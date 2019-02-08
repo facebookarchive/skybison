@@ -27,8 +27,8 @@ void FunctionBuiltins::initialize(Runtime* runtime) {
   Type function(&scope, runtime->addBuiltinType(
                             SymbolId::kFunction, LayoutId::kFunction,
                             LayoutId::kObject, kAttributes, kMethods));
-  Layout layout(&scope, function->instanceLayout());
-  layout->setOverflowAttributes(SmallInt::fromWord(RawFunction::kDictOffset));
+  Layout layout(&scope, function.instanceLayout());
+  layout.setOverflowAttributes(SmallInt::fromWord(RawFunction::kDictOffset));
 }
 
 RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
@@ -39,18 +39,18 @@ RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!self->isFunction()) {
+  if (!self.isFunction()) {
     return thread->raiseTypeErrorWithCStr(
         "__get__ must be called with function instance as first argument");
   }
   Object instance(&scope, args.get(1));
-  if (!instance->isNoneType()) {
+  if (!instance.isNoneType()) {
     return thread->runtime()->newBoundMethod(self, instance);
   }
   Object type_obj(&scope, args.get(2));
   if (thread->runtime()->isInstanceOfType(*type_obj)) {
     Type type(&scope, *type_obj);
-    if (RawLayout::cast(type->instanceLayout()).id() == LayoutId::kNoneType) {
+    if (RawLayout::cast(type.instanceLayout()).id() == LayoutId::kNoneType) {
       return thread->runtime()->newBoundMethod(self, instance);
     }
   }

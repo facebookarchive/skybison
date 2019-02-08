@@ -19,8 +19,8 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
 
   List list(&scope, runtime->newList());
   Tuple items(&scope, runtime->newTuple(size));
-  list->setNumItems(size);
-  list->setItems(*items);
+  list.setNumItems(size);
+  list.setItems(*items);
 
   return ApiHandle::newReference(thread, *list);
 }
@@ -48,9 +48,9 @@ PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
     return nullptr;
   }
   List list(&scope, *list_obj);
-  Tuple tuple(&scope, runtime->newTuple(list->numItems()));
-  for (Py_ssize_t i = 0; i < list->numItems(); i++) {
-    tuple->atPut(i, list->at(i));
+  Tuple tuple(&scope, runtime->newTuple(list.numItems()));
+  for (Py_ssize_t i = 0; i < list.numItems(); i++) {
+    tuple.atPut(i, list.at(i));
   }
   return ApiHandle::newReference(thread, *tuple);
 }
@@ -65,11 +65,11 @@ PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
     return nullptr;
   }
   List list(&scope, *list_obj);
-  if (i >= list->numItems()) {
+  if (i >= list.numItems()) {
     thread->raiseIndexErrorWithCStr("index out of bounds in PyList_GetItem");
     return nullptr;
   }
-  Object value(&scope, list->at(i));
+  Object value(&scope, list.at(i));
   return ApiHandle::borrowedReference(thread, *value);
 }
 
@@ -101,11 +101,11 @@ PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {
     return -1;
   }
   List list(&scope, *list_obj);
-  if (i >= list->numItems()) {
+  if (i >= list.numItems()) {
     thread->raiseIndexErrorWithCStr("index out of bounds in PyList_SetItem");
     return -1;
   }
-  list->atPut(i, ApiHandle::fromPyObject(item)->asObject());
+  list.atPut(i, ApiHandle::fromPyObject(item)->asObject());
   return 0;
 }
 
@@ -147,18 +147,18 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
   List list(&scope, *list_obj);
   if (low < 0) {
     low = 0;
-  } else if (low > list->numItems()) {
-    low = list->numItems();
+  } else if (low > list.numItems()) {
+    low = list.numItems();
   }
   if (high < low) {
     high = low;
-  } else if (high > list->numItems()) {
-    high = list->numItems();
+  } else if (high > list.numItems()) {
+    high = list.numItems();
   }
   Slice slice(&scope, runtime->newSlice());
-  slice->setStart(runtime->newInt(low));
-  slice->setStop(runtime->newInt(high));
-  slice->setStep(SmallInt::fromWord(1));
+  slice.setStart(runtime->newInt(low));
+  slice.setStop(runtime->newInt(high));
+  slice.setStep(SmallInt::fromWord(1));
   return ApiHandle::newReference(thread, listSlice(thread, list, slice));
 }
 
@@ -177,7 +177,7 @@ PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,
     return -1;
   }
   List list(&scope, *list_obj);
-  if (list->numItems() == kMaxWord) {
+  if (list.numItems() == kMaxWord) {
     thread->raiseSystemErrorWithCStr("cannot add more objects to list");
     return -1;
   }
@@ -203,7 +203,7 @@ PY_EXPORT Py_ssize_t PyList_Size(PyObject* p) {
   }
 
   List list(&scope, *list_obj);
-  return list->numItems();
+  return list.numItems();
 }
 
 PY_EXPORT int PyList_Sort(PyObject* pylist) {

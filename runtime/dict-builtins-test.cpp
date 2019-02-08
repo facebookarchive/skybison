@@ -14,7 +14,7 @@ TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   runFromCStr(&runtime, "result = {'foo': 0}.__contains__('foo')");
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isBool());
+  ASSERT_TRUE(result.isBool());
   EXPECT_TRUE(RawBool::cast(*result).value());
 }
 
@@ -23,7 +23,7 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   runFromCStr(&runtime, "result = {}.__contains__('foo')");
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isBool());
+  ASSERT_TRUE(result.isBool());
   EXPECT_FALSE(RawBool::cast(*result).value());
 }
 
@@ -69,7 +69,7 @@ foo_in_d = "foo" in d
   HandleScope scope;
   Bool foo_in_d(&scope, moduleAt(&runtime, "__main__", "foo_in_d"));
 
-  EXPECT_TRUE(foo_in_d->value());
+  EXPECT_TRUE(foo_in_d.value());
 }
 
 TEST(DictBuiltinsTest, InWithNonexistentKeyReturnsFalse) {
@@ -81,7 +81,7 @@ foo_in_d = "foo" in d
   HandleScope scope;
   Bool foo_in_d(&scope, moduleAt(&runtime, "__main__", "foo_in_d"));
 
-  EXPECT_FALSE(foo_in_d->value());
+  EXPECT_FALSE(foo_in_d.value());
 }
 
 TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
@@ -143,8 +143,8 @@ TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
 
   Object result(&scope,
                 runBuiltin(DictBuiltins::dunderSetItem, dict, key, val2));
-  ASSERT_TRUE(result->isNoneType());
-  ASSERT_EQ(dict->numItems(), 1);
+  ASSERT_TRUE(result.isNoneType());
+  ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val2);
 }
 
@@ -152,13 +152,13 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   Runtime runtime;
   HandleScope scope;
   Dict dict(&scope, runtime.newDictWithSize(1));
-  ASSERT_EQ(dict->numItems(), 0);
+  ASSERT_EQ(dict.numItems(), 0);
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
   Object result(&scope,
                 runBuiltin(DictBuiltins::dunderSetItem, dict, key, val));
-  ASSERT_TRUE(result->isNoneType());
-  ASSERT_EQ(dict->numItems(), 1);
+  ASSERT_TRUE(result.isNoneType());
+  ASSERT_EQ(dict.numItems(), 1);
   ASSERT_EQ(runtime.dictAt(dict, key), *val);
 }
 
@@ -184,7 +184,7 @@ TEST(DictBuiltinsTest, DunderNewConstructsDict) {
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kDict));
   Object result(&scope, runBuiltin(DictBuiltins::dunderNew, type));
-  ASSERT_TRUE(result->isDict());
+  ASSERT_TRUE(result.isDict());
 }
 
 TEST(DictBuiltinsTest, DunderSetItemWithDictSubclassSetsItem) {
@@ -200,9 +200,9 @@ d = foo()
   Str value(&scope, runtime.newStrFromCStr("b"));
   Object result1(&scope,
                  runBuiltin(DictBuiltins::dunderSetItem, dict, key, value));
-  EXPECT_TRUE(result1->isNoneType());
+  EXPECT_TRUE(result1.isNoneType());
   Object result2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(result2->isStr());
+  ASSERT_TRUE(result2.isStr());
   EXPECT_EQ(RawStr::cast(*result2), *value);
 }
 
@@ -211,7 +211,7 @@ TEST(DictBuiltinsTest, DunderIterReturnsDictKeyIter) {
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
   Object iter(&scope, runBuiltin(DictBuiltins::dunderIter, dict));
-  ASSERT_TRUE(iter->isDictKeyIterator());
+  ASSERT_TRUE(iter.isDictKeyIterator());
 }
 
 TEST(DictBuiltinsTest, DunderItemsReturnsDictItems) {
@@ -219,7 +219,7 @@ TEST(DictBuiltinsTest, DunderItemsReturnsDictItems) {
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
   Object items(&scope, runBuiltin(DictBuiltins::items, dict));
-  ASSERT_TRUE(items->isDictItems());
+  ASSERT_TRUE(items.isDictItems());
 }
 
 TEST(DictBuiltinsTest, KeysReturnsDictKeys) {
@@ -227,7 +227,7 @@ TEST(DictBuiltinsTest, KeysReturnsDictKeys) {
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
   Object keys(&scope, runBuiltin(DictBuiltins::keys, dict));
-  ASSERT_TRUE(keys->isDictKeys());
+  ASSERT_TRUE(keys.isDictKeys());
 }
 
 TEST(DictBuiltinsTest, ValuesReturnsDictValues) {
@@ -235,7 +235,7 @@ TEST(DictBuiltinsTest, ValuesReturnsDictValues) {
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
   Object values(&scope, runBuiltin(DictBuiltins::values, dict));
-  ASSERT_TRUE(values->isDictValues());
+  ASSERT_TRUE(values.isDictValues());
 }
 
 TEST(DictBuiltinsTest, DunderEqWithNonDict) {
@@ -285,18 +285,18 @@ d3 = {"a": 123}
   HandleScope scope(thread);
   Dict d1(&scope, moduleAt(&runtime, "__main__", "d1"));
   Dict d2(&scope, moduleAt(&runtime, "__main__", "d2"));
-  ASSERT_EQ(d1->numItems(), 2);
-  ASSERT_EQ(d2->numItems(), 2);
+  ASSERT_EQ(d1.numItems(), 2);
+  ASSERT_EQ(d2.numItems(), 2);
   ASSERT_TRUE(runBuiltin(DictBuiltins::update, d1, d2).isNoneType());
-  EXPECT_EQ(d1->numItems(), 4);
-  EXPECT_EQ(d2->numItems(), 2);
+  EXPECT_EQ(d1.numItems(), 4);
+  EXPECT_EQ(d2.numItems(), 2);
 
   Dict d3(&scope, moduleAt(&runtime, "__main__", "d3"));
   ASSERT_TRUE(runBuiltin(DictBuiltins::update, d1, d3).isNoneType());
-  EXPECT_EQ(d1->numItems(), 4);
+  EXPECT_EQ(d1.numItems(), 4);
   Str a(&scope, runtime.newStrFromCStr("a"));
   Object a_val(&scope, runtime.dictAt(d1, a));
-  ASSERT_TRUE(a_val->isInt());
+  ASSERT_TRUE(a_val.isInt());
   EXPECT_EQ(RawInt::cast(*a_val).asWord(), 123);
 }
 
@@ -306,7 +306,7 @@ TEST(DictItemsBuiltinsTest, DunderIterReturnsIter) {
   Dict dict(&scope, runtime.newDict());
   DictItems items(&scope, runtime.newDictItems(dict));
   Object iter(&scope, runBuiltin(DictItemsBuiltins::dunderIter, items));
-  ASSERT_TRUE(iter->isDictItemIterator());
+  ASSERT_TRUE(iter.isDictItemIterator());
 }
 
 TEST(DictKeysBuiltinsTest, DunderIterReturnsIter) {
@@ -315,7 +315,7 @@ TEST(DictKeysBuiltinsTest, DunderIterReturnsIter) {
   Dict dict(&scope, runtime.newDict());
   DictKeys keys(&scope, runtime.newDictKeys(dict));
   Object iter(&scope, runBuiltin(DictKeysBuiltins::dunderIter, keys));
-  ASSERT_TRUE(iter->isDictKeyIterator());
+  ASSERT_TRUE(iter.isDictKeyIterator());
 }
 
 TEST(DictValuesBuiltinsTest, DunderIterReturnsIter) {
@@ -324,7 +324,7 @@ TEST(DictValuesBuiltinsTest, DunderIterReturnsIter) {
   Dict dict(&scope, runtime.newDict());
   DictValues values(&scope, runtime.newDictValues(dict));
   Object iter(&scope, runBuiltin(DictValuesBuiltins::dunderIter, values));
-  ASSERT_TRUE(iter->isDictValueIterator());
+  ASSERT_TRUE(iter.isDictValueIterator());
 }
 
 TEST(DictItemIteratorBuiltinsTest, CallDunderIterReturnsSelf) {
@@ -366,7 +366,7 @@ TEST(DictItemIteratorBuiltinsTest,
   DictItemIterator iter(&scope, runtime.newDictItemIterator(empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictItemIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -378,7 +378,7 @@ TEST(DictKeyIteratorBuiltinsTest,
   DictKeyIterator iter(&scope, runtime.newDictKeyIterator(empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictKeyIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -390,7 +390,7 @@ TEST(DictValueIteratorBuiltinsTest,
   DictValueIterator iter(&scope, runtime.newDictValueIterator(empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictValueIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -407,17 +407,17 @@ TEST(DictItemIteratorBuiltinsTest, CallDunderNextReadsItemsSequentially) {
   DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
 
   Object item1(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1->isTuple());
+  ASSERT_TRUE(item1.isTuple());
   EXPECT_EQ(Tuple::cast(*item1)->at(0), hello);
   EXPECT_EQ(Tuple::cast(*item1)->at(1), world);
 
   Object item2(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2->isTuple());
+  ASSERT_TRUE(item2.isTuple());
   EXPECT_EQ(Tuple::cast(*item2)->at(0), goodbye);
   EXPECT_EQ(Tuple::cast(*item2)->at(1), moon);
 
   Object item3(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item3->isError());
+  ASSERT_TRUE(item3.isError());
 }
 
 TEST(DictKeyIteratorBuiltinsTest, CallDunderNextReadsKeysSequentially) {
@@ -433,15 +433,15 @@ TEST(DictKeyIteratorBuiltinsTest, CallDunderNextReadsKeysSequentially) {
   DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
 
   Object item1(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1->isStr());
+  ASSERT_TRUE(item1.isStr());
   EXPECT_EQ(Str::cast(*item1), hello);
 
   Object item2(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2->isStr());
+  ASSERT_TRUE(item2.isStr());
   EXPECT_EQ(Str::cast(*item2), goodbye);
 
   Object item3(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item3->isError());
+  ASSERT_TRUE(item3.isError());
 }
 
 TEST(DictValueIteratorBuiltinsTest, CallDunderNextReadsValuesSequentially) {
@@ -457,15 +457,15 @@ TEST(DictValueIteratorBuiltinsTest, CallDunderNextReadsValuesSequentially) {
   DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
 
   Object item1(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1->isStr());
+  ASSERT_TRUE(item1.isStr());
   EXPECT_EQ(Str::cast(*item1), world);
 
   Object item2(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2->isStr());
+  ASSERT_TRUE(item2.isStr());
   EXPECT_EQ(Str::cast(*item2), moon);
 
   Object item3(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item3->isError());
+  ASSERT_TRUE(item3.isError());
 }
 
 TEST(DictItemIteratorBuiltinsTest,
@@ -479,11 +479,11 @@ TEST(DictItemIteratorBuiltinsTest,
   DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
 
   Object item1(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
-  ASSERT_FALSE(item1->isError());
+  ASSERT_FALSE(item1.isError());
 
   Object length_hint(
       &scope, runBuiltin(DictItemIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -498,11 +498,11 @@ TEST(DictKeyIteratorBuiltinsTest,
   DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
 
   Object item1(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
-  ASSERT_FALSE(item1->isError());
+  ASSERT_FALSE(item1.isError());
 
   Object length_hint(
       &scope, runBuiltin(DictKeyIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -517,11 +517,11 @@ TEST(DictValueIteratorBuiltinsTest,
   DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
 
   Object item1(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
-  ASSERT_FALSE(item1->isError());
+  ASSERT_FALSE(item1.isError());
 
   Object length_hint(
       &scope, runBuiltin(DictValueIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -534,12 +534,12 @@ TEST(DictBuiltinsTest, ItemIteratorNextOnOneElementDictReturnsElement) {
   runtime.dictAtPut(dict, key, value);
   DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
   Object next(&scope, dictItemIteratorNext(Thread::currentThread(), iter));
-  ASSERT_TRUE(next->isTuple());
+  ASSERT_TRUE(next.isTuple());
   EXPECT_EQ(Tuple::cast(*next)->at(0), key);
   EXPECT_EQ(Tuple::cast(*next)->at(1), value);
 
   next = dictItemIteratorNext(Thread::currentThread(), iter);
-  ASSERT_TRUE(next->isError());
+  ASSERT_TRUE(next.isError());
 }
 
 TEST(DictBuiltinsTest, KeyIteratorNextOnOneElementDictReturnsElement) {
@@ -554,7 +554,7 @@ TEST(DictBuiltinsTest, KeyIteratorNextOnOneElementDictReturnsElement) {
   EXPECT_EQ(next, key);
 
   next = dictKeyIteratorNext(Thread::currentThread(), iter);
-  ASSERT_TRUE(next->isError());
+  ASSERT_TRUE(next.isError());
 }
 
 TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
@@ -569,7 +569,7 @@ TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
   EXPECT_EQ(next, value);
 
   next = dictValueIteratorNext(Thread::currentThread(), iter);
-  ASSERT_TRUE(next->isError());
+  ASSERT_TRUE(next.isError());
 }
 
 TEST(DictBuiltinsTest, GetWithNotEnoughArgumentsRaisesTypeError) {
@@ -633,7 +633,7 @@ TEST(DictBuiltinsTest, GetReturnsValue) {
   runtime.dictAtPut(dict, key, value);
   Object dflt(&scope, runtime.newInt(789));
   Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(Int::cast(*result)->asWord(), 456);
 }
 
@@ -645,7 +645,7 @@ TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
   Object value(&scope, runtime.newStrFromCStr("world"));
   runtime.dictAtPut(dict, key, value);
   ASSERT_FALSE(runtime.dictRemove(dict, key).isError());
-  Tuple data(&scope, dict->data());
+  Tuple data(&scope, dict.data());
   word i = Dict::Bucket::kFirst;
   ASSERT_FALSE(Dict::Bucket::nextItem(*data, &i));
 }

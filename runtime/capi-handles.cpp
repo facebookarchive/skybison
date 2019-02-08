@@ -27,7 +27,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
   Object value(&scope, runtime->dictAt(dict, key));
 
   // Fast path: All initialized builtin objects
-  if (!value->isError()) {
+  if (!value.isError()) {
     return castFromObject(*value);
   }
 
@@ -62,7 +62,7 @@ ApiHandle* ApiHandle::castFromObject(RawObject value) {
 RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  if (!obj->isInstance()) return Error::object();
+  if (!obj.isInstance()) return Error::object();
 
   HeapObject instance(&scope, *obj);
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
@@ -76,7 +76,7 @@ RawObject ApiHandle::asInstance(RawObject obj) {
 
   DCHECK(obj->isType(), "not a RawType object");
   Type type(&scope, obj);
-  Layout layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime->newInstance(layout));
   Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
@@ -114,8 +114,8 @@ void* ApiHandle::cache() {
   Object key(&scope, asObject());
   Dict caches(&scope, runtime->apiCaches());
   Object cache(&scope, runtime->dictAt(caches, key));
-  DCHECK(cache->isInt() || cache->isError(), "unexpected cache type");
-  if (!cache->isError()) return RawInt::cast(*cache)->asCPtr();
+  DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
+  if (!cache.isError()) return RawInt::cast(*cache)->asCPtr();
   return nullptr;
 }
 
@@ -141,8 +141,8 @@ void ApiHandle::dispose() {
 
   dict = runtime->apiCaches();
   Object cache(&scope, runtime->dictRemove(dict, key));
-  DCHECK(cache->isInt() || cache->isError(), "unexpected cache type");
-  if (!cache->isError()) std::free(RawInt::cast(*cache)->asCPtr());
+  DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
+  if (!cache.isError()) std::free(RawInt::cast(*cache)->asCPtr());
 
   std::free(this);
 }

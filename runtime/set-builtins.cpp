@@ -21,7 +21,7 @@ RawObject SetBaseBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
         "'__len__' requires a 'set' or 'frozenset' object");
   }
   SetBase set(&scope, *self);
-  return SmallInt::fromWord(set->numItems());
+  return SmallInt::fromWord(set.numItems());
 }
 
 RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
@@ -74,23 +74,23 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
         "isdisjoint() requires a 'set' or 'frozenset' object");
   }
   SetBase a(&scope, *self);
-  if (a->numItems() == 0) {
+  if (a.numItems() == 0) {
     return Bool::trueObj();
   }
   if (thread->runtime()->isInstanceOfSetBase(*other)) {
     SetBase b(&scope, *other);
-    if (b->numItems() == 0) {
+    if (b.numItems() == 0) {
       return Bool::trueObj();
     }
     // Iterate over the smaller set
-    if (a->numItems() > b->numItems()) {
+    if (a.numItems() > b.numItems()) {
       a = *other;
       b = *self;
     }
     SetIterator set_iter(&scope, runtime->newSetIterator(a));
     for (;;) {
       value = setIteratorNext(thread, set_iter);
-      if (value->isError()) {
+      if (value.isError()) {
         break;
       }
       if (runtime->setIncludes(b, value)) {
@@ -103,25 +103,25 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
   Object iter_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), other,
                                         SymbolId::kDunderIter));
-  if (iter_method->isError()) {
+  if (iter_method.isError()) {
     return thread->raiseTypeErrorWithCStr("object is not iterable");
   }
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
                                            iter_method, other));
-  if (iterator->isError()) {
+  if (iterator.isError()) {
     return thread->raiseTypeErrorWithCStr("object is not iterable");
   }
   Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
-  if (next_method->isError()) {
+  if (next_method.isError()) {
     return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
   }
   for (;;) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
                                      next_method, iterator);
-    if (value->isError()) {
+    if (value.isError()) {
       if (thread->clearPendingStopIteration()) break;
       return *value;
     }
@@ -172,7 +172,7 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
   // nargs is at least 2
   Object other(&scope, args.get(1));
   Object result(&scope, thread->runtime()->setIntersection(thread, set, other));
-  if (result->isError() || nargs == 2) {
+  if (result.isError() || nargs == 2) {
     return *result;
   }
 
@@ -180,12 +180,12 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
   for (word i = 2; i < nargs; i++) {
     other = args.get(i);
     result = thread->runtime()->setIntersection(thread, base, other);
-    if (result->isError()) {
+    if (result.isError()) {
       return *result;
     }
     base = *result;
     // Early exit
-    if (base->numItems() == 0) {
+    if (base.numItems() == 0) {
       break;
     }
   }
@@ -373,7 +373,7 @@ void FrozenSetBuiltins::initialize(Runtime* runtime) {
   Type frozen_set(&scope, runtime->addBuiltinType(
                               SymbolId::kFrozenSet, LayoutId::kFrozenSet,
                               LayoutId::kObject, kAttributes, kMethods));
-  frozen_set->sealAttributes();
+  frozen_set.sealAttributes();
 }
 
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
@@ -388,37 +388,37 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
-  if (type->builtinBase() != LayoutId::kFrozenSet) {
+  if (type.builtinBase() != LayoutId::kFrozenSet) {
     return thread->raiseTypeErrorWithCStr("not a subtype of frozenset");
   }
-  if (nargs == 1 && type->isBuiltin() &&
-      type->builtinBase() == LayoutId::kFrozenSet) {
+  if (nargs == 1 && type.isBuiltin() &&
+      type.builtinBase() == LayoutId::kFrozenSet) {
     return thread->runtime()->emptyFrozenSet();
   }
   if (nargs > 1) {
     Object iterable(&scope, args.get(1));
     // frozenset(f) where f is a frozenset is idempotent
-    if (iterable->isFrozenSet()) {
+    if (iterable.isFrozenSet()) {
       return *iterable;
     }
     Object dunder_iter(
         &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                           iterable, SymbolId::kDunderIter));
-    if (dunder_iter->isError()) {
+    if (dunder_iter.isError()) {
       return thread->raiseTypeErrorWithCStr(
           "frozenset.__new__ must be called with an iterable");
     }
     FrozenSet result(&scope, thread->runtime()->newFrozenSet());
     result = thread->runtime()->setUpdate(thread, result, iterable);
-    if (result->numItems() == 0) {
+    if (result.numItems() == 0) {
       return thread->runtime()->emptyFrozenSet();
     }
     return *result;
   }
-  Layout layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type.instanceLayout());
   FrozenSet result(&scope, thread->runtime()->newInstance(layout));
-  result->setNumItems(0);
-  result->setData(thread->runtime()->newTuple(0));
+  result.setNumItems(0);
+  result.setData(thread->runtime()->newTuple(0));
   return *result;
 }
 
@@ -451,7 +451,7 @@ void SetBuiltins::initialize(Runtime* runtime) {
   Type set(&scope,
            runtime->addBuiltinType(SymbolId::kSet, LayoutId::kSet,
                                    LayoutId::kObject, kAttributes, kMethods));
-  set->sealAttributes();
+  set.sealAttributes();
   ;
 }
 
@@ -463,7 +463,7 @@ RawObject setAdd(Thread* thread, const Set& set, const Object& key) {
 }
 
 RawObject setCopy(Thread* thread, const SetBase& set) {
-  word num_items = set->numItems();
+  word num_items = set.numItems();
   Runtime* runtime = thread->runtime();
   if (num_items == 0) {
     return runtime->isInstanceOfSet(*set) ? runtime->newSet()
@@ -474,8 +474,8 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
   SetBase new_set(&scope, runtime->isInstanceOfSet(*set)
                               ? runtime->newSet()
                               : runtime->newFrozenSet());
-  Tuple data(&scope, set->data());
-  Tuple new_data(&scope, runtime->newTuple(data->length()));
+  Tuple data(&scope, set.data());
+  Tuple new_data(&scope, runtime->newTuple(data.length()));
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
@@ -484,14 +484,14 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
     key_hash = SetBase::Bucket::hash(*data, i);
     SetBase::Bucket::set(*new_data, i, *key_hash, *key);
   }
-  new_set->setData(*new_data);
-  new_set->setNumItems(set->numItems());
+  new_set.setData(*new_data);
+  new_set.setNumItems(set.numItems());
   return *new_set;
 }
 
 bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
   HandleScope scope(thread);
-  Tuple data(&scope, set->data());
+  Tuple data(&scope, set.data());
   Object key(&scope, NoneType::object());
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
@@ -505,14 +505,14 @@ bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
 
 bool setIsProperSubset(Thread* thread, const SetBase& set,
                        const SetBase& other) {
-  if (set->numItems() == other->numItems()) {
+  if (set.numItems() == other.numItems()) {
     return false;
   }
   return setIsSubset(thread, set, other);
 }
 
 bool setEquals(Thread* thread, const SetBase& set, const SetBase& other) {
-  if (set->numItems() != other->numItems()) {
+  if (set.numItems() != other.numItems()) {
     return false;
   }
   if (*set == *other) {
@@ -523,14 +523,14 @@ bool setEquals(Thread* thread, const SetBase& set, const SetBase& other) {
 
 RawObject setPop(Thread* thread, const Set& set) {
   HandleScope scope(thread);
-  Tuple data(&scope, set->data());
-  word num_items = set->numItems();
+  Tuple data(&scope, set.data());
+  word num_items = set.numItems();
   if (num_items != 0) {
     for (word i = SetBase::Bucket::kFirst;
          SetBase::Bucket::nextItem(*data, &i);) {
       Object value(&scope, Set::Bucket::key(*data, i));
       Set::Bucket::setTombstone(*data, i);
-      set->setNumItems(num_items - 1);
+      set.setNumItems(num_items - 1);
       return *value;
     }
   }
@@ -539,16 +539,16 @@ RawObject setPop(Thread* thread, const Set& set) {
 }
 
 RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
-  word idx = iter->index();
+  word idx = iter.index();
   HandleScope scope(thread);
-  SetBase underlying(&scope, iter->iterable());
-  Tuple data(&scope, underlying->data());
+  SetBase underlying(&scope, iter.iterable());
+  Tuple data(&scope, underlying.data());
   // Find the next non empty bucket
   if (!SetBase::Bucket::nextItem(*data, &idx)) {
     return Error::object();
   }
-  iter->setConsumedCount(iter->consumedCount() + 1);
-  iter->setIndex(idx);
+  iter.setConsumedCount(iter.consumedCount() + 1);
+  iter.setIndex(idx);
   return RawSet::Bucket::key(*data, idx);
 }
 
@@ -589,12 +589,12 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   Set set(&scope, *self);
   Object intersection(&scope,
                       thread->runtime()->setIntersection(thread, set, other));
-  if (intersection->isError()) {
+  if (intersection.isError()) {
     return *intersection;
   }
   RawSet intersection_set = RawSet::cast(*intersection);
-  set->setData(intersection_set->data());
-  set->setNumItems(intersection_set->numItems());
+  set.setData(intersection_set->data());
+  set.setNumItems(intersection_set->numItems());
   return *set;
 }
 
@@ -618,7 +618,7 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     Set set(&scope, *self);
     Object iterable(&scope, args.get(1));
     Object result(&scope, runtime->setUpdate(thread, set, iterable));
-    if (result->isError()) {
+    if (result.isError()) {
       return *result;
     }
   }
@@ -650,13 +650,13 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
-  if (type->builtinBase() != LayoutId::kSet) {
+  if (type.builtinBase() != LayoutId::kSet) {
     return thread->raiseTypeErrorWithCStr("not a subtype of set");
   }
-  Layout layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type.instanceLayout());
   Set result(&scope, thread->runtime()->newInstance(layout));
-  result->setNumItems(0);
-  result->setData(thread->runtime()->newTuple(0));
+  result.setNumItems(0);
+  result.setData(thread->runtime()->newTuple(0));
   return *result;
 }
 
@@ -681,7 +681,7 @@ RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isSetIterator()) {
+  if (!self.isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a set iterator instance as the first "
         "argument");
@@ -697,14 +697,14 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj->isSetIterator()) {
+  if (!self_obj.isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a set iterator instance as the first "
         "argument");
   }
   SetIterator self(&scope, *self_obj);
   Object value(&scope, setIteratorNext(thread, self));
-  if (value->isError()) {
+  if (value.isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
   return *value;
@@ -719,14 +719,14 @@ RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isSetIterator()) {
+  if (!self.isSetIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() must be called with a set iterator instance as "
         "the first argument");
   }
   SetIterator set_iterator(&scope, *self);
-  Set set(&scope, set_iterator->iterable());
-  return SmallInt::fromWord(set->numItems() - set_iterator->consumedCount());
+  Set set(&scope, set_iterator.iterable());
+  return SmallInt::fromWord(set.numItems() - set_iterator.consumedCount());
 }
 
 }  // namespace python

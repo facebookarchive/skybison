@@ -25,12 +25,12 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
   if (size > 0) {
     word capacity = static_cast<word>(size);
     if (str == nullptr) {
-      result->setBytes(runtime->newBytes(capacity, 0));
+      result.setBytes(runtime->newBytes(capacity, 0));
     } else {
       View<byte> view(reinterpret_cast<const byte*>(str), capacity);
-      result->setBytes(runtime->newBytesWithAll(view));
+      result.setBytes(runtime->newBytesWithAll(view));
     }
-    result->setNumBytes(capacity);
+    result.setNumBytes(capacity);
   }
   return ApiHandle::newReference(thread, *result);
 }

@@ -73,7 +73,7 @@ TEST(ModuleBuiltinsTest, DunderNewReturnsModule) {
   Str module_name(&scope, runtime.newStrFromCStr("foo"));
   Object module(&scope,
                 runBuiltin(ModuleBuiltins::dunderNew, moduletype, module_name));
-  ASSERT_TRUE(module->isModule());
+  ASSERT_TRUE(module.isModule());
   Object result_module_name(&scope, RawModule::cast(*module).name());
   EXPECT_TRUE(isStrEquals(result_module_name, module_name));
 }
@@ -97,7 +97,7 @@ result = sys.__dict__
 )");
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(result->isDict());
+  EXPECT_TRUE(result.isDict());
 }
 
 }  // namespace python

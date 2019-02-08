@@ -17,7 +17,7 @@ RawObject getCategory(Thread* thread, const Object& message,
   Type warning(&scope, runtime->typeAt(LayoutId::kWarning));
   // TODO(bsimmers): Use our equivalent of PyObject_IsInstance once we have it.
   if (!runtime->isSubclass(result, warning)) {
-    if (category->isNoneType()) {
+    if (category.isNoneType()) {
       result = *warning;
     } else if (runtime->isInstanceOfType(*category)) {
       result = *category;
@@ -45,14 +45,14 @@ RawObject warningsWarn(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfInt(*stacklevel)) {
     return thread->raiseTypeErrorWithCStr("integer argument expected");
   }
-  auto result = Int(&scope, *stacklevel)->asInt<word>();
+  auto result = Int(&scope, *stacklevel).asInt<word>();
   if (result.error != CastError::None) {
     return thread->raiseOverflowErrorWithCStr(
         "Python int too large to convert to C ssize_t");
   }
 
   Object real_category(&scope, getCategory(thread, message, category));
-  if (real_category->isError()) return *real_category;
+  if (real_category.isError()) return *real_category;
 
   // TODO(T39431178): Implement proper filtering/escalation.
   return NoneType::object();

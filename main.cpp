@@ -36,7 +36,7 @@ int main(int argc, const char** argv) {
   // function to use the C-API.
   python::HandleScope scope;
   python::Object result(&scope, runtime.run(buffer.get()));
-  if (result->isError()) {
+  if (result.isError()) {
     python::Thread::currentThread()->printPendingException();
     return EXIT_FAILURE;
   }

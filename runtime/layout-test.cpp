@@ -31,11 +31,11 @@ TEST(LayoutTest, FindAttribute) {
 
   // Update the layout to include the new attribute as an in-object attribute
   Tuple entry(&scope, runtime.newTuple(2));
-  entry->atPut(0, *attr);
-  entry->atPut(
-      1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
+  entry.atPut(0, *attr);
+  entry.atPut(1,
+              AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
   Tuple array(&scope, runtime.newTuple(1));
-  array->atPut(0, *entry);
+  array.atPut(0, *entry);
   RawLayout::cast(*layout)->setInObjectAttributes(*array);
 
   // Should find the attribute
@@ -124,29 +124,29 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
   // Create a new layout with a single in-object attribute
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
   Tuple entry(&scope, runtime.newTuple(2));
-  entry->atPut(0, *attr);
-  entry->atPut(
-      1, AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
+  entry.atPut(0, *attr);
+  entry.atPut(1,
+              AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
   Tuple array(&scope, runtime.newTuple(1));
-  array->atPut(0, *entry);
+  array.atPut(0, *entry);
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
-  layout->setInObjectAttributes(*array);
+  layout.setInObjectAttributes(*array);
 
   // Deleting the attribute should succeed and return a new layout
   RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr);
   ASSERT_TRUE(result->isLayout());
   Layout layout2(&scope, result);
-  EXPECT_NE(layout->id(), layout2->id());
+  EXPECT_NE(layout.id(), layout2.id());
 
   // The new layout should have the entry for the attribute marked as deleted
-  ASSERT_TRUE(layout2->inObjectAttributes()->isTuple());
-  Tuple inobject(&scope, layout2->inObjectAttributes());
-  ASSERT_EQ(inobject->length(), 1);
-  ASSERT_TRUE(inobject->at(0)->isTuple());
-  entry = inobject->at(0);
-  EXPECT_EQ(entry->at(0), NoneType::object());
-  ASSERT_TRUE(entry->at(1)->isSmallInt());
-  EXPECT_EQ(AttributeInfo(entry->at(1)).flags(), 2);
+  ASSERT_TRUE(layout2.inObjectAttributes()->isTuple());
+  Tuple inobject(&scope, layout2.inObjectAttributes());
+  ASSERT_EQ(inobject.length(), 1);
+  ASSERT_TRUE(inobject.at(0)->isTuple());
+  entry = inobject.at(0);
+  EXPECT_EQ(entry.at(0), NoneType::object());
+  ASSERT_TRUE(entry.at(1)->isSmallInt());
+  EXPECT_EQ(AttributeInfo(entry.at(1)).flags(), 2);
 
   // Performing the same deletion should follow the edge created by the
   // previous deletion and arrive at the same layout
@@ -167,21 +167,21 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   Object attr3(&scope, runtime.newStrFromCStr("myattr3"));
   Tuple attrs(&scope, runtime.newTuple(3));
   Object* names[] = {&attr, &attr2, &attr3};
-  for (word i = 0; i < attrs->length(); i++) {
+  for (word i = 0; i < attrs.length(); i++) {
     Tuple entry(&scope, runtime.newTuple(2));
-    entry->atPut(0, **names[i]);
-    entry->atPut(1, AttributeInfo(i, 0).asSmallInt());
-    attrs->atPut(i, *entry);
+    entry.atPut(0, **names[i]);
+    entry.atPut(1, AttributeInfo(i, 0).asSmallInt());
+    attrs.atPut(i, *entry);
   }
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
-  layout->setOverflowAttributes(*attrs);
+  layout.setOverflowAttributes(*attrs);
 
   // Delete the middle attribute. Make sure a new layout is created and the
   // entry after the deleted attribute has its offset updated correctly.
   RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr2);
   ASSERT_TRUE(result->isLayout());
   Layout layout2(&scope, result);
-  EXPECT_NE(layout2->id(), layout->id());
+  EXPECT_NE(layout2.id(), layout.id());
   // The first attribute should have the same offset
   AttributeInfo info;
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout2, attr, &info));
@@ -197,8 +197,8 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   result = runtime.layoutDeleteAttribute(thread, layout2, attr);
   ASSERT_TRUE(result->isLayout());
   Layout layout3(&scope, result);
-  EXPECT_NE(layout3->id(), layout->id());
-  EXPECT_NE(layout3->id(), layout2->id());
+  EXPECT_NE(layout3.id(), layout.id());
+  EXPECT_NE(layout3.id(), layout2.id());
   // The first attribute should not exist
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout3, attr, &info));
   // The second attribute should not exist
@@ -213,9 +213,9 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   result = runtime.layoutDeleteAttribute(thread, layout3, attr3);
   ASSERT_TRUE(result->isLayout());
   Layout layout4(&scope, result);
-  EXPECT_NE(layout4->id(), layout->id());
-  EXPECT_NE(layout4->id(), layout2->id());
-  EXPECT_NE(layout4->id(), layout3->id());
+  EXPECT_NE(layout4.id(), layout.id());
+  EXPECT_NE(layout4.id(), layout2.id());
+  EXPECT_NE(layout4.id(), layout3.id());
   // No attributes should exist
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout4, attr, &info));
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, layout4, attr2, &info));
@@ -226,10 +226,10 @@ static RawObject createLayoutAttribute(Runtime* runtime, const Object& name,
                                        uword flags) {
   HandleScope scope;
   Tuple entry(&scope, runtime->newTuple(2));
-  entry->atPut(0, *name);
-  entry->atPut(1, AttributeInfo(0, flags).asSmallInt());
+  entry.atPut(0, *name);
+  entry.atPut(1, AttributeInfo(0, flags).asSmallInt());
   Tuple result(&scope, runtime->newTuple(1));
-  result->atPut(0, *entry);
+  result.atPut(0, *entry);
   return *result;
 }
 
@@ -242,10 +242,10 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   // attribute
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
   Object inobject(&scope, runtime.newStrFromCStr("inobject"));
-  layout->setInObjectAttributes(createLayoutAttribute(
+  layout.setInObjectAttributes(createLayoutAttribute(
       &runtime, inobject, AttributeInfo::Flag::kInObject));
   Object overflow(&scope, runtime.newStrFromCStr("overflow"));
-  layout->setOverflowAttributes(createLayoutAttribute(&runtime, overflow, 0));
+  layout.setOverflowAttributes(createLayoutAttribute(&runtime, overflow, 0));
 
   // Delete the in-object attribute and add it back. It should be re-added as
   // an overflow attribute.
@@ -270,17 +270,17 @@ TEST(LayoutTest, VerifyChildLayout) {
                runtime.layoutAddAttribute(Thread::currentThread(), parent, attr,
                                           AttributeInfo::Flag::kNone));
 
-  EXPECT_NE(child->id(), parent->id());
-  EXPECT_EQ(child->numInObjectAttributes(), parent->numInObjectAttributes());
-  EXPECT_EQ(child->inObjectAttributes(), parent->inObjectAttributes());
+  EXPECT_NE(child.id(), parent.id());
+  EXPECT_EQ(child.numInObjectAttributes(), parent.numInObjectAttributes());
+  EXPECT_EQ(child.inObjectAttributes(), parent.inObjectAttributes());
   // Child should have an additional overflow attribute
-  EXPECT_NE(child->overflowAttributes(), parent->overflowAttributes());
-  EXPECT_NE(child->additions(), parent->additions());
-  EXPECT_EQ(RawList::cast(child->additions())->numItems(), 0);
-  EXPECT_NE(child->deletions(), parent->deletions());
-  EXPECT_EQ(RawList::cast(child->deletions())->numItems(), 0);
-  EXPECT_EQ(child->describedType(), parent->describedType());
-  EXPECT_EQ(child->instanceSize(), parent->instanceSize());
+  EXPECT_NE(child.overflowAttributes(), parent.overflowAttributes());
+  EXPECT_NE(child.additions(), parent.additions());
+  EXPECT_EQ(RawList::cast(child.additions())->numItems(), 0);
+  EXPECT_NE(child.deletions(), parent.deletions());
+  EXPECT_EQ(RawList::cast(child.deletions())->numItems(), 0);
+  EXPECT_EQ(child.describedType(), parent.describedType());
+  EXPECT_EQ(child.instanceSize(), parent.instanceSize());
 }
 
 }  // namespace python

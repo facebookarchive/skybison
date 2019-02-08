@@ -95,7 +95,7 @@ sysname = sys.platform
 )");
   Module main(&scope, findModule(&runtime, "__main__"));
   Object sysname(&scope, moduleAt(&runtime, main, "sysname"));
-  ASSERT_TRUE(sysname->isStr());
+  ASSERT_TRUE(sysname.isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
   bool is_darwin = !strcmp(name.sysname, "Darwin");
@@ -117,7 +117,7 @@ import sys
 result = sys.path_importer_cache
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(result->isDict());
+  EXPECT_TRUE(result.isDict());
 }
 
 TEST(SysModuleTest, BuiltinModuleNames) {
@@ -129,18 +129,18 @@ builtin_names = sys.builtin_module_names
 )");
   Module main(&scope, findModule(&runtime, "__main__"));
   Object builtins(&scope, moduleAt(&runtime, main, "builtin_names"));
-  ASSERT_TRUE(builtins->isTuple());
+  ASSERT_TRUE(builtins.isTuple());
 
   // Test that builtin list is greater than 0
   Tuple builtins_tuple(&scope, *builtins);
-  EXPECT_GT(builtins_tuple->length(), 0);
+  EXPECT_GT(builtins_tuple.length(), 0);
 
   // Test that sys and _stat are both in the builtin list
   bool builtin_sys = false;
   bool builtin__stat = false;
-  for (int i = 0; i < builtins_tuple->length(); i++) {
-    builtin_sys |= RawStr::cast(builtins_tuple->at(i))->equalsCStr("sys");
-    builtin__stat |= RawStr::cast(builtins_tuple->at(i))->equalsCStr("_stat");
+  for (int i = 0; i < builtins_tuple.length(); i++) {
+    builtin_sys |= RawStr::cast(builtins_tuple.at(i))->equalsCStr("sys");
+    builtin__stat |= RawStr::cast(builtins_tuple.at(i))->equalsCStr("_stat");
   }
   EXPECT_TRUE(builtin_sys);
   EXPECT_TRUE(builtin__stat);
@@ -153,10 +153,10 @@ TEST(SysModuleTest, PathWithUnsetPythonPath) {
   Object sys(&scope, runtime.newStrFromCStr("sys"));
   runtime.importModule(sys);
   Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
-  ASSERT_TRUE(path_obj->isList());
+  ASSERT_TRUE(path_obj.isList());
   List path(&scope, *path_obj);
-  ASSERT_EQ(path->numItems(), 1);
-  ASSERT_TRUE(isStrEqualsCStr(path->at(0), ""));
+  ASSERT_EQ(path.numItems(), 1);
+  ASSERT_TRUE(isStrEqualsCStr(path.at(0), ""));
 }
 
 TEST(SysModuleTest, PathWithEmptyPythonPath) {
@@ -166,10 +166,10 @@ TEST(SysModuleTest, PathWithEmptyPythonPath) {
   Object sys(&scope, runtime.newStrFromCStr("sys"));
   runtime.importModule(sys);
   Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
-  ASSERT_TRUE(path_obj->isList());
+  ASSERT_TRUE(path_obj.isList());
   List path(&scope, *path_obj);
-  ASSERT_EQ(path->numItems(), 1);
-  ASSERT_TRUE(isStrEqualsCStr(path->at(0), ""));
+  ASSERT_EQ(path.numItems(), 1);
+  ASSERT_TRUE(isStrEqualsCStr(path.at(0), ""));
 }
 
 TEST(SysModuleTest, PathWithPythonPath) {
@@ -179,12 +179,12 @@ TEST(SysModuleTest, PathWithPythonPath) {
   Object sys(&scope, runtime.newStrFromCStr("sys"));
   runtime.importModule(sys);
   Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
-  ASSERT_TRUE(path_obj->isList());
+  ASSERT_TRUE(path_obj.isList());
   List path(&scope, *path_obj);
-  ASSERT_EQ(path->numItems(), 3);
-  ASSERT_TRUE(isStrEqualsCStr(path->at(0), ""));
-  ASSERT_TRUE(isStrEqualsCStr(path->at(1), "/foo/bar"));
-  ASSERT_TRUE(isStrEqualsCStr(path->at(2), "/baz"));
+  ASSERT_EQ(path.numItems(), 3);
+  ASSERT_TRUE(isStrEqualsCStr(path.at(0), ""));
+  ASSERT_TRUE(isStrEqualsCStr(path.at(1), "/foo/bar"));
+  ASSERT_TRUE(isStrEqualsCStr(path.at(2), "/baz"));
 }
 
 }  // namespace python

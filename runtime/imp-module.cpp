@@ -38,7 +38,7 @@ RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
   Object spec(&scope, args.get(0));
   Object key(&scope, runtime->symbols()->Name());
   Object name_obj(&scope, getAttribute(thread, spec, key));
-  if (name_obj->isError()) {
+  if (name_obj.isError()) {
     return thread->raiseTypeErrorWithCStr("spec has no attribute 'name'");
   }
   if (!runtime->isInstanceOfStr(*name_obj)) {
@@ -47,7 +47,7 @@ RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
   }
   Str name(&scope, *name_obj);
   for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (name->equalsCStr(_PyImport_Inittab[i].name)) {
+    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
       PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();
       if (pymodule == nullptr) {
         if (thread->hasPendingException()) return Error::object();
@@ -55,7 +55,7 @@ RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
             "NULL return without exception set");
       };
       Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-      if (!module_obj->isModule()) {
+      if (!module_obj.isModule()) {
         // TODO(T39542987): Enable multi-phase module initialization
         UNIMPLEMENTED("Multi-phase module initialization");
       }

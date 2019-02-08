@@ -155,7 +155,7 @@ c = a + b
 )");
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  ASSERT_TRUE(c->isFloat());
+  ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
 }
 
@@ -170,7 +170,7 @@ c = a + b
 )");
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  ASSERT_TRUE(c->isFloat());
+  ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
 }
 
@@ -204,7 +204,7 @@ c = a - b
 )");
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  ASSERT_TRUE(c->isFloat());
+  ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(RawFloat::cast(*c)->value(), 0.5);
 }
 
@@ -219,7 +219,7 @@ c = a - b
 )");
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  ASSERT_TRUE(c->isFloat());
+  ASSERT_TRUE(c.isFloat());
   EXPECT_EQ(RawFloat::cast(*c)->value(), 1.5);
 }
 
@@ -232,7 +232,7 @@ a = float.__new__(float)
 )");
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isFloat());
+  ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(RawFloat::cast(*a)->value(), 0.0);
 }
 
@@ -245,7 +245,7 @@ a = float.__new__(float, 1.0)
 )");
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isFloat());
+  ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(RawFloat::cast(*a)->value(), 1.0);
 }
 
@@ -261,7 +261,7 @@ a = float.__new__(float, Foo())
 )");
 
   Float a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_EQ(a->value(), 1.0);
+  EXPECT_EQ(a.value(), 1.0);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithStringReturnsFloat) {
@@ -273,7 +273,7 @@ a = float.__new__(float, "1.5")
 )");
 
   Float a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_EQ(a->value(), 1.5);
+  EXPECT_EQ(a.value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, FloatSubclassReturnsFloat) {
@@ -291,16 +291,16 @@ subfloat_foo = subfloat.foo
 
   // Check that it's a subtype of float
   Object subfloat(&scope, moduleAt(&runtime, "__main__", "subfloat"));
-  ASSERT_FALSE(subfloat->isFloat());
+  ASSERT_FALSE(subfloat.isFloat());
   ASSERT_TRUE(runtime.isInstanceOfFloat(*subfloat));
 
   UserFloatBase user_float(&scope, *subfloat);
-  Object float_value(&scope, user_float->floatValue());
-  ASSERT_TRUE(float_value->isFloat());
+  Object float_value(&scope, user_float.floatValue());
+  ASSERT_TRUE(float_value.isFloat());
   EXPECT_EQ(Float::cast(*float_value)->value(), 1.5);
 
   Object foo_attr(&scope, moduleAt(&runtime, "__main__", "subfloat_foo"));
-  ASSERT_TRUE(foo_attr->isInt());
+  ASSERT_TRUE(foo_attr.isInt());
   EXPECT_EQ(3, Int::cast(*foo_attr)->asWord());
 }
 
@@ -313,16 +313,16 @@ class Test(float):
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object value(&scope, moduleAt(&runtime, "__main__", "Test"));
-  ASSERT_TRUE(value->isType());
+  ASSERT_TRUE(value.isType());
 
   Type type(&scope, *value);
-  ASSERT_TRUE(type->mro()->isTuple());
+  ASSERT_TRUE(type.mro()->isTuple());
 
-  Tuple mro(&scope, type->mro());
-  ASSERT_EQ(mro->length(), 3);
-  EXPECT_EQ(mro->at(0), *type);
-  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kFloat));
-  EXPECT_EQ(mro->at(2), runtime.typeAt(LayoutId::kObject));
+  Tuple mro(&scope, type.mro());
+  ASSERT_EQ(mro.length(), 3);
+  EXPECT_EQ(mro.at(0), *type);
+  EXPECT_EQ(mro.at(1), runtime.typeAt(LayoutId::kFloat));
+  EXPECT_EQ(mro.at(2), runtime.typeAt(LayoutId::kObject));
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithStringOfHugeNumberReturnsInf) {
@@ -336,8 +336,8 @@ b = float.__new__(float, "-1.18973e+4932")
 )");
   Float a(&scope, moduleAt(&runtime, "__main__", "a"));
   Float b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_EQ(a->value(), std::numeric_limits<double>::infinity());
-  EXPECT_EQ(b->value(), -std::numeric_limits<double>::infinity());
+  EXPECT_EQ(a.value(), std::numeric_limits<double>::infinity());
+  EXPECT_EQ(b.value(), -std::numeric_limits<double>::infinity());
 }
 
 TEST(FloatBuiltinsTest, SubWithNonFloatSelfRaisesTypeError) {
@@ -359,7 +359,7 @@ base = 2.0
 x = base ** 4.0
 )");
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
-  EXPECT_EQ(result->value(), 16.0);
+  EXPECT_EQ(result.value(), 16.0);
 }
 
 TEST(FloatBuiltinsTest, PowFloatAndInt) {
@@ -371,7 +371,7 @@ base = 2.0
 x = base ** 4
 )");
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
-  EXPECT_EQ(result->value(), 16.0);
+  EXPECT_EQ(result.value(), 16.0);
 }
 
 TEST(FloatBuiltinsTest, InplacePowFloatAndFloat) {
@@ -383,7 +383,7 @@ x = 2.0
 x **= 4.0
 )");
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
-  EXPECT_EQ(result->value(), 16.0);
+  EXPECT_EQ(result.value(), 16.0);
 }
 
 TEST(FloatBuiltinsTest, InplacePowFloatAndInt) {
@@ -395,7 +395,7 @@ x = 2.0
 x **= 4
 )");
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
-  EXPECT_EQ(result->value(), 16.0);
+  EXPECT_EQ(result.value(), 16.0);
 }
 
 TEST(FloatBuiltinsTest, FloatNewWithDunderFloatReturnsStringRaisesTypeError) {
@@ -448,7 +448,7 @@ TEST(FloatBuiltinsTest, DunderFloatWithFloatLiteralReturnsSameObject) {
 
   runFromCStr(&runtime, "a = (7.0).__float__()");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isFloat());
+  ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
 }
 
@@ -458,7 +458,7 @@ TEST(FloatBuiltinsTest, DunderFloatFromFloatClassReturnsSameValue) {
 
   Float a_float(&scope, runtime.newFloat(7.0));
   Object a(&scope, runBuiltin(FloatBuiltins::dunderFloat, a_float));
-  ASSERT_TRUE(a->isFloat());
+  ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
 }
 
@@ -471,7 +471,7 @@ class FloatSub(float):
   pass
 a = FloatSub(1.0).__float__())");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isFloat());
+  ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(RawFloat::cast(*a)->value(), 1.0);
 }
 

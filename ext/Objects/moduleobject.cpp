@@ -25,7 +25,7 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
 
   Object name(&scope, runtime->newStrFromCStr(def->m_name));
   Module module(&scope, runtime->newModule(name));
-  module->setDef(runtime->newIntFromCPtr(def));
+  module.setDef(runtime->newIntFromCPtr(def));
 
   if (def->m_methods != nullptr) {
     for (PyMethodDef* fdef = def->m_methods; fdef->ml_name != nullptr; fdef++) {
@@ -36,29 +36,28 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
       }
       Function function(&scope, runtime->newFunction());
       Str function_name(&scope, runtime->newStrFromCStr(fdef->ml_name));
-      function->setName(*function_name);
-      function->setCode(
-          runtime->newIntFromCPtr(bit_cast<void*>(fdef->ml_meth)));
+      function.setName(*function_name);
+      function.setCode(runtime->newIntFromCPtr(bit_cast<void*>(fdef->ml_meth)));
       switch (fdef->ml_flags) {
         case METH_NOARGS:
-          function->setEntry(moduleTrampolineNoArgs);
-          function->setEntryKw(moduleTrampolineNoArgsKw);
-          function->setEntryEx(moduleTrampolineNoArgsEx);
+          function.setEntry(moduleTrampolineNoArgs);
+          function.setEntryKw(moduleTrampolineNoArgsKw);
+          function.setEntryEx(moduleTrampolineNoArgsEx);
           break;
         case METH_O:
-          function->setEntry(moduleTrampolineOneArg);
-          function->setEntryKw(moduleTrampolineOneArgKw);
-          function->setEntryEx(moduleTrampolineOneArgEx);
+          function.setEntry(moduleTrampolineOneArg);
+          function.setEntryKw(moduleTrampolineOneArgKw);
+          function.setEntryEx(moduleTrampolineOneArgEx);
           break;
         case METH_VARARGS:
-          function->setEntry(moduleTrampolineVarArgs);
-          function->setEntryKw(moduleTrampolineVarArgsKw);
-          function->setEntryEx(moduleTrampolineVarArgsEx);
+          function.setEntry(moduleTrampolineVarArgs);
+          function.setEntryKw(moduleTrampolineVarArgsKw);
+          function.setEntryEx(moduleTrampolineVarArgsEx);
           break;
         case METH_VARARGS | METH_KEYWORDS:
-          function->setEntry(moduleTrampolineKeywordArgs);
-          function->setEntryKw(moduleTrampolineKeywordArgsKw);
-          function->setEntryEx(moduleTrampolineKeywordArgsEx);
+          function.setEntry(moduleTrampolineKeywordArgs);
+          function.setEntryKw(moduleTrampolineKeywordArgsKw);
+          function.setEntryEx(moduleTrampolineKeywordArgsEx);
           break;
         case METH_FASTCALL:
           UNIMPLEMENTED("METH_FASTCALL");
@@ -67,7 +66,7 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
               "Bad call flags in PyCFunction_Call. METH_OLDARGS is no longer "
               "supported!");
       }
-      function->setModule(*module);
+      function.setModule(*module);
       runtime->attributeAtPut(thread, module, function_name, function);
     }
   }
@@ -93,16 +92,16 @@ PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  if (!module_obj->isModule()) {
+  if (!module_obj.isModule()) {
     // TODO(cshapiro): throw a TypeError
     return nullptr;
   }
   Module module(&scope, *module_obj);
-  if (!module->def()->isInt()) {
+  if (!module.def()->isInt()) {
     return nullptr;
   }
-  Int def(&scope, module->def());
-  return static_cast<PyModuleDef*>(def->asCPtr());
+  Int def(&scope, module.def());
+  return static_cast<PyModuleDef*>(def.asCPtr());
 }
 
 PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
@@ -110,7 +109,7 @@ PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
   HandleScope scope(thread);
 
   Module module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  return ApiHandle::newReference(thread, module->dict());
+  return ApiHandle::newReference(thread, module.dict());
 }
 
 PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
@@ -119,7 +118,7 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
   HandleScope scope(thread);
 
   Object module_obj(&scope, ApiHandle::fromPyObject(mod)->asObject());
-  if (!module_obj->isModule()) {
+  if (!module_obj.isModule()) {
     // TODO(atalaba): Allow for module subclassing
     thread->raiseBadArgument();
     return nullptr;
@@ -140,7 +139,7 @@ PY_EXPORT void* PyModule_GetState(PyObject* mod) {
 
   ApiHandle* handle = ApiHandle::fromPyObject(mod);
   Object module_obj(&scope, handle->asObject());
-  if (!module_obj->isModule()) {
+  if (!module_obj.isModule()) {
     // TODO(atalaba): Support module subclassing
     thread->raiseBadArgument();
     return nullptr;
@@ -226,7 +225,7 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
   HandleScope scope(thread);
 
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  if (!module_obj->isModule()) {
+  if (!module_obj.isModule()) {
     // TODO(atalaba): Allow for module subclassing
     thread->raiseBadArgument();
     return nullptr;
@@ -272,7 +271,7 @@ PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
   HandleScope scope(thread);
   Object module_obj(&scope, ApiHandle::fromPyObject(m)->asObject());
   Object uni(&scope, runtime->newStrFromCStr(doc));
-  if (!uni->isStr() || !module_obj->isModule()) {
+  if (!uni.isStr() || !module_obj.isModule()) {
     return -1;
   }
   Module module(&scope, *module_obj);

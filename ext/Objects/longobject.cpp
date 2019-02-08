@@ -74,7 +74,7 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
   Object object(&scope, ApiHandle::fromPyObject(pylong)->asObject());
 
   Object longobj(&scope, asIntObject(thread, object));
-  if (longobj->isError()) {
+  if (longobj.isError()) {
     return -1;
   }
 
@@ -109,12 +109,12 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
   Object object(&scope, ApiHandle::fromPyObject(pylong)->asObject());
 
   Object longobj(&scope, asIntObject(thread, object));
-  if (longobj->isError()) {
+  if (longobj.isError()) {
     return -1;
   }
   static_assert(sizeof(T) <= sizeof(word), "T requires multiple digits");
   Int intobj(&scope, *longobj);
-  return intobj->digitAt(0);
+  return intobj.digitAt(0);
 }
 
 // Converting to signed ints.

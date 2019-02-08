@@ -15,8 +15,8 @@ TEST(ComplexBuiltinsTest, NewWithNoArgsReturnsZero) {
   HandleScope scope;
   Object type(&scope, runtime.typeAt(LayoutId::kComplex));
   Complex cmplx(&scope, runBuiltin(ComplexBuiltins::dunderNew, type));
-  EXPECT_EQ(cmplx->real(), 0);
-  EXPECT_EQ(cmplx->imag(), 0);
+  EXPECT_EQ(cmplx.real(), 0);
+  EXPECT_EQ(cmplx.imag(), 0);
 }
 
 TEST(ComplexBuiltinsTest, NewWithOneNumberArgReturnsComplexWithReal) {
@@ -25,8 +25,8 @@ TEST(ComplexBuiltinsTest, NewWithOneNumberArgReturnsComplexWithReal) {
   Object type(&scope, runtime.typeAt(LayoutId::kComplex));
   Object int1(&scope, runtime.newInt(1));
   Complex cmplx(&scope, runBuiltin(ComplexBuiltins::dunderNew, type, int1));
-  EXPECT_EQ(cmplx->real(), 1.0);
-  EXPECT_EQ(cmplx->imag(), 0);
+  EXPECT_EQ(cmplx.real(), 1.0);
+  EXPECT_EQ(cmplx.imag(), 0);
 }
 
 TEST(ComplexBuiltinsTest, NewWithTwoNumberArgReturnsComplexWithReal) {
@@ -37,8 +37,8 @@ TEST(ComplexBuiltinsTest, NewWithTwoNumberArgReturnsComplexWithReal) {
   Object int2(&scope, runtime.newInt(2));
   Complex cmplx(&scope,
                 runBuiltin(ComplexBuiltins::dunderNew, type, int1, int2));
-  EXPECT_EQ(cmplx->real(), 1.0);
-  EXPECT_EQ(cmplx->imag(), 2.0);
+  EXPECT_EQ(cmplx.real(), 1.0);
+  EXPECT_EQ(cmplx.imag(), 2.0);
 }
 
 TEST(ComplexBuiltinsTest, NewWithComplexArgReturnsSameComplex) {
@@ -47,8 +47,8 @@ TEST(ComplexBuiltinsTest, NewWithComplexArgReturnsSameComplex) {
   Object type(&scope, runtime.typeAt(LayoutId::kComplex));
   Object c(&scope, runtime.newComplex(1.0, 2.0));
   Complex cmplx(&scope, runBuiltin(ComplexBuiltins::dunderNew, type, c));
-  EXPECT_EQ(cmplx->real(), 1.0);
-  EXPECT_EQ(cmplx->imag(), 2.0);
+  EXPECT_EQ(cmplx.real(), 1.0);
+  EXPECT_EQ(cmplx.imag(), 2.0);
 }
 
 TEST(ComplexBuiltinsTest, DunderReprHasRealAndImag) {

@@ -14,7 +14,7 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
   FrozenSet set(&scope, runtime->newFrozenSet());
   Object result(&scope, runtime->setUpdate(thread, set, obj));
-  if (result->isError()) {
+  if (result.isError()) {
     thread->raiseTypeErrorWithCStr("PyFrozenSet_New requires an iterable");
     return nullptr;
   }
@@ -54,8 +54,8 @@ PY_EXPORT int PySet_Clear(PyObject* anyset) {
     return -1;
   }
   SetBase set(&scope, *set_obj);
-  set->setNumItems(0);
-  set->setData(runtime->newTuple(0));
+  set.setNumItems(0);
+  set.setData(runtime->newTuple(0));
   return 0;
 }
 
@@ -107,7 +107,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
   Set set(&scope, runtime->newSet());
 
   Object result(&scope, runtime->setUpdate(thread, set, obj));
-  if (result->isError()) {
+  if (result.isError()) {
     thread->raiseTypeErrorWithCStr("PySet_New requires an iterable");
     return nullptr;
   }
@@ -144,7 +144,7 @@ PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
   }
 
   SetBase set(&scope, *set_obj);
-  return set->numItems();
+  return set.numItems();
 }
 
 }  // namespace python

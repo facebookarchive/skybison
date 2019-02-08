@@ -71,10 +71,10 @@ TEST_P(BuiltinTypeIdsTest, HasTypeObject) {
   ASSERT_EQ(runtime.layoutAt(id)->layoutId(), LayoutId::kLayout)
       << "Bad RawLayout for " << layoutIdName(id);
   Object elt(&scope, runtime.typeAt(id));
-  ASSERT_TRUE(elt->isType());
+  ASSERT_TRUE(elt.isType());
   Type cls(&scope, *elt);
-  Layout layout(&scope, cls->instanceLayout());
-  EXPECT_EQ(layout->id(), GetParam());
+  Layout layout(&scope, cls.instanceLayout());
+  EXPECT_EQ(layout.id(), GetParam());
 }
 
 static const LayoutId kBuiltinHeapTypeIds[] = {
@@ -92,22 +92,22 @@ TEST(RuntimeByteArrayTest, EnsureCapacity) {
 
   ByteArray array(&scope, runtime.newByteArray());
   Bytes initial_bytes(&scope, runtime.newBytes(10, 0));
-  array->setBytes(*initial_bytes);
+  array.setBytes(*initial_bytes);
 
   word index = 0;
   word expected_capacity = 10;
   runtime.byteArrayEnsureCapacity(array, index);
-  EXPECT_EQ(array->capacity(), expected_capacity);
+  EXPECT_EQ(array.capacity(), expected_capacity);
 
   index = 10;
   expected_capacity = 20;
   runtime.byteArrayEnsureCapacity(array, index);
-  EXPECT_EQ(array->capacity(), expected_capacity);
+  EXPECT_EQ(array.capacity(), expected_capacity);
 
   index = 40;
   expected_capacity = 64;
   runtime.byteArrayEnsureCapacity(array, index);
-  EXPECT_EQ(array->capacity(), expected_capacity);
+  EXPECT_EQ(array.capacity(), expected_capacity);
 }
 
 TEST(RuntimeDictTest, EmptyDictInvariants) {
@@ -115,9 +115,9 @@ TEST(RuntimeDictTest, EmptyDictInvariants) {
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
 
-  EXPECT_EQ(dict->numItems(), 0);
-  ASSERT_TRUE(dict->data()->isTuple());
-  EXPECT_EQ(RawTuple::cast(dict->data())->length(), 0);
+  EXPECT_EQ(dict.numItems(), 0);
+  ASSERT_TRUE(dict.data()->isTuple());
+  EXPECT_EQ(RawTuple::cast(dict.data())->length(), 0);
 }
 
 TEST(RuntimeDictTest, GetSet) {
@@ -132,7 +132,7 @@ TEST(RuntimeDictTest, GetSet) {
   // Store a value
   Object stored(&scope, SmallInt::fromWord(67890));
   runtime.dictAtPut(dict, key, stored);
-  EXPECT_EQ(dict->numItems(), 1);
+  EXPECT_EQ(dict.numItems(), 1);
 
   // Retrieve the stored value
   RawObject retrieved = runtime.dictAt(dict, key);
@@ -143,7 +143,7 @@ TEST(RuntimeDictTest, GetSet) {
   // Overwrite the stored value
   Object new_value(&scope, SmallInt::fromWord(5555));
   runtime.dictAtPut(dict, key, new_value);
-  EXPECT_EQ(dict->numItems(), 1);
+  EXPECT_EQ(dict.numItems(), 1);
 
   // Get the new value
   retrieved = runtime.dictAt(dict, key);
@@ -167,7 +167,7 @@ TEST(RuntimeDictTest, Remove) {
   Object stored(&scope, SmallInt::fromWord(54321));
 
   runtime.dictAtPut(dict, key, stored);
-  EXPECT_EQ(dict->numItems(), 1);
+  EXPECT_EQ(dict.numItems(), 1);
 
   RawObject retrieved = runtime.dictRemove(dict, key);
   ASSERT_FALSE(retrieved->isError());
@@ -176,7 +176,7 @@ TEST(RuntimeDictTest, Remove) {
 
   // Looking up a key that was deleted should fail
   EXPECT_TRUE(runtime.dictAt(dict, key)->isError());
-  EXPECT_EQ(dict->numItems(), 0);
+  EXPECT_EQ(dict.numItems(), 0);
 }
 
 TEST(RuntimeDictTest, Length) {
@@ -189,14 +189,14 @@ TEST(RuntimeDictTest, Length) {
     Object key(&scope, SmallInt::fromWord(i));
     runtime.dictAtPut(dict, key, key);
   }
-  EXPECT_EQ(dict->numItems(), 10);
+  EXPECT_EQ(dict.numItems(), 10);
 
   // Remove half the items
   for (int i = 0; i < 5; i++) {
     Object key(&scope, SmallInt::fromWord(i));
     ASSERT_FALSE(runtime.dictRemove(dict, key)->isError());
   }
-  EXPECT_EQ(dict->numItems(), 5);
+  EXPECT_EQ(dict.numItems(), 5);
 }
 
 TEST(RuntimeDictTest, AtIfAbsentPutLength) {
@@ -207,7 +207,7 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   Object k1(&scope, SmallInt::fromWord(1));
   Object v1(&scope, SmallInt::fromWord(111));
   runtime.dictAtPut(dict, k1, v1);
-  EXPECT_EQ(dict->numItems(), 1);
+  EXPECT_EQ(dict.numItems(), 1);
 
   class SmallIntCallback : public Callback<RawObject> {
    public:
@@ -222,7 +222,7 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   Object k2(&scope, SmallInt::fromWord(2));
   SmallIntCallback cb(222);
   Object entry2(&scope, runtime.dictAtIfAbsentPut(dict, k2, &cb));
-  EXPECT_EQ(dict->numItems(), 2);
+  EXPECT_EQ(dict.numItems(), 2);
   RawObject retrieved = runtime.dictAt(dict, k2);
   EXPECT_TRUE(retrieved->isSmallInt());
   EXPECT_EQ(retrieved, SmallInt::fromWord(222));
@@ -231,7 +231,7 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   Object k3(&scope, SmallInt::fromWord(1));
   SmallIntCallback cb3(333);
   Object entry3(&scope, runtime.dictAtIfAbsentPut(dict, k3, &cb3));
-  EXPECT_EQ(dict->numItems(), 2);
+  EXPECT_EQ(dict.numItems(), 2);
   retrieved = runtime.dictAt(dict, k3);
   EXPECT_TRUE(retrieved->isSmallInt());
   EXPECT_EQ(retrieved, *v1);
@@ -246,8 +246,8 @@ TEST(RuntimeDictTest, GrowWhenFull) {
   // backing Tuple.
   Object init_key(&scope, SmallInt::fromWord(0));
   runtime.dictAtPut(dict, init_key, init_key);
-  ASSERT_TRUE(dict->data()->isTuple());
-  word init_data_size = RawTuple::cast(dict->data())->length();
+  ASSERT_TRUE(dict.data()->isTuple());
+  word init_data_size = RawTuple::cast(dict.data())->length();
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
@@ -268,8 +268,8 @@ TEST(RuntimeDictTest, GrowWhenFull) {
   Object straw(&scope, make_key(num_keys));
   Object straw_value(&scope, make_value(num_keys));
   runtime.dictAtPut(dict, straw, straw_value);
-  ASSERT_TRUE(dict->data()->isTuple());
-  word new_data_size = RawTuple::cast(dict->data())->length();
+  ASSERT_TRUE(dict.data()->isTuple());
+  word new_data_size = RawTuple::cast(dict.data())->length();
   EXPECT_EQ(new_data_size, Runtime::kDictGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys/values
@@ -333,23 +333,23 @@ TEST(RuntimeDictTest, GetKeys) {
 
   // Create keys
   Tuple keys(&scope, runtime.newTuple(4));
-  keys->atPut(0, SmallInt::fromWord(100));
-  keys->atPut(1, runtime.newStrFromCStr("testing 123"));
-  keys->atPut(2, Bool::trueObj());
-  keys->atPut(3, NoneType::object());
+  keys.atPut(0, SmallInt::fromWord(100));
+  keys.atPut(1, runtime.newStrFromCStr("testing 123"));
+  keys.atPut(2, Bool::trueObj());
+  keys.atPut(3, NoneType::object());
 
   // Add keys to dict
   Dict dict(&scope, runtime.newDict());
-  for (word i = 0; i < keys->length(); i++) {
-    Object key(&scope, keys->at(i));
+  for (word i = 0; i < keys.length(); i++) {
+    Object key(&scope, keys.at(i));
     runtime.dictAtPut(dict, key, key);
   }
 
   // Grab the keys and verify everything is there
   Tuple retrieved(&scope, runtime.dictKeys(dict));
-  ASSERT_EQ(retrieved->length(), keys->length());
-  for (word i = 0; i < keys->length(); i++) {
-    Object key(&scope, keys->at(i));
+  ASSERT_EQ(retrieved.length(), keys.length());
+  for (word i = 0; i < keys.length(); i++) {
+    Object key(&scope, keys.at(i));
     EXPECT_TRUE(tupleContains(retrieved, key)) << " missing key " << i;
   }
 }
@@ -367,27 +367,27 @@ TEST(RuntimeListTest, ListGrowth) {
   HandleScope scope;
   List list(&scope, runtime.newList());
   Tuple array1(&scope, runtime.newTuple(1));
-  list->setItems(*array1);
-  EXPECT_EQ(array1->length(), 1);
+  list.setItems(*array1);
+  EXPECT_EQ(array1.length(), 1);
   runtime.listEnsureCapacity(list, 2);
-  Tuple array2(&scope, list->items());
+  Tuple array2(&scope, list.items());
   EXPECT_NE(*array1, *array2);
-  EXPECT_GT(array2->length(), 2);
+  EXPECT_GT(array2.length(), 2);
 
   Tuple array4(&scope, runtime.newTuple(4));
-  EXPECT_EQ(array4->length(), 4);
-  list->setItems(*array4);
+  EXPECT_EQ(array4.length(), 4);
+  list.setItems(*array4);
   runtime.listEnsureCapacity(list, 5);
-  Tuple array8(&scope, list->items());
+  Tuple array8(&scope, list.items());
   EXPECT_NE(*array4, *array8);
-  EXPECT_EQ(array8->length(), 8);
-  list->setItems(*array8);
+  EXPECT_EQ(array8.length(), 8);
+  list.setItems(*array8);
   runtime.listEnsureCapacity(list, 9);
-  Tuple array16(&scope, list->items());
+  Tuple array16(&scope, list.items());
   EXPECT_NE(*array8, *array16);
-  EXPECT_EQ(array16->length(), 16);
+  EXPECT_EQ(array16.length(), 16);
   runtime.listEnsureCapacity(list, 32);
-  EXPECT_GT(list->capacity(), 32);
+  EXPECT_GT(list.capacity(), 32);
 }
 
 TEST(RuntimeListTest, EmptyListInvariants) {
@@ -408,13 +408,13 @@ TEST(RuntimeListTest, AppendToList) {
   for (int i = 0; i < 16; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
-    ASSERT_EQ(list->capacity(), expected_capacity[i]);
-    ASSERT_EQ(list->numItems(), i + 1);
+    ASSERT_EQ(list.capacity(), expected_capacity[i]);
+    ASSERT_EQ(list.numItems(), i + 1);
   }
 
   // Sanity check list contents
   for (int i = 0; i < 16; i++) {
-    RawSmallInt elem = RawSmallInt::cast(list->at(i));
+    RawSmallInt elem = RawSmallInt::cast(list.at(i));
     ASSERT_EQ(elem->value(), i);
   }
 }
@@ -424,8 +424,8 @@ TEST(RuntimeTest, NewByteArray) {
   HandleScope scope;
 
   ByteArray array(&scope, runtime.newByteArray());
-  EXPECT_EQ(array->numBytes(), 0);
-  EXPECT_EQ(array->capacity(), 0);
+  EXPECT_EQ(array.numBytes(), 0);
+  EXPECT_EQ(array.capacity(), 0);
 }
 
 TEST(RuntimeTest, NewBytes) {
@@ -433,21 +433,21 @@ TEST(RuntimeTest, NewBytes) {
   HandleScope scope;
 
   Bytes len0(&scope, runtime.newBytes(0, 0));
-  EXPECT_EQ(len0->length(), 0);
+  EXPECT_EQ(len0.length(), 0);
 
   Bytes len3(&scope, runtime.newBytes(3, 9));
-  EXPECT_EQ(len3->length(), 3);
-  EXPECT_EQ(len3->byteAt(0), 9);
-  EXPECT_EQ(len3->byteAt(1), 9);
-  EXPECT_EQ(len3->byteAt(2), 9);
+  EXPECT_EQ(len3.length(), 3);
+  EXPECT_EQ(len3.byteAt(0), 9);
+  EXPECT_EQ(len3.byteAt(1), 9);
+  EXPECT_EQ(len3.byteAt(2), 9);
 
   Bytes len254(&scope, runtime.newBytes(254, 0));
-  EXPECT_EQ(len254->length(), 254);
-  EXPECT_EQ(len254->size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
+  EXPECT_EQ(len254.length(), 254);
+  EXPECT_EQ(len254.size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
 
   Bytes len255(&scope, runtime.newBytes(255, 0));
-  EXPECT_EQ(len255->length(), 255);
-  EXPECT_EQ(len255->size(),
+  EXPECT_EQ(len255.length(), 255);
+  EXPECT_EQ(len255.size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 }
 
@@ -456,21 +456,21 @@ TEST(RuntimeTest, NewBytesWithAll) {
   HandleScope scope;
 
   Bytes len0(&scope, runtime.newBytesWithAll(View<byte>(nullptr, 0)));
-  EXPECT_EQ(len0->length(), 0);
+  EXPECT_EQ(len0.length(), 0);
 
   const byte src1[] = {0x42};
   Bytes len1(&scope, runtime.newBytesWithAll(src1));
-  EXPECT_EQ(len1->length(), 1);
-  EXPECT_EQ(len1->size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
-  EXPECT_EQ(len1->byteAt(0), 0x42);
+  EXPECT_EQ(len1.length(), 1);
+  EXPECT_EQ(len1.size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
+  EXPECT_EQ(len1.byteAt(0), 0x42);
 
   const byte src3[] = {0xAA, 0xBB, 0xCC};
   Bytes len3(&scope, runtime.newBytesWithAll(src3));
-  EXPECT_EQ(len3->length(), 3);
-  EXPECT_EQ(len3->size(), Utils::roundUp(kPointerSize + 3, kPointerSize));
-  EXPECT_EQ(len3->byteAt(0), 0xAA);
-  EXPECT_EQ(len3->byteAt(1), 0xBB);
-  EXPECT_EQ(len3->byteAt(2), 0xCC);
+  EXPECT_EQ(len3.length(), 3);
+  EXPECT_EQ(len3.size(), Utils::roundUp(kPointerSize + 3, kPointerSize));
+  EXPECT_EQ(len3.byteAt(0), 0xAA);
+  EXPECT_EQ(len3.byteAt(1), 0xBB);
+  EXPECT_EQ(len3.byteAt(2), 0xCC);
 }
 
 TEST(RuntimeTest, NewTuple) {
@@ -478,16 +478,16 @@ TEST(RuntimeTest, NewTuple) {
   HandleScope scope;
 
   Tuple a0(&scope, runtime.newTuple(0));
-  EXPECT_EQ(a0->length(), 0);
+  EXPECT_EQ(a0.length(), 0);
 
   Tuple a1(&scope, runtime.newTuple(1));
-  ASSERT_EQ(a1->length(), 1);
-  EXPECT_EQ(a1->at(0), NoneType::object());
-  a1->atPut(0, SmallInt::fromWord(42));
-  EXPECT_EQ(a1->at(0), SmallInt::fromWord(42));
+  ASSERT_EQ(a1.length(), 1);
+  EXPECT_EQ(a1.at(0), NoneType::object());
+  a1.atPut(0, SmallInt::fromWord(42));
+  EXPECT_EQ(a1.at(0), SmallInt::fromWord(42));
 
   Tuple a300(&scope, runtime.newTuple(300));
-  ASSERT_EQ(a300->length(), 300);
+  ASSERT_EQ(a300.length(), 300);
 }
 
 TEST(RuntimeTest, NewStr) {
@@ -495,35 +495,35 @@ TEST(RuntimeTest, NewStr) {
   HandleScope scope;
   const byte bytes[400]{0};
   Str empty0(&scope, runtime.newStrWithAll(View<byte>(bytes, 0)));
-  ASSERT_TRUE(empty0->isSmallStr());
-  EXPECT_EQ(empty0->length(), 0);
+  ASSERT_TRUE(empty0.isSmallStr());
+  EXPECT_EQ(empty0.length(), 0);
 
   Str empty1(&scope, runtime.newStrWithAll(View<byte>(bytes, 0)));
-  ASSERT_TRUE(empty1->isSmallStr());
+  ASSERT_TRUE(empty1.isSmallStr());
   EXPECT_EQ(*empty0, *empty1);
 
   Str empty2(&scope, runtime.newStrFromCStr("\0"));
-  ASSERT_TRUE(empty2->isSmallStr());
+  ASSERT_TRUE(empty2.isSmallStr());
   EXPECT_EQ(*empty0, *empty2);
 
   Str s1(&scope, runtime.newStrWithAll(View<byte>(bytes, 1)));
-  ASSERT_TRUE(s1->isSmallStr());
-  EXPECT_EQ(s1->length(), 1);
+  ASSERT_TRUE(s1.isSmallStr());
+  EXPECT_EQ(s1.length(), 1);
 
   Str s254(&scope, runtime.newStrWithAll(View<byte>(bytes, 254)));
-  EXPECT_EQ(s254->length(), 254);
-  ASSERT_TRUE(s254->isLargeStr());
+  EXPECT_EQ(s254.length(), 254);
+  ASSERT_TRUE(s254.isLargeStr());
   EXPECT_EQ(RawHeapObject::cast(*s254)->size(),
             Utils::roundUp(kPointerSize + 254, kPointerSize));
 
   Str s255(&scope, runtime.newStrWithAll(View<byte>(bytes, 255)));
-  EXPECT_EQ(s255->length(), 255);
-  ASSERT_TRUE(s255->isLargeStr());
+  EXPECT_EQ(s255.length(), 255);
+  ASSERT_TRUE(s255.isLargeStr());
   EXPECT_EQ(RawHeapObject::cast(*s255)->size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
   Str s300(&scope, runtime.newStrWithAll(View<byte>(bytes, 300)));
-  ASSERT_EQ(s300->length(), 300);
+  ASSERT_EQ(s300.length(), 300);
 }
 
 TEST(RuntimeTest, NewStrFromFormatWithCStrArg) {
@@ -540,18 +540,18 @@ TEST(RuntimeTest, NewStrWithAll) {
   HandleScope scope;
 
   Str str0(&scope, runtime.newStrWithAll(View<byte>(nullptr, 0)));
-  EXPECT_EQ(str0->length(), 0);
-  EXPECT_TRUE(str0->equalsCStr(""));
+  EXPECT_EQ(str0.length(), 0);
+  EXPECT_TRUE(str0.equalsCStr(""));
 
   const byte bytes3[] = {'A', 'B', 'C'};
   Str str3(&scope, runtime.newStrWithAll(bytes3));
-  EXPECT_EQ(str3->length(), 3);
-  EXPECT_TRUE(str3->equalsCStr("ABC"));
+  EXPECT_EQ(str3.length(), 3);
+  EXPECT_TRUE(str3.equalsCStr("ABC"));
 
   const byte bytes10[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
   Str str10(&scope, runtime.newStrWithAll(bytes10));
-  EXPECT_EQ(str10->length(), 10);
-  EXPECT_TRUE(str10->equalsCStr("ABCDEFGHIJ"));
+  EXPECT_EQ(str10.length(), 10);
+  EXPECT_TRUE(str10.equalsCStr("ABCDEFGHIJ"));
 }
 
 TEST(RuntimeTest, NewStrFromUTF32WithZeroSizeReturnsEmpty) {
@@ -559,7 +559,7 @@ TEST(RuntimeTest, NewStrFromUTF32WithZeroSizeReturnsEmpty) {
   HandleScope scope;
   int32 str[2] = {'a', 's'};
   Str empty(&scope, runtime.newStrFromUTF32(View<int32>(str, 0)));
-  EXPECT_EQ(empty->length(), 0);
+  EXPECT_EQ(empty.length(), 0);
 }
 
 TEST(RuntimeTest, NewStrFromUTF32WithLargeASCIIStringReturnsString) {
@@ -567,8 +567,8 @@ TEST(RuntimeTest, NewStrFromUTF32WithLargeASCIIStringReturnsString) {
   HandleScope scope;
   int32 str[7] = {'a', 'b', 'c', '1', '2', '3', '-'};
   Str unicode(&scope, runtime.newStrFromUTF32(View<int32>(str, 7)));
-  EXPECT_EQ(unicode->length(), 7);
-  EXPECT_TRUE(unicode->equalsCStr("abc123-"));
+  EXPECT_EQ(unicode.length(), 7);
+  EXPECT_TRUE(unicode.equalsCStr("abc123-"));
 }
 
 TEST(RuntimeTest, NewStrFromUTF32WithSmallASCIIStringReturnsString) {
@@ -576,8 +576,8 @@ TEST(RuntimeTest, NewStrFromUTF32WithSmallASCIIStringReturnsString) {
   HandleScope scope;
   int32 str[7] = {'a', 'b'};
   Str unicode(&scope, runtime.newStrFromUTF32(View<int32>(str, 2)));
-  EXPECT_EQ(unicode->length(), 2);
-  EXPECT_TRUE(unicode->equalsCStr("ab"));
+  EXPECT_EQ(unicode.length(), 2);
+  EXPECT_TRUE(unicode.equalsCStr("ab"));
 }
 
 TEST(RuntimeTest, NewStrFromUTF32WithGreaterThanASCIIAborts) {
@@ -605,10 +605,10 @@ TEST(RuntimeTest, HashBytes) {
   // Strings have their hash codes computed lazily.
   const byte src1[] = {0x1, 0x2, 0x3};
   Bytes arr1(&scope, runtime.newBytesWithAll(src1));
-  EXPECT_EQ(arr1->header()->hashCode(), 0);
+  EXPECT_EQ(arr1.header()->hashCode(), 0);
   word hash1 = RawSmallInt::cast(runtime.hash(*arr1))->value();
-  EXPECT_NE(arr1->header()->hashCode(), 0);
-  EXPECT_EQ(arr1->header()->hashCode(), hash1);
+  EXPECT_NE(arr1.header()->hashCode(), 0);
+  EXPECT_EQ(arr1.header()->hashCode(), hash1);
 
   word code1 = runtime.siphash24(src1);
   EXPECT_EQ(code1 & RawHeader::kHashCodeMask, static_cast<uword>(hash1));
@@ -719,21 +719,21 @@ TEST(RuntimeTest, EnsureCapacity) {
 
   // Check that empty arrays expand
   List list(&scope, runtime.newList());
-  Tuple empty(&scope, list->items());
+  Tuple empty(&scope, list.items());
   runtime.listEnsureCapacity(list, 0);
-  Tuple orig(&scope, list->items());
+  Tuple orig(&scope, list.items());
   ASSERT_NE(*empty, *orig);
-  ASSERT_GT(orig->length(), 0);
+  ASSERT_GT(orig.length(), 0);
 
   // We shouldn't grow the array if there is sufficient capacity
-  runtime.listEnsureCapacity(list, orig->length() - 1);
-  Tuple ensured0(&scope, list->items());
+  runtime.listEnsureCapacity(list, orig.length() - 1);
+  Tuple ensured0(&scope, list.items());
   ASSERT_EQ(*orig, *ensured0);
 
   // We should double the array if there is insufficient capacity
-  runtime.listEnsureCapacity(list, orig->length());
-  Tuple ensured1(&scope, list->items());
-  ASSERT_EQ(ensured1->length(), orig->length() * 2);
+  runtime.listEnsureCapacity(list, orig.length());
+  Tuple ensured1(&scope, list.items());
+  ASSERT_EQ(ensured1.length(), orig.length() * 2);
 }
 
 TEST(RuntimeTest, InternLargeStr) {
@@ -743,43 +743,43 @@ TEST(RuntimeTest, InternLargeStr) {
   Set interned(&scope, runtime.interned());
 
   // Creating an ordinary large string should not affect on the intern table.
-  word num_interned = interned->numItems();
+  word num_interned = interned.numItems();
   Object str1(&scope, runtime.newStrFromCStr("hello, world"));
-  ASSERT_TRUE(str1->isLargeStr());
-  EXPECT_EQ(num_interned, interned->numItems());
+  ASSERT_TRUE(str1.isLargeStr());
+  EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_FALSE(runtime.setIncludes(interned, str1));
 
   // Interning the string should add it to the intern table and increase the
   // size of the intern table by one.
-  num_interned = interned->numItems();
+  num_interned = interned.numItems();
   Object sym1(&scope, runtime.internStr(str1));
   EXPECT_TRUE(runtime.setIncludes(interned, str1));
   EXPECT_EQ(*sym1, *str1);
-  EXPECT_EQ(num_interned + 1, interned->numItems());
+  EXPECT_EQ(num_interned + 1, interned.numItems());
 
   Object str2(&scope, runtime.newStrFromCStr("goodbye, world"));
-  ASSERT_TRUE(str2->isLargeStr());
+  ASSERT_TRUE(str2.isLargeStr());
   EXPECT_NE(*str1, *str2);
 
   // Intern another string and make sure we get it back (as opposed to the
   // previously interned string).
-  num_interned = interned->numItems();
+  num_interned = interned.numItems();
   Object sym2(&scope, runtime.internStr(str2));
-  EXPECT_EQ(num_interned + 1, interned->numItems());
+  EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime.setIncludes(interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
   // Create a unique copy of a previously created string.
   Object str3(&scope, runtime.newStrFromCStr("hello, world"));
-  ASSERT_TRUE(str3->isLargeStr());
+  ASSERT_TRUE(str3.isLargeStr());
   EXPECT_NE(*str1, *str3);
   EXPECT_TRUE(runtime.setIncludes(interned, str3));
 
   // Interning a duplicate string should not affecct the intern table.
-  num_interned = interned->numItems();
+  num_interned = interned.numItems();
   Object sym3(&scope, runtime.internStr(str3));
-  EXPECT_EQ(num_interned, interned->numItems());
+  EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_NE(*sym3, *str3);
   EXPECT_EQ(*sym3, *sym1);
 }
@@ -791,17 +791,17 @@ TEST(RuntimeTest, InternSmallStr) {
   Set interned(&scope, runtime.interned());
 
   // Creating a small string should not affect the intern table.
-  word num_interned = interned->numItems();
+  word num_interned = interned.numItems();
   Object str(&scope, runtime.newStrFromCStr("a"));
-  ASSERT_TRUE(str->isSmallStr());
+  ASSERT_TRUE(str.isSmallStr());
   EXPECT_FALSE(runtime.setIncludes(interned, str));
-  EXPECT_EQ(num_interned, interned->numItems());
+  EXPECT_EQ(num_interned, interned.numItems());
 
   // Interning a small string should have no affect on the intern table.
   Object sym(&scope, runtime.internStr(str));
-  EXPECT_TRUE(sym->isSmallStr());
+  EXPECT_TRUE(sym.isSmallStr());
   EXPECT_FALSE(runtime.setIncludes(interned, str));
-  EXPECT_EQ(num_interned, interned->numItems());
+  EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_EQ(*sym, *str);
 }
 
@@ -811,11 +811,11 @@ TEST(RuntimeTest, InternCStr) {
 
   Set interned(&scope, runtime.interned());
 
-  word num_interned = interned->numItems();
+  word num_interned = interned.numItems();
   Object sym(&scope, runtime.internStrFromCStr("hello, world"));
-  EXPECT_TRUE(sym->isStr());
+  EXPECT_TRUE(sym.isStr());
   EXPECT_TRUE(runtime.setIncludes(interned, sym));
-  EXPECT_EQ(num_interned + 1, interned->numItems());
+  EXPECT_EQ(num_interned + 1, interned.numItems());
 }
 
 TEST(RuntimeTest, CollectAttributes) {
@@ -827,18 +827,18 @@ TEST(RuntimeTest, CollectAttributes) {
   Object baz(&scope, runtime.newStrFromCStr("baz"));
 
   Tuple names(&scope, runtime.newTuple(3));
-  names->atPut(0, *foo);
-  names->atPut(1, *bar);
-  names->atPut(2, *baz);
+  names.atPut(0, *foo);
+  names.atPut(1, *bar);
+  names.atPut(2, *baz);
 
   Tuple consts(&scope, runtime.newTuple(4));
-  consts->atPut(0, SmallInt::fromWord(100));
-  consts->atPut(1, SmallInt::fromWord(200));
-  consts->atPut(2, SmallInt::fromWord(300));
-  consts->atPut(3, NoneType::object());
+  consts.atPut(0, SmallInt::fromWord(100));
+  consts.atPut(1, SmallInt::fromWord(200));
+  consts.atPut(2, SmallInt::fromWord(300));
+  consts.atPut(3, NoneType::object());
 
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setNames(*names);
+  code.setNames(*names);
   // Bytecode for the snippet:
   //
   //   def __init__(self):
@@ -850,17 +850,17 @@ TEST(RuntimeTest, CollectAttributes) {
   const byte bc[] = {LOAD_CONST,   0, LOAD_FAST, 0, STORE_ATTR, 0,
                      LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 0,
                      RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   Dict attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
 
   // We should have collected a single attribute: 'foo'
-  EXPECT_EQ(attributes->numItems(), 1);
+  EXPECT_EQ(attributes.numItems(), 1);
 
   // Check that we collected 'foo'
   Object result(&scope, runtime.dictAt(attributes, foo));
-  ASSERT_TRUE(result->isStr());
+  ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(RawStr::cast(*result)->equals(*foo));
 
   // Bytecode for the snippet:
@@ -871,20 +871,20 @@ TEST(RuntimeTest, CollectAttributes) {
   const byte bc2[] = {LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 1,
                       LOAD_CONST,   2, LOAD_FAST, 0, STORE_ATTR, 2,
                       RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc2));
+  code.setCode(runtime.newBytesWithAll(bc2));
   runtime.collectAttributes(code, attributes);
 
   // We should have collected a two more attributes: 'bar' and 'baz'
-  EXPECT_EQ(attributes->numItems(), 3);
+  EXPECT_EQ(attributes.numItems(), 3);
 
   // Check that we collected 'bar'
   result = runtime.dictAt(attributes, bar);
-  ASSERT_TRUE(result->isStr());
+  ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(RawStr::cast(*result)->equals(*bar));
 
   // Check that we collected 'baz'
   result = runtime.dictAt(attributes, baz);
-  ASSERT_TRUE(result->isStr());
+  ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(RawStr::cast(*result)->equals(*baz));
 }
 
@@ -896,14 +896,14 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   Object bar(&scope, runtime.newStrFromCStr("bar"));
 
   Tuple names(&scope, runtime.newTuple(2));
-  names->atPut(0, *foo);
-  names->atPut(1, *bar);
+  names.atPut(0, *foo);
+  names.atPut(1, *bar);
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, NoneType::object());
+  consts.atPut(0, NoneType::object());
 
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setNames(*names);
+  code.setNames(*names);
   // Bytecode for the snippet:
   //
   //   def __init__(self):
@@ -914,17 +914,17 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   const byte bc[] = {LOAD_CONST, 0, EXTENDED_ARG, 10, LOAD_FAST, 0,
                      STORE_ATTR, 1, LOAD_CONST,   0,  LOAD_FAST, 0,
                      STORE_ATTR, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   Dict attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
 
   // We should have collected a single attribute: 'foo'
-  EXPECT_EQ(attributes->numItems(), 1);
+  EXPECT_EQ(attributes.numItems(), 1);
 
   // Check that we collected 'foo'
   Object result(&scope, runtime.dictAt(attributes, foo));
-  ASSERT_TRUE(result->isStr());
+  ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(RawStr::cast(*result)->equals(*foo));
 }
 
@@ -933,7 +933,7 @@ TEST(RuntimeTest, GetTypeConstructor) {
   HandleScope scope;
   Type type(&scope, runtime.newType());
   Dict type_dict(&scope, runtime.newDict());
-  type->setDict(*type_dict);
+  type.setDict(*type_dict);
 
   EXPECT_EQ(runtime.classConstructor(type), NoneType::object());
 
@@ -952,15 +952,15 @@ TEST(RuntimeTest, NewInstanceEmptyClass) {
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyEmptyClass"));
-  Layout layout(&scope, type->instanceLayout());
-  EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
+  Layout layout(&scope, type.instanceLayout());
+  EXPECT_EQ(layout.instanceSize(), 1 * kPointerSize);
 
-  Type cls(&scope, layout->describedType());
-  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyEmptyClass"));
+  Type cls(&scope, layout.describedType());
+  EXPECT_TRUE(isStrEqualsCStr(cls.name(), "MyEmptyClass"));
 
   Instance instance(&scope, runtime.newInstance(layout));
-  EXPECT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->header()->layoutId(), layout->id());
+  EXPECT_TRUE(instance.isInstance());
+  EXPECT_EQ(instance.header()->layoutId(), layout.id());
 }
 
 TEST(RuntimeTest, NewInstanceManyAttributes) {
@@ -978,15 +978,15 @@ class MyTypeWithAttributes():
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyTypeWithAttributes"));
-  Layout layout(&scope, type->instanceLayout());
-  ASSERT_EQ(layout->instanceSize(), 4 * kPointerSize);
+  Layout layout(&scope, type.instanceLayout());
+  ASSERT_EQ(layout.instanceSize(), 4 * kPointerSize);
 
-  Type cls(&scope, layout->describedType());
-  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithAttributes"));
+  Type cls(&scope, layout.describedType());
+  EXPECT_TRUE(isStrEqualsCStr(cls.name(), "MyTypeWithAttributes"));
 
   Instance instance(&scope, runtime.newInstance(layout));
-  EXPECT_TRUE(instance->isInstance());
-  EXPECT_EQ(instance->header()->layoutId(), layout->id());
+  EXPECT_TRUE(instance.isInstance());
+  EXPECT_EQ(instance.header()->layoutId(), layout.id());
 }
 
 TEST(RuntimeTest, VerifySymbols) {
@@ -1032,10 +1032,10 @@ TEST(RuntimeTest, CallRunTwice) {
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Object x(&scope, moduleAt(&runtime, main, "x"));
-  EXPECT_TRUE(x->isSmallInt());
+  EXPECT_TRUE(x.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*x)->value(), 42);
   Object y(&scope, moduleAt(&runtime, main, "y"));
-  EXPECT_TRUE(y->isSmallInt());
+  EXPECT_TRUE(y.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*y)->value(), 1764);
 }
 
@@ -1063,10 +1063,10 @@ TEST(RuntimeStrTest, StrConcat) {
   EXPECT_TRUE(isStrEqualsCStr(*concat13, "abc0123456789abcdef"));
   EXPECT_TRUE(isStrEqualsCStr(*concat31, "0123456789abcdefabc"));
 
-  EXPECT_TRUE(concat12->isSmallStr());
-  EXPECT_TRUE(concat34->isLargeStr());
-  EXPECT_TRUE(concat13->isLargeStr());
-  EXPECT_TRUE(concat31->isLargeStr());
+  EXPECT_TRUE(concat12.isSmallStr());
+  EXPECT_TRUE(concat34.isLargeStr());
+  EXPECT_TRUE(concat13.isLargeStr());
+  EXPECT_TRUE(concat31.isLargeStr());
 }
 
 struct LookupNameInMroData {
@@ -1089,7 +1089,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
 
   auto create_class_with_attr = [&](const char* attr, word value) {
     Type type(&scope, runtime.newType());
-    Dict dict(&scope, type->dict());
+    Dict dict(&scope, type.dict());
     Object key(&scope, runtime.newStrFromCStr(attr));
     Object val(&scope, SmallInt::fromWord(value));
     runtime.dictAtPutInValueCell(dict, key, val);
@@ -1097,12 +1097,12 @@ TEST_P(LookupNameInMroTest, Lookup) {
   };
 
   Tuple mro(&scope, runtime.newTuple(3));
-  mro->atPut(0, create_class_with_attr("foo", 2));
-  mro->atPut(1, create_class_with_attr("bar", 4));
-  mro->atPut(2, create_class_with_attr("baz", 8));
+  mro.atPut(0, create_class_with_attr("foo", 2));
+  mro.atPut(1, create_class_with_attr("bar", 4));
+  mro.atPut(2, create_class_with_attr("baz", 8));
 
-  Type type(&scope, mro->at(0));
-  type->setMro(*mro);
+  Type type(&scope, mro.at(0));
+  type.setMro(*mro);
 
   auto param = GetParam();
   Object key(&scope, runtime.newStrFromCStr(param.name));
@@ -1135,13 +1135,13 @@ c = MyTypeWithNoInitMethod()
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object instance(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(instance->isInstance());
-  LayoutId layout_id = instance->layoutId();
+  ASSERT_TRUE(instance.isInstance());
+  LayoutId layout_id = instance.layoutId();
   Layout layout(&scope, runtime.layoutAt(layout_id));
-  EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
+  EXPECT_EQ(layout.instanceSize(), 1 * kPointerSize);
 
-  Type cls(&scope, layout->describedType());
-  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithNoInitMethod"));
+  Type cls(&scope, layout.describedType());
+  EXPECT_TRUE(isStrEqualsCStr(cls.name(), "MyTypeWithNoInitMethod"));
 }
 
 TEST(RuntimeTypeCallTest, TypeCallEmptyInitMethod) {
@@ -1161,13 +1161,13 @@ c = MyTypeWithEmptyInitMethod()
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object instance(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(instance->isInstance());
-  LayoutId layout_id = instance->layoutId();
+  ASSERT_TRUE(instance.isInstance());
+  LayoutId layout_id = instance.layoutId();
   Layout layout(&scope, runtime.layoutAt(layout_id));
-  EXPECT_EQ(layout->instanceSize(), 1 * kPointerSize);
+  EXPECT_EQ(layout.instanceSize(), 1 * kPointerSize);
 
-  Type cls(&scope, layout->describedType());
-  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithEmptyInitMethod"));
+  Type cls(&scope, layout.describedType());
+  EXPECT_TRUE(isStrEqualsCStr(cls.name(), "MyTypeWithEmptyInitMethod"));
 }
 
 TEST(RuntimeTypeCallTest, TypeCallWithArguments) {
@@ -1188,21 +1188,21 @@ c = MyTypeWithAttributes(1)
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "MyTypeWithAttributes"));
   Object instance(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(instance->isInstance());
-  LayoutId layout_id = instance->layoutId();
+  ASSERT_TRUE(instance.isInstance());
+  LayoutId layout_id = instance.layoutId();
   // Since this class has extra attributes, its layout id should be greater than
   // the layout id from the type.
-  ASSERT_GT(layout_id, RawLayout::cast(type->instanceLayout())->id());
+  ASSERT_GT(layout_id, RawLayout::cast(type.instanceLayout())->id());
   Layout layout(&scope, runtime.layoutAt(layout_id));
-  ASSERT_EQ(layout->instanceSize(), 2 * kPointerSize);
+  ASSERT_EQ(layout.instanceSize(), 2 * kPointerSize);
 
-  Type cls(&scope, layout->describedType());
-  EXPECT_TRUE(isStrEqualsCStr(cls->name(), "MyTypeWithAttributes"));
+  Type cls(&scope, layout.describedType());
+  EXPECT_TRUE(isStrEqualsCStr(cls.name(), "MyTypeWithAttributes"));
 
   Object name(&scope, runtime.newStrFromCStr("x"));
   Object value(&scope,
                runtime.attributeAt(Thread::currentThread(), instance, name));
-  EXPECT_FALSE(value->isError());
+  EXPECT_FALSE(value.isError());
   EXPECT_EQ(*value, SmallInt::fromWord(1));
 }
 
@@ -1233,8 +1233,8 @@ def func():
 
   Object name(&scope, runtime.newStrFromCStr("func"));
   Function func(&scope, runtime.moduleAt(main, name));
-  Code code(&scope, func->code());
-  ASSERT_EQ(code->firstlineno(), 2);
+  Code code(&scope, func.code());
+  ASSERT_EQ(code.firstlineno(), 2);
 
   // a = 1
   Thread* thread = Thread::currentThread();
@@ -1246,7 +1246,7 @@ def func():
   EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 6), 4);
 
   // print(a, b)
-  for (word i = 8; i < RawBytes::cast(code->code())->length(); i++) {
+  for (word i = 8; i < RawBytes::cast(code.code())->length(); i++) {
     EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, i), 5);
   }
 }
@@ -1304,10 +1304,10 @@ TEST(RuntimeSetTest, EmptySetInvariants) {
   HandleScope scope;
   Set set(&scope, runtime.newSet());
 
-  EXPECT_EQ(set->numItems(), 0);
-  ASSERT_TRUE(set->isSet());
-  ASSERT_TRUE(set->data()->isTuple());
-  EXPECT_EQ(RawTuple::cast(set->data())->length(), 0);
+  EXPECT_EQ(set.numItems(), 0);
+  ASSERT_TRUE(set.isSet());
+  ASSERT_TRUE(set.data()->isTuple());
+  EXPECT_EQ(RawTuple::cast(set.data())->length(), 0);
 }
 
 TEST(RuntimeSetTest, Add) {
@@ -1318,7 +1318,7 @@ TEST(RuntimeSetTest, Add) {
 
   // Store a value
   runtime.setAdd(set, value);
-  EXPECT_EQ(set->numItems(), 1);
+  EXPECT_EQ(set.numItems(), 1);
 
   // Retrieve the stored value
   ASSERT_TRUE(runtime.setIncludes(set, value));
@@ -1326,7 +1326,7 @@ TEST(RuntimeSetTest, Add) {
   // Add a new value
   Object new_value(&scope, SmallInt::fromWord(5555));
   runtime.setAdd(set, new_value);
-  EXPECT_EQ(set->numItems(), 2);
+  EXPECT_EQ(set.numItems(), 2);
 
   // Get the new value
   ASSERT_TRUE(runtime.setIncludes(set, new_value));
@@ -1334,7 +1334,7 @@ TEST(RuntimeSetTest, Add) {
   // Add a existing value
   Object same_value(&scope, SmallInt::fromWord(12345));
   RawObject old_value = runtime.setAdd(set, same_value);
-  EXPECT_EQ(set->numItems(), 2);
+  EXPECT_EQ(set.numItems(), 2);
   EXPECT_EQ(old_value, *value);
 }
 
@@ -1348,10 +1348,10 @@ TEST(RuntimeSetTest, Remove) {
   EXPECT_FALSE(runtime.setRemove(set, value));
 
   runtime.setAdd(set, value);
-  EXPECT_EQ(set->numItems(), 1);
+  EXPECT_EQ(set.numItems(), 1);
 
   ASSERT_TRUE(runtime.setRemove(set, value));
-  EXPECT_EQ(set->numItems(), 0);
+  EXPECT_EQ(set.numItems(), 0);
 
   // Looking up a key that was deleted should fail
   ASSERT_FALSE(runtime.setIncludes(set, value));
@@ -1366,8 +1366,8 @@ TEST(RuntimeSetTest, Grow) {
   // backing Tuple.
   Object init_key(&scope, SmallInt::fromWord(0));
   runtime.setAdd(set, init_key);
-  ASSERT_TRUE(set->data()->isTuple());
-  word init_data_size = RawTuple::cast(set->data())->length();
+  ASSERT_TRUE(set.data()->isTuple());
+  word init_data_size = RawTuple::cast(set.data())->length();
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
@@ -1385,8 +1385,8 @@ TEST(RuntimeSetTest, Grow) {
   // Add another key which should force us to double the capacity
   Object straw(&scope, make_key(num_keys));
   runtime.setAdd(set, straw);
-  ASSERT_TRUE(set->data()->isTuple());
-  word new_data_size = RawTuple::cast(set->data())->length();
+  ASSERT_TRUE(set.data()->isTuple());
+  word new_data_size = RawTuple::cast(set.data())->length();
   EXPECT_EQ(new_data_size, Runtime::kSetGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys
@@ -1408,15 +1408,15 @@ TEST(RuntimeSetTest, UpdateSet) {
     runtime.setAdd(set, value);
   }
   runtime.setUpdate(Thread::currentThread(), set, set1_handle);
-  ASSERT_EQ(set->numItems(), 8);
+  ASSERT_EQ(set.numItems(), 8);
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set1, value);
   }
   runtime.setUpdate(Thread::currentThread(), set, set1_handle);
-  ASSERT_EQ(set->numItems(), 12);
+  ASSERT_EQ(set.numItems(), 12);
   runtime.setUpdate(Thread::currentThread(), set, set1_handle);
-  ASSERT_EQ(set->numItems(), 12);
+  ASSERT_EQ(set.numItems(), 12);
 }
 
 TEST(RuntimeSetTest, UpdateList) {
@@ -1432,12 +1432,12 @@ TEST(RuntimeSetTest, UpdateList) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set, value);
   }
-  ASSERT_EQ(set->numItems(), 8);
+  ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
   runtime.setUpdate(Thread::currentThread(), set, list_handle);
-  ASSERT_EQ(set->numItems(), 12);
+  ASSERT_EQ(set.numItems(), 12);
   runtime.setUpdate(Thread::currentThread(), set, list_handle);
-  ASSERT_EQ(set->numItems(), 12);
+  ASSERT_EQ(set.numItems(), 12);
 }
 
 TEST(RuntimeSetTest, UpdateListIterator) {
@@ -1453,11 +1453,11 @@ TEST(RuntimeSetTest, UpdateListIterator) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set, value);
   }
-  ASSERT_EQ(set->numItems(), 8);
+  ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
   Object list_iterator(&scope, runtime.newListIterator(list_handle));
   runtime.setUpdate(Thread::currentThread(), set, list_iterator);
-  ASSERT_EQ(set->numItems(), 12);
+  ASSERT_EQ(set.numItems(), 12);
 }
 
 TEST(RuntimeSetTest, UpdateTuple) {
@@ -1466,16 +1466,16 @@ TEST(RuntimeSetTest, UpdateTuple) {
   Tuple object_array(&scope, runtime.newTuple(8));
   Set set(&scope, runtime.newSet());
   for (word i = 0; i < 8; i++) {
-    object_array->atPut(i, SmallInt::fromWord(i));
+    object_array.atPut(i, SmallInt::fromWord(i));
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set, value);
   }
-  ASSERT_EQ(set->numItems(), 8);
+  ASSERT_EQ(set.numItems(), 8);
   Object object_array_handle(&scope, *object_array);
   runtime.setUpdate(Thread::currentThread(), set, object_array_handle);
-  ASSERT_EQ(set->numItems(), 12);
+  ASSERT_EQ(set.numItems(), 12);
 }
 
 TEST(RuntimeSetTest, UpdateIterator) {
@@ -1485,7 +1485,7 @@ TEST(RuntimeSetTest, UpdateIterator) {
   Object iterable(&scope, runtime.newRange(1, 4, 1));
   runtime.setUpdate(Thread::currentThread(), set, iterable);
 
-  ASSERT_EQ(set->numItems(), 3);
+  ASSERT_EQ(set.numItems(), 3);
 }
 
 TEST(RuntimeSetTest, UpdateWithNonIterable) {
@@ -1495,7 +1495,7 @@ TEST(RuntimeSetTest, UpdateWithNonIterable) {
   Object non_iterable(&scope, NoneType::object());
   Object result(&scope,
                 runtime.setUpdate(Thread::currentThread(), set, non_iterable));
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
 }
 
 TEST(RuntimeSetTest, EmptySetItersectionReturnsEmptySet) {
@@ -1507,7 +1507,7 @@ TEST(RuntimeSetTest, EmptySetItersectionReturnsEmptySet) {
 
   // set() & set()
   Object result(&scope, runtime.setIntersection(thread, set, set1));
-  ASSERT_TRUE(result->isSet());
+  ASSERT_TRUE(result.isSet());
   EXPECT_EQ(RawSet::cast(*result)->numItems(), 0);
 }
 
@@ -1525,12 +1525,12 @@ TEST(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
 
   // set() & {0, 1, 2, 3, 4, 5, 6, 7}
   Object result(&scope, runtime.setIntersection(thread, set, set1));
-  ASSERT_TRUE(result->isSet());
+  ASSERT_TRUE(result.isSet());
   EXPECT_EQ(RawSet::cast(*result)->numItems(), 0);
 
   // {0, 1, 2, 3, 4, 5, 6, 7} & set()
   Object result1(&scope, runtime.setIntersection(thread, set1, set));
-  ASSERT_TRUE(result1->isSet());
+  ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(RawSet::cast(*result1)->numItems(), 0);
 }
 
@@ -1584,7 +1584,7 @@ TEST(RuntimeSetTest, IntersectIterator) {
   Set set(&scope, runtime.newSet());
   Object iterable(&scope, runtime.newRange(1, 4, 1));
   Set result(&scope, runtime.setIntersection(thread, set, iterable));
-  EXPECT_EQ(result->numItems(), 0);
+  EXPECT_EQ(result.numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(1));
   runtime.setAdd(set, key);
@@ -1592,7 +1592,7 @@ TEST(RuntimeSetTest, IntersectIterator) {
   runtime.setAdd(set, key);
   Object iterable1(&scope, runtime.newRange(1, 4, 1));
   Set result1(&scope, runtime.setIntersection(thread, set, iterable1));
-  EXPECT_EQ(result1->numItems(), 2);
+  EXPECT_EQ(result1.numItems(), 2);
   EXPECT_TRUE(runtime.setIncludes(result1, key));
   key = SmallInt::fromWord(1);
   EXPECT_TRUE(runtime.setIncludes(result1, key));
@@ -1606,7 +1606,7 @@ TEST(RuntimeSetTest, IntersectWithNonIterable) {
   Object non_iterable(&scope, NoneType::object());
 
   Object result(&scope, runtime.setIntersection(thread, set, non_iterable));
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
 }
 
 // Attribute tests
@@ -1616,13 +1616,13 @@ static RawObject createType(Runtime* runtime) {
   Type type(&scope, runtime->newType());
   Thread* thread = Thread::currentThread();
   Layout layout(&scope, runtime->layoutCreateEmpty(thread));
-  layout->setDescribedType(*type);
-  type->setInstanceLayout(*layout);
+  layout.setDescribedType(*type);
+  type.setInstanceLayout(*layout);
   Tuple mro(&scope, runtime->newTuple(1));
-  mro->atPut(0, *type);
-  type->setMro(*mro);
-  layout->setId(runtime->reserveLayoutId());
-  runtime->layoutAtPut(layout->id(), *layout);
+  mro.atPut(0, *type);
+  type.setMro(*mro);
+  layout.setId(runtime->reserveLayoutId());
+  runtime->layoutAtPut(layout.id(), *layout);
   return *type;
 }
 
@@ -1630,7 +1630,7 @@ static void setInTypeDict(Runtime* runtime, const Object& type,
                           const Object& attr, const Object& value) {
   HandleScope scope;
   Type k(&scope, *type);
-  Dict type_dict(&scope, k->dict());
+  Dict type_dict(&scope, k.dict());
   runtime->dictAtPutInValueCell(type_dict, attr, value);
 }
 
@@ -1656,8 +1656,8 @@ TEST(TypeGetAttrTest, MetaClassFunction) {
   RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
   ASSERT_TRUE(result->isBoundMethod());
   BoundMethod bm(&scope, result);
-  EXPECT_TRUE(Object::equals(bm->function(), *value));
-  EXPECT_TRUE(Object::equals(bm->self(), *type));
+  EXPECT_TRUE(Object::equals(bm.function(), *value));
+  EXPECT_TRUE(Object::equals(bm.self(), *type));
 }
 
 // Get an attribute that resides on the metaclass
@@ -1755,7 +1755,7 @@ TEST(TypeAttributeTest, SetAttrOnType) {
 
   Dict type_dict(&scope, RawType::cast(*type)->dict());
   Object value_cell(&scope, runtime.dictAt(type_dict, attr));
-  ASSERT_TRUE(value_cell->isValueCell());
+  ASSERT_TRUE(value_cell.isValueCell());
   EXPECT_EQ(RawValueCell::cast(*value_cell)->value(), SmallInt::fromWord(100));
 }
 
@@ -1843,7 +1843,7 @@ class DataDescriptor:
 
   // Create an instance of the descriptor and store it on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_type->instanceLayout());
+  Layout layout(&scope, descr_type.instanceLayout());
   Object descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, type, attr, descr);
 
@@ -1870,7 +1870,7 @@ class DataDescriptor:
 
   // Create an instance of the descriptor and store it on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_type->instanceLayout());
+  Layout layout(&scope, descr_type.instanceLayout());
   Object descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, type, attr, descr);
 
@@ -1900,7 +1900,7 @@ class DataDescriptor:
 
   // Create an instance of the descriptor and store it on the metaclass
   Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_type->instanceLayout());
+  Layout layout(&scope, descr_type.instanceLayout());
   Object descr(&scope, runtime.newInstance(layout));
   setInTypeDict(&runtime, type, attr, descr);
 
@@ -1963,8 +1963,8 @@ def test(x):
   Function test(&scope, moduleAt(&runtime, main, "test"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
   Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type->instanceLayout());
-  args->atPut(0, runtime.newInstance(layout));
+  Layout layout(&scope, type.instanceLayout());
+  args.atPut(0, runtime.newInstance(layout));
 
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
 }
@@ -1988,8 +1988,8 @@ def test(x):
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
   Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type->instanceLayout());
-  args->atPut(0, runtime.newInstance(layout));
+  Layout layout(&scope, type.instanceLayout());
+  args.atPut(0, runtime.newInstance(layout));
 
   // Run __init__
   Function test(&scope, moduleAt(&runtime, main, "test"));
@@ -2017,8 +2017,8 @@ def test(x):
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
   Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type->instanceLayout());
-  args->atPut(0, runtime.newInstance(layout));
+  Layout layout(&scope, type.instanceLayout());
+  args.atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then RMW the attribute
   Function test(&scope, moduleAt(&runtime, main, "test"));
@@ -2048,21 +2048,21 @@ def test(x):
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  Layout layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type.instanceLayout());
   Instance foo1(&scope, runtime.newInstance(layout));
-  LayoutId original_layout_id = layout->id();
+  LayoutId original_layout_id = layout.id();
 
   // Add overflow attributes that should force layout transitions
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *foo1);
+  args.atPut(0, *foo1);
   Function test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
-  EXPECT_NE(foo1->layoutId(), original_layout_id);
+  EXPECT_NE(foo1.layoutId(), original_layout_id);
 
   // Add the same set of attributes to a new instance, should arrive at the
   // same layout
   Instance foo2(&scope, runtime.newInstance(layout));
-  args->atPut(0, *foo2);
+  args.atPut(0, *foo2);
   EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
 }
 
@@ -2090,8 +2090,8 @@ def test(x):
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
   Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type->instanceLayout());
-  args->atPut(0, runtime.newInstance(layout));
+  Layout layout(&scope, type.instanceLayout());
+  args.atPut(0, runtime.newInstance(layout));
 
   // Run __init__ then call the method
   Function test(&scope, moduleAt(&runtime, main, "test"));
@@ -2119,7 +2119,7 @@ class Foo:
   Type descr_type(&scope, moduleAt(&runtime, main, "DataDescr"));
   Object type(&scope, moduleAt(&runtime, main, "Foo"));
   Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Layout descr_layout(&scope, descr_type->instanceLayout());
+  Layout descr_layout(&scope, descr_type.instanceLayout());
   Object descr(&scope, runtime.newInstance(descr_layout));
   setInTypeDict(&runtime, type, attr, descr);
 
@@ -2128,10 +2128,10 @@ class Foo:
   Object instance(&scope, runtime.newInstance(instance_layout));
   Tuple result(&scope,
                runtime.attributeAt(Thread::currentThread(), instance, attr));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_EQ(runtime.typeOf(result->at(0)), *descr_type);
-  EXPECT_EQ(result->at(1), *instance);
-  EXPECT_EQ(result->at(2), *type);
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_EQ(runtime.typeOf(result.at(0)), *descr_type);
+  EXPECT_EQ(result.at(1), *instance);
+  EXPECT_EQ(result.at(2), *type);
 }
 
 TEST(InstanceAttributeTest, GetNonDataDescriptor) {
@@ -2152,7 +2152,7 @@ class Foo:
   Type descr_type(&scope, moduleAt(&runtime, main, "Descr"));
   Object type(&scope, moduleAt(&runtime, main, "Foo"));
   Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Layout descr_layout(&scope, descr_type->instanceLayout());
+  Layout descr_layout(&scope, descr_type.instanceLayout());
   Object descr(&scope, runtime.newInstance(descr_layout));
   setInTypeDict(&runtime, type, attr, descr);
 
@@ -2192,8 +2192,8 @@ def test(x):
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
   Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type->instanceLayout());
-  args->atPut(0, runtime.newInstance(layout));
+  Layout layout(&scope, type.instanceLayout());
+  args.atPut(0, runtime.newInstance(layout));
 
   // Run the test
   Function test(&scope, moduleAt(&runtime, main, "test"));
@@ -2301,16 +2301,16 @@ del foo.bar
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(data->isTuple());
+  ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
-  ASSERT_EQ(result->length(), 2);
+  ASSERT_EQ(result.length(), 2);
 
   Object descr(&scope, moduleAt(&runtime, main, "descr"));
-  EXPECT_EQ(result->at(0), *descr);
+  EXPECT_EQ(result.at(0), *descr);
 
   Object foo(&scope, moduleAt(&runtime, main, "foo"));
-  EXPECT_EQ(result->at(1), *foo);
+  EXPECT_EQ(result.at(1), *foo);
 }
 
 TEST(InstanceAttributeDeletionTest, DeleteUnknownAttribute) {
@@ -2344,14 +2344,14 @@ del foo.bar
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(data->isTuple());
+  ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
-  ASSERT_EQ(result->length(), 2);
+  ASSERT_EQ(result.length(), 2);
 
   Object foo(&scope, moduleAt(&runtime, main, "foo"));
-  EXPECT_EQ(result->at(0), *foo);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "bar"));
+  EXPECT_EQ(result.at(0), *foo);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "bar"));
 }
 
 TEST(InstanceAttributeDeletionTest,
@@ -2375,14 +2375,14 @@ del bar.baz
   compileAndRunToString(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(data->isTuple());
+  ASSERT_TRUE(data.isTuple());
 
   Tuple result(&scope, *data);
-  ASSERT_EQ(result->length(), 2);
+  ASSERT_EQ(result.length(), 2);
 
   Object bar(&scope, moduleAt(&runtime, main, "bar"));
-  EXPECT_EQ(result->at(0), *bar);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "baz"));
+  EXPECT_EQ(result.at(0), *bar);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "baz"));
 }
 
 TEST(ClassAttributeDeletionTest, DeleteKnownAttribute) {
@@ -2429,16 +2429,16 @@ del Foo.attr
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "args"));
-  ASSERT_TRUE(data->isTuple());
+  ASSERT_TRUE(data.isTuple());
 
   Tuple args(&scope, *data);
-  ASSERT_EQ(args->length(), 2);
+  ASSERT_EQ(args.length(), 2);
 
   Object descr(&scope, moduleAt(&runtime, main, "descr"));
-  EXPECT_EQ(args->at(0), *descr);
+  EXPECT_EQ(args.at(0), *descr);
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_EQ(args->at(1), *foo);
+  EXPECT_EQ(args.at(1), *foo);
 }
 
 TEST(ClassAttributeDeletionTest, DeleteUnknownAttribute) {
@@ -2473,16 +2473,16 @@ del Foo.bar
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object data(&scope, moduleAt(&runtime, main, "args"));
-  ASSERT_TRUE(data->isTuple());
+  ASSERT_TRUE(data.isTuple());
 
   Tuple args(&scope, *data);
-  ASSERT_EQ(args->length(), 2);
+  ASSERT_EQ(args.length(), 2);
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_EQ(args->at(0), *foo);
+  EXPECT_EQ(args.at(0), *foo);
 
   Object attr(&scope, runtime.internStrFromCStr("bar"));
-  EXPECT_EQ(args->at(1), *attr);
+  EXPECT_EQ(args.at(1), *attr);
 }
 
 TEST(ModuleAttributeDeletionTest, DeleteUnknownAttribute) {
@@ -2496,7 +2496,7 @@ def test(module):
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *main);
+  args.atPut(0, *main);
   EXPECT_TRUE(raised(callFunction(test, args), LayoutId::kAttributeError));
 }
 
@@ -2514,7 +2514,7 @@ def test(module):
   Module main(&scope, findModule(&runtime, "__main__"));
   Function test(&scope, moduleAt(&runtime, main, "test"));
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *main);
+  args.atPut(0, *main);
   EXPECT_EQ(callFunction(test, args), SmallInt::fromWord(123));
 
   Object attr(&scope, runtime.newStrFromCStr("foo"));
@@ -2528,8 +2528,8 @@ TEST(RuntimeIntTest, NewSmallIntWithDigits) {
   HandleScope scope;
 
   Int zero(&scope, runtime.newIntWithDigits(View<uword>(nullptr, 0)));
-  ASSERT_TRUE(zero->isSmallInt());
-  EXPECT_EQ(zero->asWord(), 0);
+  ASSERT_TRUE(zero.isSmallInt());
+  EXPECT_EQ(zero.asWord(), 0);
 
   uword digit = 1;
   RawObject one = runtime.newIntWithDigits(View<uword>(&digit, 1));
@@ -2544,14 +2544,14 @@ TEST(RuntimeIntTest, NewSmallIntWithDigits) {
   word min_small_int = RawSmallInt::kMaxValue;
   digit = static_cast<uword>(min_small_int);
   Int min_smallint(&scope, runtime.newIntWithDigits(View<uword>(&digit, 1)));
-  ASSERT_TRUE(min_smallint->isSmallInt());
-  EXPECT_EQ(min_smallint->asWord(), min_small_int);
+  ASSERT_TRUE(min_smallint.isSmallInt());
+  EXPECT_EQ(min_smallint.asWord(), min_small_int);
 
   word max_small_int = RawSmallInt::kMaxValue;
   digit = static_cast<uword>(max_small_int);
   Int max_smallint(&scope, runtime.newIntWithDigits(View<uword>(&digit, 1)));
-  ASSERT_TRUE(max_smallint->isSmallInt());
-  EXPECT_EQ(max_smallint->asWord(), max_small_int);
+  ASSERT_TRUE(max_smallint.isSmallInt());
+  EXPECT_EQ(max_smallint.asWord(), max_small_int);
 }
 
 TEST(RuntimeIntTest, NewLargeIntWithDigits) {
@@ -2562,15 +2562,15 @@ TEST(RuntimeIntTest, NewLargeIntWithDigits) {
   uword digit = static_cast<uword>(negative_large_int);
   Int negative_largeint(&scope,
                         runtime.newIntWithDigits(View<uword>(&digit, 1)));
-  ASSERT_TRUE(negative_largeint->isLargeInt());
-  EXPECT_EQ(negative_largeint->asWord(), negative_large_int);
+  ASSERT_TRUE(negative_largeint.isLargeInt());
+  EXPECT_EQ(negative_largeint.asWord(), negative_large_int);
 
   word positive_large_int = RawSmallInt::kMaxValue + 1;
   digit = static_cast<uword>(positive_large_int);
   Int positive_largeint(&scope,
                         runtime.newIntWithDigits(View<uword>(&digit, 1)));
-  ASSERT_TRUE(positive_largeint->isLargeInt());
-  EXPECT_EQ(positive_largeint->asWord(), positive_large_int);
+  ASSERT_TRUE(positive_largeint.isLargeInt());
+  EXPECT_EQ(positive_largeint.asWord(), positive_large_int);
 }
 
 TEST(RuntimeIntTest, BinaryAndWithSmallInts) {
@@ -2580,7 +2580,7 @@ TEST(RuntimeIntTest, BinaryAndWithSmallInts) {
   Int right(&scope, SmallInt::fromWord(0xDC));  // 0b11011100
   Object result(&scope,
                 runtime.intBinaryAnd(Thread::currentThread(), left, right));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*result)->value(), 0xC8);  // 0b11001000
 }
 
@@ -2595,12 +2595,12 @@ TEST(RuntimeIntTest, BinaryAndWithLargeInts) {
                 runtime.intBinaryAnd(Thread::currentThread(), left, right));
   // {0b00000111, 0b01110000}
   Int expected(&scope, newIntWithDigits(&runtime, {0x03, 0x30}));
-  ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
+  ASSERT_TRUE(result.isLargeInt());
+  EXPECT_EQ(expected.compare(Int::cast(*result)), 0);
 
   Object result_commuted(
       &scope, runtime.intBinaryAnd(Thread::currentThread(), right, left));
-  ASSERT_TRUE(result_commuted->isLargeInt());
+  ASSERT_TRUE(result_commuted.isLargeInt());
   EXPECT_EQ(Int::cast(*result)->compare(Int::cast(*result_commuted)), 0);
 }
 
@@ -2613,10 +2613,10 @@ TEST(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
                                      {static_cast<uword>(-1), 0xF0, 0x2, 0x7}));
   Object result(&scope,
                 runtime.intBinaryAnd(Thread::currentThread(), left, right));
-  ASSERT_TRUE(result->isLargeInt());
+  ASSERT_TRUE(result.isLargeInt());
   Int expected(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-42),
                                                    0xF0, 0x2, 0x7}));
-  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
+  EXPECT_EQ(expected.compare(Int::cast(*result)), 0);
 }
 
 TEST(RuntimeIntTest, BinaryOrWithSmallInts) {
@@ -2626,7 +2626,7 @@ TEST(RuntimeIntTest, BinaryOrWithSmallInts) {
   Int right(&scope, SmallInt::fromWord(0x9C));  // 0b10011100
   Object result(&scope,
                 runtime.intBinaryOr(Thread::currentThread(), left, right));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*result)->value(), 0xBE);  // 0b10111110
 }
 
@@ -2641,12 +2641,12 @@ TEST(RuntimeIntTest, BinaryOrWithLargeInts) {
                 runtime.intBinaryOr(Thread::currentThread(), left, right));
   // {0b00001111, 0b11110000, 0b00000011, 0b00000111}
   Int expected(&scope, newIntWithDigits(&runtime, {0x0F, 0xF0, 0x3, 0x7}));
-  ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
+  ASSERT_TRUE(result.isLargeInt());
+  EXPECT_EQ(expected.compare(Int::cast(*result)), 0);
 
   Object result_commuted(
       &scope, runtime.intBinaryOr(Thread::currentThread(), right, left));
-  ASSERT_TRUE(result_commuted->isLargeInt());
+  ASSERT_TRUE(result_commuted.isLargeInt());
   EXPECT_EQ(Int::cast(*result)->compare(Int::cast(*result_commuted)), 0);
 }
 
@@ -2659,7 +2659,7 @@ TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
                                                 0x2, static_cast<uword>(-1)}));
   Object result(&scope,
                 runtime.intBinaryOr(Thread::currentThread(), left, right));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), -2);
 }
 
@@ -2670,7 +2670,7 @@ TEST(RuntimeIntTest, BinaryXorWithSmallInts) {
   Int right(&scope, SmallInt::fromWord(0x9C));  // 0b10011100
   Object result(&scope,
                 runtime.intBinaryXor(Thread::currentThread(), left, right));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*result)->value(), 0x36);  // 0b00110110
 }
 
@@ -2685,12 +2685,12 @@ TEST(RuntimeIntTest, BinaryXorWithLargeInts) {
                 runtime.intBinaryXor(Thread::currentThread(), left, right));
   // {0b00001111, 0b11100000, 0b00000011, 0b00000111}
   Int expected(&scope, newIntWithDigits(&runtime, {0x0F, 0xE0, 0x3, 0x7}));
-  ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
+  ASSERT_TRUE(result.isLargeInt());
+  EXPECT_EQ(expected.compare(Int::cast(*result)), 0);
 
   Object result_commuted(
       &scope, runtime.intBinaryXor(Thread::currentThread(), right, left));
-  ASSERT_TRUE(result_commuted->isLargeInt());
+  ASSERT_TRUE(result_commuted.isLargeInt());
   EXPECT_EQ(Int::cast(*result)->compare(Int::cast(*result_commuted)), 0);
 }
 
@@ -2706,8 +2706,8 @@ TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
   Int expected(&scope,
                newIntWithDigits(&runtime, {0x29, ~static_cast<uword>(0xF0),
                                            ~static_cast<uword>(0x2), 0}));
-  ASSERT_TRUE(result->isLargeInt());
-  EXPECT_EQ(expected->compare(Int::cast(*result)), 0);
+  ASSERT_TRUE(result.isLargeInt());
+  EXPECT_EQ(expected.compare(Int::cast(*result)), 0);
 }
 
 TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
@@ -2716,41 +2716,41 @@ TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
 
   LargeInt lint_42(&scope, newLargeIntWithDigits({42}));
   Object norm_42(&scope, runtime.normalizeLargeInt(lint_42));
-  ASSERT_TRUE(norm_42->isSmallInt());
+  ASSERT_TRUE(norm_42.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*norm_42)->value(), 42);
 
   LargeInt lint_neg1(&scope, newLargeIntWithDigits({uword(-1)}));
   Object norm_neg1(&scope, runtime.normalizeLargeInt(lint_neg1));
-  ASSERT_TRUE(norm_neg1->isSmallInt());
+  ASSERT_TRUE(norm_neg1.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*norm_neg1)->value(), -1);
 
   LargeInt lint_min(&scope,
                     newLargeIntWithDigits({uword(RawSmallInt::kMinValue)}));
   Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
-  ASSERT_TRUE(norm_min->isSmallInt());
+  ASSERT_TRUE(norm_min.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*norm_min)->value(), RawSmallInt::kMinValue);
 
   LargeInt lint_max(&scope, newLargeIntWithDigits({RawSmallInt::kMaxValue}));
   Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
-  ASSERT_TRUE(norm_max->isSmallInt());
+  ASSERT_TRUE(norm_max.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*norm_max)->value(), RawSmallInt::kMaxValue);
 
   LargeInt lint_sext_neg_4(&scope,
                            newLargeIntWithDigits({uword(-4), kMaxUword}));
   Object norm_neg_4(&scope, runtime.normalizeLargeInt(lint_sext_neg_4));
-  ASSERT_TRUE(norm_neg_4->isSmallInt());
+  ASSERT_TRUE(norm_neg_4.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*norm_neg_4)->value(), -4);
 
   LargeInt lint_sext_neg_13(
       &scope,
       newLargeIntWithDigits({uword(-13), kMaxUword, kMaxUword, kMaxUword}));
   Object norm_neg_13(&scope, runtime.normalizeLargeInt(lint_sext_neg_13));
-  ASSERT_TRUE(norm_neg_13->isSmallInt());
+  ASSERT_TRUE(norm_neg_13.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*norm_neg_13)->value(), -13);
 
   LargeInt lint_zext_66(&scope, newLargeIntWithDigits({66, 0}));
   Object norm_66(&scope, runtime.normalizeLargeInt(lint_zext_66));
-  ASSERT_TRUE(norm_66->isSmallInt());
+  ASSERT_TRUE(norm_66.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*norm_66)->value(), 66);
 }
 
@@ -2760,37 +2760,37 @@ TEST(RuntimeIntTest, NormalizeLargeIntToLargeInt) {
 
   LargeInt lint_max(&scope, newLargeIntWithDigits({kMaxWord}));
   Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
-  ASSERT_TRUE(norm_max->isLargeInt());
+  ASSERT_TRUE(norm_max.isLargeInt());
   EXPECT_EQ(RawLargeInt::cast(*norm_max)->asWord(), kMaxWord);
 
   LargeInt lint_min(&scope, newLargeIntWithDigits({uword(kMinWord)}));
   Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
-  ASSERT_TRUE(norm_min->isLargeInt());
+  ASSERT_TRUE(norm_min.isLargeInt());
   EXPECT_EQ(RawLargeInt::cast(*norm_min)->asWord(), kMinWord);
 
   LargeInt lint_max_sub_7_zext(&scope,
                                newLargeIntWithDigits({kMaxWord - 7, 0, 0}));
   Object norm_max_sub_7(&scope, runtime.normalizeLargeInt(lint_max_sub_7_zext));
-  ASSERT_TRUE(norm_max_sub_7->isLargeInt());
+  ASSERT_TRUE(norm_max_sub_7.isLargeInt());
   EXPECT_EQ(RawLargeInt::cast(*norm_max_sub_7)->asWord(), kMaxWord - 7);
 
   LargeInt lint_min_plus_9_sext(
       &scope, newLargeIntWithDigits({uword(kMinWord) + 9, kMaxUword}));
   Object norm_min_plus_9(&scope,
                          runtime.normalizeLargeInt(lint_min_plus_9_sext));
-  ASSERT_TRUE(norm_min_plus_9->isLargeInt());
+  ASSERT_TRUE(norm_min_plus_9.isLargeInt());
   EXPECT_EQ(RawLargeInt::cast(*norm_min_plus_9)->asWord(), kMinWord + 9);
 
   LargeInt lint_no_sext(&scope, newLargeIntWithDigits({0, kMaxUword}));
   Object norm_no_sext(&scope, runtime.normalizeLargeInt(lint_no_sext));
-  ASSERT_TRUE(norm_no_sext->isLargeInt());
+  ASSERT_TRUE(norm_no_sext.isLargeInt());
   EXPECT_EQ(RawLargeInt::cast(*norm_no_sext)->numDigits(), 2);
   EXPECT_EQ(RawLargeInt::cast(*norm_no_sext)->digitAt(0), uword{0});
   EXPECT_EQ(RawLargeInt::cast(*norm_no_sext)->digitAt(1), kMaxUword);
 
   LargeInt lint_no_zext(&scope, newLargeIntWithDigits({kMaxUword, 0}));
   Object norm_no_zext(&scope, runtime.normalizeLargeInt(lint_no_zext));
-  ASSERT_TRUE(norm_no_zext->isLargeInt());
+  ASSERT_TRUE(norm_no_zext.isLargeInt());
   EXPECT_EQ(RawLargeInt::cast(*norm_no_zext)->numDigits(), 2);
   EXPECT_EQ(RawLargeInt::cast(*norm_no_zext)->digitAt(0), kMaxUword);
   EXPECT_EQ(RawLargeInt::cast(*norm_no_zext)->digitAt(1), uword{0});
@@ -2807,7 +2807,7 @@ class Foo:
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  Layout layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime.newInstance(layout));
   Object attr(&scope, runtime.newStrFromCStr("unknown"));
   EXPECT_EQ(runtime.instanceDel(Thread::currentThread(), instance, attr),
@@ -2835,7 +2835,7 @@ def new_foo():
   HeapObject instance(&scope, callFunction(new_foo, args));
 
   // Verify that 'bar' is an in-object property
-  Layout layout(&scope, runtime.layoutAt(instance->header()->layoutId()));
+  Layout layout(&scope, runtime.layoutAt(instance.header()->layoutId()));
   Object attr(&scope, runtime.internStrFromCStr("bar"));
   AttributeInfo info;
   Thread* thread = Thread::currentThread();
@@ -2845,7 +2845,7 @@ def new_foo():
   // After successful deletion, the instance should have a new layout and should
   // no longer reference the previous value
   EXPECT_EQ(runtime.instanceDel(thread, instance, attr), NoneType::object());
-  Layout new_layout(&scope, runtime.layoutAt(instance->header()->layoutId()));
+  Layout new_layout(&scope, runtime.layoutAt(instance.header()->layoutId()));
   EXPECT_NE(*layout, *new_layout);
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, new_layout, attr, &info));
 }
@@ -2871,7 +2871,7 @@ def new_foo():
   HeapObject instance(&scope, callFunction(new_foo, args));
 
   // Verify that 'bar' is an overflow property
-  Layout layout(&scope, runtime.layoutAt(instance->header()->layoutId()));
+  Layout layout(&scope, runtime.layoutAt(instance.header()->layoutId()));
   Object attr(&scope, runtime.internStrFromCStr("bar"));
   AttributeInfo info;
   Thread* thread = Thread::currentThread();
@@ -2881,7 +2881,7 @@ def new_foo():
   // After successful deletion, the instance should have a new layout and should
   // no longer reference the previous value
   EXPECT_EQ(runtime.instanceDel(thread, instance, attr), NoneType::object());
-  Layout new_layout(&scope, runtime.layoutAt(instance->header()->layoutId()));
+  Layout new_layout(&scope, runtime.layoutAt(instance.header()->layoutId()));
   EXPECT_NE(*layout, *new_layout);
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, new_layout, attr, &info));
 }
@@ -2901,10 +2901,10 @@ class Bar(Foo):
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_TRUE(foo->isType());
+  EXPECT_TRUE(foo.isType());
 
   Object bar(&scope, moduleAt(&runtime, main, "Bar"));
-  EXPECT_TRUE(bar->isType());
+  EXPECT_TRUE(bar.isType());
 }
 
 TEST(MetaclassTest, ClassWithCustomMetaclassIsntConcreteType) {
@@ -2921,7 +2921,7 @@ class Foo(type, metaclass=MyMeta):
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_FALSE(foo->isType());
+  EXPECT_FALSE(foo.isType());
 }
 
 TEST(MetaclassTest, ClassWithTypeMetaclassIsInstanceOfType) {
@@ -3001,7 +3001,7 @@ Foo = MyMeta('Foo', (), {})
   Object mymeta(&scope, moduleAt(&runtime, main, "MyMeta"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_EQ(runtime.typeOf(*foo), *mymeta);
-  EXPECT_FALSE(foo->isType());
+  EXPECT_FALSE(foo.isType());
   EXPECT_TRUE(runtime.isInstanceOfType(*foo));
 }
 
@@ -3016,7 +3016,7 @@ meta_path = sys.meta_path
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object meta_path(&scope, moduleAt(&runtime, main, "meta_path"));
-  ASSERT_TRUE(meta_path->isList());
+  ASSERT_TRUE(meta_path.isList());
 }
 
 TEST(SubclassingTest, SubclassBuiltinSubclass) {
@@ -3029,17 +3029,17 @@ class Test(Exception):
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object value(&scope, moduleAt(&runtime, main, "Test"));
-  ASSERT_TRUE(value->isType());
+  ASSERT_TRUE(value.isType());
 
   Type type(&scope, *value);
-  ASSERT_TRUE(type->mro()->isTuple());
+  ASSERT_TRUE(type.mro()->isTuple());
 
-  Tuple mro(&scope, type->mro());
-  ASSERT_EQ(mro->length(), 4);
-  EXPECT_EQ(mro->at(0), *type);
-  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kException));
-  EXPECT_EQ(mro->at(2), runtime.typeAt(LayoutId::kBaseException));
-  EXPECT_EQ(mro->at(3), runtime.typeAt(LayoutId::kObject));
+  Tuple mro(&scope, type.mro());
+  ASSERT_EQ(mro.length(), 4);
+  EXPECT_EQ(mro.at(0), *type);
+  EXPECT_EQ(mro.at(1), runtime.typeAt(LayoutId::kException));
+  EXPECT_EQ(mro.at(2), runtime.typeAt(LayoutId::kBaseException));
+  EXPECT_EQ(mro.at(3), runtime.typeAt(LayoutId::kObject));
 }
 
 TEST(ModuleImportTest, ModuleImportsAllPublicSymbols) {
@@ -3051,7 +3051,7 @@ TEST(ModuleImportTest, ModuleImportsAllPublicSymbols) {
   Module module(&scope, runtime.newModule(name));
 
   // Add symbols
-  Dict module_dict(&scope, module->dict());
+  Dict module_dict(&scope, module.dict());
   Object symbol_str1(&scope, runtime.newStrFromCStr("public_symbol"));
   Object symbol_str2(&scope, runtime.newStrFromCStr("_private_symbol"));
   runtime.dictAtPutInValueCell(module_dict, symbol_str1, symbol_str1);
@@ -3060,10 +3060,10 @@ TEST(ModuleImportTest, ModuleImportsAllPublicSymbols) {
   // Import public symbols to dictionary
   Dict symbols_dict(&scope, runtime.newDict());
   runtime.moduleImportAllFrom(symbols_dict, module);
-  EXPECT_EQ(symbols_dict->numItems(), 1);
+  EXPECT_EQ(symbols_dict.numItems(), 1);
 
   ValueCell result(&scope, runtime.dictAt(symbols_dict, symbol_str1));
-  EXPECT_TRUE(isStrEqualsCStr(result->value(), "public_symbol"));
+  EXPECT_TRUE(isStrEqualsCStr(result.value(), "public_symbol"));
 }
 
 TEST(HeapFrameTest, Create) {
@@ -3076,12 +3076,12 @@ def gen():
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object gen(&scope, moduleAt(&runtime, "__main__", "gen"));
-  ASSERT_TRUE(gen->isFunction());
+  ASSERT_TRUE(gen.isFunction());
   Code code(&scope, RawFunction::cast(*gen)->code());
   Object frame_obj(&scope, runtime.newHeapFrame(code));
-  ASSERT_TRUE(frame_obj->isHeapFrame());
+  ASSERT_TRUE(frame_obj.isHeapFrame());
   HeapFrame heap_frame(&scope, *frame_obj);
-  EXPECT_EQ(heap_frame->maxStackSize(), code->stacksize());
+  EXPECT_EQ(heap_frame.maxStackSize(), code.stacksize());
 }
 
 extern "C" struct _inittab _PyImport_Inittab[];
@@ -3091,7 +3091,7 @@ TEST(ModuleImportTest, ImportModuleFromInitTab) {
   runFromCStr(&runtime, "import _empty");
   HandleScope scope;
   Object mod(&scope, moduleAt(&runtime, "__main__", "_empty"));
-  EXPECT_TRUE(mod->isModule());
+  EXPECT_TRUE(mod.isModule());
 }
 
 TEST(ModuleTest, NewModuleSetsDictValues) {
@@ -3103,7 +3103,7 @@ TEST(ModuleTest, NewModuleSetsDictValues) {
   Module module(&scope, runtime.newModule(name));
 
   Str mod_name(&scope, moduleAt(&runtime, module, "__name__"));
-  EXPECT_TRUE(mod_name->equalsCStr("mymodule"));
+  EXPECT_TRUE(mod_name.equalsCStr("mymodule"));
   EXPECT_EQ(moduleAt(&runtime, module, "__doc__"), NoneType::object());
   EXPECT_EQ(moduleAt(&runtime, module, "__package__"), NoneType::object());
   EXPECT_EQ(moduleAt(&runtime, module, "__loader__"), NoneType::object());
@@ -3118,10 +3118,10 @@ foo.x = 3
 )");
   HandleScope scope;
   Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
-  Dict function_dict(&scope, function->dict());
+  Dict function_dict(&scope, function.dict());
   Object key(&scope, runtime.newStrFromCStr("x"));
   Object value(&scope, runtime.dictAt(function_dict, key));
-  ASSERT_TRUE(value->isInt());
+  ASSERT_TRUE(value.isInt());
   EXPECT_EQ(Int::cast(*value)->asWord(), 3);
 }
 
@@ -3134,7 +3134,7 @@ value = foo.x
 )");
   HandleScope scope;
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
-  ASSERT_TRUE(value->isInt());
+  ASSERT_TRUE(value.isInt());
   EXPECT_EQ(Int::cast(*value)->asWord(), 3);
 }
 
@@ -3148,7 +3148,7 @@ value = foo.__doc__
 )");
   HandleScope scope;
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
-  ASSERT_TRUE(value->isStr());
+  ASSERT_TRUE(value.isStr());
   EXPECT_TRUE(RawStr::cast(*value)->equalsCStr("bar"));
 }
 
@@ -3165,29 +3165,29 @@ TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
   Runtime runtime;
   HandleScope scope;
   Function function(&scope, runtime.newFunction());
-  ASSERT_TRUE(function->dict()->isNoneType());
+  ASSERT_TRUE(function.dict()->isNoneType());
 
   Object key(&scope, runtime.newStrFromCStr("bar"));
   runtime.attributeAt(Thread::currentThread(), function, key);
-  EXPECT_TRUE(function->dict()->isDict());
+  EXPECT_TRUE(function.dict()->isDict());
 }
 
 TEST(RuntimeTest, LazyInitializationOfFunctionDict) {
   Runtime runtime;
   HandleScope scope;
   Function function(&scope, runtime.newFunction());
-  ASSERT_TRUE(function->dict()->isNoneType());
+  ASSERT_TRUE(function.dict()->isNoneType());
 
   Object key(&scope, runtime.newStrFromCStr("__dict__"));
   runtime.attributeAt(Thread::currentThread(), function, key);
-  EXPECT_TRUE(function->dict()->isDict());
+  EXPECT_TRUE(function.dict()->isDict());
 }
 
 TEST(RuntimeTest, SetFunctionDict) {
   Runtime runtime;
   HandleScope scope;
   Function function(&scope, runtime.newFunction());
-  ASSERT_TRUE(function->dict()->isNoneType());
+  ASSERT_TRUE(function.dict()->isNoneType());
 
   Object dict_name(&scope, runtime.newStrFromCStr("__dict__"));
   Object dict(&scope, runtime.newDict());
@@ -3195,7 +3195,7 @@ TEST(RuntimeTest, SetFunctionDict) {
 
   Object result(&scope, runtime.attributeAt(Thread::currentThread(), function,
                                             dict_name));
-  EXPECT_TRUE(result->isDict());
+  EXPECT_TRUE(result.isDict());
   EXPECT_EQ(*dict, *result);
 }
 
@@ -3211,17 +3211,17 @@ TEST(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   Str baz(&scope, runtime.internStrFromCStr("baz"));
   Str foobar(&scope, runtime.internStrFromCStr("foobar"));
   Str foobaz(&scope, runtime.internStrFromCStr("foobaz"));
-  varnames->atPut(0, *foo);
-  varnames->atPut(1, *bar);
-  varnames->atPut(2, *baz);
-  cellvars->atPut(0, *foobar);
-  cellvars->atPut(1, *foobaz);
+  varnames.atPut(0, *foo);
+  varnames.atPut(1, *bar);
+  varnames.atPut(2, *baz);
+  cellvars.atPut(0, *foobar);
+  cellvars.atPut(1, *foobaz);
   Object none(&scope, NoneType::object());
   Tuple empty_tuple(&scope, runtime.newTuple(0));
   Code code(&scope, runtime.newCode(argcount, kwargcount, 0, 0, 0, none, none,
                                     none, varnames, empty_tuple, cellvars, none,
                                     none, 0, none));
-  EXPECT_TRUE(code->cell2arg()->isNoneType());
+  EXPECT_TRUE(code.cell2arg()->isNoneType());
 }
 
 TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
@@ -3235,24 +3235,24 @@ TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   Str bar(&scope, runtime.internStrFromCStr("bar"));
   Str baz(&scope, runtime.internStrFromCStr("baz"));
   Str foobar(&scope, runtime.internStrFromCStr("foobar"));
-  varnames->atPut(0, *foo);
-  varnames->atPut(1, *bar);
-  varnames->atPut(2, *baz);
-  cellvars->atPut(0, *baz);
-  cellvars->atPut(1, *foobar);
+  varnames.atPut(0, *foo);
+  varnames.atPut(1, *bar);
+  varnames.atPut(2, *baz);
+  cellvars.atPut(0, *baz);
+  cellvars.atPut(1, *foobar);
   Object none(&scope, NoneType::object());
   Tuple empty_tuple(&scope, runtime.newTuple(0));
   Code code(&scope, runtime.newCode(argcount, kwargcount, 0, 0, 0, none, none,
                                     none, varnames, empty_tuple, cellvars, none,
                                     none, 0, none));
-  ASSERT_FALSE(code->cell2arg()->isNoneType());
-  Tuple cell2arg(&scope, code->cell2arg());
-  ASSERT_EQ(cell2arg->length(), 2);
+  ASSERT_FALSE(code.cell2arg()->isNoneType());
+  Tuple cell2arg(&scope, code.cell2arg());
+  ASSERT_EQ(cell2arg.length(), 2);
 
-  ASSERT_TRUE(cell2arg->at(0)->isInt());
-  Int cell2arg_value(&scope, cell2arg->at(0));
-  EXPECT_EQ(cell2arg_value->asWord(), 2);
-  EXPECT_EQ(cell2arg->at(1), NoneType::object());
+  ASSERT_TRUE(cell2arg.at(0)->isInt());
+  Int cell2arg_value(&scope, cell2arg.at(0));
+  EXPECT_EQ(cell2arg_value.asWord(), 2);
+  EXPECT_EQ(cell2arg.at(1), NoneType::object());
 }
 
 // Set is not special except that it is a builtin type with sealed attributes.
@@ -3262,7 +3262,7 @@ TEST(RuntimeTest, SetHasSameSizeCreatedTwoDifferentWays) {
   Layout layout(&scope, runtime.layoutAt(LayoutId::kSet));
   Set set1(&scope, runtime.newInstance(layout));
   Set set2(&scope, runtime.newSet());
-  EXPECT_EQ(set1->size(), set2->size());
+  EXPECT_EQ(set1.size(), set2.size());
 }
 
 // Set is not special except that it is a builtin type with sealed attributes.
@@ -3270,9 +3270,9 @@ TEST(RuntimeTest, SealedClassLayoutDoesNotHaveSpaceForOverflowAttributes) {
   Runtime runtime;
   HandleScope scope;
   Layout layout(&scope, runtime.layoutAt(LayoutId::kSet));
-  EXPECT_TRUE(layout->overflowAttributes().isNoneType());
-  word expected_set_size = kPointerSize * layout->numInObjectAttributes();
-  EXPECT_EQ(layout->instanceSize(), expected_set_size);
+  EXPECT_TRUE(layout.overflowAttributes().isNoneType());
+  word expected_set_size = kPointerSize * layout.numInObjectAttributes();
+  EXPECT_EQ(layout.instanceSize(), expected_set_size);
 }
 
 TEST(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
@@ -3291,10 +3291,9 @@ TEST(RuntimeTest, NonSealedClassHasSpaceForOverflowAttrbutes) {
   Runtime runtime;
   HandleScope scope;
   Layout layout(&scope, runtime.layoutAt(LayoutId::kMemoryError));
-  EXPECT_TRUE(layout->overflowAttributes().isTuple());
-  EXPECT_EQ(
-      layout->instanceSize(),
-      (layout->numInObjectAttributes() + 1) * kPointerSize);  // 1=overflow
+  EXPECT_TRUE(layout.overflowAttributes().isTuple());
+  EXPECT_EQ(layout.instanceSize(),
+            (layout.numInObjectAttributes() + 1) * kPointerSize);  // 1=overflow
 }
 
 // User-defined class attributes can be set on the fly.
@@ -3310,7 +3309,7 @@ a = C()
   Str value(&scope, runtime.newStrFromCStr("value"));
   Object result(&scope,
                 runtime.instanceAtPut(Thread::currentThread(), a, attr, value));
-  ASSERT_FALSE(result->isError());
+  ASSERT_FALSE(result.isError());
   EXPECT_EQ(runtime.instanceAt(Thread::currentThread(), a, attr), *value);
 }
 

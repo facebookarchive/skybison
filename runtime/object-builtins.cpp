@@ -21,14 +21,14 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
 
   Layout layout(&scope, runtime->newLayout());
-  layout->setId(LayoutId::kObject);
+  layout.setId(LayoutId::kObject);
   Type object_type(&scope, runtime->newType());
-  layout->setDescribedType(*object_type);
-  object_type->setName(runtime->symbols()->ObjectTypename());
+  layout.setDescribedType(*object_type);
+  object_type.setName(runtime->symbols()->ObjectTypename());
   Tuple mro(&scope, runtime->newTuple(1));
-  mro->atPut(0, *object_type);
-  object_type->setMro(*mro);
-  object_type->setInstanceLayout(*layout);
+  mro.atPut(0, *object_type);
+  object_type.setMro(*mro);
+  object_type.setInstanceLayout(*layout);
   runtime->layoutAtPut(LayoutId::kObject, *layout);
 
   for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
@@ -85,7 +85,7 @@ RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
-  Layout layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type.instanceLayout());
   return thread->runtime()->newInstance(layout);
 }
 
@@ -113,11 +113,11 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   // TODO(T31727304): Get the module and qualified subname. For now settle for
   // the class name.
   Type type(&scope, runtime->typeOf(*self));
-  Str type_name(&scope, type->name());
-  char* c_string = type_name->toCStr();
+  Str type_name(&scope, type.name());
+  char* c_string = type_name.toCStr();
   // TODO(bsimmers): Move this into Python once we can get an object's address.
   RawObject str = thread->runtime()->newStrFromFormat(
-      "<%s object at 0x%" PRIxPTR ">", c_string, self->raw());
+      "<%s object at 0x%" PRIxPTR ">", c_string, self.raw());
   free(c_string);
   return str;
 }

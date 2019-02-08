@@ -32,7 +32,7 @@ TEST(MarshalModuleTest, LoadsReadsSet) {
   const byte set_bytes[] = "\xbc\x00\x00\x00\x00";
   Bytes bytes(&scope, runtime.newBytesWithAll(set_bytes));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
-  ASSERT_TRUE(obj->isSet());
+  ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(RawSet::cast(*obj).numItems(), 0);
 }
 
@@ -43,7 +43,7 @@ TEST(MarshalModuleTest, LoadsIgnoresExtraBytesAtEnd) {
   const byte set_bytes[] = "\xbc\x00\x00\x00\x00\x00\x00\x00\xAA\xBB\xCC";
   Bytes bytes(&scope, runtime.newBytesWithAll(set_bytes));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
-  ASSERT_TRUE(obj->isSet());
+  ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(RawSet::cast(*obj).numItems(), 0);
 }
 

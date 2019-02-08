@@ -28,8 +28,8 @@ a = Foo()
 )");
   HandleScope scope;
   UserTupleBase a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Object obj(&scope, a->tupleValue());
-  EXPECT_TRUE(obj->isTuple());
+  Object obj(&scope, a.tupleValue());
+  EXPECT_TRUE(obj.isTuple());
 }
 
 TEST(TupleBuiltinsTest, SubscriptTuple) {
@@ -53,12 +53,12 @@ slice = t[1:3]
 )");
 
   Object slice(&scope, moduleAt(&runtime, "__main__", "slice"));
-  ASSERT_TRUE(slice->isTuple());
+  ASSERT_TRUE(slice.isTuple());
 
   Tuple tuple(&scope, *slice);
-  ASSERT_EQ(tuple->length(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(1))->value(), 3);
+  ASSERT_EQ(tuple.length(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(1))->value(), 3);
 }
 
 TEST(TupleBuiltinsTest, SubscriptWithTupleSubclassReturnsValue) {
@@ -70,9 +70,9 @@ item = obj[0]
 )");
   HandleScope scope;
   Object item(&scope, moduleAt(&runtime, "__main__", "item"));
-  ASSERT_TRUE(item->isInt());
+  ASSERT_TRUE(item.isInt());
   Int num(&scope, *item);
-  EXPECT_EQ(num->asWord(), 0);
+  EXPECT_EQ(num.asWord(), 0);
 }
 
 TEST(TupleBuiltinsTest, SubscriptWithTupleSubclassReturnsSliceValue) {
@@ -84,12 +84,12 @@ slice = obj[1:3]
 )");
   HandleScope scope;
   Object slice(&scope, moduleAt(&runtime, "__main__", "slice"));
-  ASSERT_TRUE(slice->isTuple());
+  ASSERT_TRUE(slice.isTuple());
 
   Tuple tuple(&scope, *slice);
-  ASSERT_EQ(tuple->length(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(1))->value(), 2);
+  ASSERT_EQ(tuple.length(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(1))->value(), 2);
 }
 
 TEST(TupleBuiltinsTest, DunderLen) {
@@ -110,10 +110,10 @@ b_len_implicit = b.__len__()
   Int b_len(&scope, moduleAt(&runtime, "__main__", "b_len"));
   Int b_len_implicit(&scope, moduleAt(&runtime, "__main__", "b_len_implicit"));
 
-  EXPECT_EQ(a_len->asWord(), 3);
-  EXPECT_EQ(a_len->asWord(), a_len_implicit->asWord());
-  EXPECT_EQ(b_len->asWord(), 0);
-  EXPECT_EQ(b_len->asWord(), b_len_implicit->asWord());
+  EXPECT_EQ(a_len.asWord(), 3);
+  EXPECT_EQ(a_len.asWord(), a_len_implicit.asWord());
+  EXPECT_EQ(b_len.asWord(), 0);
+  EXPECT_EQ(b_len.asWord(), b_len_implicit.asWord());
 }
 
 TEST(TupleBuiltinsTest, DunderLenWithTupleSubclassReturnsLen) {
@@ -134,10 +134,10 @@ b_len_implicit = b.__len__()
   Int b_len(&scope, moduleAt(&runtime, "__main__", "b_len"));
   Int b_len_implicit(&scope, moduleAt(&runtime, "__main__", "b_len_implicit"));
 
-  EXPECT_EQ(a_len->asWord(), 3);
-  EXPECT_EQ(a_len->asWord(), a_len_implicit->asWord());
-  EXPECT_EQ(b_len->asWord(), 0);
-  EXPECT_EQ(b_len->asWord(), b_len_implicit->asWord());
+  EXPECT_EQ(a_len.asWord(), 3);
+  EXPECT_EQ(a_len.asWord(), a_len_implicit.asWord());
+  EXPECT_EQ(b_len.asWord(), 0);
+  EXPECT_EQ(b_len.asWord(), b_len_implicit.asWord());
 }
 
 // Equivalent to evaluating "tuple(range(start, stop))" in Python
@@ -146,7 +146,7 @@ static RawObject tupleFromRange(word start, word stop) {
   HandleScope scope(thread);
   Tuple result(&scope, thread->runtime()->newTuple(stop - start));
   for (word i = 0, j = start; j < stop; i++, j++) {
-    result->atPut(i, SmallInt::fromWord(j));
+    result.atPut(i, SmallInt::fromWord(j));
   }
   return *result;
 }
@@ -159,12 +159,12 @@ TEST(TupleBuiltinsTest, SlicePositiveStartIndex) {
 
   // Test [2:]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStart(SmallInt::fromWord(2));
+  slice.setStart(SmallInt::fromWord(2));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(test->at(2))->value(), 5);
+  ASSERT_EQ(test.length(), 3);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 5);
 }
 
 TEST(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
@@ -175,11 +175,11 @@ TEST(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
 
   // Test [-2:]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStart(SmallInt::fromWord(-2));
+  slice.setStart(SmallInt::fromWord(-2));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 2);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 5);
+  ASSERT_EQ(test.length(), 2);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 5);
 }
 
 TEST(TupleBuiltinsTest, SlicePositiveStopIndex) {
@@ -190,11 +190,11 @@ TEST(TupleBuiltinsTest, SlicePositiveStopIndex) {
 
   // Test [:2]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStop(SmallInt::fromWord(2));
+  slice.setStop(SmallInt::fromWord(2));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 2);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 2);
+  ASSERT_EQ(test.length(), 2);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 2);
 }
 
 TEST(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
@@ -205,12 +205,12 @@ TEST(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
 
   // Test [:-2]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStop(SmallInt::fromWord(-2));
+  slice.setStop(SmallInt::fromWord(-2));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(test->at(2))->value(), 3);
+  ASSERT_EQ(test.length(), 3);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 3);
 }
 
 TEST(TupleBuiltinsTest, SlicePositiveStep) {
@@ -221,12 +221,12 @@ TEST(TupleBuiltinsTest, SlicePositiveStep) {
 
   // Test [::2]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStep(SmallInt::fromWord(2));
+  slice.setStep(SmallInt::fromWord(2));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test->at(2))->value(), 5);
+  ASSERT_EQ(test.length(), 3);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 5);
 }
 
 TEST(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
@@ -237,12 +237,12 @@ TEST(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
 
   // Test [::-2]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStep(SmallInt::fromWord(-2));
+  slice.setStep(SmallInt::fromWord(-2));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 5);
-  EXPECT_EQ(RawSmallInt::cast(test->at(1))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test->at(2))->value(), 1);
+  ASSERT_EQ(test.length(), 3);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 5);
+  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 1);
 }
 
 TEST(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
@@ -253,9 +253,9 @@ TEST(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
 
   // Test [10:]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStart(SmallInt::fromWord(10));
+  slice.setStart(SmallInt::fromWord(10));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 0);
+  ASSERT_EQ(test.length(), 0);
 }
 
 TEST(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
@@ -266,11 +266,11 @@ TEST(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
 
   // Test [:10]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStop(SmallInt::fromWord(10));
+  slice.setStop(SmallInt::fromWord(10));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 5);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test->at(4))->value(), 5);
+  ASSERT_EQ(test.length(), 5);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(test.at(4))->value(), 5);
 }
 
 TEST(TupleBuiltinsTest, SliceStepOutOfBounds) {
@@ -281,10 +281,10 @@ TEST(TupleBuiltinsTest, SliceStepOutOfBounds) {
 
   // Test [::10]
   Slice slice(&scope, runtime.newSlice());
-  slice->setStep(SmallInt::fromWord(10));
+  slice.setStep(SmallInt::fromWord(10));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
-  ASSERT_EQ(test->length(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test->at(0))->value(), 1);
+  ASSERT_EQ(test.length(), 1);
+  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
 }
 
 TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
@@ -304,7 +304,7 @@ TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kTuple));
   Tuple ret(&scope, runBuiltin(TupleBuiltins::dunderNew, type));
-  EXPECT_EQ(ret->length(), 0);
+  EXPECT_EQ(ret.length(), 0);
 }
 
 TEST(TupleBuiltinsTest, DunderNewWithIterableReturnsTuple) {
@@ -315,10 +315,10 @@ a = tuple.__new__(tuple, [1, 2, 3])
 )");
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  ASSERT_EQ(a->length(), 3);
-  EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(a->at(2))->value(), 3);
+  ASSERT_EQ(a.length(), 3);
+  EXPECT_EQ(RawSmallInt::cast(a.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(a.at(2))->value(), 3);
 }
 
 TEST(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
@@ -375,11 +375,11 @@ TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  ASSERT_EQ(a->length(), 4);
-  EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(2))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(3))->value(), 1);
+  ASSERT_EQ(a.length(), 4);
+  EXPECT_EQ(RawSmallInt::cast(a.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(1))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(2))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(3))->value(), 1);
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
@@ -388,13 +388,13 @@ TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  ASSERT_EQ(a->length(), 6);
-  EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(a->at(2))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(a->at(3))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(4))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(a->at(5))->value(), 3);
+  ASSERT_EQ(a.length(), 6);
+  EXPECT_EQ(RawSmallInt::cast(a.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(a.at(2))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(a.at(3))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(4))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(a.at(5))->value(), 3);
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
@@ -403,7 +403,7 @@ TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  EXPECT_EQ(a->length(), 0);
+  EXPECT_EQ(a.length(), 0);
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
@@ -412,7 +412,7 @@ TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  EXPECT_EQ(a->length(), 0);
+  EXPECT_EQ(a.length(), 0);
 }
 
 TEST(TupleBuiltinsTest, DunderMulWithTupleSubclassReturnsTuple) {
@@ -423,7 +423,7 @@ a = Foo((1, 2, 3)) * 2
 )");
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_TRUE(a->isTuple());
+  EXPECT_TRUE(a.isTuple());
 }
 
 TEST(TupleBuiltinsTest, DunderAddWithNonTupleLeftHandSideReturnsError) {
@@ -432,7 +432,7 @@ TEST(TupleBuiltinsTest, DunderAddWithNonTupleLeftHandSideReturnsError) {
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Int zero(&scope, runtime.newInt(0));
   Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple, zero));
-  ASSERT_TRUE(error->isError());
+  ASSERT_TRUE(error.isError());
   EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
@@ -443,7 +443,7 @@ TEST(TupleBuiltinsTest, DunderAddWithNonTupleRightHandSideReturnsError) {
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Int zero(&scope, runtime.newInt(0));
   Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, zero, empty_tuple));
-  ASSERT_TRUE(error->isError());
+  ASSERT_TRUE(error.isError());
   EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
@@ -452,7 +452,7 @@ TEST(TupleBuiltinsTest, DunderAddWithNoArgumentsReturnsError) {
   Runtime runtime;
   HandleScope scope;
   Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd));
-  ASSERT_TRUE(error->isError());
+  ASSERT_TRUE(error.isError());
   EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
@@ -463,7 +463,7 @@ TEST(TupleBuiltinsTest, DunderAddWithManyArgumentsReturnsError) {
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple,
                                   empty_tuple, empty_tuple));
-  ASSERT_TRUE(error->isError());
+  ASSERT_TRUE(error.isError());
   EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
@@ -478,15 +478,15 @@ TEST(TupleBuiltinsTest, DunderAddWithEmptyTupleReturnsTuple) {
   Object rhs_result(
       &scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple, one_tuple));
 
-  ASSERT_TRUE(lhs_result->isTuple());
+  ASSERT_TRUE(lhs_result.isTuple());
   Tuple lhs_tuple(&scope, *lhs_result);
-  EXPECT_EQ(lhs_tuple->length(), 1);
-  EXPECT_EQ(RawSmallInt::cast(lhs_tuple->at(0))->value(), 1);
+  EXPECT_EQ(lhs_tuple.length(), 1);
+  EXPECT_EQ(RawSmallInt::cast(lhs_tuple.at(0))->value(), 1);
 
-  ASSERT_TRUE(rhs_result->isTuple());
+  ASSERT_TRUE(rhs_result.isTuple());
   Tuple rhs_tuple(&scope, *rhs_result);
-  EXPECT_EQ(rhs_tuple->length(), 1);
-  EXPECT_EQ(RawSmallInt::cast(rhs_tuple->at(0))->value(), 1);
+  EXPECT_EQ(rhs_tuple.length(), 1);
+  EXPECT_EQ(RawSmallInt::cast(rhs_tuple.at(0))->value(), 1);
 }
 
 TEST(TupleBuiltinsTest, DunderAddWithManyElementsReturnsTuple) {
@@ -495,17 +495,17 @@ TEST(TupleBuiltinsTest, DunderAddWithManyElementsReturnsTuple) {
   Tuple lhs(&scope, tupleFromRange(1, 4));
   Tuple rhs(&scope, tupleFromRange(4, 8));
   Object result(&scope, runBuiltin(TupleBuiltins::dunderAdd, lhs, rhs));
-  ASSERT_TRUE(result->isTuple());
+  ASSERT_TRUE(result.isTuple());
   Tuple a(&scope, *result);
 
-  EXPECT_EQ(a->length(), 7);
-  EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(a->at(2))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(a->at(3))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(a->at(4))->value(), 5);
-  EXPECT_EQ(RawSmallInt::cast(a->at(5))->value(), 6);
-  EXPECT_EQ(RawSmallInt::cast(a->at(6))->value(), 7);
+  EXPECT_EQ(a.length(), 7);
+  EXPECT_EQ(RawSmallInt::cast(a.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(a.at(2))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(a.at(3))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(a.at(4))->value(), 5);
+  EXPECT_EQ(RawSmallInt::cast(a.at(5))->value(), 6);
+  EXPECT_EQ(RawSmallInt::cast(a.at(6))->value(), 7);
 }
 
 TEST(TupleBuiltinsTest, DunderAddWithTupleSubclassReturnsTuple) {
@@ -516,13 +516,13 @@ a = Foo((1, 2)) + (3, 4)
 )");
   HandleScope scope;
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a_obj->isTuple());
+  ASSERT_TRUE(a_obj.isTuple());
   Tuple a(&scope, *a_obj);
-  EXPECT_EQ(a->length(), 4);
-  EXPECT_EQ(RawSmallInt::cast(a->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(a->at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(a->at(2))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(a->at(3))->value(), 4);
+  EXPECT_EQ(a.length(), 4);
+  EXPECT_EQ(RawSmallInt::cast(a.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(a.at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(a.at(2))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(a.at(3))->value(), 4);
 }
 
 TEST(TupleBuiltinsTest, DunderEqWithDifferentSizeTuplesReturnsFalse) {
@@ -531,7 +531,7 @@ TEST(TupleBuiltinsTest, DunderEqWithDifferentSizeTuplesReturnsFalse) {
   Object left(&scope, runtime.newTuple(0));
   Object right(&scope, runtime.newTuple(3));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a->isBool());
+  ASSERT_TRUE(a.isBool());
   EXPECT_FALSE(Bool::cast(*a)->value());
 }
 
@@ -539,13 +539,13 @@ TEST(TupleBuiltinsTest, DunderEqWithDifferentValueTuplesReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
   Tuple left(&scope, runtime.newTuple(2));
-  left->atPut(0, runtime.newInt(1));
-  left->atPut(1, runtime.newInt(2));
+  left.atPut(0, runtime.newInt(1));
+  left.atPut(1, runtime.newInt(2));
   Tuple right(&scope, runtime.newTuple(2));
-  right->atPut(0, runtime.newInt(1));
-  right->atPut(1, runtime.newInt(3));
+  right.atPut(0, runtime.newInt(1));
+  right.atPut(1, runtime.newInt(3));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a->isBool());
+  ASSERT_TRUE(a.isBool());
   EXPECT_FALSE(Bool::cast(*a)->value());
 }
 
@@ -553,17 +553,17 @@ TEST(TupleBuiltinsTest, DunderEqWithTupleSubclassReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
   Tuple left(&scope, runtime.newTuple(2));
-  left->atPut(0, runtime.newInt(1));
-  left->atPut(1, runtime.newInt(2));
+  left.atPut(0, runtime.newInt(1));
+  left.atPut(1, runtime.newInt(2));
   runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 right = Foo((1, 2))
 )");
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
-  ASSERT_FALSE(right->isTuple());
+  ASSERT_FALSE(right.isTuple());
   ASSERT_TRUE(runtime.isInstanceOfTuple(*right));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a->isBool());
+  ASSERT_TRUE(a.isBool());
   EXPECT_TRUE(Bool::cast(*a)->value());
 }
 
@@ -573,7 +573,7 @@ TEST(TupleBuiltinsTest, DunderEqWithNonTupleSecondArgReturnsNotImplemented) {
   Object left(&scope, runtime.newTuple(0));
   Object right(&scope, runtime.newInt(1));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  EXPECT_TRUE(a->isNotImplemented());
+  EXPECT_TRUE(a.isNotImplemented());
 }
 
 TEST(TupleBuiltinsTest, DunderEqWithNonTupleFirstArgRaisesTypeError) {
@@ -582,7 +582,7 @@ TEST(TupleBuiltinsTest, DunderEqWithNonTupleFirstArgRaisesTypeError) {
   Object left(&scope, runtime.newInt(1));
   Object right(&scope, runtime.newTuple(0));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  ASSERT_TRUE(a->isError());
+  ASSERT_TRUE(a.isError());
   Thread* thread = Thread::currentThread();
   EXPECT_EQ(thread->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
@@ -593,7 +593,7 @@ TEST(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
   HandleScope scope;
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
-  ASSERT_TRUE(iter->isTupleIterator());
+  ASSERT_TRUE(iter.isTupleIterator());
 }
 
 TEST(TupleBuiltinsTest, DunderIterWithTupleSubclassReturnsTupleIter) {
@@ -605,7 +605,7 @@ a = Foo()
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, a));
-  ASSERT_TRUE(iter->isTupleIterator());
+  ASSERT_TRUE(iter.isTupleIterator());
 }
 
 TEST(TupleIteratorBuiltinsTest, CallDunderNext) {
@@ -613,14 +613,14 @@ TEST(TupleIteratorBuiltinsTest, CallDunderNext) {
   HandleScope scope;
   Tuple tuple(&scope, tupleFromRange(0, 2));
   Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, tuple));
-  ASSERT_TRUE(iter->isTupleIterator());
+  ASSERT_TRUE(iter.isTupleIterator());
 
   Object item1(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1->isSmallInt());
+  ASSERT_TRUE(item1.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
 
   Object item2(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2->isSmallInt());
+  ASSERT_TRUE(item2.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*item2)->value(), 1);
 }
 
@@ -629,7 +629,7 @@ TEST(TupleIteratorBuiltinsTest, DunderIterReturnsSelf) {
   HandleScope scope;
   Tuple empty_tuple(&scope, tupleFromRange(0, 0));
   Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, empty_tuple));
-  ASSERT_TRUE(iter->isTupleIterator());
+  ASSERT_TRUE(iter.isTupleIterator());
 
   // Now call __iter__ on the iterator object
   Object result(&scope, runBuiltin(TupleIteratorBuiltins::dunderIter, iter));
@@ -645,7 +645,7 @@ TEST(TupleIteratorBuiltinsTest,
 
   Object length_hint(&scope,
                      runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -657,17 +657,17 @@ TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
 
   Object length_hint1(
       &scope, runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1->isSmallInt());
+  ASSERT_TRUE(length_hint1.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 1);
 
   // Consume the iterator
   Object item1(&scope, runBuiltin(TupleIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1->isSmallInt());
+  ASSERT_TRUE(item1.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
 
   Object length_hint2(
       &scope, runBuiltin(TupleIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1->isSmallInt());
+  ASSERT_TRUE(length_hint1.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 0);
 }
 

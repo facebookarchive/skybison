@@ -15,13 +15,13 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  if (seq->isTuple()) return *seq;
+  if (seq.isTuple()) return *seq;
   if (runtime->isInstanceOfList(*seq)) {
     List list(&scope, *seq);
-    word len = list->numItems();
+    word len = list.numItems();
     Tuple ret(&scope, runtime->newTuple(len));
     for (word i = 0; i < len; i++) {
-      ret->atPut(i, list->at(i));
+      ret.atPut(i, list.at(i));
     }
     return *ret;
   }
@@ -33,14 +33,14 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
 }
 
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
-  word idx = iter->index();
-  if (idx == iter->tupleLength()) {
+  word idx = iter.index();
+  if (idx == iter.tupleLength()) {
     return RawError::object();
   }
   HandleScope scope(thread);
-  Tuple underlying(&scope, iter->iterable());
-  RawObject item = underlying->at(idx);
-  iter->setIndex(idx + 1);
+  Tuple underlying(&scope, iter.iterable());
+  RawObject item = underlying.at(idx);
+  iter.setIndex(idx + 1);
   return item;
 }
 
@@ -79,9 +79,9 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*lhs)) {
     return thread->raiseTypeErrorWithCStr("'__add__' requires a tuple");
   }
-  if (!lhs->isTuple()) {
+  if (!lhs.isTuple()) {
     UserTupleBase lhs_user(&scope, *lhs);
-    lhs = lhs_user->tupleValue();
+    lhs = lhs_user.tupleValue();
   }
   Tuple left(&scope, *lhs);
   Object rhs(&scope, args.get(1));
@@ -89,13 +89,13 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "can only concatenate tuple to tuple");
   }
-  if (!rhs->isTuple()) {
+  if (!rhs.isTuple()) {
     UserTupleBase rhs_user(&scope, *rhs);
-    rhs = rhs_user->tupleValue();
+    rhs = rhs_user.tupleValue();
   }
   Tuple right(&scope, *rhs);
-  word llength = left->length();
-  word rlength = right->length();
+  word llength = left.length();
+  word rlength = right.length();
 
   word new_length = llength + rlength;
   if (new_length > kMaxWord) {
@@ -105,10 +105,10 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 
   Tuple new_tuple(&scope, thread->runtime()->newTuple(new_length));
   for (word i = 0; i < llength; ++i) {
-    new_tuple->atPut(i, left->at(i));
+    new_tuple.atPut(i, left.at(i));
   }
   for (word j = 0; j < rlength; ++j) {
-    new_tuple->atPut(llength + j, right->at(j));
+    new_tuple.atPut(llength + j, right.at(j));
   }
   return *new_tuple;
 }
@@ -129,26 +129,26 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return runtime->notImplemented();
   }
 
-  if (!self_obj->isTuple()) {
+  if (!self_obj.isTuple()) {
     UserTupleBase user_self(&scope, *self_obj);
-    self_obj = user_self->tupleValue();
+    self_obj = user_self.tupleValue();
   }
-  if (!other_obj->isTuple()) {
+  if (!other_obj.isTuple()) {
     UserTupleBase user_other(&scope, *other_obj);
-    other_obj = user_other->tupleValue();
+    other_obj = user_other.tupleValue();
   }
 
   Tuple self(&scope, *self_obj);
   Tuple other(&scope, *other_obj);
-  if (self->length() != other->length()) {
+  if (self.length() != other.length()) {
     return Bool::falseObj();
   }
   Object left(&scope, NoneType::object());
   Object right(&scope, NoneType::object());
-  word length = self->length();
+  word length = self.length();
   for (word i = 0; i < length; i++) {
-    left = self->at(i);
-    right = other->at(i);
+    left = self.at(i);
+    right = other.at(i);
     RawObject result =
         Interpreter::compareOperation(thread, frame, EQ, left, right);
     if (result == Bool::falseObj()) {
@@ -163,21 +163,21 @@ RawObject TupleBuiltins::slice(Thread* thread, const Tuple& tuple,
   HandleScope scope(thread);
   word start, stop, step;
   Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-  if (err->isError()) return *err;
+  if (err.isError()) return *err;
   return sliceWithWords(thread, tuple, start, stop, step);
 }
 
 RawObject TupleBuiltins::sliceWithWords(Thread* thread, const Tuple& tuple,
                                         word start, word stop, word step) {
-  word length = Slice::adjustIndices(tuple->length(), &start, &stop, step);
-  if (start == 0 && stop >= tuple->length() && step == 1) {
+  word length = Slice::adjustIndices(tuple.length(), &start, &stop, step);
+  if (start == 0 && stop >= tuple.length() && step == 1) {
     return *tuple;
   }
 
   HandleScope scope(thread);
   Tuple items(&scope, thread->runtime()->newTuple(length));
   for (word i = 0, index = start; i < length; i++, index += step) {
-    items->atPut(i, tuple->at(index));
+    items.atPut(i, tuple.at(index));
   }
   return *items;
 }
@@ -197,24 +197,24 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
         "argument");
   }
 
-  if (!self->isTuple()) {
+  if (!self.isTuple()) {
     UserTupleBase user_tuple(&scope, *self);
-    self = user_tuple->tupleValue();
+    self = user_tuple.tupleValue();
   }
 
   Tuple tuple(&scope, *self);
   Object index(&scope, args.get(1));
-  if (index->isSmallInt()) {
+  if (index.isSmallInt()) {
     word idx = RawSmallInt::cast(*index)->value();
     if (idx < 0) {
-      idx = tuple->length() - idx;
+      idx = tuple.length() - idx;
     }
-    if (idx < 0 || idx >= tuple->length()) {
+    if (idx < 0 || idx >= tuple.length()) {
       return thread->raiseIndexErrorWithCStr("tuple index out of range");
     }
-    return tuple->at(idx);
+    return tuple.at(idx);
   }
-  if (index->isSlice()) {
+  if (index.isSlice()) {
     Slice tuple_slice(&scope, *index);
     return slice(thread, tuple, tuple_slice);
   }
@@ -235,12 +235,12 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__len__(self): self is not a tuple");
   }
-  if (!obj->isTuple()) {
+  if (!obj.isTuple()) {
     UserTupleBase user_tuple(&scope, *obj);
-    obj = user_tuple->tupleValue();
+    obj = user_tuple.tupleValue();
   }
   Tuple self(&scope, *obj);
-  return runtime->newInt(self->length());
+  return runtime->newInt(self.length());
 }
 
 RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
@@ -255,22 +255,22 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj->isTuple()) {
+  if (!self_obj.isTuple()) {
     UserTupleBase user_tuple(&scope, *self_obj);
-    self_obj = user_tuple->tupleValue();
+    self_obj = user_tuple.tupleValue();
   }
   Tuple self(&scope, *self_obj);
   Object rhs(&scope, args.get(1));
-  if (!rhs->isInt()) {
+  if (!rhs.isInt()) {
     return thread->raiseTypeErrorWithCStr("can't multiply sequence by non-int");
   }
-  if (!rhs->isSmallInt()) {
+  if (!rhs.isSmallInt()) {
     return thread->raiseOverflowErrorWithCStr(
         "cannot fit 'int' into an index-sized integer");
   }
   SmallInt right(&scope, *rhs);
-  word length = self->length();
-  word times = right->value();
+  word length = self.length();
+  word times = right.value();
   if (length == 0 || times <= 0) {
     return thread->runtime()->newTuple(0);
   }
@@ -288,7 +288,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Tuple new_tuple(&scope, thread->runtime()->newTuple(new_length));
   for (word i = 0; i < times; i++) {
     for (word j = 0; j < length; j++) {
-      new_tuple->atPut(i * length + j, self->at(j));
+      new_tuple.atPut(i * length + j, self.at(j));
     }
   }
   return *new_tuple;
@@ -296,11 +296,11 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 
 static RawObject newTupleOrUserSubclass(Thread* thread, const Tuple& tuple,
                                         const Type& type) {
-  if (type->isBuiltin()) return *tuple;
+  if (type.isBuiltin()) return *tuple;
   HandleScope scope(thread);
-  Layout layout(&scope, type->instanceLayout());
+  Layout layout(&scope, type.instanceLayout());
   UserTupleBase instance(&scope, thread->runtime()->newInstance(layout));
-  instance->setTupleValue(*tuple);
+  instance.setTupleValue(*tuple);
   return *instance;
 }
 
@@ -324,7 +324,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   Type type(&scope, *type_obj);
-  if (type->builtinBase() != LayoutId::kTuple) {
+  if (type.builtinBase() != LayoutId::kTuple) {
     return thread->raiseTypeErrorWithCStr(
         "tuple.__new__(X): X is not a subclass of tuple");
   }
@@ -339,7 +339,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Object iterable(&scope, args.get(1));
   Object dunder_iter(&scope, Interpreter::lookupMethod(thread, frame, iterable,
                                                        SymbolId::kDunderIter));
-  if (dunder_iter->isError()) {
+  if (dunder_iter.isError()) {
     return thread->raiseTypeErrorWithCStr("object is not iterable");
   }
   Object iterator(
@@ -353,7 +353,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Object length_hint(&scope,
                      runtime->lookupSymbolInMro(thread, iter_type,
                                                 SymbolId::kDunderLengthHint));
-  if (length_hint->isSmallInt()) {
+  if (length_hint.isSmallInt()) {
     max_len = RawSmallInt::cast(*length_hint)->value();
   }
 
@@ -363,7 +363,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   for (;;) {
     Object elem(&scope,
                 Interpreter::callMethod1(thread, frame, dunder_next, iterator));
-    if (elem->isError()) {
+    if (elem.isError()) {
       if (thread->clearPendingStopIteration()) break;
       return *elem;
     }
@@ -373,11 +373,11 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
       max_len *= 2;
       Tuple new_tuple(&scope, runtime->newTuple(max_len));
       for (word i = 0; i < curr; i++) {
-        new_tuple->atPut(i, result->at(i));
+        new_tuple.atPut(i, result.at(i));
       }
       result = *new_tuple;
     }
-    result->atPut(curr++, *elem);
+    result.atPut(curr++, *elem);
   }
 
   // If the result is perfectly sized, return it.
@@ -388,7 +388,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // The result was over-allocated, shrink it.
   Tuple new_tuple(&scope, runtime->newTuple(curr));
   for (word i = 0; i < curr; i++) {
-    new_tuple->atPut(i, result->at(i));
+    new_tuple.atPut(i, result.at(i));
   }
   return newTupleOrUserSubclass(thread, new_tuple, type);
 }
@@ -407,12 +407,12 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
         "__iter__() must be called with a tuple instance as the first "
         "argument");
   }
-  if (!self->isTuple()) {
+  if (!self.isTuple()) {
     UserTupleBase user_tuple(&scope, *self);
-    self = user_tuple->tupleValue();
+    self = user_tuple.tupleValue();
   }
   Tuple tuple(&scope, *self);
-  return runtime->newTupleIterator(tuple, tuple->length());
+  return runtime->newTupleIterator(tuple, tuple.length());
 }
 
 const BuiltinMethod TupleIteratorBuiltins::kMethods[] = {
@@ -436,7 +436,7 @@ RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isTupleIterator()) {
+  if (!self.isTupleIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a tuple iterator instance as the first "
         "argument");
@@ -452,14 +452,14 @@ RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj->isTupleIterator()) {
+  if (!self_obj.isTupleIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a tuple iterator instance as the first "
         "argument");
   }
   TupleIterator self(&scope, *self_obj);
   Object value(&scope, tupleIteratorNext(thread, self));
-  if (value->isError()) {
+  if (value.isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
   return *value;
@@ -474,15 +474,15 @@ RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isTupleIterator()) {
+  if (!self.isTupleIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() must be called with a tuple iterator instance as "
         "the "
         "first argument");
   }
   TupleIterator tuple_iterator(&scope, *self);
-  Tuple tuple(&scope, tuple_iterator->iterable());
-  return SmallInt::fromWord(tuple->length() - tuple_iterator->index());
+  Tuple tuple(&scope, tuple_iterator.iterable());
+  return SmallInt::fromWord(tuple.length() - tuple_iterator.index());
 }
 
 }  // namespace python

@@ -27,13 +27,13 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (self->layoutId() != target) {
+  if (self.layoutId() != target) {
     return thread->raiseAttributeError(thread->runtime()->newStrFromFormat(
         "send() must be called with a %s instance as the first argument",
         type_name));
   }
   GeneratorBase gen(&scope, *self);
-  if (RawHeapFrame::cast(gen->heapFrame())->frame()->virtualPC() == 0 &&
+  if (RawHeapFrame::cast(gen.heapFrame())->frame()->virtualPC() == 0 &&
       !args.get(1)->isNoneType()) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "can't send non-None value to a just-started %s", type_name));
@@ -64,7 +64,7 @@ RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isGenerator()) {
+  if (!self.isGenerator()) {
     return thread->raiseAttributeErrorWithCStr(
         "__iter__() must be called with a generator instance as the first "
         "argument");
@@ -80,7 +80,7 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isGenerator()) {
+  if (!self.isGenerator()) {
     return thread->raiseAttributeErrorWithCStr(
         "__next__() must be called with a generator instance as the first "
         "argument");

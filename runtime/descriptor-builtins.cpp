@@ -22,7 +22,7 @@ RawObject builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   ClassMethod classmethod(&scope, args.get(0));
   Object arg(&scope, args.get(1));
-  classmethod->setFunction(*arg);
+  classmethod.setFunction(*arg);
   return *classmethod;
 }
 
@@ -64,7 +64,7 @@ RawObject builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   StaticMethod staticmethod(&scope, args.get(0));
   Object arg(&scope, args.get(1));
-  staticmethod->setFunction(*arg);
+  staticmethod.setFunction(*arg);
   return *staticmethod;
 }
 
@@ -83,8 +83,8 @@ RawObject builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
 
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
-  Object getter(&scope, property->getter());
-  Object setter(&scope, property->setter());
+  Object getter(&scope, property.getter());
+  Object setter(&scope, property.setter());
   Object deleter(&scope, args.get(1));
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
@@ -104,15 +104,15 @@ RawObject builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   Property property(&scope, args.get(0));
   Object obj(&scope, args.get(1));
 
-  if (property->getter() == NoneType::object()) {
+  if (property.getter() == NoneType::object()) {
     return thread->raiseAttributeErrorWithCStr("unreadable attribute");
   }
 
-  if (obj->isNoneType()) {
+  if (obj.isNoneType()) {
     return *property;
   }
 
-  Object getter(&scope, property->getter());
+  Object getter(&scope, property.getter());
   return Interpreter::callFunction1(thread, frame, getter, obj);
 }
 
@@ -132,11 +132,11 @@ RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
   Object obj(&scope, args.get(1));
   Object value(&scope, args.get(2));
 
-  if (property->setter()->isNoneType()) {
+  if (property.setter()->isNoneType()) {
     return thread->raiseAttributeErrorWithCStr("can't set attribute");
   }
 
-  Object setter(&scope, property->setter());
+  Object setter(&scope, property.setter());
   return Interpreter::callFunction2(thread, frame, setter, obj, value);
 }
 
@@ -153,8 +153,8 @@ RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
   Object getter(&scope, args.get(1));
-  Object setter(&scope, property->setter());
-  Object deleter(&scope, property->deleter());
+  Object setter(&scope, property.setter());
+  Object deleter(&scope, property.deleter());
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
@@ -170,13 +170,13 @@ RawObject builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
   if (nargs > 1) {
-    property->setGetter(args.get(1));
+    property.setGetter(args.get(1));
   }
   if (nargs > 2) {
-    property->setSetter(args.get(2));
+    property.setSetter(args.get(2));
   }
   if (nargs > 3) {
-    property->setDeleter(args.get(3));
+    property.setDeleter(args.get(3));
   }
   return *property;
 }
@@ -199,9 +199,9 @@ RawObject builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
-  Object getter(&scope, property->getter());
+  Object getter(&scope, property.getter());
   Object setter(&scope, args.get(1));
-  Object deleter(&scope, property->deleter());
+  Object deleter(&scope, property.deleter());
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 

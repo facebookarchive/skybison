@@ -22,9 +22,9 @@ RawObject builtinRefNew(Thread* thread, Frame* frame, word nargs) {
   }
   Arguments args(frame, nargs);
   WeakRef ref(&scope, thread->runtime()->newWeakRef());
-  ref->setReferent(args.get(1));
+  ref.setReferent(args.get(1));
   if (nargs == 3) {
-    ref->setCallback(args.get(2));
+    ref.setCallback(args.get(2));
   }
 
   return *ref;

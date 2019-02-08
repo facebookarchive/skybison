@@ -16,12 +16,12 @@ exc = BaseException()
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isBaseException());
+  ASSERT_TRUE(exc.isBaseException());
   BaseException base_exception(&scope, *exc);
 
   // No constructor arguments means args should contain an empty tuple.
-  ASSERT_TRUE(base_exception->args()->isTuple());
-  ASSERT_EQ(base_exception->args(), runtime.newTuple(0));
+  ASSERT_TRUE(base_exception.args()->isTuple());
+  ASSERT_EQ(base_exception.args(), runtime.newTuple(0));
 }
 
 TEST(ExceptionBuiltinsTest, BaseExceptionManyArguments) {
@@ -33,15 +33,15 @@ exc = BaseException(1,2,3)
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isBaseException());
+  ASSERT_TRUE(exc.isBaseException());
   BaseException base_exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(base_exception->args()->isTuple());
-  Tuple args(&scope, base_exception->args());
-  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
-  EXPECT_EQ(args->at(1), SmallInt::fromWord(2));
-  EXPECT_EQ(args->at(2), SmallInt::fromWord(3));
+  ASSERT_TRUE(base_exception.args()->isTuple());
+  Tuple args(&scope, base_exception.args());
+  EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(args.at(1), SmallInt::fromWord(2));
+  EXPECT_EQ(args.at(2), SmallInt::fromWord(3));
 }
 
 TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
@@ -89,15 +89,15 @@ exc = Exception(1,2,3)
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isException());
+  ASSERT_TRUE(exc.isException());
   Exception exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(exception->args()->isTuple());
-  Tuple args(&scope, exception->args());
-  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
-  EXPECT_EQ(args->at(1), SmallInt::fromWord(2));
-  EXPECT_EQ(args->at(2), SmallInt::fromWord(3));
+  ASSERT_TRUE(exception.args()->isTuple());
+  Tuple args(&scope, exception.args());
+  EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(args.at(1), SmallInt::fromWord(2));
+  EXPECT_EQ(args.at(2), SmallInt::fromWord(3));
 }
 
 TEST(ExceptionBuiltinsTest, SimpleExceptionTypesCanBeConstructed) {
@@ -120,13 +120,13 @@ rt_error = RuntimeError()
   BaseException rt_error(&scope, moduleAt(&runtime, "__main__", "rt_error"));
 
   EXPECT_TRUE(runtime.isInstanceOfBaseException(*attr_error));
-  EXPECT_EQ(attr_error->layoutId(), LayoutId::kAttributeError);
+  EXPECT_EQ(attr_error.layoutId(), LayoutId::kAttributeError);
   EXPECT_TRUE(runtime.isInstanceOfBaseException(*name_error));
-  EXPECT_EQ(name_error->layoutId(), LayoutId::kNameError);
+  EXPECT_EQ(name_error.layoutId(), LayoutId::kNameError);
   EXPECT_TRUE(runtime.isInstanceOfBaseException(*value_error));
-  EXPECT_EQ(value_error->layoutId(), LayoutId::kValueError);
+  EXPECT_EQ(value_error.layoutId(), LayoutId::kValueError);
   EXPECT_TRUE(runtime.isInstanceOfBaseException(*rt_error));
-  EXPECT_EQ(rt_error->layoutId(), LayoutId::kRuntimeError);
+  EXPECT_EQ(rt_error.layoutId(), LayoutId::kRuntimeError);
 }
 
 TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesHaveCorrectHierarchy) {
@@ -144,9 +144,9 @@ key_is_lookup = issubclass(KeyError, LookupError)
                        moduleAt(&runtime, "__main__", "index_is_lookup"));
   Bool key_is_lookup(&scope, moduleAt(&runtime, "__main__", "key_is_lookup"));
 
-  EXPECT_TRUE(lookup_is_exc->value());
-  EXPECT_TRUE(index_is_lookup->value());
-  EXPECT_TRUE(key_is_lookup->value());
+  EXPECT_TRUE(lookup_is_exc.value());
+  EXPECT_TRUE(index_is_lookup.value());
+  EXPECT_TRUE(key_is_lookup.value());
 }
 
 TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesCanBeConstructed) {
@@ -207,9 +207,9 @@ exc = TypeError()
   BaseException exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(exception->args()->isTuple());
-  Tuple args(&scope, exception->args());
-  EXPECT_EQ(args->length(), 0);
+  ASSERT_TRUE(exception.args()->isTuple());
+  Tuple args(&scope, exception.args());
+  EXPECT_EQ(args.length(), 0);
 }
 
 TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
@@ -221,16 +221,16 @@ exc = StopIteration()
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isStopIteration());
+  ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
   // No constructor arguments so value should be none.
-  EXPECT_TRUE(stop_iteration->value()->isNoneType());
+  EXPECT_TRUE(stop_iteration.value()->isNoneType());
 
   // No constructor arguments means args should contain an empty tuple.
-  ASSERT_TRUE(stop_iteration->args()->isTuple());
-  Tuple args(&scope, stop_iteration->args());
-  EXPECT_EQ(args->length(), 0);
+  ASSERT_TRUE(stop_iteration.args()->isTuple());
+  Tuple args(&scope, stop_iteration.args());
+  EXPECT_EQ(args.length(), 0);
 }
 
 TEST(ExceptionBuiltinsTest, StopIterationOneArgument) {
@@ -242,17 +242,17 @@ exc = StopIteration(1)
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isStopIteration());
+  ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
   // The value attribute should contain the first constructor argument.
-  EXPECT_EQ(stop_iteration->value(), SmallInt::fromWord(1));
+  EXPECT_EQ(stop_iteration.value(), SmallInt::fromWord(1));
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(stop_iteration->args()->isTuple());
-  Tuple args(&scope, stop_iteration->args());
-  ASSERT_EQ(args->length(), 1);
-  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
+  ASSERT_TRUE(stop_iteration.args()->isTuple());
+  Tuple args(&scope, stop_iteration.args());
+  ASSERT_EQ(args.length(), 1);
+  EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
 }
 
 TEST(ExceptionBuiltinsTest, StopIterationManyArguments) {
@@ -264,19 +264,19 @@ exc = StopIteration(4, 5, 6)
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isStopIteration());
+  ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
   // The value attribute should contain the first constructor argument.
-  EXPECT_EQ(stop_iteration->value(), SmallInt::fromWord(4));
+  EXPECT_EQ(stop_iteration.value(), SmallInt::fromWord(4));
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(stop_iteration->args()->isTuple());
-  Tuple args(&scope, stop_iteration->args());
-  ASSERT_EQ(args->length(), 3);
-  EXPECT_EQ(args->at(0), SmallInt::fromWord(4));
-  EXPECT_EQ(args->at(1), SmallInt::fromWord(5));
-  EXPECT_EQ(args->at(2), SmallInt::fromWord(6));
+  ASSERT_TRUE(stop_iteration.args()->isTuple());
+  Tuple args(&scope, stop_iteration.args());
+  ASSERT_EQ(args.length(), 3);
+  EXPECT_EQ(args.at(0), SmallInt::fromWord(4));
+  EXPECT_EQ(args.at(1), SmallInt::fromWord(5));
+  EXPECT_EQ(args.at(2), SmallInt::fromWord(6));
 }
 
 TEST(ExceptionBuiltinsTest, NotImplementedErrorNoArguments) {
@@ -294,7 +294,7 @@ exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
 
   EXPECT_TRUE(runtime.isInstanceOfBaseException(*exc));
 
-  EXPECT_TRUE(exc_is_rt_error->value());
+  EXPECT_TRUE(exc_is_rt_error.value());
 }
 
 TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
@@ -306,16 +306,16 @@ exc = SystemExit()
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isSystemExit());
+  ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
-  ASSERT_TRUE(system_exit->args()->isTuple());
+  ASSERT_TRUE(system_exit.args()->isTuple());
 
   // No constructor arguments so code should be none.
-  EXPECT_TRUE(system_exit->code()->isNoneType());
+  EXPECT_TRUE(system_exit.code()->isNoneType());
 
   // No constructor arguments means args should contain an empty tuple.
-  Tuple args(&scope, system_exit->args());
-  EXPECT_EQ(args->length(), 0);
+  Tuple args(&scope, system_exit.args());
+  EXPECT_EQ(args.length(), 0);
 }
 
 TEST(ExceptionBuiltinsTest, SystemExitOneArgument) {
@@ -327,17 +327,17 @@ exc = SystemExit(1)
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isSystemExit());
+  ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
-  ASSERT_TRUE(system_exit->args()->isTuple());
+  ASSERT_TRUE(system_exit.args()->isTuple());
 
   // The code attribute should contain the first constructor argument.
-  EXPECT_EQ(system_exit->code(), SmallInt::fromWord(1));
+  EXPECT_EQ(system_exit.code(), SmallInt::fromWord(1));
 
   // The args attribute contains a tuple of the constructor arguments.
-  Tuple args(&scope, system_exit->args());
-  ASSERT_EQ(args->length(), 1);
-  EXPECT_EQ(args->at(0), SmallInt::fromWord(1));
+  Tuple args(&scope, system_exit.args());
+  ASSERT_EQ(args.length(), 1);
+  EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
 }
 
 TEST(ExceptionBuiltinsTest, SystemExitManyArguments) {
@@ -349,19 +349,19 @@ exc = SystemExit(4, 5, 6)
 )");
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(exc->isSystemExit());
+  ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
 
   // The code attribute should contain the first constructor argument.
-  EXPECT_EQ(system_exit->code(), SmallInt::fromWord(4));
+  EXPECT_EQ(system_exit.code(), SmallInt::fromWord(4));
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(system_exit->args()->isTuple());
-  Tuple args(&scope, system_exit->args());
-  ASSERT_EQ(args->length(), 3);
-  EXPECT_EQ(args->at(0), SmallInt::fromWord(4));
-  EXPECT_EQ(args->at(1), SmallInt::fromWord(5));
-  EXPECT_EQ(args->at(2), SmallInt::fromWord(6));
+  ASSERT_TRUE(system_exit.args()->isTuple());
+  Tuple args(&scope, system_exit.args());
+  ASSERT_EQ(args.length(), 3);
+  EXPECT_EQ(args.at(0), SmallInt::fromWord(4));
+  EXPECT_EQ(args.at(1), SmallInt::fromWord(5));
+  EXPECT_EQ(args.at(2), SmallInt::fromWord(6));
 }
 
 TEST(ExceptionBuiltinsTest, SystemExitGetValue) {
@@ -375,7 +375,7 @@ result = exc.value
 
   // The value attribute should contain the first constructor argument.
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1111);
 }
 
@@ -384,24 +384,24 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
   HandleScope scope;
   runFromCStr(&runtime, "x = ImportError()");
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(data->isImportError());
+  ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
-  EXPECT_EQ(err->msg(), NoneType::object());
-  EXPECT_EQ(err->path(), NoneType::object());
-  EXPECT_EQ(err->name(), NoneType::object());
+  EXPECT_EQ(err.msg(), NoneType::object());
+  EXPECT_EQ(err.path(), NoneType::object());
+  EXPECT_EQ(err.name(), NoneType::object());
 
-  err->setMsg(SmallInt::fromWord(1111));
-  ASSERT_TRUE(err->msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->msg())->value(), 1111);
+  err.setMsg(SmallInt::fromWord(1111));
+  ASSERT_TRUE(err.msg()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
 
-  err->setPath(SmallInt::fromWord(2222));
-  ASSERT_TRUE(err->path()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->path())->value(), 2222);
+  err.setPath(SmallInt::fromWord(2222));
+  ASSERT_TRUE(err.path()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.path())->value(), 2222);
 
-  err->setName(SmallInt::fromWord(3333));
-  ASSERT_TRUE(err->name()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->name())->value(), 3333);
+  err.setName(SmallInt::fromWord(3333));
+  ASSERT_TRUE(err.name()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.name())->value(), 3333);
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
@@ -409,13 +409,13 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
   HandleScope scope;
   runFromCStr(&runtime, "x = ImportError(1111)");
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(data->isImportError());
+  ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
-  ASSERT_TRUE(err->msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->msg())->value(), 1111);
-  EXPECT_EQ(err->path(), NoneType::object());
-  EXPECT_EQ(err->name(), NoneType::object());
+  ASSERT_TRUE(err.msg()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
+  EXPECT_EQ(err.path(), NoneType::object());
+  EXPECT_EQ(err.name(), NoneType::object());
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
@@ -423,15 +423,15 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
   HandleScope scope;
   runFromCStr(&runtime, "x = ImportError(1111, name=2222, path=3333)");
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(data->isImportError());
+  ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
-  ASSERT_TRUE(err->msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->msg())->value(), 1111);
-  ASSERT_TRUE(err->name()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->name())->value(), 2222);
-  ASSERT_TRUE(err->path()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->path())->value(), 3333);
+  ASSERT_TRUE(err.msg()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
+  ASSERT_TRUE(err.name()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.name())->value(), 2222);
+  ASSERT_TRUE(err.path()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.path())->value(), 3333);
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithInvalidKwargs) {
@@ -451,15 +451,15 @@ exc = ModuleNotFoundError(1111, name=2222, path=3333)
 )");
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_TRUE(data->isModuleNotFoundError());
+  ASSERT_TRUE(data.isModuleNotFoundError());
 
   ModuleNotFoundError err(&scope, *data);
-  ASSERT_TRUE(err->msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->msg())->value(), 1111);
-  ASSERT_TRUE(err->name()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->name())->value(), 2222);
-  ASSERT_TRUE(err->path()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err->path())->value(), 3333);
+  ASSERT_TRUE(err.msg()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
+  ASSERT_TRUE(err.name()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.name())->value(), 2222);
+  ASSERT_TRUE(err.path()->isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(err.path())->value(), 3333);
 }
 
 TEST(ExceptionBuiltinsTest, DunderReprWithNoArgsHasEmptyParens) {

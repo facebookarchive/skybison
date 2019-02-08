@@ -44,7 +44,7 @@ PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
                                                 SymbolId::kAscii, obj));
-  if (result->isError()) {
+  if (result.isError()) {
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
@@ -61,13 +61,13 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
 
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
   Object obj(&scope, handle->asObject());
-  if (obj->isBytes()) {
+  if (obj.isBytes()) {
     handle->incref();
     return pyobj;
   }
 
   Object result(&scope, asBytes(thread, obj));
-  if (result->isError()) return nullptr;
+  if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
 
@@ -83,10 +83,10 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!object->isHeapObject()) return nullptr;
+  if (!object.isHeapObject()) return nullptr;
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object result(&scope, getAttribute(thread, object, name_obj));
-  return result->isError() ? nullptr : ApiHandle::newReference(thread, *result);
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
@@ -94,11 +94,11 @@ PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!object->isHeapObject()) return -1;
+  if (!object.isHeapObject()) return -1;
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   Object result(&scope, setAttribute(thread, object, name_obj, value_obj));
-  return result->isError() ? -1 : 0;
+  return result.isError() ? -1 : 0;
 }
 
 PY_EXPORT int PyObject_GenericSetDict(PyObject* /* j */, PyObject* /* e */,
@@ -126,7 +126,7 @@ PY_EXPORT int PyObject_HasAttr(PyObject* pyobj, PyObject* pyname) {
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object name(&scope, ApiHandle::fromPyObject(pyname)->asObject());
   Object result(&scope, hasAttribute(thread, obj, name));
-  if (result->isBool()) return Bool::cast(*result)->value();
+  if (result.isBool()) return Bool::cast(*result)->value();
   thread->clearPendingException();
   return false;
 }
@@ -167,7 +167,7 @@ PY_EXPORT int PyObject_IsTrue(PyObject* obj) {
   Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Frame* frame = thread->currentFrame();
   Object result(&scope, Interpreter::isTrue(thread, frame, obj_obj));
-  if (result->isError()) {
+  if (result.isError()) {
     return -1;
   }
   return RawBool::cast(*result).value();
@@ -189,7 +189,7 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderRepr));
-  if (result->isError()) {
+  if (result.isError()) {
     return nullptr;
   }
   if (!thread->runtime()->isInstanceOfStr(*result)) {
@@ -215,7 +215,7 @@ PY_EXPORT PyObject* PyObject_RichCompare(PyObject* v, PyObject* w, int op) {
   Object result(&scope, Interpreter::compareOperation(
                             thread, thread->currentFrame(),
                             static_cast<CompareOp>(op), left, right));
-  if (result->isError()) {
+  if (result.isError()) {
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
@@ -255,7 +255,7 @@ PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderStr));
-  if (result->isError()) {
+  if (result.isError()) {
     return nullptr;
   }
   if (!thread->runtime()->isInstanceOfStr(*result)) {

@@ -23,7 +23,7 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isRange()) {
+  if (!self.isRange()) {
     return thread->raiseTypeErrorWithCStr(
         "__getitem__() must be called with a range instance as the first "
         "argument");
@@ -52,7 +52,7 @@ RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isRangeIterator()) {
+  if (!self.isRangeIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__iter__() must be called with a range iterator instance as the first "
         "argument");
@@ -68,13 +68,13 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isRangeIterator()) {
+  if (!self.isRangeIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a range iterator instance as the first "
         "argument");
   }
   Object value(&scope, RawRangeIterator::cast(*self)->next());
-  if (value->isError()) {
+  if (value.isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }
   return *value;
@@ -89,13 +89,13 @@ RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self->isRangeIterator()) {
+  if (!self.isRangeIterator()) {
     return thread->raiseTypeErrorWithCStr(
         "__length_hint__() must be called with a range iterator instance as "
         "the first argument");
   }
   RangeIterator range_iterator(&scope, *self);
-  return SmallInt::fromWord(range_iterator->pendingLength());
+  return SmallInt::fromWord(range_iterator.pendingLength());
 }
 
 }  // namespace python

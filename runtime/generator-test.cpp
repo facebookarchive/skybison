@@ -44,7 +44,7 @@ g.send(7)
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "value"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_TRUE(RawSmallInt::cast(*result)->value() == 10);
 }
 
@@ -104,11 +104,11 @@ for i in g:
        "initial string first second", 0, 1, 2, 3, 4, "finished!"});
 
   // Manually check element 3 for object identity
-  ASSERT_TRUE(result->isList());
+  ASSERT_TRUE(result.isList());
   List list(&scope, *result);
   Object initial(&scope, moduleAt(&runtime, "__main__", "initial_str"));
-  EXPECT_GE(list->numItems(), 3);
-  EXPECT_EQ(list->at(3), *initial);
+  EXPECT_GE(list.numItems(), 3);
+  EXPECT_EQ(list.at(3), *initial);
 }
 
 TEST(GeneratorTest, ReraiseAfterYield) {
@@ -142,7 +142,7 @@ c = coro()
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "c"));
-  EXPECT_TRUE(result->isCoroutine());
+  EXPECT_TRUE(result.isCoroutine());
 }
 
 TEST(CoroutineTest, BadInitialSend) {

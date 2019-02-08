@@ -32,7 +32,7 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   Dict modules_dict(&scope, runtime->modules());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object module(&scope, runtime->dictAt(modules_dict, name_obj));
-  if (module->isModule()) {
+  if (module.isModule()) {
     return ApiHandle::borrowedReference(thread, *module);
   }
 

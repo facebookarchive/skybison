@@ -21,8 +21,8 @@ a = object.__repr__(Foo())
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   // Storage for the class name. It must be shorter than the length of the whole
   // string.
-  char* c_str = a->toCStr();
-  char* class_name = static_cast<char*>(std::malloc(a->length()));
+  char* c_str = a.toCStr();
+  char* class_name = static_cast<char*>(std::malloc(a.length()));
   void* ptr = nullptr;
   int num_written = std::sscanf(c_str, "<%s object at %p>", class_name, &ptr);
   ASSERT_EQ(num_written, 2);
@@ -151,7 +151,7 @@ TEST(NoneBuiltinsTest, DunderReprIsBoundMethod) {
   runFromCStr(&runtime, "a = None.__repr__");
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_TRUE(a->isBoundMethod());
+  EXPECT_TRUE(a.isBoundMethod());
 }
 
 TEST(NoneBuiltinsTest, DunderReprReturnsNone) {

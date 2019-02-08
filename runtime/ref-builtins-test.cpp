@@ -24,7 +24,7 @@ weak = ref(a)
   EXPECT_EQ(RawWeakRef::cast(weak)->callback(), NoneType::object());
 
   Module main(&scope, findModule(&runtime, "__main__"));
-  Dict globals(&scope, main->dict());
+  Dict globals(&scope, main.dict());
   Object key(&scope, runtime.newStrFromCStr("a"));
   runtime.dictRemove(globals, key);
 
@@ -54,7 +54,7 @@ weak = ref(a, f)
   EXPECT_EQ(RawSmallInt::cast(b)->value(), 1);
 
   Module main(&scope, findModule(&runtime, "__main__"));
-  Dict globals(&scope, main->dict());
+  Dict globals(&scope, main.dict());
   Object key(&scope, runtime.newStrFromCStr("a"));
   runtime.dictRemove(globals, key);
 

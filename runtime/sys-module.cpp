@@ -18,7 +18,7 @@ RawObject builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
-  if (obj->isNoneType()) {
+  if (obj.isNoneType()) {
     return NoneType::object();
   }
   UNIMPLEMENTED("sys.displayhook()");

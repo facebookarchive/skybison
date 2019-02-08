@@ -37,13 +37,13 @@ PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
     return -1;
   }
 
-  if (!tupleobj->isTuple()) {
+  if (!tupleobj.isTuple()) {
     UserTupleBase user_tuple(&scope, *tupleobj);
-    tupleobj = user_tuple->tupleValue();
+    tupleobj = user_tuple.tupleValue();
   }
 
   Tuple tuple(&scope, *tupleobj);
-  return tuple->length();
+  return tuple.length();
 }
 
 PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
@@ -58,19 +58,19 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
     return -1;
   }
 
-  if (!tupleobj->isTuple()) {
+  if (!tupleobj.isTuple()) {
     UserTupleBase user_tuple(&scope, *tupleobj);
-    tupleobj = user_tuple->tupleValue();
+    tupleobj = user_tuple.tupleValue();
   }
 
   Tuple tuple(&scope, *tupleobj);
-  if (pos < 0 || pos >= tuple->length()) {
+  if (pos < 0 || pos >= tuple.length()) {
     thread->raiseIndexErrorWithCStr("tuple assignment index out of range");
     return -1;
   }
 
   Object item(&scope, ApiHandle::fromPyObject(pyitem)->asObject());
-  tuple->atPut(pos, *item);
+  tuple.atPut(pos, *item);
   return 0;
 }
 
@@ -84,17 +84,17 @@ PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
     return nullptr;
   }
 
-  if (!tupleobj->isTuple()) {
+  if (!tupleobj.isTuple()) {
     UserTupleBase user_tuple(&scope, *tupleobj);
-    tupleobj = user_tuple->tupleValue();
+    tupleobj = user_tuple.tupleValue();
   }
 
   Tuple tuple(&scope, *tupleobj);
-  if (pos < 0 || pos >= tuple->length()) {
+  if (pos < 0 || pos >= tuple.length()) {
     return nullptr;
   }
 
-  return ApiHandle::borrowedReference(thread, tuple->at(pos));
+  return ApiHandle::borrowedReference(thread, tuple.at(pos));
 }
 
 PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
@@ -108,7 +108,7 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   Tuple tuple(&scope, runtime->newTuple(n));
   for (Py_ssize_t i = 0; i < n; i++) {
     item = va_arg(vargs, PyObject*);
-    tuple->atPut(i, ApiHandle::fromPyObject(item)->asObject());
+    tuple.atPut(i, ApiHandle::fromPyObject(item)->asObject());
   }
   va_end(vargs);
   return ApiHandle::newReference(thread, *tuple);
@@ -133,15 +133,15 @@ PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
   Tuple tuple(&scope, *tuple_obj);
   if (low < 0) {
     low = 0;
-  } else if (low > tuple->length()) {
-    low = tuple->length();
+  } else if (low > tuple.length()) {
+    low = tuple.length();
   }
   if (high < low) {
     high = low;
-  } else if (high > tuple->length()) {
-    high = tuple->length();
+  } else if (high > tuple.length()) {
+    high = tuple.length();
   }
-  if (low == 0 && high == tuple->length() && tuple->isTuple()) {
+  if (low == 0 && high == tuple.length() && tuple.isTuple()) {
     return ApiHandle::newReference(thread, *tuple);
   }
   return ApiHandle::newReference(

@@ -10,7 +10,7 @@ namespace python {
 RawObject asBytes(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderBytes));
-  if (result->isError()) {
+  if (result.isError()) {
     if (!thread->hasPendingException()) {
       // Attribute lookup failed, try PyBytes_FromObject
       return bytesFromIterable(thread, obj);
@@ -30,18 +30,18 @@ RawObject bytesFromIterable(Thread* thread, const Object& obj) {
     UNIMPLEMENTED("strict subclass of bytes");  // TODO(T36619847)
   }
   HandleScope scope(thread);
-  if (obj->isList()) {
+  if (obj.isList()) {
     List list(&scope, *obj);
-    Tuple tuple(&scope, list->items());
-    return bytesFromTuple(thread, tuple, list->numItems());
+    Tuple tuple(&scope, list.items());
+    return bytesFromTuple(thread, tuple, list.numItems());
   }
-  if (obj->isTuple()) {
+  if (obj.isTuple()) {
     Tuple tuple(&scope, *obj);
-    return bytesFromTuple(thread, tuple, tuple->length());
+    return bytesFromTuple(thread, tuple, tuple.length());
   }
   if (!runtime->isInstanceOfStr(*obj)) {
     Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
-    if (iter->isError()) {
+    if (iter.isError()) {
       if (!thread->hasPendingException()) {
         return thread->raiseTypeErrorWithCStr("object is not iterable");
       }
@@ -50,37 +50,37 @@ RawObject bytesFromIterable(Thread* thread, const Object& obj) {
     Frame* frame = thread->currentFrame();
     Object next(&scope, Interpreter::lookupMethod(thread, frame, iter,
                                                   SymbolId::kDunderNext));
-    if (next->isError()) {
+    if (next.isError()) {
       return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
     }
     Object value(&scope, NoneType::object());
     List buffer(&scope, runtime->newList());
     for (;;) {
       value = Interpreter::callMethod1(thread, frame, next, iter);
-      if (value->isError()) {
+      if (value.isError()) {
         if (thread->clearPendingStopIteration()) break;
         return *value;
       }
       runtime->listAdd(buffer, value);
     }
-    Tuple tuple(&scope, buffer->items());
-    return bytesFromTuple(thread, tuple, buffer->numItems());
+    Tuple tuple(&scope, buffer.items());
+    return bytesFromTuple(thread, tuple, buffer.numItems());
   }
 
   return thread->raiseTypeErrorWithCStr("cannot convert object to bytes");
 }
 
 RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
-  DCHECK_BOUND(size, items->length());
+  DCHECK_BOUND(size, items.length());
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Bytes result(&scope, runtime->newBytes(size, 0));
 
   for (word idx = 0; idx < size; idx++) {
-    Object item(&scope, items->at(idx));
+    Object item(&scope, items.at(idx));
     if (!runtime->isInstanceOfInt(*item)) {
       Object index(&scope, thread->invokeMethod1(item, SymbolId::kDunderIndex));
-      if (index->isError()) {
+      if (index.isError()) {
         if (!thread->hasPendingException()) {
           return thread->raiseTypeErrorWithCStr(
               "object cannot be interpreted as an integer");
@@ -97,7 +97,7 @@ RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
     OptInt<byte> current_byte = RawInt::cast(*item).asInt<byte>();
     switch (current_byte.error) {
       case CastError::None:
-        result->byteAtPut(idx, current_byte.value);
+        result.byteAtPut(idx, current_byte.value);
         continue;
       case CastError::Overflow:
       case CastError::Underflow:
@@ -161,7 +161,7 @@ RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
-  return Bool::fromBool(self->compare(*other) == 0);
+  return Bool::fromBool(self.compare(*other) == 0);
 }
 
 RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
@@ -178,7 +178,7 @@ RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
-  return Bool::fromBool(self->compare(*other) >= 0);
+  return Bool::fromBool(self.compare(*other) >= 0);
 }
 
 RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
@@ -196,28 +196,28 @@ RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   // TODO(T27897506): use __index__ to get index
   if (runtime->isInstanceOfInt(*index)) {
     // TODO(T38780562): strict subclass of int
-    if (!index->isSmallInt()) {
+    if (!index.isSmallInt()) {
       return thread->raiseIndexErrorWithCStr(
           "cannot fit index into an index-sized integer");
     }
     word idx = RawSmallInt::cast(*index)->value();
-    word len = self->length();
+    word len = self.length();
     if (idx < 0) idx += len;
     if (idx < 0 || idx >= len) {
       return thread->raiseIndexErrorWithCStr("index out of range");
     }
-    return RawSmallInt::fromWord(static_cast<word>(self->byteAt(idx)));
+    return RawSmallInt::fromWord(static_cast<word>(self.byteAt(idx)));
   }
-  if (index->isSlice()) {
+  if (index.isSlice()) {
     Slice slice(&scope, *index);
     word start, stop, step;
     Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-    if (err->isError()) return *err;
-    word len = RawSlice::adjustIndices(self->length(), &start, &stop, step);
+    if (err.isError()) return *err;
+    word len = RawSlice::adjustIndices(self.length(), &start, &stop, step);
     // TODO(T36997048): intern 1-element byte arrays
     Bytes result(&scope, runtime->newBytes(len, 0));
     for (word i = 0, idx = start; i < len; i++, idx += step) {
-      result->byteAtPut(i, self->byteAt(idx));
+      result.byteAtPut(i, self.byteAt(idx));
     }
     return *result;
   }
@@ -239,7 +239,7 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
-  return Bool::fromBool(self->compare(*other) > 0);
+  return Bool::fromBool(self.compare(*other) > 0);
 }
 
 RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
@@ -256,7 +256,7 @@ RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
-  return Bool::fromBool(self->compare(*other) <= 0);
+  return Bool::fromBool(self.compare(*other) <= 0);
 }
 
 RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
@@ -270,7 +270,7 @@ RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   }
 
   Bytes self(&scope, *self_obj);
-  return SmallInt::fromWord(self->length());
+  return SmallInt::fromWord(self.length());
 }
 
 RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
@@ -287,7 +287,7 @@ RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
-  return Bool::fromBool(self->compare(*other) < 0);
+  return Bool::fromBool(self.compare(*other) < 0);
 }
 
 RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
@@ -304,7 +304,7 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
-  return Bool::fromBool(self->compare(*other) != 0);
+  return Bool::fromBool(self.compare(*other) != 0);
 }
 
 }  // namespace python

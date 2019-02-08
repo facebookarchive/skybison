@@ -27,7 +27,7 @@ PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(op)->asObject());
   Object float_or_err(&scope, asFloatObject(thread, obj));
-  if (float_or_err->isError()) return -1;
+  if (float_or_err.isError()) return -1;
   return RawFloat::cast(*float_or_err)->value();
 }
 

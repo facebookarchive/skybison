@@ -39,7 +39,7 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
 
   HandleScope scope(thread);
   Object result(&scope, runtime->attributeAt(thread, self, name));
-  if (!result->isError()) {
+  if (!result.isError()) {
     return Bool::trueObj();
   }
 
@@ -82,7 +82,7 @@ RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
   Object name(&scope, args.get(1));
   Tuple bases(&scope, runtime->newTuple(nargs - 2));
   for (word i = 0, j = 2; j < nargs; i++, j++) {
-    bases->atPut(i, args.get(j));
+    bases.atPut(i, args.get(j));
   }
 
   // TODO(cshapiro): might need to do some kind of callback here and we want
@@ -106,41 +106,40 @@ RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
 
 static bool isPass(const Code& code) {
   HandleScope scope;
-  Bytes bytes(&scope, code->code());
+  Bytes bytes(&scope, code.code());
   // const_loaded is the index into the consts array that is returned
-  word const_loaded = bytes->byteAt(1);
-  return bytes->length() == 4 && bytes->byteAt(0) == LOAD_CONST &&
-         RawTuple::cast(code->consts()).at(const_loaded).isNoneType() &&
-         bytes->byteAt(2) == RETURN_VALUE && bytes->byteAt(3) == 0;
+  word const_loaded = bytes.byteAt(1);
+  return bytes.length() == 4 && bytes.byteAt(0) == LOAD_CONST &&
+         RawTuple::cast(code.consts()).at(const_loaded).isNoneType() &&
+         bytes.byteAt(2) == RETURN_VALUE && bytes.byteAt(3) == 0;
 }
 
 static void patchFunctionAttrs(Thread* thread, const Function& base,
                                const Function& patch) {
   HandleScope scope(thread);
-  Str method_name(&scope, patch->name());
-  Code patch_code(&scope, patch->code());
+  Str method_name(&scope, patch.name());
+  Code patch_code(&scope, patch.code());
   CHECK(isPass(patch_code),
         "Redefinition of native code method %s in managed code",
-        method_name->toCStr());
-  patch_code->setCode(NoneType::object());
-  base->setCode(*patch_code);
+        method_name.toCStr());
+  patch_code.setCode(NoneType::object());
+  base.setCode(*patch_code);
   // The Python implementation will be used for all of its attributes, except
   // for its code.
-  if (base->annotations()->isNoneType() &&
-      !patch->annotations()->isNoneType()) {
-    base->setAnnotations(patch->annotations());
+  if (base.annotations()->isNoneType() && !patch.annotations()->isNoneType()) {
+    base.setAnnotations(patch.annotations());
   }
-  if (base->defaults()->isNoneType() && !patch->defaults()->isNoneType()) {
-    base->setDefaults(patch->defaults());
+  if (base.defaults()->isNoneType() && !patch.defaults()->isNoneType()) {
+    base.setDefaults(patch.defaults());
   }
-  if (base->doc()->isNoneType() && !patch->doc()->isNoneType()) {
-    base->setDoc(patch->doc());
+  if (base.doc()->isNoneType() && !patch.doc()->isNoneType()) {
+    base.setDoc(patch.doc());
   }
-  if (base->kwDefaults()->isNoneType() && !patch->kwDefaults()->isNoneType()) {
-    base->setKwDefaults(patch->kwDefaults());
+  if (base.kwDefaults()->isNoneType() && !patch.kwDefaults()->isNoneType()) {
+    base.setKwDefaults(patch.kwDefaults());
   }
-  if (base->qualname()->isNoneType() && !patch->qualname()->isNoneType()) {
-    base->setQualname(patch->qualname());
+  if (base.qualname()->isNoneType() && !patch.qualname()->isNoneType()) {
+    base.setQualname(patch.qualname());
   }
 }
 
@@ -151,35 +150,34 @@ static void patchFunctionAttrs(Thread* thread, const Function& base,
 void patchFunctionAttrsInTypeDict(Thread* thread, const Dict& type_dict,
                                   const Function& patch) {
   HandleScope scope(thread);
-  Object patch_code_obj(&scope, patch->code());
-  if (!patch_code_obj->isCode()) {
+  Object patch_code_obj(&scope, patch.code());
+  if (!patch_code_obj.isCode()) {
     return;
   }
 
-  Str method_name(&scope, patch->name());
+  Str method_name(&scope, patch.name());
   Runtime* runtime = thread->runtime();
   Object base_obj(&scope, runtime->typeDictAt(type_dict, method_name));
-  CHECK(base_obj->isFunction(),
+  CHECK(base_obj.isFunction(),
         "Python annotation of non-function native object");
   Function base(&scope, *base_obj);
 
   // The Python implementation will be used only for its attributes, and
   // not for its code.
-  if (base->annotations()->isNoneType() &&
-      !patch->annotations()->isNoneType()) {
-    base->setAnnotations(patch->annotations());
+  if (base.annotations()->isNoneType() && !patch.annotations()->isNoneType()) {
+    base.setAnnotations(patch.annotations());
   }
-  if (base->defaults()->isNoneType() && !patch->defaults()->isNoneType()) {
-    base->setDefaults(patch->defaults());
+  if (base.defaults()->isNoneType() && !patch.defaults()->isNoneType()) {
+    base.setDefaults(patch.defaults());
   }
-  if (base->doc()->isNoneType() && !patch->doc()->isNoneType()) {
-    base->setDoc(patch->doc());
+  if (base.doc()->isNoneType() && !patch.doc()->isNoneType()) {
+    base.setDoc(patch.doc());
   }
-  if (base->kwDefaults()->isNoneType() && !patch->kwDefaults()->isNoneType()) {
-    base->setKwDefaults(patch->kwDefaults());
+  if (base.kwDefaults()->isNoneType() && !patch.kwDefaults()->isNoneType()) {
+    base.setKwDefaults(patch.kwDefaults());
   }
-  if (base->qualname()->isNoneType() && !patch->qualname()->isNoneType()) {
-    base->setQualname(patch->qualname());
+  if (base.qualname()->isNoneType() && !patch.qualname()->isNoneType()) {
+    base.setQualname(patch.qualname());
   }
   patchFunctionAttrs(thread, base, patch);
 }
@@ -187,18 +185,18 @@ void patchFunctionAttrsInTypeDict(Thread* thread, const Dict& type_dict,
 void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Tuple patch_data(&scope, patch->data());
+  Tuple patch_data(&scope, patch.data());
   for (word i = Dict::Bucket::kFirst;
        Dict::Bucket::nextItem(*patch_data, &i);) {
     Str key(&scope, Dict::Bucket::key(*patch_data, i));
     Object patch_value_cell(&scope, Dict::Bucket::value(*patch_data, i));
-    DCHECK(patch_value_cell->isValueCell(),
+    DCHECK(patch_value_cell.isValueCell(),
            "Values in type dict should be ValueCell");
     Object patch_obj(&scope, RawValueCell::cast(*patch_value_cell).value());
 
     if (runtime->dictIncludes(base, key)) {
       // Key is present in the base, so patch the base.
-      CHECK(patch_obj->isFunction(), "Python should only annotate functions");
+      CHECK(patch_obj.isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);
       patchFunctionAttrsInTypeDict(thread, base, patch_fn);
     } else {
@@ -224,19 +222,19 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object bootstrap(&scope, args.getKw(runtime->symbols()->Bootstrap()));
-  if (bootstrap->isError()) {
+  if (bootstrap.isError()) {
     bootstrap = Bool::falseObj();
   }
 
   Object metaclass(&scope, args.getKw(runtime->symbols()->Metaclass()));
-  if (metaclass->isError()) {
+  if (metaclass.isError()) {
     metaclass = runtime->typeAt(LayoutId::kType);
   }
 
   Tuple bases(&scope,
               runtime->newTuple(args.numArgs() - args.numKeywords() - 1));
   for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
-    bases->atPut(i, args.get(j));
+    bases.atPut(i, args.get(j));
   }
 
   Dict type_dict(&scope, runtime->newDict());
@@ -251,12 +249,12 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Dict globals(&scope, frame->previousFrame()->globals());
     Object type_obj(&scope, runtime->moduleDictAt(globals, name));
-    CHECK(type_obj->isType(),
+    CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",
-          name->toCStr());
+          name.toCStr());
     Type type(&scope, *type_obj);
-    type_dict = type->dict();
+    type_dict = type.dict();
 
     Dict patch_type(&scope, runtime->newDict());
     thread->runClassFunction(body, patch_type);
@@ -280,7 +278,7 @@ RawObject Builtins::callable(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object arg(&scope, args.get(0));
-  if (arg->isFunction() || arg->isBoundMethod() || arg->isType()) {
+  if (arg.isFunction() || arg.isBoundMethod() || arg.isType()) {
     return Bool::trueObj();
   }
   Runtime* runtime = thread->runtime();
@@ -291,7 +289,7 @@ RawObject Builtins::callable(Thread* thread, Frame* frame, word nargs) {
   // instance, only __call__ defined on the type.
   Object callable(&scope, thread->runtime()->lookupSymbolInMro(
                               thread, type, SymbolId::kDunderCall));
-  return Bool::fromBool(!callable->isError());
+  return Bool::fromBool(!callable.isError());
 }
 
 RawObject Builtins::chr(Thread* thread, Frame* frame_frame, word nargs) {
@@ -307,7 +305,7 @@ RawObject Builtins::chr(Thread* thread, Frame* frame_frame, word nargs) {
 
 static RawObject compileStr(Thread* thread, const Str& source) {
   HandleScope scope(thread);
-  unique_c_ptr<char[]> source_str(source->toCStr());
+  unique_c_ptr<char[]> source_str(source.toCStr());
   std::unique_ptr<char[]> bytecode_str(
       Runtime::compileFromCStr(source_str.get()));
   source_str.reset();
@@ -342,14 +340,14 @@ RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
         "compile() does not yet support user-supplied optimize");
   }
   // Note: mode doesn't actually do anything yet.
-  if (!mode->equalsCStr("exec") && !mode->equalsCStr("eval") &&
-      !mode->equalsCStr("single")) {
+  if (!mode.equalsCStr("exec") && !mode.equalsCStr("eval") &&
+      !mode.equalsCStr("single")) {
     return thread->raiseValueErrorWithCStr(
         "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
   }
 
   Code code(&scope, compileStr(thread, source_str));
-  code->setFilename(*filename);
+  code.setFilename(*filename);
   return *code;
 }
 
@@ -357,7 +355,7 @@ RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object source_obj(&scope, args.get(0));
-  if (!source_obj->isCode() && !source_obj->isStr()) {
+  if (!source_obj.isCode() && !source_obj.isStr()) {
     return thread->raiseTypeErrorWithCStr(
         "Expected 'source' to be str or code in 'exec'");
   }
@@ -368,11 +366,11 @@ RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
   Object globals_obj(&scope, args.get(1));
   Object locals(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
-  if (globals_obj->isNoneType() &&
-      locals->isNoneType()) {  // neither globals nor locals are provided
+  if (globals_obj.isNoneType() &&
+      locals.isNoneType()) {  // neither globals nor locals are provided
     Frame* caller_frame = frame->previousFrame();
     globals_obj = caller_frame->globals();
-    DCHECK(globals_obj->isDict(),
+    DCHECK(globals_obj.isDict(),
            "Expected caller_frame->globals() to be dict in 'exec'");
     if (caller_frame->globals() != caller_frame->implicitGlobals()) {
       // TODO(T37888835): Fix 1 argument case
@@ -381,7 +379,7 @@ RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
       UNIMPLEMENTED("exec() with 1 argument not at the module level");
     }
     locals = *globals_obj;
-  } else if (!globals_obj->isNoneType()) {  // only globals is provided
+  } else if (!globals_obj.isNoneType()) {  // only globals is provided
     if (!runtime->isInstanceOfDict(*globals_obj)) {
       return thread->raiseTypeErrorWithCStr(
           "Expected 'globals' to be dict in 'exec'");
@@ -399,13 +397,13 @@ RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
     // TODO(T37888835): Fix 3 argument case
     UNIMPLEMENTED("exec() with both globals and locals");
   }
-  if (source_obj->isStr()) {
+  if (source_obj.isStr()) {
     Str source(&scope, *source_obj);
     source_obj = compileStr(thread, source);
-    DCHECK(source_obj->isCode(), "compileStr must return code object");
+    DCHECK(source_obj.isCode(), "compileStr must return code object");
   }
   Code code(&scope, *source_obj);
-  if (code->numFreevars() != 0) {
+  if (code.numFreevars() != 0) {
     return thread->raiseTypeErrorWithCStr(
         "Expected 'source' not to have free variables in 'exec'");
   }
@@ -427,10 +425,10 @@ static RawObject isinstanceImpl(Thread* thread, const Object& obj,
     Tuple types(&scope, *type_obj);
     Object elem(&scope, NoneType::object());
     Object result(&scope, NoneType::object());
-    for (word i = 0, len = types->length(); i < len; i++) {
-      elem = types->at(i);
+    for (word i = 0, len = types.length(); i < len; i++) {
+      elem = types.at(i);
       result = isinstanceImpl(thread, obj, elem);
-      if (result->isError() || result == Bool::trueObj()) return *result;
+      if (result.isError() || result == Bool::trueObj()) return *result;
     }
     return Bool::falseObj();
   }
@@ -464,20 +462,20 @@ RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(runtime->isSubclass(type, possible_superclass));
   }
   // If classinfo is not a tuple, then throw a TypeError.
-  if (!classinfo->isTuple()) {
+  if (!classinfo.isTuple()) {
     return thread->raiseTypeErrorWithCStr(
         "issubclass() arg 2 must be a class of tuple of classes");
   }
   // If classinfo is a tuple, try each of the values, and return
   // True if the first argument is a subclass of any of them.
   Tuple tuple_of_types(&scope, *classinfo);
-  for (word i = 0; i < tuple_of_types->length(); i++) {
+  for (word i = 0; i < tuple_of_types.length(); i++) {
     // If any argument is not a type, then throw TypeError.
-    if (!runtime->isInstanceOfType(tuple_of_types->at(i))) {
+    if (!runtime->isInstanceOfType(tuple_of_types.at(i))) {
       return thread->raiseTypeErrorWithCStr(
           "issubclass() arg 2 must be a class of tuple of classes");
     }
-    Type possible_superclass(&scope, tuple_of_types->at(i));
+    Type possible_superclass(&scope, tuple_of_types.at(i));
     // If any of the types are a superclass, return true.
     if (runtime->isSubclass(type, possible_superclass)) return Bool::trueObj();
   }
@@ -564,7 +562,7 @@ RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
   Object default_obj(&scope, args.get(2));
   Object result(&scope, getAttribute(thread, self, name));
   Runtime* runtime = thread->runtime();
-  if (result->isError() && !default_obj.isUnboundValue()) {
+  if (result.isError() && !default_obj.isUnboundValue()) {
     Type given(&scope, thread->pendingExceptionType());
     Type exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
     if (givenExceptionMatches(thread, given, exc)) {
@@ -605,16 +603,16 @@ RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object patch_fn_obj(&scope, args.get(0));
-  if (!patch_fn_obj->isFunction()) {
+  if (!patch_fn_obj.isFunction()) {
     return thread->raiseTypeErrorWithCStr("_patch expects function argument");
   }
   Function patch_fn(&scope, *patch_fn_obj);
-  Str fn_name(&scope, patch_fn->name());
+  Str fn_name(&scope, patch_fn.name());
   Runtime* runtime = thread->runtime();
-  Object module_name(&scope, patch_fn->module());
+  Object module_name(&scope, patch_fn.module());
   Module module(&scope, runtime->findModule(module_name));
   Object base_fn_obj(&scope, runtime->moduleAt(module, fn_name));
-  if (!base_fn_obj->isFunction()) {
+  if (!base_fn_obj.isFunction()) {
     return thread->raiseTypeErrorWithCStr("_patch can only patch functions");
   }
   Function base_fn(&scope, *base_fn_obj);

@@ -27,9 +27,9 @@ PY_EXPORT char* PyBytes_AsString(PyObject* pyobj) {
   }
   if (void* cache = handle->cache()) return static_cast<char*>(cache);
   Bytes bytes(&scope, *obj);
-  word len = bytes->length();
+  word len = bytes.length();
   auto cache = static_cast<byte*>(std::malloc(len + 1));
-  bytes->copyTo(cache, len);
+  bytes.copyTo(cache, len);
   cache[len] = '\0';
   handle->setCache(cache);
   return reinterpret_cast<char*>(cache);
@@ -116,13 +116,13 @@ PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
   HandleScope scope(thread);
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
   Object obj(&scope, handle->asObject());
-  if (obj->isBytes()) {
+  if (obj.isBytes()) {
     handle->incref();
     return pyobj;
   }
 
   Object result(&scope, bytesFromIterable(thread, obj));
-  if (result->isError()) return nullptr;
+  if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
 
@@ -181,7 +181,7 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
   // TODO(wmeehan): handle delegated subtype of bytes
 
   Bytes bytes(&scope, *bytes_obj);
-  return bytes->length();
+  return bytes.length();
 }
 
 PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
@@ -199,12 +199,12 @@ PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
     return -1;
   }
   Bytes bytes(&scope, *obj);
-  if (bytes->length() == newsize) return 0;
+  if (bytes.length() == newsize) return 0;
   // we don't check here that Py_REFCNT(*pyobj) == 1
   Bytes resized(&scope, runtime->newBytes(newsize, 0));
-  word min_size = Utils::minimum(bytes->length(), static_cast<word>(newsize));
+  word min_size = Utils::minimum(bytes.length(), static_cast<word>(newsize));
   for (word i = 0; i < min_size; i++) {
-    resized->byteAtPut(i, bytes->byteAt(i));
+    resized.byteAtPut(i, bytes.byteAt(i));
   }
   *pyobj = ApiHandle::newReference(thread, *resized);
   handle->decref();

@@ -20,8 +20,8 @@
 namespace python {
 
 std::ostream& operator<<(std::ostream& os, const Str& str) {
-  unique_c_ptr<char[]> data(str->toCStr());
-  return os.write(data.get(), str->length());
+  unique_c_ptr<char[]> data(str.toCStr());
+  return os.write(data.get(), str.length());
 }
 
 std::ostream& operator<<(std::ostream& os, CastError err) {
@@ -113,7 +113,7 @@ template <typename T1, typename T2>
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
 
-  if (!actual->isList()) {
+  if (!actual.isList()) {
     return ::testing::AssertionFailure()
            << " Type of: " << actual_expr << "\n"
            << "  Actual: " << typeName(runtime, *actual) << "\n"
@@ -122,15 +122,15 @@ template <typename T1, typename T2>
 
   HandleScope scope(thread);
   List list(&scope, *actual);
-  if (static_cast<size_t>(list->numItems()) != expected.size()) {
+  if (static_cast<size_t>(list.numItems()) != expected.size()) {
     return ::testing::AssertionFailure()
            << "Length of: " << actual_expr << "\n"
-           << "   Actual: " << list->numItems() << "\n"
+           << "   Actual: " << list.numItems() << "\n"
            << " Expected: " << expected.size();
   }
 
   for (size_t i = 0; i < expected.size(); i++) {
-    Object actual_item(&scope, list->at(i));
+    Object actual_item(&scope, list.at(i));
     const Value& expected_item = expected[i];
 
     auto bad_type = [&](const char* expected_type) {
@@ -142,12 +142,12 @@ template <typename T1, typename T2>
 
     switch (expected_item.type()) {
       case Value::Type::None: {
-        if (!actual_item->isNoneType()) return bad_type("RawNoneType");
+        if (!actual_item.isNoneType()) return bad_type("RawNoneType");
         break;
       }
 
       case Value::Type::Bool: {
-        if (!actual_item->isBool()) return bad_type("bool");
+        if (!actual_item.isBool()) return bad_type("bool");
         auto const actual_val = RawBool::cast(*actual_item) == Bool::trueObj();
         auto const expected_val = expected_item.boolVal();
         if (actual_val != expected_val) {
@@ -158,19 +158,19 @@ template <typename T1, typename T2>
       }
 
       case Value::Type::Int: {
-        if (!actual_item->isInt()) return bad_type("int");
+        if (!actual_item.isInt()) return bad_type("int");
         Int actual_val(&scope, *actual_item);
         Int expected_val(&scope, runtime->newInt(expected_item.intVal()));
-        if (actual_val->compare(*expected_val) != 0) {
+        if (actual_val.compare(*expected_val) != 0) {
           // TODO(bsimmers): Support multi-digit values when we can print them.
-          return badListValue(actual_expr, i, actual_val->digitAt(0),
+          return badListValue(actual_expr, i, actual_val.digitAt(0),
                               expected_item.intVal());
         }
         break;
       }
 
       case Value::Type::Float: {
-        if (!actual_item->isFloat()) return bad_type("float");
+        if (!actual_item.isFloat()) return bad_type("float");
         auto const actual_val = RawFloat::cast(*actual_item)->value();
         auto const expected_val = expected_item.floatVal();
         if (std::abs(actual_val - expected_val) >= DBL_EPSILON) {
@@ -180,10 +180,10 @@ template <typename T1, typename T2>
       }
 
       case Value::Type::Str: {
-        if (!actual_item->isStr()) return bad_type("str");
+        if (!actual_item.isStr()) return bad_type("str");
         Str actual_val(&scope, *actual_item);
         const char* expected_val = expected_item.strVal();
-        if (!actual_val->equalsCStr(expected_val)) {
+        if (!actual_val.equalsCStr(expected_val)) {
           return badListValue(actual_expr, i, actual_val, expected_val);
         }
         break;
@@ -229,21 +229,21 @@ std::string callFunctionToString(const Function& func, const Tuple& args) {
 RawObject callFunction(const Function& func, const Tuple& args) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  Code code(&scope, func->code());
+  Code code(&scope, func.code());
   Frame* frame =
-      thread->pushNativeFrame(bit_cast<void*>(&callFunction), args->length());
+      thread->pushNativeFrame(bit_cast<void*>(&callFunction), args.length());
   frame->pushValue(*func);
-  for (word i = 0; i < args->length(); i++) {
-    frame->pushValue(args->at(i));
+  for (word i = 0; i < args.length(); i++) {
+    frame->pushValue(args.at(i));
   }
-  Object result(&scope, func->entry()(thread, frame, code->argcount()));
+  Object result(&scope, func.entry()(thread, frame, code.argcount()));
   thread->popFrame();
   return *result;
 }
 
 bool tupleContains(const Tuple& object_array, const Object& key) {
-  for (word i = 0; i < object_array->length(); i++) {
-    if (Object::equals(object_array->at(i), *key)) {
+  for (word i = 0; i < object_array.length(); i++) {
+    if (Object::equals(object_array.at(i), *key)) {
       return true;
     }
   }
@@ -266,7 +266,7 @@ RawObject moduleAt(Runtime* runtime, const char* module_name,
                    const char* name) {
   HandleScope scope;
   Object mod_obj(&scope, findModule(runtime, module_name));
-  if (mod_obj->isNoneType()) {
+  if (mod_obj.isNoneType()) {
     return Error::object();
   }
   Module module(&scope, *mod_obj);
@@ -378,10 +378,10 @@ RawObject listFromRange(word start, word stop) {
            << "is a '" << typeName(runtime, *str2) << "'";
   }
   Str s1(&scope, *str1);
-  if (!s1->equals(*str2)) {
+  if (!s1.equals(*str2)) {
     Str s2(&scope, *str2);
     return ::testing::AssertionFailure()
-           << "is not equal to '" << s2->toCStr() << "'";
+           << "is not equal to '" << s2.toCStr() << "'";
   }
   return ::testing::AssertionSuccess();
 }
@@ -396,9 +396,9 @@ RawObject listFromRange(word start, word stop) {
            << "is a '" << typeName(runtime, *str_obj) << "'";
   }
   Str str(&scope, *str_obj);
-  if (!str->equalsCStr(c_str)) {
+  if (!str.equalsCStr(c_str)) {
     return ::testing::AssertionFailure()
-           << "'" << str->toCStr() << "' is not equal to '" << c_str << "'";
+           << "'" << str.toCStr() << "' is not equal to '" << c_str << "'";
   }
   return ::testing::AssertionSuccess();
 }
@@ -415,9 +415,9 @@ RawObject listFromRange(word start, word stop) {
   HandleScope scope(thread);
   Object return_value_obj(&scope, return_value);
 
-  if (!return_value_obj->isError()) {
+  if (!return_value_obj.isError()) {
     Type type(&scope, runtime->typeOf(*return_value_obj));
-    Str name(&scope, type->name());
+    Str name(&scope, type.name());
     return ::testing::AssertionFailure()
            << "call returned " << name << ", not Error";
   }
@@ -429,8 +429,8 @@ RawObject listFromRange(word start, word stop) {
   Type expected_type(&scope, runtime->typeAt(layout_id));
   Type exception_type(&scope, thread->pendingExceptionType());
   if (!runtime->isSubclass(exception_type, expected_type)) {
-    Str expected_name(&scope, expected_type->name());
-    Str actual_name(&scope, exception_type->name());
+    Str expected_name(&scope, expected_type.name());
+    Str actual_name(&scope, exception_type.name());
     return ::testing::AssertionFailure()
            << "\npending exception has type:\n  " << actual_name
            << "\nexpected:\n  " << expected_name << "\n";
@@ -442,12 +442,12 @@ RawObject listFromRange(word start, word stop) {
   if (!runtime->isInstanceOfStr(*exc_value)) {
     if (runtime->isInstanceOfBaseException(*exc_value)) {
       BaseException exc(&scope, *exc_value);
-      Tuple args(&scope, exc->args());
-      if (args->length() == 0) {
+      Tuple args(&scope, exc.args());
+      if (args.length() == 0) {
         return ::testing::AssertionFailure()
                << "pending exception args tuple is empty";
       }
-      exc_value = args->at(0);
+      exc_value = args.at(0);
     }
 
     if (!runtime->isInstanceOfStr(*exc_value)) {
@@ -457,7 +457,7 @@ RawObject listFromRange(word start, word stop) {
   }
 
   Str exc_msg(&scope, *exc_value);
-  if (!exc_msg->equalsCStr(expected)) {
+  if (!exc_msg.equalsCStr(expected)) {
     return ::testing::AssertionFailure()
            << "\npending exception value:\n  '" << exc_msg
            << "'\nexpected:\n  '" << expected << "'\n";

@@ -142,11 +142,11 @@ PY_EXPORT int _PyUnicodeWriter_WriteStr(_PyUnicodeWriter* writer,
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
-  Py_ssize_t len = src->length();
+  Py_ssize_t len = src.length();
   if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
   for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
     PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
-                    src->charAt(i));
+                    src.charAt(i));
   }
   return 0;
 }
@@ -163,7 +163,7 @@ PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
   Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
   for (Py_ssize_t i = start; i < end; ++i, writer->pos++) {
     PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
-                    src->charAt(i));
+                    src.charAt(i));
   }
   return 0;
 }
@@ -501,7 +501,7 @@ PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
 
   HandleScope scope;
   Str str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
-  return str->equalsCStr(c_str);
+  return str.equalsCStr(c_str);
 }
 
 PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {
@@ -509,7 +509,7 @@ PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {
   HandleScope scope(thread);
   Str lhs(&scope, ApiHandle::fromPyObject(aa)->asObject());
   Str rhs(&scope, ApiHandle::fromPyObject(bb)->asObject());
-  word diff = lhs->compare(*rhs);
+  word diff = lhs.compare(*rhs);
   return diff == 0 ? 1 : 0;
 }
 
@@ -550,7 +550,7 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
 
   auto handle = ApiHandle::fromPyObject(pyunicode);
   Object obj(&scope, handle->asObject());
-  if (!obj->isStr()) {
+  if (!obj.isStr()) {
     if (thread->runtime()->isInstanceOfStr(*obj)) {
       UNIMPLEMENTED("RawStr subclass");
     }
@@ -559,11 +559,11 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
   }
 
   Str str(&scope, *obj);
-  word length = str->length();
+  word length = str.length();
   if (size) *size = length;
   if (void* cache = handle->cache()) return static_cast<char*>(cache);
   auto result = static_cast<byte*>(std::malloc(length + 1));
-  str->copyTo(result, length);
+  str.copyTo(result, length);
   result[length] = '\0';
   handle->setCache(result);
   return reinterpret_cast<char*>(result);
@@ -733,15 +733,15 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
   if (runtime->isInstanceOfStr(*left_obj) &&
       runtime->isInstanceOfStr(*right_obj)) {
     Str left_str(&scope, *left_obj);
-    return left_str->compare(*right_obj);
+    return left_str.compare(*right_obj);
   }
 
   Str ltype(&scope, Type::cast(runtime->typeOf(*left_obj))->name());
   Str rtype(&scope, Type::cast(runtime->typeOf(*right_obj))->name());
   // TODO(T32655200): Once we have a real string formatter, use that instead of
   // converting the names to C strings here.
-  unique_c_ptr<char> ltype_name(ltype->toCStr());
-  unique_c_ptr<char> rtype_name(rtype->toCStr());
+  unique_c_ptr<char> ltype_name(ltype.toCStr());
+  unique_c_ptr<char> rtype_name(rtype.toCStr());
 
   thread->raiseTypeError(runtime->newStrFromFormat(
       "Can't compare %.100s and %.100s", ltype_name.get(), rtype_name.get()));
@@ -755,7 +755,7 @@ PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str) {
   // TODO(atalaba): Allow for proper comparison against Latin-1 strings. For
   // example, in CPython: "\xC3\xA9" (UTF-8) == "\xE9" (Latin-1), and
   // "\xE9 longer" > "\xC3\xA9".
-  return str_obj->compareCStr(str);
+  return str_obj.compareCStr(str);
 }
 
 PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
@@ -774,7 +774,7 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
   Str left_str(&scope, *left_obj);
   Str right_str(&scope, *right_obj);
   word dummy;
-  if (__builtin_add_overflow(left_str->length(), right_str->length(), &dummy)) {
+  if (__builtin_add_overflow(left_str.length(), right_str.length(), &dummy)) {
     thread->raiseOverflowErrorWithCStr("strings are too large to concat");
     return nullptr;
   }
@@ -1084,13 +1084,13 @@ PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* py_str) {
     return -1;
   }
 
-  if (!str_obj->isStr()) {
+  if (!str_obj.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
 
   Str str(&scope, *str_obj);
-  return str->length();  // TODO(T36613745): this should return the number of
-                         // code points, not bytes
+  return str.length();  // TODO(T36613745): this should return the number of
+                        // code points, not bytes
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
@@ -1104,13 +1104,13 @@ PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
     return -1;
   }
 
-  if (!str_obj->isStr()) {
+  if (!str_obj.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
 
   Str str(&scope, *str_obj);
-  return str->length();  // TODO(T36613745): this should return the number of
-                         // code units, not bytes
+  return str.length();  // TODO(T36613745): this should return the number of
+                        // code units, not bytes
 }
 
 PY_EXPORT PyObject* PyUnicode_InternFromString(const char* /* p */) {

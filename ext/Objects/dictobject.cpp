@@ -63,7 +63,7 @@ static PyObject* getItem(Thread* thread, const Object& dict_obj,
   HandleScope scope(thread);
   Dict dict(&scope, *dict_obj);
   Object value(&scope, runtime->dictAt(dict, key_obj));
-  if (value->isError()) return nullptr;
+  if (value.isError()) return nullptr;
   return ApiHandle::borrowedReference(thread, *value);
 }
 
@@ -92,8 +92,8 @@ PY_EXPORT void PyDict_Clear(PyObject* pydict) {
     return;
   }
   Dict dict(&scope, *dict_obj);
-  dict->setNumItems(0);
-  dict->setData(runtime->newTuple(0));
+  dict.setNumItems(0);
+  dict.setData(runtime->newTuple(0));
 }
 
 PY_EXPORT int PyDict_ClearFreeList() { return 0; }
@@ -138,13 +138,13 @@ PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
   Frame* frame = thread->currentFrame();
   Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key_obj,
                                                        SymbolId::kDunderHash));
-  if (dunder_hash->isNoneType()) {
+  if (dunder_hash.isNoneType()) {
     thread->raiseTypeErrorWithCStr("unhashable object");
     return -1;
   }
   Object key_hash(
       &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key_obj));
-  if (key_hash->isError()) {
+  if (key_hash.isError()) {
     thread->raiseTypeErrorWithCStr("key is not hashable");
     return -1;
   }
@@ -177,19 +177,19 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key_obj,
                                                        SymbolId::kDunderHash));
-  if (dunder_hash->isNoneType()) {
+  if (dunder_hash.isNoneType()) {
     thread->raiseTypeErrorWithCStr("unhashable object");
     return nullptr;
   }
   Object key_hash(
       &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key_obj));
-  if (key_hash->isError()) {
+  if (key_hash.isError()) {
     thread->raiseTypeErrorWithCStr("key is not hashable");
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
   Object value(&scope, runtime->dictAtWithHash(dict, key_obj, key_hash));
-  if (value->isError()) {
+  if (value.isError()) {
     return nullptr;
   }
   return ApiHandle::borrowedReference(thread, *value);
@@ -206,8 +206,8 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   }
   Dict dict(&scope, *dict_obj);
   List items(&scope, runtime->newList());
-  items->setNumItems(dict->numItems());
-  items->setItems(runtime->dictItems(thread, dict));
+  items.setNumItems(dict.numItems());
+  items.setItems(runtime->dictItems(thread, dict));
   return ApiHandle::newReference(thread, *items);
 }
 
@@ -223,8 +223,8 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
   Dict dict(&scope, *dict_obj);
   Tuple keys_tuple(&scope, runtime->dictKeys(dict));
   List keys(&scope, runtime->newList());
-  keys->setItems(*keys_tuple);
-  keys->setNumItems(keys_tuple->length());
+  keys.setItems(*keys_tuple);
+  keys.setNumItems(keys_tuple.length());
   return ApiHandle::newReference(thread, *keys);
 }
 
@@ -265,7 +265,7 @@ PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
     return 0;
   }
   Dict dict(&scope, *dict_obj);
-  Tuple dict_data(&scope, dict->data());
+  Tuple dict_data(&scope, dict.data());
   if (!Dict::Bucket::nextItem(*dict_data, ppos)) {
     return false;
   }
@@ -293,7 +293,7 @@ PY_EXPORT Py_ssize_t PyDict_Size(PyObject* p) {
   }
 
   Dict dict(&scope, *dict_obj);
-  return dict->numItems();
+  return dict.numItems();
 }
 
 PY_EXPORT int PyDict_Update(PyObject* left, PyObject* right) {
@@ -311,8 +311,8 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   }
   Dict dict(&scope, *dict_obj);
   List values(&scope, runtime->newList());
-  values->setNumItems(dict->numItems());
-  values->setItems(runtime->dictValues(thread, dict));
+  values.setNumItems(dict.numItems());
+  values.setItems(runtime->dictValues(thread, dict));
   return ApiHandle::newReference(thread, *values);
 }
 

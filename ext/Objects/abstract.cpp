@@ -23,7 +23,7 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object len(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
-  if (len->isError()) {
+  if (len.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("object has no __len__()");
     }
@@ -37,7 +37,7 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   } else {
     Object len_index(&scope,
                      thread->invokeMethod1(len, SymbolId::kDunderIndex));
-    if (len_index->isError()) {
+    if (len_index.isError()) {
       if (!thread->hasPendingException()) {
         thread->raiseTypeErrorWithCStr(
             "__len__() cannot be interpreted as an integer");
@@ -90,7 +90,7 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
     // End of iterable
     return nullptr;
   }
-  if (next->isError()) {
+  if (next.isError()) {
     // Method lookup or call failed
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("failed to call __next__ on iterable");
@@ -168,24 +168,24 @@ static RawObject doBinaryOpImpl(Thread* thread, Interpreter::BinaryOp op,
       Interpreter::lookupMethod(thread, caller, right, swapped_selector));
 
   bool try_other = true;
-  if (!left_method->isError()) {
+  if (!left_method.isError()) {
     if (runtime->shouldReverseBinaryOperation(
             thread, left, left_reversed_method, right, right_reversed_method)) {
       Object result(
           &scope, Interpreter::callMethod2(thread, caller,
                                            right_reversed_method, right, left));
-      if (!result->isNotImplemented()) return *result;
+      if (!result.isNotImplemented()) return *result;
       try_other = false;
     }
     Object result(&scope, Interpreter::callMethod2(thread, caller, left_method,
                                                    left, right));
-    if (!result->isNotImplemented()) return *result;
+    if (!result.isNotImplemented()) return *result;
   }
-  if (try_other && !right_reversed_method->isError()) {
+  if (try_other && !right_reversed_method.isError()) {
     Object result(
         &scope, Interpreter::callMethod2(thread, caller, right_reversed_method,
                                          right, left));
-    if (!result->isNotImplemented()) return *result;
+    if (!result.isNotImplemented()) return *result;
   }
   return Error::object();
 }
@@ -199,7 +199,7 @@ static PyObject* doBinaryOp(PyObject* v, PyObject* w,
   Object left(&scope, ApiHandle::fromPyObject(v)->asObject());
   Object right(&scope, ApiHandle::fromPyObject(w)->asObject());
   Object result(&scope, doBinaryOpImpl(thread, op, left, right));
-  if (!result->isError()) {
+  if (!result.isError()) {
     return ApiHandle::newReference(thread, *result);
   }
 
@@ -207,8 +207,8 @@ static PyObject* doBinaryOp(PyObject* v, PyObject* w,
   // converting the names to C strings here.
   Str ltype(&scope, Type::cast(runtime->typeOf(*left))->name());
   Str rtype(&scope, Type::cast(runtime->typeOf(*right))->name());
-  unique_c_ptr<char> ltype_name(ltype->toCStr());
-  unique_c_ptr<char> rtype_name(rtype->toCStr());
+  unique_c_ptr<char> ltype_name(ltype.toCStr());
+  unique_c_ptr<char> rtype_name(rtype.toCStr());
   thread->raiseTypeError(runtime->newStrFromFormat(
       "Cannot do binary op %ld for types '%s' and '%s'", static_cast<word>(op),
       ltype_name.get(), rtype_name.get()));
@@ -315,7 +315,7 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
     return item;
   }
   Object index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
-  if (index->isError()) {
+  if (index.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr(
           "object cannot be interpreted as an integer");
@@ -438,7 +438,7 @@ PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
   // TODO(T30925218): CPython tracks recursive calls before calling the function
   // through Py_EnterRecursiveCall, and we should probably do the same
   Object result(&scope, Interpreter::call(thread, frame, nargs));
-  if (result->isError()) return nullptr;
+  if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
 
@@ -517,7 +517,7 @@ PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
   Runtime* runtime = thread->runtime();
-  if (iter->isError()) {
+  if (iter.isError()) {
     // If the object is a sequence, make a new sequence iterator. It doesn't
     // need to have __iter__.
     if (runtime->isSequence(thread, obj)) {
@@ -609,7 +609,7 @@ PY_EXPORT int PySequence_Contains(PyObject* seq, PyObject* obj) {
   Object result(
       &scope, thread->invokeFunction2(SymbolId::kOperator, SymbolId::kContains,
                                       seq_obj, object));
-  if (result->isError()) {
+  if (result.isError()) {
     return -1;
   }
   return RawBool::cast(*result).value() ? 1 : 0;
@@ -627,7 +627,7 @@ PY_EXPORT Py_ssize_t PySequence_Count(PyObject* seq, PyObject* obj) {
   Object result(&scope,
                 thread->invokeFunction2(SymbolId::kOperator, SymbolId::kCountOf,
                                         seq_obj, object));
-  if (result->isError()) {
+  if (result.isError()) {
     return -1;
   }
   return RawSmallInt::cast(*result).value();
@@ -647,7 +647,7 @@ PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
   Object idx_obj(&scope, SmallInt::fromWord(idx));
   Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem,
                                               idx_obj));
-  if (result->isError()) {
+  if (result.isError()) {
     return -1;
   }
   return 0;
@@ -676,7 +676,7 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   Object idx_obj(&scope, SmallInt::fromWord(idx));
   Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetItem,
                                               idx_obj));
-  if (result->isError()) {
+  if (result.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("could not call __getitem__");
     }
@@ -706,7 +706,7 @@ PY_EXPORT Py_ssize_t PySequence_Index(PyObject* seq, PyObject* obj) {
   Object result(&scope,
                 thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIndexOf,
                                         seq_obj, object));
-  if (result->isError()) {
+  if (result.isError()) {
     return -1;
   }
   return RawSmallInt::cast(*result).value();
@@ -767,7 +767,7 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
     result = thread->invokeMethod3(seq_obj, SymbolId::kDunderSetItem, idx_obj,
                                    object);
   }
-  if (result->isError()) {
+  if (result.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("could not call __setitem__");
     }

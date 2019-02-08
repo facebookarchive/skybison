@@ -26,7 +26,7 @@ import _warnings
 result = _warnings.warn("something went wrong")
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(result->isNoneType());
+  EXPECT_TRUE(result.isNoneType());
 }
 
 TEST(WarningsModuleTest, WarnWithNoArgsRaisesTypeError) {

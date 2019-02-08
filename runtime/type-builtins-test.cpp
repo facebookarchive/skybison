@@ -20,11 +20,11 @@ c = C()
 )");
 
   Type type(&scope, moduleAt(&runtime, "__main__", "C"));
-  ASSERT_FALSE(type->isError());
+  ASSERT_FALSE(type.isError());
   Object instance(&scope, moduleAt(&runtime, "__main__", "c"));
-  ASSERT_FALSE(instance->isError());
+  ASSERT_FALSE(instance.isError());
   Object instance_type(&scope, runtime.typeOf(*instance));
-  ASSERT_FALSE(instance_type->isError());
+  ASSERT_FALSE(instance_type.isError());
 
   EXPECT_EQ(*type, *instance_type);
 }
@@ -44,8 +44,8 @@ C()
 )");
 
   Object global(&scope, moduleAt(&runtime, "__main__", "g"));
-  ASSERT_FALSE(global->isError());
-  ASSERT_TRUE(global->isSmallInt());
+  ASSERT_FALSE(global.isError());
+  ASSERT_TRUE(global.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*global)->value(), 2);
 }
 
@@ -64,8 +64,8 @@ C(9)
 )");
 
   Object global(&scope, moduleAt(&runtime, "__main__", "g"));
-  ASSERT_FALSE(global->isError());
-  ASSERT_TRUE(global->isSmallInt());
+  ASSERT_FALSE(global.isError());
+  ASSERT_TRUE(global.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*global)->value(), 9);
 }
 
@@ -73,7 +73,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Runtime runtime;
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setArgcount(1);
+  code.setArgcount(1);
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
   frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
@@ -134,8 +134,8 @@ b = type.__new__(type, "hello");
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
   Type b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  EXPECT_EQ(RawLayout::cast(a->instanceLayout())->id(), LayoutId::kSmallInt);
-  EXPECT_EQ(RawLayout::cast(b->instanceLayout())->id(), LayoutId::kSmallStr);
+  EXPECT_EQ(RawLayout::cast(a.instanceLayout())->id(), LayoutId::kSmallInt);
+  EXPECT_EQ(RawLayout::cast(b.instanceLayout())->id(), LayoutId::kSmallStr);
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneMetaclassArgReturnsType) {
@@ -147,7 +147,7 @@ class Foo(type):
 a = type.__new__(type, Foo);
 )");
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_EQ(RawLayout::cast(a->instanceLayout())->id(), LayoutId::kType);
+  EXPECT_EQ(RawLayout::cast(a.instanceLayout())->id(), LayoutId::kType);
 }
 
 TEST(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
@@ -155,7 +155,7 @@ TEST(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
   HandleScope scope;
   runFromCStr(&runtime, "result = str.__class__.__mro__");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isTuple());
+  ASSERT_TRUE(result.isTuple());
 }
 
 TEST(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
@@ -163,7 +163,7 @@ TEST(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
   HandleScope scope;
   runFromCStr(&runtime, "result = str.__class__.__name__");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isStr());
+  ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(isStrEqualsCStr(RawStr::cast(*result), "type"));
 }
 
@@ -172,7 +172,7 @@ TEST(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {
   HandleScope scope;
   runFromCStr(&runtime, "result = str.__class__.__flags__");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
 }
 
 TEST(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
@@ -180,7 +180,7 @@ TEST(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   HandleScope scope;
   runFromCStr(&runtime, "result = str.__class__.__dict__");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isDict());
+  ASSERT_TRUE(result.isDict());
 }
 
 TEST(TypeBuiltinTest, DunderCallReceivesExArgs) {

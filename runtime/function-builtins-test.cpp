@@ -17,7 +17,7 @@ code = foo.__code__
 )");
   HandleScope scope;
   Object code(&scope, moduleAt(&runtime, "__main__", "code"));
-  ASSERT_TRUE(code->isCode());
+  ASSERT_TRUE(code.isCode());
 }
 
 TEST(FunctionBuiltinsTest,
@@ -33,9 +33,9 @@ a = foo(5)
 )");
   HandleScope scope;
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a_obj->isSmallInt());
+  ASSERT_TRUE(a_obj.isSmallInt());
   SmallInt a(&scope, *a_obj);
-  ASSERT_EQ(a->value(), 10);
+  ASSERT_EQ(a.value(), 10);
 }
 
 TEST(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
@@ -57,7 +57,7 @@ TEST(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
   Object not_none(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(FunctionBuiltins::dunderGet, func, not_none,
                                    not_none));
-  EXPECT_TRUE(result->isBoundMethod());
+  EXPECT_TRUE(result.isBoundMethod());
 }
 
 TEST(FunctionBuiltinsTest,
@@ -69,7 +69,7 @@ TEST(FunctionBuiltinsTest,
   Type none_type(&scope, runtime.typeOf(*none));
   Object result(&scope,
                 runBuiltin(FunctionBuiltins::dunderGet, func, none, none_type));
-  EXPECT_TRUE(result->isBoundMethod());
+  EXPECT_TRUE(result.isBoundMethod());
 }
 
 TEST(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
@@ -91,7 +91,7 @@ result = repr(f)
 )");
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isStr());
+  ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(RawStr::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function f at 0x"));
 }
@@ -101,7 +101,7 @@ TEST(FunctionBuiltinsTest, ReprHandlesLambda) {
   runFromCStr(&runtime, "result = repr(lambda x: x)");
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isStr());
+  ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(RawStr::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function <lambda> at 0x"));
 }
@@ -115,7 +115,7 @@ result = f.__call__(3)
 )");
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result).value(), 3);
 }
 

@@ -39,7 +39,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
 
   // Create bases
   Tuple bases(&scope, runtime->newTuple(1));
-  bases->atPut(0, runtime->typeAt(LayoutId::kTuple));
+  bases.atPut(0, runtime->typeAt(LayoutId::kTuple));
 
   // Create the structsequence dictionary
   word num_fields = 0;

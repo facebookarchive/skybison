@@ -55,11 +55,11 @@ void IntBuiltins::initialize(Runtime* runtime) {
   Type largeint_type(
       &scope, runtime->addEmptyBuiltinType(
                   SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
-  largeint_type->setBuiltinBase(LayoutId::kInt);
+  largeint_type.setBuiltinBase(LayoutId::kInt);
 }
 
 RawObject IntBuiltins::asInt(const Int& value) {
-  if (value->isBool()) {
+  if (value.isBool()) {
     return RawSmallInt::fromWord(RawBool::cast(*value)->value() ? 1 : 0);
   }
   return *value;
@@ -86,19 +86,19 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   Type type(&scope, *type_obj);
-  if (type->builtinBase() != LayoutId::kInt) {
+  if (type.builtinBase() != LayoutId::kInt) {
     return thread->raiseTypeErrorWithCStr(
         "int.__new__(X): X is not a subtype of int");
   }
 
-  Layout layout(&scope, type->instanceLayout());
-  if (layout->id() != LayoutId::kInt) {
+  Layout layout(&scope, type.instanceLayout());
+  if (layout.id() != LayoutId::kInt) {
     // TODO(dulinr): Implement __new__ with subtypes of int.
     UNIMPLEMENTED("int.__new__(<subtype of int>, ...)");
   }
 
   Object arg(&scope, args.get(1));
-  if (!arg->isStr()) {
+  if (!arg.isStr()) {
     // TODO(dulinr): Handle non-string types.
     UNIMPLEMENTED("int(<non-string>)");
   }
@@ -110,7 +110,7 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // The third argument is the base of the integer represented in the string.
   Object base(&scope, args.get(2));
-  if (!base->isInt()) {
+  if (!base.isInt()) {
     // TODO(dulinr): Call __index__ on base to convert it.
     UNIMPLEMENTED("Can't handle non-integer base");
   }
@@ -125,16 +125,16 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
   }
   HandleScope scope(thread);
   Object arg(&scope, arg_raw);
-  if (arg->isInt()) {
+  if (arg.isInt()) {
     return *arg;
   }
 
-  CHECK(arg->isStr(), "not string type");
+  CHECK(arg.isStr(), "not string type");
   Str s(&scope, *arg);
-  if (s->length() == 0) {
+  if (s.length() == 0) {
     return thread->raiseValueErrorWithCStr("invalid literal");
   }
-  char* c_str = s->toCStr();  // for strtol()
+  char* c_str = s.toCStr();  // for strtol()
   char* end_ptr;
   errno = 0;
   long res = std::strtol(c_str, &end_ptr, base);
@@ -177,7 +177,7 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
   Type type(&scope, runtime->addBuiltinTypeWithMethods(
                         SymbolId::kSmallInt, LayoutId::kSmallInt,
                         LayoutId::kInt, kMethods));
-  type->setBuiltinBase(LayoutId::kInt);
+  type.setBuiltinBase(LayoutId::kInt);
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInt to all locations that decode to a SmallInt tag.
@@ -210,8 +210,8 @@ RawObject IntBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("'__abs__' requires a 'int' object");
   }
   Int self(&scope, *self_obj);
-  return self->isNegative() ? thread->runtime()->intNegate(thread, self)
-                            : asInt(self);
+  return self.isNegative() ? thread->runtime()->intNegate(thread, self)
+                           : asInt(self);
 }
 
 RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
@@ -302,7 +302,7 @@ RawObject IntBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
 
   double value;
   Object maybe_error(&scope, convertIntToDouble(thread, self, &value));
-  if (!maybe_error->isNoneType()) return *maybe_error;
+  if (!maybe_error.isNoneType()) return *maybe_error;
   return runtime->newFloat(value);
 }
 
@@ -359,7 +359,7 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
         "length argument cannot be interpreted as an integer");
   }
   Int length_int(&scope, *length_obj);
-  OptInt<word> l = length_int->asInt<word>();
+  OptInt<word> l = length_int.asInt<word>();
   if (l.error != CastError::None) {
     return thread->raiseOverflowErrorWithCStr(
         "Python int too large to convert to C word");
@@ -376,23 +376,23 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   }
   Str byteorder(&scope, *byteorder_obj);
   endian endianness;
-  if (byteorder->equals(runtime->symbols()->Little())) {
+  if (byteorder.equals(runtime->symbols()->Little())) {
     endianness = endian::little;
-  } else if (byteorder->equals(runtime->symbols()->Big())) {
+  } else if (byteorder.equals(runtime->symbols()->Big())) {
     endianness = endian::big;
   } else {
     return thread->raiseValueErrorWithCStr(
         "byteorder must be either 'little' or 'big'");
   }
 
-  if (!is_signed && self->isNegative()) {
+  if (!is_signed && self.isNegative()) {
     return thread->raiseOverflowErrorWithCStr(
         "can't convert negative int to unsigned");
   }
 
   // Check for overflow.
-  word num_digits = self->numDigits();
-  uword high_digit = self->digitAt(num_digits - 1);
+  word num_digits = self.numDigits();
+  uword high_digit = self.digitAt(num_digits - 1);
   word bit_length =
       num_digits * kBitsPerWord - Utils::numRedundantSignBits(high_digit);
   if (bit_length > length * kBitsPerByte + !is_signed) {
@@ -464,10 +464,10 @@ RawObject IntBuiltins::toBytesKw(Thread* thread, Frame* frame, word nargs) {
 
   bool is_signed = false;
   Object signed_arg(&scope, args.getKw(runtime->symbols()->Signed()));
-  if (!signed_arg->isError()) {
+  if (!signed_arg.isError()) {
     ++num_known_keywords;
     Object is_true(&scope, Interpreter::isTrue(thread, frame, signed_arg));
-    if (is_true->isError()) return *is_true;
+    if (is_true.isError()) return *is_true;
     is_signed = is_true == Bool::trueObj();
   }
 
@@ -726,7 +726,7 @@ RawObject IntBuiltins::dunderRshift(Thread* thread, Frame* frame, word nargs) {
   if (runtime->isInstanceOfInt(*other_obj)) {
     Int self(&scope, *self_obj);
     Int other(&scope, *other_obj);
-    if (other->isNegative()) {
+    if (other.isNegative()) {
       return thread->raiseValueErrorWithCStr("negative shift count");
     }
     return runtime->intBinaryRshift(thread, self, other);
@@ -798,7 +798,7 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*maybe_bytes)) {
     maybe_bytes = asBytes(thread, bytes_obj);
-    if (maybe_bytes->isError()) return *maybe_bytes;
+    if (maybe_bytes.isError()) return *maybe_bytes;
   }
   Bytes bytes(&scope, *maybe_bytes);
 
@@ -808,9 +808,9 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   }
   Str byteorder(&scope, *byteorder_obj);
   endian endianness;
-  if (byteorder->equals(runtime->symbols()->Little())) {
+  if (byteorder.equals(runtime->symbols()->Little())) {
     endianness = endian::little;
-  } else if (byteorder->equals(runtime->symbols()->Big())) {
+  } else if (byteorder.equals(runtime->symbols()->Big())) {
     endianness = endian::big;
   } else {
     return thread->raiseValueErrorWithCStr(
@@ -859,7 +859,7 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
 
   Object byteorder(&scope, args.getKw(runtime->symbols()->Byteorder()));
   if (args.numArgs() > 1) {
-    if (!byteorder->isError()) {
+    if (!byteorder.isError()) {
       return thread->raiseTypeErrorWithCStr(
           "argument for from_bytes() given by name ('byteorder') and position "
           "(2)");
@@ -875,10 +875,10 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
 
   bool is_signed = false;
   Object signed_arg(&scope, args.getKw(runtime->symbols()->Signed()));
-  if (!signed_arg->isError()) {
+  if (!signed_arg.isError()) {
     ++num_known_keywords;
     Object is_true(&scope, Interpreter::isTrue(thread, frame, signed_arg));
-    if (is_true->isError()) return *is_true;
+    if (is_true.isError()) return *is_true;
     is_signed = is_true == Bool::trueObj();
   }
 
@@ -900,11 +900,11 @@ RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
-  if (!self->isInt()) {
+  if (!self.isInt()) {
     return thread->raiseTypeErrorWithCStr(
         "descriptor '__or__' requires a 'int' object");
   }
-  if (other->isInt()) {
+  if (other.isInt()) {
     Int self_int(&scope, *self);
     Int other_int(&scope, *other);
     return runtime->intBinaryOr(thread, self_int, other_int);
@@ -926,7 +926,7 @@ RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
   if (runtime->isInstanceOfInt(*other_obj)) {
     Int self(&scope, *self_obj);
     Int other(&scope, *other_obj);
-    if (other->isNegative()) {
+    if (other.isNegative()) {
       return thread->raiseValueErrorWithCStr("negative shift count");
     }
     return runtime->intBinaryLshift(thread, self, other);
@@ -975,8 +975,8 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // Since bool can't be subclassed, only need to check if the type is exactly
   // bool.
-  Layout layout(&scope, type->instanceLayout());
-  if (layout->id() != LayoutId::kBool) {
+  Layout layout(&scope, type.instanceLayout());
+  if (layout.id() != LayoutId::kBool) {
     return thread->raiseTypeErrorWithCStr("bool.__new__(X): X is not bool");
   }
 
@@ -998,11 +998,11 @@ void BoolBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinTypeWithMethods(SymbolId::kBool, LayoutId::kBool,
                                                LayoutId::kInt, kMethods));
-  type->setBuiltinBase(LayoutId::kInt);
+  type.setBuiltinBase(LayoutId::kInt);
 }
 
 RawObject asIntObject(Thread* thread, const Object& object) {
-  if (object->isInt()) {
+  if (object.isInt()) {
     return *object;
   }
 
@@ -1013,12 +1013,12 @@ RawObject asIntObject(Thread* thread, const Object& object) {
   Frame* frame = thread->currentFrame();
   Object int_method(&scope, Interpreter::lookupMethod(thread, frame, object,
                                                       SymbolId::kDunderInt));
-  if (int_method->isError()) {
+  if (int_method.isError()) {
     return thread->raiseTypeErrorWithCStr("an integer is required");
   }
   Object int_res(&scope,
                  Interpreter::callMethod1(thread, frame, int_method, object));
-  if (int_res->isError()) return *int_res;
+  if (int_res.isError()) return *int_res;
   if (!thread->runtime()->isInstanceOfInt(*int_res)) {
     return thread->raiseTypeErrorWithCStr("__int__ returned non-int");
   }
@@ -1029,8 +1029,8 @@ RawObject asIntObject(Thread* thread, const Object& object) {
 }
 
 RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
-  if (value->numDigits() == 1) {
-    *result = static_cast<double>(value->asWord());
+  if (value.numDigits() == 1) {
+    *result = static_cast<double>(value.asWord());
     return NoneType::object();
   }
 
@@ -1104,7 +1104,7 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
     // Already scanned the digits in the negative case and can look at carry.
     if (is_negative) return carry_to_second_highest != 0;
     for (word i = num_digits - 3; i >= 0; i--) {
-      if (large_int->digitAt(i) != 0) return false;
+      if (large_int.digitAt(i) != 0) return false;
     }
     return true;
   };

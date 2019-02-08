@@ -42,9 +42,9 @@ TEST(ThreadTest, RunEmptyFunction) {
   EXPECT_EQ(size, 5);
 
   Object code_obj(&scope, reader.readObject());
-  ASSERT_TRUE(code_obj->isCode());
+  ASSERT_TRUE(code_obj.isCode());
   Code code(&scope, *code_obj);
-  EXPECT_EQ(code->argcount(), 0);
+  EXPECT_EQ(code.argcount(), 0);
 
   Thread thread(1 * kKiB);
   RawObject result = thread.run(code);
@@ -90,8 +90,8 @@ g = c(3)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object global(&scope, moduleAt(&runtime, main, "g"));
-  ASSERT_FALSE(global->isError());
-  ASSERT_TRUE(global->isSmallInt());
+  ASSERT_FALSE(global.isError());
+  ASSERT_TRUE(global.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*global)->value(), 36);
 }
 
@@ -118,7 +118,7 @@ c(1111)
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1111);
 }
 
@@ -140,7 +140,7 @@ result = c(y=3)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 3);
 }
 
@@ -160,7 +160,7 @@ result = c(*args)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 3);
 }
 
@@ -180,7 +180,7 @@ result = c(**kwargs)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 3);
 }
 
@@ -206,10 +206,10 @@ c(*args, **kwargs)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result_x(&scope, moduleAt(&runtime, main, "result_x"));
-  ASSERT_TRUE(result_x->isSmallInt());
+  ASSERT_TRUE(result_x.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_x)->value(), 1);
   Object result_y(&scope, moduleAt(&runtime, main, "result_y"));
-  ASSERT_TRUE(result_y->isSmallInt());
+  ASSERT_TRUE(result_y.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_y)->value(), 3);
 }
 
@@ -219,7 +219,7 @@ TEST(ThreadTest, OverlappingFrames) {
 
   // Push a frame for a code object with space for 3 items on the value stack
   Code caller_code(&scope, testing::newEmptyCode(&runtime));
-  caller_code->setStacksize(3);
+  caller_code.setStacksize(3);
   auto thread = Thread::currentThread();
   auto caller_frame = thread->pushFrame(caller_code);
   RawObject* sp = caller_frame->valueStackTop();
@@ -235,8 +235,8 @@ TEST(ThreadTest, OverlappingFrames) {
   // Push a frame for a code object that expects 3 arguments and needs space
   // for 3 local variables
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setArgcount(3);
-  code->setNlocals(3);
+  code.setArgcount(3);
+  code.setNlocals(3);
   auto frame = thread->pushFrame(code);
 
   // Make sure we can read the args from the frame
@@ -270,8 +270,8 @@ TEST(ThreadTest, PushPopFrame) {
   HandleScope scope;
 
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setNlocals(2);
-  code->setStacksize(3);
+  code.setNlocals(2);
+  code.setStacksize(3);
 
   auto thread = Thread::currentThread();
   byte* prev_sp = thread->stackPtr();
@@ -295,8 +295,8 @@ TEST(ThreadTest, PushFrameWithNoCellVars) {
   HandleScope scope;
 
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setCellvars(NoneType::object());
-  code->setFreevars(runtime.newTuple(0));
+  code.setCellvars(NoneType::object());
+  code.setFreevars(runtime.newTuple(0));
   auto thread = Thread::currentThread();
   byte* prev_sp = thread->stackPtr();
   thread->pushFrame(code);
@@ -309,8 +309,8 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
   HandleScope scope;
 
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setFreevars(NoneType::object());
-  code->setCellvars(runtime.newTuple(0));
+  code.setFreevars(NoneType::object());
+  code.setCellvars(runtime.newTuple(0));
   auto thread = Thread::currentThread();
   byte* prev_sp = thread->stackPtr();
   thread->pushFrame(code);
@@ -401,29 +401,29 @@ TEST(ThreadTest, CallFunction) {
   //
   auto expected_result = SmallInt::fromWord(2222);
   Code callee_code(&scope, testing::newEmptyCode(&runtime));
-  callee_code->setArgcount(2);
-  callee_code->setStacksize(1);
-  callee_code->setConsts(runtime.newTuple(1));
-  RawTuple::cast(callee_code->consts())->atPut(0, expected_result);
+  callee_code.setArgcount(2);
+  callee_code.setStacksize(1);
+  callee_code.setConsts(runtime.newTuple(1));
+  RawTuple::cast(callee_code.consts())->atPut(0, expected_result);
   const byte callee_bc[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  callee_code->setCode(runtime.newBytesWithAll(callee_bc));
+  callee_code.setCode(runtime.newBytesWithAll(callee_bc));
 
   // Create the function object and bind it to the code object
   Function callee(&scope, runtime.newFunction());
-  callee->setCode(*callee_code);
-  callee->setEntry(interpreterTrampoline);
+  callee.setCode(*callee_code);
+  callee.setEntry(interpreterTrampoline);
 
   // Build a code object to call the function defined above
   Code caller_code(&scope, testing::newEmptyCode(&runtime));
-  caller_code->setStacksize(3);
+  caller_code.setStacksize(3);
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
-  consts->atPut(2, SmallInt::fromWord(2222));
-  caller_code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  consts.atPut(2, SmallInt::fromWord(2222));
+  caller_code.setConsts(*consts);
   const byte caller_bc[] = {LOAD_CONST,    0, LOAD_CONST,   1, LOAD_CONST, 2,
                             CALL_FUNCTION, 2, RETURN_VALUE, 0};
-  caller_code->setCode(runtime.newBytesWithAll(caller_bc));
+  caller_code.setCode(runtime.newBytesWithAll(caller_bc));
 
   // Execute the caller and make sure we get back the expected result
   RawObject result = Thread::currentThread()->run(caller_code);
@@ -442,13 +442,13 @@ TEST(ThreadTest, ExtendedArg) {
   auto zero = SmallInt::fromWord(0);
   auto non_zero = SmallInt::fromWord(0xDEADBEEF);
   for (word i = 0; i < num_consts - 2; i++) {
-    constants->atPut(i, zero);
+    constants.atPut(i, zero);
   }
-  constants->atPut(num_consts - 1, non_zero);
+  constants.atPut(num_consts - 1, non_zero);
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setConsts(*constants);
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setConsts(*constants);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   RawObject result = Thread::currentThread()->run(code);
 
@@ -475,12 +475,12 @@ TEST(ThreadTest, ExecuteDupTop) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(0, SmallInt::fromWord(1111));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setStacksize(2);
-  code->setConsts(*consts);
+  code.setStacksize(2);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, DUP_TOP, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
@@ -492,14 +492,14 @@ TEST(ThreadTest, ExecuteDupTopTwo) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, SmallInt::fromWord(2222));
+  consts.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setStacksize(2);
-  code->setConsts(*consts);
+  code.setStacksize(2);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,  0, LOAD_CONST,   1,
                            DUP_TOP_TWO, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
@@ -511,14 +511,14 @@ TEST(ThreadTest, ExecuteRotTwo) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, SmallInt::fromWord(2222));
+  consts.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setStacksize(2);
-  code->setConsts(*consts);
+  code.setStacksize(2);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1,
                            ROT_TWO,    0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
@@ -530,15 +530,15 @@ TEST(ThreadTest, ExecuteRotThree) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, SmallInt::fromWord(2222));
-  consts->atPut(2, SmallInt::fromWord(3333));
+  consts.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, SmallInt::fromWord(2222));
+  consts.atPut(2, SmallInt::fromWord(3333));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setStacksize(3);
-  code->setConsts(*consts);
+  code.setStacksize(3);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
                            ROT_THREE,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
@@ -550,14 +550,14 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, SmallInt::fromWord(2222));
+  consts.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setStacksize(2);
-  code->setConsts(*consts);
+  code.setStacksize(2);
+  code.setConsts(*consts);
   const byte bytecode[] = {JUMP_ABSOLUTE, 4, LOAD_CONST,   0,
                            LOAD_CONST,    1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
@@ -569,14 +569,14 @@ TEST(ThreadTest, ExecuteJumpForward) {
   HandleScope scope;
 
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, SmallInt::fromWord(2222));
+  consts.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, SmallInt::fromWord(2222));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setStacksize(2);
-  code->setConsts(*consts);
+  code.setStacksize(2);
+  code.setConsts(*consts);
   const byte bytecode[] = {JUMP_FORWARD, 2, LOAD_CONST,   0,
                            LOAD_CONST,   1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
@@ -589,12 +589,12 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
-  code->setNlocals(2);
+  consts.atPut(0, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
+  code.setNlocals(2);
   const byte bytecode[] = {LOAD_CONST, 0, STORE_FAST,   1,
                            LOAD_FAST,  1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
@@ -608,11 +608,11 @@ TEST(ThreadTest, LoadGlobal) {
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
@@ -620,14 +620,14 @@ TEST(ThreadTest, LoadGlobal) {
   Dict globals(&scope, runtime.newDict());
   Dict builtins(&scope, runtime.newDict());
   ValueCell value_cell(&scope, runtime.newValueCell());
-  value_cell->setValue(SmallInt::fromWord(1234));
+  value_cell.setValue(SmallInt::fromWord(1234));
   Object value(&scope, *value_cell);
   runtime.dictAtPut(globals, key, value);
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Object result(&scope, Interpreter::execute(thread, frame));
-  EXPECT_EQ(*result, value_cell->value());
+  EXPECT_EQ(*result, value_cell.value());
 }
 
 struct TestData {
@@ -747,17 +747,17 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
                            LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
@@ -770,7 +770,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object value(&scope, runtime.dictAt(globals, key));
-  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(value.isValueCell());
   EXPECT_EQ(*result, RawValueCell::cast(*value)->value());
 }
 
@@ -781,23 +781,23 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
                            LOAD_GLOBAL, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
 
   ValueCell value_cell1(&scope, runtime.newValueCell());
-  value_cell1->setValue(SmallInt::fromWord(99));
+  value_cell1.setValue(SmallInt::fromWord(99));
 
   Dict globals(&scope, runtime.newDict());
   Dict builtins(&scope, runtime.newDict());
@@ -809,9 +809,9 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object value_cell2(&scope, runtime.dictAt(globals, key));
-  ASSERT_TRUE(value_cell2->isValueCell());
+  ASSERT_TRUE(value_cell2.isValueCell());
   EXPECT_EQ(*value_cell2, *value_cell1);
-  EXPECT_EQ(SmallInt::fromWord(42), value_cell1->value());
+  EXPECT_EQ(SmallInt::fromWord(42), value_cell1.value());
 }
 
 TEST(ThreadTest, StoreNameCreateValueCell) {
@@ -821,17 +821,17 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
@@ -845,7 +845,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object value(&scope, runtime.dictAt(implicit_globals, key));
-  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(value.isValueCell());
   EXPECT_EQ(*result, RawValueCell::cast(*value)->value());
 }
 
@@ -857,11 +857,11 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, runtime.newDict());
   Dict builtins(&scope, runtime.newDict());
@@ -879,7 +879,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object value_cell(&scope, runtime.dictAt(builtins, key));
-  ASSERT_TRUE(value_cell->isValueCell());
+  ASSERT_TRUE(value_cell.isValueCell());
   EXPECT_EQ(*builtins_value, RawValueCell::cast(*value_cell)->value());
 }
 
@@ -890,17 +890,17 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, runtime.newDict());
   Dict builtins(&scope, runtime.newDict());
@@ -915,9 +915,9 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object val0(&scope, runtime.dictAt(globals, key));  // 2-level indirection
-  ASSERT_TRUE(val0->isValueCell());
+  ASSERT_TRUE(val0.isValueCell());
   Object val1(&scope, RawValueCell::cast(*val0));
-  ASSERT_TRUE(val1->isValueCell());
+  ASSERT_TRUE(val1.isValueCell());
   EXPECT_EQ(*result, RawValueCell::cast(*val1)->value());
 }
 
@@ -928,17 +928,17 @@ TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, runtime.newDict());
   Dict builtins(&scope, runtime.newDict());
@@ -955,9 +955,9 @@ TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object val0(&scope, runtime.dictAt(globals, key));  // 2-level indirection
-  ASSERT_TRUE(val0->isValueCell());
+  ASSERT_TRUE(val0.isValueCell());
   Object val1(&scope, RawValueCell::cast(*val0));
-  ASSERT_TRUE(val1->isValueCell());
+  ASSERT_TRUE(val1.isValueCell());
   EXPECT_EQ(*result, RawValueCell::cast(*val1)->value());
 }
 
@@ -968,17 +968,17 @@ TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
                            LOAD_NAME,  0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, runtime.newDict());
   Dict builtins(&scope, runtime.newDict());
@@ -995,7 +995,7 @@ TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object val(&scope, runtime.dictAt(implicit_globals, key));
-  ASSERT_TRUE(val->isValueCell());  // 1-level indirection
+  ASSERT_TRUE(val.isValueCell());  // 1-level indirection
   EXPECT_EQ(*result, RawValueCell::cast(*val)->value());
 }
 
@@ -1007,22 +1007,22 @@ TEST(ThreadTest, MakeFunction) {
 
   Tuple consts(&scope, runtime.newTuple(3));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  consts->atPut(0, *code);
+  consts.atPut(0, *code);
   Object key(&scope, runtime.newStrFromCStr("hello"));
-  consts->atPut(1, *key);
-  consts->atPut(2, NoneType::object());
-  module->setConsts(*consts);
+  consts.atPut(1, *key);
+  consts.atPut(2, NoneType::object());
+  module.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
-  names->atPut(0, runtime.newStrFromCStr("hello"));
-  module->setNames(*names);
+  names.atPut(0, runtime.newStrFromCStr("hello"));
+  module.setNames(*names);
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST, 1, MAKE_FUNCTION, 0,
                      STORE_NAME, 0, LOAD_CONST, 2, RETURN_VALUE,  0};
-  module->setCode(runtime.newBytesWithAll(bc));
-  code->setCode(runtime.newBytesWithAll(bc));
-  code->setFlags(Code::Flags::NOFREE);
-  code->setNames(*names);
+  module.setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
+  code.setFlags(Code::Flags::NOFREE);
+  code.setNames(*names);
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(module);
@@ -1037,13 +1037,13 @@ TEST(ThreadTest, MakeFunction) {
   Object result(&scope, Interpreter::execute(thread, frame));
 
   Object value(&scope, runtime.dictAt(implicit_globals, key));
-  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(value.isValueCell());
   ASSERT_TRUE(RawValueCell::cast(*value)->value()->isFunction());
 
   Function function(&scope, RawValueCell::cast(*value)->value());
-  EXPECT_EQ(function->code(), consts->at(0));
-  EXPECT_EQ(function->qualname(), consts->at(1));
-  EXPECT_EQ(function->entry(), &interpreterTrampoline);
+  EXPECT_EQ(function.code(), consts.at(0));
+  EXPECT_EQ(function.qualname(), consts.at(1));
+  EXPECT_EQ(function.entry(), &interpreterTrampoline);
 }
 
 TEST(ThreadTest, BuildList) {
@@ -1053,14 +1053,14 @@ TEST(ThreadTest, BuildList) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, SmallInt::fromWord(111));
-  consts->atPut(1, runtime.newStrFromCStr("qqq"));
-  consts->atPut(2, NoneType::object());
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(111));
+  consts.atPut(1, runtime.newStrFromCStr("qqq"));
+  consts.atPut(2, NoneType::object());
+  code.setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
                      BUILD_LIST, 3, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isList());
@@ -1082,13 +1082,13 @@ TEST(ThreadTest, BuildSetEmpty) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   const byte bc[] = {BUILD_SET, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSet());
 
   Set set(&scope, result);
-  EXPECT_EQ(set->numItems(), 0);
+  EXPECT_EQ(set.numItems(), 0);
 }
 
 TEST(ThreadTest, BuildSetWithOneItem) {
@@ -1098,19 +1098,19 @@ TEST(ThreadTest, BuildSetWithOneItem) {
 
   Tuple consts(&scope, runtime.newTuple(2));
   Object smi(&scope, SmallInt::fromWord(111));
-  consts->atPut(0, *smi);
-  consts->atPut(1, *smi);  // dup
-  code->setConsts(*consts);
+  consts.atPut(0, *smi);
+  consts.atPut(1, *smi);  // dup
+  code.setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST,   1,
                      BUILD_SET,  2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSet());
 
   Set set(&scope, result);
-  EXPECT_EQ(set->numItems(), 1);
+  EXPECT_EQ(set.numItems(), 1);
 
   EXPECT_TRUE(runtime.setIncludes(set, smi));
 }
@@ -1123,26 +1123,26 @@ TEST(ThreadTest, BuildSet) {
   Tuple consts(&scope, runtime.newTuple(4));
 
   Object smi(&scope, SmallInt::fromWord(111));
-  consts->atPut(0, *smi);
-  consts->atPut(1, *smi);  // dup
+  consts.atPut(0, *smi);
+  consts.atPut(1, *smi);  // dup
 
   Object str(&scope, runtime.newStrFromCStr("qqq"));
-  consts->atPut(2, *str);
+  consts.atPut(2, *str);
 
   Object none(&scope, NoneType::object());
-  consts->atPut(3, *none);
+  consts.atPut(3, *none);
 
-  code->setConsts(*consts);
+  code.setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2,
                      LOAD_CONST, 3, BUILD_SET,  4, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSet());
 
   Set set(&scope, result);
-  EXPECT_EQ(set->numItems(), 3);
+  EXPECT_EQ(set.numItems(), 3);
 
   EXPECT_TRUE(runtime.setIncludes(set, smi));
   EXPECT_TRUE(runtime.setIncludes(set, str));
@@ -1171,15 +1171,15 @@ TEST(ThreadTest, SetupLoop) {
 
   Tuple consts(&scope, runtime.newTuple(1));
   // inspect_block is meant to be called raw, without any trampoline.
-  consts->atPut(0, runtime.newBuiltinFunction(SymbolId::kDummy, inspect_block,
-                                              unimplementedTrampoline,
-                                              unimplementedTrampoline));
+  consts.atPut(0, runtime.newBuiltinFunction(SymbolId::kDummy, inspect_block,
+                                             unimplementedTrampoline,
+                                             unimplementedTrampoline));
   const byte bc[] = {SETUP_LOOP, 100, LOAD_CONST,   0, CALL_FUNCTION, 0,
                      POP_TOP,    0,   RETURN_VALUE, 0};
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setCode(runtime.newBytesWithAll(bc));
-  code->setConsts(*consts);
-  code->setStacksize(4);
+  code.setCode(runtime.newBytesWithAll(bc));
+  code.setConsts(*consts);
+  code.setStacksize(4);
 
   // Create a frame with three items on the stack
   auto thread = Thread::currentThread();
@@ -1199,8 +1199,8 @@ TEST(ThreadTest, PopBlock) {
 
   const byte bc[] = {POP_BLOCK, 0, RETURN_VALUE, 0};
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setCode(runtime.newBytesWithAll(bc));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bc));
+  code.setStacksize(3);
 
   // Create a frame with three items on the stack
   auto thread = Thread::currentThread();
@@ -1229,17 +1229,17 @@ TEST(ThreadTest, PopJumpIfFalse) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, Bool::trueObj());
-  consts->atPut(1, SmallInt::fromWord(1111));
-  consts->atPut(2, SmallInt::fromWord(2222));
-  code->setConsts(*consts);
+  consts.atPut(0, Bool::trueObj());
+  consts.atPut(1, SmallInt::fromWord(1111));
+  consts.atPut(2, SmallInt::fromWord(2222));
+  code.setConsts(*consts);
   // Bytecode for the snippet:
   //   if x:
   //     return 1111
   //   return 2222
   const byte bc[] = {LOAD_CONST,   0, POP_JUMP_IF_FALSE, 8, LOAD_CONST,   1,
                      RETURN_VALUE, 0, LOAD_CONST,        2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   // Test when the condition evaluates to a truthy value
   RawObject result = Thread::currentThread()->run(code);
@@ -1247,7 +1247,7 @@ TEST(ThreadTest, PopJumpIfFalse) {
   EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
 
   // Test when the condition evaluates to a falsey value
-  consts->atPut(0, Bool::falseObj());
+  consts.atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
@@ -1259,17 +1259,17 @@ TEST(ThreadTest, PopJumpIfTrue) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, Bool::falseObj());
-  consts->atPut(1, SmallInt::fromWord(1111));
-  consts->atPut(2, SmallInt::fromWord(2222));
-  code->setConsts(*consts);
+  consts.atPut(0, Bool::falseObj());
+  consts.atPut(1, SmallInt::fromWord(1111));
+  consts.atPut(2, SmallInt::fromWord(2222));
+  code.setConsts(*consts);
   // Bytecode for the snippet:
   //   if not x:
   //     return 1111
   //   return 2222
   const byte bc[] = {LOAD_CONST,   0, POP_JUMP_IF_TRUE, 8, LOAD_CONST,   1,
                      RETURN_VALUE, 0, LOAD_CONST,       2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   // Test when the condition evaluates to a falsey value
   RawObject result = Thread::currentThread()->run(code);
@@ -1277,7 +1277,7 @@ TEST(ThreadTest, PopJumpIfTrue) {
   EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
 
   // Test when the condition evaluates to a truthy value
-  consts->atPut(0, Bool::trueObj());
+  consts.atPut(0, Bool::trueObj());
   result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
@@ -1289,12 +1289,12 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, Bool::falseObj());
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, Bool::falseObj());
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bc[] = {LOAD_CONST, 0, JUMP_IF_FALSE_OR_POP, 6,
                      LOAD_CONST, 1, RETURN_VALUE,         0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   // If the condition is false, we should return the top of the stack, which is
   // the condition itself
@@ -1305,7 +1305,7 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   // If the condition is true, we should pop the top of the stack (the
   // condition) and continue execution. In our case that loads a const and
   // returns it.
-  consts->atPut(0, Bool::trueObj());
+  consts.atPut(0, Bool::trueObj());
   result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
@@ -1317,12 +1317,12 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, Bool::trueObj());
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, Bool::trueObj());
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bc[] = {LOAD_CONST, 0, JUMP_IF_TRUE_OR_POP, 6,
                      LOAD_CONST, 1, RETURN_VALUE,        0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   // If the condition is true, we should return the top of the stack, which is
   // the condition itself
@@ -1333,7 +1333,7 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   // If the condition is false, we should pop the top of the stack (the
   // condition) and continue execution. In our case that loads a const and
   // returns it.
-  consts->atPut(0, Bool::falseObj());
+  consts.atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
@@ -1345,12 +1345,12 @@ TEST(ThreadTest, UnaryNot) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, Bool::trueObj());
-  code->setConsts(*consts);
+  consts.atPut(0, Bool::trueObj());
+  code.setConsts(*consts);
   // Bytecode for the snippet:
   //     return not x
   const byte bc[] = {LOAD_CONST, 0, UNARY_NOT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   // If the condition is true, we should return false
   RawObject result = Thread::currentThread()->run(code);
@@ -1358,7 +1358,7 @@ TEST(ThreadTest, UnaryNot) {
   EXPECT_FALSE(RawBool::cast(result)->value());
 
   // If the condition is false, we should return true
-  consts->atPut(0, Bool::falseObj());
+  consts.atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isBool());
   EXPECT_TRUE(RawBool::cast(result)->value());
@@ -1367,10 +1367,10 @@ TEST(ThreadTest, UnaryNot) {
 static RawDict getMainModuleDict(Runtime* runtime) {
   HandleScope scope;
   Module mod(&scope, findModule(runtime, "__main__"));
-  EXPECT_TRUE(mod->isModule());
+  EXPECT_TRUE(mod.isModule());
 
-  Dict dict(&scope, mod->dict());
-  EXPECT_TRUE(dict->isDict());
+  Dict dict(&scope, mod.dict());
+  EXPECT_TRUE(dict.isDict());
   return *dict;
 }
 
@@ -1390,16 +1390,16 @@ class C:
 
   Object key(&scope, runtime.newStrFromCStr("C"));
   Object value(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(value.isValueCell());
 
   Type cls(&scope, RawValueCell::cast(*value)->value());
-  ASSERT_TRUE(cls->name()->isSmallStr());
-  EXPECT_EQ(cls->name(), SmallStr::fromCStr("C"));
+  ASSERT_TRUE(cls.name()->isSmallStr());
+  EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
-  Tuple mro(&scope, cls->mro());
-  EXPECT_EQ(mro->length(), 2);
-  EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
+  Tuple mro(&scope, cls.mro());
+  EXPECT_EQ(mro.length(), 2);
+  EXPECT_EQ(mro.at(0), *cls);
+  EXPECT_EQ(mro.at(1), runtime.typeAt(LayoutId::kObject));
 }
 
 TEST(ThreadTest, LoadBuildTypeTypeWithInit) {
@@ -1416,35 +1416,35 @@ class C:
   ASSERT_EQ(result, NoneType::object());  // returns None
 
   Module mod(&scope, findModule(&runtime, "__main__"));
-  ASSERT_TRUE(mod->isModule());
+  ASSERT_TRUE(mod.isModule());
 
-  Dict mod_dict(&scope, mod->dict());
-  ASSERT_TRUE(mod_dict->isDict());
+  Dict mod_dict(&scope, mod.dict());
+  ASSERT_TRUE(mod_dict.isDict());
 
   // Check for the class name in the module dict
   Object cls_name(&scope, runtime.newStrFromCStr("C"));
   Object value(&scope, runtime.dictAt(mod_dict, cls_name));
-  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(value.isValueCell());
   Type cls(&scope, RawValueCell::cast(*value)->value());
 
   // Check class MRO
-  Tuple mro(&scope, cls->mro());
-  EXPECT_EQ(mro->length(), 2);
-  EXPECT_EQ(mro->at(0), *cls);
-  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
+  Tuple mro(&scope, cls.mro());
+  EXPECT_EQ(mro.length(), 2);
+  EXPECT_EQ(mro.at(0), *cls);
+  EXPECT_EQ(mro.at(1), runtime.typeAt(LayoutId::kObject));
 
   // Check class name
-  ASSERT_TRUE(cls->name()->isSmallStr());
-  EXPECT_EQ(cls->name(), SmallStr::fromCStr("C"));
+  ASSERT_TRUE(cls.name()->isSmallStr());
+  EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
-  Dict cls_dict(&scope, cls->dict());
-  ASSERT_TRUE(cls_dict->isDict());
+  Dict cls_dict(&scope, cls.dict());
+  ASSERT_TRUE(cls_dict.isDict());
 
   // Check for the __init__ method name in the dict
   Object meth_name(&scope, runtime.symbols()->DunderInit());
   ASSERT_TRUE(runtime.dictIncludes(cls_dict, meth_name));
   value = runtime.dictAt(cls_dict, meth_name);
-  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(value.isValueCell());
   ASSERT_TRUE(RawValueCell::cast(*value)->value()->isFunction());
 }
 
@@ -1460,25 +1460,25 @@ TEST(ThreadTest, NativeExceptions) {
   HandleScope scope;
 
   Function fn(&scope, runtime.newFunction());
-  fn->setEntry(nativeTrampoline<nativeExceptionTest>);
+  fn.setEntry(nativeTrampoline<nativeExceptionTest>);
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *fn);
-  code->setConsts(*consts);
+  consts.atPut(0, *fn);
+  code.setConsts(*consts);
 
   // Call the native function and check that a pending exception is left in the
   // Thread.
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   Thread* thread = Thread::currentThread();
   EXPECT_TRUE(raised(thread->run(code), LayoutId::kRuntimeError));
   Object value(&scope, thread->pendingExceptionValue());
-  ASSERT_TRUE(value->isStr());
+  ASSERT_TRUE(value.isStr());
   Str str(&scope, *value);
-  EXPECT_TRUE(str->equalsCStr("test exception"));
+  EXPECT_TRUE(str.equalsCStr("test exception"));
 }
 
 // MRO tests
@@ -1486,7 +1486,7 @@ TEST(ThreadTest, NativeExceptions) {
 static RawStr className(RawObject obj) {
   HandleScope scope;
   Type cls(&scope, obj);
-  Str name(&scope, cls->name());
+  Str name(&scope, cls.name());
   return *name;
 }
 
@@ -1502,7 +1502,7 @@ static RawObject getMro(Runtime* runtime, const char* src,
   Object value(&scope, runtime->dictAt(mod_dict, class_name));
   Type cls(&scope, RawValueCell::cast(*value)->value());
 
-  return cls->mro();
+  return cls.mro();
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMro) {
@@ -1516,11 +1516,11 @@ class C(A,B): pass
 )";
 
   Tuple mro(&scope, getMro(&runtime, src, "C"));
-  EXPECT_EQ(mro->length(), 4);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "object"));
+  EXPECT_EQ(mro.length(), 4);
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "object"));
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroInheritance) {
@@ -1534,11 +1534,11 @@ class C(B): pass
 )";
 
   Tuple mro(&scope, getMro(&runtime, src, "C"));
-  EXPECT_EQ(mro->length(), 4);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "object"));
+  EXPECT_EQ(mro.length(), 4);
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "object"));
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroMultiInheritance) {
@@ -1553,12 +1553,12 @@ class D(B,C): pass
 )";
 
   Tuple mro(&scope, getMro(&runtime, src, "D"));
-  EXPECT_EQ(mro->length(), 5);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "D"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(4)), "object"));
+  EXPECT_EQ(mro.length(), 5);
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "D"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(4)), "object"));
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroDiamond) {
@@ -1573,12 +1573,12 @@ class D(B,C): pass
 )";
 
   Tuple mro(&scope, getMro(&runtime, src, "D"));
-  EXPECT_EQ(mro->length(), 5);
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(0)), "D"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(1)), "B"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(2)), "C"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(3)), "A"));
-  EXPECT_TRUE(isStrEqualsCStr(className(mro->at(4)), "object"));
+  EXPECT_EQ(mro.length(), 5);
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(0)), "D"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(1)), "B"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(2)), "C"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(3)), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(className(mro.at(4)), "object"));
 }
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroError) {
@@ -1736,11 +1736,11 @@ class Foo(object):
   Type type(&scope, object);
 
   // Check that its MRO is itself and object
-  ASSERT_TRUE(type->mro()->isTuple());
-  Tuple mro(&scope, type->mro());
-  ASSERT_EQ(mro->length(), 2);
-  EXPECT_EQ(mro->at(0), *type);
-  EXPECT_EQ(mro->at(1), runtime.typeAt(LayoutId::kObject));
+  ASSERT_TRUE(type.mro()->isTuple());
+  Tuple mro(&scope, type.mro());
+  ASSERT_EQ(mro.length(), 2);
+  EXPECT_EQ(mro.at(0), *type);
+  EXPECT_EQ(mro.at(1), runtime.typeAt(LayoutId::kObject));
 }
 
 // imports
@@ -1988,23 +1988,23 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object t(&scope, moduleAt(&runtime, main, "t"));
-  EXPECT_TRUE(t->isTuple());
+  EXPECT_TRUE(t.isTuple());
   Tuple tuple_t(&scope, *t);
-  EXPECT_EQ(tuple_t->length(), 6);
-  for (word i = 0; i < tuple_t->length(); i++) {
-    EXPECT_EQ(RawSmallInt::cast(tuple_t->at(i))->value(), i);
+  EXPECT_EQ(tuple_t.length(), 6);
+  for (word i = 0; i < tuple_t.length(); i++) {
+    EXPECT_EQ(RawSmallInt::cast(tuple_t.at(i))->value(), i);
   }
 
   Object t1(&scope, moduleAt(&runtime, main, "t1"));
-  EXPECT_TRUE(t1->isTuple());
+  EXPECT_TRUE(t1.isTuple());
   Tuple tuple_t1(&scope, *t1);
-  EXPECT_EQ(tuple_t1->length(), 6);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(4))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1->at(5))->value(), 5);
+  EXPECT_EQ(tuple_t1.length(), 6);
+  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(0))->value(), 0);
+  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(1))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(2))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(3))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(4))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(5))->value(), 5);
 }
 
 TEST(TestThread, BuildListUnpack) {
@@ -2017,15 +2017,15 @@ l = [*[0], *[1, 2], *[], *[3, 4, 5]]
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object l(&scope, moduleAt(&runtime, main, "l"));
-  EXPECT_TRUE(l->isList());
+  EXPECT_TRUE(l.isList());
   List list_l(&scope, *l);
-  EXPECT_EQ(list_l->numItems(), 6);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(4))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(5))->value(), 5);
+  EXPECT_EQ(list_l.numItems(), 6);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(0))->value(), 0);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(1))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(3))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(4))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(5))->value(), 5);
 }
 
 TEST(TestThread, BuildSetUnpack) {
@@ -2038,9 +2038,9 @@ s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object s(&scope, moduleAt(&runtime, main, "s"));
-  EXPECT_TRUE(s->isSet());
+  EXPECT_TRUE(s.isSet());
   Set set_s(&scope, *s);
-  EXPECT_EQ(set_s->numItems(), 6);
+  EXPECT_EQ(set_s.numItems(), 6);
   Object small_int(&scope, SmallInt::fromWord(0));
   EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
   small_int = SmallInt::fromWord(1);
@@ -2061,14 +2061,14 @@ TEST(BuildString, buildStringEmpty) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   const byte bc[] = {BUILD_STRING, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
   EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isSmallStr());
 
   Str result(&scope, obj);
-  EXPECT_TRUE(result->equalsCStr(""));
+  EXPECT_TRUE(result.equalsCStr(""));
 }
 
 TEST(BuildString, buildStringSingle) {
@@ -2079,18 +2079,18 @@ TEST(BuildString, buildStringSingle) {
   Tuple consts(&scope, runtime.newTuple(1));
   const char* expected = "foo";
   Object str(&scope, SmallStr::fromCStr(expected));
-  consts->atPut(0, *str);
-  code->setConsts(*consts);
+  consts.atPut(0, *str);
+  code.setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST, 0, BUILD_STRING, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
   EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isSmallStr());
 
   Str result(&scope, obj);
-  EXPECT_TRUE(result->equalsCStr(expected));
+  EXPECT_TRUE(result.equalsCStr(expected));
 }
 
 TEST(BuildString, buildStringMultiSmall) {
@@ -2101,20 +2101,20 @@ TEST(BuildString, buildStringMultiSmall) {
   Tuple consts(&scope, runtime.newTuple(2));
   Object str(&scope, SmallStr::fromCStr("foo"));
   Object str1(&scope, SmallStr::fromCStr("bar"));
-  consts->atPut(0, *str);
-  consts->atPut(1, *str1);
-  code->setConsts(*consts);
+  consts.atPut(0, *str);
+  consts.atPut(1, *str1);
+  code.setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST,   0, LOAD_CONST,   1,
                      BUILD_STRING, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
   EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isSmallStr());
 
   Str result(&scope, obj);
-  EXPECT_TRUE(result->equalsCStr("foobar"));
+  EXPECT_TRUE(result.equalsCStr("foobar"));
 }
 
 TEST(BuildString, buildStringMultiLarge) {
@@ -2126,21 +2126,21 @@ TEST(BuildString, buildStringMultiLarge) {
   Object str(&scope, SmallStr::fromCStr("hello"));
   Object str1(&scope, SmallStr::fromCStr("world"));
   Object str2(&scope, SmallStr::fromCStr("python"));
-  consts->atPut(0, *str);
-  consts->atPut(1, *str1);
-  consts->atPut(2, *str2);
-  code->setConsts(*consts);
+  consts.atPut(0, *str);
+  consts.atPut(1, *str1);
+  consts.atPut(2, *str2);
+  code.setConsts(*consts);
 
   const byte bc[] = {LOAD_CONST,   0, LOAD_CONST,   1, LOAD_CONST, 2,
                      BUILD_STRING, 3, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
   EXPECT_TRUE(obj->isStr());
   EXPECT_TRUE(obj->isLargeStr());
 
   Str result(&scope, obj);
-  EXPECT_TRUE(result->equalsCStr("helloworldpython"));
+  EXPECT_TRUE(result.equalsCStr("helloworldpython"));
 }
 
 TEST(UnpackSeq, unpackRangePyStone) {
@@ -2187,9 +2187,9 @@ b = {x for x in a}
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(b->isSet());
+  ASSERT_TRUE(b.isSet());
   Set set_b(&scope, *b);
-  EXPECT_EQ(set_b->numItems(), 3);
+  EXPECT_EQ(set_b.numItems(), 3);
 }
 
 TEST(TestThread, MapAdd) {
@@ -2202,9 +2202,9 @@ b = {x:x for x in a}
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(b->isDict(), true);
+  EXPECT_EQ(b.isDict(), true);
   Dict dict_b(&scope, *b);
-  EXPECT_EQ(dict_b->numItems(), 3);
+  EXPECT_EQ(dict_b.numItems(), 3);
 }
 
 TEST(UnpackList, unpackNestedLists) {
@@ -2294,9 +2294,9 @@ for el in l:
   ASSERT_NE(RawSmallInt::cast(*b)->value(), 12);
 
   List list_l(&scope, *l);
-  ASSERT_EQ(list_l->numItems(), 16);
-  ASSERT_EQ(RawSmallInt::cast(list_l->at(2))->value(), 2);
-  ASSERT_EQ(RawSmallInt::cast(list_l->at(12))->value(), 12);
+  ASSERT_EQ(list_l.numItems(), 16);
+  ASSERT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
+  ASSERT_EQ(RawSmallInt::cast(list_l.at(12))->value(), 12);
 
   // sum(0..16) = 120
   ASSERT_EQ(RawSmallInt::cast(*s)->value(), 120);
@@ -2315,13 +2315,13 @@ l.insert(-100, 0)
   Module main(&scope, findModule(&runtime, "__main__"));
   Object l(&scope, moduleAt(&runtime, main, "l"));
   List list_l(&scope, *l);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(4))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(5))->value(), 5);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(6))->value(), 6);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(0))->value(), 0);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(1))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(3))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(4))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(5))->value(), 5);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(6))->value(), 6);
 }
 
 TEST(ListInsertTest, InsertToNegativeIndex) {
@@ -2336,12 +2336,12 @@ l.insert(-1, 3)
   Module main(&scope, findModule(&runtime, "__main__"));
   Object l(&scope, moduleAt(&runtime, main, "l"));
   List list_l(&scope, *l);
-  ASSERT_EQ(list_l->numItems(), 5);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list_l->at(4))->value(), 4);
+  ASSERT_EQ(list_l.numItems(), 5);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(0))->value(), 0);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(1))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(3))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(list_l.at(4))->value(), 4);
 }
 
 TEST(ThreadTest, BaseTypeConflict) {
@@ -2459,16 +2459,16 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
 
   Tuple consts(&scope, runtime.newTuple(4));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  consts->atPut(0, SmallInt::fromWord(0));
-  consts->atPut(1, SmallInt::fromWord(1));
-  consts->atPut(2, SmallInt::fromWord(3));
-  consts->atPut(3, NoneType::object());
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(0));
+  consts.atPut(1, SmallInt::fromWord(1));
+  consts.atPut(2, SmallInt::fromWord(3));
+  consts.atPut(3, NoneType::object());
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("a"));
-  names->atPut(0, *key);
-  code->setNames(*names);
+  names.atPut(0, *key);
+  code.setNames(*names);
 
   // see python code in BreakLoop.whileLoop (sans print)
   const byte bc[] = {LOAD_CONST,        0,                  // 0
@@ -2482,7 +2482,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
                      POP_JUMP_IF_FALSE, 6,  BREAK_LOOP, 0, JUMP_ABSOLUTE, 6,
                      POP_BLOCK,         0,  LOAD_CONST, 3,  // None
                      RETURN_VALUE,      0};
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
@@ -2496,7 +2496,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
 
   Object result(&scope, Interpreter::execute(thread, frame));
   Object value(&scope, runtime.dictAt(implicit_globals, key));
-  ASSERT_TRUE(value->isValueCell());
+  ASSERT_TRUE(value.isValueCell());
   RawObject value_obj = RawValueCell::cast(*value)->value();
   EXPECT_TRUE(value_obj->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(value_obj)->value(), 3);
@@ -2534,12 +2534,12 @@ for x in range(4):
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object l(&scope, moduleAt(&runtime, main, "l"));
-  EXPECT_TRUE(l->isList());
+  EXPECT_TRUE(l.isList());
   List list_l(&scope, *l);
-  ASSERT_GE(list_l->numItems(), 3);
-  EXPECT_EQ(list_l->at(0), SmallInt::fromWord(0));
-  EXPECT_EQ(list_l->at(1), SmallInt::fromWord(1));
-  EXPECT_EQ(list_l->at(2), SmallInt::fromWord(2));
+  ASSERT_GE(list_l.numItems(), 3);
+  EXPECT_EQ(list_l.at(0), SmallInt::fromWord(0));
+  EXPECT_EQ(list_l.at(1), SmallInt::fromWord(1));
+  EXPECT_EQ(list_l.at(2), SmallInt::fromWord(2));
 }
 
 TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
@@ -2548,21 +2548,21 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
 
   Tuple consts(&scope, runtime.newTuple(5));
   Code code(&scope, testing::newEmptyCode(&runtime));
-  consts->atPut(0, SmallInt::fromWord(0));
-  consts->atPut(1, SmallInt::fromWord(4));
-  consts->atPut(2, SmallInt::fromWord(1));
-  consts->atPut(3, SmallInt::fromWord(3));
-  consts->atPut(4, NoneType::object());
-  code->setConsts(*consts);
-  code->setArgcount(0);
-  code->setNlocals(2);
+  consts.atPut(0, SmallInt::fromWord(0));
+  consts.atPut(1, SmallInt::fromWord(4));
+  consts.atPut(2, SmallInt::fromWord(1));
+  consts.atPut(3, SmallInt::fromWord(3));
+  consts.atPut(4, NoneType::object());
+  code.setConsts(*consts);
+  code.setArgcount(0);
+  code.setNlocals(2);
 
   Tuple names(&scope, runtime.newTuple(2));
   Object key0(&scope, runtime.newStrFromCStr("cnt"));
   Object key1(&scope, runtime.newStrFromCStr("s"));
-  names->atPut(0, *key0);
-  names->atPut(1, *key0);
-  code->setNames(*names);
+  names.atPut(0, *key0);
+  names.atPut(1, *key0);
+  code.setNames(*names);
 
   //  # python code:
   //  cnt = 0
@@ -2603,7 +2603,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
 
                      LOAD_FAST,         1,  RETURN_VALUE, 0};
 
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
@@ -2616,7 +2616,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
       runtime.computeFastGlobals(code, implicit_globals, builtins));
 
   Object result(&scope, Interpreter::execute(thread, frame));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 7);
 }
 
@@ -2792,7 +2792,7 @@ a = Foo()
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  EXPECT_TRUE(foo->isType());
+  EXPECT_TRUE(foo.isType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(runtime.typeOf(*a) == *foo);
 }
@@ -2877,7 +2877,7 @@ del var
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object var(&scope, moduleAt(&runtime, main, "var"));
-  EXPECT_TRUE(var->isError());
+  EXPECT_TRUE(var.isError());
 }
 
 TEST(ThreadTest, SetupFinally) {
@@ -2968,15 +2968,15 @@ foo = Foo(1111, b=2222, c=3333)
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object result_a(&scope, moduleAt(&runtime, main, "result_a"));
-  ASSERT_TRUE(result_a->isSmallInt());
+  ASSERT_TRUE(result_a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 1111);
 
   Object result_b(&scope, moduleAt(&runtime, main, "result_b"));
-  ASSERT_TRUE(result_b->isSmallInt());
+  ASSERT_TRUE(result_b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 2222);
 
   Object result_c(&scope, moduleAt(&runtime, main, "result_c"));
-  ASSERT_TRUE(result_c->isSmallInt());
+  ASSERT_TRUE(result_c.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_c)->value(), 3333);
 }
 
@@ -3002,18 +3002,18 @@ TEST(ThreadTest, LoadTypeDerefFromLocal) {
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(0, SmallInt::fromWord(1111));
   Tuple freevars(&scope, runtime.newTuple(1));
-  freevars->atPut(0, SmallStr::fromCStr("lalala"));
+  freevars.atPut(0, SmallStr::fromCStr("lalala"));
   Tuple names(&scope, runtime.newTuple(1));
-  names->atPut(0, SmallStr::fromCStr("lalala"));
-  code->setConsts(*consts);
-  code->setNames(*names);
-  code->setFreevars(*freevars);
+  names.atPut(0, SmallStr::fromCStr("lalala"));
+  code.setConsts(*consts);
+  code.setNames(*names);
+  code.setFreevars(*freevars);
   const byte bytecode[] = {LOAD_CONST,      0, STORE_NAME,   0,
                            LOAD_CLASSDEREF, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
   frame->setCode(*code);

@@ -23,17 +23,17 @@ def test(callable):
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
+  ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
   Object test(&scope, moduleAt(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
+  ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *method);
+  args.atPut(0, *method);
 
   std::string output = callFunctionToString(func, args);
   EXPECT_EQ(output, "1111\n");
@@ -52,17 +52,17 @@ def test(callable):
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
+  ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
   Object test(&scope, moduleAt(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
+  ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *method);
+  args.atPut(0, *method);
 
   std::string output = callFunctionToString(func, args);
   EXPECT_EQ(output, "1111 2222 3333\n");
@@ -88,28 +88,28 @@ def test(callable):
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
+  ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
   Object test(&scope, moduleAt(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
+  ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *method);
+  args.atPut(0, *method);
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self->isSmallInt());
+  ASSERT_TRUE(result_self.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a->isSmallInt());
+  ASSERT_TRUE(result_a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b->isSmallInt());
+  ASSERT_TRUE(result_b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
@@ -134,28 +134,28 @@ def test(callable):
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
+  ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
   Object test(&scope, moduleAt(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
+  ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *method);
+  args.atPut(0, *method);
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self->isSmallInt());
+  ASSERT_TRUE(result_self.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a->isSmallInt());
+  ASSERT_TRUE(result_a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b->isSmallInt());
+  ASSERT_TRUE(result_b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
@@ -180,28 +180,28 @@ def test(callable):
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
+  ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
   Object test(&scope, moduleAt(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
+  ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *method);
+  args.atPut(0, *method);
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self->isSmallInt());
+  ASSERT_TRUE(result_self.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a->isSmallInt());
+  ASSERT_TRUE(result_a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b->isSmallInt());
+  ASSERT_TRUE(result_b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
@@ -227,28 +227,28 @@ def test(callable):
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
-  ASSERT_TRUE(function->isFunction());
+  ASSERT_TRUE(function.isFunction());
 
   Object self(&scope, SmallInt::fromWord(1111));
   BoundMethod method(&scope, runtime.newBoundMethod(function, self));
 
   Object test(&scope, moduleAt(&runtime, module, "test"));
-  ASSERT_TRUE(test->isFunction());
+  ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
   Tuple args(&scope, runtime.newTuple(1));
-  args->atPut(0, *method);
+  args.atPut(0, *method);
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self->isSmallInt());
+  ASSERT_TRUE(result_self.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a->isSmallInt());
+  ASSERT_TRUE(result_a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b->isSmallInt());
+  ASSERT_TRUE(result_b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
 }
 
@@ -588,18 +588,18 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalArgument) {
 
   // Create the builtin function
   Function callee(&scope, runtime.newFunction());
-  callee->setEntry(nativeTrampoline<firstArg>);
+  callee.setEntry(nativeTrampoline<firstArg>);
 
   // Set up a code object that calls the builtin with a single argument.
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -616,10 +616,10 @@ static RawObject returnsPositionalAndKeywordArgument(Thread* thread,
   Object foo_name(&scope, thread->runtime()->newStrFromCStr("foo"));
   Object foo_val_opt(&scope, args.getKw(*foo_name));
   Object foo_val(&scope,
-                 (foo_val_opt->isError() ? NoneType::object() : *foo_val_opt));
+                 (foo_val_opt.isError() ? NoneType::object() : *foo_val_opt));
   Tuple tuple(&scope, thread->runtime()->newTuple(2));
-  tuple->atPut(0, args.get(0));
-  tuple->atPut(1, *foo_val);
+  tuple.atPut(0, args.get(0));
+  tuple.atPut(1, *foo_val);
   return *tuple;
 }
 
@@ -629,32 +629,32 @@ TEST(TrampolineTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
 
   // Create the builtin kw function
   Function callee(&scope, runtime.newFunction());
-  callee->setEntryKw(nativeTrampolineKw<returnsPositionalAndKeywordArgument>);
+  callee.setEntryKw(nativeTrampolineKw<returnsPositionalAndKeywordArgument>);
 
   // Set up a code object that calls the builtin with (1234, foo='bar')
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(4));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1234));
-  consts->atPut(2, runtime.newStrFromCStr("bar"));
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1234));
+  consts.atPut(2, runtime.newStrFromCStr("bar"));
   Tuple kw_tuple(&scope, runtime.newTuple(1));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  consts->atPut(3, *kw_tuple);
-  code->setConsts(*consts);
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  consts.atPut(3, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(4);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isTuple());
   Tuple tuple(&scope, result);
-  ASSERT_EQ(tuple->length(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1234);
-  EXPECT_TRUE(RawStr::cast(tuple->at(1))->equalsCStr("bar"));
+  ASSERT_EQ(tuple.length(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 1234);
+  EXPECT_TRUE(RawStr::cast(tuple.at(1))->equalsCStr("bar"));
 }
 
 // test "builtin-kw" func that returns a list of first position arg
@@ -668,11 +668,11 @@ static RawObject returnsPositionalAndTwoKeywordArguments(Thread* thread,
   Object foo_name(&scope, runtime->newStrFromCStr("foo"));
   Object bar_name(&scope, runtime->newStrFromCStr("bar"));
   Tuple tuple(&scope, runtime->newTuple(3));
-  tuple->atPut(0, args.get(0));
+  tuple.atPut(0, args.get(0));
   Object foo_val(&scope, args.getKw(*foo_name));
-  tuple->atPut(1, (foo_val->isError() ? NoneType::object() : *foo_val));
+  tuple.atPut(1, (foo_val.isError() ? NoneType::object() : *foo_val));
   Object bar_val(&scope, args.getKw(*bar_name));
-  tuple->atPut(2, (bar_val->isError() ? NoneType::object() : *bar_val));
+  tuple.atPut(2, (bar_val.isError() ? NoneType::object() : *bar_val));
   return *tuple;
 }
 
@@ -683,40 +683,40 @@ TEST(TrampolineTest,
 
   // Create the builtin 'multi-kw' function
   Function callee(&scope, runtime.newFunction());
-  callee->setEntryKw(
+  callee.setEntryKw(
       nativeTrampolineKw<returnsPositionalAndTwoKeywordArguments>);
 
   // Code object that calls func with (1234, (foo='foo_val', bar='bar_val'))
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(5));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1234));
-  consts->atPut(2, runtime.newStrFromCStr("foo_val"));
-  consts->atPut(3, runtime.newStrFromCStr("bar_val"));
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1234));
+  consts.atPut(2, runtime.newStrFromCStr("foo_val"));
+  consts.atPut(3, runtime.newStrFromCStr("bar_val"));
   Tuple kw_tuple(&scope, runtime.newTuple(2));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  kw_tuple->atPut(1, runtime.newStrFromCStr("bar"));
-  consts->atPut(4, *kw_tuple);
-  code->setConsts(*consts);
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  kw_tuple.atPut(1, runtime.newStrFromCStr("bar"));
+  consts.atPut(4, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,   0, LOAD_CONST, 1, LOAD_CONST,       2,
                            LOAD_CONST,   3, LOAD_CONST, 4, CALL_FUNCTION_KW, 3,
                            RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(5);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isTuple());
   Tuple tuple(&scope, result);
-  ASSERT_EQ(tuple->length(), 3);
-  ASSERT_TRUE(tuple->at(0)->isInt());
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1234);
-  ASSERT_TRUE(tuple->at(1)->isStr());
-  EXPECT_TRUE(RawStr::cast(tuple->at(1))->equalsCStr("foo_val"));
-  ASSERT_TRUE(tuple->at(2)->isStr());
-  EXPECT_TRUE(RawStr::cast(tuple->at(2))->equalsCStr("bar_val"));
+  ASSERT_EQ(tuple.length(), 3);
+  ASSERT_TRUE(tuple.at(0)->isInt());
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 1234);
+  ASSERT_TRUE(tuple.at(1)->isStr());
+  EXPECT_TRUE(RawStr::cast(tuple.at(1))->equalsCStr("foo_val"));
+  ASSERT_TRUE(tuple.at(2)->isStr());
+  EXPECT_TRUE(RawStr::cast(tuple.at(2))->equalsCStr("bar_val"));
 }
 
 static RawObject builtinReturnSecondArg(Thread* /* thread */, Frame* frame,
@@ -747,7 +747,7 @@ TEST(TrampolineTest, BuiltinTrampolineKwPassesKwargs) {
   createAndPatchBuiltinReturnSecondArg(&runtime);
   runFromCStr(&runtime, "result = dummy(second=12345, first=None)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawInt::cast(*result).asWord(), 12345);
 }
 
@@ -769,8 +769,8 @@ TEST(TrampolineTest, InterpreterClosureUsesArgOverCellValue) {
   Tuple varnames(&scope, runtime.newTuple(nlocals));
   Tuple cellvars(&scope, runtime.newTuple(1));
   Str bar(&scope, runtime.internStrFromCStr("bar"));
-  varnames->atPut(0, *bar);
-  cellvars->atPut(0, *bar);
+  varnames.atPut(0, *bar);
+  cellvars.atPut(0, *bar);
   const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
   Bytes bc(&scope, runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
@@ -778,22 +778,22 @@ TEST(TrampolineTest, InterpreterClosureUsesArgOverCellValue) {
   Code code(&scope,
             runtime.newCode(1, 0, nlocals, 0, 0, bc, none, none, varnames,
                             empty_tuple, cellvars, none, none, 0, none));
-  ASSERT_TRUE(!code->cell2arg()->isNoneType());
+  ASSERT_TRUE(!code.cell2arg()->isNoneType());
 
   // Create a function
   runFromCStr(&runtime, R"(
 def foo(bar): pass
 )");
   Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
-  foo->setEntry(interpreterClosureTrampoline);
-  foo->setCode(*code);
+  foo.setEntry(interpreterClosureTrampoline);
+  foo.setCode(*code);
 
   // Run function
   runFromCStr(&runtime, R"(
 result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(Int::cast(*result)->asWord(), 1);
 }
 
@@ -804,16 +804,16 @@ TEST(TrampolineTest, InterpreterClosureUsesCellValue) {
   // Create code object
   word nlocals = 2;
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, runtime.newInt(10));
+  consts.atPut(0, runtime.newInt(10));
   Tuple varnames(&scope, runtime.newTuple(nlocals));
   Tuple cellvars(&scope, runtime.newTuple(2));
   Str bar(&scope, runtime.internStrFromCStr("bar"));
   Str baz(&scope, runtime.internStrFromCStr("baz"));
   Str foobar(&scope, runtime.internStrFromCStr("foobar"));
-  varnames->atPut(0, *bar);
-  varnames->atPut(1, *baz);
-  cellvars->atPut(0, *foobar);
-  cellvars->atPut(1, *bar);
+  varnames.atPut(0, *bar);
+  varnames.atPut(1, *baz);
+  cellvars.atPut(0, *foobar);
+  cellvars.atPut(1, *bar);
   const byte bytecode[] = {LOAD_CONST, 0, STORE_DEREF,  0,
                            LOAD_DEREF, 0, RETURN_VALUE, 0};
   Bytes bc(&scope, runtime.newBytesWithAll(bytecode));
@@ -822,22 +822,22 @@ TEST(TrampolineTest, InterpreterClosureUsesCellValue) {
   Code code(&scope,
             runtime.newCode(1, 0, nlocals, 0, 0, bc, consts, none, varnames,
                             empty_tuple, cellvars, none, none, 0, none));
-  ASSERT_TRUE(!code->cell2arg()->isNoneType());
+  ASSERT_TRUE(!code.cell2arg()->isNoneType());
 
   // Create a function
   runFromCStr(&runtime, R"(
 def foo(bar): pass
 )");
   Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
-  foo->setEntry(interpreterClosureTrampoline);
-  foo->setCode(*code);
+  foo.setEntry(interpreterClosureTrampoline);
+  foo.setCode(*code);
 
   // Run function
   runFromCStr(&runtime, R"(
 result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(Int::cast(*result)->asWord(), 10);
 }
 
@@ -873,18 +873,18 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineNoArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineNoArgs);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *callee);
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -902,20 +902,20 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineNoArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineNoArgs);
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -923,7 +923,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
-  EXPECT_EQ(exception_type->builtinBase(), LayoutId::kTypeError);
+  EXPECT_EQ(exception_type.builtinBase(), LayoutId::kTypeError);
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
@@ -933,18 +933,18 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineNoArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineNoArgs);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *callee);
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -952,7 +952,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
-  EXPECT_EQ(exception_type->builtinBase(), LayoutId::kSystemError);
+  EXPECT_EQ(exception_type.builtinBase(), LayoutId::kSystemError);
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
@@ -965,25 +965,25 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineNoArgsKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineNoArgsKw);
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
-  consts->atPut(1, runtime.newStrFromCStr("bar"));
+  consts.atPut(0, *callee);
+  consts.atPut(1, runtime.newStrFromCStr("bar"));
   Tuple kw_tuple(&scope, runtime.newTuple(1));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  consts->atPut(2, *kw_tuple);
-  code->setConsts(*consts);
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  consts.atPut(2, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_KW, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   EXPECT_TRUE(raised(Thread::currentThread()->run(code), LayoutId::kTypeError));
@@ -999,23 +999,23 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineNoArgsKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineNoArgsKw);
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple kw_tuple(&scope, runtime.newTuple(0));
-  consts->atPut(1, *kw_tuple);
-  code->setConsts(*consts);
+  consts.atPut(1, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_KW, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1033,24 +1033,24 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineNoArgsEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineNoArgsEx);
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(10));
-  consts->atPut(1, *arg_tuple);
-  code->setConsts(*consts);
+  arg_tuple.atPut(0, SmallInt::fromWord(10));
+  consts.atPut(1, *arg_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   EXPECT_TRUE(raised(Thread::currentThread()->run(code), LayoutId::kTypeError));
@@ -1066,23 +1066,23 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineNoArgsEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineNoArgsEx);
 
   // Set up a code object that calls with (*())
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(0));
-  consts->atPut(1, *arg_tuple);
-  code->setConsts(*consts);
+  consts.atPut(1, *arg_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1100,18 +1100,18 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineOneArg);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *callee);
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1125,20 +1125,20 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineOneArg);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1154,21 +1154,21 @@ TEST(TrampolinesTest,
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineOneArg);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function with (123, 456)
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(123));
-  consts->atPut(2, SmallInt::fromWord(456));
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(123));
+  consts.atPut(2, SmallInt::fromWord(456));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1182,20 +1182,20 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineOneArg);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1209,24 +1209,24 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndZeroKwArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineOneArgKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineOneArgKw);
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
   Tuple kw_tuple(&scope, runtime.newTuple(0));
-  consts->atPut(2, *kw_tuple);
-  code->setConsts(*consts);
+  consts.atPut(2, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_KW, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1244,26 +1244,26 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineOneArgKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineOneArgKw);
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(4));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple kw_tuple(&scope, runtime.newTuple(1));
-  consts->atPut(1, SmallInt::fromWord(1111));
-  consts->atPut(2, runtime.newStrFromCStr("bar"));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  consts->atPut(3, *kw_tuple);
-  code->setConsts(*consts);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  consts.atPut(2, runtime.newStrFromCStr("bar"));
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  consts.atPut(3, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(4);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1277,24 +1277,24 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineOneArgEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineOneArgEx);
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, *arg_tuple);
-  code->setConsts(*consts);
+  arg_tuple.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, *arg_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1309,26 +1309,26 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineOneArgEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineOneArgEx);
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, *arg_tuple);
+  arg_tuple.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime.newDict());
-  consts->atPut(2, *kw_dict);
-  code->setConsts(*consts);
+  consts.atPut(2, *kw_dict);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1346,29 +1346,29 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineOneArgEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineOneArgEx);
 
   // Set up a code object that calls with (*(10), {2:3})
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, *arg_tuple);
+  arg_tuple.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime.newDict());
   Object key(&scope, SmallInt::fromWord(2));
   Object value(&scope, SmallInt::fromWord(3));
   runtime.dictAtPut(kw_dict, key, value);
-  consts->atPut(2, *kw_dict);
-  code->setConsts(*consts);
+  consts.atPut(2, *kw_dict);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1385,18 +1385,18 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineVarArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineVarArgs);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *callee);
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1408,27 +1408,27 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple->at(0));
+    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
   };
 
   Runtime runtime;
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineVarArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineVarArgs);
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1443,18 +1443,18 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineVarArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineVarArgs);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *callee);
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1462,38 +1462,38 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
-  EXPECT_EQ(exception_type->builtinBase(), LayoutId::kSystemError);
+  EXPECT_EQ(exception_type.builtinBase(), LayoutId::kSystemError);
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple->at(0));
+    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
   };
 
   Runtime runtime;
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineVarArgsKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineVarArgsKw);
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
   Tuple kw_tuple(&scope, runtime.newTuple(0));
-  consts->atPut(2, *kw_tuple);
-  code->setConsts(*consts);
+  consts.atPut(2, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_KW, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1511,26 +1511,26 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineVarArgsKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineVarArgsKw);
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(4));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple kw_tuple(&scope, runtime.newTuple(1));
-  consts->atPut(1, SmallInt::fromWord(1111));
-  consts->atPut(2, runtime.newStrFromCStr("bar"));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  consts->atPut(3, *kw_tuple);
-  code->setConsts(*consts);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  consts.atPut(2, runtime.newStrFromCStr("bar"));
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  consts.atPut(3, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(4);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1541,31 +1541,31 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple->at(0));
+    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
   };
 
   Runtime runtime;
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineVarArgsEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineVarArgsEx);
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, *arg_tuple);
-  code->setConsts(*consts);
+  arg_tuple.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, *arg_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1577,33 +1577,33 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple->at(0));
+    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
   };
 
   Runtime runtime;
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineVarArgsEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineVarArgsEx);
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, *arg_tuple);
+  arg_tuple.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime.newDict());
-  consts->atPut(2, *kw_dict);
-  code->setConsts(*consts);
+  consts.atPut(2, *kw_dict);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1622,29 +1622,29 @@ TEST(TrampolinesTest,
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineVarArgsEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineVarArgsEx);
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(1111));
-  consts->atPut(1, *arg_tuple);
+  arg_tuple.atPut(0, SmallInt::fromWord(1111));
+  consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime.newDict());
   Object key(&scope, SmallInt::fromWord(2));
   Object value(&scope, SmallInt::fromWord(3));
   runtime.dictAtPut(kw_dict, key, value);
-  consts->atPut(2, *kw_dict);
-  code->setConsts(*consts);
+  consts.atPut(2, *kw_dict);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1661,18 +1661,18 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineKeywordArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineKeywordArgs);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *callee);
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1684,27 +1684,27 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple->at(0));
+    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
   };
 
   Runtime runtime;
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineKeywordArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineKeywordArgs);
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1111));
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,    0, LOAD_CONST,   1,
                            CALL_FUNCTION, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1721,18 +1721,18 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntry(moduleTrampolineKeywordArgs);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntry(moduleTrampolineKeywordArgs);
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *callee);
-  code->setConsts(*consts);
+  consts.atPut(0, *callee);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
   Object result(&scope, Thread::currentThread()->run(code));
@@ -1755,26 +1755,26 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineKeywordArgsKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineKeywordArgsKw);
 
   // Set up a code object that calls the builtin with ("bar", foo=1111)
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(4));
-  consts->atPut(0, *callee);
-  consts->atPut(1, runtime.newStrFromCStr("bar"));
-  consts->atPut(2, SmallInt::fromWord(1111));
+  consts.atPut(0, *callee);
+  consts.atPut(1, runtime.newStrFromCStr("bar"));
+  consts.atPut(2, SmallInt::fromWord(1111));
   Tuple kw_tuple(&scope, runtime.newTuple(1));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  consts->atPut(3, *kw_tuple);
-  code->setConsts(*consts);
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  consts.atPut(3, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(4);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1786,35 +1786,35 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
     HandleScope scope;
     Tuple args_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), args_tuple->at(1));
+    return ApiHandle::newReference(Thread::currentThread(), args_tuple.at(1));
   };
 
   Runtime runtime;
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineKeywordArgsKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineKeywordArgsKw);
 
   // Set up a code object that calls the builtin with (123, 456, foo=789)
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(5));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(123));
-  consts->atPut(2, SmallInt::fromWord(456));
-  consts->atPut(3, SmallInt::fromWord(789));
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(123));
+  consts.atPut(2, SmallInt::fromWord(456));
+  consts.atPut(3, SmallInt::fromWord(789));
   Tuple kw_tuple(&scope, runtime.newTuple(1));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  consts->atPut(4, *kw_tuple);
-  code->setConsts(*consts);
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  consts.atPut(4, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,   0, LOAD_CONST, 1, LOAD_CONST,       2,
                            LOAD_CONST,   3, LOAD_CONST, 4, CALL_FUNCTION_KW, 3,
                            RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(5);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1837,27 +1837,27 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryKw(moduleTrampolineKeywordArgsKw);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryKw(moduleTrampolineKeywordArgsKw);
 
   // Set up a code object that calls the builtin with ("foo"=1234, "bar"=5678)
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(4));
-  consts->atPut(0, *callee);
-  consts->atPut(1, SmallInt::fromWord(1234));
-  consts->atPut(2, SmallInt::fromWord(5678));
+  consts.atPut(0, *callee);
+  consts.atPut(1, SmallInt::fromWord(1234));
+  consts.atPut(2, SmallInt::fromWord(5678));
   Tuple kw_tuple(&scope, runtime.newTuple(2));
-  kw_tuple->atPut(0, runtime.newStrFromCStr("foo"));
-  kw_tuple->atPut(1, runtime.newStrFromCStr("bar"));
-  consts->atPut(3, *kw_tuple);
-  code->setConsts(*consts);
+  kw_tuple.atPut(0, runtime.newStrFromCStr("foo"));
+  kw_tuple.atPut(1, runtime.newStrFromCStr("bar"));
+  consts.atPut(3, *kw_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,       1, LOAD_CONST,   2,
                            LOAD_CONST, 3, CALL_FUNCTION_KW, 2, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(4);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1869,31 +1869,31 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple->at(0));
+    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
   };
 
   Runtime runtime;
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineKeywordArgsEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineKeywordArgsEx);
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(10));
-  consts->atPut(1, *arg_tuple);
-  code->setConsts(*consts);
+  arg_tuple.atPut(0, SmallInt::fromWord(10));
+  consts.atPut(1, *arg_tuple);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1,
                            CALL_FUNCTION_EX, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(2);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1916,29 +1916,29 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
-  callee->setModule(runtime.newModule(mod_name));
-  callee->setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee->setEntryEx(moduleTrampolineKeywordArgsEx);
+  callee.setModule(runtime.newModule(mod_name));
+  callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setEntryEx(moduleTrampolineKeywordArgsEx);
 
   // Set up a code object that calls with (*(10), **{"foo":1111})
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(3));
-  consts->atPut(0, *callee);
+  consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
-  arg_tuple->atPut(0, SmallInt::fromWord(10));
-  consts->atPut(1, *arg_tuple);
+  arg_tuple.atPut(0, SmallInt::fromWord(10));
+  consts.atPut(1, *arg_tuple);
   Dict kw_dict(&scope, runtime.newDict());
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object value(&scope, SmallInt::fromWord(1111));
   runtime.dictAtPut(kw_dict, key, value);
-  consts->atPut(2, *kw_dict);
-  code->setConsts(*consts);
+  consts.atPut(2, *kw_dict);
+  code.setConsts(*consts);
 
   // load arguments and call builtin kw function
   const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
                            CALL_FUNCTION_EX, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(3);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
@@ -1971,7 +1971,7 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(*(1,2))");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
 }
 
@@ -1981,7 +1981,7 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(1, *(2,))");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
 }
 
@@ -2007,7 +2007,7 @@ TEST(TrampolinesTest,
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(1, *(2, 3))");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawInt::cast(*result).asWord(), 1);
 }
 
@@ -2033,7 +2033,7 @@ TEST(TrampolinesTest,
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(1, 2, *(3,), **{'foo': 1, 'bar': 2})");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
 }
 
@@ -2043,7 +2043,7 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(*(1,), second=5)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
 }
 

@@ -17,7 +17,7 @@ RawObject nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
   Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc);
   Object result(&scope, Fn(thread, frame, argc));
-  DCHECK(result->isError() == thread->hasPendingException(),
+  DCHECK(result.isError() == thread->hasPendingException(),
          "error/exception mismatch");
   thread->popFrame();
   return *result;
@@ -29,7 +29,7 @@ RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
   HandleScope scope(thread);
   Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc + 1);
   Object result(&scope, Fn(thread, frame, argc + 1));
-  DCHECK(result->isError() == thread->hasPendingException(),
+  DCHECK(result.isError() == thread->hasPendingException(),
          "error/exception mismatch");
   thread->popFrame();
   return *result;

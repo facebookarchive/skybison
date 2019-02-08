@@ -10,11 +10,11 @@ namespace python {
 bool givenExceptionMatches(Thread* thread, const Object& given,
                            const Object& exc) {
   HandleScope scope(thread);
-  if (exc->isTuple()) {
+  if (exc.isTuple()) {
     Tuple tuple(&scope, *exc);
     Object item(&scope, NoneType::object());
-    for (word i = 0; i < tuple->length(); i++) {
-      item = tuple->at(i);
+    for (word i = 0; i < tuple.length(); i++) {
+      item = tuple.at(i);
       if (givenExceptionMatches(thread, given, item)) {
         return true;
       }
@@ -30,8 +30,8 @@ bool givenExceptionMatches(Thread* thread, const Object& given,
       runtime->isInstanceOfType(*exc)) {
     Type subtype(&scope, *given_type);
     Type supertype(&scope, *exc);
-    if (subtype->isBaseExceptionSubclass() &&
-        supertype->isBaseExceptionSubclass()) {
+    if (subtype.isBaseExceptionSubclass() &&
+        supertype.isBaseExceptionSubclass()) {
       return runtime->isSubclass(subtype, supertype);
     }
   }
@@ -42,7 +42,7 @@ RawObject createException(Thread* thread, const Type& type,
                           const Object& value) {
   Frame* caller = thread->currentFrame();
 
-  if (value->isNoneType()) {
+  if (value.isNoneType()) {
     return Interpreter::callFunction0(thread, caller, type);
   }
   if (thread->runtime()->isInstanceOfTuple(*value)) {
@@ -60,7 +60,7 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
   auto normalize = [&] {
     if (!runtime->isInstanceOfType(**exc)) return true;
     Type type(&scope, **exc);
-    if (!type->isBaseExceptionSubclass()) return true;
+    if (!type.isBaseExceptionSubclass()) return true;
     Object value(&scope, **val);
     Type value_type(&scope, runtime->typeOf(*value));
 
@@ -69,7 +69,7 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
     if (!runtime->isSubclass(value_type, type)) {
       // value isn't an instance of type. Replace it with type(value).
       value = createException(thread, type, value);
-      if (value->isError()) return false;
+      if (value.isError()) return false;
       *val = *value;
     } else if (*value_type != *type) {
       // value_type is more specific than type, so use it instead.
@@ -95,13 +95,13 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
     *exc = thread->pendingExceptionType();
     *val = thread->pendingExceptionValue();
     Object new_tb(&scope, thread->pendingExceptionTraceback());
-    if (!new_tb->isNoneType()) *tb = *new_tb;
+    if (!new_tb.isNoneType()) *tb = *new_tb;
     thread->clearPendingException();
   }
 
   if (runtime->isInstanceOfType(**exc)) {
     Type type(&scope, **exc);
-    if (type->builtinBase() == LayoutId::kMemoryError) {
+    if (type.builtinBase() == LayoutId::kMemoryError) {
       UNIMPLEMENTED(
           "Cannot recover from MemoryErrors while normalizing exceptions.");
     }
@@ -144,11 +144,11 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   BaseException self(&scope, args.get(0));
   Tuple tuple(&scope, runtime->newTuple(nargs - 1));
   for (word i = 1; i < nargs; i++) {
-    tuple->atPut(i - 1, args.get(i));
+    tuple.atPut(i - 1, args.get(i));
   }
-  self->setArgs(*tuple);
-  self->setCause(runtime->unboundValue());
-  self->setContext(runtime->unboundValue());
+  self.setArgs(*tuple);
+  self.setCause(runtime->unboundValue());
+  self.setContext(runtime->unboundValue());
   return NoneType::object();
 }
 
@@ -184,9 +184,9 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   if (result->isError()) {
     return result;
   }
-  Tuple tuple(&scope, self->args());
-  if (tuple->length() > 0) {
-    self->setValue(tuple->at(0));
+  Tuple tuple(&scope, self.args());
+  if (tuple.length() > 0) {
+    self.setValue(tuple.at(0));
   }
   return NoneType::object();
 }
@@ -223,9 +223,9 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   if (result->isError()) {
     return result;
   }
-  Tuple tuple(&scope, self->args());
-  if (tuple->length() > 0) {
-    self->setCode(tuple->at(0));
+  Tuple tuple(&scope, self.args());
+  if (tuple.length() > 0) {
+    self.setCode(tuple.at(0));
   }
   return NoneType::object();
 }

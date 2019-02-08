@@ -18,13 +18,13 @@ PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,
   HandleScope scope(thread);
   Slice slice(&scope, thread->runtime()->newSlice());
   if (start != nullptr) {
-    slice->setStart(ApiHandle::fromPyObject(start)->asObject());
+    slice.setStart(ApiHandle::fromPyObject(start)->asObject());
   }
   if (stop != nullptr) {
-    slice->setStop(ApiHandle::fromPyObject(stop)->asObject());
+    slice.setStop(ApiHandle::fromPyObject(stop)->asObject());
   }
   if (step != nullptr) {
-    slice->setStep(ApiHandle::fromPyObject(step)->asObject());
+    slice.setStep(ApiHandle::fromPyObject(step)->asObject());
   }
   return ApiHandle::newReference(thread, *slice);
 }

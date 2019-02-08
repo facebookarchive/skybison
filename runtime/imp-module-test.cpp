@@ -65,7 +65,7 @@ spec = DummyModuleSpec("non_existent_module")
   HandleScope scope;
   Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
   Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
-  EXPECT_TRUE(result->isNoneType());
+  EXPECT_TRUE(result.isNoneType());
 }
 
 TEST(ImportBuiltinsTest, CreateBuiltinReturnsModule) {
@@ -80,7 +80,7 @@ spec = DummyModuleSpec("errno")
   HandleScope scope;
   Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
   Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
-  ASSERT_TRUE(result->isModule());
+  ASSERT_TRUE(result.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result)->name(), "errno"));
 }
 
@@ -107,7 +107,7 @@ TEST(ImportBuiltinsTest, ExtensionSuffixesWithoutArgsRaisesTypeError) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(builtinImpExtensionSuffixes, module_name));
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
   EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
@@ -116,7 +116,7 @@ TEST(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
   Runtime runtime;
   HandleScope scope;
   Object result(&scope, runBuiltin(builtinImpExtensionSuffixes));
-  ASSERT_TRUE(result->isList());
+  ASSERT_TRUE(result.isList());
   EXPECT_PYLIST_EQ(result, {".so"});
 }
 
@@ -152,7 +152,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(Int::cast(*result)->asWord(), 0);
 }
 
@@ -161,7 +161,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsNegativeOne) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("sys"));
   Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(Int::cast(*result)->asWord(), -1);
 }
 
@@ -170,7 +170,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("errno"));
   Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(Int::cast(*result)->asWord(), 1);
 }
 
@@ -186,7 +186,7 @@ TEST(ImportBuiltinsTest, IsFrozenReturnsFalse) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(builtinImpIsFrozen, module_name));
-  ASSERT_TRUE(result->isBool());
+  ASSERT_TRUE(result.isBool());
   EXPECT_FALSE(Bool::cast(*result)->value());
 }
 
@@ -215,7 +215,7 @@ TEST(ImportBuiltins, AcquireLockCheckRecursiveCallsWorks) {
   runBuiltin(builtinImpReleaseLock);
   // Make sure that additional releases raise.
   Object result(&scope, runBuiltin(builtinImpReleaseLock));
-  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(result.isError());
 }
 
 }  // namespace python

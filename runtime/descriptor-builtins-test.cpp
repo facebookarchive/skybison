@@ -67,11 +67,11 @@ x = property()
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(x->isProperty());
+  ASSERT_TRUE(x.isProperty());
   Property prop(&scope, *x);
-  ASSERT_TRUE(prop->getter()->isNoneType());
-  ASSERT_TRUE(prop->setter()->isNoneType());
-  ASSERT_TRUE(prop->deleter()->isNoneType());
+  ASSERT_TRUE(prop.getter()->isNoneType());
+  ASSERT_TRUE(prop.setter()->isNoneType());
+  ASSERT_TRUE(prop.deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyCreateWithGetterSetterReturnsArgs) {
@@ -86,11 +86,11 @@ x = property(get_foo, set_foo)
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(x->isProperty());
+  ASSERT_TRUE(x.isProperty());
   Property prop(&scope, *x);
-  ASSERT_TRUE(prop->getter()->isFunction());
-  ASSERT_TRUE(prop->setter()->isFunction());
-  ASSERT_TRUE(prop->deleter()->isNoneType());
+  ASSERT_TRUE(prop.getter()->isFunction());
+  ASSERT_TRUE(prop.setter()->isFunction());
+  ASSERT_TRUE(prop.deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyModifyViaGetterReturnsGetter) {
@@ -106,18 +106,18 @@ y = x.getter(get_foo)
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(x->isProperty());
+  ASSERT_TRUE(x.isProperty());
   Property x_prop(&scope, *x);
-  ASSERT_TRUE(x_prop->getter()->isNoneType());
-  ASSERT_TRUE(x_prop->setter()->isFunction());
-  ASSERT_TRUE(x_prop->deleter()->isNoneType());
+  ASSERT_TRUE(x_prop.getter()->isNoneType());
+  ASSERT_TRUE(x_prop.setter()->isFunction());
+  ASSERT_TRUE(x_prop.deleter()->isNoneType());
 
   Object y(&scope, moduleAt(&runtime, "__main__", "y"));
-  ASSERT_TRUE(y->isProperty());
+  ASSERT_TRUE(y.isProperty());
   Property y_prop(&scope, *y);
-  ASSERT_TRUE(y_prop->getter()->isFunction());
-  ASSERT_TRUE(y_prop->setter()->isFunction());
-  ASSERT_TRUE(y_prop->deleter()->isNoneType());
+  ASSERT_TRUE(y_prop.getter()->isFunction());
+  ASSERT_TRUE(y_prop.setter()->isFunction());
+  ASSERT_TRUE(y_prop.deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyModifyViaSetterReturnsSetter) {
@@ -133,18 +133,18 @@ y = x.setter(set_foo)
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(x->isProperty());
+  ASSERT_TRUE(x.isProperty());
   Property x_prop(&scope, *x);
-  ASSERT_TRUE(x_prop->getter()->isFunction());
-  ASSERT_TRUE(x_prop->setter()->isNoneType());
-  ASSERT_TRUE(x_prop->deleter()->isNoneType());
+  ASSERT_TRUE(x_prop.getter()->isFunction());
+  ASSERT_TRUE(x_prop.setter()->isNoneType());
+  ASSERT_TRUE(x_prop.deleter()->isNoneType());
 
   Object y(&scope, moduleAt(&runtime, "__main__", "y"));
-  ASSERT_TRUE(y->isProperty());
+  ASSERT_TRUE(y.isProperty());
   Property y_prop(&scope, *y);
-  ASSERT_TRUE(y_prop->getter()->isFunction());
-  ASSERT_TRUE(y_prop->setter()->isFunction());
-  ASSERT_TRUE(y_prop->deleter()->isNoneType());
+  ASSERT_TRUE(y_prop.getter()->isFunction());
+  ASSERT_TRUE(y_prop.setter()->isFunction());
+  ASSERT_TRUE(y_prop.deleter()->isNoneType());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {
@@ -226,7 +226,7 @@ x = C.x
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(x->isProperty());
+  ASSERT_TRUE(x.isProperty());
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaClassModifiedViaSetter) {
@@ -253,10 +253,10 @@ x2 = c1.x
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x1(&scope, moduleAt(&runtime, "__main__", "x1"));
-  ASSERT_TRUE(x1->isInt());
+  ASSERT_TRUE(x1.isInt());
   EXPECT_EQ(RawSmallInt::cast(*x1)->value(), 24);
   Object x2(&scope, moduleAt(&runtime, "__main__", "x2"));
-  ASSERT_TRUE(x2->isInt());
+  ASSERT_TRUE(x2.isInt());
   EXPECT_EQ(RawSmallInt::cast(*x2)->value(), 42);
 }
 
@@ -283,7 +283,7 @@ x = c1.x
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(x->isInt());
+  ASSERT_TRUE(x.isInt());
   EXPECT_EQ(RawSmallInt::cast(*x)->value(), 42);
 }
 
@@ -301,7 +301,7 @@ class Foo:
 result = Foo().x
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 123);
 }
 
@@ -321,7 +321,7 @@ foo.x = 123
 result = foo.y
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isInt());
+  ASSERT_TRUE(result.isInt());
   EXPECT_EQ(RawSmallInt::cast(*result)->value(), 123);
 }
 

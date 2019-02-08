@@ -24,13 +24,13 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
 
 static RawObject extensionSlot(const Type& type, Type::ExtensionSlot slot_id) {
   DCHECK(!type->extensionSlots()->isNoneType(), "Type is not an extension");
-  return RawTuple::cast(type->extensionSlots())->at(static_cast<word>(slot_id));
+  return RawTuple::cast(type.extensionSlots())->at(static_cast<word>(slot_id));
 }
 
 static void setExtensionSlot(const Type& type, Type::ExtensionSlot slot_id,
                              RawObject slot) {
   DCHECK(!type->extensionSlots()->isNoneType(), "Type is not an extension");
-  return RawTuple::cast(type->extensionSlots())
+  return RawTuple::cast(type.extensionSlots())
       ->atPut(static_cast<word>(slot_id), slot);
 }
 
@@ -42,16 +42,16 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
 
   HandleScope scope;
   Type type(&scope, handle->asObject());
-  if (type->isBuiltin()) {
+  if (type.isBuiltin()) {
     UNIMPLEMENTED("GetFlags from built-in types");
   }
 
-  if (type->extensionSlots()->isNoneType()) {
+  if (type.extensionSlots()->isNoneType()) {
     UNIMPLEMENTED("GetFlags from types initialized through Python code");
   }
 
   Int flags(&scope, extensionSlot(type, Type::ExtensionSlot::kFlags));
-  return flags->asWord();
+  return flags.asWord();
 }
 
 static Type::ExtensionSlot slotToTypeSlot(int slot) {
@@ -233,7 +233,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
 
   HandleScope scope(thread);
   Type type(&scope, handle->asObject());
-  if (type->isBuiltin()) {
+  if (type.isBuiltin()) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
@@ -244,13 +244,13 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
     return nullptr;
   }
 
-  if (type->extensionSlots()->isNoneType()) {
+  if (type.extensionSlots()->isNoneType()) {
     UNIMPLEMENTED("Get slots from types initialized through Python code");
   }
 
   DCHECK(!type->extensionSlots()->isNoneType(), "Type is not extension type");
   Int address(&scope, extensionSlot(type, field_id));
-  return address->asCPtr();
+  return address.asCPtr();
 }
 
 PY_EXPORT int PyType_Ready(PyTypeObject*) {
@@ -270,7 +270,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   // Create a new type for the PyTypeObject
   Type type(&scope, runtime->newType());
   Dict dict(&scope, runtime->newDict());
-  type->setDict(*dict);
+  type.setDict(*dict);
 
   // Set the class name
   const char* class_name = strrchr(spec->name, '.');
@@ -280,14 +280,14 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     class_name++;
   }
   Object name_obj(&scope, runtime->newStrFromCStr(class_name));
-  type->setName(*name_obj);
+  type.setName(*name_obj);
   Object dict_key(&scope, runtime->symbols()->DunderName());
   runtime->dictAtPutInValueCell(dict, dict_key, name_obj);
 
   // Compute Mro
   Tuple parents(&scope, runtime->newTuple(0));
   Object mro(&scope, computeMro(thread, type, parents));
-  type->setMro(*mro);
+  type.setMro(*mro);
 
   // Initialize instance Layout
   Layout layout_init(
@@ -295,13 +295,13 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   Layout layout(&scope,
                 runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
-  layout->setDescribedType(*type);
-  type->setInstanceLayout(*layout);
+  layout.setDescribedType(*type);
+  type.setInstanceLayout(*layout);
 
   // Initialize the extension slots tuple
   Object extension_slots(
       &scope, runtime->newTuple(static_cast<int>(Type::ExtensionSlot::kEnd)));
-  type->setExtensionSlots(*extension_slots);
+  type.setExtensionSlots(*extension_slots);
 
   // Set the type slots
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
@@ -354,13 +354,13 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
   Int item_size(&scope, extensionSlot(type, Type::ExtensionSlot::kItemSize));
   Py_ssize_t size = Utils::roundUp(
-      nitems * item_size->asWord() + basic_size->asWord(), kWordSize);
+      nitems * item_size.asWord() + basic_size.asWord(), kWordSize);
 
   PyObject* pyobj = static_cast<PyObject*>(PyObject_Calloc(1, size));
   if (pyobj == nullptr) return nullptr;
   pyobj->ob_refcnt = 1;
   pyobj->ob_type = type_obj;
-  if (item_size->asWord() != 0) {
+  if (item_size.asWord() != 0) {
     reinterpret_cast<PyVarObject*>(pyobj)->ob_size = nitems;
   }
   return pyobj;

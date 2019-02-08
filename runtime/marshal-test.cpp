@@ -504,7 +504,7 @@ TEST(MarshalReaderTest, ReadObjectSetOnEmptySetReturnsEmptySet) {
   // marshal.dumps(set())
   Marshal::Reader reader(&scope, &runtime, "\xbc\x00\x00\x00\x00");
   Object obj(&scope, reader.readObject());
-  ASSERT_TRUE(obj->isSet());
+  ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(RawSet::cast(*obj).numItems(), 0);
 }
 
@@ -517,9 +517,9 @@ TEST(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
       "\x00\x00";
   Marshal::Reader reader(&scope, &runtime, buffer);
   Object obj(&scope, reader.readObject());
-  ASSERT_TRUE(obj->isSet());
+  ASSERT_TRUE(obj.isSet());
   Set set(&scope, *obj);
-  EXPECT_EQ(set->numItems(), 3);
+  EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(runtime.setIncludes(set, one));
   Int two(&scope, SmallInt::fromWord(2));
@@ -534,7 +534,7 @@ TEST(MarshalReaderTest, ReadObjectFrozenSetOnEmptySetReturnsEmptyFrozenSet) {
   // marshal.dumps(frozenset())
   Marshal::Reader reader(&scope, &runtime, "\xbe\x00\x00\x00\x00");
   Object obj(&scope, reader.readObject());
-  ASSERT_TRUE(obj->isFrozenSet());
+  ASSERT_TRUE(obj.isFrozenSet());
   EXPECT_EQ(RawFrozenSet::cast(*obj).numItems(), 0);
 }
 
@@ -558,9 +558,9 @@ TEST(MarshalReaderTest,
       "\x00\x00";
   Marshal::Reader reader(&scope, &runtime, buffer);
   Object obj(&scope, reader.readObject());
-  ASSERT_TRUE(obj->isFrozenSet());
+  ASSERT_TRUE(obj.isFrozenSet());
   FrozenSet set(&scope, *obj);
-  EXPECT_EQ(set->numItems(), 3);
+  EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(runtime.setIncludes(set, one));
   Int two(&scope, SmallInt::fromWord(2));

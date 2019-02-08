@@ -40,15 +40,15 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseRuntimeErrorWithCStr("super(): no code object");
     }
     Code code(&scope, caller_frame->code());
-    if (code->argcount() == 0) {
+    if (code.argcount() == 0) {
       return thread->raiseRuntimeErrorWithCStr("super(): no arguments");
     }
-    Tuple free_vars(&scope, code->freevars());
+    Tuple free_vars(&scope, code.freevars());
     RawObject cell = Error::object();
-    for (word i = 0; i < free_vars->length(); i++) {
-      if (RawStr::cast(free_vars->at(i))
+    for (word i = 0; i < free_vars.length(); i++) {
+      if (RawStr::cast(free_vars.at(i))
               ->equals(thread->runtime()->symbols()->DunderClass())) {
-        cell = caller_frame->getLocal(code->nlocals() + i);
+        cell = caller_frame->getLocal(code.nlocals() + i);
         break;
       }
     }
@@ -66,14 +66,14 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     type_obj = args.get(1);
     obj = args.get(2);
   }
-  if (!type_obj->isType()) {
+  if (!type_obj.isType()) {
     return thread->raiseTypeErrorWithCStr("super() argument 1 must be type");
   }
-  super->setType(*type_obj);
-  super->setObject(*obj);
+  super.setType(*type_obj);
+  super.setObject(*obj);
   Object obj_type_obj(&scope, NoneType::object());
   Type type(&scope, *type_obj);
-  if (obj->isType()) {
+  if (obj.isType()) {
     Type obj_type(&scope, *obj);
     if (thread->runtime()->isSubclass(obj_type, type)) {
       obj_type_obj = *obj;
@@ -84,11 +84,11 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
       obj_type_obj = *obj_type;
     }
   }
-  if (obj_type_obj->isNoneType()) {
+  if (obj_type_obj.isNoneType()) {
     return thread->raiseTypeErrorWithCStr(
         "obj must be an instance or subtype of type");
   }
-  super->setObjectType(*obj_type_obj);
+  super.setObjectType(*obj_type_obj);
   return *super;
 }
 

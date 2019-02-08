@@ -15,13 +15,13 @@ TEST(StrBuiltinsTest, BuiltinBase) {
   HandleScope scope;
 
   Type small_str(&scope, runtime.typeAt(LayoutId::kSmallStr));
-  EXPECT_EQ(small_str->builtinBase(), LayoutId::kStr);
+  EXPECT_EQ(small_str.builtinBase(), LayoutId::kStr);
 
   Type large_str(&scope, runtime.typeAt(LayoutId::kLargeStr));
-  EXPECT_EQ(large_str->builtinBase(), LayoutId::kStr);
+  EXPECT_EQ(large_str.builtinBase(), LayoutId::kStr);
 
   Type str(&scope, runtime.typeAt(LayoutId::kStr));
-  EXPECT_EQ(str->builtinBase(), LayoutId::kStr);
+  EXPECT_EQ(str.builtinBase(), LayoutId::kStr);
 }
 
 TEST(StrBuiltinsTest, RichCompareStringEQ) {  // pystone dependency
@@ -235,11 +235,11 @@ l3 = "aloha".__len__()
 )");
   HandleScope scope;
   SmallInt l1(&scope, moduleAt(&runtime, "__main__", "l1"));
-  EXPECT_EQ(5, l1->value());
+  EXPECT_EQ(5, l1.value());
   SmallInt l2(&scope, moduleAt(&runtime, "__main__", "l2"));
-  EXPECT_EQ(5, l2->value());
+  EXPECT_EQ(5, l2.value());
   SmallInt l3(&scope, moduleAt(&runtime, "__main__", "l3"));
-  EXPECT_EQ(5, l3->value());
+  EXPECT_EQ(5, l3.value());
 }
 
 TEST(StrBuiltinsTest, StringLenWithEmptyString) {
@@ -247,7 +247,7 @@ TEST(StrBuiltinsTest, StringLenWithEmptyString) {
   runFromCStr(&runtime, "l = len('')");
   HandleScope scope;
   SmallInt l(&scope, moduleAt(&runtime, "__main__", "l"));
-  EXPECT_EQ(0, l->value());
+  EXPECT_EQ(0, l.value());
 }
 
 TEST(StrBuiltinsTest, StringLenWithInt) {
@@ -305,11 +305,11 @@ TEST(StrBuiltinsTest, IndexWithSliceWithPositiveInts) {
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Slice slice(&scope, runtime.newSlice());
-  slice->setStart(SmallInt::fromWord(1));
-  slice->setStop(SmallInt::fromWord(2));
+  slice.setStart(SmallInt::fromWord(1));
+  slice.setStop(SmallInt::fromWord(2));
   Object result_a(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_a, "e"));
-  slice->setStop(SmallInt::fromWord(4));
+  slice.setStop(SmallInt::fromWord(4));
   Object result_b(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_b, "ell"));
 }
@@ -319,11 +319,11 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeInts) {
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Slice slice(&scope, runtime.newSlice());
-  slice->setStart(SmallInt::fromWord(-1));
+  slice.setStart(SmallInt::fromWord(-1));
   Object result_a(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_a, "o"));
-  slice->setStart(SmallInt::fromWord(1));
-  slice->setStop(SmallInt::fromWord(-2));
+  slice.setStart(SmallInt::fromWord(1));
+  slice.setStop(SmallInt::fromWord(-2));
   Object result_b(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_b, "el"));
 }
@@ -333,13 +333,13 @@ TEST(StrBuiltinsTest, IndexWithSliceWithStep) {
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Slice slice(&scope, runtime.newSlice());
-  slice->setStart(SmallInt::fromWord(0));
-  slice->setStop(SmallInt::fromWord(5));
-  slice->setStep(SmallInt::fromWord(2));
+  slice.setStart(SmallInt::fromWord(0));
+  slice.setStop(SmallInt::fromWord(5));
+  slice.setStep(SmallInt::fromWord(2));
   Object result_a(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_a, "hlo"));
-  slice->setStart(SmallInt::fromWord(1));
-  slice->setStep(SmallInt::fromWord(3));
+  slice.setStart(SmallInt::fromWord(1));
+  slice.setStep(SmallInt::fromWord(3));
   Object result_b(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result_b, "eo"));
 }
@@ -349,7 +349,7 @@ TEST(StrBuiltinsTest, EmptyStringIndexWithSliceWithNegativeOneStep) {
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr(""));
   Slice slice(&scope, runtime.newSlice());
-  slice->setStep(SmallInt::fromWord(-1));
+  slice.setStep(SmallInt::fromWord(-1));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
@@ -359,7 +359,7 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeOneStep) {
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Slice slice(&scope, runtime.newSlice());
-  slice->setStep(SmallInt::fromWord(-1));
+  slice.setStep(SmallInt::fromWord(-1));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result, "olleh"));
 }
@@ -370,7 +370,7 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeTwoStep) {
   Str hello(&scope, runtime.newStrFromCStr("hello"));
   Object none(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice());
-  slice->setStep(SmallInt::fromWord(-2));
+  slice.setStep(SmallInt::fromWord(-2));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
   EXPECT_TRUE(isStrEqualsCStr(*result, "olh"));
 }
@@ -384,8 +384,8 @@ b = "".startswith("")
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
 }
 
 TEST(StrBuiltinsTest, StartsWithStringReturnsTrue) {
@@ -403,11 +403,11 @@ e = "hello".startswith("hello")
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool d(&scope, moduleAt(&runtime, "__main__", "d"));
   Bool e(&scope, moduleAt(&runtime, "__main__", "e"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
-  EXPECT_TRUE(c->value());
-  EXPECT_TRUE(d->value());
-  EXPECT_TRUE(e->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
+  EXPECT_TRUE(c.value());
+  EXPECT_TRUE(d.value());
+  EXPECT_TRUE(e.value());
 }
 
 TEST(StrBuiltinsTest, StartsWithTooLongPrefixReturnsFalse) {
@@ -417,7 +417,7 @@ a = "hello".startswith("hihello")
 )");
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(a.value());
 }
 
 TEST(StrBuiltinsTest, StartsWithUnrelatedPrefixReturnsFalse) {
@@ -427,7 +427,7 @@ a = "hello".startswith("bob")
 )");
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(a.value());
 }
 
 TEST(StrBuiltinsTest, StartsWithStart) {
@@ -443,10 +443,10 @@ d = "hello".startswith("llo", 3)
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool d(&scope, moduleAt(&runtime, "__main__", "d"));
-  EXPECT_TRUE(a->value());
-  EXPECT_FALSE(b->value());
-  EXPECT_TRUE(c->value());
-  EXPECT_FALSE(d->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_FALSE(b.value());
+  EXPECT_TRUE(c.value());
+  EXPECT_FALSE(d.value());
 }
 
 TEST(StrBuiltinsTest, StartsWithStartAndEnd) {
@@ -462,10 +462,10 @@ d = "hello".startswith("ll", 1, 4)
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool d(&scope, moduleAt(&runtime, "__main__", "d"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
-  EXPECT_TRUE(c->value());
-  EXPECT_FALSE(d->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
+  EXPECT_TRUE(c.value());
+  EXPECT_FALSE(d.value());
 }
 
 TEST(StrBuiltinsTest, StartsWithStartAndEndNegatives) {
@@ -477,8 +477,8 @@ b = "hello".startswith("ll", -3)
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
 }
 
 TEST(StrBuiltinsTest, StartsWithTupleOfPrefixes) {
@@ -490,8 +490,8 @@ b = "hello".startswith(("asdf", "foo", "bar"))
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_FALSE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_FALSE(b.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithEmptyStringReturnsTrue) {
@@ -503,8 +503,8 @@ b = "".endswith("")
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithStringReturnsTrue) {
@@ -522,11 +522,11 @@ e = "hello".endswith("hello")
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool d(&scope, moduleAt(&runtime, "__main__", "d"));
   Bool e(&scope, moduleAt(&runtime, "__main__", "e"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
-  EXPECT_TRUE(c->value());
-  EXPECT_TRUE(d->value());
-  EXPECT_TRUE(e->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
+  EXPECT_TRUE(c.value());
+  EXPECT_TRUE(d.value());
+  EXPECT_TRUE(e.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithTooLongSuffixReturnsFalse) {
@@ -536,7 +536,7 @@ a = "hello".endswith("hihello")
 )");
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(a.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithUnrelatedSuffixReturnsFalse) {
@@ -546,7 +546,7 @@ a = "hello".endswith("bob")
 )");
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(a.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithStart) {
@@ -562,10 +562,10 @@ d = "hello".endswith("llo", 3)
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool d(&scope, moduleAt(&runtime, "__main__", "d"));
-  EXPECT_TRUE(a->value());
-  EXPECT_FALSE(b->value());
-  EXPECT_TRUE(c->value());
-  EXPECT_FALSE(d->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_FALSE(b.value());
+  EXPECT_TRUE(c.value());
+  EXPECT_FALSE(d.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithStartAndEnd) {
@@ -581,10 +581,10 @@ d = "hello".endswith("llo", 1, 4)
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool d(&scope, moduleAt(&runtime, "__main__", "d"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
-  EXPECT_TRUE(c->value());
-  EXPECT_FALSE(d->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
+  EXPECT_TRUE(c.value());
+  EXPECT_FALSE(d.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithStartAndEndNegatives) {
@@ -596,8 +596,8 @@ b = "hello".endswith("o", -1)
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
 }
 
 TEST(StrBuiltinsTest, EndsWithTupleOfSuffixes) {
@@ -609,8 +609,8 @@ b = "hello".endswith(("asdf", "foo", "bar"))
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_FALSE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_FALSE(b.value());
 }
 
 TEST(StrBuiltinsTest, StringFormat) {
@@ -859,10 +859,10 @@ a = "hello".partition("l")
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  ASSERT_EQ(a->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), "l"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(2), "lo"));
+  ASSERT_EQ(a.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "l"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(2), "lo"));
 }
 
 TEST(StrBuiltinsTest, PartitionOnMultiCharStr) {
@@ -873,10 +873,10 @@ a = "hello".partition("ll")
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  ASSERT_EQ(a->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), "ll"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(2), "o"));
+  ASSERT_EQ(a.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "ll"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest, PartitionOnSuffix) {
@@ -889,15 +889,15 @@ b = "hello".partition("lop")
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
   Tuple b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  ASSERT_EQ(a->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "hel"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), "lo"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(2), ""));
+  ASSERT_EQ(a.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "hel"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "lo"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(2), ""));
 
-  ASSERT_EQ(b->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(b->at(0), "hello"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(2), ""));
+  ASSERT_EQ(b.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(b.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(2), ""));
 }
 
 TEST(StrBuiltinsTest, PartitionOnPrefix) {
@@ -910,15 +910,15 @@ b = "hello".partition("hex")
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
   Tuple b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  ASSERT_EQ(a->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(2), "llo"));
+  ASSERT_EQ(a.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(2), "llo"));
 
-  ASSERT_EQ(b->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(b->at(0), "hello"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(2), ""));
+  ASSERT_EQ(b.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(b.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(2), ""));
 }
 
 TEST(StrBuiltinsTest, PartitionLargerStr) {
@@ -929,10 +929,10 @@ a = "hello".partition("abcdefghijk")
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  ASSERT_EQ(a->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "hello"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(2), ""));
+  ASSERT_EQ(a.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(2), ""));
 }
 
 TEST(StrBuiltinsTest, PartitionEmptyStr) {
@@ -943,10 +943,10 @@ a = "".partition("a")
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
-  ASSERT_EQ(a->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(2), ""));
+  ASSERT_EQ(a.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(2), ""));
 }
 
 TEST(StrBuiltinsTest, SplitWithOneCharSeparator) {
@@ -958,15 +958,15 @@ b = "hello".split("l")
   HandleScope scope;
 
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_EQ(a->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "h"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), "llo"));
+  ASSERT_EQ(a.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "h"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "llo"));
 
   List b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_EQ(b->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(b->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(2), "o"));
+  ASSERT_EQ(b.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(b.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest, SplitWithEmptySelfReturnsSingleEmptyString) {
@@ -976,8 +976,8 @@ a = "".split("a")
 )");
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_EQ(a->numItems(), 1);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), ""));
+  ASSERT_EQ(a.numItems(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), ""));
 }
 
 TEST(StrBuiltinsTest, SplitWithMultiCharSeparator) {
@@ -991,25 +991,25 @@ d = "hellllo".split("ll")
   HandleScope scope;
 
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_EQ(a->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "h"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), "lo"));
+  ASSERT_EQ(a.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "h"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "lo"));
 
   List b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_EQ(b->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(b->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(1), "o"));
+  ASSERT_EQ(b.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(b.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(1), "o"));
 
   List c(&scope, moduleAt(&runtime, "__main__", "c"));
-  ASSERT_EQ(c->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(c->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(c->at(1), ""));
+  ASSERT_EQ(c.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(c.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(c.at(1), ""));
 
   List d(&scope, moduleAt(&runtime, "__main__", "d"));
-  ASSERT_EQ(d->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(d->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(d->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(d->at(2), "o"));
+  ASSERT_EQ(d.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(d.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(d.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(d.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitBelowNumPartsStopsEarly) {
@@ -1021,15 +1021,15 @@ b = "1,2,3,4".split(",", 2)
   HandleScope scope;
 
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_EQ(a->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), "lo"));
+  ASSERT_EQ(a.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "lo"));
 
   List b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_EQ(b->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(b->at(0), "1"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(1), "2"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(2), "3,4"));
+  ASSERT_EQ(b.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(b.at(0), "1"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(1), "2"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(2), "3,4"));
 }
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitGreaterThanNumParts) {
@@ -1040,17 +1040,17 @@ b = "1,2,3,4".split(",", 5)
 )");
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_EQ(a->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(a->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(a->at(2), "o"));
+  ASSERT_EQ(a.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(2), "o"));
 
   List b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_EQ(b->numItems(), 4);
-  EXPECT_TRUE(isStrEqualsCStr(b->at(0), "1"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(1), "2"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(2), "3"));
-  EXPECT_TRUE(isStrEqualsCStr(b->at(3), "4"));
+  ASSERT_EQ(b.numItems(), 4);
+  EXPECT_TRUE(isStrEqualsCStr(b.at(0), "1"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(1), "2"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(2), "3"));
+  EXPECT_TRUE(isStrEqualsCStr(b.at(3), "4"));
 }
 
 TEST(StrBuiltinsTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
@@ -1060,10 +1060,10 @@ t = "hello".rpartition("l")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "hel"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "l"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "o"));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "l"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest, RpartitionOnMultiCharStrPartitionsCorrectly) {
@@ -1073,10 +1073,10 @@ t = "hello".rpartition("ll")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "ll"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "o"));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "ll"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest, RpartitionOnSuffixPutsEmptyStrAtEndOfResult) {
@@ -1086,10 +1086,10 @@ t = "hello".rpartition("lo")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "hel"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "lo"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), ""));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "lo"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
 }
 
 TEST(StrBuiltinsTest, RpartitionOnNonExistentSuffixPutsStrAtEndOfResult) {
@@ -1099,10 +1099,10 @@ t = "hello".rpartition("lop")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "hello"));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "hello"));
 }
 
 TEST(StrBuiltinsTest, RpartitionOnPrefixPutsEmptyStrAtBeginningOfResult) {
@@ -1112,10 +1112,10 @@ t = "hello".rpartition("he")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "llo"));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "llo"));
 }
 
 TEST(StrBuiltinsTest, RpartitionOnNonExistentPrefixPutsStrAtEndOfResult) {
@@ -1125,10 +1125,10 @@ t = "hello".rpartition("hex")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "hello"));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "hello"));
 }
 
 TEST(StrBuiltinsTest, RpartitionLargerStrPutsStrAtEndOfResult) {
@@ -1138,10 +1138,10 @@ t = "hello".rpartition("foobarbaz")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "hello"));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "hello"));
 }
 
 TEST(StrBuiltinsTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
@@ -1151,10 +1151,10 @@ t = "".rpartition("a")
 )");
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
-  ASSERT_EQ(result->length(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), ""));
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
 }
 
 TEST(StrBuiltinsTest, RsplitWithOneCharSeparatorSplitsCorrectly) {
@@ -1164,9 +1164,9 @@ l = "hello".rsplit("e")
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "h"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "llo"));
+  ASSERT_EQ(result.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "h"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "llo"));
 }
 
 TEST(StrBuiltinsTest, RsplitWithRepeatedOneCharSeparatorSplitsCorrectly) {
@@ -1176,10 +1176,10 @@ l = "hello".rsplit("l")
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "o"));
+  ASSERT_EQ(result.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest, RsplitWithEmptySelfReturnsSingleEmptyString) {
@@ -1189,8 +1189,8 @@ l = "".rsplit("a")
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 1);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), ""));
+  ASSERT_EQ(result.numItems(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
 }
 
 TEST(StrBuiltinsTest, RsplitWithMultiCharSeparatorSplitsFromRight) {
@@ -1200,9 +1200,9 @@ l = "hello".rsplit("el")
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "h"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "lo"));
+  ASSERT_EQ(result.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "h"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "lo"));
 }
 
 TEST(StrBuiltinsTest, RsplitWithRepeatedCharSeparatorSplitsFromRight) {
@@ -1212,9 +1212,9 @@ l = "hello".rsplit("ll")
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "o"));
+  ASSERT_EQ(result.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "o"));
 }
 
 TEST(StrBuiltinsTest, RsplitWithSeparatorSameAsInputSplitsIntoEmptyComponents) {
@@ -1224,9 +1224,9 @@ l = "hello".rsplit("hello")
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
+  ASSERT_EQ(result.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
 }
 
 TEST(StrBuiltinsTest,
@@ -1237,10 +1237,10 @@ l = "hellllo".rsplit("ll")
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "o"));
+  ASSERT_EQ(result.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest,
@@ -1251,9 +1251,9 @@ l = "hello".rsplit("l", 1)
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 2);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "hel"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "o"));
+  ASSERT_EQ(result.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hel"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "o"));
 }
 
 TEST(StrBuiltinsTest, RsplitWithMaxSplitBelowNumPartsStopsEarly) {
@@ -1263,10 +1263,10 @@ l = "1,2,3,4".rsplit(",", 2)
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "1,2"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "3"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "4"));
+  ASSERT_EQ(result.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "1,2"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "3"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "4"));
 }
 
 TEST(StrBuiltinsTest,
@@ -1277,10 +1277,10 @@ l = "hello".rsplit("l", 2)
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 3);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "he"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), ""));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "o"));
+  ASSERT_EQ(result.numItems(), 3);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
 }
 
 TEST(StrBuiltinsTest, RsplitWithMaxSplitGreaterThanNumPartsSplitsCorrectly) {
@@ -1290,11 +1290,11 @@ l = "1,2,3,4".rsplit(",", 5)
 )");
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
-  ASSERT_EQ(result->numItems(), 4);
-  EXPECT_TRUE(isStrEqualsCStr(result->at(0), "1"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(1), "2"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(2), "3"));
-  EXPECT_TRUE(isStrEqualsCStr(result->at(3), "4"));
+  ASSERT_EQ(result.numItems(), 4);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "1"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "2"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "3"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(3), "4"));
 }
 
 TEST(StrBuiltinsTest, StrStripWithNoArgsRaisesTypeError) {
@@ -1488,7 +1488,7 @@ TEST(StrBuiltinsTest, DunderIterReturnsStrIter) {
   HandleScope scope;
   Str empty_str(&scope, runtime.newStrFromCStr(""));
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
-  ASSERT_TRUE(iter->isStrIterator());
+  ASSERT_TRUE(iter.isStrIterator());
 }
 
 TEST(StrIteratorBuiltinsTest, CallDunderNextReadsCharactersSequentially) {
@@ -1497,14 +1497,14 @@ TEST(StrIteratorBuiltinsTest, CallDunderNextReadsCharactersSequentially) {
   Str str(&scope, runtime.newStrFromCStr("ab"));
 
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, str));
-  ASSERT_TRUE(iter->isStrIterator());
+  ASSERT_TRUE(iter.isStrIterator());
 
   Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1->isStr());
+  ASSERT_TRUE(item1.isStr());
   ASSERT_EQ(item1, runtime.newStrFromCStr("a"));
 
   Object item2(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2->isStr());
+  ASSERT_TRUE(item2.isStr());
   ASSERT_EQ(item2, runtime.newStrFromCStr("b"));
 }
 
@@ -1514,7 +1514,7 @@ TEST(StrIteratorBuiltinsTest, DunderIterReturnsSelf) {
   Str empty_str(&scope, runtime.newStrFromCStr(""));
 
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
-  ASSERT_TRUE(iter->isStrIterator());
+  ASSERT_TRUE(iter.isStrIterator());
 
   // Now call __iter__ on the iterator object
   Object result(&scope, runBuiltin(StrIteratorBuiltins::dunderIter, iter));
@@ -1527,11 +1527,11 @@ TEST(StrIteratorBuiltinsTest, DunderLengthHintOnEmptyStrIteratorReturnsZero) {
   Str empty_str(&scope, runtime.newStrFromCStr(""));
 
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
-  ASSERT_TRUE(iter->isStrIterator());
+  ASSERT_TRUE(iter.isStrIterator());
 
   Object length_hint(&scope,
                      runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint->isSmallInt());
+  ASSERT_TRUE(length_hint.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
 }
 
@@ -1542,21 +1542,21 @@ TEST(StrIteratorBuiltinsTest,
   Str str(&scope, runtime.newStrFromCStr("a"));
 
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, str));
-  ASSERT_TRUE(iter->isStrIterator());
+  ASSERT_TRUE(iter.isStrIterator());
 
   Object length_hint1(&scope,
                       runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1->isSmallInt());
+  ASSERT_TRUE(length_hint1.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 1);
 
   // Consume the iterator
   Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1->isStr());
+  ASSERT_TRUE(item1.isStr());
   ASSERT_EQ(item1, runtime.newStrFromCStr("a"));
 
   Object length_hint2(&scope,
                       runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint2->isSmallInt());
+  ASSERT_TRUE(length_hint2.isSmallInt());
   ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 0);
 }
 
@@ -1582,7 +1582,7 @@ TEST(StrBuiltinsTest, StripSpaceWithUnstrippableStrIsIdentity) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("Nothing to strip here"));
-  ASSERT_TRUE(str->isLargeStr());
+  ASSERT_TRUE(str.isLargeStr());
   Thread* thread = Thread::currentThread();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
@@ -1600,7 +1600,7 @@ TEST(StrBuiltinsTest, StripSpaceWithUnstrippableSmallStrIsIdentity) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("nostrip"));
-  ASSERT_TRUE(str->isSmallStr());
+  ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::currentThread();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
@@ -1621,38 +1621,38 @@ TEST(StrBuiltinsTest, StripSpaceWithFullyStrippableStrReturnsEmptyStr) {
   Thread* thread = Thread::currentThread();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
-  EXPECT_EQ(lstripped_str->length(), 0);
+  EXPECT_EQ(lstripped_str.length(), 0);
 
   Str rstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Right));
-  EXPECT_EQ(rstripped_str->length(), 0);
+  EXPECT_EQ(rstripped_str.length(), 0);
 
   Str stripped_str(&scope, strStripSpace(thread, str, StrStripDirection::Both));
-  EXPECT_EQ(stripped_str->length(), 0);
+  EXPECT_EQ(stripped_str.length(), 0);
 }
 
 TEST(StrBuiltinsTest, StripSpaceLeft) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" strp "));
-  ASSERT_TRUE(str->isSmallStr());
+  ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::currentThread();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
-  ASSERT_TRUE(lstripped_str->isSmallStr());
+  ASSERT_TRUE(lstripped_str.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str, "strp "));
 
   Str str1(&scope, runtime.newStrFromCStr("   \n \n\tLot of leading space  "));
-  ASSERT_TRUE(str1->isLargeStr());
+  ASSERT_TRUE(str1.isLargeStr());
   Str lstripped_str1(&scope,
                      strStripSpace(thread, str1, StrStripDirection::Left));
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str1, "Lot of leading space  "));
 
   Str str2(&scope, runtime.newStrFromCStr("\n\n\n              \ntest"));
-  ASSERT_TRUE(str2->isLargeStr());
+  ASSERT_TRUE(str2.isLargeStr());
   Str lstripped_str2(&scope,
                      strStripSpace(thread, str2, StrStripDirection::Left));
-  ASSERT_TRUE(lstripped_str2->isSmallStr());
+  ASSERT_TRUE(lstripped_str2.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str2, "test"));
 }
 
@@ -1660,25 +1660,25 @@ TEST(StrBuiltinsTest, StripSpaceRight) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" strp "));
-  ASSERT_TRUE(str->isSmallStr());
+  ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::currentThread();
   Str rstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Right));
-  ASSERT_TRUE(rstripped_str->isSmallStr());
+  ASSERT_TRUE(rstripped_str.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str, " strp"));
 
   Str str1(&scope,
            runtime.newStrFromCStr("  Lot of trailing space\t\n \n    "));
-  ASSERT_TRUE(str1->isLargeStr());
+  ASSERT_TRUE(str1.isLargeStr());
   Str rstripped_str1(&scope,
                      strStripSpace(thread, str1, StrStripDirection::Right));
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str1, "  Lot of trailing space"));
 
   Str str2(&scope, runtime.newStrFromCStr("test\n      \n\n\n"));
-  ASSERT_TRUE(str2->isLargeStr());
+  ASSERT_TRUE(str2.isLargeStr());
   Str rstripped_str2(&scope,
                      strStripSpace(thread, str2, StrStripDirection::Right));
-  ASSERT_TRUE(rstripped_str2->isSmallStr());
+  ASSERT_TRUE(rstripped_str2.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str2, "test"));
 }
 
@@ -1686,26 +1686,26 @@ TEST(StrBuiltinsTest, StripSpaceBoth) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" strp "));
-  ASSERT_TRUE(str->isSmallStr());
+  ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::currentThread();
   Str stripped_str(&scope, strStripSpace(thread, str, StrStripDirection::Both));
-  ASSERT_TRUE(stripped_str->isSmallStr());
+  ASSERT_TRUE(stripped_str.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*stripped_str, "strp"));
 
   Str str1(&scope,
            runtime.newStrFromCStr(
                "\n \n    \n\tLot of leading and trailing space\n \n    "));
-  ASSERT_TRUE(str1->isLargeStr());
+  ASSERT_TRUE(str1.isLargeStr());
   Str stripped_str1(&scope,
                     strStripSpace(thread, str1, StrStripDirection::Both));
   EXPECT_TRUE(
       isStrEqualsCStr(*stripped_str1, "Lot of leading and trailing space"));
 
   Str str2(&scope, runtime.newStrFromCStr("\n\ttest\t      \n\n\n"));
-  ASSERT_TRUE(str2->isLargeStr());
+  ASSERT_TRUE(str2.isLargeStr());
   Str stripped_str2(&scope,
                     strStripSpace(thread, str2, StrStripDirection::Both));
-  ASSERT_TRUE(stripped_str2->isSmallStr());
+  ASSERT_TRUE(stripped_str2.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*stripped_str2, "test"));
 }
 
@@ -1736,15 +1736,15 @@ TEST(StrBuiltinsTest, StripWithFullyStrippableStrReturnsEmptyStr) {
   Thread* thread = Thread::currentThread();
   Str lstripped_str(&scope,
                     strStrip(thread, str, chars, StrStripDirection::Left));
-  EXPECT_EQ(lstripped_str->length(), 0);
+  EXPECT_EQ(lstripped_str.length(), 0);
 
   Str rstripped_str(&scope,
                     strStrip(thread, str, chars, StrStripDirection::Right));
-  EXPECT_EQ(rstripped_str->length(), 0);
+  EXPECT_EQ(rstripped_str.length(), 0);
 
   Str stripped_str(&scope,
                    strStrip(thread, str, chars, StrStripDirection::Both));
-  EXPECT_EQ(stripped_str->length(), 0);
+  EXPECT_EQ(stripped_str.length(), 0);
 }
 
 TEST(StrBuiltinsTest, StripWithEmptyCharsIsIdentity) {
@@ -1805,27 +1805,27 @@ TEST(StringIterTest, SimpleIter) {
   Thread* thread = Thread::currentThread();
 
   Str str(&scope, runtime.newStrFromCStr("test"));
-  EXPECT_TRUE(str->equalsCStr("test"));
+  EXPECT_TRUE(str.equalsCStr("test"));
 
   StrIterator iter(&scope, runtime.newStrIterator(str));
   Object ch(&scope, strIteratorNext(thread, iter));
-  ASSERT_TRUE(ch->isStr());
+  ASSERT_TRUE(ch.isStr());
   EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("t"));
 
   ch = strIteratorNext(thread, iter);
-  ASSERT_TRUE(ch->isStr());
+  ASSERT_TRUE(ch.isStr());
   EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("e"));
 
   ch = strIteratorNext(thread, iter);
-  ASSERT_TRUE(ch->isStr());
+  ASSERT_TRUE(ch.isStr());
   EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("s"));
 
   ch = strIteratorNext(thread, iter);
-  ASSERT_TRUE(ch->isStr());
+  ASSERT_TRUE(ch.isStr());
   EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("t"));
 
   ch = strIteratorNext(thread, iter);
-  ASSERT_TRUE(ch->isError());
+  ASSERT_TRUE(ch.isError());
 }
 
 TEST(StringIterTest, SetIndex) {
@@ -1834,19 +1834,19 @@ TEST(StringIterTest, SetIndex) {
   Thread* thread = Thread::currentThread();
 
   Str str(&scope, runtime.newStrFromCStr("test"));
-  EXPECT_TRUE(str->equalsCStr("test"));
+  EXPECT_TRUE(str.equalsCStr("test"));
 
   StrIterator iter(&scope, runtime.newStrIterator(str));
-  iter->setIndex(1);
+  iter.setIndex(1);
   Object ch(&scope, strIteratorNext(thread, iter));
-  ASSERT_TRUE(ch->isStr());
+  ASSERT_TRUE(ch.isStr());
   EXPECT_TRUE(RawStr::cast(*ch)->equalsCStr("e"));
 
-  iter->setIndex(5);
+  iter.setIndex(5);
   ch = strIteratorNext(thread, iter);
   // Index should not have advanced.
-  ASSERT_EQ(iter->index(), 5);
-  ASSERT_TRUE(ch->isError());
+  ASSERT_EQ(iter.index(), 5);
+  ASSERT_TRUE(ch.isError());
 }
 
 }  // namespace python

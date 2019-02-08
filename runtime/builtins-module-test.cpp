@@ -19,7 +19,7 @@ a = callable(Foo)
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(a.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinCallableOnMethodReturnsTrue) {
@@ -36,8 +36,8 @@ b = callable(Foo().bar)
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
   Bool b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinCallableOnNonCallableReturnsFalse) {
@@ -50,8 +50,8 @@ b = callable("hello")
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
   Bool b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_FALSE(a->value());
-  EXPECT_FALSE(b->value());
+  EXPECT_FALSE(a.value());
+  EXPECT_FALSE(b.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
@@ -67,7 +67,7 @@ a = callable(f)
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_TRUE(a->value());
+  EXPECT_TRUE(a.value());
 }
 
 TEST(BuiltinsModuleTest,
@@ -87,7 +87,7 @@ a = callable(f)
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(a.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinChr) {
@@ -137,7 +137,7 @@ def test(a, b):
 
   // Create an instance of D
   Object type_d(&scope, moduleAt(&runtime, main, "D"));
-  ASSERT_TRUE(type_d->isType());
+  ASSERT_TRUE(type_d.isType());
   Layout layout(&scope, RawType::cast(*type_d)->instanceLayout());
   Object instance(&scope, runtime.newInstance(layout));
 
@@ -148,36 +148,36 @@ def test(a, b):
 
   // isinstance(1, D) should be false
   Tuple args(&scope, runtime.newTuple(2));
-  args->atPut(0, SmallInt::fromWord(100));
-  args->atPut(1, *type_d);
+  args.atPut(0, SmallInt::fromWord(100));
+  args.atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
 
   // isinstance(D, D) should be false
-  args->atPut(0, *type_d);
-  args->atPut(1, *type_d);
+  args.atPut(0, *type_d);
+  args.atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "False\n");
 
   // isinstance(D(), D) should be true
-  args->atPut(0, *instance);
-  args->atPut(1, *type_d);
+  args.atPut(0, *instance);
+  args.atPut(1, *type_d);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), C) should be true
   Object type_c(&scope, moduleAt(&runtime, main, "C"));
-  ASSERT_TRUE(type_c->isType());
-  args->atPut(1, *type_c);
+  ASSERT_TRUE(type_c.isType());
+  args.atPut(1, *type_c);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(D(), B) should be true
   Object type_b(&scope, moduleAt(&runtime, main, "B"));
-  ASSERT_TRUE(type_b->isType());
-  args->atPut(1, *type_b);
+  ASSERT_TRUE(type_b.isType());
+  args.atPut(1, *type_b);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 
   // isinstance(C(), A) should be true
   Object type_a(&scope, moduleAt(&runtime, main, "A"));
-  ASSERT_TRUE(type_a->isType());
-  args->atPut(1, *type_a);
+  ASSERT_TRUE(type_a.isType());
+  args.atPut(1, *type_a);
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
@@ -187,9 +187,9 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   HandleScope scope(thread);
 
   Tuple types(&scope, runtime.newTuple(3));
-  types->atPut(0, runtime.typeAt(LayoutId::kStr));
-  types->atPut(1, runtime.typeAt(LayoutId::kBool));
-  types->atPut(2, runtime.typeAt(LayoutId::kException));
+  types.atPut(0, runtime.typeAt(LayoutId::kStr));
+  types.atPut(1, runtime.typeAt(LayoutId::kBool));
+  types.atPut(2, runtime.typeAt(LayoutId::kException));
 
   Object str(&scope, runtime.newStrFromCStr("hello there!"));
   EXPECT_EQ(runBuiltin(Builtins::isinstance, str, types), Bool::trueObj());
@@ -208,9 +208,9 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   EXPECT_EQ(runBuiltin(Builtins::isinstance, bytes, types), Bool::falseObj());
 
   Tuple inner(&scope, runtime.newTuple(2));
-  inner->atPut(0, runtime.typeAt(LayoutId::kInt));
-  inner->atPut(1, runtime.typeAt(LayoutId::kBytes));
-  types->atPut(2, *inner);
+  inner.atPut(0, runtime.typeAt(LayoutId::kInt));
+  inner.atPut(1, runtime.typeAt(LayoutId::kBytes));
+  types.atPut(2, *inner);
 
   EXPECT_EQ(runBuiltin(Builtins::isinstance, str, types), Bool::trueObj());
   EXPECT_EQ(runBuiltin(Builtins::isinstance, an_int, types), Bool::trueObj());
@@ -218,7 +218,7 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   EXPECT_EQ(runBuiltin(Builtins::isinstance, exc, types), Bool::falseObj());
   EXPECT_EQ(runBuiltin(Builtins::isinstance, bytes, types), Bool::trueObj());
 
-  inner->atPut(1, *an_int);
+  inner.atPut(1, *an_int);
   EXPECT_TRUE(raised(runBuiltin(Builtins::isinstance, exc, types),
                      LayoutId::kTypeError));
 }
@@ -244,9 +244,9 @@ c = issubclass(Baz, type)
   Bool a(&scope, moduleAt(&runtime, main, "a"));
   Bool b(&scope, moduleAt(&runtime, main, "b"));
   Bool c(&scope, moduleAt(&runtime, main, "c"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
-  EXPECT_TRUE(c->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
+  EXPECT_TRUE(c.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinIssubclassWithNonSubclassReturnsFalse) {
@@ -267,9 +267,9 @@ c = issubclass(dict, list)
   Bool a(&scope, moduleAt(&runtime, main, "a"));
   Bool b(&scope, moduleAt(&runtime, main, "b"));
   Bool c(&scope, moduleAt(&runtime, main, "c"));
-  EXPECT_FALSE(a->value());
-  EXPECT_FALSE(b->value());
-  EXPECT_FALSE(c->value());
+  EXPECT_FALSE(a.value());
+  EXPECT_FALSE(b.value());
+  EXPECT_FALSE(c.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinIssubclassWithOneSuperclassReturnsTrue) {
@@ -288,8 +288,8 @@ b = issubclass(Bar, (Foo))
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
   Bool b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_TRUE(a->value());
-  EXPECT_TRUE(b->value());
+  EXPECT_TRUE(a.value());
+  EXPECT_TRUE(b.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinIssubclassWithNoSuperclassReturnsFalse) {
@@ -303,7 +303,7 @@ a = issubclass(Foo, (str, int))
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_FALSE(a->value());
+  EXPECT_FALSE(a.value());
 }
 
 TEST(BuiltinsModuleTest, BuiltinLen) {
@@ -662,13 +662,13 @@ d = getattr(list, '__module__')
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(*a, Bool::trueObj());
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_TRUE(b->isStr());
+  ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(*a, Bool::trueObj());
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
-  ASSERT_TRUE(b->isStr());
+  ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
 }
 
@@ -687,13 +687,13 @@ d = getattr(list, '__qualname__')
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(*a, Bool::trueObj());
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_TRUE(b->isStr());
+  ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b)->equalsCStr("object"));
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(*c, Bool::trueObj());
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
-  ASSERT_TRUE(d->isStr());
+  ASSERT_TRUE(d.isStr());
   EXPECT_TRUE(Str::cast(*d)->equalsCStr("list"));
 }
 
@@ -705,14 +705,14 @@ TEST(BuiltinsModuleTest, BuiltinCompile) {
   Str filename(&scope, runtime.newStrFromCStr("<string>"));
   Str mode(&scope, runtime.newStrFromCStr("eval"));
   Code code(&scope, moduleAt(&runtime, "__main__", "code"));
-  ASSERT_TRUE(code->filename().isStr());
-  EXPECT_TRUE(Str::cast(code->filename()).equals(*filename));
+  ASSERT_TRUE(code.filename().isStr());
+  EXPECT_TRUE(Str::cast(code.filename()).equals(*filename));
 
-  ASSERT_TRUE(code->names().isTuple());
-  Tuple names(&scope, code->names());
-  ASSERT_EQ(names->length(), 2);
-  ASSERT_TRUE(names->contains(runtime.newStrFromCStr("a")));
-  ASSERT_TRUE(names->contains(runtime.newStrFromCStr("b")));
+  ASSERT_TRUE(code.names().isTuple());
+  Tuple names(&scope, code.names());
+  ASSERT_EQ(names.length(), 2);
+  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("b")));
 }
 
 TEST(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooFewArgs) {
@@ -749,7 +749,7 @@ exec("a = 1338")
   // We can't use runBuiltin here because it does not set up the frame properly
   // for functions that need globals, implicitGlobals, etc
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*a)->value(), 1338);
 }
 
@@ -758,7 +758,7 @@ TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   HandleScope scope;
   runFromCStr(&runtime, "");
   Module main(&scope, findModule(&runtime, "__main__"));
-  Dict globals(&scope, main->dict());
+  Dict globals(&scope, main.dict());
   Str globals_name(&scope, runtime.newStrFromCStr("gl"));
   runtime.moduleDictAtPut(globals, globals_name, globals);
   runFromCStr(&runtime, R"(
@@ -766,9 +766,9 @@ a = 1337
 result = exec("a = 1338", gl)
   )");
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result->isNoneType());
+  ASSERT_TRUE(result.isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*a)->value(), 1338);
 }
 
@@ -781,9 +781,9 @@ result = exec("a = 1338", {})
   )");
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result->isNoneType());
+  ASSERT_TRUE(result.isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*a)->value(), 1337);
 }
 
@@ -805,7 +805,7 @@ TEST(BuiltinsModuleTest, BuiltinExecExWithTupleCallsExec) {
 exec(*("a = 1338",))
   )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*a).value(), 1338);
 }
 
@@ -816,7 +816,7 @@ TEST(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
 exec(*["a = 1338"])
   )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*a).value(), 1338);
 }
 
@@ -848,28 +848,28 @@ class bumble():
 
   Type bumble_type(&scope, moduleAt(&runtime, main, "bumble"));
   Str dunder_lt_sym(&scope, runtime.symbols()->DunderLt());
-  Dict str_dict(&scope, str_type->dict());
+  Dict str_dict(&scope, str_type.dict());
 
   // Clear the annotations so that we can meaningfully test the patch
   Function str_lt(&scope, runtime.typeDictAt(str_dict, dunder_lt_sym));
-  str_lt->setAnnotations(RawNoneType::object());
+  str_lt.setAnnotations(RawNoneType::object());
   ASSERT_TRUE(RawFunction::cast(runtime.typeDictAt(str_dict, dunder_lt_sym))
                   .annotations()
                   .isNoneType());
 
-  Dict bumble_dict(&scope, bumble_type->dict());
+  Dict bumble_dict(&scope, bumble_type.dict());
   Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
   patchFunctionAttrsInTypeDict(Thread::currentThread(), str_dict, bumble_lt);
 
-  Dict annotations(&scope, str_lt->annotations());
-  EXPECT_EQ(annotations->numItems(), 2);
+  Dict annotations(&scope, str_lt.annotations());
+  EXPECT_EQ(annotations.numItems(), 2);
   Str other_name(&scope, runtime.newStrFromCStr("other"));
   Object other_ann(&scope, runtime.dictAt(annotations, other_name));
-  ASSERT_TRUE(other_ann->isType());
+  ASSERT_TRUE(other_ann.isType());
   EXPECT_EQ(RawType::cast(*other_ann), *str_type);
   Str return_name(&scope, runtime.newStrFromCStr("return"));
   Object return_ann(&scope, runtime.dictAt(annotations, return_name));
-  ASSERT_TRUE(return_ann->isType());
+  ASSERT_TRUE(return_ann.isType());
   EXPECT_EQ(RawType::cast(*return_ann), moduleAt(&runtime, builtins, "bool"));
 }
 
@@ -901,15 +901,15 @@ class bumble():
 
   Type bumble_type(&scope, moduleAt(&runtime, main, "bumble"));
   Str dunder_lt_sym(&scope, runtime.symbols()->DunderLt());
-  Dict bumble_dict(&scope, bumble_type->dict());
+  Dict bumble_dict(&scope, bumble_type.dict());
   Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
-  Dict str_dict(&scope, str_type->dict());
+  Dict str_dict(&scope, str_type.dict());
   patchFunctionAttrsInTypeDict(Thread::currentThread(), str_dict, bumble_lt);
 
   Object dunder_lt(&scope, runtime.typeDictAt(str_dict, dunder_lt_sym));
-  ASSERT_TRUE(dunder_lt->isFunction());
+  ASSERT_TRUE(dunder_lt.isFunction());
   Function func(&scope, *dunder_lt);
-  EXPECT_TRUE(isStrEqualsCStr(func->doc(), "O, Canada"));
+  EXPECT_TRUE(isStrEqualsCStr(func.doc(), "O, Canada"));
 }
 
 TEST(BuiltinsModuleDeathTest,
@@ -940,9 +940,9 @@ class bumble():
 
   Type bumble_type(&scope, moduleAt(&runtime, main, "bumble"));
   Str dunder_lt_sym(&scope, runtime.symbols()->DunderLt());
-  Dict bumble_dict(&scope, bumble_type->dict());
+  Dict bumble_dict(&scope, bumble_type.dict());
   Function bumble_lt(&scope, runtime.typeDictAt(bumble_dict, dunder_lt_sym));
-  Dict str_dict(&scope, str_type->dict());
+  Dict str_dict(&scope, str_type.dict());
   ASSERT_DEATH(patchFunctionAttrsInTypeDict(Thread::currentThread(), str_dict,
                                             bumble_lt),
                "Redefinition of native code method __lt__ in managed code");
@@ -978,7 +978,7 @@ result = all([True, True])
   )");
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(result->value());
+  EXPECT_TRUE(result.value());
 }
 
 TEST(BuiltinsModuleTest, AllOnListWithFalseReturnsFalse) {
@@ -988,7 +988,7 @@ result = all([True, False, True])
   )");
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_FALSE(result->value());
+  EXPECT_FALSE(result.value());
 }
 
 TEST(BuiltinsModuleTest, AnyOnListWithOnlyFalseReturnsFalse) {
@@ -998,7 +998,7 @@ result = any([False, False])
   )");
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_FALSE(result->value());
+  EXPECT_FALSE(result.value());
 }
 
 TEST(BuiltinsModuleTest, AnyOnListWithTrueReturnsTrue) {
@@ -1008,7 +1008,7 @@ result = any([False, True, False])
   )");
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(result->value());
+  EXPECT_TRUE(result.value());
 }
 
 TEST(BuiltinsModuleTest, RangeOnNonIntegerRaisesTypeError) {
@@ -1025,9 +1025,9 @@ result = range(5)
   )");
   HandleScope scope;
   Range result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_EQ(result->start(), 0);
-  EXPECT_EQ(result->stop(), 5);
-  EXPECT_EQ(result->step(), 1);
+  EXPECT_EQ(result.start(), 0);
+  EXPECT_EQ(result.stop(), 5);
+  EXPECT_EQ(result.step(), 1);
 }
 
 TEST(BuiltinsModuleTest, RangeWithStartAndStopDefaultsStep) {
@@ -1037,9 +1037,9 @@ result = range(1, 5)
   )");
   HandleScope scope;
   Range result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_EQ(result->start(), 1);
-  EXPECT_EQ(result->stop(), 5);
-  EXPECT_EQ(result->step(), 1);
+  EXPECT_EQ(result.start(), 1);
+  EXPECT_EQ(result.stop(), 5);
+  EXPECT_EQ(result.step(), 1);
 }
 
 TEST(BuiltinsModuleTest, RangeWithAllArgsSetsAllArgs) {
@@ -1049,9 +1049,9 @@ result = range(1, 5, 7)
   )");
   HandleScope scope;
   Range result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_EQ(result->start(), 1);
-  EXPECT_EQ(result->stop(), 5);
-  EXPECT_EQ(result->step(), 7);
+  EXPECT_EQ(result.start(), 1);
+  EXPECT_EQ(result.stop(), 5);
+  EXPECT_EQ(result.step(), 7);
 }
 
 TEST(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaisesTypeError) {

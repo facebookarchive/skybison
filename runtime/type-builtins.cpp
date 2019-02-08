@@ -15,49 +15,49 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
-  type->setName(*name);
+  type.setName(*name);
 
   // Compute MRO
   Object maybe_mro(&scope, computeMro(thread, type, bases));
-  if (maybe_mro->isError()) {
+  if (maybe_mro.isError()) {
     return *maybe_mro;
   }
-  type->setMro(*maybe_mro);
+  type.setMro(*maybe_mro);
 
   // Initialize dict
   Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
   Object class_cell(&scope, runtime->dictAt(dict, class_cell_key));
-  if (!class_cell->isError()) {
+  if (!class_cell.isError()) {
     RawValueCell::cast(RawValueCell::cast(*class_cell)->value())
         ->setValue(*type);
     runtime->dictRemove(dict, class_cell_key);
   }
-  type->setDict(*dict);
+  type.setDict(*dict);
 
   // Compute builtin base class
   Object builtin_base(&scope, runtime->computeBuiltinBase(thread, type));
-  if (builtin_base->isError()) {
+  if (builtin_base.isError()) {
     return *builtin_base;
   }
   Type builtin_base_type(&scope, *builtin_base);
   LayoutId base_layout_id =
-      RawLayout::cast(builtin_base_type->instanceLayout())->id();
+      RawLayout::cast(builtin_base_type.instanceLayout())->id();
 
   // Initialize instance layout
   Layout layout(&scope,
                 runtime->computeInitialLayout(thread, type, base_layout_id));
-  layout->setDescribedType(*type);
-  type->setInstanceLayout(*layout);
+  layout.setDescribedType(*type);
+  type.setInstanceLayout(*layout);
 
   // Copy down class flags from bases
   Tuple mro(&scope, *maybe_mro);
   word flags = 0;
-  for (word i = 1; i < mro->length(); i++) {
-    Type cur(&scope, mro->at(i));
-    flags |= cur->flags();
+  for (word i = 1; i < mro.length(); i++) {
+    Type cur(&scope, mro.at(i));
+    flags |= cur.flags();
   }
-  type->setFlagsAndBuiltinBase(static_cast<RawType::Flag>(flags),
-                               base_layout_id);
+  type.setFlagsAndBuiltinBase(static_cast<RawType::Flag>(flags),
+                              base_layout_id);
 
   return *type;
 }
@@ -80,8 +80,8 @@ void TypeBuiltins::initialize(Runtime* runtime) {
   Type type(&scope,
             runtime->addBuiltinType(SymbolId::kType, LayoutId::kType,
                                     LayoutId::kObject, kAttributes, kMethods));
-  Layout layout(&scope, type->instanceLayout());
-  layout->setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
+  Layout layout(&scope, type.instanceLayout());
+  layout.setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
   runtime->typeAddBuiltinFunctionKwEx(
       type, SymbolId::kDunderCall, nativeTrampoline<TypeBuiltins::dunderCall>,
       nativeTrampolineKw<TypeBuiltins::dunderCallKw>,
@@ -109,7 +109,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   }
 
   Object instance(&scope, Interpreter::call(thread, frame, nargs));
-  if (instance->isError()) return *instance;
+  if (instance.isError()) return *instance;
 
   // Second, call __init__ to initialize the instance.
 
@@ -126,7 +126,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   // TODO(T36407643): throw a type error if the __init__ method does not return
   // None.
   Object result(&scope, Interpreter::call(thread, frame, nargs));
-  if (result->isError()) return *result;
+  if (result.isError()) return *result;
 
   return *instance;
 }
@@ -148,7 +148,7 @@ RawObject TypeBuiltins::dunderCallKw(Thread* thread, Frame* frame, word nargs) {
   // Copy down the args, kwargs, and kwarg tuple that __call__ was called with
   frame->pushLocals(nargs, 0);
   Object new_obj(&scope, Interpreter::callKw(thread, frame, nargs - 1));
-  if (new_obj->isError()) return *new_obj;
+  if (new_obj.isError()) return *new_obj;
 
   // Second, call __init__ to initialize the instance.
   Object dunder_init(
@@ -161,7 +161,7 @@ RawObject TypeBuiltins::dunderCallKw(Thread* thread, Frame* frame, word nargs) {
   // TODO(T36407643): throw a type error if the __init__ method does not return
   // None.
   Object result(&scope, Interpreter::callKw(thread, frame, nargs - 1));
-  if (result->isError()) return *result;
+  if (result.isError()) return *result;
 
   return *new_obj;
 }
@@ -174,7 +174,7 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type metaclass(&scope, args.get(0));
-  LayoutId metaclass_id = RawLayout::cast(metaclass->instanceLayout())->id();
+  LayoutId metaclass_id = RawLayout::cast(metaclass.instanceLayout())->id();
   // If the first argument is exactly type, and there are no other arguments,
   // then this call acts like a "typeof" operator, and returns the type of the
   // argument.
@@ -214,17 +214,17 @@ RawObject TypeBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   }
 
   Type type(&scope, *self);
-  Str type_name(&scope, type->name());
+  Str type_name(&scope, type.name());
   // Make a buffer large enough to store the formatted string.
   const char prefix[] = "<class '";
   const char suffix[] = "'>";
-  const word len = sizeof(prefix) - 1 + type_name->length() + sizeof(suffix);
+  const word len = sizeof(prefix) - 1 + type_name.length() + sizeof(suffix);
   char* buf = new char[len];
   char* ptr = buf;
   std::copy(prefix, prefix + sizeof(prefix), ptr);
   ptr += sizeof(prefix) - 1;
-  type_name->copyTo(reinterpret_cast<byte*>(ptr), type_name->length());
-  ptr += type_name->length();
+  type_name.copyTo(reinterpret_cast<byte*>(ptr), type_name.length());
+  ptr += type_name.length();
   std::copy(suffix, suffix + sizeof(suffix), ptr);
   ptr += sizeof(suffix) - 1;
   DCHECK(ptr == buf + len - 1, "Didn't write as many as expected");

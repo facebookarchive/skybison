@@ -15,31 +15,31 @@ namespace python {
 
 RawObject asFloatObject(Thread* thread, const Object& obj) {
   // Object is float
-  if (obj->isFloat()) return *obj;
+  if (obj.isFloat()) return *obj;
 
   // Object is subclass of float
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   if (runtime->isInstanceOfFloat(*obj)) {
     UserFloatBase user_float(&scope, *obj);
-    return user_float->floatValue();
+    return user_float.floatValue();
   }
 
   // Try calling __float__
   Frame* frame = thread->currentFrame();
   Object fltmethod(&scope, Interpreter::lookupMethod(thread, frame, obj,
                                                      SymbolId::kDunderFloat));
-  if (fltmethod->isError()) {
+  if (fltmethod.isError()) {
     return thread->raiseTypeErrorWithCStr("must be a real number");
   }
   Object flt_obj(&scope,
                  Interpreter::callMethod1(thread, frame, fltmethod, obj));
-  if (flt_obj->isError() || flt_obj->isFloat()) return *flt_obj;
+  if (flt_obj.isError() || flt_obj.isFloat()) return *flt_obj;
   if (!runtime->isInstanceOfFloat(*flt_obj)) {
     return thread->raiseTypeErrorWithCStr("__float__ returned non-float");
   }
   UserFloatBase user_float(&scope, *obj);
-  return user_float->floatValue();
+  return user_float.floatValue();
 }
 
 // Convert `object` to double.
@@ -49,7 +49,7 @@ RawObject asFloatObject(Thread* thread, const Object& obj) {
 // cpython.
 static RawObject convertToDouble(Thread* thread, const Object& object,
                                  double* result) {
-  if (object->isFloat()) {
+  if (object.isFloat()) {
     *result = RawFloat::cast(*object)->value();
     return NoneType::object();
   }
@@ -100,12 +100,12 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(1));
-  if (obj->isFloat()) {
+  if (obj.isFloat()) {
     return *obj;
   }
 
   // This only converts exact strings.
-  if (obj->isStr()) {
+  if (obj.isStr()) {
     return floatFromString(thread, RawStr::cast(*obj));
   }
 
@@ -114,7 +114,7 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   // handled here.
   Object method(&scope, Interpreter::lookupMethod(thread, frame, obj,
                                                   SymbolId::kDunderFloat));
-  if (method->isError()) {
+  if (method.isError()) {
     return thread->raiseTypeErrorWithCStr(
         "TypeError: float() argument must have a __float__");
   }
@@ -122,7 +122,7 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   Object converted(&scope,
                    Interpreter::callMethod1(thread, frame, method, obj));
   // If there was an exception thrown during call, propagate it up.
-  if (converted->isError()) {
+  if (converted.isError()) {
     return *converted;
   }
 
@@ -134,7 +134,7 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   // __float__ used to be allowed to return any subtype of float, but that
   // behavior was deprecated.
   // TODO(dulinr): Convert this to a warning exception once that is supported.
-  CHECK(converted->isFloat(),
+  CHECK(converted.isFloat(),
         "__float__ returned a strict subclass of float, which is deprecated");
   return *converted;
 }
@@ -188,12 +188,12 @@ RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (self->isFloat()) {
+  if (self.isFloat()) {
     return *self;
   }
   if (runtime->isInstanceOfFloat(*self)) {
     UserFloatBase user_float(&scope, *self);
-    return user_float->floatValue();
+    return user_float.floatValue();
   }
   return thread->raiseTypeErrorWithCStr("'float' object expected");
 }
@@ -306,16 +306,16 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
         "float.__new__(X): X is not a type object");
   }
   Type type(&scope, *obj);
-  if (type->builtinBase() != LayoutId::kFloat) {
+  if (type.builtinBase() != LayoutId::kFloat) {
     return thread->raiseTypeErrorWithCStr(
         "float.__new__(X): X is not a subtype of float");
   }
 
   // Handle subclasses
-  if (!type->isBuiltin()) {
-    Layout type_layout(&scope, type->instanceLayout());
+  if (!type.isBuiltin()) {
+    Layout type_layout(&scope, type.instanceLayout());
     UserFloatBase instance(&scope, runtime->newInstance(type_layout));
-    instance->setFloatValue(floatFromObject(thread, frame, nargs));
+    instance.setFloatValue(floatFromObject(thread, frame, nargs));
     return *instance;
   }
   return floatFromObject(thread, frame, nargs);
@@ -339,7 +339,7 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   Object maybe_error(&scope, convertToDouble(thread, other, &right));
   // May have returned NotImplemented or raised an exception.
-  if (!maybe_error->isNoneType()) return *maybe_error;
+  if (!maybe_error.isNoneType()) return *maybe_error;
 
   return thread->runtime()->newFloat(left + right);
 }
@@ -380,7 +380,7 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   Object maybe_error(&scope, convertToDouble(thread, other, &right));
   // May have returned NotImplemented or raised an exception.
-  if (!maybe_error->isNoneType()) return *maybe_error;
+  if (!maybe_error.isNoneType()) return *maybe_error;
 
   return thread->runtime()->newFloat(left - right);
 }
@@ -406,7 +406,7 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   Object maybe_error(&scope, convertToDouble(thread, other, &right));
   // May have returned NotImplemented or raised an exception.
-  if (!maybe_error->isNoneType()) return *maybe_error;
+  if (!maybe_error.isNoneType()) return *maybe_error;
 
   return thread->runtime()->newFloat(std::pow(left, right));
 }

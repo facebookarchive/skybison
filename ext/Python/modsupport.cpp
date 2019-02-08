@@ -12,7 +12,7 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
   Runtime* runtime = thread->runtime();
 
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
-  if (!module_obj->isModule()) {
+  if (!module_obj.isModule()) {
     // TODO(cshapiro): throw a TypeError
     return -1;
   }
@@ -21,7 +21,7 @@ PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
     return -1;
   }
   Object key(&scope, runtime->newStrFromCStr(name));
-  if (!key->isStr()) {
+  if (!key.isStr()) {
     // TODO(cshapiro): throw a MemoryError
     return -1;
   }

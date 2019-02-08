@@ -131,8 +131,8 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   Int b(&scope, moduleAt(&runtime, "__main__", "b"));
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool e(&scope, moduleAt(&runtime, "__main__", "e"));
-  EXPECT_EQ(a->asWord(), 3);
-  EXPECT_EQ(b->asWord(), 10);
+  EXPECT_EQ(a.asWord(), 3);
+  EXPECT_EQ(b.asWord(), 10);
   EXPECT_EQ(*c, Bool::trueObj());
   EXPECT_EQ(*e, Bool::trueObj());
 }

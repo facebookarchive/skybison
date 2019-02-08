@@ -22,7 +22,7 @@ void Handles::visitPointers(PointerVisitor* visitor) {
     Handle<RawObject>* handle = scope->list();
     while (handle != nullptr) {
       visitor->visitPointer(handle->pointer());
-      handle = handle->next();
+      handle = handle->nextHandle();
     }
   }
 }
@@ -123,7 +123,7 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
 
 Frame* Thread::pushFrame(const Code& code) {
   Frame* frame =
-      openAndLinkFrame(code->totalArgs(), code->totalVars(), code->stacksize());
+      openAndLinkFrame(code.totalArgs(), code.totalVars(), code.stacksize());
   frame->setCode(*code);
   return frame;
 }
@@ -135,12 +135,12 @@ Frame* Thread::pushExecFrame(const Code& code, const Dict& globals,
   Object builtins_obj(&scope,
                       runtime()->typeDictAt(globals, dunder_builtins_name));
   // TODO(T36914735): __builtins__ should always be in globals.
-  if (builtins_obj->isError()) {  // couldn't find __builtins__ in globals
+  if (builtins_obj.isError()) {  // couldn't find __builtins__ in globals
     Str builtins_name(&scope, runtime()->symbols()->Builtins());
     builtins_obj = runtime()->findModule(builtins_name);
   }
   Module builtins(&scope, *builtins_obj);
-  Dict builtins_dict(&scope, builtins->dict());
+  Dict builtins_dict(&scope, builtins.dict());
   Frame* result = pushFrame(code);
   result->setGlobals(*globals);
   result->setBuiltins(*builtins_dict);
@@ -152,7 +152,7 @@ Frame* Thread::pushExecFrame(const Code& code, const Dict& globals,
 
 Frame* Thread::pushModuleFunctionFrame(const Module& module, const Code& code) {
   HandleScope scope(this);
-  Dict globals(&scope, module->dict());
+  Dict globals(&scope, module.dict());
   return pushExecFrame(code, globals, globals);
 }
 
@@ -163,20 +163,20 @@ Frame* Thread::pushClassFunctionFrame(const Function& function,
   Dict globals(&scope, RawFunction::cast(*function)->globals());
   Frame* result = pushExecFrame(code, globals, dict);
 
-  word num_locals = code->nlocals();
-  word num_cellvars = code->numCellvars();
-  DCHECK(code->cell2arg()->isNoneType(), "class body cannot have cell2arg.");
-  for (word i = 0; i < code->numCellvars(); i++) {
+  word num_locals = code.nlocals();
+  word num_cellvars = code.numCellvars();
+  DCHECK(code.cell2arg()->isNoneType(), "class body cannot have cell2arg.");
+  for (word i = 0; i < code.numCellvars(); i++) {
     result->setLocal(num_locals + i, runtime()->newValueCell());
   }
 
   // initialize free vars
   DCHECK(
-      code->numFreevars() == 0 ||
-          code->numFreevars() ==
+      code.numFreevars() == 0 ||
+          code.numFreevars() ==
               RawTuple::cast(RawFunction::cast(*function)->closure())->length(),
       "Number of freevars is different than the closure.");
-  for (word i = 0; i < code->numFreevars(); i++) {
+  for (word i = 0; i < code.numFreevars(); i++) {
     result->setLocal(
         num_locals + num_cellvars + i,
         RawTuple::cast(RawFunction::cast(*function)->closure())->at(i));
@@ -229,7 +229,7 @@ RawObject Thread::invokeMethod1(const Object& receiver, SymbolId selector) {
   HandleScope scope(this);
   Object method(&scope, Interpreter::lookupMethod(this, currentFrame_, receiver,
                                                   selector));
-  if (method->isError()) return *method;
+  if (method.isError()) return *method;
   return Interpreter::callMethod1(this, currentFrame_, method, receiver);
 }
 
@@ -238,7 +238,7 @@ RawObject Thread::invokeMethod2(const Object& receiver, SymbolId selector,
   HandleScope scope(this);
   Object method(&scope, Interpreter::lookupMethod(this, currentFrame_, receiver,
                                                   selector));
-  if (method->isError()) return *method;
+  if (method.isError()) return *method;
   return Interpreter::callMethod2(this, currentFrame_, method, receiver, arg1);
 }
 
@@ -247,7 +247,7 @@ RawObject Thread::invokeMethod3(const Object& receiver, SymbolId selector,
   HandleScope scope(this);
   Object method(&scope, Interpreter::lookupMethod(this, currentFrame_, receiver,
                                                   selector));
-  if (method->isError()) return *method;
+  if (method.isError()) return *method;
   return Interpreter::callMethod3(this, currentFrame_, method, receiver, arg1,
                                   arg2);
 }
@@ -256,7 +256,7 @@ RawObject Thread::invokeFunction1(SymbolId module, SymbolId name,
                                   const Object& arg1) {
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
-  if (func->isError()) return *func;
+  if (func.isError()) return *func;
   return Interpreter::callFunction1(this, currentFrame_, func, arg1);
 }
 
@@ -264,7 +264,7 @@ RawObject Thread::invokeFunction2(SymbolId module, SymbolId name,
                                   const Object& arg1, const Object& arg2) {
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
-  if (func->isError()) return *func;
+  if (func.isError()) return *func;
   return Interpreter::callFunction2(this, currentFrame_, func, arg1, arg2);
 }
 
@@ -426,12 +426,12 @@ void Thread::printPendingException() {
   Type exc_type(&scope, pendingExceptionType());
   Object exc_obj(&scope, pendingExceptionValue());
   clearPendingException();
-  Str type_name(&scope, exc_type->name());
-  std::cerr << unique_c_ptr<char[]>(type_name->toCStr()).get() << ": ";
+  Str type_name(&scope, exc_type.name());
+  std::cerr << unique_c_ptr<char[]>(type_name.toCStr()).get() << ": ";
 
   if (runtime()->isInstanceOfStr(*exc_obj)) {
     Str str(&scope, *exc_obj);
-    std::cerr << unique_c_ptr<char[]>(str->toCStr()).get() << "\n";
+    std::cerr << unique_c_ptr<char[]>(str.toCStr()).get() << "\n";
     return;
   }
 
@@ -441,11 +441,11 @@ void Thread::printPendingException() {
                                                 SymbolId::kDunderStr));
     Object result(&scope, Interpreter::callMethod1(this, currentFrame(),
                                                    dunder_str, exc_obj));
-    if (result->isError() || !runtime()->isInstanceOfStr(*result)) {
+    if (result.isError() || !runtime()->isInstanceOfStr(*result)) {
       std::cerr << "<exception str() failed>\n";
     } else {
       Str result_str(&scope, *result);
-      std::cerr << unique_c_ptr<char[]>(result_str->toCStr()).get() << "\n";
+      std::cerr << unique_c_ptr<char[]>(result_str.toCStr()).get() << "\n";
     }
     return;
   }

@@ -611,7 +611,7 @@ TEST(InterpreterTest, SequenceIterSearchWithListReturnsTrue) {
   Object val(&scope, SmallInt::fromWord(2));
   Object result(&scope,
                 Interpreter::sequenceIterSearch(thread, frame, val, container));
-  ASSERT_FALSE(result->isError());
+  ASSERT_FALSE(result.isError());
   EXPECT_EQ(result, Bool::trueObj());
 }
 
@@ -624,7 +624,7 @@ TEST(InterpreterTest, SequenceIterSearchWithListReturnsFalse) {
   Frame* frame = thread->currentFrame();
   Object result(&scope,
                 Interpreter::sequenceIterSearch(thread, frame, val, container));
-  ASSERT_FALSE(result->isError());
+  ASSERT_FALSE(result.isError());
   EXPECT_EQ(result, Bool::falseObj());
 }
 
@@ -688,27 +688,27 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
-  code->setArgcount(2);
-  code->setStacksize(1);
+  names.atPut(0, *key);
+  code.setNames(*names);
+  code.setArgcount(2);
+  code.setStacksize(1);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Function callee(&scope, runtime.newFunction());
-  callee->setCode(*code);
-  callee->setEntry(interpreterTrampoline);
+  callee.setCode(*code);
+  callee.setEntry(interpreterTrampoline);
   Tuple defaults(&scope, runtime.newTuple(2));
 
-  defaults->atPut(0, SmallInt::fromWord(1));
-  defaults->atPut(1, SmallInt::fromWord(2));
-  callee->setDefaults(*defaults);
+  defaults.atPut(0, SmallInt::fromWord(1));
+  defaults.atPut(1, SmallInt::fromWord(2));
+  callee.setDefaults(*defaults);
 
   // Create a caller frame
   Frame* frame = thread->pushFrame(code);
@@ -742,27 +742,27 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
-  code->setArgcount(2);
-  code->setStacksize(1);
+  names.atPut(0, *key);
+  code.setNames(*names);
+  code.setArgcount(2);
+  code.setStacksize(1);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Function callee(&scope, runtime.newFunction());
-  callee->setCode(*code);
-  callee->setEntryEx(interpreterTrampolineEx);
+  callee.setCode(*code);
+  callee.setEntryEx(interpreterTrampolineEx);
   Tuple defaults(&scope, runtime.newTuple(2));
 
-  defaults->atPut(0, SmallInt::fromWord(1));
-  defaults->atPut(1, SmallInt::fromWord(2));
-  callee->setDefaults(*defaults);
+  defaults.atPut(0, SmallInt::fromWord(1));
+  defaults.atPut(1, SmallInt::fromWord(2));
+  callee.setDefaults(*defaults);
 
   // Create a caller frame
   Frame* frame = thread->pushFrame(code);
@@ -772,7 +772,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
 
   // Push function pointer and argument
   Tuple ex(&scope, runtime.newTuple(1));
-  ex->atPut(0, SmallInt::fromWord(2));
+  ex.atPut(0, SmallInt::fromWord(2));
   frame->pushValue(*callee);
   frame->pushValue(*ex);
 
@@ -798,31 +798,31 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   Code code(&scope, testing::newEmptyCode(&runtime));
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *key);
-  code->setNames(*names);
-  code->setArgcount(2);
-  code->setStacksize(1);
+  names.atPut(0, *key);
+  code.setNames(*names);
+  code.setArgcount(2);
+  code.setStacksize(1);
   Tuple var_names(&scope, runtime.newTuple(2));
-  var_names->atPut(0, runtime.newStrFromCStr("a"));
-  var_names->atPut(1, runtime.newStrFromCStr("b"));
-  code->setVarnames(*var_names);
+  var_names.atPut(0, runtime.newStrFromCStr("a"));
+  var_names.atPut(1, runtime.newStrFromCStr("b"));
+  code.setVarnames(*var_names);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Function callee(&scope, runtime.newFunction());
-  callee->setCode(*code);
-  callee->setEntryKw(interpreterTrampolineKw);
+  callee.setCode(*code);
+  callee.setEntryKw(interpreterTrampolineKw);
   Tuple defaults(&scope, runtime.newTuple(2));
 
-  defaults->atPut(0, SmallInt::fromWord(1));
-  defaults->atPut(1, SmallInt::fromWord(2));
-  callee->setDefaults(*defaults);
+  defaults.atPut(0, SmallInt::fromWord(1));
+  defaults.atPut(1, SmallInt::fromWord(2));
+  callee.setDefaults(*defaults);
 
   // Create a caller frame
   Frame* frame = thread->pushFrame(code);
@@ -832,7 +832,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
 
   // Push function pointer and argument
   Tuple arg_names(&scope, runtime.newTuple(1));
-  arg_names->atPut(0, runtime.newStrFromCStr("b"));
+  arg_names.atPut(0, runtime.newStrFromCStr("b"));
   frame->pushValue(*callee);
   frame->pushValue(SmallInt::fromWord(4));
   frame->pushValue(*arg_names);
@@ -983,11 +983,11 @@ a, b, c = l
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
-  ASSERT_TRUE(b->isSmallInt());
+  ASSERT_TRUE(b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
-  ASSERT_TRUE(c->isSmallInt());
+  ASSERT_TRUE(c.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
 }
 
@@ -1032,13 +1032,13 @@ sys.displayhook = my_displayhook
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, *unique);
-  consts->atPut(1, NoneType::object());
-  code->setConsts(*consts);
-  code->setNlocals(0);
+  consts.atPut(0, *unique);
+  consts.atPut(1, NoneType::object());
+  code.setConsts(*consts);
+  code.setNlocals(0);
   const byte bytecode[] = {LOAD_CONST, 0, PRINT_EXPR,   0,
                            LOAD_CONST, 1, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
   ASSERT_TRUE(result->isNoneType());
@@ -1069,13 +1069,13 @@ a = AsyncIterable()
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *a);
-  code->setConsts(*consts);
+  consts.atPut(0, *a);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
 }
 
@@ -1084,10 +1084,10 @@ TEST(InterpreterTest, GetAiterOnNonIterable) {
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(123));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(123));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -1115,21 +1115,21 @@ manager = M()
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Code code(&scope, testing::newEmptyCode(&runtime));
-  code->setNlocals(0);
+  code.setNlocals(0);
 
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(42));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
-  names->atPut(0, runtime.newStrFromCStr("manager"));
-  code->setNames(*names);
+  names.atPut(0, runtime.newStrFromCStr("manager"));
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_GLOBAL, 0, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
                            LOAD_CONST,  0, RETURN_VALUE,      0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Dict globals(&scope, main->dict());
+  Dict globals(&scope, main.dict());
   Dict builtins(&scope, runtime.newDict());
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);
@@ -1153,15 +1153,15 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(2));
-  consts->atPut(0, SmallInt::fromWord(42));
-  consts->atPut(1, NoneType::object());
-  code->setConsts(*consts);
-  code->setNlocals(0);
+  consts.atPut(0, SmallInt::fromWord(42));
+  consts.atPut(1, NoneType::object());
+  code.setConsts(*consts);
+  code.setNlocals(0);
   const byte bc[] = {
       LOAD_CONST, 0, LOAD_CONST,   1, SETUP_ASYNC_WITH, 0,
       POP_BLOCK,  0, RETURN_VALUE, 0,
   };
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
   RawObject result = Thread::currentThread()->run(code);
   EXPECT_EQ(result, SmallInt::fromWord(42));
 }
@@ -1177,27 +1177,27 @@ a, b, c, *d, e, f, g  = l
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
-  ASSERT_TRUE(b->isSmallInt());
+  ASSERT_TRUE(b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
-  ASSERT_TRUE(c->isSmallInt());
+  ASSERT_TRUE(c.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
 
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isList());
+  ASSERT_TRUE(d.isList());
   List list(&scope, *d);
-  EXPECT_EQ(list->numItems(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 4);
+  EXPECT_EQ(list.numItems(), 1);
+  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 4);
 
   Object e(&scope, moduleAt(&runtime, main, "e"));
   Object f(&scope, moduleAt(&runtime, main, "f"));
   Object g(&scope, moduleAt(&runtime, main, "g"));
-  ASSERT_TRUE(e->isSmallInt());
+  ASSERT_TRUE(e.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*e)->value(), 5);
-  ASSERT_TRUE(f->isSmallInt());
+  ASSERT_TRUE(f.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*f)->value(), 6);
-  ASSERT_TRUE(g->isSmallInt());
+  ASSERT_TRUE(g.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*g)->value(), 7);
 }
 
@@ -1212,16 +1212,16 @@ a, b, *c = l
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(a->isSmallInt());
+  ASSERT_TRUE(a.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
-  ASSERT_TRUE(b->isSmallInt());
+  ASSERT_TRUE(b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
 
-  ASSERT_TRUE(c->isList());
+  ASSERT_TRUE(c.isList());
   List list(&scope, *c);
-  ASSERT_EQ(list->numItems(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list->at(1))->value(), 4);
+  ASSERT_EQ(list.numItems(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 4);
 }
 
 TEST(InterpreterTest, UnpackSequenceExWithNoElementsBefore) {
@@ -1235,15 +1235,15 @@ l = [1, 2, 3, 4]
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(a->isList());
+  ASSERT_TRUE(a.isList());
   List list(&scope, *a);
-  ASSERT_EQ(list->numItems(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list->at(1))->value(), 2);
+  ASSERT_EQ(list.numItems(), 2);
+  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 2);
 
-  ASSERT_TRUE(b->isSmallInt());
+  ASSERT_TRUE(b.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*b)->value(), 3);
-  ASSERT_TRUE(c->isSmallInt());
+  ASSERT_TRUE(c.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*c)->value(), 4);
 }
 
@@ -1256,29 +1256,29 @@ d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -1305,29 +1305,29 @@ d = {**Foo(), 'd': 4}
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -1354,29 +1354,29 @@ d = {**Foo(), 'd': 4}
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -1418,29 +1418,29 @@ d = {**Foo(), 'd': 4}
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -1547,13 +1547,13 @@ t = foo(*(1,2), *(3, 4))
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object t(&scope, moduleAt(&runtime, main, "t"));
-  ASSERT_TRUE(t->isTuple());
+  ASSERT_TRUE(t.isTuple());
 
   Tuple tuple(&scope, *t);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(2))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(tuple->at(3))->value(), 4);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 1);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(1))->value(), 2);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(2))->value(), 3);
+  EXPECT_EQ(RawSmallInt::cast(tuple.at(3))->value(), 4);
 }
 
 TEST(InterpreterTest, FunctionDerefsVariable) {
@@ -1572,9 +1572,9 @@ v = outer()
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object v(&scope, moduleAt(&runtime, main, "v"));
-  ASSERT_TRUE(v->isInt());
+  ASSERT_TRUE(v.isInt());
   Int result(&scope, *v);
-  EXPECT_EQ(result->asWord(), 0);
+  EXPECT_EQ(result.asWord(), 0);
 }
 
 TEST(InterpreterTest, FunctionAccessesUnboundVariable) {
@@ -1621,13 +1621,13 @@ b = public_symbol2()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a->isInt());
-  ASSERT_TRUE(b->isInt());
+  ASSERT_TRUE(a.isInt());
+  ASSERT_TRUE(b.isInt());
 
   Int result1(&scope, *a);
   Int result2(&scope, *b);
-  EXPECT_EQ(result1->asWord(), 1);
-  EXPECT_EQ(result2->asWord(), 2);
+  EXPECT_EQ(result1.asWord(), 1);
+  EXPECT_EQ(result2.asWord(), 2);
 }
 
 TEST(InterpreterTest, ImportStarDoesNotImportPrivateSymbols) {
@@ -1682,10 +1682,10 @@ a = AsyncIterator()
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *a);
-  code->setConsts(*consts);
+  consts.atPut(0, *a);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
   EXPECT_EQ(*a, *result);
@@ -1700,10 +1700,10 @@ TEST(InterpreterTest, GetAnextOnNonIterable) {
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, SmallInt::fromWord(123));
-  code->setConsts(*consts);
+  consts.atPut(0, SmallInt::fromWord(123));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -1724,10 +1724,10 @@ a = AsyncIterator()
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *a);
-  code->setConsts(*consts);
+  consts.atPut(0, *a);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -1749,13 +1749,13 @@ a = Awaitable()
 
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *a);
-  code->setConsts(*consts);
+  consts.atPut(0, *a);
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
 }
 
@@ -1764,10 +1764,10 @@ TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   HandleScope scope;
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, runtime.newStrFromCStr("foo"));
-  code->setConsts(*consts);
+  consts.atPut(0, runtime.newStrFromCStr("foo"));
+  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -1785,29 +1785,29 @@ d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -1833,29 +1833,29 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -1881,29 +1881,29 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -1947,29 +1947,29 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
-  ASSERT_TRUE(d->isDict());
+  ASSERT_TRUE(d.isDict());
 
   Dict dict(&scope, *d);
-  EXPECT_EQ(dict->numItems(), 4);
+  EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0->isSmallInt());
+  ASSERT_TRUE(el0.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1->isSmallInt());
+  ASSERT_TRUE(el1.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2->isSmallInt());
+  ASSERT_TRUE(el2.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3->isSmallInt());
+  ASSERT_TRUE(el3.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
 }
 
@@ -2234,8 +2234,8 @@ foo = Foo()
   // Create a code object and set the foo instance as a const
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple consts(&scope, runtime.newTuple(1));
-  consts->atPut(0, *foo);
-  code->setConsts(*consts);
+  consts.atPut(0, *foo);
+  code.setConsts(*consts);
 
   // Python code:
   // foo = Foo()
@@ -2246,12 +2246,12 @@ foo = Foo()
       GET_YIELD_FROM_ITER, 0,  // iter(foo)
       RETURN_VALUE,        0,
   };
-  code->setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bc));
 
   // Confirm that the returned value is the iterator of Foo
   Object result(&scope, Thread::currentThread()->run(code));
   Type result_type(&scope, runtime.typeOf(*result));
-  EXPECT_TRUE(isStrEqualsCStr(result_type->name(), "FooIterator"));
+  EXPECT_TRUE(isStrEqualsCStr(result_type.name(), "FooIterator"));
 }
 
 TEST(InterpreterTest, YieldFromIterRaisesException) {
@@ -2285,10 +2285,10 @@ a = getattr(foo.bar, '__module__')
 b = getattr(baz, '__module__')
 )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isStr());
+  ASSERT_TRUE(a.isStr());
   EXPECT_TRUE(Str::cast(*a)->equalsCStr("foo"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_TRUE(b->isStr());
+  ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b)->equalsCStr("__main__"));
 }
 
@@ -2303,10 +2303,10 @@ b = getattr(baz, '__qualname__')
 )");
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a->isStr());
+  ASSERT_TRUE(a.isStr());
   EXPECT_TRUE(Str::cast(*a)->equalsCStr("Foo.bar"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  ASSERT_TRUE(b->isStr());
+  ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b)->equalsCStr("baz"));
 }
 
@@ -2320,15 +2320,15 @@ def bar(): pass
 )");
   HandleScope scope;
   Object foo(&scope, testing::moduleAt(&runtime, "__main__", "foo"));
-  ASSERT_TRUE(foo->isFunction());
+  ASSERT_TRUE(foo.isFunction());
   Object foo_docstring(&scope, RawFunction::cast(*foo)->doc());
-  ASSERT_TRUE(foo_docstring->isStr());
+  ASSERT_TRUE(foo_docstring.isStr());
   EXPECT_TRUE(RawStr::cast(*foo_docstring)->equalsCStr("This is a docstring"));
 
   Object bar(&scope, testing::moduleAt(&runtime, "__main__", "bar"));
-  ASSERT_TRUE(bar->isFunction());
+  ASSERT_TRUE(bar.isFunction());
   Object bar_docstring(&scope, RawFunction::cast(*bar)->doc());
-  EXPECT_TRUE(bar_docstring->isNoneType());
+  EXPECT_TRUE(bar_docstring.isNoneType());
 }
 
 TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
@@ -2353,10 +2353,10 @@ for i in range(5):
 
   HandleScope scope;
   Object l_obj(&scope, testing::moduleAt(&runtime, "__main__", "l"));
-  ASSERT_TRUE(l_obj->isList());
+  ASSERT_TRUE(l_obj.isList());
   List l(&scope, *l_obj);
-  ASSERT_EQ(l->numItems(), 1);
-  EXPECT_EQ(l->at(0), SmallInt::fromWord(10));
+  ASSERT_EQ(l.numItems(), 1);
+  EXPECT_EQ(l.at(0), SmallInt::fromWord(10));
 }
 
 // TODO(bsimmers) Rewrite these exception tests to ensure that the specific
@@ -2376,9 +2376,9 @@ except:
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n->isInt());
+  ASSERT_TRUE(n.isInt());
   Int n_int(&scope, *n);
-  EXPECT_EQ(n_int->asWord(), 2);
+  EXPECT_EQ(n_int.asWord(), 2);
 }
 
 TEST(InterpreterTest, RaiseCrossesFunctions) {
@@ -2401,9 +2401,9 @@ except:
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n->isInt());
+  ASSERT_TRUE(n.isInt());
   Int n_int(&scope, *n);
-  EXPECT_EQ(n_int->asWord(), 2);
+  EXPECT_EQ(n_int.asWord(), 2);
 }
 
 TEST(InterpreterTest, RaiseFromSetsCause) {
@@ -2420,9 +2420,9 @@ except Exception as e:
 
   HandleScope scope;
   Object exc_obj(&scope, testing::moduleAt(&runtime, "__main__", "exc"));
-  ASSERT_EQ(exc_obj->layoutId(), LayoutId::kTypeError);
+  ASSERT_EQ(exc_obj.layoutId(), LayoutId::kTypeError);
   BaseException exc(&scope, *exc_obj);
-  EXPECT_EQ(exc->cause()->layoutId(), LayoutId::kRuntimeError);
+  EXPECT_EQ(exc.cause()->layoutId(), LayoutId::kRuntimeError);
 }
 
 TEST(InterpreterTest, ExceptWithRightTypeCatches) {
@@ -2439,9 +2439,9 @@ except RuntimeError:
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n->isInt());
+  ASSERT_TRUE(n.isInt());
   Int n_int(&scope, *n);
-  EXPECT_EQ(n_int->asWord(), 2);
+  EXPECT_EQ(n_int.asWord(), 2);
 }
 
 TEST(InterpreterTest, ExceptWithRightTupleTypeCatches) {
@@ -2458,9 +2458,9 @@ except (StopIteration, RuntimeError, ImportError):
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n->isInt());
+  ASSERT_TRUE(n.isInt());
   Int n_int(&scope, *n);
-  EXPECT_EQ(n_int->asWord(), 2);
+  EXPECT_EQ(n_int.asWord(), 2);
 }
 
 TEST(InterpreterTest, ExceptWithWrongTypePasses) {
@@ -2559,13 +2559,13 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   Code code(&scope, testing::newEmptyCode(&runtime));
   Tuple names(&scope, runtime.newTuple(1));
   Str foo(&scope, runtime.newStrFromCStr("foo"));
-  names->atPut(0, *foo);
-  code->setNames(*names);
+  names.atPut(0, *foo);
+  code.setNames(*names);
 
   // load arguments and execute the code
   const byte bytecode[] = {BUILD_MAP, 0, LOAD_ATTR, 0};
-  code->setCode(runtime.newBytesWithAll(bytecode));
-  code->setStacksize(1);
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(1);
 
   // Execute the code and make sure to get the unwinded Error
   RawObject result = Thread::currentThread()->run(code);
@@ -2674,7 +2674,7 @@ for i in range(5):
 result = 10
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result).value(), 10);
 }
 
@@ -2693,7 +2693,7 @@ for i in range(5):
   result -= i
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result).value(), -4);
 }
 
@@ -2712,7 +2712,7 @@ except:
   result += 1000
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result->isSmallInt());
+  ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(*result).value(), 1003);
 }
 

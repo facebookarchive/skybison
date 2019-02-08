@@ -75,11 +75,11 @@ class Handle : public T {
 
   RawObject* pointer() { return this; }
 
-  Handle<RawObject>* next() const { return next_; }
+  Handle<RawObject>* nextHandle() const { return next_; }
 
-  T* operator->() const { return const_cast<Handle*>(this); }
+  T* operator->() const = delete;
 
-  T operator*() const { return *operator->(); }
+  T operator*() const { return *static_cast<const T*>(this); }
 
   // Note that Handle<T>::operator= takes a raw pointer, not a handle, so
   // to assign handles, one writes: `lhandle = *rhandle;`. (This is to avoid
@@ -88,7 +88,7 @@ class Handle : public T {
   Handle& operator=(S other) {
     static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
                   "Only up- and down-casts are permitted.");
-    *static_cast<T*>(this) = other.template rawCast<T>();
+    *static_cast<T*>(this) = other->template rawCast<T>();
     DCHECK(isValidType(), "Invalid Handle assignment");
     return *this;
   }
