@@ -271,6 +271,16 @@ RawObject Interpreter::callFunction2(Thread* thread, Frame* caller,
   return call(thread, caller, 2);
 }
 
+RawObject Interpreter::callFunction3(Thread* thread, Frame* caller,
+                                     const Object& func, const Object& arg1,
+                                     const Object& arg2, const Object& arg3) {
+  caller->pushValue(*func);
+  caller->pushValue(*arg1);
+  caller->pushValue(*arg2);
+  caller->pushValue(*arg3);
+  return call(thread, caller, 3);
+}
+
 RawObject Interpreter::callFunction(Thread* thread, Frame* caller,
                                     const Object& func, const Tuple& args) {
   caller->pushValue(*func);
@@ -536,6 +546,9 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
   if (!method->isError()) {
     Object result(&scope,
                   callMethod2(thread, caller, method, container, value));
+    if (result->isError()) {
+      return *result;
+    }
     return isTrue(thread, caller, result);
   }
   return sequenceIterSearch(thread, caller, value, container);

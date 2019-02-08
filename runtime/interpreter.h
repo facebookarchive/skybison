@@ -66,6 +66,9 @@ class Interpreter {
   static RawObject callFunction2(Thread* thread, Frame* caller,
                                  const Object& func, const Object& arg1,
                                  const Object& arg2);
+  static RawObject callFunction3(Thread* thread, Frame* caller,
+                                 const Object& func, const Object& arg1,
+                                 const Object& arg2, const Object& arg3);
   static RawObject callFunction(Thread* thread, Frame* caller,
                                 const Object& func, const Tuple& args);
 

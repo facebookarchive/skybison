@@ -233,12 +233,39 @@ RawObject Thread::invokeMethod1(const Object& receiver, SymbolId selector) {
   return Interpreter::callMethod1(this, currentFrame_, method, receiver);
 }
 
+RawObject Thread::invokeMethod2(const Object& receiver, SymbolId selector,
+                                const Object& arg1) {
+  HandleScope scope(this);
+  Object method(&scope, Interpreter::lookupMethod(this, currentFrame_, receiver,
+                                                  selector));
+  if (method->isError()) return *method;
+  return Interpreter::callMethod2(this, currentFrame_, method, receiver, arg1);
+}
+
+RawObject Thread::invokeMethod3(const Object& receiver, SymbolId selector,
+                                const Object& arg1, const Object& arg2) {
+  HandleScope scope(this);
+  Object method(&scope, Interpreter::lookupMethod(this, currentFrame_, receiver,
+                                                  selector));
+  if (method->isError()) return *method;
+  return Interpreter::callMethod3(this, currentFrame_, method, receiver, arg1,
+                                  arg2);
+}
+
 RawObject Thread::invokeFunction1(SymbolId module, SymbolId name,
                                   const Object& arg1) {
   HandleScope scope(this);
   Object func(&scope, runtime()->lookupNameInModule(this, module, name));
   if (func->isError()) return *func;
   return Interpreter::callFunction1(this, currentFrame_, func, arg1);
+}
+
+RawObject Thread::invokeFunction2(SymbolId module, SymbolId name,
+                                  const Object& arg1, const Object& arg2) {
+  HandleScope scope(this);
+  Object func(&scope, runtime()->lookupNameInModule(this, module, name));
+  if (func->isError()) return *func;
+  return Interpreter::callFunction2(this, currentFrame_, func, arg1, arg2);
 }
 
 RawObject Thread::raise(LayoutId type, RawObject value) {

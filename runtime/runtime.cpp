@@ -1741,6 +1741,7 @@ struct {
     {SymbolId::kMarshal, &Runtime::createMarshalModule},
     {SymbolId::kUnderWarnings, &Runtime::createWarningsModule},
     {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
+    {SymbolId::kOperator, &Runtime::createOperatorModule},
 };
 
 void Runtime::initializeModules() {
@@ -2260,6 +2261,15 @@ void Runtime::createWeakRefModule() {
 
   moduleAddBuiltinType(module, SymbolId::kRef, LayoutId::kWeakRef);
   addModule(module);
+}
+
+void Runtime::createOperatorModule() {
+  HandleScope scope;
+  Object name(&scope, symbols()->Operator());
+  Module module(&scope, newModule(name));
+  addModule(module);
+  CHECK(!executeModule(kOperatorModuleData, module).isError(),
+        "Failed to initialize operator module");
 }
 
 void Runtime::createTimeModule() {

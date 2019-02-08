@@ -167,6 +167,7 @@ class Runtime {
   void createBuiltinsModule();
   void createImportModule();
   void createMarshalModule();
+  void createOperatorModule();
   void createSysModule();
   void createTimeModule();
   void createUnderIoModule();

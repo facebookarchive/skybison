@@ -149,6 +149,8 @@ class Runtime;
   V(ConnectionError, "ConnectionError")                                        \
   V(ConnectionRefusedError, "ConnectionRefusedError")                          \
   V(ConnectionResetError, "ConnectionResetError")                              \
+  V(Contains, "contains")                                                      \
+  V(CountOf, "countOf")                                                        \
   V(Coroutine, "coroutine")                                                    \
   V(CreateBuiltin, "create_builtin")                                           \
   V(Deleter, "deleter")                                                        \
@@ -198,6 +200,7 @@ class Runtime;
   V(ImportWarning, "ImportWarning")                                            \
   V(IndentationError, "IndentationError")                                      \
   V(IndexError, "IndexError")                                                  \
+  V(IndexOf, "indexOf")                                                        \
   V(Insert, "insert")                                                          \
   V(Int, "int")                                                                \
   V(InterruptedError, "InterruptedError")                                      \
@@ -248,6 +251,7 @@ class Runtime;
   V(Null, "<NULL>")                                                            \
   V(OSError, "OSError")                                                        \
   V(ObjectTypename, "object")                                                  \
+  V(Operator, "operator")                                                      \
   V(Ord, "ord")                                                                \
   V(OverflowError, "OverflowError")                                            \
   V(Path, "path")                                                              \

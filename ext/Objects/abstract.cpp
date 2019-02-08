@@ -597,16 +597,60 @@ PY_EXPORT PyObject* PySequence_Concat(PyObject* left, PyObject* right) {
   return PyNumber_Add(left, right);
 }
 
-PY_EXPORT int PySequence_Contains(PyObject* /* q */, PyObject* /* b */) {
-  UNIMPLEMENTED("PySequence_Contains");
+PY_EXPORT int PySequence_Contains(PyObject* seq, PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr || obj == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(
+      &scope, thread->invokeFunction2(SymbolId::kOperator, SymbolId::kContains,
+                                      seq_obj, object));
+  if (result->isError()) {
+    return -1;
+  }
+  return RawBool::cast(*result).value() ? 1 : 0;
 }
 
-PY_EXPORT Py_ssize_t PySequence_Count(PyObject* /* s */, PyObject* /* o */) {
-  UNIMPLEMENTED("PySequence_Count");
+PY_EXPORT Py_ssize_t PySequence_Count(PyObject* seq, PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr || obj == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope,
+                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kCountOf,
+                                        seq_obj, object));
+  if (result->isError()) {
+    return -1;
+  }
+  return RawSmallInt::cast(*result).value();
 }
 
-PY_EXPORT int PySequence_DelItem(PyObject* /* s */, Py_ssize_t /* i */) {
-  UNIMPLEMENTED("PySequence_DelItem");
+PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    return -1;
+  }
+  if (!SmallInt::isValid(idx)) {
+    thread->raiseTypeErrorWithCStr("idx does not fit in word");
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object idx_obj(&scope, SmallInt::fromWord(idx));
+  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem,
+                                              idx_obj));
+  if (result->isError()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PySequence_DelSlice(PyObject* /* s */, Py_ssize_t /* 1 */,
@@ -618,8 +662,27 @@ PY_EXPORT PyObject* PySequence_Fast(PyObject* /* v */, const char* /* m */) {
   UNIMPLEMENTED("PySequence_Fast");
 }
 
-PY_EXPORT PyObject* PySequence_GetItem(PyObject* /* s */, Py_ssize_t /* i */) {
-  UNIMPLEMENTED("PySequence_GetItem");
+PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    return nullError(thread);
+  }
+  if (!SmallInt::isValid(idx)) {
+    thread->raiseTypeErrorWithCStr("idx does not fit in word");
+    return nullptr;
+  }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object idx_obj(&scope, SmallInt::fromWord(idx));
+  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetItem,
+                                              idx_obj));
+  if (result->isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call __getitem__");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PySequence_GetSlice(PyObject* /* s */, Py_ssize_t /* 1 */,
@@ -627,12 +690,26 @@ PY_EXPORT PyObject* PySequence_GetSlice(PyObject* /* s */, Py_ssize_t /* 1 */,
   UNIMPLEMENTED("PySequence_GetSlice");
 }
 
-PY_EXPORT int PySequence_In(PyObject* /* w */, PyObject* /* v */) {
-  UNIMPLEMENTED("PySequence_In");
+PY_EXPORT int PySequence_In(PyObject* pyseq, PyObject* pyobj) {
+  return PySequence_Contains(pyseq, pyobj);
 }
 
-PY_EXPORT Py_ssize_t PySequence_Index(PyObject* /* s */, PyObject* /* o */) {
-  UNIMPLEMENTED("PySequence_Index");
+PY_EXPORT Py_ssize_t PySequence_Index(PyObject* seq, PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr || obj == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope,
+                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIndexOf,
+                                        seq_obj, object));
+  if (result->isError()) {
+    return -1;
+  }
+  return RawSmallInt::cast(*result).value();
 }
 
 PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* /* s */,
@@ -668,9 +745,35 @@ PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {
   return result;
 }
 
-PY_EXPORT int PySequence_SetItem(PyObject* /* s */, Py_ssize_t /* i */,
-                                 PyObject* /* o */) {
-  UNIMPLEMENTED("PySequence_SetItem");
+PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  if (!SmallInt::isValid(idx)) {
+    thread->raiseTypeErrorWithCStr("idx does not fit in word");
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object idx_obj(&scope, SmallInt::fromWord(idx));
+  Object result(&scope, NoneType::object());
+  if (obj == nullptr) {
+    // Equivalent to PySequence_DelItem
+    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem, idx_obj);
+  } else {
+    Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+    result = thread->invokeMethod3(seq_obj, SymbolId::kDunderSetItem, idx_obj,
+                                   object);
+  }
+  if (result->isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call __setitem__");
+    }
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PySequence_SetSlice(PyObject* /* s */, Py_ssize_t /* 1 */,

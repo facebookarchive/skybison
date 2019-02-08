@@ -151,6 +151,7 @@ target_include_directories(
 set(
   FROZEN_MODULE_INPUT
   library/builtins.py
+  library/operator.py
   library/sys.py
   library/_warnings.py)
 set(
