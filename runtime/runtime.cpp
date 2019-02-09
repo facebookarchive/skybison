@@ -3095,7 +3095,7 @@ void Runtime::genSave(Thread* thread, const GeneratorBase& gen) {
 RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {
   // For now, we have the invariant that GeneratorBase bodies are only invoked
   // by __next__() or send(), which have the GeneratorBase as their first local.
-  return RawGeneratorBase::cast(frame->previousFrame()->getLocal(0));
+  return RawGeneratorBase::cast(frame->previousFrame()->local(0));
 }
 
 RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }

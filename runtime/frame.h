@@ -166,7 +166,7 @@ class BlockStack {
 class Frame {
  public:
   // Function arguments, local variables, cell variables, and free variables
-  RawObject getLocal(word idx);
+  RawObject local(word idx);
   void setLocal(word idx, RawObject local);
 
   void setNumLocals(word num_locals);
@@ -292,7 +292,7 @@ class Arguments {
 
   RawObject get(word n) const {
     CHECK(n < num_args_, "index out of range");
-    return frame_->getLocal(n);
+    return frame_->local(n);
   }
 
   word numArgs() const { return num_args_; }
@@ -306,7 +306,7 @@ class KwArguments : public Arguments {
  public:
   KwArguments(Frame* frame, word nargs)
       : Arguments(frame, nargs),
-        kwnames_(RawTuple::cast(frame->getLocal(nargs - 1))),
+        kwnames_(RawTuple::cast(frame->local(nargs - 1))),
         num_keywords_(kwnames_->length()) {
     num_args_ = nargs - num_keywords_ - 1;
   }
@@ -314,7 +314,7 @@ class KwArguments : public Arguments {
   RawObject getKw(RawObject name) const {
     for (word i = 0; i < num_keywords_; i++) {
       if (RawStr::cast(name)->equals(kwnames_->at(i))) {
-        return frame_->getLocal(num_args_ + i);
+        return frame_->local(num_args_ + i);
       }
     }
     return Error::object();
@@ -381,7 +381,7 @@ inline RawObject* Frame::locals() {
   return reinterpret_cast<RawObject*>(at(kLocalsOffset).raw());
 }
 
-inline RawObject Frame::getLocal(word idx) {
+inline RawObject Frame::local(word idx) {
   DCHECK_INDEX(idx, numLocals());
   return *(locals() - idx);
 }
@@ -478,7 +478,7 @@ inline void Frame::setTopValue(RawObject value) { *valueStackTop() = value; }
 inline void Frame::pushLocals(word count, word offset) {
   DCHECK(offset + count <= numLocals(), "locals overflow");
   for (word i = offset; i < offset + count; i++) {
-    pushValue(getLocal(i));
+    pushValue(local(i));
   }
 }
 

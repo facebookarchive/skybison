@@ -1933,7 +1933,7 @@ void Interpreter::doSetupFinally(Context* ctx, word arg) {
 // opcode 124
 bool Interpreter::doLoadFast(Context* ctx, word arg) {
   // TODO(cshapiro): Need to handle unbound local error
-  RawObject value = ctx->frame->getLocal(arg);
+  RawObject value = ctx->frame->local(arg);
   if (value->isError()) {
     Thread* thread = ctx->thread;
     HandleScope scope(thread);
@@ -1946,7 +1946,7 @@ bool Interpreter::doLoadFast(Context* ctx, word arg) {
     thread->raise(LayoutId::kUnboundLocalError, *msg);
     return unwind(ctx);
   }
-  ctx->frame->pushValue(ctx->frame->getLocal(arg));
+  ctx->frame->pushValue(ctx->frame->local(arg));
   return false;
 }
 
@@ -1960,7 +1960,7 @@ void Interpreter::doStoreFast(Context* ctx, word arg) {
 void Interpreter::doDeleteFast(Context* ctx, word arg) {
   // TODO(T32821785): use another immediate value than Error to signal unbound
   // local
-  if (ctx->frame->getLocal(arg) == Error::object()) {
+  if (ctx->frame->local(arg) == Error::object()) {
     RawObject name =
         RawTuple::cast(RawCode::cast(ctx->frame->code())->varnames())->at(arg);
     UNIMPLEMENTED("unbound local %s", RawStr::cast(name)->toCStr());
@@ -2099,7 +2099,7 @@ void Interpreter::doBuildSlice(Context* ctx, word arg) {
 // opcode 135
 void Interpreter::doLoadClosure(Context* ctx, word arg) {
   RawCode code = RawCode::cast(ctx->frame->code());
-  ctx->frame->pushValue(ctx->frame->getLocal(code->nlocals() + arg));
+  ctx->frame->pushValue(ctx->frame->local(code->nlocals() + arg));
 }
 
 static RawObject raiseUnboundCellFreeVar(Thread* thread, const Code& code,
@@ -2129,7 +2129,7 @@ bool Interpreter::doLoadDeref(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Code code(&scope, ctx->frame->code());
-  ValueCell value(&scope, ctx->frame->getLocal(code.nlocals() + arg));
+  ValueCell value(&scope, ctx->frame->local(code.nlocals() + arg));
   if (value.isUnbound()) {
     raiseUnboundCellFreeVar(thread, code, arg);
     return unwind(ctx);
@@ -2141,15 +2141,14 @@ bool Interpreter::doLoadDeref(Context* ctx, word arg) {
 // opcode 137
 void Interpreter::doStoreDeref(Context* ctx, word arg) {
   RawCode code = RawCode::cast(ctx->frame->code());
-  RawValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))
+  RawValueCell::cast(ctx->frame->local(code->nlocals() + arg))
       ->setValue(ctx->frame->popValue());
 }
 
 // opcode 138
 void Interpreter::doDeleteDeref(Context* ctx, word arg) {
   RawCode code = RawCode::cast(ctx->frame->code());
-  RawValueCell::cast(ctx->frame->getLocal(code->nlocals() + arg))
-      ->makeUnbound();
+  RawValueCell::cast(ctx->frame->local(code->nlocals() + arg))->makeUnbound();
 }
 
 // opcode 141
@@ -2222,7 +2221,7 @@ void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
   Dict implicit_global(&scope, ctx->frame->implicitGlobals());
   Object result(&scope, ctx->thread->runtime()->dictAt(implicit_global, name));
   if (result.isError()) {
-    ValueCell value_cell(&scope, ctx->frame->getLocal(code.nlocals() + arg));
+    ValueCell value_cell(&scope, ctx->frame->local(code.nlocals() + arg));
     if (value_cell.isUnbound()) {
       UNIMPLEMENTED("unbound free var %s", RawStr::cast(*name)->toCStr());
     }

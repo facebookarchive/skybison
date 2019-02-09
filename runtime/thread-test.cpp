@@ -240,15 +240,15 @@ TEST(ThreadTest, OverlappingFrames) {
   auto frame = thread->pushFrame(code);
 
   // Make sure we can read the args from the frame
-  RawObject local = frame->getLocal(0);
+  RawObject local = frame->local(0);
   ASSERT_TRUE(local->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(local)->value(), arg1->value());
 
-  local = frame->getLocal(1);
+  local = frame->local(1);
   ASSERT_TRUE(local->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(local)->value(), arg2->value());
 
-  local = frame->getLocal(2);
+  local = frame->local(2);
   ASSERT_TRUE(local->isSmallInt());
   EXPECT_EQ(RawSmallInt::cast(local)->value(), arg3->value());
 }

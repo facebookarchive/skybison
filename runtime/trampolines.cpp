@@ -64,7 +64,7 @@ static void processFreevarsAndCellvars(Thread* thread, const Function& function,
 
     // Allocate a cell for an argument
     word local_idx = Int::cast(*arg_index)->asWord();
-    value_cell.setValue(callee_frame->getLocal(local_idx));
+    value_cell.setValue(callee_frame->local(local_idx));
     callee_frame->setLocal(local_idx, NoneType::object());
     callee_frame->setLocal(num_locals + i, *value_cell);
   }

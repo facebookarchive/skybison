@@ -48,7 +48,7 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     for (word i = 0; i < free_vars.length(); i++) {
       if (RawStr::cast(free_vars.at(i))
               ->equals(thread->runtime()->symbols()->DunderClass())) {
-        cell = caller_frame->getLocal(code.nlocals() + i);
+        cell = caller_frame->local(code.nlocals() + i);
         break;
       }
     }
@@ -58,7 +58,7 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     }
     type_obj = RawValueCell::cast(cell)->value();
     // TODO(zekun): handle cell2arg case
-    obj = caller_frame->getLocal(0);
+    obj = caller_frame->local(0);
   } else {
     if (nargs != 3) {
       return thread->raiseTypeErrorWithCStr("super() expected 2 arguments");
