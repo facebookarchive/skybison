@@ -60,6 +60,21 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8ReturnsCString) {
   EXPECT_EQ(cstring2, cstring);
 }
 
+TEST_F(UnicodeExtensionApiTest, AsUTF8StringWithNonStringReturnsNull) {
+  PyObjectPtr bytes(_PyUnicode_AsUTF8String(Py_None, nullptr));
+  ASSERT_EQ(bytes, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUTF8StringReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  PyObjectPtr bytes(_PyUnicode_AsUTF8String(unicode, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 3);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo");
+}
+
 TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
 }

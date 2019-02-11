@@ -1255,9 +1255,14 @@ PY_EXPORT int _Py_normalize_encoding(const char* /* encoding */,
   UNIMPLEMENTED("_Py_normalize_encoding");
 }
 
-PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* /* unicode */,
+PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
                                             const char* /* errors */) {
-  UNIMPLEMENTED("_PyUnicode_AsUTF8String");
+  if (!PyUnicode_Check(unicode)) {
+    PyErr_BadArgument();
+    return nullptr;
+  }
+  return PyBytes_FromStringAndSize(PyUnicode_AsUTF8(unicode),
+                                   PyUnicode_GetLength(unicode));
 }
 
 PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* /* s */,
