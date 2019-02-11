@@ -191,6 +191,9 @@ def create_output_file_dict(source_paths, header_symbols_dict, source_symbols_di
 
         # Modules should not be patched. This quickly skips over them
         # to just copy the file directly.
+        # Please note that posixmodule is an exception. This C Extension also
+        # contains the implementation of a public C-API. However, this pattern
+        # should not be followed
         if "Modules" in path and "posixmodule" not in path:
             continue
 
