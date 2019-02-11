@@ -1,7 +1,9 @@
 #include <cstdarg>
 
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "frame.h"
+#include "list-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -638,13 +640,9 @@ PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
   if (seq == nullptr) {
     return -1;
   }
-  if (!SmallInt::isValid(idx)) {
-    thread->raiseTypeErrorWithCStr("idx does not fit in word");
-    return -1;
-  }
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object idx_obj(&scope, SmallInt::fromWord(idx));
+  Object idx_obj(&scope, thread->runtime()->newInt(idx));
   Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem,
                                               idx_obj));
   if (result.isError()) {
@@ -653,13 +651,54 @@ PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
   return 0;
 }
 
-PY_EXPORT int PySequence_DelSlice(PyObject* /* s */, Py_ssize_t /* 1 */,
-                                  Py_ssize_t /* 2 */) {
-  UNIMPLEMENTED("PySequence_DelSlice");
+static RawObject makeSlice(Thread* thread, Py_ssize_t low, Py_ssize_t high) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Slice slice(&scope, runtime->newSlice());
+  slice.setStart(runtime->newInt(low));
+  slice.setStop(runtime->newInt(high));
+  return *slice;
 }
 
-PY_EXPORT PyObject* PySequence_Fast(PyObject* /* v */, const char* /* m */) {
-  UNIMPLEMENTED("PySequence_Fast");
+PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
+                                  Py_ssize_t high) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object slice(&scope, makeSlice(thread, low, high));
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object result(
+      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem, slice));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("object does not support slice deletion");
+    }
+    return -1;
+  }
+  return 0;
+}
+
+PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
+  if (seq == nullptr) {
+    return nullError(Thread::currentThread());
+  }
+  if (PyList_CheckExact(seq) || PyTuple_CheckExact(seq)) {
+    Py_INCREF(seq);
+    return seq;
+  }
+  PyObject* it = PyObject_GetIter(seq);
+  if (it == nullptr) {
+    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+      PyErr_SetString(PyExc_TypeError, msg);
+    }
+    return nullptr;
+  }
+  seq = PySequence_List(it);
+  Py_DECREF(it);
+  return seq;
 }
 
 PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
@@ -667,13 +706,9 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   if (seq == nullptr) {
     return nullError(thread);
   }
-  if (!SmallInt::isValid(idx)) {
-    thread->raiseTypeErrorWithCStr("idx does not fit in word");
-    return nullptr;
-  }
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object idx_obj(&scope, SmallInt::fromWord(idx));
+  Object idx_obj(&scope, thread->runtime()->newInt(idx));
   Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetItem,
                                               idx_obj));
   if (result.isError()) {
@@ -685,9 +720,24 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PySequence_GetSlice(PyObject* /* s */, Py_ssize_t /* 1 */,
-                                        Py_ssize_t /* 2 */) {
-  UNIMPLEMENTED("PySequence_GetSlice");
+PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
+                                        Py_ssize_t high) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object slice(&scope, makeSlice(thread, low, high));
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object result(
+      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetItem, slice));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call __getitem__");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PySequence_In(PyObject* pyseq, PyObject* pyobj) {
@@ -726,8 +776,24 @@ PY_EXPORT Py_ssize_t PySequence_Length(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
-PY_EXPORT PyObject* PySequence_List(PyObject* /* v */) {
-  UNIMPLEMENTED("PySequence_List");
+PY_EXPORT PyObject* PySequence_List(PyObject* seq) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  // TODO(T40274012): Re-write this function in terms of builtins.list
+  Object result_obj(&scope, thread->runtime()->newList());
+  if (result_obj.isError()) {
+    return nullptr;
+  }
+  List result(&scope, *result_obj);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  result_obj = listExtend(thread, result, seq_obj);
+  if (result_obj.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result_obj);
 }
 
 PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {
@@ -751,13 +817,9 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
     nullError(thread);
     return -1;
   }
-  if (!SmallInt::isValid(idx)) {
-    thread->raiseTypeErrorWithCStr("idx does not fit in word");
-    return -1;
-  }
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  Object idx_obj(&scope, SmallInt::fromWord(idx));
+  Object idx_obj(&scope, thread->runtime()->newInt(idx));
   Object result(&scope, NoneType::object());
   if (obj == nullptr) {
     // Equivalent to PySequence_DelItem
@@ -769,24 +831,61 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
   }
   if (result.isError()) {
     if (!thread->hasPendingException()) {
-      thread->raiseTypeErrorWithCStr("could not call __setitem__");
+      thread->raiseTypeErrorWithCStr("object is not subscriptable");
     }
     return -1;
   }
   return 0;
 }
 
-PY_EXPORT int PySequence_SetSlice(PyObject* /* s */, Py_ssize_t /* 1 */,
-                                  Py_ssize_t /* 2 */, PyObject* /* o */) {
-  UNIMPLEMENTED("PySequence_SetSlice");
+PY_EXPORT int PySequence_SetSlice(PyObject* seq, Py_ssize_t low,
+                                  Py_ssize_t high, PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object slice(&scope, makeSlice(thread, low, high));
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object result(&scope, NoneType::object());
+  if (obj == nullptr) {
+    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem, slice);
+  } else {
+    Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+    result =
+        thread->invokeMethod3(seq_obj, SymbolId::kDunderSetItem, slice, object);
+  }
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr(
+          "object does not support slice assignment");
+    }
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT Py_ssize_t PySequence_Size(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
-PY_EXPORT PyObject* PySequence_Tuple(PyObject* /* v */) {
-  UNIMPLEMENTED("PySequence_Tuple");
+PY_EXPORT PyObject* PySequence_Tuple(PyObject* seq) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  if (seq_obj.isTuple()) {
+    return ApiHandle::newReference(thread, *seq_obj);
+  }
+  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kTuple, seq_obj));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 }  // namespace python

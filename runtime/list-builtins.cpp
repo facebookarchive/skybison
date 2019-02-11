@@ -15,32 +15,18 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   word index = dst.numItems();
   Runtime* runtime = thread->runtime();
   // Special case for lists
-  if (runtime->isInstanceOfList(*iterable)) {
+  if (iterable.isList()) {
     List src(&scope, *iterable);
     if (src.numItems() > 0) {
       word new_capacity = index + src.numItems();
       runtime->listEnsureCapacity(dst, new_capacity);
+      // Save the number of items before adding the two sizes together. This is
+      // for the a.extend(a) case (src == dst).
+      word num_items = src.numItems();
       dst.setNumItems(new_capacity);
-      for (word i = 0; i < src.numItems(); i++) {
+      for (word i = 0; i < num_items; i++) {
         dst.atPut(index++, src.at(i));
       }
-    }
-    return *dst;
-  }
-  // Special case for list iterators
-  if (iterable.isListIterator()) {
-    ListIterator list_iter(&scope, *iterable);
-    List src(&scope, list_iter.iterable());
-    word new_capacity = index + src.numItems();
-    runtime->listEnsureCapacity(dst, new_capacity);
-    dst.setNumItems(new_capacity);
-    Object elt(&scope, NoneType::object());
-    for (word i = 0; i < src.numItems(); i++) {
-      elt = listIteratorNext(thread, list_iter);
-      if (elt.isError()) {
-        break;
-      }
-      dst.atPut(index++, src.at(i));
     }
     return *dst;
   }
@@ -53,35 +39,6 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
       dst.setNumItems(new_capacity);
       for (word i = 0; i < tuple.length(); i++) {
         dst.atPut(index++, tuple.at(i));
-      }
-    }
-    return *dst;
-  }
-  // Special case for sets
-  if (runtime->isInstanceOfSetBase(*iterable)) {
-    SetBase set(&scope, *iterable);
-    if (set.numItems() > 0) {
-      Tuple data(&scope, set.data());
-      word new_capacity = index + set.numItems();
-      runtime->listEnsureCapacity(dst, new_capacity);
-      dst.setNumItems(new_capacity);
-      for (word i = SetBase::Bucket::kFirst;
-           SetBase::Bucket::nextItem(*data, &i);) {
-        dst.atPut(index++, SetBase::Bucket::key(*data, i));
-      }
-    }
-    return *dst;
-  }
-  // Special case for dicts
-  if (iterable.isDict()) {
-    Dict dict(&scope, *iterable);
-    if (dict.numItems() > 0) {
-      Tuple keys(&scope, runtime->dictKeys(dict));
-      word new_capacity = index + dict.numItems();
-      runtime->listEnsureCapacity(dst, new_capacity);
-      dst.setNumItems(new_capacity);
-      for (word i = 0; i < keys.length(); i++) {
-        dst.atPut(index++, keys.at(i));
       }
     }
     return *dst;

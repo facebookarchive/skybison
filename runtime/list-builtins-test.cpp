@@ -1447,4 +1447,31 @@ TEST(ListBuiltinsTest, SortIsStable) {
   EXPECT_EQ(list.at(3), *elt3);
 }
 
+TEST(ListBuiltinsTest, ListExtendSelfDuplicatesElements) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+a = [1, 2, 3]
+a.extend(a)
+)");
+  HandleScope scope;
+  List a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_EQ(a.numItems(), 6);
+  EXPECT_PYLIST_EQ(a, {1, 2, 3, 1, 2, 3});
+}
+
+TEST(ListBuiltinsTest, ListExtendListSubclassFallsBackToIter) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C(list):
+  def __iter__(self):
+    return [4, 5, 6].__iter__()
+a = [1, 2, 3]
+a.extend(C([1,2,3]))
+)");
+  HandleScope scope;
+  List a(&scope, moduleAt(&runtime, "__main__", "a"));
+  ASSERT_EQ(a.numItems(), 6);
+  EXPECT_PYLIST_EQ(a, {1, 2, 3, 4, 5, 6});
+}
+
 }  // namespace python

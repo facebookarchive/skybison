@@ -935,4 +935,210 @@ TEST_F(AbstractExtensionApiTest, PySequenceIndexFindsFirstOccurrence) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PySequenceFastWithNullObjRaisesSystemError) {
+  EXPECT_EQ(PySequence_Fast(nullptr, "msg"), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceFastWithTupleReturnsSameObject) {
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyObjectPtr result(PySequence_Fast(tuple, "msg"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(tuple, result);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceFastWithListReturnsSameObject) {
+  PyObjectPtr list(PyList_New(3));
+  PyObjectPtr result(PySequence_Fast(list, "msg"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(list, result);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceFastWithNonIterableRaisesTypeError) {
+  ASSERT_EQ(PySequence_Fast(Py_None, "msg"), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceFastWithIterableReturnsList) {
+  PyRun_SimpleString(R"(
+class C:
+  def __iter__(self):
+    return (1, 2, 3).__iter__()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PySequence_Fast(c, "msg"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyList_CheckExact(result));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceListWithNullSeqRaisesSystemError) {
+  ASSERT_EQ(PySequence_List(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceListWithNonIterableRaisesTypeError) {
+  ASSERT_EQ(PySequence_List(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceListReturnsList) {
+  PyRun_SimpleString(R"(
+class C:
+  def __iter__(self):
+    return (1, 2, 3).__iter__()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PySequence_List(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyList_CheckExact(result));
+  EXPECT_EQ(PyList_Size(result), 3);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceGetSliceWithNullSeqRaisesSystemError) {
+  EXPECT_EQ(PySequence_GetSlice(nullptr, 1, 2), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceGetSliceWithNonIterableRaisesTypeError) {
+  EXPECT_EQ(PySequence_GetSlice(Py_None, 1, 2), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceGetSliceCallsDunderGetItem) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    return 7
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PySequence_GetSlice(c, 1, 2));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_Check(result));
+  EXPECT_EQ(PyLong_AsLong(result), 7);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceSetSliceWithNullSeqRaisesSystemError) {
+  PyObjectPtr obj(PyList_New(0));
+  EXPECT_EQ(PySequence_SetSlice(nullptr, 1, 2, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceSetSliceWithNonIterableRaisesTypeError) {
+  PyObjectPtr obj(PyList_New(0));
+  EXPECT_EQ(PySequence_SetSlice(Py_None, 1, 2, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceSetSliceCallsDunderSetItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __setitem__(self, key, value):
+    global sideeffect
+    sideeffect = 10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyList_New(0));
+  ASSERT_EQ(PySequence_SetSlice(c, 1, 2, obj), 0);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceSetSliceWithNullObjCallsDunderDelItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __delitem__(self, key):
+    global sideeffect
+    sideeffect = 10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PySequence_SetSlice(c, 1, 2, nullptr), 0);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceDelSliceWithNullSeqRaisesSystemError) {
+  PyObjectPtr obj(PyList_New(0));
+  EXPECT_EQ(PySequence_DelSlice(nullptr, 1, 2), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceDelSliceWithNonIterableRaisesTypeError) {
+  PyObjectPtr obj(PyList_New(0));
+  EXPECT_EQ(PySequence_DelSlice(Py_None, 1, 2), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceDelSliceCallsDunderDelItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __delitem__(self, key):
+    global sideeffect
+    sideeffect = 10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PySequence_DelSlice(c, 1, 2), 0);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceTupleWithNullSeqRaisesSystemError) {
+  EXPECT_EQ(PySequence_Tuple(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceTupleWithNonIterableRaisesTypeError) {
+  EXPECT_EQ(PySequence_Tuple(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceTupleReturnsTuple) {
+  PyRun_SimpleString(R"(
+class C:
+  def __iter__(self):
+    return [1, 2, 3].__iter__()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PySequence_Tuple(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_EQ(PyTuple_Size(result), 3);
+}
+
 }  // namespace python
