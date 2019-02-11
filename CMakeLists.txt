@@ -134,6 +134,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/random.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/sysmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/traceback.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Modules/posixmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp)
 include(CPythonBuild.cmake)
 
@@ -401,6 +402,7 @@ target_link_libraries(
 
 set(
   EXTENSION_TESTS
+  ext/Modules/posixmodule-test.cpp
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
   ext/Objects/bytearrayobject-test.cpp

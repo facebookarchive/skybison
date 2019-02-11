@@ -191,7 +191,7 @@ def create_output_file_dict(source_paths, header_symbols_dict, source_symbols_di
 
         # Modules should not be patched. This quickly skips over them
         # to just copy the file directly.
-        if "Modules" in path:
+        if "Modules" in path and "posixmodule" not in path:
             continue
 
         if path.endswith(".h"):

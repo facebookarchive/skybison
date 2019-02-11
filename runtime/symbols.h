@@ -43,6 +43,7 @@ class Runtime;
   V(DunderFloat, "__float__")                                                  \
   V(DunderFloordiv, "__floordiv__")                                            \
   V(DunderFormat, "__format__")                                                \
+  V(DunderFspath, "__fspath__")                                                \
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
   V(DunderGetItem, "__getitem__")                                              \
