@@ -586,6 +586,42 @@ def func(a, b, c, d, e, f):
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyIndexCheckWithIntReturnsTrue) {
+  PyObjectPtr int_num(PyLong_FromLong(1));
+  EXPECT_TRUE(PyIndex_Check(int_num.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyIndexCheckWithFloatReturnsFalse) {
+  PyObjectPtr float_num(PyFloat_FromDouble(1.1));
+  EXPECT_FALSE(PyIndex_Check(float_num.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyIndexCheckWithUncallableDunderIndexReturnsTrue) {
+  PyRun_SimpleString(R"(
+class C:
+  __index__ = None
+idx = C()
+  )");
+  PyObjectPtr idx(moduleGet("__main__", "idx"));
+  EXPECT_TRUE(PyIndex_Check(idx.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyIndexCheckWithDunderIndexReturnsTrue) {
+  PyRun_SimpleString(R"(
+class C:
+  def __index__(self):
+    return 1
+idx = C()
+  )");
+  PyObjectPtr idx(moduleGet("__main__", "idx"));
+  EXPECT_TRUE(PyIndex_Check(idx.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberCheckWithFloatReturnsTrue) {
   PyObjectPtr float_num(PyFloat_FromDouble(1.1));
   EXPECT_EQ(PyNumber_Check(float_num), 1);

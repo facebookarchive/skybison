@@ -83,6 +83,16 @@ PY_EXPORT void PyBuffer_Release(Py_buffer* /* w */) {
   UNIMPLEMENTED("PyBuffer_Release");
 }
 
+PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
+  DCHECK(obj != nullptr, "Got null argument");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  return !Interpreter::lookupMethod(thread, thread->currentFrame(), num,
+                                    SymbolId::kDunderIndex)
+              .isError();
+}
+
 PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
