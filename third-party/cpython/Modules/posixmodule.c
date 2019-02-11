@@ -13037,8 +13037,9 @@ INITFUNC(void)
         if (StatResultType == NULL) {
             return NULL;
         }
-        structseq_new = StatResultType->tp_new;
-        StatResultType->tp_new = statresult_new;
+        // TODO(T39907867): Remove the use of tp_new from StatResultType
+        // structseq_new = StatResultType->tp_new;
+        // StatResultType->tp_new = statresult_new;
 
         statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
         StatVFSResultType = PyStructSequence_NewType(&statvfs_result_desc);
@@ -13061,7 +13062,8 @@ INITFUNC(void)
         if (SchedParamType == NULL) {
             return NULL;
         }
-        SchedParamType->tp_new = os_sched_param;
+        // TODO(T39907867): Handle the kwarg 'sched_param' in structseq.__new__
+        // SchedParamType->tp_new = os_sched_param;
 #endif
 
         /* initialize TerminalSize_info */
