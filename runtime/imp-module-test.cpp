@@ -25,46 +25,49 @@ TEST(ImportBuiltins, AcquireLockAndReleaseLockWorks) {
 
 TEST(ImportBuiltinsTest, CreateBuiltinWithoutArgsRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object result(&scope, runBuiltin(builtinImpCreateBuiltin));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+import _imp
+_imp.create_builtin()
+)"),
+                     LayoutId::kTypeError));
 }
 
 TEST(ImportBuiltinsTest, CreateBuiltinWithoutSpecNameRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Int foo(&scope, RawSmallInt::fromWord(123));
-  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, foo));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+import _imp
+_imp.create_builtin(123)
+)"),
+                     LayoutId::kTypeError));
 }
 
 TEST(ImportBuiltinsTest, CreateBuiltinWithNonStrSpecNameRaisesTypeError) {
   Runtime runtime;
   // Mock of importlib._bootstrap.ModuleSpec
-  runFromCStr(&runtime, R"(
-class DummyModuleSpec():
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+import _imp
+class DummyModuleSpec:
   def __init__(self, name):
     self.name = name
 spec = DummyModuleSpec(5)
-)");
-  HandleScope scope;
-  Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
-  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+_imp.create_builtin(spec)
+)"),
+                     LayoutId::kTypeError));
 }
 
 TEST(ImportBuiltinsTest, CreateBuiltinWithNonExistentModuleReturnsNone) {
   Runtime runtime;
   // Mock of importlib._bootstrap.ModuleSpec
   runFromCStr(&runtime, R"(
-class DummyModuleSpec():
+import _imp
+class DummyModuleSpec:
   def __init__(self, name):
     self.name = name
 spec = DummyModuleSpec("non_existent_module")
+result = _imp.create_builtin(spec)
 )");
   HandleScope scope;
-  Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
-  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isNoneType());
 }
 
@@ -72,14 +75,32 @@ TEST(ImportBuiltinsTest, CreateBuiltinReturnsModule) {
   Runtime runtime;
   // Mock of importlib._bootstrap.ModuleSpec
   runFromCStr(&runtime, R"(
-class DummyModuleSpec():
+import _imp
+class DummyModuleSpec:
   def __init__(self, name):
     self.name = name
 spec = DummyModuleSpec("errno")
+result = _imp.create_builtin(spec)
 )");
   HandleScope scope;
-  Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
-  Object result(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isModule());
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result)->name(), "errno"));
+}
+
+TEST(ImportBuiltinsTest, CreateBuiltinWithExArgsReturnsModule) {
+  Runtime runtime;
+  // Mock of importlib._bootstrap.ModuleSpec
+  runFromCStr(&runtime, R"(
+import _imp
+class DummyModuleSpec:
+  def __init__(self, name):
+    self.name = name
+spec = (DummyModuleSpec("errno"),)
+result = _imp.create_builtin(*spec)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isModule());
   EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result)->name(), "errno"));
 }

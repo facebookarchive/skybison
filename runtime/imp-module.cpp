@@ -29,10 +29,6 @@ RawObject builtinImpAcquireLock(Thread* thread, Frame* /* frame */,
 }
 
 RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "_imp.create_builtin() expected 1 argument, got %ld", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

@@ -2189,8 +2189,9 @@ void Runtime::createImportModule() {
 
   // _imp.create_builtin
   moduleAddBuiltinFunction(module, SymbolId::kCreateBuiltin,
-                           nativeTrampoline<builtinImpCreateBuiltin>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+                           builtinTrampolineWrapper<builtinImpCreateBuiltin>,
+                           builtinTrampolineWrapperKw<builtinImpCreateBuiltin>,
+                           builtinTrampolineWrapperEx<builtinImpCreateBuiltin>);
 
   // _imp.exec_builtin
   moduleAddBuiltinFunction(module, SymbolId::kExecBuiltin,
