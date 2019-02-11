@@ -7,3 +7,12 @@ def exit(code=0):
 
 
 path_importer_cache = {}
+
+
+# TODO(T39224400): Implement flags as a structsequence
+class FlagsStructSeq:
+    def __init__(self):
+        self.verbose = 0
+
+
+flags = FlagsStructSeq()

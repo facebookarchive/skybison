@@ -187,4 +187,16 @@ TEST(SysModuleTest, PathWithPythonPath) {
   ASSERT_TRUE(isStrEqualsCStr(path.at(2), "/baz"));
 }
 
+TEST(SysModuleTest, FlagsVerbose) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+import sys
+result = sys.flags.verbose
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isInt());
+  EXPECT_EQ(RawInt::cast(*result).asWord(), 0);
+}
+
 }  // namespace python
