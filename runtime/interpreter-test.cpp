@@ -2716,4 +2716,173 @@ except:
   EXPECT_EQ(RawSmallInt::cast(*result).value(), 1003);
 }
 
+TEST(InterpreterTest, ReturnInsideTryRunsFinally) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+ran_finally = False
+
+def f():
+  try:
+    return 56789
+  finally:
+    global ran_finally
+    ran_finally = True
+
+result = f()
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 56789);
+
+  Object ran_finally(&scope, moduleAt(&runtime, "__main__", "ran_finally"));
+  EXPECT_EQ(*ran_finally, Bool::trueObj());
+}
+
+TEST(InterpreterTest, ReturnInsideFinallyOverridesEarlierReturn) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+def f():
+  try:
+    return 123
+  finally:
+    return 456
+
+result = f()
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 456);
+}
+
+TEST(InterpreterTest, ReturnInsideWithRunsDunderExit) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+sequence = ""
+
+class Mgr:
+    def __enter__(self):
+        global sequence
+        sequence += "enter "
+    def __exit__(self, exc, value, tb):
+        global sequence
+        sequence += "exit"
+
+def foo():
+    with Mgr():
+        global sequence
+        sequence += "in foo "
+        return 1234
+
+result = foo()
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1234);
+
+  Object sequence(&scope, moduleAt(&runtime, "__main__", "sequence"));
+  EXPECT_TRUE(isStrEqualsCStr(*sequence, "enter in foo exit"));
+}
+
+TEST(InterpreterTest, WithStatementPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Mgr:
+    def __enter__(self):
+        pass
+    def __exit__(self, exc, value, tb):
+        return ()
+
+def raises():
+  raise RuntimeError("It's dead, Jim")
+
+with Mgr():
+  raises()
+)"),
+                            LayoutId::kRuntimeError, "It's dead, Jim"));
+}
+
+TEST(InterpreterTest, WithStatementPassesCorrectExceptionToExit) {
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+raised_exc = None
+exit_info = None
+
+class Mgr:
+  def __enter__(self):
+    pass
+  def __exit__(self, exc, value, tb):
+    global exit_info
+    exit_info = (exc, value, tb)
+
+def raises():
+  global raised_exc
+  raised_exc = StopIteration("nope")
+  raise raised_exc
+
+with Mgr():
+  raises()
+)"),
+                     LayoutId::kStopIteration));
+  Object exit_info(&scope, moduleAt(&runtime, "__main__", "exit_info"));
+  ASSERT_TRUE(exit_info.isTuple());
+  Tuple tuple(&scope, *exit_info);
+  ASSERT_EQ(tuple.length(), 3);
+  EXPECT_EQ(tuple.at(0), runtime.typeAt(LayoutId::kStopIteration));
+
+  Object raised_exc(&scope, moduleAt(&runtime, "__main__", "raised_exc"));
+  EXPECT_EQ(tuple.at(1), *raised_exc);
+
+  // TODO(bsimmers): Check traceback once we record them.
+}
+
+TEST(InterpreterTest, WithStatementSwallowsException) {
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class Mgr:
+  def __enter__(self):
+    pass
+  def __exit__(self, exc, value, tb):
+    return 1
+
+def raises():
+  raise RuntimeError()
+
+with Mgr():
+  raises()
+result = 1234
+)")
+                   .isError());
+
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1234);
+}
+
+TEST(InterpreterTest, WithStatementWithRaisingExitRaises) {
+  Runtime runtime;
+  HandleScope scope;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Mgr:
+  def __enter__(self):
+    pass
+  def __exit__(self, exc, value, tb):
+    raise RuntimeError("from exit")
+
+def raises():
+  raise RuntimeError("from raises")
+
+with Mgr():
+  raises()
+)"),
+                            LayoutId::kRuntimeError, "from exit"));
+
+  // TODO(T40269344): Inspect __context__ from the raised exception.
+}
+
 }  // namespace python

@@ -152,6 +152,17 @@ class Interpreter {
   // false if the popped block was not relevant to the given Why.
   static bool popBlock(Context* ctx, TryBlock::Why why, const Object& value);
 
+  // Pop from the block stack until a handler that cares about 'return' is
+  // found, or the stack is emptied. The return value is meant to be used
+  // directly as the return value of an opcode handler (see "Opcode handlers"
+  // below for an explanation).
+  static bool handleReturn(Context* ctx, const Object& retval);
+
+  // Pop from the block stack until a handler that cares about 'break' or
+  // 'continue' is found.
+  static void handleLoopExit(Context* ctx, TryBlock::Why why,
+                             const Object& retval);
+
   // Pseudo-opcodes
   static void doInvalidBytecode(Context* ctx, word arg);
   static void doNotImplemented(Context* ctx, word arg);
@@ -216,8 +227,8 @@ class Interpreter {
   static bool doInplaceXor(Context* ctx, word arg);
   static bool doInplaceOr(Context* ctx, word arg);
   static void doBreakLoop(Context* ctx, word arg);
-  static void doWithCleanupStart(Context* ctx, word arg);
-  static void doWithCleanupFinish(Context* ctx, word arg);
+  static bool doWithCleanupStart(Context* ctx, word arg);
+  static bool doWithCleanupFinish(Context* ctx, word arg);
   static bool doReturnValue(Context* ctx, word arg);
   static void doImportStar(Context* ctx, word arg);
   static void doSetupAnnotations(Context* ctx, word arg);

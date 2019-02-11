@@ -685,6 +685,7 @@ void Interpreter::unwindExceptHandler(Thread* thread, Frame* frame,
                                       TryBlock block) {
   // Drop all dead values except for the 3 that are popped into the caught
   // exception state.
+  DCHECK(block.kind() == TryBlock::kExceptHandler, "Invalid TryBlock Kind");
   frame->dropValues(frame->valueStackSize() - block.level() - 3);
   thread->setCaughtExceptionType(frame->popValue());
   thread->setCaughtExceptionValue(frame->popValue());
@@ -732,6 +733,23 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
   frame->pushValue(RawSmallInt::fromWord(static_cast<int>(why)));
   ctx->pc = block.handler();
   return true;
+}
+
+bool Interpreter::handleReturn(Context* ctx, const Object& retval) {
+  for (;;) {
+    if (ctx->frame->blockStack()->depth() == 0) {
+      ctx->frame->pushValue(*retval);
+      return true;
+    }
+    if (popBlock(ctx, TryBlock::Why::kReturn, retval)) return false;
+  }
+}
+
+void Interpreter::handleLoopExit(Context* ctx, TryBlock::Why why,
+                                 const Object& retval) {
+  for (;;) {
+    if (popBlock(ctx, why, retval)) return;
+  }
 }
 
 bool Interpreter::unwind(Context* ctx) {
@@ -1232,38 +1250,85 @@ bool Interpreter::doInplaceOr(Context* ctx, word) {
 void Interpreter::doBreakLoop(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Object none(&scope, NoneType::object());
-
-  for (;;) {
-    if (popBlock(ctx, TryBlock::Why::kBreak, none)) return;
-  }
+  handleLoopExit(ctx, TryBlock::Why::kBreak, none);
 }
 
 // opcode 81
-void Interpreter::doWithCleanupStart(Context* ctx, word) {
+bool Interpreter::doWithCleanupStart(Context* ctx, word) {
   HandleScope scope(ctx->thread);
-  Object exc(&scope, ctx->frame->popValue());
+  Frame* frame = ctx->frame;
+  Object exc(&scope, frame->popValue());
+  Object value(&scope, NoneType::object());
+  Object traceback(&scope, NoneType::object());
+  Object exit(&scope, NoneType::object());
+
+  // The stack currently contains a sequence of values understood by
+  // END_FINALLY, followed by __exit__ from the context manager. We need to
+  // determine the location of __exit__ and remove it from the stack, shifting
+  // everything above it down to compensate.
   if (exc.isNoneType()) {
-    // This is a bound method.
-    Object exit(&scope, ctx->frame->topValue());
-    Object none(&scope, NoneType::object());
-    ctx->frame->setTopValue(*exc);
-    Object result(&scope, callMethod4(ctx->thread, ctx->frame, exit, none, none,
-                                      none, none));
-    ctx->frame->pushValue(*exc);
-    ctx->frame->pushValue(*result);
+    // The with block exited normally. __exit__ is just below the None.
+    exit = frame->topValue();
+  } else if (exc.isSmallInt()) {
+    // The with block exited for a return, continue, or break. __exit__ will be
+    // below 'why' and an optional return value (depending on 'why').
+    auto why = static_cast<TryBlock::Why>(RawSmallInt::cast(*exc).value());
+    if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
+      exit = frame->peek(1);
+      frame->setValueAt(frame->peek(0), 1);
+    } else {
+      exit = frame->topValue();
+    }
   } else {
-    UNIMPLEMENTED("exception handling in context manager");
+    // The stack contains the caught exception, the previous exception state,
+    // then __exit__. Grab __exit__ then shift everything else down.
+    exit = frame->peek(5);
+    for (word i = 5; i > 0; i--) {
+      frame->setValueAt(frame->peek(i - 1), i);
+    }
+    value = frame->peek(1);
+    traceback = frame->peek(2);
+
+    // We popped __exit__ out from under the depth recorded by the top
+    // ExceptHandler block, so adjust it.
+    TryBlock block = frame->blockStack()->pop();
+    DCHECK(block.kind() == TryBlock::kExceptHandler,
+           "Unexpected TryBlock Kind");
+    block.setLevel(block.level() - 1);
+    frame->blockStack()->push(block);
   }
+
+  // Regardless of what happened above, exc should be put back at the new top of
+  // the stack.
+  frame->setTopValue(*exc);
+
+  Object result(&scope,
+                callFunction3(ctx->thread, frame, exit, exc, value, traceback));
+  if (result.isError()) return unwind(ctx);
+
+  // Push exc and result to be consumed by WITH_CLEANUP_FINISH.
+  ctx->frame->pushValue(*exc);
+  ctx->frame->pushValue(*result);
+
+  return false;
 }
 
 // opcode 82
-void Interpreter::doWithCleanupFinish(Context* ctx, word) {
+bool Interpreter::doWithCleanupFinish(Context* ctx, word) {
+  Frame* frame = ctx->frame;
   HandleScope scope(ctx->thread);
-  Object result(&scope, ctx->frame->popValue());
-  Object exc(&scope, ctx->frame->popValue());
+  Object result(&scope, frame->popValue());
+  Object exc(&scope, frame->popValue());
   if (!exc.isNoneType()) {
-    UNIMPLEMENTED("exception handling in context manager");
+    Object is_true(&scope, isTrue(ctx->thread, frame, result));
+    if (is_true.isError()) return unwind(ctx);
+    if (*is_true == Bool::trueObj()) {
+      frame->pushValue(
+          SmallInt::fromWord(static_cast<int>(TryBlock::Why::kSilenced)));
+    }
   }
+
+  return false;
 }
 
 // opcode 83
@@ -1280,12 +1345,7 @@ bool Interpreter::doReturnValue(Context* ctx, word) {
     return unwind(ctx);
   }
 
-  for (;;) {
-    if (frame->blockStack()->depth() == 0) break;
-    if (popBlock(ctx, TryBlock::Why::kReturn, result)) return false;
-  }
-  frame->pushValue(*result);
-  return true;
+  return handleReturn(ctx, result);
 }
 
 // opcode 85
@@ -1330,23 +1390,36 @@ void Interpreter::doPopBlock(Context* ctx, word) {
 // opcode 88
 bool Interpreter::doEndFinally(Context* ctx, word) {
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   HandleScope scope(thread);
 
-  Object status(&scope, ctx->frame->popValue());
-  if (thread->runtime()->isInstanceOfType(*status)) {
-    Type type(&scope, *status);
-    if (type.isBaseExceptionSubclass()) {
-      thread->setPendingExceptionType(*type);
-      thread->setPendingExceptionValue(ctx->frame->popValue());
-      thread->setPendingExceptionTraceback(ctx->frame->popValue());
-      return unwind(ctx);
+  Object status(&scope, frame->popValue());
+  if (status.isSmallInt()) {
+    auto why = static_cast<TryBlock::Why>(SmallInt::cast(*status).value());
+    if (why == TryBlock::Why::kSilenced) {
+      unwindExceptHandler(thread, frame, frame->blockStack()->pop());
+      return false;
     }
-  }
 
+    Object retval(&scope, NoneType::object());
+    if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
+      retval = frame->popValue();
+    }
+
+    if (why == TryBlock::Why::kReturn) return handleReturn(ctx, retval);
+    handleLoopExit(ctx, why, retval);
+    return false;
+  }
+  if (thread->runtime()->isInstanceOfType(*status) &&
+      Type(&scope, *status).isBaseExceptionSubclass()) {
+    thread->setPendingExceptionType(*status);
+    thread->setPendingExceptionValue(frame->popValue());
+    thread->setPendingExceptionTraceback(frame->popValue());
+    return unwind(ctx);
+  }
   if (!status.isNoneType()) {
-    // status may also be an Int, in which case it indicates the non-exception
-    // reason for executing the finally block (return, break, etc.).
-    UNIMPLEMENTED("unsupported finally case");
+    thread->raiseSystemErrorWithCStr("Bad exception given to 'finally'");
+    return unwind(ctx);
   }
 
   return false;
@@ -1901,9 +1974,7 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
 void Interpreter::doContinueLoop(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Object arg_int(&scope, RawSmallInt::fromWord(arg));
-  for (;;) {
-    if (popBlock(ctx, TryBlock::Why::kContinue, arg_int)) return;
-  }
+  handleLoopExit(ctx, TryBlock::Why::kContinue, arg_int);
 }
 
 // opcode 120
