@@ -2124,25 +2124,113 @@ TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaisesTypeError) {
       "from_bytes() takes at most 2 positional arguments (3 given)"));
 }
 
-TEST(IntBuiltinsTest, SmallIntDunderRepr) {
+TEST(IntBuiltinsTest, DunderReprWithZeroReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newInt(0));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "0"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithSmallIntReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newInt(0xdeadbeef));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "3735928559"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithSmallIntMaxReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newInt(RawSmallInt::kMaxValue));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "4611686018427387903"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithSmallIntMinReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newInt(RawSmallInt::kMinValue));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "-4611686018427387904"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithBoolFalseReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "0"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithBoolTrueReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newIntWithDigits({0x7ab65f95e6775822}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "8842360015809894434"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitMinReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newIntWithDigits({0x8000000000000000}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "-9223372036854775808"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitMaxReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newIntWithDigits({0x7fffffffffffffff}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "9223372036854775807"));
+}
+
+TEST(IntBuiltinsTest, DunderReprWithLargeIntReturnsStr) {
   Runtime runtime;
   HandleScope scope;
 
-  Int minint(&scope, SmallInt::fromWord(RawSmallInt::kMinValue));
-  Object str(&scope, runBuiltin(SmallIntBuiltins::dunderRepr, minint));
-  EXPECT_TRUE(isStrEqualsCStr(*str, "-4611686018427387904"));
+  Object num(&scope, runtime.newIntWithDigits(
+                         {0x68ccbb7f61087fb7, 0x4081e2972fe52778}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(
+      isStrEqualsCStr(*result, "85744993827831399429103580491677204407"));
+}
 
-  Int maxint(&scope, SmallInt::fromWord(RawSmallInt::kMaxValue));
-  str = runBuiltin(SmallIntBuiltins::dunderRepr, maxint);
-  EXPECT_TRUE(isStrEqualsCStr(*str, "4611686018427387903"));
+TEST(IntBuiltinsTest, DunderReprWithNegativeLargeIntReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
 
-  Int zero(&scope, SmallInt::fromWord(0));
-  str = runBuiltin(SmallIntBuiltins::dunderRepr, zero);
-  EXPECT_TRUE(isStrEqualsCStr(*str, "0"));
+  Object num(&scope,
+             runtime.newIntWithDigits({0x49618108301eff93, 0xc70a0c6e0731da35,
+                                       0x438a2278e8762294, 0xccf89b106c9b714d,
+                                       0xfa694d4cbdf0b0ba}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(
+      isStrEqualsCStr(*result,
+                      "-4663013431296140509759060231428418933437027788588076073"
+                      "3669209802197774863968523736917349564525"));
+}
 
-  Int num(&scope, SmallInt::fromWord(0xdeadbeef));
-  str = runBuiltin(SmallIntBuiltins::dunderRepr, num);
-  EXPECT_TRUE(isStrEqualsCStr(*str, "3735928559"));
+TEST(IntBuiltinsTest, DunderReprWithLargeIntManyZerosReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Object num(&scope, runtime.newIntWithDigits(
+                         {0x6ea69b2000000000, 0xf374ff2873cd99de, 0x375c24}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(
+      *result, "1234567890000000000000000000000000000000000000"));
 }
 
 TEST(IntBuiltinsTest, DunderRshiftWithBoolsReturnsSmallInt) {

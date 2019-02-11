@@ -35,6 +35,7 @@ const BuiltinMethod IntBuiltins::kMethods[] = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderOr, builtinTrampolineWrapper<dunderOr>},
     {SymbolId::kDunderPos, builtinTrampolineWrapper<dunderPos>},
+    {SymbolId::kDunderRepr, builtinTrampolineWrapper<dunderRepr>},
     {SymbolId::kDunderRshift, builtinTrampolineWrapper<dunderRshift>},
     {SymbolId::kDunderSub, builtinTrampolineWrapper<dunderSub>},
     {SymbolId::kDunderXor, builtinTrampolineWrapper<dunderXor>},
@@ -169,7 +170,6 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
     {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
-    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
 void SmallIntBuiltins::initialize(Runtime* runtime) {
@@ -935,23 +935,183 @@ RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
   return runtime->notImplemented();
 }
 
-RawObject SmallIntBuiltins::dunderRepr(Thread* thread, Frame* frame,
-                                       word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected no arguments");
+// Returns the quotient of a double word number and a single word.
+// Assumes the result will fit in a single uword: `dividend_high < divisor`.
+static uword dwordUDiv(uword dividend_low, uword dividend_high, uword divisor,
+                       uword* remainder) {
+  // TODO(matthiasb): Future optimization idea:
+  // This whole function is a single `divq` instruction on x86_64, we could use
+  // inline assembly for it (there doesn't seem to be a builtin).
+
+  // The code is based on Hacker's Delight chapter 9-4 Unsigned Long Division.
+  DCHECK(divisor != 0, "division by zero");
+  DCHECK(dividend_high < divisor, "overflow");
+
+  // Performs some arithmetic with no more than half the bits of a `uword`.
+  int half_bits = kBitsPerWord / 2;
+  uword half_mask = (static_cast<uword>(1) << half_bits) - 1;
+
+  // Normalize divisor by shifting the highest bit left as much as possible.
+  static_assert(sizeof(divisor) == sizeof(long), "choose right builtin");
+  int s = __builtin_clzl(divisor);
+  uword divisor_n = divisor << s;
+  uword divisor_n_high_half = divisor_n >> half_bits;
+  uword divisor_n_low_half = divisor_n & half_mask;
+
+  // Normalize dividend by shifting it by the same amount as the divisor.
+  uword dividend_high_n =
+      (s == 0) ? dividend_high
+               : (dividend_high << s) | (dividend_low >> (kBitsPerWord - s));
+  uword dividend_low_n = dividend_low << s;
+  uword dividend_low_n_high_half = dividend_low_n >> half_bits;
+  uword dividend_low_n_low_half = dividend_low_n & half_mask;
+
+  uword quot_high_half = dividend_high_n / divisor_n_high_half;
+  uword remainder_high_half = dividend_high_n % divisor_n_high_half;
+  while (quot_high_half > half_mask ||
+         quot_high_half * divisor_n_low_half >
+             ((remainder_high_half << half_bits) | dividend_low_n_high_half)) {
+    quot_high_half--;
+    remainder_high_half += divisor_n_high_half;
+    if (remainder_high_half > half_mask) break;
   }
+
+  uword dividend_middle =
+      ((dividend_high_n << half_bits) | dividend_low_n_high_half) -
+      quot_high_half * divisor_n;
+
+  uword quot_low_half = dividend_middle / divisor_n_high_half;
+  uword remainder_low_half = dividend_middle % divisor_n_high_half;
+  while (quot_low_half > half_mask ||
+         quot_low_half * divisor_n_low_half >
+             ((remainder_low_half << half_bits) | dividend_low_n_low_half)) {
+    quot_low_half--;
+    remainder_low_half += divisor_n_high_half;
+    if (remainder_low_half > half_mask) break;
+  }
+
+  uword result = (quot_high_half << half_bits) | quot_low_half;
+  *remainder = dividend_low - result * divisor;
+  return result;
+}
+
+// Divide a large integer formed by an array of int digits by a single digit and
+// return the remainder. `digits_in` and `digits_out` may be the same pointer
+// for in-place operation.
+static uword divIntSingleDigit(uword* digits_out, const uword* digits_in,
+                               word num_digits, uword divisor) {
+  // TODO(matthiasb): Future optimization idea:
+  // Instead of dividing by a constant, multiply with a precomputed inverse
+  // (see Hackers Delight, chapter 10). The compiler doesn't catch this case
+  // for double word arithmetic as in dwordUDiv.
+  uword remainder = 0;
+  for (word i = num_digits - 1; i >= 0; i--) {
+    // Compute `remainder:digit / divisor`.
+    digits_out[i] = dwordUDiv(digits_in[i], remainder, divisor, &remainder);
+  }
+  return remainder;
+}
+
+// Converts an uword to ascii decimal digits. The digits can only be efficiently
+// produced from least to most significant without knowing the exact number of
+// digits upfront. Because of this the function takes a `buf_end` argument and
+// writes the digit before it. Returns a pointer to the last byte written.
+static byte* uwordToDecimal(uword num, byte* buf_end) {
+  byte* start = buf_end;
+  do {
+    *--start = '0' + num % 10;
+    num /= 10;
+  } while (num > 0);
+  return start;
+}
+
+RawObject IntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  if (!self->isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__repr__() must be called with int instance as first argument");
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr("'__repr__' requires a 'int' object");
   }
-  word value = RawSmallInt::cast(self)->value();
-  char buffer[kWordDigits10 + 1];
-  int size = std::snprintf(buffer, sizeof(buffer), "%" PRIdPTR, value);
-  (void)size;
-  DCHECK(size < int{sizeof(buffer)}, "buffer too small");
-  return thread->runtime()->newStrFromCStr(buffer);
+  Int self(&scope, *self_obj);
+  if (self.numDigits() == 1) {
+    word value = self.asWord();
+    uword magnitude = value >= 0 ? value : -static_cast<uword>(value);
+    byte buffer[kUwordDigits10 + 1];
+    byte* end = buffer + sizeof(buffer);
+    byte* start = uwordToDecimal(magnitude, end);
+    if (value < 0) *--start = '-';
+    DCHECK(start >= buffer, "buffer underflow");
+    return runtime->newStrWithAll(View<byte>(start, end - start));
+  }
+  LargeInt large_int(&scope, *self);
+
+  // Allocate space for intermediate results. We also convert a negative number
+  // to a positive number of the same magnitude here.
+  word num_digits = large_int.numDigits();
+  std::unique_ptr<uword[]> temp_digits(new uword[num_digits]);
+  bool negative = large_int.isNegative();
+  if (!negative) {
+    for (word i = 0; i < num_digits; ++i) {
+      temp_digits[i] = large_int.digitAt(i);
+    }
+  } else {
+    uword carry = 1;
+    for (word i = 0; i < num_digits; ++i) {
+      temp_digits[i] = ~large_int.digitAt(i) + carry;
+      carry = (temp_digits[i] == 0);
+    }
+    // The complement of the highest bit in a negative number must be 0 so we
+    // cannot overflow.
+    DCHECK(carry == 0, "overflow");
+  }
+  word num_temp_digits = num_digits;
+
+  // Compute an upper bound on the number of decimal digits required for a
+  // number with n bits:
+  //   ceil(log10(2**n - 1))
+  // We over-approximate this with:
+  //   ceil(log10(2**n - 1))
+  //   == ceil(log2(2**n - 1)/log2(10))
+  //   <= 1 + n * (1/log2(10))
+  //   <= 1 + n * 0.30102999566398114
+  //   <= 1 + n * 309 / 1024
+  // This isn't off by more than 1 digit for all one binary numbers up to
+  // 1425 bits.
+  word bit_length = large_int.bitLength();
+  word max_chars = 1 + negative + bit_length * 309 / 1024;
+  std::unique_ptr<byte[]> buffer(new byte[max_chars]);
+
+  // The strategy here is to divide the large integer by continually dividing it
+  // by `kUwordDigits10Pow`. `uwordToDecimal` can convert those remainders to
+  // decimal digits.
+  //
+  // TODO(matthiasb): Future optimization ideas:
+  // It seems cpythons algorithm is faster (for big numbers) in practive.
+  // Their source claims it is (Knuth TAOCP, vol 2, section 4.4, method 1b).
+  byte* end = buffer.get() + max_chars;
+  byte* start = end;
+  do {
+    uword remainder = divIntSingleDigit(temp_digits.get(), temp_digits.get(),
+                                        num_temp_digits, kUwordDigits10Pow);
+    byte* new_start = uwordToDecimal(remainder, start);
+
+    while (num_temp_digits > 0 && temp_digits[num_temp_digits - 1] == 0) {
+      num_temp_digits--;
+    }
+    // Produce leading zeros if this wasn't the last round.
+    if (num_temp_digits > 0) {
+      for (word i = 0, n = kUwordDigits10 - (start - new_start); i < n; i++) {
+        *--new_start = '0';
+      }
+    }
+    start = new_start;
+  } while (num_temp_digits > 0);
+
+  if (negative) *--start = '-';
+
+  DCHECK(start >= buffer.get(), "buffer underflow");
+  return runtime->newStrWithAll(View<byte>(start, end - start));
 }
 
 RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

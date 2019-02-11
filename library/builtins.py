@@ -93,6 +93,9 @@ class int(bootstrap=True):
     def __pos__(self) -> int:
         pass
 
+    def __repr__(self) -> str:  # noqa: T484
+        pass
+
     def __rshift__(self, n: int) -> int:
         pass
 
