@@ -124,6 +124,44 @@ b_lt_b = b < b
   EXPECT_EQ(*b_lt_b, Bool::falseObj());
 }
 
+TEST(FloatBuiltinsTest, DunderMulWithDoubleReturnsDouble) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(2.0));
+  Float right(&scope, runtime.newFloat(1.5));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 3.0);
+}
+
+TEST(FloatBuiltinsTest, DunderMulWithSmallIntReturnsDouble) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(2.5));
+  Int right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderMul, left, right));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 2.5);
+}
+
+TEST(FloatBuiltinsTest, DunderMulWithNonFloatSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, NoneType::object());
+  Float right(&scope, runtime.newFloat(1.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderMul, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(FloatBuiltinsTest, DunderMulWithNonFloatOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(1.0));
+  Object right(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderMul, left, right));
+  EXPECT_TRUE(result.isNotImplemented());
+}
+
 TEST(FloatBuiltinsTest, CompareDoubleNe) {
   Runtime runtime;
   HandleScope scope;

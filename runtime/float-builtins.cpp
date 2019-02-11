@@ -72,6 +72,7 @@ const BuiltinMethod FloatBuiltins::kMethods[] = {
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
+    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderPow, nativeTrampoline<dunderPow>},
@@ -268,6 +269,30 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("integer to float conversion");
   }
   return thread->runtime()->notImplemented();
+}
+
+RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+  if (nargs != 2) {
+    return thread->raiseTypeErrorWithCStr("expected 1 argument");
+  }
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isFloat()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__mul__() must be called with float instance as first argument");
+  }
+  Float self(&scope, *self_obj);
+  double left = self.value();
+
+  double right;
+  Object other(&scope, args.get(1));
+  Object maybe_error(&scope, convertToDouble(thread, other, &right));
+  // May have returned NotImplemented or raised an exception.
+  if (!maybe_error.isNoneType()) return *maybe_error;
+
+  return thread->runtime()->newFloat(left * right);
 }
 
 RawObject FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
