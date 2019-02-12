@@ -66,6 +66,7 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
 
 const BuiltinMethod FloatBuiltins::kMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderTruediv, builtinTrampolineWrapper<dunderTrueDiv>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderFloat, nativeTrampoline<dunderFloat>},
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
@@ -367,6 +368,31 @@ RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (!maybe_error.isNoneType()) return *maybe_error;
 
   return thread->runtime()->newFloat(left + right);
+}
+
+RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__truediv__() must be called with float instance as first argument");
+  }
+  Float self(&scope, *self_obj);
+  double left = self.value();
+
+  double right;
+  Object other(&scope, args.get(1));
+  Object maybe_error(&scope, convertToDouble(thread, other, &right));
+  // May have returned NotImplemented or raised an exception.
+  if (!maybe_error.isNoneType()) return *maybe_error;
+
+  if (right == 0.0) {
+    return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
+  }
+  return thread->runtime()->newFloat(left / right);
 }
 
 RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {

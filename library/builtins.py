@@ -109,6 +109,11 @@ class int(bootstrap=True):
         pass
 
 
+class float(bootstrap=True):
+    def __truediv__(self, n: float) -> float:
+        pass
+
+
 class ImportError(bootstrap=True):
     def __init__(self, *args, name=None, path=None, **kwargs):
         if len(kwargs) > 0:

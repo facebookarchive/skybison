@@ -231,6 +231,71 @@ TEST(FloatBuiltinsTest, AddWithNonFloatOtherRaisesTypeError) {
                             "'__add__' is not supported"));
 }
 
+TEST(FloatBuiltinsTest, DunderTrueDivWithDoubleReturnsDouble) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(3.0));
+  Float right(&scope, runtime.newFloat(2.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+}
+
+TEST(FloatBuiltinsTest, DunderTrueDivWithSmallIntReturnsDouble) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(3.0));
+  Int right(&scope, runtime.newInt(2));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+}
+
+TEST(FloatBuiltinsTest, DunderTrueDivWithNonFloatSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, NoneType::object());
+  Float right(&scope, runtime.newFloat(1.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(FloatBuiltinsTest, DunderTrueDivWithNonFloatOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(1.0));
+  Object right(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
+  EXPECT_TRUE(result.isNotImplemented());
+}
+
+TEST(FloatBuiltinsTest, DunderTrueDivWithZeroFloatRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(1.0));
+  Float right(&scope, runtime.newFloat(0.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kZeroDivisionError));
+}
+
+TEST(FloatBuiltinsTest, DunderTrueDivWithZeroSmallIntRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(1.0));
+  Int right(&scope, runtime.newInt(0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kZeroDivisionError));
+}
+
+TEST(FloatBuiltinsTest, DunderTrueDivWithZeroBoolRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(1.0));
+  Bool right(&scope, RawBool::falseObj());
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kZeroDivisionError));
+}
+
 TEST(FloatBuiltinsTest, BinarySubtractDouble) {
   Runtime runtime;
   HandleScope scope;
