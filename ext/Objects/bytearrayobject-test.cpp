@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cstring>
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -39,6 +41,67 @@ TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeWithNullReturnsNew) {
   PyObjectPtr array(PyByteArray_FromStringAndSize(nullptr, 10));
   ASSERT_TRUE(PyByteArray_CheckExact(array));
   EXPECT_EQ(PyByteArray_Size(array), 10);
+}
+
+TEST_F(ByteArrayExtensionApiTest, ResizeWithNonByteArrayRaisesTypeErrorPyro) {
+  const char* hello = "hello";
+  PyObjectPtr bytes(PyBytes_FromString(hello));
+  ASSERT_EQ(PyByteArray_Resize(bytes, std::strlen(hello)), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ByteArrayExtensionApiTest, ResizeWithSameSizeIsNoop) {
+  const char* hello = "hello";
+  Py_ssize_t len = static_cast<Py_ssize_t>(std::strlen(hello));
+  PyObjectPtr array(PyByteArray_FromStringAndSize(hello, len));
+  ASSERT_EQ(PyByteArray_Resize(array, len), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(array), len);
+}
+
+TEST_F(ByteArrayExtensionApiTest, ResizeWithSmallerSizeShrinks) {
+  const char* hello = "hello";
+  Py_ssize_t len = static_cast<Py_ssize_t>(std::strlen(hello));
+  PyObjectPtr array(PyByteArray_FromStringAndSize(hello, len));
+  ASSERT_EQ(PyByteArray_Resize(array, len - 2), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(array), len - 2);
+}
+
+TEST_F(ByteArrayExtensionApiTest, ResizeWithLargerSizeGrows) {
+  const char* hello = "hello";
+  Py_ssize_t len = static_cast<Py_ssize_t>(std::strlen(hello));
+  PyObjectPtr array(PyByteArray_FromStringAndSize(hello, len));
+  ASSERT_EQ(PyByteArray_Resize(array, len + 2), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(array), len + 2);
+}
+
+TEST_F(ByteArrayExtensionApiTest, ResizeLargerThenSmaller) {
+  const char* hello = "hello";
+  Py_ssize_t len = static_cast<Py_ssize_t>(std::strlen(hello));
+  PyObjectPtr array(PyByteArray_FromStringAndSize(hello, len));
+  ASSERT_EQ(PyByteArray_Resize(array, len + 3), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(array), len + 3);
+
+  ASSERT_EQ(PyByteArray_Resize(array, len - 1), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(array), len - 1);
+}
+
+TEST_F(ByteArrayExtensionApiTest, ResizeSmallerThenLarger) {
+  const char* hello = "hello";
+  Py_ssize_t len = static_cast<Py_ssize_t>(std::strlen(hello));
+  PyObjectPtr array(PyByteArray_FromStringAndSize(hello, len));
+  ASSERT_EQ(PyByteArray_Resize(array, len - 3), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(array), len - 3);
+
+  ASSERT_EQ(PyByteArray_Resize(array, len + 1), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(array), len + 1);
 }
 
 TEST_F(ByteArrayExtensionApiTest, SizeWithNonByteArrayRaisesPyro) {

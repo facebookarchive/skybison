@@ -35,10 +35,6 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT int PyByteArray_Resize(PyObject* /* f */, Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyByteArray_Resize");
-}
-
 PY_EXPORT char* PyByteArray_AsString(PyObject* /* f */) {
   UNIMPLEMENTED("PyByteArray_AsString");
 }
@@ -49,6 +45,32 @@ PY_EXPORT PyObject* PyByteArray_Concat(PyObject* /* a */, PyObject* /* b */) {
 
 PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* /* t */) {
   UNIMPLEMENTED("PyByteArray_FromObject");
+}
+
+PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
+  DCHECK(pyobj != nullptr, "null argument to PyByteArray_Resize");
+  DCHECK(newsize >= 0, "negative size");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*obj)) {
+    thread->raiseBadArgument();
+    return -1;
+  }
+  ByteArray array(&scope, *obj);
+  word requested = static_cast<word>(newsize);
+  word current = array.numBytes();
+  if (requested == current) return 0;
+  if (requested < current) {
+    // Ensure no leftover bytes remain past the new end of the array
+    Bytes bytes(&scope, array.bytes());
+    array.setBytes(runtime->bytesSubseq(thread, bytes, 0, requested));
+  } else {
+    runtime->byteArrayEnsureCapacity(thread, array, requested - 1);
+  }
+  array.setNumBytes(requested);
+  return 0;
 }
 
 PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
