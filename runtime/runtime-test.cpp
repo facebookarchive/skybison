@@ -88,7 +88,8 @@ INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
 
 TEST(RuntimeByteArrayTest, EnsureCapacity) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
   Bytes initial_bytes(&scope, runtime.newBytes(10, 0));
@@ -96,18 +97,72 @@ TEST(RuntimeByteArrayTest, EnsureCapacity) {
 
   word index = 0;
   word expected_capacity = 10;
-  runtime.byteArrayEnsureCapacity(array, index);
+  runtime.byteArrayEnsureCapacity(thread, array, index);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
   index = 10;
   expected_capacity = 20;
-  runtime.byteArrayEnsureCapacity(array, index);
+  runtime.byteArrayEnsureCapacity(thread, array, index);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
   index = 40;
   expected_capacity = 64;
-  runtime.byteArrayEnsureCapacity(array, index);
+  runtime.byteArrayEnsureCapacity(thread, array, index);
   EXPECT_EQ(array.capacity(), expected_capacity);
+}
+
+TEST(RuntimeByteArrayTest, Extend) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  ByteArray array(&scope, runtime.newByteArray());
+  View<byte> hello(reinterpret_cast<const byte*>("Hello world!"), 5);
+  runtime.byteArrayExtend(thread, array, hello);
+  EXPECT_GE(array.capacity(), 5);
+  EXPECT_EQ(array.numBytes(), 5);
+  EXPECT_EQ(array.byteAt(0), 'H');
+  EXPECT_EQ(array.byteAt(1), 'e');
+  EXPECT_EQ(array.byteAt(2), 'l');
+  EXPECT_EQ(array.byteAt(3), 'l');
+  EXPECT_EQ(array.byteAt(4), 'o');
+}
+
+TEST(RuntimeBytesTest, Concat) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  View<byte> foo(reinterpret_cast<const byte*>("foo"), 3);
+  Bytes self(&scope, runtime.newBytesWithAll(foo));
+  View<byte> bar(reinterpret_cast<const byte*>("bar"), 3);
+  Bytes other(&scope, runtime.newBytesWithAll(bar));
+  Bytes result(&scope, runtime.bytesConcat(thread, self, other));
+  EXPECT_EQ(result.length(), 6);
+  EXPECT_EQ(result.byteAt(0), 'f');
+  EXPECT_EQ(result.byteAt(1), 'o');
+  EXPECT_EQ(result.byteAt(2), 'o');
+  EXPECT_EQ(result.byteAt(3), 'b');
+  EXPECT_EQ(result.byteAt(4), 'a');
+  EXPECT_EQ(result.byteAt(5), 'r');
+}
+
+TEST(RuntimeBytesTest, Subseq) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  View<byte> hello(reinterpret_cast<const byte*>("Hello world!"), 12);
+  Bytes bytes(&scope, runtime.newBytesWithAll(hello));
+  ASSERT_EQ(bytes.length(), 12);
+
+  Bytes copy(&scope, runtime.bytesSubseq(thread, bytes, 6, 5));
+  EXPECT_EQ(copy.length(), 5);
+  EXPECT_EQ(copy.byteAt(0), 'w');
+  EXPECT_EQ(copy.byteAt(1), 'o');
+  EXPECT_EQ(copy.byteAt(2), 'r');
+  EXPECT_EQ(copy.byteAt(3), 'l');
+  EXPECT_EQ(copy.byteAt(4), 'd');
 }
 
 TEST(RuntimeDictTest, EmptyDictInvariants) {
@@ -421,7 +476,8 @@ TEST(RuntimeListTest, AppendToList) {
 
 TEST(RuntimeTest, NewByteArray) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
   EXPECT_EQ(array.numBytes(), 0);

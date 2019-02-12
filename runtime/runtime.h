@@ -282,10 +282,19 @@ class Runtime {
 
   // Ensures that the byte array has enough space for a byte at index.
   // Allocates if the given index is not currently within bounds.
-  void byteArrayEnsureCapacity(const ByteArray& array, word index);
+  void byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
+                               word index);
+
+  // Appends multiple bytes to the end of the array.
+  void byteArrayExtend(Thread* thread, const ByteArray& array, View<byte> view);
 
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
+
+  // Returns a new Bytes containing the subsequence of self
+  // with the given start index and length.
+  RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,
+                        word length);
 
   // Ensures that array has enough space for an atPut at index. If so, returns
   // array. If not, allocates and returns a new array with sufficient capacity

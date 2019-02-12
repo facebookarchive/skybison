@@ -194,6 +194,8 @@ add_library(
   STATIC
   runtime/builtins-module.cpp
   runtime/builtins-module.h
+  runtime/bytearray-builtins.cpp
+  runtime/bytearray-builtins.h
   runtime/bytecode.cpp
   runtime/bytecode.h
   runtime/bytes-builtins.cpp
@@ -343,6 +345,7 @@ add_library(
   runtime-tests
   STATIC
   runtime/builtins-module-test.cpp
+  runtime/bytearray-builtins-test.cpp
   runtime/bytes-builtins-test.cpp
   runtime/capi-handles-test.cpp
   runtime/complex-builtins-test.cpp

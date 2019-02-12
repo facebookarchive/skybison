@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "builtins-module.h"
+#include "bytearray-builtins.h"
 #include "bytecode.h"
 #include "bytes-builtins.h"
 #include "callback.h"
@@ -1157,8 +1158,7 @@ void Runtime::initializeHeapTypes() {
   initializeExceptionTypes();
 
   // Concrete classes.
-  addEmptyBuiltinType(SymbolId::kByteArray, LayoutId::kByteArray,
-                      LayoutId::kObject);
+  ByteArrayBuiltins::initialize(this);
   BytesBuiltins::initialize(this);
   initializeClassMethodType();
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
@@ -2328,23 +2328,35 @@ void Runtime::createMarshalModule() {
 
 // ByteArray
 
-void Runtime::byteArrayEnsureCapacity(const ByteArray& array, word index) {
+void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
+                                      word index) {
   word existing_capacity = array.capacity();
   if (index < existing_capacity) return;
-  HandleScope scope;
   word new_capacity = (existing_capacity < kInitialEnsuredCapacity)
                           ? kInitialEnsuredCapacity
                           : existing_capacity << 1;
   if (new_capacity <= index) {
     new_capacity = Utils::nextPowerOfTwo(index);
   }
+  HandleScope scope(thread);
   Bytes old_bytes(&scope, array.bytes());
   Bytes new_bytes(&scope, newBytes(new_capacity, 0));
-  word len = array.numBytes();
-  for (word idx = 0; idx < len; idx++) {
-    new_bytes.byteAtPut(idx, old_bytes.byteAt(idx));
-  }
+  const byte* src = reinterpret_cast<byte*>(old_bytes.address());
+  byte* dst = reinterpret_cast<byte*>(new_bytes.address());
+  std::memcpy(dst, src, array.numBytes());
   array.setBytes(*new_bytes);
+}
+
+void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
+                              View<byte> view) {
+  word index = array.numBytes();
+  word length = view.length();
+  byteArrayEnsureCapacity(thread, array, index + length - 1);
+  HandleScope scope(thread);
+  Bytes bytes(&scope, array.bytes());
+  byte* dst = reinterpret_cast<byte*>(bytes.address());
+  std::memcpy(dst + index, view.data(), length);
+  array.setNumBytes(index + length);
 }
 
 // Bytes
@@ -2361,6 +2373,19 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
   self.copyTo(buffer, self_len);
   other.copyTo(buffer + self_len, other_len);
   return *result;
+}
+
+RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
+                               word length) {
+  DCHECK_BOUND(start, self.length());
+  DCHECK_BOUND(length, self.length() - start);
+  if (length == 0) return empty_byte_array_;
+  HandleScope scope(thread);
+  Bytes copy(&scope, heap()->createBytes(length));
+  const byte* src = reinterpret_cast<byte*>(self.address());
+  byte* dst = reinterpret_cast<byte*>(copy.address());
+  std::memcpy(dst, src + start, length);
+  return *copy;
 }
 
 // List
