@@ -1,3 +1,6 @@
+#include <cstdarg>
+
+#include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
@@ -98,12 +101,160 @@ PY_EXPORT PyObject* PyBytes_DecodeEscape(const char* /* s */,
   UNIMPLEMENTED("PyBytes_DecodeEscape");
 }
 
-PY_EXPORT PyObject* PyBytes_FromFormat(const char* /* t */, ...) {
-  UNIMPLEMENTED("PyBytes_FromFormat");
+PY_EXPORT PyObject* PyBytes_FromFormat(const char* format, ...) {
+  va_list vargs;
+  va_start(vargs, format);
+  PyObject* result = PyBytes_FromFormatV(format, vargs);
+  va_end(vargs);
+  return result;
 }
 
-PY_EXPORT PyObject* PyBytes_FromFormatV(const char* /* t */, va_list /* s */) {
-  UNIMPLEMENTED("PyBytes_FromFormatV");
+static void writeBytes(Thread* thread, Runtime* runtime,
+                       const ByteArray& writer, const char* buffer) {
+  DCHECK_BOUND(std::strlen(buffer), sizeof(buffer));
+  View<byte> array(reinterpret_cast<const byte*>(buffer), std::strlen(buffer));
+  runtime->byteArrayExtend(thread, writer, array);
+}
+
+static const char* writeArg(Thread* thread, Runtime* runtime,
+                            const ByteArray& writer, const char* start,
+                            va_list vargs) {
+  DCHECK(*start == '%', "index is not at a format specifier");
+  const char* current = start + 1;
+
+  // ignore the width (ex: 10 in "%10s")
+  while (Py_ISDIGIT(*current)) current++;
+
+  // parse the precision (ex: 10 in "%.10s")
+  word precision = 0;
+  if (*current == '.') {
+    current++;
+    for (; Py_ISDIGIT(*current); current++) {
+      precision = precision * 10 + (*current - '0');
+    }
+  }
+
+  // scan forward to the conversion specifier or the end of the string
+  while (*current != '\0' && *current != '%' && !Py_ISALPHA(*current)) {
+    current++;
+  }
+
+  // Handle the long flag ('l'), but only for %ld and %lu.
+  // Others can be added when necessary.
+  bool long_flag = false;
+  if (*current == 'l' && (current[1] == 'd' || current[1] == 'u')) {
+    long_flag = true;
+    current++;
+  }
+
+  // Handle the size_t flag ('z'), but only for %zd and %zu.
+  bool size_t_flag = false;
+  if (*current == 'z' && (current[1] == 'd' || current[1] == 'u')) {
+    size_t_flag = true;
+    ++current;
+  }
+
+  // Longest 64-bit formatted numbers:
+  // - "18446744073709551615\0" (21 bytes)
+  // - "-9223372036854775808\0" (21 bytes)
+  // Decimal takes the most space (it isn't enough for octal).
+  // Longest 64-bit pointer representation: "0xffffffffffffffff\0" (19 bytes).
+  char buffer[21];
+  switch (*current) {
+    case 'c': {
+      int c = va_arg(vargs, int);
+      if (c < 0 || c > 255) {
+        thread->raiseOverflowErrorWithCStr(
+            "PyBytes_FromFormatV(): "
+            "%c format expects an integer in [0,255]");
+        return nullptr;
+      }
+      byteArrayAdd(thread, runtime, writer, static_cast<byte>(c));
+      return current + 1;
+    }
+    case 'd':
+      if (long_flag) {
+        std::sprintf(buffer, "%ld", va_arg(vargs, long));
+      } else if (size_t_flag) {
+        std::sprintf(buffer, "%" PY_FORMAT_SIZE_T "d",
+                     va_arg(vargs, Py_ssize_t));
+      } else {
+        std::sprintf(buffer, "%d", va_arg(vargs, int));
+      }
+      writeBytes(thread, runtime, writer, buffer);
+      return current + 1;
+    case 'u':
+      if (long_flag) {
+        std::sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
+      } else if (size_t_flag) {
+        std::sprintf(buffer, "%" PY_FORMAT_SIZE_T "u", va_arg(vargs, size_t));
+      } else {
+        std::sprintf(buffer, "%u", va_arg(vargs, unsigned int));
+      }
+      writeBytes(thread, runtime, writer, buffer);
+      return current + 1;
+    case 'i':
+      std::sprintf(buffer, "%i", va_arg(vargs, int));
+      writeBytes(thread, runtime, writer, buffer);
+      return current + 1;
+    case 'x':
+      std::sprintf(buffer, "%x", va_arg(vargs, int));
+      writeBytes(thread, runtime, writer, buffer);
+      return current + 1;
+    case 's': {
+      const char* arg = va_arg(vargs, const char*);
+      word len = std::strlen(arg);
+      if (precision > 0 && len > precision) {
+        len = precision;
+      }
+      View<byte> array(reinterpret_cast<const byte*>(arg), len);
+      runtime->byteArrayExtend(thread, writer, array);
+      return current + 1;
+    }
+    case 'p':
+      std::sprintf(buffer, "%p", va_arg(vargs, void*));
+      // %p is ill-defined, ensure leading 0x
+      if (buffer[1] == 'X') {
+        buffer[1] = 'x';
+      } else if (buffer[1] != 'x') {
+        // missing 0x prefix, shift right and prepend
+        std::memmove(buffer + 2, buffer, std::strlen(buffer) + 1);
+        buffer[0] = '0';
+        buffer[1] = 'x';
+      }
+      writeBytes(thread, runtime, writer, buffer);
+      return current + 1;
+    case '%':
+      byteArrayAdd(thread, runtime, writer, '%');
+      return current + 1;
+    default:
+      word len = static_cast<word>(std::strlen(start));
+      View<byte> array(reinterpret_cast<const byte*>(start), len);
+      runtime->byteArrayExtend(thread, writer, array);
+      return start + len;
+  }
+}
+
+PY_EXPORT PyObject* PyBytes_FromFormatV(const char* format, va_list vargs) {
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  ByteArray writer(&scope, runtime->newByteArray());
+  runtime->byteArrayEnsureCapacity(thread, writer, std::strlen(format));
+  while (*format) {
+    if (*format == '%') {
+      format = writeArg(thread, runtime, writer, format, vargs);
+      if (format == nullptr) return nullptr;
+    } else {
+      const char* next = format + 1;
+      while (*next && *next != '%') next++;
+      View<byte> view(reinterpret_cast<const byte*>(format), next - format);
+      runtime->byteArrayExtend(thread, writer, view);
+      format = next;
+    }
+  }
+  return ApiHandle::newReference(thread,
+                                 byteArrayAsBytes(thread, runtime, writer));
 }
 
 PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {

@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cstring>
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -171,6 +173,120 @@ TEST_F(BytesExtensionApiTest, ConcatAndDelDecrefsSecondArg) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(Py_REFCNT(bar), refcnt);
   Py_DECREF(bar);
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatWithNoSpecifiersReturnsBytes) {
+  PyObjectPtr bytes(PyBytes_FromFormat("hello world"));
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "hello world");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatWithManyArgsReturnsBytes) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%%%ih%c%.3s", 2, 'e', "llo world"));
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "%2hello");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatIgnoresWidth) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%5d", 42));
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatIgnoresPrecisionForInt) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%5d", 42));
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatUsesPrecisionForString) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%.5s", "hello world"));
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "hello");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatCParsesChar) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%c", 42));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "*");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatCWithNegativeRaisesOverflowError) {
+  ASSERT_EQ(PyBytes_FromFormat("%c", -1), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatCWithLargeRaisesOverflowError) {
+  ASSERT_EQ(PyBytes_FromFormat("%c", 256), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatLDParsesLongDecimal) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%ld", 42l));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatZDParsesPySsizeT) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%zd", static_cast<Py_ssize_t>(42)));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatDParsesDecimal) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%d", 42));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatLUParsesNumberTypes) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%lu", 42l));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatZUParsesSizeT) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%zu", static_cast<size_t>(42)));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatUParsesUnsignedDecimal) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%u", 42));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatIParsesInt) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%i", 42));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "42");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatXParsesHex) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%x", 42));
+  EXPECT_STREQ(PyBytes_AsString(bytes), "2a");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatSParsesString) {
+  PyObjectPtr bytes(PyBytes_FromFormat("%s", "UTF-8"));
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 5);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "UTF-8");
+}
+
+TEST_F(BytesExtensionApiTest, FromFormatPParsesPointer) {
+  long value = 0;
+  void* test = &value;
+  char buff[18];
+  std::snprintf(buff, sizeof(buff), "%p", test);
+  Py_ssize_t pointer_len = static_cast<Py_ssize_t>(std::strlen(buff));
+  PyObjectPtr bytes(PyBytes_FromFormat("%p", test));
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  if (buff[1] == 'x') {
+    EXPECT_EQ(PyBytes_Size(bytes), pointer_len);
+    EXPECT_STREQ(PyBytes_AsString(bytes), buff);
+  } else {
+    EXPECT_EQ(PyBytes_Size(bytes), pointer_len + 2);
+    const char* str = PyBytes_AsString(bytes);
+    EXPECT_EQ(str[0], '0');
+    EXPECT_EQ(str[1], 'x');
+    EXPECT_STREQ(str + 2, buff);
+  }
 }
 
 TEST_F(BytesExtensionApiTest, FromObjectWithBytesReturnsArgument) {
