@@ -192,7 +192,7 @@ RawObject Heap::createTuple(word length, RawObject value) {
   auto result = raw.rawCast<RawTuple>();
   result->setHeaderAndOverflow(length, 0, LayoutId::kTuple,
                                ObjectFormat::kObjectArray);
-  result->initialize(size, value);
+  result->initialize(length * kPointerSize, value);
   return RawTuple::cast(result);
 }
 
