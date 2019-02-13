@@ -215,4 +215,15 @@ result = Foo.foo(*(1,2,3))
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
 }
 
+TEST(TypeBuiltinTest, TypeNewReceivesExArgs) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+ty = type.__new__(type, *("foo", (object,), {'a': 1}))
+name = ty.__name__
+)");
+  HandleScope scope;
+  Object name(&scope, moduleAt(&runtime, "__main__", "name"));
+  EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
+}
+
 }  // namespace python

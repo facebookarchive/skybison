@@ -71,7 +71,6 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
 
 const BuiltinMethod TypeBuiltins::kMethods[] = {
     {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
@@ -86,6 +85,11 @@ void TypeBuiltins::initialize(Runtime* runtime) {
       type, SymbolId::kDunderCall, nativeTrampoline<TypeBuiltins::dunderCall>,
       nativeTrampolineKw<TypeBuiltins::dunderCallKw>,
       builtinTrampolineWrapperEx<TypeBuiltins::dunderCall>);
+  runtime->typeAddBuiltinFunctionKwEx(
+      type, SymbolId::kDunderNew,
+      builtinTrampolineWrapper<TypeBuiltins::dunderNew>,
+      builtinTrampolineWrapperKw<TypeBuiltins::dunderNew>,
+      builtinTrampolineWrapperEx<TypeBuiltins::dunderNew>);
 }
 
 RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
@@ -167,9 +171,6 @@ RawObject TypeBuiltins::dunderCallKw(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 2) {
-    return thread->raiseTypeErrorWithCStr("type() takes 1 or 3 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -178,7 +179,8 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // If the first argument is exactly type, and there are no other arguments,
   // then this call acts like a "typeof" operator, and returns the type of the
   // argument.
-  if (nargs == 2 && metaclass_id == LayoutId::kType) {
+  if (args.get(2).isUnboundValue() && args.get(3).isUnboundValue() &&
+      metaclass_id == LayoutId::kType) {
     Object arg(&scope, args.get(1));
     // TODO(dulinr): In the future, types that should be visible only to the
     // runtime should be shown here, and things like SmallInt should return Int
