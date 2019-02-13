@@ -764,4 +764,56 @@ TEST_F(UnicodeExtensionApiTest, AppendAndDelWithStringDecreasesRefcnt) {
   Py_DECREF(world);
 }
 
+TEST_F(UnicodeExtensionApiTest, EncodeFSDefaultWithNonStringReturnsNull) {
+  PyObjectPtr bytes(PyUnicode_EncodeFSDefault(Py_None));
+  EXPECT_EQ(bytes, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, EncodeFSDefaultReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  PyObjectPtr bytes(PyUnicode_EncodeFSDefault(unicode));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 3);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo");
+}
+
+TEST_F(UnicodeExtensionApiTest, FSConverterWithNullSetAddrToNull) {
+  PyObject* result = PyLong_FromLong(1);
+  ASSERT_EQ(PyUnicode_FSConverter(nullptr, &result), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FSConverterWithBytesReturnsBytes) {
+  PyObjectPtr bytes(PyBytes_FromString("foo"));
+  PyObject* result = nullptr;
+  ASSERT_EQ(PyUnicode_FSConverter(bytes, &result), Py_CLEANUP_SUPPORTED);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyBytes_Check(result));
+  Py_DECREF(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, FSConverterWithUnicodeReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  PyObject* result = nullptr;
+  ASSERT_EQ(PyUnicode_FSConverter(unicode, &result), Py_CLEANUP_SUPPORTED);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyBytes_Check(result));
+  Py_DECREF(result);
+}
+
+TEST_F(UnicodeExtensionApiTest, FSConverterWithEmbeddedNullRaisesValueError) {
+  PyObjectPtr bytes(PyBytes_FromStringAndSize("foo \0 bar", 9));
+  PyObject* result = nullptr;
+  ASSERT_EQ(PyUnicode_FSConverter(bytes, &result), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(result, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
 }  // namespace python

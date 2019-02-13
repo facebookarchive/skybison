@@ -10,6 +10,8 @@
 #include "runtime.h"
 #include "utils.h"
 
+const char* Py_FileSystemDefaultEncodeErrors = "surrogateescape";
+
 namespace python {
 
 typedef byte Py_UCS1;
@@ -593,8 +595,9 @@ PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
   return ApiHandle::newReference(thread, *value);
 }
 
-PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_EncodeFSDefault");
+PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* unicode) {
+  // TODO(T40363016): Allow arbitrary encodings instead of defaulting to utf-8
+  return _PyUnicode_AsUTF8String(unicode, Py_FileSystemDefaultEncodeErrors);
 }
 
 PY_EXPORT PyObject* PyUnicode_New(Py_ssize_t /* e */, Py_UCS4 /* r */) {
@@ -947,8 +950,40 @@ PY_EXPORT PyObject* PyUnicode_EncodeLocale(PyObject* /* e */,
   UNIMPLEMENTED("PyUnicode_EncodeLocale");
 }
 
-PY_EXPORT int PyUnicode_FSConverter(PyObject* /* g */, void* /* r */) {
-  UNIMPLEMENTED("PyUnicode_FSConverter");
+PY_EXPORT int PyUnicode_FSConverter(PyObject* arg, void* addr) {
+  if (arg == nullptr) {
+    Py_DECREF(*reinterpret_cast<PyObject**>(addr));
+    *reinterpret_cast<PyObject**>(addr) = nullptr;
+    return 1;
+  }
+  PyObject* path = PyOS_FSPath(arg);
+  if (path == nullptr) {
+    return 0;
+  }
+  PyObject* output = nullptr;
+  if (PyBytes_Check(path)) {
+    output = path;
+  } else {
+    // PyOS_FSPath() guarantees its returned value is bytes or str.
+    output = PyUnicode_EncodeFSDefault(path);
+    Py_DECREF(path);
+    if (output == nullptr) {
+      return 0;
+    }
+    CHECK(PyBytes_Check(output), "output must be a bytes object");
+  }
+  for (int i = 0; i < PyBytes_Size(output); i++) {
+    PyObject* item = PySequence_GetItem(output, i);
+    if (PyLong_AsLong(item) == 0) {
+      PyErr_SetString(PyExc_ValueError, "embedded null byte");
+      Py_DECREF(output);
+      Py_DECREF(item);
+      return 0;
+    }
+    Py_DECREF(item);
+  }
+  *reinterpret_cast<PyObject**>(addr) = output;
+  return Py_CLEANUP_SUPPORTED;
 }
 
 PY_EXPORT int PyUnicode_FSDecoder(PyObject* /* g */, void* /* r */) {

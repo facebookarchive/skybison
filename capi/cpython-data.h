@@ -228,6 +228,8 @@ extern const unsigned char _Py_ctype_toupper[256];
 
 extern char* PyStructSequence_UnnamedField;
 
+extern const char* Py_FileSystemDefaultEncodeErrors;
+
 #ifdef __cplusplus
 }
 #endif
