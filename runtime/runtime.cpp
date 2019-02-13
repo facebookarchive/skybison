@@ -266,7 +266,7 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
 RawObject Runtime::newByteArray() {
   HandleScope scope;
   ByteArray result(&scope, heap()->create<RawByteArray>());
-  result.setNumBytes(0);
+  result.setNumItems(0);
   result.setBytes(empty_byte_array_);
   return *result;
 }
@@ -2343,20 +2343,20 @@ void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
   Bytes new_bytes(&scope, newBytes(new_capacity, 0));
   const byte* src = reinterpret_cast<byte*>(old_bytes.address());
   byte* dst = reinterpret_cast<byte*>(new_bytes.address());
-  std::memcpy(dst, src, array.numBytes());
+  std::memcpy(dst, src, array.numItems());
   array.setBytes(*new_bytes);
 }
 
 void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
                               View<byte> view) {
-  word index = array.numBytes();
+  word index = array.numItems();
   word length = view.length();
   byteArrayEnsureCapacity(thread, array, index + length - 1);
   HandleScope scope(thread);
   Bytes bytes(&scope, array.bytes());
   byte* dst = reinterpret_cast<byte*>(bytes.address());
   std::memcpy(dst + index, view.data(), length);
-  array.setNumBytes(index + length);
+  array.setNumItems(index + length);
 }
 
 // Bytes

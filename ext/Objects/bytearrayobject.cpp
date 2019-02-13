@@ -30,7 +30,7 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
       View<byte> view(reinterpret_cast<const byte*>(str), capacity);
       result.setBytes(runtime->newBytesWithAll(view));
     }
-    result.setNumBytes(capacity);
+    result.setNumItems(capacity);
   }
   return ApiHandle::newReference(thread, *result);
 }
@@ -60,7 +60,7 @@ PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
   }
   ByteArray array(&scope, *obj);
   word requested = static_cast<word>(newsize);
-  word current = array.numBytes();
+  word current = array.numItems();
   if (requested == current) return 0;
   if (requested < current) {
     // Ensure no leftover bytes remain past the new end of the array
@@ -69,7 +69,7 @@ PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
   } else {
     runtime->byteArrayEnsureCapacity(thread, array, requested - 1);
   }
-  array.setNumBytes(requested);
+  array.setNumItems(requested);
   return 0;
 }
 
@@ -82,7 +82,7 @@ PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
     thread->raiseBadArgument();
     return -1;
   }
-  return static_cast<Py_ssize_t>(ByteArray::cast(*obj)->numBytes());
+  return static_cast<Py_ssize_t>(ByteArray::cast(*obj)->numItems());
 }
 
 }  // namespace python

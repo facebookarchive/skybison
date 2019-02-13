@@ -120,7 +120,7 @@ TEST(RuntimeByteArrayTest, Extend) {
   View<byte> hello(reinterpret_cast<const byte*>("Hello world!"), 5);
   runtime.byteArrayExtend(thread, array, hello);
   EXPECT_GE(array.capacity(), 5);
-  EXPECT_EQ(array.numBytes(), 5);
+  EXPECT_EQ(array.numItems(), 5);
   EXPECT_EQ(array.byteAt(0), 'H');
   EXPECT_EQ(array.byteAt(1), 'e');
   EXPECT_EQ(array.byteAt(2), 'l');
@@ -480,7 +480,7 @@ TEST(RuntimeTest, NewByteArray) {
   HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
-  EXPECT_EQ(array.numBytes(), 0);
+  EXPECT_EQ(array.numItems(), 0);
   EXPECT_EQ(array.capacity(), 0);
 }
 

@@ -1559,7 +1559,7 @@ class RawNotImplemented : public RawHeapObject {
  *
  * RawLayout:
  *   [RawType pointer]
- *   [NumBytes       ] - Number of bytes currently in the array.
+ *   [NumItems       ] - Number of bytes currently in the array.
  *   [Bytes          ] - Pointer to a RawBytes with the underlying data.
  */
 class RawByteArray : public RawHeapObject {
@@ -1569,15 +1569,15 @@ class RawByteArray : public RawHeapObject {
   void byteAtPut(word index, byte value) const;
   RawObject bytes() const;
   void setBytes(RawObject new_bytes) const;
-  word numBytes() const;
-  void setNumBytes(word num_bytes) const;
+  word numItems() const;
+  void setNumItems(word num_bytes) const;
 
   // The size of the underlying bytes
   word capacity() const;
 
   // Layout
-  static const int kNumBytesOffset = RawHeapObject::kSize;
-  static const int kBytesOffset = kNumBytesOffset + kPointerSize;
+  static const int kNumItemsOffset = RawHeapObject::kSize;
+  static const int kBytesOffset = kNumItemsOffset + kPointerSize;
   static const int kSize = kBytesOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ByteArray);
@@ -3583,21 +3583,21 @@ inline void RawStaticMethod::setFunction(RawObject function) const {
 // RawByteArray
 
 inline byte RawByteArray::byteAt(word index) const {
-  DCHECK_BOUND(index, numBytes());
+  DCHECK_BOUND(index, numItems());
   return RawBytes::cast(bytes())->byteAt(index);
 }
 
 inline void RawByteArray::byteAtPut(word index, byte value) const {
-  DCHECK_BOUND(index, numBytes());
+  DCHECK_BOUND(index, numItems());
   RawBytes::cast(bytes())->byteAtPut(index, value);
 }
 
-inline word RawByteArray::numBytes() const {
-  return RawSmallInt::cast(instanceVariableAt(kNumBytesOffset))->value();
+inline word RawByteArray::numItems() const {
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
 }
 
-inline void RawByteArray::setNumBytes(word num_bytes) const {
-  instanceVariableAtPut(kNumBytesOffset, RawSmallInt::fromWord(num_bytes));
+inline void RawByteArray::setNumItems(word num_bytes) const {
+  instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_bytes));
 }
 
 inline RawObject RawByteArray::bytes() const {

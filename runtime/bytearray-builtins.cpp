@@ -8,7 +8,7 @@ RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
                            const ByteArray& array) {
   HandleScope scope(thread);
   Bytes bytes(&scope, array.bytes());
-  return runtime->bytesSubseq(thread, bytes, 0, array.numBytes());
+  return runtime->bytesSubseq(thread, bytes, 0, array.numItems());
 }
 
 void ByteArrayBuiltins::initialize(Runtime* runtime) {

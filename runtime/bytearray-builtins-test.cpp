@@ -17,7 +17,7 @@ TEST(ByteArrayBuiltinsTest, Add) {
   byteArrayAdd(thread, &runtime, array, 1);
   byteArrayAdd(thread, &runtime, array, 2);
   EXPECT_GE(array.capacity(), 3);
-  EXPECT_EQ(array.numBytes(), 3);
+  EXPECT_EQ(array.numItems(), 3);
   EXPECT_EQ(array.byteAt(0), 0);
   EXPECT_EQ(array.byteAt(1), 1);
   EXPECT_EQ(array.byteAt(2), 2);
@@ -33,7 +33,7 @@ TEST(ByteArrayBuiltinsTest, AsBytes) {
   EXPECT_EQ(bytes.length(), 0);
 
   array.setBytes(runtime.newBytes(10, 0));
-  array.setNumBytes(3);
+  array.setNumItems(3);
   bytes = byteArrayAsBytes(thread, &runtime, array);
   EXPECT_EQ(bytes.length(), 3);
   EXPECT_EQ(bytes.byteAt(0), 0);
