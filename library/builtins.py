@@ -216,6 +216,10 @@ class type(bootstrap=True):
     def __new__(cls, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
         pass
 
+    # Not a patch; just empty
+    def __init__(self, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
+        pass
+
 
 class str(bootstrap=True):
     def partition(self, sep):

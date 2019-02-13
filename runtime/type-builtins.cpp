@@ -70,7 +70,6 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod TypeBuiltins::kMethods[] = {
-    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
@@ -191,11 +190,6 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Tuple bases(&scope, args.get(2));
   Dict dict(&scope, args.get(3));
   return typeNew(thread, metaclass_id, name, bases, dict);
-}
-
-RawObject TypeBuiltins::dunderInit(Thread* /* thread */, Frame* /* frame */,
-                                   word /* nargs */) {
-  return NoneType::object();
 }
 
 RawObject TypeBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
