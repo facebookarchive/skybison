@@ -87,8 +87,8 @@ class Runtime {
   RawObject emptyFrozenSet();
   RawObject newFrozenSet();
 
-  RawObject newBuiltinFunction(SymbolId name, Function::Entry entry,
-                               Function::Entry entry_kw,
+  RawObject newBuiltinFunction(SymbolId name, const Str& qualname,
+                               Function::Entry entry, Function::Entry entry_kw,
                                Function::Entry entry_ex);
 
   RawObject newExceptionState();

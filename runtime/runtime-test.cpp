@@ -8,6 +8,7 @@
 #include "runtime.h"
 #include "symbols.h"
 #include "test-utils.h"
+#include "trampolines.h"
 
 namespace python {
 using namespace testing;
@@ -3438,6 +3439,16 @@ o.__getitem__ = 4
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
   EXPECT_FALSE(runtime.isMapping(Thread::currentThread(), obj));
+}
+
+TEST(RuntimeTest, NewBuiltinFunctionAddsQualname) {
+  Runtime runtime;
+  HandleScope scope;
+  Str name(&scope, runtime.newStrFromCStr("Foo.bar"));
+  Function fn(&scope, runtime.newBuiltinFunction(
+                          SymbolId::kDummy, name, unimplementedTrampoline,
+                          unimplementedTrampoline, unimplementedTrampoline));
+  EXPECT_EQ(fn.qualname(), *name);
 }
 
 }  // namespace python

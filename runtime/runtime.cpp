@@ -708,12 +708,14 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
   return *result;
 }
 
-RawObject Runtime::newBuiltinFunction(SymbolId name, Function::Entry entry,
+RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
+                                      Function::Entry entry,
                                       Function::Entry entry_kw,
                                       Function::Entry entry_ex) {
   HandleScope scope;
   Function result(&scope, heap()->create<RawFunction>());
   result.setName(symbols()->at(name));
+  result.setQualname(internStr(qualname));
   result.setEntry(entry);
   result.setEntryKw(entry_kw);
   result.setEntryEx(entry_ex);
@@ -781,8 +783,14 @@ void Runtime::typeAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
                                          Function::Entry entry_kw,
                                          Function::Entry entry_ex) {
   HandleScope scope;
-  Function function(&scope,
-                    newBuiltinFunction(name, entry, entry_kw, entry_ex));
+  // TODO(T40440499): Clean this mess up with a helper or string formatting
+  Tuple parts(&scope, newTuple(2));
+  parts.atPut(0, type.name());
+  parts.atPut(1, symbols()->at(name));
+  Str sep(&scope, newStrFromCStr("."));
+  Str qualname(&scope, strJoin(Thread::currentThread(), sep, parts, 2));
+  Function function(
+      &scope, newBuiltinFunction(name, qualname, entry, entry_kw, entry_ex));
   Object key(&scope, symbols()->at(name));
   Object value(&scope, *function);
   Dict dict(&scope, type.dict());
@@ -1870,9 +1878,10 @@ RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                             Function::Entry entry_kw,
                                             Function::Entry entry_ex) {
   HandleScope scope;
-  Object key(&scope, symbols()->at(name));
+  Str key(&scope, symbols()->at(name));
   Dict dict(&scope, module.dict());
-  Object value(&scope, newBuiltinFunction(name, entry, entry_kw, entry_ex));
+  Object value(&scope,
+               newBuiltinFunction(name, key, entry, entry_kw, entry_ex));
   return dictAtPutInValueCell(dict, key, value);
 }
 

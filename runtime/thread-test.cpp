@@ -1171,9 +1171,10 @@ TEST(ThreadTest, SetupLoop) {
 
   Tuple consts(&scope, runtime.newTuple(1));
   // inspect_block is meant to be called raw, without any trampoline.
-  consts.atPut(0, runtime.newBuiltinFunction(SymbolId::kDummy, inspect_block,
-                                             unimplementedTrampoline,
-                                             unimplementedTrampoline));
+  Str dummy(&scope, runtime.symbols()->Dummy());
+  consts.atPut(0, runtime.newBuiltinFunction(
+                      SymbolId::kDummy, dummy, inspect_block,
+                      unimplementedTrampoline, unimplementedTrampoline));
   const byte bc[] = {SETUP_LOOP, 100, LOAD_CONST,   0, CALL_FUNCTION, 0,
                      POP_TOP,    0,   RETURN_VALUE, 0};
   Code code(&scope, testing::newEmptyCode(&runtime));
