@@ -2,6 +2,7 @@
 
 #include "cpython-data.h"
 #include "cpython-func.h"
+#include "exception-builtins.h"
 #include "frame.h"
 #include "list-builtins.h"
 #include "runtime.h"
@@ -119,25 +120,147 @@ PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
   return thread->runtime()->isMapping(thread, obj);
 }
 
-PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* /* o */,
-                                            const char* /* y */) {
-  UNIMPLEMENTED("PyMapping_GetItemString");
+static PyObject* getItem(Thread* thread, const Object& obj, const Object& key) {
+  HandleScope scope(thread);
+  Object result(&scope,
+                thread->invokeMethod2(obj, SymbolId::kDunderGetItem, key));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("object is not subscriptable");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT int PyMapping_HasKey(PyObject* /* o */, PyObject* /* y */) {
-  UNIMPLEMENTED("PyMapping_HasKey");
+PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* obj, const char* key) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr || key == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object key_obj(&scope, thread->runtime()->newStrFromCStr(key));
+  return getItem(thread, object, key_obj);
 }
 
-PY_EXPORT int PyMapping_HasKeyString(PyObject* /* o */, const char* /* y */) {
-  UNIMPLEMENTED("PyMapping_HasKeyString");
+PY_EXPORT int PyMapping_HasKey(PyObject* obj, PyObject* key) {
+  PyObject* v = PyObject_GetItem(obj, key);
+  if (v != nullptr) {
+    Py_DECREF(v);
+    return 1;
+  }
+  PyErr_Clear();
+  return 0;
 }
 
-PY_EXPORT PyObject* PyMapping_Items(PyObject* /* o */) {
-  UNIMPLEMENTED("PyMapping_Items");
+PY_EXPORT int PyMapping_HasKeyString(PyObject* obj, const char* key) {
+  PyObject* v = PyMapping_GetItemString(obj, key);
+  if (v != nullptr) {
+    Py_DECREF(v);
+    return 1;
+  }
+  PyErr_Clear();
+  return 0;
 }
 
-PY_EXPORT PyObject* PyMapping_Keys(PyObject* /* o */) {
-  UNIMPLEMENTED("PyMapping_Keys");
+// TODO(T40432322): Re-inline into PyObject_GetIter
+static RawObject getIter(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
+  Runtime* runtime = thread->runtime();
+  if (iter.isError()) {
+    // If the object is a sequence, make a new sequence iterator. It doesn't
+    // need to have __iter__.
+    if (runtime->isSequence(thread, obj)) {
+      return runtime->newSeqIterator(obj);
+    }
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("object is not iterable");
+    }
+    return Error::object();
+  }
+  // If the object has __iter__, ensure that the resulting object has __next__.
+  Type type(&scope, runtime->typeOf(*iter));
+  if (runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderNext)
+          .isError()) {
+    return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+  }
+  return *iter;
+}
+
+// TODO(T40432322): Re-inline into PySequence_Fast
+static RawObject sequenceFast(Thread* thread, const Object& seq,
+                              const Str& msg) {
+  if (seq.isList() || seq.isTuple()) {
+    return *seq;
+  }
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object iter(&scope, getIter(thread, seq));
+  if (iter.isError()) {
+    Object given(&scope, thread->pendingExceptionType());
+    Object exc(&scope, runtime->typeAt(LayoutId::kTypeError));
+    if (givenExceptionMatches(thread, given, exc)) {
+      thread->setPendingExceptionValue(*msg);
+    }
+    return Error::object();
+  }
+  // TODO(T40274012): Re-write this function in terms of builtins.list
+  List result(&scope, runtime->newList());
+  if (listExtend(thread, result, seq).isError()) {
+    return Error::object();
+  }
+  return *result;
+}
+
+// TODO(T40432322): Delete
+static PyObject* callMappingMethod(Thread* thread, const Object& map,
+                                   SymbolId method, const char* method_name) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object result(&scope, thread->invokeMethod1(map, method));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseAttributeError(
+          runtime->newStrFromFormat("could not call %s", method_name));
+    }
+    return nullptr;
+  }
+  Str msg(&scope,
+          runtime->newStrFromFormat("%s are not iterable", method_name));
+  result = sequenceFast(thread, result, msg);
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
+}
+
+// TODO(T40432322): Copy over wholesale from CPython 3.6
+PY_EXPORT PyObject* PyMapping_Items(PyObject* mapping) {
+  DCHECK(mapping != nullptr, "mapping was null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
+  if (map.isDict()) {
+    Dict dict(&scope, *map);
+    return ApiHandle::newReference(thread,
+                                   thread->runtime()->dictItems(thread, dict));
+  }
+  return callMappingMethod(thread, map, SymbolId::kItems, "o.items()");
+}
+
+// TODO(T40432322): Copy over wholesale from CPython 3.6
+PY_EXPORT PyObject* PyMapping_Keys(PyObject* mapping) {
+  DCHECK(mapping != nullptr, "mapping was null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
+  if (map.isDict()) {
+    Dict dict(&scope, *map);
+    return ApiHandle::newReference(thread, thread->runtime()->dictKeys(dict));
+  }
+  return callMappingMethod(thread, map, SymbolId::kKeys, "o.keys()");
 }
 
 PY_EXPORT Py_ssize_t PyMapping_Length(PyObject* pyobj) {
@@ -153,8 +276,18 @@ PY_EXPORT Py_ssize_t PyMapping_Size(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
-PY_EXPORT PyObject* PyMapping_Values(PyObject* /* o */) {
-  UNIMPLEMENTED("PyMapping_Values");
+// TODO(T40432322): Copy over wholesale from CPython 3.6
+PY_EXPORT PyObject* PyMapping_Values(PyObject* mapping) {
+  DCHECK(mapping != nullptr, "mapping was null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
+  if (map.isDict()) {
+    Dict dict(&scope, *map);
+    return ApiHandle::newReference(thread,
+                                   thread->runtime()->dictValues(thread, dict));
+  }
+  return callMappingMethod(thread, map, SymbolId::kValues, "o.values()");
 }
 
 PY_EXPORT PyObject* PyNumber_Absolute(PyObject* /* o */) {
@@ -519,35 +652,26 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* /* j */, Py_buffer* /* w */,
   UNIMPLEMENTED("PyObject_GetBuffer");
 }
 
-PY_EXPORT PyObject* PyObject_GetItem(PyObject* /* o */, PyObject* /* y */) {
-  UNIMPLEMENTED("PyObject_GetItem");
+PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr || key == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  return getItem(thread, object, key_obj);
 }
 
 PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
-  Runtime* runtime = thread->runtime();
-  if (iter.isError()) {
-    // If the object is a sequence, make a new sequence iterator. It doesn't
-    // need to have __iter__.
-    if (runtime->isSequence(thread, obj)) {
-      return ApiHandle::newReference(thread, runtime->newSeqIterator(obj));
-    }
-    if (!thread->hasPendingException()) {
-      thread->raiseTypeErrorWithCStr("object is not iterable");
-    }
+  Object result(&scope, getIter(thread, obj));
+  if (result.isError()) {
     return nullptr;
   }
-  // If the object has __iter__, ensure that the resulting object has __next__.
-  Type type(&scope, runtime->typeOf(*iter));
-  if (runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderNext)
-          .isError()) {
-    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *iter);
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_IsInstance(PyObject* /* t */, PyObject* /* s */) {
@@ -692,23 +816,18 @@ PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
 }
 
 PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
+  Thread* thread = Thread::currentThread();
   if (seq == nullptr) {
-    return nullError(Thread::currentThread());
+    return nullError(thread);
   }
-  if (PyList_CheckExact(seq) || PyTuple_CheckExact(seq)) {
-    Py_INCREF(seq);
-    return seq;
-  }
-  PyObject* it = PyObject_GetIter(seq);
-  if (it == nullptr) {
-    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-      PyErr_SetString(PyExc_TypeError, msg);
-    }
+  HandleScope scope(thread);
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Str msg_obj(&scope, thread->runtime()->newStrFromCStr(msg));
+  Object result(&scope, sequenceFast(thread, seq_obj, msg_obj));
+  if (result.isError()) {
     return nullptr;
   }
-  seq = PySequence_List(it);
-  Py_DECREF(it);
-  return seq;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {

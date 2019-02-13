@@ -1177,4 +1177,435 @@ c = C()
   EXPECT_EQ(PyTuple_Size(result), 3);
 }
 
+TEST_F(AbstractExtensionApiTest, ObjectGetItemWithNullObjRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_GetItem(nullptr, obj), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectGetItemWithNullKeyRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_GetItem(obj, nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       ObjectGetItemWithNoDunderGetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  EXPECT_EQ(PyObject_GetItem(c, key), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       ObjectGetItemWithUncallableDunderGetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __getitem__ = 4
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  EXPECT_EQ(PyObject_GetItem(c, key), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectGetItemCallsDunderGetItem) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    return key
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  EXPECT_EQ(PyObject_GetItem(c, key), key);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectGetItemPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    raise IndexError
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  EXPECT_EQ(PyObject_GetItem(c, key), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingGetItemStringWithNullObjRaisesSystemError) {
+  EXPECT_EQ(PyMapping_GetItemString(nullptr, "hello"), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingGetItemStringWithNullKeyRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyMapping_GetItemString(obj, nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingGetItemStringWithNoDunderGetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyMapping_GetItemString(c, "hello"), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingGetItemStringWithUncallableDunderGetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __getitem__ = 4
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyMapping_GetItemString(c, "hello"), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, MappingGetItemStringCallsDunderGetItem) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    return key
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  const char* key = "hello";
+  PyObjectPtr result(PyMapping_GetItemString(c, key));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyUnicode_Check(result));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, key), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingGetItemStringPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    raise IndexError
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyMapping_GetItemString(c, "hello"), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(AbstractExtensionApiTest, MappingHasKeyWithNullObjReturnsFalse) {
+  PyObjectPtr obj(PyLong_FromLong(7));
+  EXPECT_EQ(PyMapping_HasKey(nullptr, obj), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingHasKeyWithNullKeyReturnsFalse) {
+  PyObjectPtr obj(PyLong_FromLong(7));
+  EXPECT_EQ(PyMapping_HasKey(obj, nullptr), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingHasKeyCallsDunderGetItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __getitem__(self, key):
+    global sideeffect
+    sideeffect = 10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  ASSERT_EQ(PyMapping_HasKey(c, key), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingHasKeyReturnsFalseWhenExceptionIsRaised) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    raise IndexError
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr key(PyLong_FromLong(7));
+  EXPECT_EQ(PyMapping_HasKey(c, key), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingHasKeyStringWithNullObjReturnsFalse) {
+  EXPECT_EQ(PyMapping_HasKeyString(nullptr, "hello"), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingHasKeyStringWithNullKeyReturnsFalse) {
+  PyObjectPtr obj(PyLong_FromLong(7));
+  EXPECT_EQ(PyMapping_HasKeyString(obj, nullptr), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingHasKeyStringCallsDunderGetItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __getitem__(self, key):
+    global sideeffect
+    sideeffect = 10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  ASSERT_EQ(PyMapping_HasKeyString(c, "hello"), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingHasKeyStringReturnsFalseWhenExceptionIsRaised) {
+  PyRun_SimpleString(R"(
+class C:
+  def __getitem__(self, key):
+    raise IndexError
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyMapping_HasKeyString(c, "hello"), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingKeysWithNoKeysRaisesAttributeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyMapping_Keys(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+}
+
+TEST_F(AbstractExtensionApiTest, MappingKeysCallsReturnsListOfKeys) {
+  PyRun_SimpleString(R"(
+class C:
+  def keys(self):
+    return ["hello", "world"]
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Keys(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingKeysCallsReturnsListOfKeysSequence) {
+  PyRun_SimpleString(R"(
+class C:
+  def keys(self):
+    return ("hello", "world").__iter__()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Keys(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingKeysWithDictSubclassCallsKeys) {
+  PyRun_SimpleString(R"(
+class C(dict):
+  def keys(self):
+    return ("hello", "world").__iter__()
+c = C()
+c["a"] = 1
+c["b"] = 2
+c["c"] = 3
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Keys(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingItemsWithNoItemsRaisesAttributeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyMapping_Items(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+}
+
+TEST_F(AbstractExtensionApiTest, MappingItemsCallsReturnsListOfItems) {
+  PyRun_SimpleString(R"(
+class C:
+  def items(self):
+    return ["hello", "world"]
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Items(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingItemsCallsReturnsListOfItemsSequence) {
+  PyRun_SimpleString(R"(
+class C:
+  def items(self):
+    return ("hello", "world").__iter__()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Items(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingItemsWithDictSubclassCallsItems) {
+  PyRun_SimpleString(R"(
+class C(dict):
+  def items(self):
+    return ("hello", "world").__iter__()
+c = C()
+c["a"] = 1
+c["b"] = 2
+c["c"] = 3
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Items(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingValuesWithNoValuesRaisesAttributeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyMapping_Values(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+}
+
+TEST_F(AbstractExtensionApiTest, MappingValuesCallsReturnsListOfValues) {
+  PyRun_SimpleString(R"(
+class C:
+  def values(self):
+    return ["hello", "world"]
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Values(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingValuesCallsReturnsListOfValuesSequence) {
+  PyRun_SimpleString(R"(
+class C:
+  def values(self):
+    return ("hello", "world").__iter__()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Values(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingValuesWithDictSubclassCallsValues) {
+  PyRun_SimpleString(R"(
+class C(dict):
+  def values(self):
+    return ("hello", "world").__iter__()
+c = C()
+c["a"] = 1
+c["b"] = 2
+c["c"] = 3
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyMapping_Values(c));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_Check(result));
+  ASSERT_EQ(PyList_Size(result), 2);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
+  EXPECT_EQ(
+      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+}
+
 }  // namespace python
