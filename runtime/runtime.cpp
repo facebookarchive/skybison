@@ -137,8 +137,8 @@ RawObject Runtime::newBoundMethod(const Object& function, const Object& self) {
 RawObject Runtime::newLayout() {
   HandleScope scope;
   Layout layout(&scope, heap()->createLayout(LayoutId::kError));
-  layout.setInObjectAttributes(empty_object_array_);
-  layout.setOverflowAttributes(empty_object_array_);
+  layout.setInObjectAttributes(empty_tuple_);
+  layout.setOverflowAttributes(empty_tuple_);
   layout.setAdditions(newList());
   layout.setDeletions(newList());
   layout.setNumInObjectAttributes(0);
@@ -188,7 +188,7 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
     return;
   }
   HandleScope scope;
-  Tuple entry(&scope, empty_object_array_);
+  Tuple entry(&scope, empty_tuple_);
   for (word i = 0; i < attributes.length(); i++) {
     AttributeInfo info(
         attributes.get(i).offset,
@@ -759,7 +759,7 @@ RawObject Runtime::newInstance(const Layout& layout) {
   RawObject object = heap()->createInstance(layout.id(), num_attrs);
   RawHeapObject instance = RawHeapObject::cast(object);
   // Set the overflow array
-  instance.instanceVariableAtPut(layout.overflowOffset(), empty_object_array_);
+  instance.instanceVariableAtPut(layout.overflowOffset(), empty_tuple_);
   return instance;
 }
 
@@ -810,7 +810,7 @@ RawObject Runtime::newList() {
   HandleScope scope;
   List result(&scope, heap()->create<RawList>());
   result.setNumItems(0);
-  result.setItems(empty_object_array_);
+  result.setItems(empty_tuple_);
   return *result;
 }
 
@@ -859,7 +859,7 @@ RawObject Runtime::newIntFromCPtr(void* ptr) {
 
 RawObject Runtime::newTuple(word length) {
   if (length == 0) {
-    return empty_object_array_;
+    return empty_tuple_;
   }
   return heap()->createTuple(length, NoneType::object());
 }
@@ -1585,7 +1585,7 @@ void Runtime::initializeThreads() {
 }
 
 void Runtime::initializePrimitiveInstances() {
-  empty_object_array_ = heap()->createTuple(0, NoneType::object());
+  empty_tuple_ = heap()->createTuple(0, NoneType::object());
   empty_frozen_set_ = newFrozenSet();
   empty_byte_array_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
@@ -1627,7 +1627,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit instances
   visitor->visitPointer(&empty_byte_array_);
   visitor->visitPointer(&empty_frozen_set_);
-  visitor->visitPointer(&empty_object_array_);
+  visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&not_implemented_);
   visitor->visitPointer(&build_class_);
@@ -2487,7 +2487,7 @@ RawObject Runtime::newDict() {
   HandleScope scope;
   Dict result(&scope, heap()->create<RawDict>());
   result.setNumItems(0);
-  result.setData(empty_object_array_);
+  result.setData(empty_tuple_);
   return *result;
 }
 
@@ -2779,7 +2779,7 @@ RawObject Runtime::newSet() {
   HandleScope scope;
   Set result(&scope, heap()->create<RawSet>());
   result.setNumItems(0);
-  result.setData(empty_object_array_);
+  result.setData(empty_tuple_);
   return *result;
 }
 
@@ -2787,7 +2787,7 @@ RawObject Runtime::newFrozenSet() {
   HandleScope scope;
   FrozenSet result(&scope, heap()->create<RawFrozenSet>());
   result.setNumItems(0);
-  result.setData(empty_object_array_);
+  result.setData(empty_tuple_);
   return *result;
 }
 
