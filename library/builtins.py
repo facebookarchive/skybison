@@ -38,6 +38,50 @@ class bool(bootstrap=True):
         return "True" if self else "False"
 
 
+class float(bootstrap=True):
+    def __add__(self, n: float) -> float:
+        pass
+
+    def __eq__(self, n: float) -> bool:  # noqa: T484
+        pass
+
+    def __float__(self) -> float:
+        pass
+
+    def __ge__(self, n: float) -> bool:
+        pass
+
+    def __gt__(self, n: float) -> bool:
+        pass
+
+    def __le__(self, n: float) -> bool:
+        pass
+
+    def __lt__(self, n: float) -> bool:
+        pass
+
+    def __mul__(self, n: float) -> float:
+        pass
+
+    def __ne__(self, n: float) -> float:  # noqa: T484
+        pass
+
+    def __new__(cls, arg=0.0) -> float:
+        pass
+
+    def __pow__(self, y, z=_UnboundValue) -> float:
+        pass
+
+    def __repr__(self) -> str:  # noqa: T484
+        pass
+
+    def __truediv__(self, n: float) -> float:
+        pass
+
+    def __sub__(self, n: float) -> float:
+        pass
+
+
 class int(bootstrap=True):
     def __abs__(self) -> int:
         pass
@@ -106,11 +150,6 @@ class int(bootstrap=True):
         pass
 
     def bit_length(self) -> int:
-        pass
-
-
-class float(bootstrap=True):
-    def __truediv__(self, n: float) -> float:
         pass
 
 

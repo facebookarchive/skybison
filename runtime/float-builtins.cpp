@@ -65,20 +65,20 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
 }
 
 const BuiltinMethod FloatBuiltins::kMethods[] = {
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
+    {SymbolId::kDunderAdd, builtinTrampolineWrapper<dunderAdd>},
     {SymbolId::kDunderTruediv, builtinTrampolineWrapper<dunderTrueDiv>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderFloat, nativeTrampoline<dunderFloat>},
-    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
-    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
-    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
-    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
-    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
-    {SymbolId::kDunderPow, nativeTrampoline<dunderPow>},
-    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
-    {SymbolId::kDunderSub, nativeTrampoline<dunderSub>},
+    {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
+    {SymbolId::kDunderFloat, builtinTrampolineWrapper<dunderFloat>},
+    {SymbolId::kDunderGe, builtinTrampolineWrapper<dunderGe>},
+    {SymbolId::kDunderGt, builtinTrampolineWrapper<dunderGt>},
+    {SymbolId::kDunderLe, builtinTrampolineWrapper<dunderLe>},
+    {SymbolId::kDunderLt, builtinTrampolineWrapper<dunderLt>},
+    {SymbolId::kDunderMul, builtinTrampolineWrapper<dunderMul>},
+    {SymbolId::kDunderNe, builtinTrampolineWrapper<dunderNe>},
+    {SymbolId::kDunderNew, builtinTrampolineWrapper<dunderNew>},
+    {SymbolId::kDunderPow, builtinTrampolineWrapper<dunderPow>},
+    {SymbolId::kDunderRepr, builtinTrampolineWrapper<dunderRepr>},
+    {SymbolId::kDunderSub, builtinTrampolineWrapper<dunderSub>},
 };
 
 const BuiltinAttribute FloatBuiltins::kAttributes[] = {
@@ -95,12 +95,8 @@ void FloatBuiltins::initialize(Runtime* runtime) {
 RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
                                          word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 1) {
-    return runtime->newFloat(0.0);
-  }
-
-  Arguments args(frame, nargs);
   HandleScope scope(thread);
+  Arguments args(frame, nargs);
   Object obj(&scope, args.get(1));
   if (obj.isFloat()) {
     return *obj;
@@ -164,9 +160,6 @@ RawObject FloatBuiltins::floatFromString(Thread* thread, RawStr str) {
 }
 
 RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -182,10 +175,6 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 0 arguments, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -201,9 +190,6 @@ RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -219,9 +205,6 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -237,9 +220,6 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -255,9 +235,6 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -273,9 +250,6 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
 
@@ -297,9 +271,6 @@ RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
@@ -315,14 +286,6 @@ RawObject FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "float.__new__(): not enough arguments");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "float expected at most 1 arguments, got %ld", nargs));
-  }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -348,10 +311,6 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   if (!self->isFloat()) {
@@ -396,9 +355,6 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
 }
 
 RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected no arguments");
-  }
   Arguments args(frame, nargs);
   RawObject self_obj = args.get(0);
   if (!self_obj.isFloat()) {
@@ -414,10 +370,6 @@ RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   if (!self->isFloat()) {
@@ -437,16 +389,14 @@ RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 2 || nargs > 3) {
-    return thread->raiseTypeErrorWithCStr("expected at most 2 arguments");
-  }
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   if (!self->isFloat()) {
     return thread->raiseTypeErrorWithCStr(
         "__pow__() must be called with float instance as first argument");
   }
-  if (nargs == 3) {
+  // TODO(T40438612): Implement the modulo operation given the 3rd argument.
+  if (!args.get(2).isUnboundValue()) {
     return thread->raiseTypeErrorWithCStr(
         "pow() 3rd argument not allowed unless all arguments are integers");
   }

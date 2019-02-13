@@ -587,21 +587,4 @@ TEST(FloatBuiltinsTest, DunderFloatWithNonFloatReturnsError) {
   EXPECT_TRUE(raised(*i_res, LayoutId::kTypeError));
 }
 
-TEST(FloatBuiltinsTest, DunderFloatWithMissingSelfReturnsError) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Object error(&scope, runBuiltin(FloatBuiltins::dunderFloat));
-  EXPECT_TRUE(raised(*error, LayoutId::kTypeError));
-}
-
-TEST(FloatBuiltinsTest, DunderFloatWithTooManyArgumentsReturnsError) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Float flt(&scope, runtime.newFloat(7.0));
-  Object error(&scope, runBuiltin(FloatBuiltins::dunderFloat, flt, flt));
-  EXPECT_TRUE(raised(*error, LayoutId::kTypeError));
-}
-
 }  // namespace python
