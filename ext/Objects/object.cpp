@@ -2,6 +2,7 @@
 
 #include "builtins-module.h"
 #include "bytes-builtins.h"
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -142,12 +143,28 @@ PY_EXPORT int PyObject_HasAttrString(PyObject* pyobj, const char* name) {
   return result;
 }
 
-PY_EXPORT Py_hash_t PyObject_Hash(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_Hash");
+PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
+  DCHECK(obj != nullptr, "obj should not be nullptr");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderHash));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("unhashable type");
+    }
+    return -1;
+  }
+  DCHECK(thread->runtime()->isInstanceOfSmallInt(*result),
+         "__hash__ should return small int");
+  SmallInt hash(&scope, *result);
+  return hash.value();
 }
 
 PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
-  UNIMPLEMENTED("PyObject_HashNotImplemented");
+  Thread* thread = Thread::currentThread();
+  thread->raiseTypeErrorWithCStr("unhashable type");
+  return -1;
 }
 
 PY_EXPORT PyObject* PyObject_Init(PyObject* /* p */, PyTypeObject* /* p */) {
@@ -173,7 +190,13 @@ PY_EXPORT int PyObject_IsTrue(PyObject* obj) {
   return RawBool::cast(*result).value();
 }
 
-PY_EXPORT int PyObject_Not(PyObject* /* v */) { UNIMPLEMENTED("PyObject_Not"); }
+PY_EXPORT int PyObject_Not(PyObject* obj) {
+  int res = PyObject_IsTrue(obj);
+  if (res < 0) {
+    return res;
+  }
+  return res == 0;
+}
 
 PY_EXPORT int PyObject_Print(PyObject* /* p */, FILE* /* p */, int /* s */) {
   UNIMPLEMENTED("PyObject_Print");
@@ -221,13 +244,35 @@ PY_EXPORT PyObject* PyObject_RichCompare(PyObject* v, PyObject* w, int op) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT int PyObject_RichCompareBool(PyObject* /* v */, PyObject* /* w */,
-                                       int /* p */) {
-  UNIMPLEMENTED("PyObject_RichCompareBool");
+PY_EXPORT int PyObject_RichCompareBool(PyObject* left, PyObject* right,
+                                       int op) {
+  // Quick result when objects are the same. Guarantees that identity implies
+  // equality.
+  if (left == right) {
+    if (op == Py_EQ) {
+      return 1;
+    }
+    if (op == Py_NE) {
+      return 0;
+    }
+  }
+  PyObject* res = PyObject_RichCompare(left, right, op);
+  if (res == nullptr) {
+    return -1;
+  }
+  int ok;
+  if (PyBool_Check(res)) {
+    ok = (res == Py_True);
+  } else {
+    ok = PyObject_IsTrue(res);
+  }
+  Py_DECREF(res);
+  return ok;
 }
 
-PY_EXPORT PyObject* PyObject_SelfIter(PyObject* /* j */) {
-  UNIMPLEMENTED("PyObject_SelfIter");
+PY_EXPORT PyObject* PyObject_SelfIter(PyObject* obj) {
+  Py_INCREF(obj);
+  return obj;
 }
 
 PY_EXPORT int PyObject_SetAttr(PyObject* v, PyObject* name, PyObject* w) {

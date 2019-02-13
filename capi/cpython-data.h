@@ -226,6 +226,14 @@ extern const unsigned char _Py_ctype_toupper[256];
 #define METH_COEXIST 0x0040
 #define METH_FASTCALL 0x0080
 
+/* Rich comparison opcodes */
+#define Py_LT 0
+#define Py_LE 1
+#define Py_EQ 2
+#define Py_NE 3
+#define Py_GT 4
+#define Py_GE 5
+
 extern char* PyStructSequence_UnnamedField;
 
 extern const char* Py_FileSystemDefaultEncodeErrors;

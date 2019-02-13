@@ -13,10 +13,14 @@ _stdout = _stdout  # noqa: F821
 
 def format(obj, fmt_spec):
     if not isinstance(fmt_spec, str):
-        raise TypeError("fmt_spec must be str instance")
+        raise TypeError(
+            f"fmt_spec must be str instance, not '{type(fmt_spec).__name__}'"
+        )
     result = obj.__format__(fmt_spec)
     if not isinstance(result, str):
-        raise TypeError("__format__ must return str instance")
+        raise TypeError(
+            f"__format__ must return str instance, not '{type(result).__name__}'"
+        )
     return result
 
 

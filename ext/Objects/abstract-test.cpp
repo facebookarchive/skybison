@@ -1608,4 +1608,206 @@ c["c"] = 3
       PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
 }
 
+TEST_F(AbstractExtensionApiTest, ObjectSetItemWithNullObjRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_SetItem(nullptr, obj, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectSetItemWithNullKeyRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_SetItem(obj, nullptr, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectSetItemWithNullValueRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_SetItem(obj, obj, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       ObjectSetItemWithNoDunderSetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_SetItem(c, obj, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       ObjectSetItemWithUncallableDunderSetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __setitem__ = 4
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyObject_SetItem(c, obj, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectSetItemCallsDunderSetItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __setitem__(self, key, val):
+    global sideeffect
+    sideeffect = 10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(1));
+  ASSERT_EQ(PyObject_SetItem(c, obj, obj), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectSetItemPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __setitem__(self, key, value):
+    raise IndexError
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(7));
+  EXPECT_EQ(PyObject_SetItem(c, obj, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingSetItemStringWithNullObjRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyMapping_SetItemString(nullptr, "hello", obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingSetItemStringWithNullKeyRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyMapping_SetItemString(obj, nullptr, obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingSetItemStringWithNullValueRaisesSystemError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyMapping_SetItemString(obj, "hello", nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingSetItemStringWithNoDunderSetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyMapping_SetItemString(c, "hello", obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       MappingSetItemStringWithUncallableDunderSetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __setitem__ = 4
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(1));
+  EXPECT_EQ(PyMapping_SetItemString(c, "hello", obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, MappingSetItemStringCallsDunderSetItem) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __setitem__(self, key, val):
+    global sideeffect
+    sideeffect = 10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(1));
+  ASSERT_EQ(PyMapping_SetItemString(c, "hello", obj), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest, MappingSetItemStringPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __setitem__(self, key, value):
+    raise IndexError
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr obj(PyLong_FromLong(7));
+  EXPECT_EQ(PyMapping_SetItemString(c, "hello", obj), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       ObjectFormatWithNonStrFormatSpecRaisesTypeErrorPyro) {
+  EXPECT_EQ(PyObject_Format(Py_None, Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, ObjectFormatCallsDunderFormat) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __format__(self, format_spec):
+    global sideeffect
+    sideeffect = 10
+    return "foo"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyObject_Format(c, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "foo"), 0);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       ObjectFormatWithDunderFormatReturningNonStrRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  def __format__(self, format_spec):
+    return 7
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyObject_Format(c, nullptr));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 }  // namespace python

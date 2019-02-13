@@ -267,9 +267,19 @@ PY_EXPORT Py_ssize_t PyMapping_Length(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
-PY_EXPORT int PyMapping_SetItemString(PyObject* /* o */, const char* /* y */,
-                                      PyObject* /* e */) {
-  UNIMPLEMENTED("PyMapping_SetItemString");
+PY_EXPORT int PyMapping_SetItemString(PyObject* obj, const char* key,
+                                      PyObject* value) {
+  if (key == nullptr) {
+    nullError(Thread::currentThread());
+    return -1;
+  }
+  PyObject* key_obj = PyUnicode_FromString(key);
+  if (key_obj == nullptr) {
+    return -1;
+  }
+  int r = PyObject_SetItem(obj, key_obj, value);
+  Py_DECREF(key_obj);
+  return r;
 }
 
 PY_EXPORT Py_ssize_t PyMapping_Size(PyObject* pyobj) {
@@ -643,8 +653,23 @@ PY_EXPORT PyObject* _PyObject_FastCallKeywords(PyObject* /* e */,
   UNIMPLEMENTED("_PyObject_FastCallKeywords");
 }
 
-PY_EXPORT PyObject* PyObject_Format(PyObject* /* j */, PyObject* /* c */) {
-  UNIMPLEMENTED("PyObject_Format");
+PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
+  DCHECK(obj != nullptr, "obj should not be null");
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object format_spec_obj(&scope,
+                         format_spec == nullptr
+                             ? runtime->newStrFromCStr("")
+                             : ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope,
+                thread->invokeFunction2(SymbolId::kBuiltins, SymbolId::kFormat,
+                                        object, format_spec_obj));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_GetBuffer(PyObject* /* j */, Py_buffer* /* w */,
@@ -691,9 +716,25 @@ PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* /* o */,
   UNIMPLEMENTED("PyObject_LengthHint");
 }
 
-PY_EXPORT int PyObject_SetItem(PyObject* /* o */, PyObject* /* y */,
-                               PyObject* /* e */) {
-  UNIMPLEMENTED("PyObject_SetItem");
+PY_EXPORT int PyObject_SetItem(PyObject* obj, PyObject* key, PyObject* value) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr || key == nullptr || value == nullptr) {
+    nullError(thread);
+    return -1;
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetItem,
+                                              key_obj, value_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("object does not support item assignment");
+    }
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT Py_ssize_t PyObject_Size(PyObject* pyobj) {

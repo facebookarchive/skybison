@@ -577,4 +577,129 @@ c = C()
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(ascii, "bongo"), 0);
 }
 
+TEST_F(ObjectExtensionApiTest, SelfIterIncrementsRefcount) {
+  PyObject* o = PyLong_FromLong(0);
+  long refcnt = Py_REFCNT(o);
+  EXPECT_GE(Py_REFCNT(o), 1);
+  PyObject* o2 = PyObject_SelfIter(o);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(Py_REFCNT(o2), refcnt + 1);
+}
+
+TEST_F(ObjectExtensionApiTest, NotWithTrueReturnsFalse) {
+  EXPECT_EQ(PyObject_Not(Py_True), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, NotWithFalseReturnsTrue) {
+  EXPECT_EQ(PyObject_Not(Py_False), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, NotWithNoneReturnsTrue) {
+  EXPECT_EQ(PyObject_Not(Py_None), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, NotCallsDunderBool) {
+  PyRun_SimpleString(R"(
+sideeffect = 0
+class C:
+  def __bool__(self):
+    global sideeffect
+    sideeffect = 10
+    return False
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyObject_Not(c), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
+  EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       NotWithDunderBoolRaisingExceptionRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  def __bool__(self):
+    return -10
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyObject_Not(c), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, HashWithUncallableDunderHashRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  __hash__ = None
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyObject_Hash(c), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, HashCallsDunderHash) {
+  PyRun_SimpleString(R"(
+class C:
+  def __hash__(self):
+    return 7
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyObject_Hash(c), 7);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, HashPropagatesRaisedException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __hash__(self):
+    raise IndexError
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyObject_Hash(c), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(ObjectExtensionApiTest, HashNotImplementedRaisesTypeError) {
+  EXPECT_EQ(PyObject_HashNotImplemented(Py_None), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest,
+       RichCompareBoolEqWithLeftEqualsRightReturnsTrue) {
+  EXPECT_EQ(PyObject_RichCompareBool(Py_None, Py_None, Py_EQ), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       RichCompareBoolNeWithLeftEqualsRightReturnsFalse) {
+  EXPECT_EQ(PyObject_RichCompareBool(Py_None, Py_None, Py_NE), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, RichCompareBoolWithSameTypeReturnsTrue) {
+  PyObjectPtr left(PyLong_FromLong(2));
+  PyObjectPtr right(PyLong_FromLong(3));
+  EXPECT_EQ(PyObject_RichCompareBool(left, right, Py_LT), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, RichCompareBoolNotComparableRaisesTypeError) {
+  PyObjectPtr left(PyLong_FromLong(2));
+  PyObjectPtr right(PyUnicode_FromString("hello"));
+  EXPECT_EQ(PyObject_RichCompareBool(left, right, Py_LT), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 }  // namespace python
