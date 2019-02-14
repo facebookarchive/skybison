@@ -311,11 +311,15 @@ RawObject setFromRange(word start, word stop) {
 RawObject runBuiltinImpl(BuiltinMethodType method,
                          View<std::reference_wrapper<const Object>> args) {
   Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  // Push an empty function so we have one at the expected place in the stack.
+  Function function(&scope, thread->runtime()->newFunction());
+  thread->currentFrame()->pushValue(*function);
+
   Frame* frame = thread->openAndLinkFrame(0, args.length(), 0);
   for (word i = 0; i < args.length(); i++) {
     frame->setLocal(i, *args.get(i).get());
   }
-  HandleScope scope(thread);
   Object result(&scope, method(thread, frame, args.length()));
   thread->popFrame();
   return *result;

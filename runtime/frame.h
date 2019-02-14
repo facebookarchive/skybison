@@ -169,6 +169,8 @@ class Frame {
   RawObject local(word idx);
   void setLocal(word idx, RawObject local);
 
+  RawObject function();
+
   void setNumLocals(word num_locals);
   word numLocals();
 
@@ -385,6 +387,8 @@ inline RawObject Frame::local(word idx) {
   DCHECK_INDEX(idx, numLocals());
   return *(locals() - idx);
 }
+
+inline RawObject Frame::function() { return *(locals() + 1); }
 
 inline void Frame::setLocal(word idx, RawObject object) {
   DCHECK_INDEX(idx, numLocals());

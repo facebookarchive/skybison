@@ -154,15 +154,53 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
   return SmallInt::fromWord(res);
 }
 
-RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+static RawObject raiseRequiresInt(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
+  Function function(&scope, frame->function());
+  Object message(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  Str function_name(&scope, function.name());
+  unique_c_ptr<char> function_name_cstr(function_name.toCStr());
+  message = runtime->newStrFromFormat("'%s' requires a 'int' object",
+                                      function_name_cstr.get());
+  return thread->raiseTypeError(*message);
+}
+
+static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
+                             RawObject (*op)(Thread* thread, const Int& left,
+                                             const Int& right)) {
   Arguments args(frame, nargs);
+  HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__int__' requires a 'int' object");
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return raiseRequiresInt(thread, frame);
+  }
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*other_obj)) {
+    return runtime->notImplemented();
   }
   Int self(&scope, *self_obj);
-  return asInt(self);
+  Int other(&scope, *other_obj);
+  return op(thread, self, other);
+}
+
+static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
+                            RawObject (*op)(Thread* thread, const Int& self)) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*self_obj)) {
+    return raiseRequiresInt(thread, frame);
+  }
+  Int self(&scope, *self_obj);
+  return op(thread, self);
+}
+
+RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(thread, frame, nargs,
+                    [](Thread*, const Int& self) { return asInt(self); });
 }
 
 const BuiltinMethod SmallIntBuiltins::kMethods[] = {
@@ -189,121 +227,60 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
   }
 }
 
-RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  if (self->isBool()) {
-    return intFromBool(self);
-  }
-  if (!self->isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "bit_length() must be called with int instance as the first argument");
-  }
-  return SmallInt::fromWord(RawInt::cast(self)->bitLength());
+RawObject IntBuiltins::bitLength(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
+    return thread->runtime()->newInt(self.bitLength());
+  });
 }
 
-RawObject IntBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__abs__' requires a 'int' object");
-  }
-  Int self(&scope, *self_obj);
-  return self.isNegative() ? thread->runtime()->intNegate(thread, self)
-                           : asInt(self);
+RawObject IntBuiltins::dunderAbs(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
+    return self.isNegative() ? thread->runtime()->intNegate(thread, self)
+                             : asInt(self);
+  });
 }
 
-RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__add__() must be called with int instance as the first argument");
-  }
-  if (thread->runtime()->isInstanceOfInt(*other_obj)) {
-    Int self(&scope, *self_obj);
-    Int other(&scope, *other_obj);
-    return runtime->intAdd(thread, self, other);
-  }
-  // signal to binary dispatch to try another method
-  return runtime->notImplemented();
+RawObject IntBuiltins::dunderAdd(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(t, frame, nargs,
+                     [](Thread* thread, const Int& left, const Int& right) {
+                       return thread->runtime()->intAdd(thread, left, right);
+                     });
 }
 
-RawObject IntBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__and__() must be called with int instance as the first argument");
-  }
-  if (thread->runtime()->isInstanceOfInt(*other)) {
-    Int self_int(&scope, *self);
-    Int other_int(&scope, *other);
-    return runtime->intBinaryAnd(thread, self_int, other_int);
-  }
-  // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderAnd(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        return thread->runtime()->intBinaryAnd(thread, left, right);
+      });
 }
 
-RawObject IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  if (args.get(0)->isBool()) {
-    return args.get(0);
-  }
-  if (args.get(0)->isSmallInt()) {
-    return (args.get(0) == SmallInt::fromWord(0)) ? Bool::falseObj()
-                                                  : Bool::trueObj();
-  }
-  if (args.get(0)->isLargeInt()) {
+RawObject IntBuiltins::dunderBool(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread*, const Int& self) -> RawObject {
+    if (self.isBool()) return *self;
+    if (self.isSmallInt()) {
+      return Bool::fromBool(SmallInt::cast(*self)->value() != 0);
+    }
+    DCHECK(self.isLargeInt(), "remaining case should be LargeInt");
     return Bool::trueObj();
-  }
-  return thread->raiseTypeErrorWithCStr("unsupported type for __bool__");
+  });
 }
 
-RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isBool()) {
-    self = intFromBool(self);
-  }
-  if (other->isBool()) {
-    other = intFromBool(other);
-  }
-  if (!self->isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__eq__() must be called with int instance as the first argument");
-  }
-
-  RawInt left = RawInt::cast(self);
-  if (other->isInt()) {
-    return Bool::fromBool(left->compare(RawInt::cast(other)) == 0);
-  }
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderEq(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread*, const Int& left, const Int& right) -> RawObject {
+        return Bool::fromBool(left.compare(*right) == 0);
+      });
 }
 
-RawObject IntBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__float__' requires a 'int' object");
-  }
-  Int self(&scope, *self_obj);
-
-  double value;
-  Object maybe_error(&scope, convertIntToDouble(thread, self, &value));
-  if (!maybe_error.isNoneType()) return *maybe_error;
-  return runtime->newFloat(value);
+RawObject IntBuiltins::dunderFloat(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
+    HandleScope scope(thread);
+    double value;
+    Object maybe_error(&scope, convertIntToDouble(thread, self, &value));
+    if (!maybe_error.isNoneType()) return *maybe_error;
+    return thread->runtime()->newFloat(value);
+  });
 }
 
 RawObject SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
@@ -321,36 +298,21 @@ RawObject SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
   return thread->raiseTypeErrorWithCStr("unsupported type for __invert__");
 }
 
-RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isBool()) {
-    self = intFromBool(self);
-  }
-  if (other->isBool()) {
-    other = intFromBool(other);
-  }
-  if (!self->isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__le__() must be called with int instance as the first argument");
-  }
-
-  RawInt left = RawInt::cast(self);
-  if (other->isInt()) {
-    return Bool::fromBool(left->compare(RawInt::cast(other)) <= 0);
-  }
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderLe(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread*, const Int& left, const Int& right) -> RawObject {
+        return Bool::fromBool(left.compare(*right) <= 0);
+      });
 }
 
-static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
-                             const Object& length_obj,
+static RawObject toBytesImpl(Thread* thread, Frame* frame,
+                             const Object& self_obj, const Object& length_obj,
                              const Object& byteorder_obj, bool is_signed) {
   HandleScope scope;
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor 'to_bytes' requires a 'int' object");
+    return raiseRequiresInt(thread, frame);
   }
   Int self(&scope, *self_obj);
 
@@ -411,7 +373,7 @@ RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object length(&scope, args.get(1));
   Object byteorder(&scope, args.get(2));
-  return toBytesImpl(thread, self, length, byteorder, false);
+  return toBytesImpl(thread, frame, self, length, byteorder, false);
 }
 
 RawObject IntBuiltins::toBytesKw(Thread* thread, Frame* frame, word nargs) {
@@ -476,7 +438,7 @@ RawObject IntBuiltins::toBytesKw(Thread* thread, Frame* frame, word nargs) {
         "to_bytes() called with invalid keyword arguments");
   }
 
-  return toBytesImpl(thread, self, length, byteorder, is_signed);
+  return toBytesImpl(thread, frame, self, length, byteorder, is_signed);
 }
 
 RawObject SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
@@ -548,70 +510,28 @@ RawObject SmallIntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   return runtime->notImplemented();
 }
 
-RawObject IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isBool()) {
-    self = intFromBool(self);
-  }
-  if (other->isBool()) {
-    other = intFromBool(other);
-  }
-  if (!self->isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__lt__() must be called with int instance as the first argument");
-  }
-
-  RawInt left = RawInt::cast(self);
-  if (other->isInt()) {
-    return Bool::fromBool(left->compare(RawInt::cast(other)) < 0);
-  }
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderLt(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread*, const Int& left, const Int& right) -> RawObject {
+        return Bool::fromBool(left.compare(*right) < 0);
+      });
 }
 
-RawObject IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isBool()) {
-    self = intFromBool(self);
-  }
-  if (other->isBool()) {
-    other = intFromBool(other);
-  }
-  if (!self->isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__ge__() must be called with int instance as the first argument");
-  }
-
-  RawInt left = RawInt::cast(self);
-  if (other->isInt()) {
-    return Bool::fromBool(left->compare(RawInt::cast(other)) >= 0);
-  }
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderGe(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread*, const Int& left, const Int& right) -> RawObject {
+        return Bool::fromBool(left.compare(*right) >= 0);
+      });
 }
 
-RawObject IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isBool()) {
-    self = intFromBool(self);
-  }
-  if (other->isBool()) {
-    other = intFromBool(other);
-  }
-  if (!self->isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__gt__() must be called with int instance as the first argument");
-  }
-
-  RawInt left = RawInt::cast(self);
-  if (other->isInt()) {
-    return Bool::fromBool(left->compare(RawInt::cast(other)) > 0);
-  }
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderGt(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread*, const Int& left, const Int& right) -> RawObject {
+        return Bool::fromBool(left.compare(*right) > 0);
+      });
 }
 
 RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* frame,
@@ -659,134 +579,60 @@ RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* frame,
   return runtime->notImplemented();
 }
 
-RawObject IntBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__mul__() must be called with int instance as the first argument");
-  }
-  if (thread->runtime()->isInstanceOfInt(*other_obj)) {
-    Int self(&scope, *self_obj);
-    Int other(&scope, *other_obj);
-    return runtime->intMultiply(thread, self, other);
-  }
-  // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderMul(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        return thread->runtime()->intMultiply(thread, left, right);
+      });
 }
 
-RawObject IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isBool()) {
-    self = intFromBool(self);
-  }
-  if (other->isBool()) {
-    other = intFromBool(other);
-  }
-  if (!self->isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__ne__() must be called with int instance as the first argument");
-  }
-
-  RawInt left = RawInt::cast(self);
-  if (other->isInt()) {
-    return Bool::fromBool(left->compare(RawInt::cast(other)) != 0);
-  }
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderNe(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread*, const Int& left, const Int& right) -> RawObject {
+        return Bool::fromBool(left.compare(*right) != 0);
+      });
 }
 
-RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__neg__' requires a 'int' object");
-  }
-  Int self(&scope, *self_obj);
-  return runtime->intNegate(thread, self);
+RawObject IntBuiltins::dunderNeg(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
+    return thread->runtime()->intNegate(thread, self);
+  });
 }
 
-RawObject IntBuiltins::dunderRshift(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__rshift__' requires a 'int' object");
-  }
-  if (runtime->isInstanceOfInt(*other_obj)) {
-    Int self(&scope, *self_obj);
-    Int other(&scope, *other_obj);
-    if (other.isNegative()) {
-      return thread->raiseValueErrorWithCStr("negative shift count");
+RawObject IntBuiltins::dunderRshift(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        if (right.isNegative()) {
+          return thread->raiseValueErrorWithCStr("negative shift count");
+        }
+        return thread->runtime()->intBinaryRshift(thread, left, right);
+      });
+}
+
+RawObject IntBuiltins::dunderSub(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        return thread->runtime()->intSubtract(thread, left, right);
+      });
+}
+
+RawObject IntBuiltins::dunderXor(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        return thread->runtime()->intBinaryXor(thread, left, right);
+      });
+}
+
+RawObject IntBuiltins::dunderPos(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread*, const Int& self) -> RawObject {
+    if (self.isBool()) {
+      return intFromBool(*self);
     }
-    return runtime->intBinaryRshift(thread, self, other);
-  }
-  // Signal binary dispatch to try another method.
-  return runtime->notImplemented();
-}
-
-RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__sub__() must be called with int instance as the first argument");
-  }
-  if (thread->runtime()->isInstanceOfInt(*other_obj)) {
-    Int self(&scope, *self_obj);
-    Int other(&scope, *other_obj);
-    return runtime->intSubtract(thread, self, other);
-  }
-  // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
-}
-
-RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfInt(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__xor__() must be called with int instance as the first argument");
-  }
-  if (thread->runtime()->isInstanceOfInt(*other)) {
-    Int self_int(&scope, *self);
-    Int other_int(&scope, *other);
-    return runtime->intBinaryXor(thread, self_int, other_int);
-  }
-  // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
-}
-
-RawObject IntBuiltins::dunderPos(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  if (self->isSmallInt()) {
-    return RawSmallInt::cast(self);
-  }
-  if (self->isLargeInt()) {
-    return self;
-  }
-  if (self->isBool()) {
-    return intFromBool(self);
-  }
-  return thread->raiseTypeErrorWithCStr(
-      "__neg__() must be called with int instance as the first argument");
+    DCHECK(self.isSmallInt() || self.isLargeInt(),
+           "remaining case should be small or large int");
+    return *self;
+  });
 }
 
 // TODO(T39167211): Merge with IntBuiltins::fromBytesKw / IntBuiltins::fromBytes
@@ -894,45 +740,21 @@ inline RawObject IntBuiltins::intFromBool(RawObject bool_obj) {
   return SmallInt::fromWord(bool_obj == Bool::trueObj() ? 1 : 0);
 }
 
-RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (!self.isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor '__or__' requires a 'int' object");
-  }
-  if (other.isInt()) {
-    Int self_int(&scope, *self);
-    Int other_int(&scope, *other);
-    return runtime->intBinaryOr(thread, self_int, other_int);
-  }
-  // signal to binary dispatch to try another method
-  return thread->runtime()->notImplemented();
+RawObject IntBuiltins::dunderOr(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        return thread->runtime()->intBinaryOr(thread, left, right);
+      });
 }
 
-RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self_obj(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__lshift__' requires a 'int' object");
-  }
-  if (runtime->isInstanceOfInt(*other_obj)) {
-    Int self(&scope, *self_obj);
-    Int other(&scope, *other_obj);
-    if (other.isNegative()) {
-      return thread->raiseValueErrorWithCStr("negative shift count");
-    }
-    return runtime->intBinaryLshift(thread, self, other);
-  }
-  // Signal binary dispatch to try another method.
-  return runtime->notImplemented();
+RawObject IntBuiltins::dunderLshift(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        if (right.isNegative()) {
+          return thread->raiseValueErrorWithCStr("negative shift count");
+        }
+        return thread->runtime()->intBinaryLshift(thread, left, right);
+      });
 }
 
 // Returns the quotient of a double word number and a single word.
