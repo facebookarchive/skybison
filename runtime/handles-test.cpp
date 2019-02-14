@@ -6,30 +6,12 @@
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
+#include "test-utils.h"
 #include "visitor.h"
 
 namespace python {
 
-class RememberingVisitor : public PointerVisitor {
- public:
-  virtual void visitPointer(RawObject* pointer) {
-    pointers_.push_back(*pointer);
-  }
-
-  word count() { return pointers_.size(); }
-
-  bool hasVisited(RawObject object) {
-    for (auto elt : pointers_) {
-      if (elt == object) {
-        return true;
-      }
-    }
-    return false;
-  }
-
- private:
-  std::vector<RawObject> pointers_;
-};
+using namespace testing;
 
 TEST(HandlesTest, UpCastTest) {
   Runtime runtime;

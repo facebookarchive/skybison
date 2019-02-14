@@ -196,5 +196,27 @@ RawObject listFromRange(word start, word stop);
                                          LayoutId layout_id,
                                          const char* message);
 
+// Simple PointerVisitor that remembers the objects visited.
+class RememberingVisitor : public PointerVisitor {
+ public:
+  virtual void visitPointer(RawObject* pointer) {
+    pointers_.push_back(*pointer);
+  }
+
+  word count() { return pointers_.size(); }
+
+  bool hasVisited(RawObject object) {
+    for (auto elt : pointers_) {
+      if (elt == object) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+ private:
+  std::vector<RawObject> pointers_;
+};
+
 }  // namespace testing
 }  // namespace python

@@ -1,6 +1,7 @@
 #include "capi-handles.h"
 #include "cpython-types.h"
 #include "runtime.h"
+#include "visitor.h"
 
 namespace python {
 
@@ -53,6 +54,30 @@ ApiHandle* ApiHandle::newReference(Thread* thread, RawObject obj) {
 
 ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
   return ApiHandle::ensure(thread, obj);
+}
+
+void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
+  HandleScope scope;
+  Dict dict(&scope, handles);
+
+  // TODO(bsimmers): Since we're reading an object mid-collection, approximate a
+  // read barrier until we have a more principled solution in place.
+  HeapObject data_raw(&scope, dict.data());
+  if (data_raw.isForwarding()) data_raw = data_raw.forward();
+  Tuple data(&scope, *data_raw);
+
+  word i = Dict::Bucket::kFirst;
+  while (Dict::Bucket::nextItem(*data, &i)) {
+    Object value(&scope, Dict::Bucket::value(*data, i));
+    // Like above, check for forwarded objects. Most values in this Dict will be
+    // SmallInts, but LargeInts are technically possible.
+    if (value.isHeapObject()) {
+      HeapObject heap_value(&scope, *value);
+      if (heap_value.isForwarding()) value = heap_value.forward();
+    }
+    ApiHandle* handle = castFromObject(*value);
+    visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_));
+  }
 }
 
 ApiHandle* ApiHandle::castFromObject(RawObject value) {

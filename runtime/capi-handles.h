@@ -6,6 +6,8 @@
 
 namespace python {
 
+class PointerVisitor;
+
 class ApiHandle : public PyObject {
  public:
   // Returns a handle for a managed object.  Increments the reference count of
@@ -19,6 +21,9 @@ class ApiHandle : public PyObject {
   static ApiHandle* fromPyObject(PyObject* py_obj) {
     return static_cast<ApiHandle*>(py_obj);
   }
+
+  // Visit all reference_ members of live ApiHandles.
+  static void visitReferences(RawObject handles, PointerVisitor* visitor);
 
   // Get the object from the handle's reference pointer. If non-existent
   // Either search the object in the runtime's extension types dictionary

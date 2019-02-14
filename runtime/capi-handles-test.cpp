@@ -3,8 +3,11 @@
 #include "capi-handles.h"
 
 #include "runtime.h"
+#include "test-utils.h"
 
 namespace python {
+
+using namespace testing;
 
 static RawObject initializeExtensionType(PyObject* extension_type) {
   Thread* thread = Thread::currentThread();
@@ -214,6 +217,28 @@ TEST(CApiHandlesTest, Cache) {
   Dict caches(&scope, runtime.apiCaches());
   EXPECT_EQ(runtime.dictAt(caches, key), Error::object());
   EXPECT_EQ(handle2->cache(), buffer1);
+}
+
+TEST(CApiHandlesTest, VisitReferences) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope;
+
+  Object obj1(&scope, runtime.newInt(123));
+  Object obj2(&scope, runtime.newStrFromCStr("hello"));
+  ApiHandle::newReference(thread, *obj1);
+  ApiHandle::newReference(thread, *obj2);
+
+  RememberingVisitor visitor;
+  ApiHandle::visitReferences(runtime.apiHandles(), &visitor);
+
+  // We should've visited obj1, obj2, their types, and Type.
+  ASSERT_EQ(visitor.count(), 5);
+  EXPECT_TRUE(visitor.hasVisited(*obj1));
+  EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(obj1.layoutId())));
+  EXPECT_TRUE(visitor.hasVisited(*obj2));
+  EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(obj2.layoutId())));
+  EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(LayoutId::kType)));
 }
 
 }  // namespace python

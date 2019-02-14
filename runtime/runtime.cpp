@@ -1650,6 +1650,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit C-API data.
   visitor->visitPointer(&api_handles_);
+  ApiHandle::visitReferences(apiHandles(), visitor);
   visitor->visitPointer(&api_caches_);
 
   // Visit symbols
