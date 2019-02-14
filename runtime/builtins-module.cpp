@@ -114,72 +114,20 @@ static bool isPass(const Code& code) {
          bytes.byteAt(2) == RETURN_VALUE && bytes.byteAt(3) == 0;
 }
 
-static void patchFunctionAttrs(Thread* thread, const Function& base,
-                               const Function& patch) {
+void copyFunctionEntries(Thread* thread, const Function& to_patch,
+                         const Function& from) {
   HandleScope scope(thread);
-  Str method_name(&scope, patch.name());
-  Code patch_code(&scope, patch.code());
-  CHECK(isPass(patch_code),
-        "Redefinition of native code method %s in managed code",
-        method_name.toCStr());
+  Code patch_code(&scope, to_patch.code());
+  if (!isPass(patch_code)) {
+    unique_c_ptr<char> from_name(RawStr::cast(from.name()).toCStr());
+    CHECK(false, "Redefinition of native code method '%s' in managed code",
+          from_name.get());
+  }
   patch_code.setCode(NoneType::object());
-  base.setCode(*patch_code);
-  // The Python implementation will be used for all of its attributes, except
-  // for its code.
-  if (base.annotations()->isNoneType() && !patch.annotations()->isNoneType()) {
-    base.setAnnotations(patch.annotations());
-  }
-  if (base.defaults()->isNoneType() && !patch.defaults()->isNoneType()) {
-    base.setDefaults(patch.defaults());
-  }
-  if (base.doc()->isNoneType() && !patch.doc()->isNoneType()) {
-    base.setDoc(patch.doc());
-  }
-  if (base.kwDefaults()->isNoneType() && !patch.kwDefaults()->isNoneType()) {
-    base.setKwDefaults(patch.kwDefaults());
-  }
-  if (base.qualname()->isNoneType() && !patch.qualname()->isNoneType()) {
-    base.setQualname(patch.qualname());
-  }
-}
 
-// Given a native implementation of a class method and an annotated
-// counterpart, merge the two definitions. This is handy for allowing type
-// annotations from declarations in managed code to supplement methods defined
-// in the runtime.
-void patchFunctionAttrsInTypeDict(Thread* thread, const Dict& type_dict,
-                                  const Function& patch) {
-  HandleScope scope(thread);
-  Object patch_code_obj(&scope, patch.code());
-  if (!patch_code_obj.isCode()) {
-    return;
-  }
-
-  Str method_name(&scope, patch.name());
-  Runtime* runtime = thread->runtime();
-  Object base_obj(&scope, runtime->typeDictAt(type_dict, method_name));
-  CHECK(base_obj.isFunction(),
-        "Python annotation of non-function native object");
-  Function base(&scope, *base_obj);
-
-  // The Python implementation will be used only for its attributes, and
-  // not for its code.
-  if (base.annotations()->isNoneType() && !patch.annotations()->isNoneType()) {
-    base.setAnnotations(patch.annotations());
-  }
-  if (base.defaults()->isNoneType() && !patch.defaults()->isNoneType()) {
-    base.setDefaults(patch.defaults());
-  }
-  if (base.doc()->isNoneType() && !patch.doc()->isNoneType()) {
-    base.setDoc(patch.doc());
-  }
-  if (base.kwDefaults()->isNoneType() && !patch.kwDefaults()->isNoneType()) {
-    base.setKwDefaults(patch.kwDefaults());
-  }
-  if (base.qualname()->isNoneType() && !patch.qualname()->isNoneType()) {
-    base.setQualname(patch.qualname());
-  }
-  patchFunctionAttrs(thread, base, patch);
+  to_patch.setEntry(from.entry());
+  to_patch.setEntryKw(from.entryKw());
+  to_patch.setEntryEx(from.entryEx());
 }
 
 void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
@@ -194,15 +142,18 @@ void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
            "Values in type dict should be ValueCell");
     Object patch_obj(&scope, RawValueCell::cast(*patch_value_cell).value());
 
-    if (runtime->dictIncludes(base, key)) {
-      // Key is present in the base, so patch the base.
+    // Copy function entries if the method already exists as a native builtin.
+    Object base_obj(&scope, runtime->typeDictAt(base, key));
+    if (!base_obj.isError()) {
       CHECK(patch_obj.isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);
-      patchFunctionAttrsInTypeDict(thread, base, patch_fn);
-    } else {
-      // Key is not present in the base, so copy the value into the base.
-      runtime->typeDictAtPut(base, key, patch_obj);
+      CHECK(base_obj.isFunction(),
+            "Python annotation of non-function native object");
+      Function base_fn(&scope, *base_obj);
+
+      copyFunctionEntries(thread, patch_fn, base_fn);
     }
+    runtime->typeDictAtPut(base, key, patch_obj);
   }
 }
 
@@ -616,8 +567,8 @@ RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("_patch can only patch functions");
   }
   Function base_fn(&scope, *base_fn_obj);
-  patchFunctionAttrs(thread, base_fn, patch_fn);
-  return *base_fn;
+  copyFunctionEntries(thread, patch_fn, base_fn);
+  return *patch_fn;
 }
 
 RawObject Builtins::underStrEscapeNonAscii(Thread* thread, Frame* frame,
