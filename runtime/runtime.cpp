@@ -1454,22 +1454,22 @@ void Runtime::initializeExceptionTypes() {
 }
 
 void Runtime::initializeRefType() {
-  const static BuiltinMethod kBuiltinMethods[] = {
+  const static BuiltinMethod builtin_methods[] = {
       {SymbolId::kDunderNew, builtinRefNew},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kRef, LayoutId::kWeakRef,
-                                   LayoutId::kObject, kBuiltinMethods);
+                                   LayoutId::kObject, builtin_methods);
 }
 
 void Runtime::initializeClassMethodType() {
-  const static BuiltinMethod kBuiltinMethods[] = {
+  const static BuiltinMethod builtin_methods[] = {
       {SymbolId::kDunderNew, builtinClassMethodNew},
       {SymbolId::kDunderInit, builtinClassMethodInit},
       {SymbolId::kDunderGet, builtinClassMethodGet},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kClassmethod,
                                    LayoutId::kClassMethod, LayoutId::kObject,
-                                   kBuiltinMethods);
+                                   builtin_methods);
 }
 
 void Runtime::initializeImmediateTypes() {
@@ -1480,7 +1480,7 @@ void Runtime::initializeImmediateTypes() {
 }
 
 void Runtime::initializePropertyType() {
-  const static BuiltinMethod kBuiltinMethods[] = {
+  const static BuiltinMethod builtin_methods[] = {
       {SymbolId::kDunderNew, builtinPropertyNew},
       {SymbolId::kDunderInit, builtinPropertyInit},
       {SymbolId::kDunderGet, builtinPropertyDunderGet},
@@ -1490,18 +1490,18 @@ void Runtime::initializePropertyType() {
       {SymbolId::kSetter, builtinPropertySetter},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kProperty, LayoutId::kProperty,
-                                   LayoutId::kObject, kBuiltinMethods);
+                                   LayoutId::kObject, builtin_methods);
 }
 
 void Runtime::initializeStaticMethodType() {
-  const static BuiltinMethod kBuiltinMethods[] = {
+  const static BuiltinMethod builtin_methods[] = {
       {SymbolId::kDunderNew, builtinStaticMethodNew},
       {SymbolId::kDunderInit, builtinStaticMethodInit},
       {SymbolId::kDunderGet, builtinStaticMethodGet},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kStaticMethod,
                                    LayoutId::kStaticMethod, LayoutId::kObject,
-                                   kBuiltinMethods);
+                                   builtin_methods);
 }
 
 void Runtime::collectGarbage() {
@@ -3846,12 +3846,12 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
 }
 
 void Runtime::initializeSuperType() {
-  const static BuiltinMethod kBuiltinMethods[] = {
+  const static BuiltinMethod builtin_methods[] = {
       {SymbolId::kDunderNew, builtinSuperNew},
       {SymbolId::kDunderInit, builtinSuperInit},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kSuper, LayoutId::kSuper,
-                                   LayoutId::kObject, kBuiltinMethods);
+                                   LayoutId::kObject, builtin_methods);
 }
 
 RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
