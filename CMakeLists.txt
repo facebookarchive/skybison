@@ -125,7 +125,6 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/mysnprintf.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/mystrtoul.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pathconfig.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/pyarena.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pylifecycle.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pystate.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pystrcmp.cpp
