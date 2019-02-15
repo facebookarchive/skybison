@@ -620,7 +620,10 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   Object maybe_bytes(&scope, *bytes_obj);
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*maybe_bytes)) {
-    maybe_bytes = asBytes(thread, bytes_obj);
+    maybe_bytes = callDunderBytes(thread, bytes_obj);
+    if (maybe_bytes.isNoneType()) {
+      maybe_bytes = bytesFromIterable(thread, bytes_obj);
+    }
     if (maybe_bytes.isError()) return *maybe_bytes;
   }
   Bytes bytes(&scope, *maybe_bytes);

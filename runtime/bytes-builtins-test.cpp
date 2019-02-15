@@ -7,9 +7,10 @@ namespace python {
 
 using namespace testing;
 
-TEST(BytesBuiltinsTest, AsBytesCallsDunderBytes) {
+TEST(BytesBuiltinsTest, CallDunderBytesCallsDunderBytes) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
   def __bytes__(self):
@@ -17,15 +18,16 @@ class Foo:
 obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
-  Object result(&scope, asBytes(Thread::currentThread(), obj));
+  Object result(&scope, callDunderBytes(thread, obj));
   ASSERT_TRUE(result.isBytes());
   Bytes expected(&scope, runtime.newBytes(3, '1'));
   EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
 }
 
-TEST(BytesBuiltinsTest, AsBytesWithNonBytesDunderBytesRaisesTypeError) {
+TEST(BytesBuiltinsTest, CallDunderBytesWithNonBytesDunderBytesRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
   def __bytes__(self):
@@ -33,14 +35,15 @@ class Foo:
 obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
-  Object result(&scope, asBytes(Thread::currentThread(), obj));
+  Object result(&scope, callDunderBytes(thread, obj));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
                             "__bytes__ returned non-bytes"));
 }
 
-TEST(BytesBuiltinsTest, AsBytesWithDunderBytesErrorRaisesValueError) {
+TEST(BytesBuiltinsTest, CallDunderBytesWithDunderBytesErrorRaisesValueError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
   def __bytes__(self):
@@ -48,36 +51,34 @@ class Foo:
 obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
-  Object result(&scope, asBytes(Thread::currentThread(), obj));
+  Object result(&scope, callDunderBytes(thread, obj));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
                             "__bytes__() raised an error"));
 }
 
-TEST(BytesBuiltinsTest, AsBytesWithoutDunderBytesIterates) {
+TEST(BytesBuiltinsTest, CallDunderBytesWithoutDunderBytesReturnsNone) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
-class Foo:
-  def __iter__(self):
-    return [97,98,99].__iter__()
+class Foo: pass
 obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
-  Object result(&scope, asBytes(Thread::currentThread(), obj));
-  ASSERT_TRUE(result.isBytes());
-  Bytes expected(&scope, runtime.newBytesWithAll({'a', 'b', 'c'}));
-  EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
+  Object result(&scope, callDunderBytes(thread, obj));
+  ASSERT_TRUE(result.isNoneType());
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object num(&scope, SmallInt::fromWord(42));
   runtime.listAdd(list, num);
   runtime.listAdd(list, num);
   runtime.listAdd(list, num);
-  Object result(&scope, bytesFromIterable(Thread::currentThread(), list));
+  Object result(&scope, bytesFromIterable(thread, list));
   ASSERT_TRUE(result.isBytes());
   Bytes expected(&scope, runtime.newBytesWithAll({42, 42, 42}));
   EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
@@ -85,12 +86,13 @@ TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
 
 TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(3));
   tuple.atPut(0, SmallInt::fromWord(42));
   tuple.atPut(1, SmallInt::fromWord(123));
   tuple.atPut(2, SmallInt::fromWord(0));
-  Object result(&scope, bytesFromIterable(Thread::currentThread(), tuple));
+  Object result(&scope, bytesFromIterable(thread, tuple));
   ASSERT_TRUE(result.isBytes());
   Bytes expected(&scope, runtime.newBytesWithAll({42, 123, 0}));
   EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
@@ -98,37 +100,58 @@ TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
 
 TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Range range(&scope, runtime.newRange('a', 'j', 2));
-  Object result(&scope, bytesFromIterable(Thread::currentThread(), range));
+  Object result(&scope, bytesFromIterable(thread, range));
   ASSERT_TRUE(result.isBytes());
   Bytes expected(&scope, runtime.newBytesWithAll({'a', 'c', 'e', 'g', 'i'}));
   EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
 }
 
+TEST(BytesBuiltinsTest, FromIterableReturnsBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __iter__(self):
+    return [97,98,99].__iter__()
+obj = Foo()
+)");
+  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+  Object result(&scope, bytesFromIterable(thread, obj));
+  ASSERT_TRUE(result.isBytes());
+  Bytes expected(&scope, runtime.newBytesWithAll({97, 98, 99}));
+  EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
+}
+
 TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Int num(&scope, SmallInt::fromWord(0));
-  Object result(&scope, bytesFromIterable(Thread::currentThread(), num));
+  Object result(&scope, bytesFromIterable(thread, num));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithStrRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Str str(&scope, runtime.newStrFromCStr("hello"));
-  Object result(&scope, bytesFromIterable(Thread::currentThread(), str));
+  Object result(&scope, bytesFromIterable(thread, str));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(3));
   tuple.atPut(0, SmallInt::fromWord(42));
   tuple.atPut(1, SmallInt::fromWord(123));
-  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 2));
+  Object result(&scope, bytesFromTuple(thread, tuple, 2));
   ASSERT_TRUE(result.isBytes());
   Bytes bytes(&scope, *result);
   EXPECT_EQ(bytes.length(), 2);
@@ -138,28 +161,31 @@ TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
 
 TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(1));
   tuple.atPut(0, runtime.newFloat(1));
-  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 1));
+  Object result(&scope, bytesFromTuple(thread, tuple, 1));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(BytesBuiltinsTest, FromTupleWithNegativeIntRaisesValueError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(1));
   tuple.atPut(0, SmallInt::fromWord(-1));
-  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 1));
+  Object result(&scope, bytesFromTuple(thread, tuple, 1));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
 TEST(BytesBuiltinsTest, FromTupleWithNonByteRaisesValueError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(1));
   tuple.atPut(0, SmallInt::fromWord(256));
-  Object result(&scope, bytesFromTuple(Thread::currentThread(), tuple, 1));
+  Object result(&scope, bytesFromTuple(thread, tuple, 1));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
@@ -822,6 +848,107 @@ TEST(BytesBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   ASSERT_TRUE(ne.isBool());
   EXPECT_TRUE(RawBool::cast(*ne)->value());
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithoutSourceWithEncodingRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(encoding='ascii')"),
+                            LayoutId::kTypeError,
+                            "encoding or errors without sequence argument"));
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithoutSourceWithErrorsRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(errors='strict')"),
+                            LayoutId::kTypeError,
+                            "encoding or errors without sequence argument"));
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithoutArgsReturnsEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "obj = bytes()");
+  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+  EXPECT_TRUE(obj.isBytes());
+  EXPECT_EQ(RawBytes::cast(*obj).length(), 0);
+}
+
+TEST(BytesBuiltinsTest,
+     DunderNewWithNonStringSourceWithEncodingRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(1, 'ascii')"),
+                            LayoutId::kTypeError,
+                            "encoding without a string argument"));
+}
+
+TEST(BytesBuiltinsTest,
+     DunderNewWithoutEncodingWithErrorsAndStringSourceRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes('', errors='strict')"),
+                            LayoutId::kTypeError,
+                            "string argument without an encoding"));
+}
+
+TEST(BytesBuiltinsTest,
+     DunderNewWithoutEncodingWithErrorsAndNonStringSourceRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(1, errors='strict')"),
+                            LayoutId::kTypeError,
+                            "errors without a string argument"));
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithMistypedDunderBytesRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Foo:
+  def __bytes__(self): return 1
+bytes(Foo())
+)"),
+                            LayoutId::kTypeError,
+                            "__bytes__ returned non-bytes"));
+}
+
+TEST(BytesBuiltinsTest, DunderNewPropagatesDunderBytesError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Foo:
+  def __bytes__(self): raise SystemError("foo")
+bytes(Foo())
+)"),
+                            LayoutId::kSystemError, "foo"));
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithDunderBytesReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __bytes__(self): return b'foo'
+result = bytes(Foo())
+)");
+  Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.length(), 3);
+  EXPECT_EQ(result.byteAt(0), 'f');
+  EXPECT_EQ(result.byteAt(1), 'o');
+  EXPECT_EQ(result.byteAt(2), 'o');
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsNullFilledBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = bytes(10)");
+  Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Bytes expected(&scope, runtime.newBytes(10, 0));
+  EXPECT_EQ(result.compare(*expected), 0);
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = bytes([6, 28])");
+  Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Bytes expected(&scope, runtime.newBytesWithAll({6, 28}));
+  EXPECT_EQ(result.compare(*expected), 0);
 }
 
 }  // namespace python

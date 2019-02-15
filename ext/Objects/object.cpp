@@ -67,7 +67,10 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
     return pyobj;
   }
 
-  Object result(&scope, asBytes(thread, obj));
+  Object result(&scope, callDunderBytes(thread, obj));
+  if (result.isNoneType()) {
+    result = bytesFromIterable(thread, obj);
+  }
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

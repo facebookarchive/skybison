@@ -275,6 +275,11 @@ class bytes(bootstrap=True):
     def __ne__(self, other):
         pass
 
+    def __new__(
+        cls, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
+    ):
+        pass
+
 
 class tuple(bootstrap=True):
     def __new__(cls, iterable=_UnboundValue):

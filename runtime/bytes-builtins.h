@@ -5,9 +5,9 @@
 
 namespace python {
 
-// Converts a non-bytes obj to bytes, using `__bytes__` if possible.
-// If the object does not have `__bytes__`, then calls bytesFromIterable.
-RawObject asBytes(Thread* thread, const Object& obj);
+// Converts a non-bytes object to bytes with `__bytes__` if it exists.
+// If the object does not have `__bytes__`, then returns None.
+RawObject callDunderBytes(Thread* thread, const Object& obj);
 
 // Converts obj, which should be list, tuple, or iterable, into bytes.
 // Assumes that obj is not bytes. Fails if obj is an instance of str.
@@ -30,6 +30,7 @@ class BytesBuiltins {
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kBuiltinMethods[];

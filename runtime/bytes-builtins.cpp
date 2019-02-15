@@ -7,13 +7,13 @@
 
 namespace python {
 
-RawObject asBytes(Thread* thread, const Object& obj) {
+RawObject callDunderBytes(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderBytes));
   if (result.isError()) {
     if (!thread->hasPendingException()) {
-      // Attribute lookup failed, try PyBytes_FromObject
-      return bytesFromIterable(thread, obj);
+      // Attribute lookup failed, return None
+      return RawNoneType::object();
     }
     return *result;
   }
@@ -119,6 +119,7 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderNe, dunderNe},
+    {SymbolId::kDunderNew, dunderNew},
 };
 
 void BytesBuiltins::initialize(Runtime* runtime) {
@@ -303,6 +304,69 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
   return Bool::fromBool(self.compare(*other) != 0);
+}
+
+RawObject BytesBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object type_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfType(*type_obj)) {
+    return thread->raiseTypeErrorWithCStr("not a type object");
+  }
+  Type type(&scope, *type_obj);
+  if (type.builtinBase() != LayoutId::kBytes) {
+    return thread->raiseTypeErrorWithCStr("not a subtype of bytes");
+  }
+  // TODO(T36619847): subclass of bytes
+  Object source(&scope, args.get(1));
+  Object encoding(&scope, args.get(2));
+  Object errors(&scope, args.get(3));
+  if (source.isUnboundValue()) {
+    if (!encoding.isUnboundValue() || !errors.isUnboundValue()) {
+      return thread->raiseTypeErrorWithCStr(
+          "encoding or errors without sequence argument");
+    }
+    return runtime->newBytesWithAll({});
+  }
+  // if we have an encoding, interpret source as a string
+  if (!encoding.isUnboundValue()) {
+    if (!runtime->isInstanceOfStr(*source)) {
+      return thread->raiseTypeErrorWithCStr(
+          "encoding without a string argument");
+    }
+    UNIMPLEMENTED("string encoding");
+  }
+  if (!errors.isUnboundValue()) {
+    return thread->raiseTypeErrorWithCStr(
+        runtime->isInstanceOfStr(*source)
+            ? "string argument without an encoding"
+            : "errors without a string argument");
+  }
+  // call `source.__bytes__`
+  Object bytes_like(&scope, callDunderBytes(thread, source));
+  if (!bytes_like.isNoneType()) {  // bytes or error
+    return *bytes_like;
+  }
+  // by now, we have exhausted the valid ways to convert a string to bytes
+  if (runtime->isInstanceOfStr(*source)) {
+    return thread->raiseTypeErrorWithCStr(
+        "string argument without an encoding");
+  }
+  // if source is an integer, interpret it as the length of a zero-filled bytes
+  if (runtime->isInstanceOfInt(*source)) {
+    if (!source.isSmallInt()) {
+      return thread->raiseOverflowErrorWithCStr(
+          "cannot fit into an index-sized integer");
+    }
+    word size = RawSmallInt::cast(*source).value();
+    if (size < 0) {
+      return thread->raiseValueErrorWithCStr("negative count");
+    }
+    return runtime->newBytes(size, 0);
+  }
+  // last option: source is an iterator that produces bytes
+  return bytesFromIterable(thread, source);
 }
 
 }  // namespace python
