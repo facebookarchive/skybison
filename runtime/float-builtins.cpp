@@ -75,9 +75,11 @@ const BuiltinMethod FloatBuiltins::kMethods[] = {
     {SymbolId::kDunderLt, builtinTrampolineWrapper<dunderLt>},
     {SymbolId::kDunderMul, builtinTrampolineWrapper<dunderMul>},
     {SymbolId::kDunderNe, builtinTrampolineWrapper<dunderNe>},
+    {SymbolId::kDunderNeg, builtinTrampolineWrapper<dunderNeg>},
     {SymbolId::kDunderNew, builtinTrampolineWrapper<dunderNew>},
     {SymbolId::kDunderPow, builtinTrampolineWrapper<dunderPow>},
     {SymbolId::kDunderRepr, builtinTrampolineWrapper<dunderRepr>},
+    {SymbolId::kDunderRtruediv, builtinTrampolineWrapper<dunderRtrueDiv>},
     {SymbolId::kDunderSub, builtinTrampolineWrapper<dunderSub>},
 };
 
@@ -285,6 +287,19 @@ RawObject FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
+RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__neg__() must be called with float instance as first argument");
+  }
+  Float self(&scope, *self_obj);
+  return runtime->newFloat(-self.value());
+}
+
 RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -335,7 +350,8 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
 
   Object self_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfFloat(*self_obj)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "__truediv__() must be called with float instance as first argument");
   }
@@ -351,7 +367,7 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   if (right == 0.0) {
     return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
   }
-  return thread->runtime()->newFloat(left / right);
+  return runtime->newFloat(left / right);
 }
 
 RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
@@ -367,6 +383,32 @@ RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   int size = std::snprintf(buffer.get(), required_size, "%g", value);
   CHECK(size < int{required_size}, "buffer too small");
   return thread->runtime()->newStrFromCStr(buffer.get());
+}
+
+RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
+                                        word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__rtruediv__() must be called with float instance as first argument");
+  }
+  Float self(&scope, *self_obj);
+  double right = self.value();
+
+  double left;
+  Object other(&scope, args.get(1));
+  Object maybe_error(&scope, convertToDouble(thread, other, &left));
+  // May have returned NotImplemented or raised an exception.
+  if (!maybe_error.isNoneType()) return *maybe_error;
+
+  if (right == 0.0) {
+    return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
+  }
+  return runtime->newFloat(left / right);
 }
 
 RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {

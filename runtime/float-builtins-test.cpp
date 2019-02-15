@@ -296,6 +296,53 @@ TEST(FloatBuiltinsTest, DunderTrueDivWithZeroBoolRaisesZeroDivisionError) {
   EXPECT_TRUE(raised(*result, LayoutId::kZeroDivisionError));
 }
 
+TEST(FloatBuiltinsTest, DunderRtrueDivWithDoubleReturnsDouble) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(2.0));
+  Float right(&scope, runtime.newFloat(3.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+}
+
+TEST(FloatBuiltinsTest, DunderRtrueDivWithSmallIntReturnsDouble) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(2.0));
+  Int right(&scope, runtime.newInt(3));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+}
+
+TEST(FloatBuiltinsTest, DunderRtrueDivWithNonFloatSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, NoneType::object());
+  Float right(&scope, runtime.newFloat(1.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(FloatBuiltinsTest, DunderRtrueDivWithNonFloatOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(1.0));
+  Object right(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
+  EXPECT_TRUE(result.isNotImplemented());
+}
+
+TEST(FloatBuiltinsTest, DunderRtrueDivWithZeroFloatRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Float left(&scope, runtime.newFloat(0.0));
+  Float right(&scope, runtime.newFloat(1.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kZeroDivisionError));
+}
+
 TEST(FloatBuiltinsTest, BinarySubtractDouble) {
   Runtime runtime;
   HandleScope scope;

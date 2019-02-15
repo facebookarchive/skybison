@@ -70,13 +70,35 @@ class float(bootstrap=True):
     def __ne__(self, n: float) -> float:  # noqa: T484
         pass
 
+    def __neg__(self) -> float:
+        pass
+
     def __new__(cls, arg=0.0) -> float:
         pass
 
     def __pow__(self, y, z=_UnboundValue) -> float:
         pass
 
+    def __radd__(self, n: float) -> float:
+        # The addition for floating point numbers is commutative:
+        # https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems.
+        # Note: Handling NaN payloads may vary depending on the hardware, but nobody
+        # seems to depend on it due to such variance.
+        return float.__add__(self, n)
+
     def __repr__(self) -> str:  # noqa: T484
+        pass
+
+    def __rmul__(self, n: float) -> float:
+        # The multiplication for floating point numbers is commutative:
+        # https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems
+        return float.__mul__(self, n)
+
+    def __rsub__(self, n: float) -> float:
+        # n - self == -self + n.
+        return float.__neg__(self).__add__(n)
+
+    def __rtruediv__(self, n: float) -> float:
         pass
 
     def __truediv__(self, n: float) -> float:
