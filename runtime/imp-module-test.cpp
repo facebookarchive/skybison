@@ -110,8 +110,7 @@ TEST(ImportBuiltins, ExecBuiltinWithNonModuleReturnsZero) {
   HandleScope scope;
   Int not_mod(&scope, runtime.newInt(1));
   Object a(&scope, runBuiltin(builtinImpExecBuiltin, not_mod));
-  ASSERT_TRUE(a.isInt());
-  EXPECT_TRUE(RawInt::cast(*a).isZero());
+  EXPECT_TRUE(isIntEqualsWord(*a, 0));
 }
 
 TEST(ImportBuiltins, ExecBuiltinWithModuleWithNoDefReturnsZero) {
@@ -128,8 +127,7 @@ spec = DummyModuleSpec("errno")
   ASSERT_TRUE(module.isModule());
 
   Object a(&scope, runBuiltin(builtinImpExecBuiltin, module));
-  ASSERT_TRUE(a.isInt());
-  EXPECT_TRUE(RawInt::cast(*a).isZero());
+  EXPECT_TRUE(isIntEqualsWord(*a, 0));
 }
 
 TEST(ImportBuiltins, ExecBuiltinWithSingleSlotExecutesCorrectly) {
@@ -161,8 +159,7 @@ TEST(ImportBuiltins, ExecBuiltinWithSingleSlotExecutesCorrectly) {
   module.setDef(runtime.newIntFromCPtr(&def));
 
   Object a(&scope, runBuiltin(builtinImpExecBuiltin, module));
-  ASSERT_TRUE(a.isInt());
-  EXPECT_TRUE(RawInt::cast(*a).isZero());
+  EXPECT_TRUE(isIntEqualsWord(*a, 0));
 
   Str mod_name(&scope, module.name());
   EXPECT_TRUE(mod_name.equalsCStr("testing"));
@@ -227,8 +224,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(Int::cast(*result)->asWord(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
 TEST(ImportBuiltinsTest, IsBuiltinReturnsNegativeOne) {
@@ -236,8 +232,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsNegativeOne) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("sys"));
   Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(Int::cast(*result)->asWord(), -1);
+  EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
 
 TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
@@ -245,8 +240,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("errno"));
   Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(Int::cast(*result)->asWord(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 TEST(ImportBuiltinsTest, IsFrozenWithNoArgsRaisesTypeError) {

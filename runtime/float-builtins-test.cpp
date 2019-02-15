@@ -450,8 +450,7 @@ subfloat_foo = subfloat.foo
   EXPECT_EQ(Float::cast(*float_value)->value(), 1.5);
 
   Object foo_attr(&scope, moduleAt(&runtime, "__main__", "subfloat_foo"));
-  ASSERT_TRUE(foo_attr.isInt());
-  EXPECT_EQ(3, Int::cast(*foo_attr)->asWord());
+  EXPECT_TRUE(isIntEqualsWord(*foo_attr, 3));
 }
 
 TEST(FloatBuiltins, FloatSubclassKeepsFloatInMro) {

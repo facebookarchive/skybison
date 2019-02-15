@@ -101,16 +101,13 @@ def test(callable):
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST(CallTest, CallBoundMethodExArgs) {
@@ -147,16 +144,13 @@ def test(callable):
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST(CallTest, CallBoundMethodExKwargs) {
@@ -193,16 +187,13 @@ def test(callable):
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST(CallTest, CallBoundMethodExArgsAndKwargs) {
@@ -240,16 +231,13 @@ def test(callable):
   callFunction(func, args);
 
   Object result_self(&scope, moduleAt(&runtime, module, "result_self"));
-  ASSERT_TRUE(result_self.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_self)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(*result_self, 1111));
 
   Object result_a(&scope, moduleAt(&runtime, module, "result_a"));
-  ASSERT_TRUE(result_a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(*result_a, 2222));
 
   Object result_b(&scope, moduleAt(&runtime, module, "result_b"));
-  ASSERT_TRUE(result_b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(*result_b, 3333));
 }
 
 TEST(CallTest, CallDefaultArgs) {
@@ -603,8 +591,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalArgument) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 // test "builtin-kw" func that returns a list of first position arg
@@ -653,7 +640,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   ASSERT_TRUE(result->isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 1234);
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 1234));
   EXPECT_TRUE(RawStr::cast(tuple.at(1))->equalsCStr("bar"));
 }
 
@@ -711,12 +698,9 @@ TEST(TrampolinesTest,
   ASSERT_TRUE(result->isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 3);
-  ASSERT_TRUE(tuple.at(0)->isInt());
-  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 1234);
-  ASSERT_TRUE(tuple.at(1)->isStr());
-  EXPECT_TRUE(RawStr::cast(tuple.at(1))->equalsCStr("foo_val"));
-  ASSERT_TRUE(tuple.at(2)->isStr());
-  EXPECT_TRUE(RawStr::cast(tuple.at(2))->equalsCStr("bar_val"));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 1234));
+  EXPECT_TRUE(isStrEqualsCStr(tuple.at(1), "foo_val"));
+  EXPECT_TRUE(isStrEqualsCStr(tuple.at(2), "bar_val"));
 }
 
 static RawObject builtinReturnSecondArg(Thread* /* thread */, Frame* frame,
@@ -745,8 +729,7 @@ TEST(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
   createAndPatchBuiltinReturnSecondArg(&runtime);
   runFromCStr(&runtime, "result = dummy(second=12345, first=None)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawInt::cast(*result).asWord(), 12345);
+  EXPECT_TRUE(isIntEqualsWord(*result, 12345));
 }
 
 TEST(TrampolinesTest, BuiltinTrampolineKwWithInvalidArgRaisesTypeError) {
@@ -791,8 +774,7 @@ def foo(bar): pass
 result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(Int::cast(*result)->asWord(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 TEST(TrampolinesTest, InterpreterClosureUsesCellValue) {
@@ -835,8 +817,7 @@ def foo(bar): pass
 result = foo(1)
 )");
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(Int::cast(*result)->asWord(), 10);
+  EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
 TEST(TrampolinesTest, ExplodeCallWithBadKeywordFails) {
@@ -885,9 +866,8 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 123);
+  Object result(&scope, Thread::currentThread()->run(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
@@ -1016,9 +996,8 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 123);
+  Object result(&scope, Thread::currentThread()->run(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
@@ -1083,9 +1062,8 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 123);
+  Object result(&scope, Thread::currentThread()->run(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
@@ -1140,8 +1118,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest,
@@ -1228,8 +1205,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndZeroKwArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
@@ -1296,8 +1272,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
@@ -1330,8 +1305,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
@@ -1398,8 +1372,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 123);
+  EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
@@ -1430,8 +1403,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
@@ -1495,8 +1467,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
@@ -1567,8 +1538,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
@@ -1605,8 +1575,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest,
@@ -1674,8 +1643,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 123);
+  EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
@@ -1706,8 +1674,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
@@ -1776,8 +1743,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
@@ -1816,8 +1782,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 456);
+  EXPECT_TRUE(isIntEqualsWord(result, 456));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
@@ -1859,8 +1824,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 5678);
+  EXPECT_TRUE(isIntEqualsWord(result, 5678));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
@@ -1895,8 +1859,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 10);
+  EXPECT_TRUE(isIntEqualsWord(result, 10));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
@@ -1940,8 +1903,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isInt());
-  EXPECT_EQ(Int::cast(result)->asWord(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 static RawObject numArgs(Thread*, Frame*, word nargs) {
@@ -1967,8 +1929,7 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(*(1,2))");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
@@ -1977,8 +1938,7 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(1, *(2,))");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 static void createAndPatchBuiltinNumArgsVariadic(Runtime* runtime) {
@@ -2001,8 +1961,7 @@ TEST(TrampolinesTest,
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(1, *(2, 3))");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawInt::cast(*result).asWord(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 static void createAndPatchBuiltinNumArgsArgsKwargs(Runtime* runtime) {
@@ -2025,8 +1984,7 @@ TEST(TrampolinesTest,
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(1, 2, *(3,), **{'foo': 1, 'bar': 2})");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
@@ -2035,8 +1993,7 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
   HandleScope scope;
   runFromCStr(&runtime, "result = dummy(*(1,), second=5)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawInt::cast(*result).asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST(TrampolinesDeathTest, BuiltinTrampolineExWithTooFewArgsRaisesTypeError) {

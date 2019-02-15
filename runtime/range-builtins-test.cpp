@@ -26,12 +26,10 @@ TEST(RangeBuiltinsTest, CallDunderNext) {
   ASSERT_TRUE(iter.isRangeIterator());
 
   Object item1(&scope, runBuiltin(RangeIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object item2(&scope, runBuiltin(RangeIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item2)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*item2, 1));
 }
 
 TEST(RangeIteratorBuiltinsTest, DunderIterReturnsSelf) {
@@ -55,24 +53,20 @@ TEST(RangeIteratorBuiltinsTest, DunderLengthHintReturnsPendingLength) {
 
   Object length_hint1(
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint1, 0));
 
   RawRangeIterator::cast(*iter)->setRange(runtime.newRange(0, 1, 1));
   Object length_hint2(
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint2.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint2, 1));
 
   // Consume the iterator
   Object item1(&scope, runBuiltin(RangeIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object length_hint3(
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint3.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint3)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint3, 0));
 }
 
 TEST(RangeIteratorBuiltinsTest, DunderLengthHintWithNegativeStepRange) {
@@ -84,18 +78,15 @@ TEST(RangeIteratorBuiltinsTest, DunderLengthHintWithNegativeStepRange) {
 
   Object length_hint1(
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint1, 2));
 
   // Consume the iterator
   Object item1(&scope, runBuiltin(RangeIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object length_hint2(
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint2.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint2, 1));
 }
 
 }  // namespace python

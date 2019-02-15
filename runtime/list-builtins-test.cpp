@@ -18,8 +18,8 @@ a = list([1, 2])
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_EQ(a.numItems(), 2);
-  EXPECT_EQ(RawInt::cast(a.at(0))->asWord(), 1);
-  EXPECT_EQ(RawInt::cast(a.at(1))->asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(a.at(1), 2));
 }
 
 TEST(ListBuiltinsTest, NewListIsNotASingleton) {
@@ -48,11 +48,11 @@ c = a + b
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isList());
   List list(&scope, RawList::cast(*c));
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list.at(2))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list.at(3))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(list.at(4))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
+  EXPECT_TRUE(isIntEqualsWord(list.at(3), 4));
+  EXPECT_TRUE(isIntEqualsWord(list.at(4), 5));
 }
 
 TEST(ListBuiltinsTest, AddToEmptyList) {
@@ -67,9 +67,9 @@ c = a + b
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isList());
   List list(&scope, RawList::cast(*c));
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list.at(2))->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
 }
 
 TEST(ListBuiltinsTest, AddWithNonListSelfRaisesTypeError) {
@@ -500,9 +500,9 @@ TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
   slice.setStart(SmallInt::fromWord(2));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 3));
+  EXPECT_TRUE(isIntEqualsWord(test.at(1), 4));
+  EXPECT_TRUE(isIntEqualsWord(test.at(2), 5));
 }
 
 TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
@@ -516,8 +516,8 @@ TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   slice.setStart(SmallInt::fromWord(-2));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 2);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 4));
+  EXPECT_TRUE(isIntEqualsWord(test.at(1), 5));
 }
 
 TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
@@ -531,8 +531,8 @@ TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
   slice.setStop(SmallInt::fromWord(2));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 2);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(test.at(1), 2));
 }
 
 TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
@@ -546,9 +546,9 @@ TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   slice.setStop(SmallInt::fromWord(-2));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(test.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(test.at(2), 3));
 }
 
 TEST(ListBuiltinsTest, SlicePositiveStep) {
@@ -562,9 +562,9 @@ TEST(ListBuiltinsTest, SlicePositiveStep) {
   slice.setStep(SmallInt::fromWord(2));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(test.at(1), 3));
+  EXPECT_TRUE(isIntEqualsWord(test.at(2), 5));
 }
 
 TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
@@ -578,9 +578,9 @@ TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
   slice.setStep(SmallInt::fromWord(-2));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 5);
-  EXPECT_EQ(RawSmallInt::cast(test.at(1))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(test.at(2))->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 5));
+  EXPECT_TRUE(isIntEqualsWord(test.at(1), 3));
+  EXPECT_TRUE(isIntEqualsWord(test.at(2), 1));
 }
 
 TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
@@ -607,8 +607,8 @@ TEST(ListBuiltinsTest, SliceStopOutOfBounds) {
   slice.setStop(SmallInt::fromWord(10));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 5);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test.at(4))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(test.at(4), 5));
 }
 
 TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
@@ -622,7 +622,7 @@ TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
   slice.setStep(SmallInt::fromWord(10));
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
 }
 
 TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
@@ -635,8 +635,8 @@ TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
   Slice slice(&scope, runtime.newSlice());
   List test(&scope, listSlice(thread, list1, slice));
   ASSERT_EQ(test.numItems(), 5);
-  EXPECT_EQ(RawSmallInt::cast(test.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(test.at(4))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(test.at(4), 5));
   ASSERT_NE(*test, *list1);
 }
 
@@ -648,19 +648,19 @@ TEST(ListBuiltinsTest, SetItem) {
   Object zero(&scope, SmallInt::fromWord(0));
   Object num(&scope, SmallInt::fromWord(2));
 
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
   Object result(&scope,
                 runBuiltin(ListBuiltins::dunderSetItem, list, zero, num));
   EXPECT_TRUE(result.isNoneType());
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 2));
 
   // Negative index
   Object minus_one(&scope, SmallInt::fromWord(-1));
-  EXPECT_EQ(RawSmallInt::cast(list.at(3))->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(list.at(3), 4));
   Object result1(&scope,
                  runBuiltin(ListBuiltins::dunderSetItem, list, minus_one, num));
   EXPECT_TRUE(result1.isNoneType());
-  EXPECT_EQ(RawSmallInt::cast(list.at(3))->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(list.at(3), 2));
 }
 
 TEST(ListBuiltinsTest, GetItemWithNegativeIndex) {
@@ -669,8 +669,7 @@ TEST(ListBuiltinsTest, GetItemWithNegativeIndex) {
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-3));
   Object result(&scope, runBuiltin(ListBuiltins::dunderGetItem, list, idx));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 TEST(ListBuiltinsTest, DelItemWithNegativeIndex) {
@@ -681,8 +680,8 @@ TEST(ListBuiltinsTest, DelItemWithNegativeIndex) {
   Object result(&scope, runBuiltin(ListBuiltins::dunderDelItem, list, idx));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(list.numItems(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 2));
+  EXPECT_TRUE(isIntEqualsWord(list.at(1), 3));
 }
 
 TEST(ListBuiltinsTest, SetItemWithNegativeIndex) {
@@ -695,9 +694,9 @@ TEST(ListBuiltinsTest, SetItemWithNegativeIndex) {
                 runBuiltin(ListBuiltins::dunderSetItem, list, idx, num));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(list.numItems(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list.at(2))->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
 }
 
 TEST(ListBuiltinsTest, GetItemWithInvalidNegativeIndexRaisesIndexError) {
@@ -1118,12 +1117,10 @@ TEST(ListIteratorBuiltinsTest, CallDunderNext) {
   ASSERT_TRUE(iter.isListIterator());
 
   Object item1(&scope, runBuiltin(ListIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object item2(&scope, runBuiltin(ListIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item2)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*item2, 1));
 }
 
 TEST(ListIteratorBuiltinsTest, DunderIterReturnsSelf) {
@@ -1147,8 +1144,7 @@ TEST(ListIteratorBuiltinsTest, DunderLengthHintOnEmptyListIterator) {
 
   Object length_hint(&scope,
                      runBuiltin(ListIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(ListIteratorBuiltinsTest, DunderLengthHintOnConsumedListIterator) {
@@ -1160,18 +1156,15 @@ TEST(ListIteratorBuiltinsTest, DunderLengthHintOnConsumedListIterator) {
 
   Object length_hint1(&scope,
                       runBuiltin(ListIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint1, 1));
 
   // Consume the iterator
   Object item1(&scope, runBuiltin(ListIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object length_hint2(&scope,
                       runBuiltin(ListIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
 TEST(ListBuiltinsTest, InsertToList) {
@@ -1186,8 +1179,8 @@ TEST(ListBuiltinsTest, InsertToList) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
   }
-  ASSERT_NE(RawSmallInt::cast(list.at(1))->value(), 1);
-  ASSERT_NE(RawSmallInt::cast(list.at(6))->value(), 6);
+  EXPECT_FALSE(isIntEqualsWord(list.at(1), 1));
+  EXPECT_FALSE(isIntEqualsWord(list.at(6), 6));
 
   Thread* thread = Thread::currentThread();
   Object value2(&scope, SmallInt::fromWord(1));
@@ -1212,17 +1205,17 @@ TEST(ListBuiltinsTest, InsertToListBounds) {
   Object value100(&scope, SmallInt::fromWord(100));
   listInsert(thread, list, value100, 100);
   ASSERT_EQ(list.numItems(), 11);
-  ASSERT_EQ(RawSmallInt::cast(list.at(10))->value(), 100);
+  EXPECT_TRUE(isIntEqualsWord(list.at(10), 100));
 
   Object value0(&scope, SmallInt::fromWord(400));
   listInsert(thread, list, value0, 0);
   ASSERT_EQ(list.numItems(), 12);
-  ASSERT_EQ(RawSmallInt::cast(list.at(0))->value(), 400);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 400));
 
   Object value_n(&scope, SmallInt::fromWord(-10));
   listInsert(thread, list, value_n, -10);
   ASSERT_EQ(list.numItems(), 13);
-  ASSERT_EQ(RawSmallInt::cast(list.at(2))->value(), -10);
+  EXPECT_TRUE(isIntEqualsWord(list.at(2), -10));
 }
 
 TEST(ListBuiltinsTest, PopList) {
@@ -1238,29 +1231,27 @@ TEST(ListBuiltinsTest, PopList) {
   // Pop from the end
   RawObject res1 = listPop(list, 15);
   ASSERT_EQ(list.numItems(), 15);
-  ASSERT_EQ(RawSmallInt::cast(list.at(14))->value(), 14);
-  ASSERT_EQ(RawSmallInt::cast(res1)->value(), 15);
+  EXPECT_TRUE(isIntEqualsWord(list.at(14), 14));
+  EXPECT_TRUE(isIntEqualsWord(res1, 15));
 
   // Pop elements from 5 - 10
   for (int i = 0; i < 5; i++) {
     RawObject res5 = listPop(list, 5);
-    ASSERT_EQ(RawSmallInt::cast(res5)->value(), i + 5);
+    EXPECT_TRUE(isIntEqualsWord(res5, i + 5));
   }
   ASSERT_EQ(list.numItems(), 10);
   for (int i = 0; i < 5; i++) {
-    RawSmallInt elem = RawSmallInt::cast(list.at(i));
-    ASSERT_EQ(elem->value(), i);
+    EXPECT_TRUE(isIntEqualsWord(list.at(i), i));
   }
   for (int i = 5; i < 10; i++) {
-    RawSmallInt elem = RawSmallInt::cast(list.at(i));
-    ASSERT_EQ(elem->value(), i + 5);
+    EXPECT_TRUE(isIntEqualsWord(list.at(i), i + 5));
   }
 
   // Pop element 0
   RawObject res0 = listPop(list, 0);
   ASSERT_EQ(list.numItems(), 9);
-  ASSERT_EQ(RawSmallInt::cast(list.at(0))->value(), 1);
-  ASSERT_EQ(RawSmallInt::cast(res0)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(res0, 0));
 }
 
 TEST(ListBuiltinsTest, ExtendList) {

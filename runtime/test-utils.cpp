@@ -36,6 +36,23 @@ std::ostream& operator<<(std::ostream& os, CastError err) {
   return os << "<invalid>";
 }
 
+std::ostream& operator<<(std::ostream& os, const Int& value) {
+  word num_digits = value.numDigits();
+  if (num_digits == 1) {
+    return os << value.asWord();
+  }
+
+  os << "largeint([";
+  for (word i = 0; i < num_digits; i++) {
+    uword digit = value.digitAt(i);
+    if (i > 0) {
+      os << ", ";
+    }
+    os << "0x" << std::hex << digit << std::dec;
+  }
+  return os << "])";
+}
+
 namespace testing {
 
 // Turn a Python string object into a standard string.
@@ -281,17 +298,17 @@ std::string typeName(Runtime* runtime, RawObject obj) {
   return result;
 }
 
-RawObject newIntWithDigits(Runtime* runtime, const std::vector<uword>& digits) {
-  return runtime->newIntWithDigits(View<uword>(digits.data(), digits.size()));
+RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
+  return runtime->newIntWithDigits(View<uword>(digits.data(), digits.length()));
 }
 
-RawLargeInt newLargeIntWithDigits(const std::vector<uword>& digits) {
+RawLargeInt newLargeIntWithDigits(View<uword> digits) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   LargeInt result(&scope,
-                  thread->runtime()->heap()->createLargeInt(digits.size()));
-  for (word i = 0, e = digits.size(); i < e; ++i) {
-    result.digitAtPut(i, digits[i]);
+                  thread->runtime()->heap()->createLargeInt(digits.length()));
+  for (word i = 0, e = digits.length(); i < e; ++i) {
+    result.digitAtPut(i, digits.get(i));
   }
   return *result;
 }
@@ -381,6 +398,58 @@ RawObject listFromRange(word start, word stop) {
   if (!str.equalsCStr(c_str)) {
     return ::testing::AssertionFailure()
            << "'" << str.toCStr() << "' is not equal to '" << c_str << "'";
+  }
+  return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult isIntEqualsWord(RawObject obj, word value) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (obj.isError()) {
+    if (thread->hasPendingException()) {
+      Type type(&scope, thread->pendingExceptionType());
+      Str type_name(&scope, type.name());
+      return ::testing::AssertionFailure()
+             << "pending '" << type_name << "' exception";
+    }
+    return ::testing::AssertionFailure() << "is an Error";
+  }
+  if (!runtime->isInstanceOfInt(obj)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, obj) << "'";
+  }
+  Int value_int(&scope, obj);
+  if (value_int.numDigits() > 1 || value_int.asWord() != value) {
+    return ::testing::AssertionFailure()
+           << value_int << " is not equal to " << value;
+  }
+  return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult isIntEqualsDigits(RawObject obj,
+                                             View<uword> digits) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (obj.isError()) {
+    if (thread->hasPendingException()) {
+      Type type(&scope, thread->pendingExceptionType());
+      Str type_name(&scope, type.name());
+      return ::testing::AssertionFailure()
+             << "pending " << type_name << "' exception";
+    }
+    return ::testing::AssertionFailure() << "is an Error";
+  }
+  if (!runtime->isInstanceOfInt(obj)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, obj) << "'";
+  }
+  Int expected(&scope, newIntWithDigits(runtime, digits));
+  Int value_int(&scope, obj);
+  if (expected.compare(*value_int) != 0) {
+    return ::testing::AssertionFailure()
+           << value_int << " is not equal to " << expected;
   }
   return ::testing::AssertionSuccess();
 }

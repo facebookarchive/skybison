@@ -296,8 +296,7 @@ d3 = {"a": 123}
   EXPECT_EQ(d1.numItems(), 4);
   Str a(&scope, runtime.newStrFromCStr("a"));
   Object a_val(&scope, runtime.dictAt(d1, a));
-  ASSERT_TRUE(a_val.isInt());
-  EXPECT_EQ(RawInt::cast(*a_val).asWord(), 123);
+  EXPECT_TRUE(isIntEqualsWord(*a_val, 123));
 }
 
 TEST(DictItemsBuiltinsTest, DunderIterReturnsIter) {
@@ -366,8 +365,7 @@ TEST(DictItemIteratorBuiltinsTest,
   DictItemIterator iter(&scope, runtime.newDictItemIterator(empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictItemIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(DictKeyIteratorBuiltinsTest,
@@ -378,8 +376,7 @@ TEST(DictKeyIteratorBuiltinsTest,
   DictKeyIterator iter(&scope, runtime.newDictKeyIterator(empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictKeyIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(DictValueIteratorBuiltinsTest,
@@ -390,8 +387,7 @@ TEST(DictValueIteratorBuiltinsTest,
   DictValueIterator iter(&scope, runtime.newDictValueIterator(empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictValueIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(DictItemIteratorBuiltinsTest, CallDunderNextReadsItemsSequentially) {
@@ -483,8 +479,7 @@ TEST(DictItemIteratorBuiltinsTest,
 
   Object length_hint(
       &scope, runBuiltin(DictItemIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(DictKeyIteratorBuiltinsTest,
@@ -502,8 +497,7 @@ TEST(DictKeyIteratorBuiltinsTest,
 
   Object length_hint(
       &scope, runBuiltin(DictKeyIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(DictValueIteratorBuiltinsTest,
@@ -521,8 +515,7 @@ TEST(DictValueIteratorBuiltinsTest,
 
   Object length_hint(
       &scope, runBuiltin(DictValueIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(DictBuiltinsTest, ItemIteratorNextOnOneElementDictReturnsElement) {
@@ -633,8 +626,7 @@ TEST(DictBuiltinsTest, GetReturnsValue) {
   runtime.dictAtPut(dict, key, value);
   Object dflt(&scope, runtime.newInt(789));
   Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(Int::cast(*result)->asWord(), 456);
+  EXPECT_TRUE(isIntEqualsWord(*result, 456));
 }
 
 TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {

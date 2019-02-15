@@ -253,11 +253,9 @@ x2 = c1.x
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x1(&scope, moduleAt(&runtime, "__main__", "x1"));
-  ASSERT_TRUE(x1.isInt());
-  EXPECT_EQ(RawSmallInt::cast(*x1)->value(), 24);
+  EXPECT_TRUE(isIntEqualsWord(*x1, 24));
   Object x2(&scope, moduleAt(&runtime, "__main__", "x2"));
-  ASSERT_TRUE(x2.isInt());
-  EXPECT_EQ(RawSmallInt::cast(*x2)->value(), 42);
+  EXPECT_TRUE(isIntEqualsWord(*x2, 42));
 }
 
 TEST(DescriptorBuiltinsTest, PropertyAddedViaDecoratorSanityCheck) {
@@ -283,8 +281,7 @@ x = c1.x
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
-  ASSERT_TRUE(x.isInt());
-  EXPECT_EQ(RawSmallInt::cast(*x)->value(), 42);
+  EXPECT_TRUE(isIntEqualsWord(*x, 42));
 }
 
 TEST(DescriptorBuiltinsTest, PropertyWithCallableGetterReturnsValue) {
@@ -301,8 +298,7 @@ class Foo:
 result = Foo().x
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 123);
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST(DescriptorBuiltinsTest, PropertyWithCallableSetterSetsValue) {
@@ -321,8 +317,7 @@ foo.x = 123
 result = foo.y
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 123);
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 }  // namespace python

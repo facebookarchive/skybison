@@ -32,10 +32,8 @@ foo.__code__ = bar.__code__
 a = foo(5)
 )");
   HandleScope scope;
-  Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a_obj.isSmallInt());
-  SmallInt a(&scope, *a_obj);
-  ASSERT_EQ(a.value(), 10);
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isIntEqualsWord(*a, 10));
 }
 
 TEST(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
@@ -115,8 +113,7 @@ result = f.__call__(3)
 )");
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
 }  // namespace testing

@@ -45,8 +45,7 @@ C()
 
   Object global(&scope, moduleAt(&runtime, "__main__", "g"));
   ASSERT_FALSE(global.isError());
-  ASSERT_TRUE(global.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*global)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*global, 2));
 }
 
 TEST(TypeBuiltinsTest, DunderCallTypeWithInitAndArgs) {
@@ -65,8 +64,7 @@ C(9)
 
   Object global(&scope, moduleAt(&runtime, "__main__", "g"));
   ASSERT_FALSE(global.isError());
-  ASSERT_TRUE(global.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*global)->value(), 9);
+  EXPECT_TRUE(isIntEqualsWord(*global, 9));
 }
 
 TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
@@ -96,9 +94,7 @@ c = C()
   Thread* thread = Thread::currentThread();
   Object x(&scope, runtime.newStrFromCStr("x"));
   RawObject attr = runtime.attributeAt(thread, c, x);
-  ASSERT_FALSE(attr->isNoneType());
-  ASSERT_TRUE(attr->isInt());
-  ASSERT_EQ(RawSmallInt::cast(attr)->value(), 42);
+  EXPECT_TRUE(isIntEqualsWord(attr, 42));
 }
 
 TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {

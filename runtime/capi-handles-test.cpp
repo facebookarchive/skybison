@@ -81,10 +81,7 @@ TEST(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
   Object obj(&scope, runtime.newInt(1));
   ApiHandle* handle = ApiHandle::newReference(Thread::currentThread(), *obj);
   Object handle_obj(&scope, handle->asObject());
-  ASSERT_TRUE(handle_obj.isInt());
-
-  Int integer(&scope, *handle_obj);
-  EXPECT_EQ(integer.asWord(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*handle_obj, 1));
 }
 
 TEST(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {

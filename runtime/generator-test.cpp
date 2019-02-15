@@ -44,8 +44,7 @@ g.send(7)
   HandleScope scope;
   runFromCStr(&runtime, src);
   Object result(&scope, moduleAt(&runtime, "__main__", "value"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_TRUE(RawSmallInt::cast(*result)->value() == 10);
+  EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
 TEST(GeneratorTest, BadInitialSend) {

@@ -213,16 +213,14 @@ TEST(MarshalReaderTest, ReadTypeIntMin) {
   // marshal.dumps(INT32_MIN)
   Marshal::Reader reader(&scope, &runtime, "\xe9\x00\x00\x00\x80");
   RawObject result = reader.readObject();
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MIN);
+  EXPECT_TRUE(isIntEqualsWord(result, INT32_MIN));
   ASSERT_EQ(reader.numRefs(), 1);
   EXPECT_EQ(reader.getRef(0), result);
 
   // marshal.dumps(INT32_MIN)
   Marshal::Reader reader_norefs(&scope, &runtime, "\x69\x00\x00\x00\x80");
   result = reader_norefs.readObject();
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MIN);
+  EXPECT_TRUE(isIntEqualsWord(result, INT32_MIN));
   EXPECT_EQ(reader_norefs.numRefs(), 0);
 }
 
@@ -233,16 +231,14 @@ TEST(MarshalReaderTest, ReadTypeIntMax) {
   // marshal.dumps(INT32_MAX)
   Marshal::Reader reader(&scope, &runtime, "\xe9\xff\xff\xff\x7f");
   RawObject result = reader.readObject();
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MAX);
+  EXPECT_TRUE(isIntEqualsWord(result, INT32_MAX));
   ASSERT_EQ(reader.numRefs(), 1);
   EXPECT_EQ(reader.getRef(0), result);
 
   // marshal.dumps(INT32_MAX)
   Marshal::Reader reader_norefs(&scope, &runtime, "\x69\xff\xff\xff\x7f");
   result = reader_norefs.readObject();
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), INT32_MAX);
+  EXPECT_TRUE(isIntEqualsWord(result, INT32_MAX));
   EXPECT_EQ(reader_norefs.numRefs(), 0);
 }
 
@@ -278,16 +274,14 @@ TEST(MarshalReaderTest, ReadNegativeTypeLong) {
   const char buf[] =
       "\xec\xfb\xff\xff\xff\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
   RawObject integer = Marshal::Reader(&scope, &runtime, buf).readObject();
-  ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(RawInt::cast(integer)->asWord(), kMinInt64 + 1);
+  EXPECT_TRUE(isIntEqualsWord(integer, kMinInt64 + 1));
 
   // marshal.dumps(SmallInt::kMinValue)
   const char buf1[] =
       "\xec\xfb\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00";
   const word min_value = RawSmallInt::kMinValue;
   integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
-  ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(RawInt::cast(integer)->asWord(), min_value);
+  EXPECT_TRUE(isIntEqualsWord(integer, min_value));
 }
 
 TEST(MarshalReaderTest, ReadPositiveTypeLong) {
@@ -298,16 +292,14 @@ TEST(MarshalReaderTest, ReadPositiveTypeLong) {
   const char buf[] =
       "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x07\x00";
   RawObject integer = Marshal::Reader(&scope, &runtime, buf).readObject();
-  ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(RawInt::cast(integer)->asWord(), kMaxInt64);
+  EXPECT_TRUE(isIntEqualsWord(integer, kMaxInt64));
 
   // marshal.dumps(SmallInt::kMaxValue)
   const char buf1[] =
       "\xec\x05\x00\x00\x00\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x03\x00";
   const word max_value = RawSmallInt::kMaxValue;
   integer = Marshal::Reader(&scope, &runtime, buf1).readObject();
-  ASSERT_TRUE(integer->isInt());
-  EXPECT_EQ(RawInt::cast(integer)->asWord(), max_value);
+  EXPECT_TRUE(isIntEqualsWord(integer, max_value));
 }
 
 TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {

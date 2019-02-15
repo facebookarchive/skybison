@@ -90,9 +90,7 @@ g = c(3)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object global(&scope, moduleAt(&runtime, main, "g"));
-  ASSERT_FALSE(global.isError());
-  ASSERT_TRUE(global.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*global)->value(), 36);
+  EXPECT_TRUE(isIntEqualsWord(*global, 36));
 }
 
 TEST(ThreadTest, DunderCallInstanceWithDescriptor) {
@@ -118,8 +116,7 @@ c(1111)
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1111));
 }
 
 TEST(ThreadTest, DunderCallInstanceKw) {
@@ -140,8 +137,7 @@ result = c(y=3)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
 TEST(ThreadTest, DunderCallInstanceSplatArgs) {
@@ -160,8 +156,7 @@ result = c(*args)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
 TEST(ThreadTest, DunderCallInstanceSplatKw) {
@@ -180,8 +175,7 @@ result = c(**kwargs)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
 TEST(ThreadTest, DunderCallInstanceSplatArgsAndKw) {
@@ -206,11 +200,9 @@ c(*args, **kwargs)
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result_x(&scope, moduleAt(&runtime, main, "result_x"));
-  ASSERT_TRUE(result_x.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_x)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*result_x, 1));
   Object result_y(&scope, moduleAt(&runtime, main, "result_y"));
-  ASSERT_TRUE(result_y.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_y)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*result_y, 3));
 }
 
 TEST(ThreadTest, OverlappingFrames) {
@@ -241,16 +233,13 @@ TEST(ThreadTest, OverlappingFrames) {
 
   // Make sure we can read the args from the frame
   RawObject local = frame->local(0);
-  ASSERT_TRUE(local->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(local)->value(), arg1->value());
+  EXPECT_TRUE(isIntEqualsWord(local, arg1->value()));
 
   local = frame->local(1);
-  ASSERT_TRUE(local->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(local)->value(), arg2->value());
+  EXPECT_TRUE(isIntEqualsWord(local, arg2->value()));
 
   local = frame->local(2);
-  ASSERT_TRUE(local->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(local)->value(), arg3->value());
+  EXPECT_TRUE(isIntEqualsWord(local, arg3->value()));
 }
 
 TEST(ThreadTest, EncodeTryBlock) {
@@ -352,18 +341,14 @@ TEST(ThreadTest, ManipulateValueStack) {
   word values[] = {3333, 2222, 1111};
   for (int i = 0; i < 3; i++) {
     RawObject object = frame->peek(i);
-    ASSERT_TRUE(object->isSmallInt())
-        << "Value at stack depth " << i << " is not an integer";
-    EXPECT_EQ(RawSmallInt::cast(object)->value(), values[i])
-        << "Incorrect value at stack depth " << i;
+    EXPECT_TRUE(isIntEqualsWord(object, values[i]))
+        << "value at stack depth " << i;
   }
 
   // Pop 2 items off the stack and check the stack is still as we expect
   frame->setValueStackTop(sp + 2);
   RawObject top = frame->peek(0);
-  ASSERT_TRUE(top->isSmallInt()) << "Stack top isn't an integer";
-  EXPECT_EQ(RawSmallInt::cast(top)->value(), 1111)
-      << "Incorrect value for stack top";
+  EXPECT_TRUE(isIntEqualsWord(top, 1111)) << "value at stack top";
 }
 
 TEST(ThreadTest, ManipulateBlockStack) {
@@ -427,8 +412,7 @@ TEST(ThreadTest, CallFunction) {
 
   // Execute the caller and make sure we get back the expected result
   RawObject result = Thread::currentThread()->run(caller_code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), expected_result->value());
+  EXPECT_TRUE(isIntEqualsWord(result, expected_result->value()));
 }
 
 TEST(ThreadTest, ExtendedArg) {
@@ -452,8 +436,7 @@ TEST(ThreadTest, ExtendedArg) {
 
   RawObject result = Thread::currentThread()->run(code);
 
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 0xDEADBEEF);
+  EXPECT_TRUE(isIntEqualsWord(result, 0xDEADBEEF));
 }
 
 TEST(ThreadTest, CallBuiltinPrint) {
@@ -483,8 +466,7 @@ TEST(ThreadTest, ExecuteDupTop) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(ThreadTest, ExecuteDupTopTwo) {
@@ -502,8 +484,7 @@ TEST(ThreadTest, ExecuteDupTopTwo) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(result, 2222));
 }
 
 TEST(ThreadTest, ExecuteRotTwo) {
@@ -521,8 +502,7 @@ TEST(ThreadTest, ExecuteRotTwo) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(ThreadTest, ExecuteRotThree) {
@@ -541,8 +521,7 @@ TEST(ThreadTest, ExecuteRotThree) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(result, 2222));
 }
 
 TEST(ThreadTest, ExecuteJumpAbsolute) {
@@ -560,8 +539,7 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(result, 2222));
 }
 
 TEST(ThreadTest, ExecuteJumpForward) {
@@ -579,8 +557,7 @@ TEST(ThreadTest, ExecuteJumpForward) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(result, 2222));
 }
 
 TEST(ThreadTest, ExecuteStoreLoadFast) {
@@ -597,8 +574,7 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(ThreadTest, LoadGlobal) {
@@ -1068,8 +1044,7 @@ TEST(ThreadTest, BuildList) {
   RawList list = RawList::cast(result);
   EXPECT_EQ(list->capacity(), 3);
 
-  ASSERT_TRUE(list->at(0)->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(list->at(0))->value(), 111);
+  EXPECT_TRUE(isIntEqualsWord(list->at(0), 111));
 
   ASSERT_TRUE(list->at(1)->isSmallStr());
   EXPECT_EQ(list->at(1), SmallStr::fromCStr("qqq"));
@@ -1220,8 +1195,7 @@ TEST(ThreadTest, PopBlock) {
 
   // The RETURN_VALUE instruction should return bottom most item from the stack,
   // assuming that POP_BLOCK worked correctly.
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(ThreadTest, PopJumpIfFalse) {
@@ -1244,14 +1218,12 @@ TEST(ThreadTest, PopJumpIfFalse) {
 
   // Test when the condition evaluates to a truthy value
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 
   // Test when the condition evaluates to a falsey value
   consts.atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(result, 2222));
 }
 
 TEST(ThreadTest, PopJumpIfTrue) {
@@ -1274,14 +1246,12 @@ TEST(ThreadTest, PopJumpIfTrue) {
 
   // Test when the condition evaluates to a falsey value
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 
   // Test when the condition evaluates to a truthy value
   consts.atPut(0, Bool::trueObj());
   result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(result, 2222));
 }
 
 TEST(ThreadTest, JumpIfFalseOrPop) {
@@ -1308,8 +1278,7 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   // returns it.
   consts.atPut(0, Bool::trueObj());
   result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(ThreadTest, JumpIfTrueOrPop) {
@@ -1336,8 +1305,7 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   // returns it.
   consts.atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(ThreadTest, UnaryNot) {
@@ -1993,19 +1961,19 @@ t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
   Tuple tuple_t(&scope, *t);
   EXPECT_EQ(tuple_t.length(), 6);
   for (word i = 0; i < tuple_t.length(); i++) {
-    EXPECT_EQ(RawSmallInt::cast(tuple_t.at(i))->value(), i);
+    EXPECT_TRUE(isIntEqualsWord(tuple_t.at(i), i));
   }
 
   Object t1(&scope, moduleAt(&runtime, main, "t1"));
   EXPECT_TRUE(t1.isTuple());
   Tuple tuple_t1(&scope, *t1);
   EXPECT_EQ(tuple_t1.length(), 6);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(4))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(tuple_t1.at(5))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(tuple_t1.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(tuple_t1.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(tuple_t1.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(tuple_t1.at(3), 3));
+  EXPECT_TRUE(isIntEqualsWord(tuple_t1.at(4), 4));
+  EXPECT_TRUE(isIntEqualsWord(tuple_t1.at(5), 5));
 }
 
 TEST(TestThread, BuildListUnpack) {
@@ -2021,12 +1989,12 @@ l = [*[0], *[1, 2], *[], *[3, 4, 5]]
   EXPECT_TRUE(l.isList());
   List list_l(&scope, *l);
   EXPECT_EQ(list_l.numItems(), 6);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(4))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(5))->value(), 5);
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(3), 3));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(4), 4));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(5), 5));
 }
 
 TEST(TestThread, BuildSetUnpack) {
@@ -2291,16 +2259,16 @@ for el in l:
   Object l(&scope, moduleAt(&runtime, main, "l"));
   Object s(&scope, moduleAt(&runtime, main, "s"));
 
-  ASSERT_NE(RawSmallInt::cast(*a)->value(), 2);
-  ASSERT_NE(RawSmallInt::cast(*b)->value(), 12);
+  EXPECT_FALSE(isIntEqualsWord(*a, 2));
+  EXPECT_FALSE(isIntEqualsWord(*b, 12));
 
   List list_l(&scope, *l);
   ASSERT_EQ(list_l.numItems(), 16);
-  ASSERT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
-  ASSERT_EQ(RawSmallInt::cast(list_l.at(12))->value(), 12);
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(12), 12));
 
   // sum(0..16) = 120
-  ASSERT_EQ(RawSmallInt::cast(*s)->value(), 120);
+  EXPECT_TRUE(isIntEqualsWord(*s, 120));
 }
 
 TEST(ListInsertTest, InsertToListBounds) {
@@ -2316,13 +2284,13 @@ l.insert(-100, 0)
   Module main(&scope, findModule(&runtime, "__main__"));
   Object l(&scope, moduleAt(&runtime, main, "l"));
   List list_l(&scope, *l);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(4))->value(), 4);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(5))->value(), 5);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(6))->value(), 6);
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(3), 3));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(4), 4));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(5), 5));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(6), 6));
 }
 
 TEST(ListInsertTest, InsertToNegativeIndex) {
@@ -2338,11 +2306,11 @@ l.insert(-1, 3)
   Object l(&scope, moduleAt(&runtime, main, "l"));
   List list_l(&scope, *l);
   ASSERT_EQ(list_l.numItems(), 5);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(0))->value(), 0);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(1))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(2))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(3))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list_l.at(4))->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(3), 3));
+  EXPECT_TRUE(isIntEqualsWord(list_l.at(4), 4));
 }
 
 TEST(ThreadTest, BaseTypeConflict) {
@@ -2499,8 +2467,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   Object value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value.isValueCell());
   RawObject value_obj = RawValueCell::cast(*value)->value();
-  EXPECT_TRUE(value_obj->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(value_obj)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(value_obj, 3));
 }
 
 TEST(ThreadTest, BreakLoopRangeLoop) {
@@ -2617,8 +2584,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
       runtime.computeFastGlobals(code, implicit_globals, builtins));
 
   Object result(&scope, Interpreter::execute(thread, frame));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 7);
+  EXPECT_TRUE(isIntEqualsWord(*result, 7));
 }
 
 TEST(ThreadTest, Func2TestPyStone) {  // mimic pystone.py Func2
@@ -2821,9 +2787,9 @@ c = a.hahaha
   Object a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(runtime.typeOf(*a) == *bar);
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 123);
+  EXPECT_TRUE(isIntEqualsWord(*b, 123));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 456);
+  EXPECT_TRUE(isIntEqualsWord(*c, 456));
 }
 
 TEST(ThreadTest, NameLookupInTypeBodyFindsImplicitGlobal) {
@@ -2843,9 +2809,9 @@ class C:
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*a, 3));
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 6);
+  EXPECT_TRUE(isIntEqualsWord(*b, 6));
 }
 
 TEST(ThreadTest, NameLookupInTypeBodyFindsGlobal) {
@@ -2863,9 +2829,9 @@ class C:
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object one(&scope, moduleAt(&runtime, main, "one"));
-  EXPECT_EQ(RawSmallInt::cast(*one)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*one, 1));
   Object two(&scope, moduleAt(&runtime, main, "two"));
-  EXPECT_EQ(RawSmallInt::cast(*two)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*two, 2));
 }
 
 TEST(ThreadTest, ExecuteDeleteName) {
@@ -2969,16 +2935,13 @@ foo = Foo(1111, b=2222, c=3333)
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object result_a(&scope, moduleAt(&runtime, main, "result_a"));
-  ASSERT_TRUE(result_a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_a)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(*result_a, 1111));
 
   Object result_b(&scope, moduleAt(&runtime, main, "result_b"));
-  ASSERT_TRUE(result_b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_b)->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(*result_b, 2222));
 
   Object result_c(&scope, moduleAt(&runtime, main, "result_c"));
-  ASSERT_TRUE(result_c.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result_c)->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(*result_c, 3333));
 }
 
 TEST(ThreadTest, LoadTypeDeref) {
@@ -3021,8 +2984,7 @@ TEST(ThreadTest, LoadTypeDerefFromLocal) {
   Dict implicit_global(&scope, runtime.newDict());
   frame->setImplicitGlobals(*implicit_global);
   RawObject result = Interpreter::execute(thread, frame);
-  ASSERT_TRUE(result->isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 }  // namespace python

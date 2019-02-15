@@ -375,8 +375,7 @@ result = exc.value
 
   // The value attribute should contain the first constructor argument.
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result)->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1111));
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
@@ -392,16 +391,13 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
   EXPECT_EQ(err.name(), NoneType::object());
 
   err.setMsg(SmallInt::fromWord(1111));
-  ASSERT_TRUE(err.msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(err.msg(), 1111));
 
   err.setPath(SmallInt::fromWord(2222));
-  ASSERT_TRUE(err.path()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.path())->value(), 2222);
+  EXPECT_TRUE(isIntEqualsWord(err.path(), 2222));
 
   err.setName(SmallInt::fromWord(3333));
-  ASSERT_TRUE(err.name()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.name())->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(err.name(), 3333));
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
@@ -412,8 +408,7 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
-  ASSERT_TRUE(err.msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
+  EXPECT_TRUE(isIntEqualsWord(err.msg(), 1111));
   EXPECT_EQ(err.path(), NoneType::object());
   EXPECT_EQ(err.name(), NoneType::object());
 }
@@ -426,12 +421,9 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
-  ASSERT_TRUE(err.msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
-  ASSERT_TRUE(err.name()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.name())->value(), 2222);
-  ASSERT_TRUE(err.path()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.path())->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(err.msg(), 1111));
+  EXPECT_TRUE(isIntEqualsWord(err.name(), 2222));
+  EXPECT_TRUE(isIntEqualsWord(err.path(), 3333));
 }
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithInvalidKwargs) {
@@ -453,12 +445,9 @@ exc = ModuleNotFoundError(1111, name=2222, path=3333)
   ASSERT_TRUE(data.isModuleNotFoundError());
 
   ModuleNotFoundError err(&scope, *data);
-  ASSERT_TRUE(err.msg()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.msg())->value(), 1111);
-  ASSERT_TRUE(err.name()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.name())->value(), 2222);
-  ASSERT_TRUE(err.path()->isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(err.path())->value(), 3333);
+  EXPECT_TRUE(isIntEqualsWord(err.msg(), 1111));
+  EXPECT_TRUE(isIntEqualsWord(err.name(), 2222));
+  EXPECT_TRUE(isIntEqualsWord(err.path(), 3333));
 }
 
 TEST(ExceptionBuiltinsTest, DunderReprWithNoArgsHasEmptyParens) {

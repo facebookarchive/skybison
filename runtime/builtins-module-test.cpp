@@ -750,8 +750,7 @@ exec("a = 1338")
   // We can't use runBuiltin here because it does not set up the frame properly
   // for functions that need globals, implicitGlobals, etc
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 1338);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
@@ -769,8 +768,7 @@ result = exec("a = 1338", gl)
   Object result(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result.isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 1338);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
@@ -784,8 +782,7 @@ result = exec("a = 1338", {})
   Object result(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result.isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a)->value(), 1337);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1337));
 }
 
 TEST(BuiltinsModuleDeathTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
@@ -806,8 +803,7 @@ TEST(BuiltinsModuleTest, BuiltinExecExWithTupleCallsExec) {
 exec(*("a = 1338",))
   )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a).value(), 1338);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
 TEST(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
@@ -817,8 +813,7 @@ TEST(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
 exec(*["a = 1338"])
   )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(SmallInt::cast(*a).value(), 1338);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
 TEST(BuiltinsModuleTest, CopyFunctionEntriesCopies) {

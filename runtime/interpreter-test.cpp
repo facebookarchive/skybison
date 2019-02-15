@@ -668,9 +668,9 @@ with Foo():
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
-  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*a, 3));
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*b, 2));
 }
 
 TEST(InterpreterTest, StackCleanupAfterCallFunction) {
@@ -723,7 +723,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   RawObject result = Interpreter::call(thread, frame, 1);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 42);
+  EXPECT_TRUE(isIntEqualsWord(result, 42));
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -779,7 +779,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   RawObject result = Interpreter::callEx(thread, frame, 0);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 42);
+  EXPECT_TRUE(isIntEqualsWord(result, 42));
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -840,7 +840,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   RawObject result = Interpreter::callKw(thread, frame, 1);
 
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_EQ(RawSmallInt::cast(result)->value(), 42);
+  EXPECT_TRUE(isIntEqualsWord(result, 42));
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -983,12 +983,9 @@ a, b, c = l
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
-  ASSERT_TRUE(b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
-  ASSERT_TRUE(c.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1));
+  EXPECT_TRUE(isIntEqualsWord(*b, 2));
+  EXPECT_TRUE(isIntEqualsWord(*c, 3));
 }
 
 TEST(InterpreterTest, UnpackSequenceTooFewObjects) {
@@ -1075,8 +1072,7 @@ a = AsyncIterable()
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
+  EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
 TEST(InterpreterTest, GetAiterOnNonIterable) {
@@ -1177,28 +1173,22 @@ a, b, c, *d, e, f, g  = l
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
-  ASSERT_TRUE(b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
-  ASSERT_TRUE(c.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1));
+  EXPECT_TRUE(isIntEqualsWord(*b, 2));
+  EXPECT_TRUE(isIntEqualsWord(*c, 3));
 
   Object d(&scope, moduleAt(&runtime, main, "d"));
   ASSERT_TRUE(d.isList());
   List list(&scope, *d);
   EXPECT_EQ(list.numItems(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 4));
 
   Object e(&scope, moduleAt(&runtime, main, "e"));
   Object f(&scope, moduleAt(&runtime, main, "f"));
   Object g(&scope, moduleAt(&runtime, main, "g"));
-  ASSERT_TRUE(e.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*e)->value(), 5);
-  ASSERT_TRUE(f.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*f)->value(), 6);
-  ASSERT_TRUE(g.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*g)->value(), 7);
+  EXPECT_TRUE(isIntEqualsWord(*e, 5));
+  EXPECT_TRUE(isIntEqualsWord(*f, 6));
+  EXPECT_TRUE(isIntEqualsWord(*g, 7));
 }
 
 TEST(InterpreterTest, UnpackSequenceExWithNoElementsAfter) {
@@ -1212,16 +1202,14 @@ a, b, *c = l
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  ASSERT_TRUE(a.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
-  ASSERT_TRUE(b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1));
+  EXPECT_TRUE(isIntEqualsWord(*b, 2));
 
   ASSERT_TRUE(c.isList());
   List list(&scope, *c);
   ASSERT_EQ(list.numItems(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 3));
+  EXPECT_TRUE(isIntEqualsWord(list.at(1), 4));
 }
 
 TEST(InterpreterTest, UnpackSequenceExWithNoElementsBefore) {
@@ -1238,13 +1226,11 @@ l = [1, 2, 3, 4]
   ASSERT_TRUE(a.isList());
   List list(&scope, *a);
   ASSERT_EQ(list.numItems(), 2);
-  EXPECT_EQ(RawSmallInt::cast(list.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(list.at(1))->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
 
-  ASSERT_TRUE(b.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 3);
-  ASSERT_TRUE(c.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*c)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*b, 3));
+  EXPECT_TRUE(isIntEqualsWord(*c, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithDict) {
@@ -1263,23 +1249,19 @@ d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithListKeysMapping) {
@@ -1312,23 +1294,19 @@ d = {**Foo(), 'd': 4}
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithTupleKeysMapping) {
@@ -1361,23 +1339,19 @@ d = {**Foo(), 'd': 4}
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithIterableKeysMapping) {
@@ -1425,23 +1399,19 @@ d = {**Foo(), 'd': 4}
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithNonMapping) {
@@ -1550,10 +1520,10 @@ t = foo(*(1,2), *(3, 4))
   ASSERT_TRUE(t.isTuple());
 
   Tuple tuple(&scope, *t);
-  EXPECT_EQ(RawSmallInt::cast(tuple.at(0))->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(tuple.at(1))->value(), 2);
-  EXPECT_EQ(RawSmallInt::cast(tuple.at(2))->value(), 3);
-  EXPECT_EQ(RawSmallInt::cast(tuple.at(3))->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(2), 3));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(3), 4));
 }
 
 TEST(InterpreterTest, FunctionDerefsVariable) {
@@ -1572,9 +1542,7 @@ v = outer()
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object v(&scope, moduleAt(&runtime, main, "v"));
-  ASSERT_TRUE(v.isInt());
-  Int result(&scope, *v);
-  EXPECT_EQ(result.asWord(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*v, 0));
 }
 
 TEST(InterpreterTest, FunctionAccessesUnboundVariable) {
@@ -1621,13 +1589,8 @@ b = public_symbol2()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
-  ASSERT_TRUE(a.isInt());
-  ASSERT_TRUE(b.isInt());
-
-  Int result1(&scope, *a);
-  Int result2(&scope, *b);
-  EXPECT_EQ(result1.asWord(), 1);
-  EXPECT_EQ(result2.asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1));
+  EXPECT_TRUE(isIntEqualsWord(*b, 2));
 }
 
 TEST(InterpreterTest, ImportStarDoesNotImportPrivateSymbols) {
@@ -1755,8 +1718,7 @@ a = Awaitable()
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   Object result(&scope, Thread::currentThread()->run(code));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(42, RawSmallInt::cast(*result)->value());
+  EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
 TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
@@ -1792,23 +1754,19 @@ d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallTupleKeys) {
@@ -1840,23 +1798,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallListKeys) {
@@ -1888,23 +1842,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallIteratorKeys) {
@@ -1954,23 +1904,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
   Object key(&scope, SmallStr::fromCStr("a"));
   Object el0(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el0.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el0)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
   Object el1(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el1)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
   Object el2(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el2)->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
   Object el3(&scope, runtime.dictAt(dict, key));
-  ASSERT_TRUE(el3.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*el3)->value(), 4);
+  EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
 TEST(InterpreterTest, BuildMapUnpackWithCallDictNonStrKey) {
@@ -2376,9 +2322,7 @@ except:
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n.isInt());
-  Int n_int(&scope, *n);
-  EXPECT_EQ(n_int.asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
 TEST(InterpreterTest, RaiseCrossesFunctions) {
@@ -2401,9 +2345,7 @@ except:
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n.isInt());
-  Int n_int(&scope, *n);
-  EXPECT_EQ(n_int.asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
 TEST(InterpreterTest, RaiseFromSetsCause) {
@@ -2439,9 +2381,7 @@ except RuntimeError:
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n.isInt());
-  Int n_int(&scope, *n);
-  EXPECT_EQ(n_int.asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
 TEST(InterpreterTest, ExceptWithRightTupleTypeCatches) {
@@ -2458,9 +2398,7 @@ except (StopIteration, RuntimeError, ImportError):
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
-  ASSERT_TRUE(n.isInt());
-  Int n_int(&scope, *n);
-  EXPECT_EQ(n_int.asWord(), 2);
+  EXPECT_TRUE(isIntEqualsWord(*n, 2));
 }
 
 TEST(InterpreterTest, ExceptWithWrongTypePasses) {
@@ -2674,8 +2612,7 @@ for i in range(5):
 result = 10
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 10);
+  EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
 TEST(InterpreterTest, ContinueInExceptContinues) {
@@ -2693,8 +2630,7 @@ for i in range(5):
   result -= i
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), -4);
+  EXPECT_TRUE(isIntEqualsWord(*result, -4));
 }
 
 TEST(InterpreterTest, RaiseInLoopRaisesRuntimeError) {
@@ -2712,8 +2648,7 @@ except:
   result += 1000
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1003);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1003));
 }
 
 TEST(InterpreterTest, ReturnInsideTryRunsFinally) {
@@ -2732,8 +2667,7 @@ def f():
 result = f()
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 56789);
+  EXPECT_TRUE(isIntEqualsWord(*result, 56789));
 
   Object ran_finally(&scope, moduleAt(&runtime, "__main__", "ran_finally"));
   EXPECT_EQ(*ran_finally, Bool::trueObj());
@@ -2752,8 +2686,7 @@ def f():
 result = f()
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 456);
+  EXPECT_TRUE(isIntEqualsWord(*result, 456));
 }
 
 TEST(InterpreterTest, ReturnInsideWithRunsDunderExit) {
@@ -2779,8 +2712,7 @@ def foo():
 result = foo()
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1234);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 
   Object sequence(&scope, moduleAt(&runtime, "__main__", "sequence"));
   EXPECT_TRUE(isStrEqualsCStr(*sequence, "enter in foo exit"));
@@ -2860,8 +2792,7 @@ result = 1234
                    .isError());
 
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1234);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 }
 
 TEST(InterpreterTest, WithStatementWithRaisingExitRaises) {

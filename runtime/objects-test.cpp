@@ -32,14 +32,10 @@ TEST(IntTest, IntTest) {
   HandleScope scope;
 
   Object o1(&scope, runtime.newInt(42));
-  ASSERT_TRUE(o1.isSmallInt());
-  Int i1(&scope, *o1);
-  EXPECT_EQ(i1.asWord(), 42);
+  EXPECT_TRUE(isIntEqualsWord(*o1, 42));
 
   Object o2(&scope, runtime.newInt(9223372036854775807L));
-  ASSERT_TRUE(o2.isLargeInt());
-  Int i2(&scope, *o2);
-  EXPECT_EQ(i2.asWord(), 9223372036854775807L);
+  EXPECT_TRUE(isIntEqualsWord(*o2, 9223372036854775807L));
 
   int stack_val = 123;
   Object o3(&scope, runtime.newIntFromCPtr(&stack_val));
@@ -48,9 +44,7 @@ TEST(IntTest, IntTest) {
   EXPECT_EQ(*static_cast<int*>(i3.asCPtr()), 123);
 
   Object o4(&scope, runtime.newInt(kMinWord));
-  ASSERT_TRUE(o4.isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(*o4)->numDigits(), 1);
-  EXPECT_EQ(RawLargeInt::cast(*o4)->asWord(), kMinWord);
+  EXPECT_TRUE(isIntEqualsWord(*o4, kMinWord));
 
   uword digits[] = {kMaxUword, 0};
   Int o5(&scope, runtime.newIntWithDigits(digits));
@@ -657,13 +651,13 @@ TEST(WeakRefTest, EnqueueAndDequeue) {
     WeakRef::enqueueReference(*weak, &list);
   }
   WeakRef weak(&scope, WeakRef::dequeueReference(&list));
-  EXPECT_EQ(RawSmallInt::cast(weak.referent())->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 0));
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(RawSmallInt::cast(weak.referent())->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 1));
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(RawSmallInt::cast(weak.referent())->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 2));
 
   EXPECT_EQ(list, NoneType::object());
 }
@@ -691,16 +685,16 @@ TEST(WeakRefTest, SpliceQueue) {
   }
   RawObject list = WeakRef::spliceQueue(list1, list2);
   WeakRef weak(&scope, WeakRef::dequeueReference(&list));
-  EXPECT_EQ(RawSmallInt::cast(weak.referent())->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 0));
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(RawSmallInt::cast(weak.referent())->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 1));
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(RawSmallInt::cast(weak.referent())->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 2));
 
   weak = WeakRef::dequeueReference(&list);
-  EXPECT_EQ(RawSmallInt::cast(weak.referent())->value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 3));
 
   EXPECT_EQ(list, NoneType::object());
 }

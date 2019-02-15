@@ -195,8 +195,7 @@ import sys
 result = sys.flags.verbose
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawInt::cast(*result).asWord(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
 }  // namespace python

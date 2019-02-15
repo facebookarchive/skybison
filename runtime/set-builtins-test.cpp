@@ -28,8 +28,8 @@ b = len(s)
 )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_EQ(RawSmallInt::cast(*a)->value(), 1);
-  EXPECT_EQ(RawSmallInt::cast(*b)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*a, 1));
+  EXPECT_TRUE(isIntEqualsWord(*b, 0));
 }
 
 TEST(SetBuiltinsTest, InitializeByTypeCall) {
@@ -304,12 +304,10 @@ TEST(SetIteratorBuiltinsTest, CallDunderNext) {
   ASSERT_TRUE(iter.isSetIterator());
 
   Object item1(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*item1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object item2(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*item2)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*item2, 1));
 
   Object item3(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item3.isError());
@@ -347,8 +345,7 @@ TEST(SetIteratorBuiltinsTest, DunderLengthHintOnEmptySetReturnsZero) {
 
   Object length_hint(&scope,
                      runBuiltin(SetIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
@@ -363,18 +360,15 @@ TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
 
   Object length_hint1(&scope,
                       runBuiltin(SetIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint1, 1));
 
   // Consume the iterator
   Object item1(&scope, runBuiltin(SetIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*item1)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*item1, 0));
 
   Object length_hint2(&scope,
                       runBuiltin(SetIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
 TEST(SetBuiltinsTest, SetIsDisjointWithNonIterableArg) {
@@ -1103,8 +1097,7 @@ s = Set([0, 1, 2])
   ASSERT_TRUE(runtime.isInstanceOfSet(*s));
 
   Object result(&scope, runBuiltin(SetBuiltins::dunderLen, s));
-  ASSERT_TRUE(result.isInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 3);
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
 TEST(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {

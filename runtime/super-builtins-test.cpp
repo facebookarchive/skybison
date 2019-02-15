@@ -127,12 +127,12 @@ d = D()
 e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
 )");
   HandleScope scope;
-  Int a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Int b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   Bool c(&scope, moduleAt(&runtime, "__main__", "c"));
   Bool e(&scope, moduleAt(&runtime, "__main__", "e"));
-  EXPECT_EQ(a.asWord(), 3);
-  EXPECT_EQ(b.asWord(), 10);
+  EXPECT_TRUE(isIntEqualsWord(*a, 3));
+  EXPECT_TRUE(isIntEqualsWord(*b, 10));
   EXPECT_EQ(*c, Bool::trueObj());
   EXPECT_EQ(*e, Bool::trueObj());
 }

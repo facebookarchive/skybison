@@ -31,6 +31,7 @@ class Runtime;
 
 std::ostream& operator<<(std::ostream& os, const Str& str);
 std::ostream& operator<<(std::ostream& os, CastError err);
+std::ostream& operator<<(std::ostream& os, const Int& value);
 
 namespace testing {
 
@@ -133,12 +134,12 @@ std::string typeName(Runtime* runtime, RawObject obj);
 
 // Helper to allow construction from initializer list, like
 // newIntFromDigits(runtime, {-1, 1})
-RawObject newIntWithDigits(Runtime* runtime, const std::vector<uword>& digits);
+RawObject newIntWithDigits(Runtime* runtime, View<uword> digits);
 
 // Helper to allow construction of a RawLargeInt from an initializer list.
 // May construct an invalid LargeInt depending on the digits so we can test
 // normalizeLargeInt().
-RawLargeInt newLargeIntWithDigits(const std::vector<uword>& digits);
+RawLargeInt newLargeIntWithDigits(View<uword> digits);
 
 // Helper to create set objects.
 // Equivalent to evaluating "set(range(start, stop))" in Python.
@@ -172,6 +173,10 @@ RawObject listFromRange(word start, word stop);
 ::testing::AssertionResult isStrEquals(const Object& s1, const Object& s2);
 
 ::testing::AssertionResult isStrEqualsCStr(RawObject obj, const char* c_str);
+
+::testing::AssertionResult isIntEqualsWord(RawObject obj, word value);
+
+::testing::AssertionResult isIntEqualsDigits(RawObject obj, View<uword> digits);
 
 // Check if the return value of a call and current thread state indicate that an
 // exception was raised with the given type.

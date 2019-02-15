@@ -1531,8 +1531,7 @@ TEST(StrIteratorBuiltinsTest, DunderLengthHintOnEmptyStrIteratorReturnsZero) {
 
   Object length_hint(&scope,
                      runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
 TEST(StrIteratorBuiltinsTest,
@@ -1546,8 +1545,7 @@ TEST(StrIteratorBuiltinsTest,
 
   Object length_hint1(&scope,
                       runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint1.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint1)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint1, 1));
 
   // Consume the iterator
   Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
@@ -1556,8 +1554,7 @@ TEST(StrIteratorBuiltinsTest,
 
   Object length_hint2(&scope,
                       runBuiltin(StrIteratorBuiltins::dunderLengthHint, iter));
-  ASSERT_TRUE(length_hint2.isSmallInt());
-  ASSERT_EQ(RawSmallInt::cast(*length_hint2)->value(), 0);
+  EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
 TEST(StrBuiltinsTest, StripSpaceWithEmptyStrIsIdentity) {

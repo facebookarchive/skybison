@@ -51,7 +51,7 @@ weak = ref(a, f)
   RawObject b = moduleAt(&runtime, "__main__", "b");
   RawObject weak = moduleAt(&runtime, "__main__", "weak");
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), a);
-  EXPECT_EQ(RawSmallInt::cast(b)->value(), 1);
+  EXPECT_TRUE(isIntEqualsWord(b, 1));
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Dict globals(&scope, main.dict());
@@ -61,7 +61,7 @@ weak = ref(a, f)
   runtime.collectGarbage();
   weak = moduleAt(&runtime, "__main__", "weak");
   b = moduleAt(&runtime, "__main__", "b");
-  EXPECT_EQ(RawSmallInt::cast(b)->value(), 2);
+  EXPECT_TRUE(isIntEqualsWord(b, 2));
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), NoneType::object());
   EXPECT_EQ(RawWeakRef::cast(weak)->callback(), NoneType::object());
 }
