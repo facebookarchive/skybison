@@ -79,6 +79,7 @@ set(
   "${CPYTHON_DIR}/Objects/accu.c"
   "${CPYTHON_DIR}/Python/fileutils.c"
   "${CPYTHON_DIR}/Python/pyctype.c"
+  "${CPYTHON_DIR}/Python/pystrhex.c"
   "${CPYTHON_DIR}/Python/pytime.c"
   "${CPYTHON_DIR}/Modules/_bisectmodule.c"
   "${CPYTHON_DIR}/Modules/_blake2/blake2module.c"
