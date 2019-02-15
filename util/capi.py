@@ -67,6 +67,7 @@ class FunctionUse:
     MODULES_RE = re.compile(r"Modules/(.+\.o)$")
     TP2_RE = re.compile(fr"/([^/]+)/(?:[^/]+)/{FBCODE_PLATFORM}/.+/([^/]+\.so)$")
     INSTAGRAM_RE = re.compile(r"/((?:distillery|site-packages|lib-dynload)/.+\.so)$")
+    UWSGI_RE = re.compile(r"uWSGI/master/src/build-.+/([^/]+\.o)")
 
     @classmethod
     def _process_filename(cls, filename):
@@ -79,6 +80,9 @@ class FunctionUse:
         match = cls.INSTAGRAM_RE.search(filename)
         if match:
             return match[1]
+        match = cls.UWSGI_RE.search(filename)
+        if match:
+            return f"uwsgi/{match[1]}"
         raise ValueError(f"Unknown path format: '{filename}'")
 
     def __repr__(self):
@@ -114,12 +118,6 @@ def find_used_capi(obj_file):
         yield FunctionUse(obj_file, function)
 
 
-# Yield all C-API functions used in all of the given object files.
-def find_all_used_capi(obj_files):
-    for obj_file in obj_files:
-        yield from find_used_capi(obj_file)
-
-
 # Read a precomputed list of C-API functions used by Instagram from the given
 # fbsource checkout.
 def read_insta_used_capi(fbsource_path):
@@ -134,13 +132,15 @@ def read_insta_used_capi(fbsource_path):
             yield FunctionUse("instagram.so", name)
 
 
-# Yield C-API functions used by any .so file recursively found in so_dir. If
-# platform is given, restrict the search to .so files that look like they're
-# from the given fbcode platform.
-def find_so_used_capi(so_dir, platform=None):
-    for path, _dirs, files in os.walk(so_dir):
+# Yield C-API functions used by any .so or .o file recursively found in
+# root. If platform is given, restrict the search to object files that look
+# like they're from the given fbcode platform.
+def find_obj_used_capi(root, platform=None):
+    if not Path(root).exists():
+        raise RuntimeError(f"Path '{root}' does not exist")
+    for path, _dirs, files in os.walk(root):
         for file in files:
-            if file.endswith(".so") and (
+            if (file.endswith(".so") or file.endswith(".o")) and (
                 platform is None or f"/{FBCODE_PLATFORM}/" in path
             ):
                 yield from find_used_capi(os.path.join(path, file))
@@ -184,11 +184,11 @@ def process_modules(args):
 
     used_capi = set()
     if args.scan_modules:
-        used_capi |= set(find_all_used_capi(module_objs))
+        used_capi |= set(itertools.chain(*[find_used_capi(obj) for obj in module_objs]))
     if args.tp2:
-        used_capi |= set(find_so_used_capi(args.tp2, platform=FBCODE_PLATFORM))
-    for so_dir in args.so:
-        used_capi |= set(find_so_used_capi(so_dir))
+        used_capi |= set(find_obj_used_capi(args.tp2, platform=FBCODE_PLATFORM))
+    for so_dir in args.objs:
+        used_capi |= set(find_obj_used_capi(so_dir))
     if not used_capi:
         sys.exit("No C-API functions found.")
     return list(used_capi)
@@ -327,10 +327,10 @@ functions are implemented out of the total needed.
         "from platform {FBCODE_PLATFORM} will be considered.",
     )
     libs.add_argument(
-        "--so",
+        "--objs",
         action="append",
         default=[],
-        help="Root of any directory to scan for .so files. Maybe be given "
+        help="Root of any directory to scan for .so or .o files. May be given "
         "multiple times.",
     )
     libs.add_argument(
