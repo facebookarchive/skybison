@@ -16,12 +16,15 @@ namespace python {
 
 const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kBitLength, bitLength},
+    {SymbolId::kConjugate, dunderInt},
     {SymbolId::kDunderAbs, dunderAbs},
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderAnd, dunderAnd},
     {SymbolId::kDunderBool, dunderBool},
+    {SymbolId::kDunderCeil, dunderInt},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderFloat, dunderFloat},
+    {SymbolId::kDunderFloor, dunderInt},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderIndex, dunderInt},
@@ -33,10 +36,13 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNeg, dunderNeg},
     {SymbolId::kDunderOr, dunderOr},
-    {SymbolId::kDunderPos, dunderPos},
+    {SymbolId::kDunderPos, dunderInt},
     {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kDunderRound, dunderInt},
     {SymbolId::kDunderRshift, dunderRshift},
+    {SymbolId::kDunderStr, dunderRepr},
     {SymbolId::kDunderSub, dunderSub},
+    {SymbolId::kDunderTrunc, dunderInt},
     {SymbolId::kDunderXor, dunderXor},
     {SymbolId::kDunderNew, dunderNew},
 };
@@ -613,17 +619,6 @@ RawObject IntBuiltins::dunderXor(Thread* t, Frame* frame, word nargs) {
       t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
         return thread->runtime()->intBinaryXor(thread, left, right);
       });
-}
-
-RawObject IntBuiltins::dunderPos(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread*, const Int& self) -> RawObject {
-    if (self.isBool()) {
-      return intFromBool(*self);
-    }
-    DCHECK(self.isSmallInt() || self.isLargeInt(),
-           "remaining case should be small or large int");
-    return *self;
-  });
 }
 
 // TODO(T39167211): Merge with IntBuiltins::fromBytesKw / IntBuiltins::fromBytes

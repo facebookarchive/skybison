@@ -578,6 +578,46 @@ TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
+TEST(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object ceil_name(&scope, runtime.newStrFromCStr("__ceil__"));
+  Object ceil_obj(&scope, runtime.typeDictAt(dict, ceil_name));
+  ASSERT_TRUE(ceil_obj.isFunction());
+  Function ceil(&scope, *ceil_obj);
+  Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, ceil_name));
+  ASSERT_TRUE(dint_obj.isFunction());
+  Function dint(&scope, *ceil_obj);
+  EXPECT_EQ(RawCode::cast(ceil.code()).code(),
+            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(ceil.entry(), dint.entry());
+  EXPECT_EQ(ceil.entryKw(), dint.entryKw());
+  EXPECT_EQ(ceil.entryEx(), dint.entryEx());
+}
+
+TEST(IntBuiltinsTest, DunderFloorAliasesDunderInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object floor_name(&scope, runtime.newStrFromCStr("__floor__"));
+  Object floor_obj(&scope, runtime.typeDictAt(dict, floor_name));
+  ASSERT_TRUE(floor_obj.isFunction());
+  Function floor(&scope, *floor_obj);
+  Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, floor_name));
+  ASSERT_TRUE(dint_obj.isFunction());
+  Function dint(&scope, *floor_obj);
+  EXPECT_EQ(RawCode::cast(floor.code()).code(),
+            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(floor.entry(), dint.entry());
+  EXPECT_EQ(floor.entryKw(), dint.entryKw());
+  EXPECT_EQ(floor.entryEx(), dint.entryEx());
+}
+
 TEST(IntBuiltinsTest, DunderLshiftWithBoolsTrueFalseReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
@@ -1271,27 +1311,6 @@ TEST(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {
             runtime.typeAt(LayoutId::kTypeError));
 }
 
-TEST(LargeIntBuiltinsTest, UnaryPositive) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Object smallint_max(&scope, runtime.newInt(RawSmallInt::kMaxValue));
-  Object a(&scope, runBuiltin(IntBuiltins::dunderPos, smallint_max));
-  EXPECT_TRUE(isIntEqualsWord(*a, static_cast<word>(RawSmallInt::kMaxValue)));
-
-  Object smallint_max1(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
-  Object b(&scope, runBuiltin(IntBuiltins::dunderPos, smallint_max1));
-  EXPECT_TRUE(isIntEqualsWord(*b, RawSmallInt::kMaxValue + 1));
-
-  Object smallint_min(&scope, runtime.newInt(RawSmallInt::kMinValue));
-  Object c(&scope, runBuiltin(IntBuiltins::dunderPos, smallint_min));
-  EXPECT_TRUE(isIntEqualsWord(*c, static_cast<word>(RawSmallInt::kMinValue)));
-
-  Object smallint_min1(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
-  Object d(&scope, runBuiltin(IntBuiltins::dunderPos, smallint_min1));
-  EXPECT_TRUE(isIntEqualsWord(*d, RawSmallInt::kMinValue - 1));
-}
-
 TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
   Runtime runtime;
   HandleScope scope;
@@ -1511,19 +1530,24 @@ TEST(IntBuiltinsTest, StringToIntDNeg) {
   EXPECT_TRUE(res2.isError());
 }
 
-TEST(IntBuiltinsTest, DunderIndexReturnsSameValue) {
+TEST(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
   Runtime runtime;
   HandleScope scope;
-
-  runFromCStr(&runtime, R"(
-a = (7).__index__()
-b = int.__index__(7)
-)");
-
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(isIntEqualsWord(*a, 7));
-  EXPECT_TRUE(isIntEqualsWord(*b, 7));
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object index_name(&scope, runtime.newStrFromCStr("__index__"));
+  Object index_obj(&scope, runtime.typeDictAt(dict, index_name));
+  ASSERT_TRUE(index_obj.isFunction());
+  Function index(&scope, *index_obj);
+  Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, index_name));
+  ASSERT_TRUE(dint_obj.isFunction());
+  Function dint(&scope, *index_obj);
+  EXPECT_EQ(RawCode::cast(index.code()).code(),
+            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(index.entry(), dint.entry());
+  EXPECT_EQ(index.entryKw(), dint.entryKw());
+  EXPECT_EQ(index.entryEx(), dint.entryEx());
 }
 
 TEST(IntBuiltinsTest, DunderIntWithBoolFalseReturnsSmallInt) {
@@ -1690,17 +1714,24 @@ TEST(IntBuiltinsTest, DunderNegWithLargeIntOverflowsReturnsLargeInt) {
       isIntEqualsDigits(*result, {0, uword{1} << (kBitsPerWord - 1), 0}));
 }
 
-TEST(IntBuiltinsTest, DunderPosOnBool) {
+TEST(IntBuiltinsTest, DunderPosAliasesDunderInt) {
   Runtime runtime;
   HandleScope scope;
-
-  Object true_obj(&scope, Bool::trueObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderPos, true_obj),
-            SmallInt::fromWord(1));
-
-  Object false_obj(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(IntBuiltins::dunderPos, false_obj),
-            SmallInt::fromWord(0));
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object pos_name(&scope, runtime.newStrFromCStr("__pos__"));
+  Object pos_obj(&scope, runtime.typeDictAt(dict, pos_name));
+  ASSERT_TRUE(pos_obj.isFunction());
+  Function pos(&scope, *pos_obj);
+  Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, pos_name));
+  ASSERT_TRUE(dint_obj.isFunction());
+  Function dint(&scope, *pos_obj);
+  EXPECT_EQ(RawCode::cast(pos.code()).code(),
+            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(pos.entry(), dint.entry());
+  EXPECT_EQ(pos.entryKw(), dint.entryKw());
+  EXPECT_EQ(pos.entryEx(), dint.entryEx());
 }
 
 TEST(IntBuiltinsTest, DunderLtOnBool) {
@@ -1779,6 +1810,46 @@ TEST(IntBuiltinsTest, DunderLeOnBool) {
   Object minus_one(&scope, SmallInt::fromWord(-1));
   EXPECT_EQ(runBuiltin(IntBuiltins::dunderLe, false_obj, minus_one),
             Bool::falseObj());
+}
+
+TEST(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object round_name(&scope, runtime.newStrFromCStr("__round__"));
+  Object round_obj(&scope, runtime.typeDictAt(dict, round_name));
+  ASSERT_TRUE(round_obj.isFunction());
+  Function round(&scope, *round_obj);
+  Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, round_name));
+  ASSERT_TRUE(dint_obj.isFunction());
+  Function dint(&scope, *round_obj);
+  EXPECT_EQ(RawCode::cast(round.code()).code(),
+            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(round.entry(), dint.entry());
+  EXPECT_EQ(round.entryKw(), dint.entryKw());
+  EXPECT_EQ(round.entryEx(), dint.entryEx());
+}
+
+TEST(IntBuiltinsTest, DunderTruncAliasesDunderInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object trunc_name(&scope, runtime.newStrFromCStr("__trunc__"));
+  Object trunc_obj(&scope, runtime.typeDictAt(dict, trunc_name));
+  ASSERT_TRUE(trunc_obj.isFunction());
+  Function trunc(&scope, *trunc_obj);
+  Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, trunc_name));
+  ASSERT_TRUE(dint_obj.isFunction());
+  Function dint(&scope, *trunc_obj);
+  EXPECT_EQ(RawCode::cast(trunc.code()).code(),
+            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(trunc.entry(), dint.entry());
+  EXPECT_EQ(trunc.entryKw(), dint.entryKw());
+  EXPECT_EQ(trunc.entryEx(), dint.entryEx());
 }
 
 TEST(IntBuiltinsTest, FromBytesWithLittleEndianReturnsSmallInt) {
@@ -2205,6 +2276,26 @@ TEST(IntBuiltinsTest, DunderRshiftWithNonIntReturnsNotImplemented) {
   Object right(&scope, runtime.newStrFromCStr(""));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
   EXPECT_TRUE(result.isNotImplemented());
+}
+
+TEST(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object str_name(&scope, runtime.newStrFromCStr("__str__"));
+  Object str_obj(&scope, runtime.typeDictAt(dict, str_name));
+  ASSERT_TRUE(str_obj.isFunction());
+  Function str(&scope, *str_obj);
+  Object repr_name(&scope, runtime.newStrFromCStr("__repr__"));
+  Object repr_obj(&scope, runtime.typeDictAt(dict, str_name));
+  ASSERT_TRUE(repr_obj.isFunction());
+  Function repr(&scope, *str_obj);
+  EXPECT_EQ(RawCode::cast(str.code()).code(),
+            RawCode::cast(repr.code()).code());
+  EXPECT_EQ(str.entry(), repr.entry());
+  EXPECT_EQ(str.entryKw(), repr.entryKw());
+  EXPECT_EQ(str.entryEx(), repr.entryEx());
 }
 
 TEST(IntBuiltinsTest, DunderSubWithSmallIntsReturnsSmallInt) {
@@ -3116,6 +3207,26 @@ TEST(SmallIntBuiltinsTest, DunderTrueDivWithSmallInt) {
   num2 = SmallInt::fromWord(3);
   result = runBuiltin(SmallIntBuiltins::dunderTrueDiv, num1, num2);
   EXPECT_NEAR(result.value(), 2.3333333333333335, DBL_EPSILON);
+}
+
+TEST(IntBuiltinsTest, ConjugateAliasesDunderInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, moduleAt(&runtime, "builtins", "int"));
+  Dict dict(&scope, type.dict());
+  Object conjugate_name(&scope, runtime.newStrFromCStr("conjugate"));
+  Object conjugate_obj(&scope, runtime.typeDictAt(dict, conjugate_name));
+  ASSERT_TRUE(conjugate_obj.isFunction());
+  Function conjugate(&scope, *conjugate_obj);
+  Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, conjugate_name));
+  ASSERT_TRUE(dint_obj.isFunction());
+  Function dint(&scope, *conjugate_obj);
+  EXPECT_EQ(RawCode::cast(conjugate.code()).code(),
+            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(conjugate.entry(), dint.entry());
+  EXPECT_EQ(conjugate.entryKw(), dint.entryKw());
+  EXPECT_EQ(conjugate.entryEx(), dint.entryEx());
 }
 
 }  // namespace python

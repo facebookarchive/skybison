@@ -46,6 +46,9 @@ class bool(bootstrap=True):
     def __repr__(self):
         return "True" if self else "False"
 
+    def __str__(self) -> str:  # noqa: T484
+        return bool.__repr__(self)
+
 
 class float(bootstrap=True):
     def __add__(self, n: float) -> float:
@@ -129,10 +132,16 @@ class int(bootstrap=True):
     def __bool__(self) -> bool:
         pass
 
+    def __ceil__(self) -> int:
+        pass
+
     def __eq__(self, n: int) -> bool:  # noqa: T484
         pass
 
     def __float__(self) -> float:
+        pass
+
+    def __floor__(self) -> int:
         pass
 
     def __ge__(self, n: int) -> bool:
@@ -174,16 +183,28 @@ class int(bootstrap=True):
     def __repr__(self) -> str:  # noqa: T484
         pass
 
+    def __round__(self) -> int:
+        pass
+
     def __rshift__(self, n: int) -> int:
         pass
 
+    def __str__(self) -> str:  # noqa: T484
+        pass
+
     def __sub__(self, n: int) -> int:
+        pass
+
+    def __trunc__(self) -> int:
         pass
 
     def __xor__(self, n: int) -> int:
         pass
 
     def bit_length(self) -> int:
+        pass
+
+    def conjugate(self) -> int:
         pass
 
 

@@ -23,6 +23,7 @@ class Runtime;
   V(DunderBuiltins, "__builtins__")                                            \
   V(DunderBytes, "__bytes__")                                                  \
   V(DunderCall, "__call__")                                                    \
+  V(DunderCeil, "__ceil__")                                                    \
   V(DunderClass, "__class__")                                                  \
   V(DunderClassCell, "__classcell__")                                          \
   V(DunderCode, "__code__")                                                    \
@@ -41,6 +42,7 @@ class Runtime;
   V(DunderFile, "__file__")                                                    \
   V(DunderFlags, "__flags__")                                                  \
   V(DunderFloat, "__float__")                                                  \
+  V(DunderFloor, "__floor__")                                                  \
   V(DunderFloordiv, "__floordiv__")                                            \
   V(DunderFormat, "__format__")                                                \
   V(DunderFspath, "__fspath__")                                                \
@@ -100,6 +102,7 @@ class Runtime;
   V(DunderRmod, "__rmod__")                                                    \
   V(DunderRmul, "__rmul__")                                                    \
   V(DunderRor, "__ror__")                                                      \
+  V(DunderRound, "__round__")                                                  \
   V(DunderRpow, "__rpow__")                                                    \
   V(DunderRrshift, "__rrshift__")                                              \
   V(DunderRshift, "__rshift__")                                                \
@@ -112,6 +115,7 @@ class Runtime;
   V(DunderStr, "__str__")                                                      \
   V(DunderSub, "__sub__")                                                      \
   V(DunderTruediv, "__truediv__")                                              \
+  V(DunderTrunc, "__trunc__")                                                  \
   V(DunderValues, "__values__")                                                \
   V(DunderXor, "__xor__")                                                      \
   V(AcquireLock, "acquire_lock")                                               \
@@ -146,6 +150,7 @@ class Runtime;
   V(Code, "code")                                                              \
   V(Compile, "compile")                                                        \
   V(Complex, "complex")                                                        \
+  V(Conjugate, "conjugate")                                                    \
   V(ConnectionAbortedError, "ConnectionAbortedError")                          \
   V(ConnectionError, "ConnectionError")                                        \
   V(ConnectionRefusedError, "ConnectionRefusedError")                          \
