@@ -30,10 +30,10 @@ TEST(ModuleBuiltinsDeathTest, DirectModuleAccessRaisesNameError) {
 
 TEST(ModuleBuiltinsDeathTest, DunderNewNotEnoughArgumentsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "import sys; type(sys).__new__()"),
-                    LayoutId::kTypeError,
-                    "TypeError: '__new__' takes 2 arguments but 0 given"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "import sys; type(sys).__new__()"),
+      LayoutId::kTypeError,
+      "TypeError: '__new__' takes 2 positional arguments but 0 given"));
 }
 
 TEST(ModuleBuiltinsDeathTest, DunderNewTooManyArgumentsRaisesTypeError) {

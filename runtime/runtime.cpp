@@ -207,30 +207,50 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
 
 RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                                        LayoutId superclass_id) {
-  return addBuiltinType(name, subclass_id, superclass_id,
-                        View<BuiltinAttribute>(nullptr, 0),
-                        View<BuiltinMethod>(nullptr, 0));
+  return addBuiltinType(
+      name, subclass_id, superclass_id, View<BuiltinAttribute>(nullptr, 0),
+      View<NativeMethod>(nullptr, 0), View<BuiltinMethod>(nullptr, 0));
 }
 
 RawObject Runtime::addBuiltinTypeWithAttrs(SymbolId name, LayoutId subclass_id,
                                            LayoutId superclass_id,
                                            View<BuiltinAttribute> attrs) {
   return addBuiltinType(name, subclass_id, superclass_id, attrs,
+                        View<NativeMethod>(nullptr, 0),
+                        View<BuiltinMethod>(nullptr, 0));
+}
+
+RawObject Runtime::addBuiltinTypeWithNativeMethods(SymbolId name,
+                                                   LayoutId subclass_id,
+                                                   LayoutId superclass_id,
+                                                   View<NativeMethod> methods) {
+  return addBuiltinType(name, subclass_id, superclass_id,
+                        View<BuiltinAttribute>(nullptr, 0), methods,
                         View<BuiltinMethod>(nullptr, 0));
 }
 
 RawObject Runtime::addBuiltinTypeWithMethods(SymbolId name,
                                              LayoutId subclass_id,
                                              LayoutId superclass_id,
-                                             View<BuiltinMethod> methods) {
+                                             View<NativeMethod> methods,
+                                             View<BuiltinMethod> builtins) {
   return addBuiltinType(name, subclass_id, superclass_id,
-                        View<BuiltinAttribute>(nullptr, 0), methods);
+                        View<BuiltinAttribute>(nullptr, 0), methods, builtins);
+}
+
+RawObject Runtime::addBuiltinTypeWithBuiltinMethods(
+    SymbolId name, LayoutId subclass_id, LayoutId superclass_id,
+    View<BuiltinMethod> methods) {
+  return addBuiltinType(name, subclass_id, superclass_id,
+                        View<BuiltinAttribute>(nullptr, 0),
+                        View<NativeMethod>(nullptr, 0), methods);
 }
 
 RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
                                   LayoutId superclass_id,
                                   View<BuiltinAttribute> attrs,
-                                  View<BuiltinMethod> methods) {
+                                  View<NativeMethod> methods,
+                                  View<BuiltinMethod> builtins) {
   HandleScope scope;
 
   // Create a class object for the subclass
@@ -255,7 +275,12 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   layoutAtPut(subclass_id, *layout);
 
   // Add the provided methods.
-  for (const BuiltinMethod& meth : methods) {
+  for (const NativeMethod& meth : methods) {
+    typeAddNativeFunction(subclass, meth.name, meth.address);
+  }
+
+  // Add the provided methods.
+  for (const BuiltinMethod& meth : builtins) {
     typeAddBuiltinFunction(subclass, meth.name, meth.address);
   }
 
@@ -665,6 +690,28 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
   return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetItem).isError();
 }
 
+RawObject Runtime::newEmptyCode() {
+  HandleScope scope;
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, newTuple(0));
+  return newCode(0,            // argcount
+                 0,            // kwonlyargcount
+                 0,            // nlocals
+                 0,            // stacksize
+                 0,            // flags
+                 none,         // code
+                 none,         // consts
+                 none,         // names
+                 empty_tuple,  // varnames
+                 empty_tuple,  // freevars
+                 empty_tuple,  // cellvars
+                 none,         // filename
+                 none,         // name
+                 0,            // firlineno
+                 none          // lnotab
+  );
+}
+
 RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
                            word stacksize, word flags, const Object& code,
                            const Object& consts, const Object& names,
@@ -708,10 +755,10 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
   return *result;
 }
 
-RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
-                                      Function::Entry entry,
-                                      Function::Entry entry_kw,
-                                      Function::Entry entry_ex) {
+RawObject Runtime::newNativeFunction(SymbolId name, const Str& qualname,
+                                     Function::Entry entry,
+                                     Function::Entry entry_kw,
+                                     Function::Entry entry_ex) {
   HandleScope scope;
   Function result(&scope, heap()->create<RawFunction>());
   result.setName(symbols()->at(name));
@@ -720,6 +767,20 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
   result.setEntryKw(entry_kw);
   result.setEntryEx(entry_ex);
   return *result;
+}
+
+RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
+                                      Function::Entry entry) {
+  HandleScope scope;
+  Function function(
+      &scope, newNativeFunction(name, qualname, builtinTrampoline,
+                                builtinTrampolineKw, builtinTrampolineEx));
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, empty_tuple_);
+  function.setCode(newEmptyCode());
+  Code code(&scope, function.code());
+  code.setCode(newInt(bit_cast<uword>(entry)));
+  return *function;
 }
 
 RawObject Runtime::newExceptionState() {
@@ -765,36 +826,51 @@ RawObject Runtime::newInstance(const Layout& layout) {
   return instance;
 }
 
-void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
-                                     Function::Entry entry) {
-  typeAddBuiltinFunctionKwEx(type, name, entry, unimplementedTrampoline,
-                             unimplementedTrampoline);
+void Runtime::typeAddNativeFunction(const Type& type, SymbolId name,
+                                    Function::Entry entry) {
+  typeAddNativeFunctionKwEx(type, name, entry, unimplementedTrampoline,
+                            unimplementedTrampoline);
 }
 
-void Runtime::typeAddBuiltinFunctionKw(const Type& type, SymbolId name,
-                                       Function::Entry entry,
-                                       Function::Entry entry_kw) {
-  typeAddBuiltinFunctionKwEx(type, name, entry, entry_kw,
-                             unimplementedTrampoline);
+void Runtime::typeAddNativeFunctionKw(const Type& type, SymbolId name,
+                                      Function::Entry entry,
+                                      Function::Entry entry_kw) {
+  typeAddNativeFunctionKwEx(type, name, entry, entry_kw,
+                            unimplementedTrampoline);
 }
 
-void Runtime::typeAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
-                                         Function::Entry entry,
-                                         Function::Entry entry_kw,
-                                         Function::Entry entry_ex) {
-  HandleScope scope;
+RawObject Runtime::newQualname(const Type& type, SymbolId name) {
   // TODO(T40440499): Clean this mess up with a helper or string formatting
+  HandleScope scope;
   Tuple parts(&scope, newTuple(2));
   parts.atPut(0, type.name());
   parts.atPut(1, symbols()->at(name));
   Str sep(&scope, newStrFromCStr("."));
-  Str qualname(&scope, strJoin(Thread::currentThread(), sep, parts, 2));
+  return strJoin(Thread::currentThread(), sep, parts, 2);
+}
+
+void Runtime::typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
+                                        Function::Entry entry,
+                                        Function::Entry entry_kw,
+                                        Function::Entry entry_ex) {
+  HandleScope scope;
+  Str qualname(&scope, newQualname(type, name));
   Function function(
-      &scope, newBuiltinFunction(name, qualname, entry, entry_kw, entry_ex));
+      &scope, newNativeFunction(name, qualname, entry, entry_kw, entry_ex));
   Object key(&scope, symbols()->at(name));
   Object value(&scope, *function);
   Dict dict(&scope, type.dict());
   dictAtPutInValueCell(dict, key, value);
+}
+
+void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
+                                     Function::Entry entry) {
+  HandleScope scope;
+  Str qualname(&scope, newQualname(type, name));
+  Object key(&scope, symbols()->at(name));
+  Function function(&scope, newBuiltinFunction(name, qualname, entry));
+  Dict dict(&scope, type.dict());
+  dictAtPutInValueCell(dict, key, function);
 }
 
 void Runtime::classAddExtensionFunction(const Type& type, SymbolId name,
@@ -1378,31 +1454,22 @@ void Runtime::initializeExceptionTypes() {
 }
 
 void Runtime::initializeRefType() {
-  HandleScope scope;
-  Type ref(&scope, addEmptyBuiltinType(SymbolId::kRef, LayoutId::kWeakRef,
-                                       LayoutId::kObject));
-
-  typeAddBuiltinFunction(ref, SymbolId::kDunderInit,
-                         nativeTrampoline<builtinRefInit>);
-
-  typeAddBuiltinFunction(ref, SymbolId::kDunderNew,
-                         nativeTrampoline<builtinRefNew>);
+  const static BuiltinMethod kBuiltinMethods[] = {
+      {SymbolId::kDunderNew, builtinRefNew},
+  };
+  addBuiltinTypeWithBuiltinMethods(SymbolId::kRef, LayoutId::kWeakRef,
+                                   LayoutId::kObject, kBuiltinMethods);
 }
 
 void Runtime::initializeClassMethodType() {
-  HandleScope scope;
-  Type classmethod(
-      &scope, addEmptyBuiltinType(SymbolId::kClassmethod,
-                                  LayoutId::kClassMethod, LayoutId::kObject));
-
-  typeAddBuiltinFunction(classmethod, SymbolId::kDunderGet,
-                         nativeTrampoline<builtinClassMethodGet>);
-
-  typeAddBuiltinFunction(classmethod, SymbolId::kDunderInit,
-                         nativeTrampoline<builtinClassMethodInit>);
-
-  typeAddBuiltinFunction(classmethod, SymbolId::kDunderNew,
-                         nativeTrampoline<builtinClassMethodNew>);
+  const static BuiltinMethod kBuiltinMethods[] = {
+      {SymbolId::kDunderNew, builtinClassMethodNew},
+      {SymbolId::kDunderInit, builtinClassMethodInit},
+      {SymbolId::kDunderGet, builtinClassMethodGet},
+  };
+  addBuiltinTypeWithBuiltinMethods(SymbolId::kClassmethod,
+                                   LayoutId::kClassMethod, LayoutId::kObject,
+                                   kBuiltinMethods);
 }
 
 void Runtime::initializeImmediateTypes() {
@@ -1413,47 +1480,28 @@ void Runtime::initializeImmediateTypes() {
 }
 
 void Runtime::initializePropertyType() {
-  HandleScope scope;
-  Type property(&scope,
-                addEmptyBuiltinType(SymbolId::kProperty, LayoutId::kProperty,
-                                    LayoutId::kObject));
-
-  typeAddBuiltinFunction(property, SymbolId::kDeleter,
-                         nativeTrampoline<builtinPropertyDeleter>);
-
-  typeAddBuiltinFunction(property, SymbolId::kDunderGet,
-                         nativeTrampoline<builtinPropertyDunderGet>);
-
-  typeAddBuiltinFunction(property, SymbolId::kDunderSet,
-                         nativeTrampoline<builtinPropertyDunderSet>);
-
-  typeAddBuiltinFunction(property, SymbolId::kDunderInit,
-                         nativeTrampoline<builtinPropertyInit>);
-
-  typeAddBuiltinFunction(property, SymbolId::kDunderNew,
-                         nativeTrampoline<builtinPropertyNew>);
-
-  typeAddBuiltinFunction(property, SymbolId::kGetter,
-                         nativeTrampoline<builtinPropertyGetter>);
-
-  typeAddBuiltinFunction(property, SymbolId::kSetter,
-                         nativeTrampoline<builtinPropertySetter>);
+  const static BuiltinMethod kBuiltinMethods[] = {
+      {SymbolId::kDunderNew, builtinPropertyNew},
+      {SymbolId::kDunderInit, builtinPropertyInit},
+      {SymbolId::kDunderGet, builtinPropertyDunderGet},
+      {SymbolId::kDunderSet, builtinPropertyDunderSet},
+      {SymbolId::kDeleter, builtinPropertyDeleter},
+      {SymbolId::kGetter, builtinPropertyGetter},
+      {SymbolId::kSetter, builtinPropertySetter},
+  };
+  addBuiltinTypeWithBuiltinMethods(SymbolId::kProperty, LayoutId::kProperty,
+                                   LayoutId::kObject, kBuiltinMethods);
 }
 
 void Runtime::initializeStaticMethodType() {
-  HandleScope scope;
-  Type staticmethod(
-      &scope, addEmptyBuiltinType(SymbolId::kStaticMethod,
-                                  LayoutId::kStaticMethod, LayoutId::kObject));
-
-  typeAddBuiltinFunction(staticmethod, SymbolId::kDunderGet,
-                         nativeTrampoline<builtinStaticMethodGet>);
-
-  typeAddBuiltinFunction(staticmethod, SymbolId::kDunderInit,
-                         nativeTrampoline<builtinStaticMethodInit>);
-
-  typeAddBuiltinFunction(staticmethod, SymbolId::kDunderNew,
-                         nativeTrampoline<builtinStaticMethodNew>);
+  const static BuiltinMethod kBuiltinMethods[] = {
+      {SymbolId::kDunderNew, builtinStaticMethodNew},
+      {SymbolId::kDunderInit, builtinStaticMethodInit},
+      {SymbolId::kDunderGet, builtinStaticMethodGet},
+  };
+  addBuiltinTypeWithBuiltinMethods(SymbolId::kStaticMethod,
+                                   LayoutId::kStaticMethod, LayoutId::kObject,
+                                   kBuiltinMethods);
 }
 
 void Runtime::collectGarbage() {
@@ -1875,14 +1923,22 @@ RawObject Runtime::moduleAddGlobal(const Module& module, SymbolId name,
 }
 
 RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
-                                            Function::Entry entry,
-                                            Function::Entry entry_kw,
-                                            Function::Entry entry_ex) {
+                                            Function::Entry entry) {
   HandleScope scope;
   Str key(&scope, symbols()->at(name));
   Dict dict(&scope, module.dict());
-  Object value(&scope,
-               newBuiltinFunction(name, key, entry, entry_kw, entry_ex));
+  Function value(&scope, newBuiltinFunction(name, key, entry));
+  return dictAtPutInValueCell(dict, key, value);
+}
+
+RawObject Runtime::moduleAddNativeFunction(const Module& module, SymbolId name,
+                                           Function::Entry entry,
+                                           Function::Entry entry_kw,
+                                           Function::Entry entry_ex) {
+  HandleScope scope;
+  Str key(&scope, symbols()->at(name));
+  Dict dict(&scope, module.dict());
+  Object value(&scope, newNativeFunction(name, key, entry, entry_kw, entry_ex));
   return dictAtPutInValueCell(dict, key, value);
 }
 
@@ -1892,64 +1948,34 @@ void Runtime::createBuiltinsModule() {
   Module module(&scope, newModule(name));
 
   // Fill in builtins...
-  build_class_ = moduleAddBuiltinFunction(
+  build_class_ = moduleAddNativeFunction(
       module, SymbolId::kDunderBuildClass,
       nativeTrampoline<Builtins::buildClass>,
       nativeTrampolineKw<Builtins::buildClassKw>, unimplementedTrampoline);
 
-  moduleAddBuiltinFunction(module, SymbolId::kCallable,
-                           builtinTrampolineWrapper<Builtins::callable>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kChr,
-                           builtinTrampolineWrapper<Builtins::chr>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kCompile,
-                           builtinTrampolineWrapper<Builtins::compile>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderComplexImag,
-                           builtinTrampolineWrapper<complexGetImag>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderComplexReal,
-                           builtinTrampolineWrapper<complexGetReal>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(
-      module, SymbolId::kExec, builtinTrampolineWrapper<Builtins::exec>,
-      unimplementedTrampoline, builtinTrampolineWrapperEx<Builtins::exec>);
-  moduleAddBuiltinFunction(module, SymbolId::kGetattr,
-                           builtinTrampolineWrapper<Builtins::getattr>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kHasattr,
-                           builtinTrampolineWrapper<Builtins::hasattr>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kIsInstance,
-                           builtinTrampolineWrapper<Builtins::isinstance>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kIsSubclass,
-                           builtinTrampolineWrapper<Builtins::issubclass>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kOrd,
-                           builtinTrampolineWrapper<Builtins::ord>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kCallable, Builtins::callable);
+  moduleAddBuiltinFunction(module, SymbolId::kChr, Builtins::chr);
+  moduleAddBuiltinFunction(module, SymbolId::kCompile, Builtins::compile);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderComplexImag, complexGetImag);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderComplexReal, complexGetReal);
+  moduleAddBuiltinFunction(module, SymbolId::kExec, Builtins::exec);
+  moduleAddBuiltinFunction(module, SymbolId::kGetattr, Builtins::getattr);
+  moduleAddBuiltinFunction(module, SymbolId::kHasattr, Builtins::hasattr);
+  moduleAddBuiltinFunction(module, SymbolId::kIsInstance, Builtins::isinstance);
+  moduleAddBuiltinFunction(module, SymbolId::kIsSubclass, Builtins::issubclass);
+  moduleAddBuiltinFunction(module, SymbolId::kOrd, Builtins::ord);
   // _patch is not patched because that would cause a circularity problem.
-  moduleAddBuiltinFunction(module, SymbolId::kUnderPatch,
-                           nativeTrampoline<Builtins::underPatch>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kRange,
-                           builtinTrampolineWrapper<Builtins::range>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kSetattr,
-                           builtinTrampolineWrapper<Builtins::setattr>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kUnderPatch,
+                          nativeTrampoline<Builtins::underPatch>,
+                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kRange, Builtins::range);
+  moduleAddBuiltinFunction(module, SymbolId::kSetattr, Builtins::setattr);
   moduleAddBuiltinFunction(module, SymbolId::kUnderAddress,
-                           nativeTrampoline<Builtins::underAddress>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+                           Builtins::underAddress);
   moduleAddBuiltinFunction(module, SymbolId::kUnderPrintStr,
-                           builtinTrampolineWrapper<Builtins::underPrintStr>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(
-      module, SymbolId::kUnderStrEscapeNonAscii,
-      builtinTrampolineWrapper<Builtins::underStrEscapeNonAscii>,
-      unimplementedTrampoline, unimplementedTrampoline);
+                           Builtins::underPrintStr);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderStrEscapeNonAscii,
+                           Builtins::underStrEscapeNonAscii);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kArithmeticError,
                        LayoutId::kArithmeticError);
@@ -2139,7 +2165,7 @@ void Runtime::createSysModule() {
   Object modules(&scope, modules_);
   moduleAddGlobal(module, SymbolId::kModules, modules);
 
-  display_hook_ = moduleAddBuiltinFunction(
+  display_hook_ = moduleAddNativeFunction(
       module, SymbolId::kDisplayhook, nativeTrampoline<builtinSysDisplayhook>,
       unimplementedTrampoline, unimplementedTrampoline);
 
@@ -2193,61 +2219,57 @@ void Runtime::createImportModule() {
   Module module(&scope, newModule(name));
 
   // _imp.acquire_lock
-  moduleAddBuiltinFunction(module, SymbolId::kAcquireLock,
-                           nativeTrampoline<builtinImpAcquireLock>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kAcquireLock,
+                          nativeTrampoline<builtinImpAcquireLock>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.create_builtin
   moduleAddBuiltinFunction(module, SymbolId::kCreateBuiltin,
-                           builtinTrampolineWrapper<builtinImpCreateBuiltin>,
-                           builtinTrampolineWrapperKw<builtinImpCreateBuiltin>,
-                           builtinTrampolineWrapperEx<builtinImpCreateBuiltin>);
+                           builtinImpCreateBuiltin);
 
   // _imp.exec_builtin
   moduleAddBuiltinFunction(module, SymbolId::kExecBuiltin,
-                           builtinTrampolineWrapper<builtinImpExecBuiltin>,
-                           builtinTrampolineWrapperKw<builtinImpExecBuiltin>,
-                           builtinTrampolineWrapperEx<builtinImpExecBuiltin>);
+                           builtinImpExecBuiltin);
 
   // _imp.exec_dynamic
-  moduleAddBuiltinFunction(module, SymbolId::kExecDynamic,
-                           nativeTrampoline<builtinImpExecDynamic>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kExecDynamic,
+                          nativeTrampoline<builtinImpExecDynamic>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.extension_suffixes
-  moduleAddBuiltinFunction(module, SymbolId::kExtensionSuffixes,
-                           nativeTrampoline<builtinImpExtensionSuffixes>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kExtensionSuffixes,
+                          nativeTrampoline<builtinImpExtensionSuffixes>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.fix_co_filename
-  moduleAddBuiltinFunction(module, SymbolId::kFixCoFilename,
-                           nativeTrampoline<builtinImpFixCoFilename>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kFixCoFilename,
+                          nativeTrampoline<builtinImpFixCoFilename>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.get_frozen_object
-  moduleAddBuiltinFunction(module, SymbolId::kGetFrozenObject,
-                           nativeTrampoline<builtinImpGetFrozenObject>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kGetFrozenObject,
+                          nativeTrampoline<builtinImpGetFrozenObject>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.is_builtin
-  moduleAddBuiltinFunction(module, SymbolId::kIsBuiltin,
-                           nativeTrampoline<builtinImpIsBuiltin>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kIsBuiltin,
+                          nativeTrampoline<builtinImpIsBuiltin>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.is_frozen
-  moduleAddBuiltinFunction(module, SymbolId::kIsFrozen,
-                           nativeTrampoline<builtinImpIsFrozen>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kIsFrozen,
+                          nativeTrampoline<builtinImpIsFrozen>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.is_frozen_package
-  moduleAddBuiltinFunction(module, SymbolId::kIsFrozenPackage,
-                           nativeTrampoline<builtinImpIsFrozenPackage>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kIsFrozenPackage,
+                          nativeTrampoline<builtinImpIsFrozenPackage>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   // _imp.release_lock
-  moduleAddBuiltinFunction(module, SymbolId::kReleaseLock,
-                           nativeTrampoline<builtinImpReleaseLock>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kReleaseLock,
+                          nativeTrampoline<builtinImpReleaseLock>,
+                          unimplementedTrampoline, unimplementedTrampoline);
   addModule(module);
   CHECK(!executeModule(k_impModuleData, module).isError(),
         "Failed to initialize _imp module");
@@ -2258,9 +2280,7 @@ void Runtime::createWarningsModule() {
   Object name(&scope, symbols()->UnderWarnings());
   Module module(&scope, newModule(name));
 
-  moduleAddBuiltinFunction(
-      module, SymbolId::kWarn, builtinTrampolineWrapper<warningsWarn>,
-      builtinTrampolineWrapperKw<warningsWarn>, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kWarn, warningsWarn);
   addModule(module);
   CHECK(!executeModule(k_warningsModuleData, module).isError(),
         "Failed to initialize _warnings module");
@@ -2273,6 +2293,8 @@ void Runtime::createWeakRefModule() {
 
   moduleAddBuiltinType(module, SymbolId::kRef, LayoutId::kWeakRef);
   addModule(module);
+  CHECK(!executeModule(k_weakrefModuleData, module).isError(),
+        "Failed to initialize _weakref module");
 }
 
 void Runtime::createOperatorModule() {
@@ -2290,9 +2312,9 @@ void Runtime::createTimeModule() {
   Module module(&scope, newModule(name));
 
   // time.time
-  moduleAddBuiltinFunction(module, SymbolId::kTime,
-                           nativeTrampoline<builtinTime>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kTime,
+                          nativeTrampoline<builtinTime>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   addModule(module);
 }
@@ -2303,12 +2325,12 @@ void Runtime::createUnderIoModule() {
   Module module(&scope, newModule(name));
 
   // TODO(eelizondo): Remove once _io is fully imported
-  moduleAddBuiltinFunction(module, SymbolId::kUnderReadFile,
-                           nativeTrampoline<ioReadFile>,
-                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderReadBytes,
-                           nativeTrampoline<ioReadBytes>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kUnderReadFile,
+                          nativeTrampoline<ioReadFile>, unimplementedTrampoline,
+                          unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kUnderReadBytes,
+                          nativeTrampoline<ioReadBytes>,
+                          unimplementedTrampoline, unimplementedTrampoline);
 
   addModule(module);
 }
@@ -2330,9 +2352,9 @@ void Runtime::createMarshalModule() {
   Object name(&scope, symbols()->Marshal());
   Module module(&scope, newModule(name));
   // marshal.loads
-  moduleAddBuiltinFunction(module, SymbolId::kLoads,
-                           nativeTrampoline<MarshalModule::loads>,
-                           unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddNativeFunction(module, SymbolId::kLoads,
+                          nativeTrampoline<MarshalModule::loads>,
+                          unimplementedTrampoline, unimplementedTrampoline);
   addModule(module);
 }
 
@@ -3199,9 +3221,12 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
     Function init(&scope, *maybe_init);
     RawObject maybe_code = init.code();
     if (!maybe_code->isCode()) {
-      continue;
+      continue;  // native trampoline
     }
     Code code(&scope, maybe_code);
+    if (code.code().isSmallInt()) {
+      continue;  // builtin trampoline
+    }
     collectAttributes(code, attrs);
   }
 
@@ -3821,15 +3846,12 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
 }
 
 void Runtime::initializeSuperType() {
-  HandleScope scope;
-  Type super(&scope, addEmptyBuiltinType(SymbolId::kSuper, LayoutId::kSuper,
-                                         LayoutId::kObject));
-
-  typeAddBuiltinFunction(super, SymbolId::kDunderInit,
-                         nativeTrampoline<builtinSuperInit>);
-
-  typeAddBuiltinFunction(super, SymbolId::kDunderNew,
-                         nativeTrampoline<builtinSuperNew>);
+  const static BuiltinMethod kBuiltinMethods[] = {
+      {SymbolId::kDunderNew, builtinSuperNew},
+      {SymbolId::kDunderInit, builtinSuperInit},
+  };
+  addBuiltinTypeWithBuiltinMethods(SymbolId::kSuper, LayoutId::kSuper,
+                                   LayoutId::kObject, kBuiltinMethods);
 }
 
 RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,

@@ -48,20 +48,24 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
 };
 
-const BuiltinMethod TupleBuiltins::kMethods[] = {
+const NativeMethod TupleBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>}};
+};
+
+const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+};
 
 void TupleBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinType(SymbolId::kTuple, LayoutId::kTuple,
-                                    LayoutId::kObject, kAttributes, kMethods));
+  Type type(&scope, runtime->addBuiltinType(SymbolId::kTuple, LayoutId::kTuple,
+                                            LayoutId::kObject, kAttributes,
+                                            kNativeMethods, kBuiltinMethods));
 }
 
 RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
@@ -305,15 +309,6 @@ static RawObject newTupleOrUserSubclass(Thread* thread, const Tuple& tuple,
 }
 
 RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "tuple.__new__(): not enough arguments");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "tuple() takes at most 1 argument (%ld given)", nargs - 1));
-  }
-
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -330,7 +325,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // If no iterable is given as an argument, return an empty zero tuple.
-  if (nargs == 1) {
+  if (args.get(1).isUnboundValue()) {
     Tuple tuple(&scope, runtime->newTuple(0));
     return newTupleOrUserSubclass(thread, tuple, type);
   }
@@ -415,17 +410,17 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 
-const BuiltinMethod TupleIteratorBuiltins::kMethods[] = {
+const NativeMethod TupleIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
 
 void TupleIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type tuple_iter(
-      &scope, runtime->addBuiltinTypeWithMethods(SymbolId::kTupleIterator,
-                                                 LayoutId::kTupleIterator,
-                                                 LayoutId::kObject, kMethods));
+  Type tuple_iter(&scope,
+                  runtime->addBuiltinTypeWithNativeMethods(
+                      SymbolId::kTupleIterator, LayoutId::kTupleIterator,
+                      LayoutId::kObject, kNativeMethods));
 }
 
 RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

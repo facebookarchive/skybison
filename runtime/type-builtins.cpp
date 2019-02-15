@@ -69,26 +69,22 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {SymbolId::kDunderDict, RawType::kDictOffset},
 };
 
-const BuiltinMethod TypeBuiltins::kMethods[] = {
+const NativeMethod TypeBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+};
+
+const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderCall, dunderCall},
+    {SymbolId::kDunderNew, dunderNew},
 };
 
 void TypeBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinType(SymbolId::kType, LayoutId::kType,
-                                    LayoutId::kObject, kAttributes, kMethods));
+  Type type(&scope, runtime->addBuiltinType(SymbolId::kType, LayoutId::kType,
+                                            LayoutId::kObject, kAttributes,
+                                            kNativeMethods, kBuiltinMethods));
   Layout layout(&scope, type.instanceLayout());
   layout.setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
-  runtime->typeAddBuiltinFunctionKwEx(
-      type, SymbolId::kDunderCall, nativeTrampoline<TypeBuiltins::dunderCall>,
-      nativeTrampolineKw<TypeBuiltins::dunderCallKw>,
-      builtinTrampolineWrapperEx<TypeBuiltins::dunderCall>);
-  runtime->typeAddBuiltinFunctionKwEx(
-      type, SymbolId::kDunderNew,
-      builtinTrampolineWrapper<TypeBuiltins::dunderNew>,
-      builtinTrampolineWrapperKw<TypeBuiltins::dunderNew>,
-      builtinTrampolineWrapperEx<TypeBuiltins::dunderNew>);
 }
 
 RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
@@ -107,28 +103,44 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
       &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderNew));
 
   frame->pushValue(*dunder_new);
-  for (word i = 0; i < nargs; i++) {
-    frame->pushValue(args.get(i));
+
+  Tuple starargs(&scope, args.get(1));
+  Dict kwargs(&scope, args.get(2));
+  bool has_kwargs = kwargs.numItems() > 0;
+  Tuple new_args(&scope, runtime->newTuple(starargs.length() + 1));
+  new_args.atPut(0, *type);
+  for (word i = 0; i < starargs.length(); i++) {
+    new_args.atPut(i + 1, starargs.at(i));
+  }
+  frame->pushValue(*new_args);
+  if (has_kwargs) {
+    frame->pushValue(*kwargs);
   }
 
-  Object instance(&scope, Interpreter::call(thread, frame, nargs));
+  Object instance(&scope, Interpreter::callEx(thread, frame, has_kwargs));
   if (instance.isError()) return *instance;
+
+  Type instance_type(&scope, runtime->typeOf(*instance));
+  if (!runtime->isSubclass(instance_type, type)) {
+    return *instance;
+  }
 
   // Second, call __init__ to initialize the instance.
 
   // top of the stack should be the new instance
-  Object dunder_init(
-      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderInit));
+  Object dunder_init(&scope, runtime->lookupSymbolInMro(thread, instance_type,
+                                                        SymbolId::kDunderInit));
 
   frame->pushValue(*dunder_init);
-  frame->pushValue(*instance);
-  for (word i = 1; i < nargs; i++) {
-    frame->pushValue(args.get(i));
+  new_args.atPut(0, *instance);
+  frame->pushValue(*new_args);
+  if (has_kwargs) {
+    frame->pushValue(*kwargs);
   }
 
   // TODO(T36407643): throw a type error if the __init__ method does not return
   // None.
-  Object result(&scope, Interpreter::call(thread, frame, nargs));
+  Object result(&scope, Interpreter::callEx(thread, frame, has_kwargs));
   if (result.isError()) return *result;
 
   return *instance;

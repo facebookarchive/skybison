@@ -109,23 +109,21 @@ RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
   return *result;
 }
 
-const BuiltinMethod BytesBuiltins::kMethods[] = {
-    {SymbolId::kDunderAdd, builtinTrampolineWrapper<dunderAdd>},
-    {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
-    {SymbolId::kDunderGe, builtinTrampolineWrapper<dunderGe>},
-    {SymbolId::kDunderGetItem, builtinTrampolineWrapper<dunderGetItem>},
-    {SymbolId::kDunderGt, builtinTrampolineWrapper<dunderGt>},
-    {SymbolId::kDunderLe, builtinTrampolineWrapper<dunderLe>},
-    {SymbolId::kDunderLen, builtinTrampolineWrapper<dunderLen>},
-    {SymbolId::kDunderLt, builtinTrampolineWrapper<dunderLt>},
-    {SymbolId::kDunderNe, builtinTrampolineWrapper<dunderNe>},
+const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderGe, dunderGe},
+    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderLe, dunderLe},
+    {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderNe, dunderNe},
 };
 
 void BytesBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithMethods(
-                        SymbolId::kBytes, LayoutId::kBytes, LayoutId::kObject,
-                        kMethods));
+  runtime->addBuiltinTypeWithBuiltinMethods(SymbolId::kBytes, LayoutId::kBytes,
+                                            LayoutId::kObject, kBuiltinMethods);
 }
 
 RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {

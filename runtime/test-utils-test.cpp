@@ -83,7 +83,7 @@ TEST(TestUtils, NewEmptyCode) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   EXPECT_EQ(code.argcount(), 0);
   EXPECT_TRUE(code.cell2arg()->isNoneType());
   ASSERT_TRUE(code.cellvars()->isTuple());

@@ -179,7 +179,7 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
     {SymbolId::kAllocated, RawList::kAllocatedOffset},
 };
 
-const BuiltinMethod ListBuiltins::kMethods[] = {
+const NativeMethod ListBuiltins::kNativeMethods[] = {
     {SymbolId::kAppend, nativeTrampoline<append>},
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
@@ -188,25 +188,23 @@ const BuiltinMethod ListBuiltins::kMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
     {SymbolId::kExtend, nativeTrampoline<extend>},
     {SymbolId::kInsert, nativeTrampoline<insert>},
     {SymbolId::kPop, nativeTrampoline<pop>},
-    {SymbolId::kRemove, nativeTrampoline<remove>}};
+    {SymbolId::kRemove, nativeTrampoline<remove>},
+};
+
+const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+};
 
 void ListBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-
-  Type list(&scope,
-            runtime->addBuiltinType(SymbolId::kList, LayoutId::kList,
-                                    LayoutId::kObject, kAttributes, kMethods));
+  runtime->addBuiltinType(SymbolId::kList, LayoutId::kList, LayoutId::kObject,
+                          kAttributes, kNativeMethods, kBuiltinMethods);
 }
 
 RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr("not enough arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
@@ -521,16 +519,16 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newListIterator(self);
 }
 
-const BuiltinMethod ListIteratorBuiltins::kMethods[] = {
+const NativeMethod ListIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
 
 void ListIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type list_iter(&scope, runtime->addBuiltinTypeWithMethods(
+  Type list_iter(&scope, runtime->addBuiltinTypeWithNativeMethods(
                              SymbolId::kListIterator, LayoutId::kListIterator,
-                             LayoutId::kObject, kMethods));
+                             LayoutId::kObject, kNativeMethods));
 }
 
 RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

@@ -12,8 +12,8 @@ void RangeBuiltins::initialize(Runtime* runtime) {
   Type range(&scope,
              runtime->addEmptyBuiltinType(SymbolId::kRange, LayoutId::kRange,
                                           LayoutId::kObject));
-  runtime->typeAddBuiltinFunction(range, SymbolId::kDunderIter,
-                                  nativeTrampoline<dunderIter>);
+  runtime->typeAddNativeFunction(range, SymbolId::kDunderIter,
+                                 nativeTrampoline<dunderIter>);
 }
 
 RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -31,17 +31,17 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRangeIterator(self);
 }
 
-const BuiltinMethod RangeIteratorBuiltins::kMethods[] = {
+const NativeMethod RangeIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
 
 void RangeIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type range_iter(
-      &scope, runtime->addBuiltinTypeWithMethods(SymbolId::kRangeIterator,
-                                                 LayoutId::kRangeIterator,
-                                                 LayoutId::kObject, kMethods));
+  Type range_iter(&scope,
+                  runtime->addBuiltinTypeWithNativeMethods(
+                      SymbolId::kRangeIterator, LayoutId::kRangeIterator,
+                      LayoutId::kObject, kNativeMethods));
 }
 
 RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

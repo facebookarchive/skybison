@@ -25,7 +25,7 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
   Super super(&scope, args.get(0));
   Object type_obj(&scope, NoneType::object());
   Object obj(&scope, NoneType::object());
-  if (nargs == 1) {
+  if (args.get(1).isUnboundValue()) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
     if (frame->previousFrame() == nullptr) {
@@ -60,7 +60,7 @@ RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
     // TODO(zekun): handle cell2arg case
     obj = caller_frame->local(0);
   } else {
-    if (nargs != 3) {
+    if (args.get(2).isUnboundValue()) {
       return thread->raiseTypeErrorWithCStr("super() expected 2 arguments");
     }
     type_obj = args.get(1);

@@ -19,7 +19,7 @@ class ModuleBuiltins {
 
  private:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleBuiltins);
 };

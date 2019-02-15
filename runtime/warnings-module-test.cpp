@@ -67,7 +67,7 @@ import _warnings
 _warnings.warn("hello", stack_level=3)
   )"),
                             LayoutId::kTypeError,
-                            "TypeError: invalid arguments"));
+                            "TypeError: invalid keyword argument supplied"));
 }
 
 }  // namespace python

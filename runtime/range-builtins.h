@@ -25,7 +25,7 @@ class RangeIteratorBuiltins {
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);
 };

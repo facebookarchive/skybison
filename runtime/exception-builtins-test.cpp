@@ -436,10 +436,9 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
 
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithInvalidKwargs) {
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "x = ImportError(foo=123)"),
                             LayoutId::kTypeError,
-                            "invalid keyword arguments supplied"));
+                            "TypeError: invalid keyword argument supplied"));
 }
 
 TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {

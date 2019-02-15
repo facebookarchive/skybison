@@ -157,30 +157,30 @@ a = str.__new__(str, "hello")
 
 TEST(StrBuiltinsTest, DunderNewWithNoArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__()"),
-                            LayoutId::kTypeError,
-                            "str.__new__(): not enough arguments"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "str.__new__()"), LayoutId::kTypeError,
+      "TypeError: '__new__' takes min 1 positional arguments but 0 given"));
 }
 
 TEST(StrBuiltinsTest, DunderNewWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "str.__new__(str, 1, 2, 3, 4)"),
-      LayoutId::kTypeError, "str() takes at most three arguments"));
+      LayoutId::kTypeError,
+      "TypeError: '__new__' takes max 4 positional arguments but 5 given"));
 }
 
 TEST(StrBuiltinsTest, DunderNewWithNonTypeArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__(1)"),
-                            LayoutId::kTypeError,
-                            "str.__new__(X): X is not a type object"));
+                            LayoutId::kTypeError, "cls is not a type object"));
 }
 
 TEST(StrBuiltinsTest, DunderNewWithNonSubtypeArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.__new__(object)"),
                             LayoutId::kTypeError,
-                            "str.__new__(X): X is not a subtype of str"));
+                            "cls is not a subtype of str"));
 }
 
 TEST(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {

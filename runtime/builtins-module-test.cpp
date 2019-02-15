@@ -824,35 +824,38 @@ exec(*["a = 1338"])
 TEST(BuiltinsModuleTest, CopyFunctionEntriesCopies) {
   Runtime runtime;
   HandleScope scope;
-  Function::Entry entry = builtinTrampolineWrapper<Builtins::chr>;
+  Function::Entry entry = Builtins::chr;
   Str qualname(&scope, runtime.symbols()->Chr());
-  Function func(&scope, runtime.newBuiltinFunction(SymbolId::kChr, qualname,
-                                                   entry, entry, entry));
+  Function func(&scope,
+                runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
   runFromCStr(&runtime, R"(
 def chr(self):
   "docstring"
   pass
 )");
   Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
-  copyFunctionEntries(Thread::currentThread(), python_func, func);
-  EXPECT_EQ(python_func.entry(), entry);
-  EXPECT_EQ(python_func.entryKw(), entry);
-  EXPECT_EQ(python_func.entryEx(), entry);
+  copyFunctionEntries(Thread::currentThread(), func, python_func);
+  Code base_code(&scope, func.code());
+  Code patch_code(&scope, python_func.code());
+  EXPECT_EQ(patch_code.code(), base_code.code());
+  EXPECT_EQ(python_func.entry(), &builtinTrampoline);
+  EXPECT_EQ(python_func.entryKw(), &builtinTrampolineKw);
+  EXPECT_EQ(python_func.entryEx(), &builtinTrampolineEx);
 }
 
 TEST(BuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {
   Runtime runtime;
   HandleScope scope;
-  Function::Entry entry = builtinTrampolineWrapper<Builtins::chr>;
+  Function::Entry entry = Builtins::chr;
   Str qualname(&scope, runtime.symbols()->Chr());
-  Function func(&scope, runtime.newBuiltinFunction(SymbolId::kChr, qualname,
-                                                   entry, entry, entry));
+  Function func(&scope,
+                runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
   runFromCStr(&runtime, R"(
 def chr(self):
   return 42
 )");
   Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
-  ASSERT_DEATH(copyFunctionEntries(Thread::currentThread(), python_func, func),
+  ASSERT_DEATH(copyFunctionEntries(Thread::currentThread(), func, python_func),
                "Redefinition of native code method 'chr' in managed code");
 }
 

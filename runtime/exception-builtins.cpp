@@ -117,24 +117,19 @@ const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
     {SymbolId::kCause, RawBaseException::kCauseOffset},
 };
 
-const BuiltinMethod BaseExceptionBuiltins::kMethods[] = {
-    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
+const BuiltinMethod BaseExceptionBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderInit, dunderInit},
 };
 
 void BaseExceptionBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinType(
-                        SymbolId::kBaseException, LayoutId::kBaseException,
-                        LayoutId::kObject, kAttributes, kMethods));
+  runtime->addBuiltinType(SymbolId::kBaseException, LayoutId::kBaseException,
+                          LayoutId::kObject, kAttributes,
+                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
 }
 
 RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'BaseException' needs an argument");
-  }
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBaseException(args.get(0))) {
@@ -142,11 +137,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
         "'__init__' requires a 'BaseException' object");
   }
   BaseException self(&scope, args.get(0));
-  Tuple tuple(&scope, runtime->newTuple(nargs - 1));
-  for (word i = 1; i < nargs; i++) {
-    tuple.atPut(i - 1, args.get(i));
-  }
-  self.setArgs(*tuple);
+  self.setArgs(args.get(1));
   self.setCause(runtime->unboundValue());
   self.setContext(runtime->unboundValue());
   return NoneType::object();
@@ -156,24 +147,19 @@ const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
     {SymbolId::kValue, RawStopIteration::kValueOffset},
 };
 
-const BuiltinMethod StopIterationBuiltins::kMethods[] = {
-    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
+const BuiltinMethod StopIterationBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderInit, dunderInit},
 };
 
 void StopIterationBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinType(
-                        SymbolId::kStopIteration, LayoutId::kStopIteration,
-                        LayoutId::kException, kAttributes, kMethods));
+  runtime->addBuiltinType(SymbolId::kStopIteration, LayoutId::kStopIteration,
+                          LayoutId::kException, kAttributes,
+                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
 }
 
 RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'StopIteration' needs an argument");
-  }
   Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfStopIteration(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
@@ -195,24 +181,19 @@ const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
     {SymbolId::kValue, RawSystemExit::kCodeOffset},
 };
 
-const BuiltinMethod SystemExitBuiltins::kMethods[] = {
-    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
+const BuiltinMethod SystemExitBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderInit, dunderInit},
 };
 
 void SystemExitBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinType(
-                        SymbolId::kSystemExit, LayoutId::kSystemExit,
-                        LayoutId::kBaseException, kAttributes, kMethods));
+  runtime->addBuiltinType(SymbolId::kSystemExit, LayoutId::kSystemExit,
+                          LayoutId::kBaseException, kAttributes,
+                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
 }
 
 RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
                                          word nargs) {
   HandleScope scope(thread);
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' of 'SystemExit' needs an argument");
-  }
   Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfSystemExit(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
@@ -237,10 +218,9 @@ const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
 };
 
 void ImportErrorBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithAttrs(
-                        SymbolId::kImportError, LayoutId::kImportError,
-                        LayoutId::kException, kAttributes));
+  runtime->addBuiltinTypeWithAttrs(SymbolId::kImportError,
+                                   LayoutId::kImportError, LayoutId::kException,
+                                   kAttributes);
 }
 
 }  // namespace python

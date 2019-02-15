@@ -7,7 +7,6 @@
 # helper here.
 _patch = _patch  # noqa: F821
 _UnboundValue = _UnboundValue  # noqa: F821
-_address = _address  # noqa: F821
 _stdout = _stdout  # noqa: F821
 
 
@@ -25,11 +24,14 @@ def format(obj, fmt_spec):
 
 
 class object(bootstrap=True):  # noqa: E999
+    def __new__(cls, *args, **kwargs):
+        pass
+
+    def __init__(self, *args, **kwargs):
+        pass
+
     def __str__(self):
         return self.__repr__()
-
-    def __hash__(self):
-        pass
 
     def __format__(self, format_spec):
         if format_spec != "":
@@ -38,6 +40,9 @@ class object(bootstrap=True):  # noqa: E999
 
 
 class bool(bootstrap=True):
+    def __new__(cls, val=False):
+        pass
+
     def __repr__(self):
         return "True" if self else "False"
 
@@ -109,6 +114,9 @@ class float(bootstrap=True):
 
 
 class int(bootstrap=True):
+    def __new__(cls, n=0, base=_UnboundValue):
+        pass
+
     def __abs__(self) -> int:
         pass
 
@@ -180,9 +188,7 @@ class int(bootstrap=True):
 
 
 class ImportError(bootstrap=True):
-    def __init__(self, *args, name=None, path=None, **kwargs):
-        if len(kwargs) > 0:
-            raise TypeError("invalid keyword arguments supplied")
+    def __init__(self, *args, name=None, path=None):
         # TODO(mpage): Call super once we have EX calling working for built-in methods
         self.args = args
         if len(args) == 1:
@@ -192,6 +198,9 @@ class ImportError(bootstrap=True):
 
 
 class BaseException(bootstrap=True):
+    def __init__(self, *args):
+        pass
+
     def __str__(self):
         if not isinstance(self, BaseException):
             raise TypeError("not a BaseException object")
@@ -244,6 +253,9 @@ class bytes(bootstrap=True):
 
 
 class tuple(bootstrap=True):
+    def __new__(cls, iterable=_UnboundValue):
+        pass
+
     def __repr__(self):
         num_elems = len(self)
         if num_elems == 1:
@@ -259,14 +271,14 @@ class tuple(bootstrap=True):
 
 
 class list(bootstrap=True):
+    def __new__(cls, iterable=()):
+        pass
+
     def __init__(self, iterable=()):
         self.extend(iterable)
 
     def __repr__(self):
         return "[" + ", ".join([i.__repr__() for i in self]) + "]"
-
-    def __contains__(self, key: object) -> bool:
-        pass
 
 
 class slice(bootstrap=True):
@@ -275,7 +287,7 @@ class slice(bootstrap=True):
 
 
 class type(bootstrap=True):
-    def __call__(self, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
+    def __call__(self, *args, **kwargs):
         pass
 
     def __new__(cls, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
@@ -287,6 +299,24 @@ class type(bootstrap=True):
 
 
 class str(bootstrap=True):
+    def __new__(cls, obj="", encoding=_UnboundValue, errors=_UnboundValue):
+        if not isinstance(cls, type):
+            raise TypeError("cls is not a type object")
+        if not issubclass(cls, str):
+            raise TypeError("cls is not a subtype of str")
+        if cls != str:
+            # TODO(T40529650): Add an unimplemented function
+            raise SystemExit("__new__ with subtype of str")
+        if type(obj) is str and obj == "":
+            return obj
+        if encoding != _UnboundValue or errors != _UnboundValue:
+            # TODO(T40529650): Add an unimplemented function
+            raise SystemExit("str encoding not supported yet")
+        result = obj.__str__()
+        if not isinstance(result, str):
+            raise TypeError("__str__ returned non-str instance")
+        return result
+
     def partition(self, sep):
         if not isinstance(self, str):
             raise TypeError(
@@ -464,46 +494,16 @@ class str(bootstrap=True):
     def __str__(self):
         return self
 
-    def __add__(self, s: str) -> str:
-        pass
-
     def __mul__(self, n: int) -> str:
         pass
 
     def __rmul__(self, n: int) -> str:
         pass
 
-    def __lt__(self, x: str) -> bool:
-        pass
-
-    def __le__(self, x: str) -> bool:
-        pass
-
-    def __gt__(self, x: str) -> bool:
-        pass
-
-    def __ge__(self, x: str) -> bool:
-        pass
-
     def __len__(self) -> int:
         pass
 
     def __contains__(self, s: object) -> bool:
-        pass
-
-    # This method requires a non-primitive type for its annotation and cannot
-    # yet be typed here.
-    def __iter__(self):
-        pass
-
-    # This method requires a non-primitive type for its annotation and cannot
-    # yet be typed here.
-    def __mod__(self, value):
-        pass
-
-    # This method requires a non-primitive type for its annotation and cannot
-    # yet be typed here.
-    def __getitem__(self, i):
         pass
 
 
@@ -560,7 +560,18 @@ class module(bootstrap=True):
         pass
 
 
+class frozenset(bootstrap=True):
+    def __new__(cls, iterable=_UnboundValue):
+        pass
+
+
 class set(bootstrap=True):
+    def __new__(cls, iterable=()):
+        pass
+
+    def __init__(self, iterable=()):
+        pass
+
     def __repr__(self):
         return f"{{{', '.join([item.__repr__() for item in self])}}}"
 
@@ -575,7 +586,73 @@ class function(bootstrap=True):
         return self(*args, **kwargs)
 
 
+class classmethod(bootstrap=True):
+    def __new__(cls, fn):
+        pass
+
+    def __init__(self, fn):
+        pass
+
+    def __get__(self, instance, owner):
+        pass
+
+
+class property(bootstrap=True):
+    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
+        pass
+
+    def __init__(self, fget=None, fset=None, fdel=None):
+        pass
+
+    def deleter(self, fn):
+        pass
+
+    def setter(self, fn):
+        pass
+
+    def getter(self, fn):
+        pass
+
+    def __get__(self, instance, owner):
+        pass
+
+    def __set__(self, instance, value):
+        pass
+
+
+class staticmethod(bootstrap=True):
+    def __new__(cls, fn):
+        pass
+
+    def __init__(self, fn):
+        pass
+
+    def __get__(self, instance, owner):
+        pass
+
+
+class super(bootstrap=True):
+    def __new__(cls, type=_UnboundValue, type_or_obj=_UnboundValue):
+        pass
+
+    def __init__(self, type=_UnboundValue, type_or_obj=_UnboundValue):
+        pass
+
+
+class StopIteration(bootstrap=True):
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class SystemExit(bootstrap=True):
+    def __init__(self, *args, **kwargs):
+        pass
+
+
 class complex(bootstrap=True):
+    def __new__(cls, real=0.0, imag=0.0):
+        pass
+
     def __repr__(self):
         return f"({self.real}+{self.imag}j)"
 
@@ -600,6 +677,11 @@ def any(iterable):
         if element:
             return True
     return False
+
+
+@_patch
+def _address(c):
+    pass
 
 
 @_patch

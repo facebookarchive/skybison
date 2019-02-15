@@ -91,11 +91,12 @@ object.__init__(object)
 TEST(ObjectBuiltinsTest, DunderInitWithNoArgsRaisesTypeError) {
   Runtime runtime;
   // Passing no args to object.__init__ should throw a type error.
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(
 object.__init__()
 )"),
-                            LayoutId::kTypeError,
-                            "__init__ needs an argument"));
+      LayoutId::kTypeError,
+      "TypeError: '__init__' takes 1 positional arguments but 0 given"));
 }
 
 TEST(ObjectBuiltinsTest, DunderInitWithArgsRaisesTypeError) {

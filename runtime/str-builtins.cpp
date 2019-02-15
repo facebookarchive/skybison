@@ -146,7 +146,7 @@ void SmallStrBuiltins::initialize(Runtime* runtime) {
   type.setBuiltinBase(LayoutId::kStr);
 }
 
-const BuiltinMethod StrBuiltins::kMethods[] = {
+const NativeMethod StrBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
@@ -154,11 +154,9 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLen, builtinTrampolineWrapper<dunderLen>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
     {SymbolId::kJoin, nativeTrampoline<join>},
     {SymbolId::kLower, nativeTrampoline<lower>},
@@ -167,12 +165,15 @@ const BuiltinMethod StrBuiltins::kMethods[] = {
     {SymbolId::kStrip, nativeTrampoline<strip>},
 };
 
+const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderLen, dunderLen},
+};
+
 void StrBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinTypeWithMethods(SymbolId::kStr, LayoutId::kStr,
-                                               LayoutId::kObject, kMethods));
-
+  Type type(&scope, runtime->addBuiltinTypeWithMethods(
+                        SymbolId::kStr, LayoutId::kStr, LayoutId::kObject,
+                        kNativeMethods, kBuiltinMethods));
   Type largestr_type(
       &scope, runtime->addEmptyBuiltinType(
                   SymbolId::kLargeStr, LayoutId::kLargeStr, LayoutId::kStr));
@@ -500,58 +501,6 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->notImplemented();
 }
 
-RawObject StrBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "str.__new__(): not enough arguments");
-  }
-  if (nargs > 4) {
-    return thread->raiseTypeErrorWithCStr(
-        "str() takes at most three arguments");
-  }
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object type_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "str.__new__(X): X is not a type object");
-  }
-  Type type(&scope, *type_obj);
-  if (type.builtinBase() != LayoutId::kStr) {
-    return thread->raiseTypeErrorWithCStr(
-        "str.__new__(X): X is not a subtype of str");
-  }
-  Layout layout(&scope, type.instanceLayout());
-  if (layout.id() != LayoutId::kStr) {
-    // TODO(T36406531): Implement __new__ with subtypes of str.
-    UNIMPLEMENTED("str.__new__(<subtype of str>, ...)");
-  }
-  if (nargs == 1) {
-    // No argument to str, return empty string.
-    return runtime->newStrFromCStr("");
-  }
-  if (nargs > 2) {
-    UNIMPLEMENTED("str() with encoding");
-  }
-  // Only one argument, the value to be stringified.
-  Object arg(&scope, args.get(1));
-  // If it's already exactly a string, return it immediately.
-  if (arg.isStr()) {
-    return *arg;
-  }
-  // If it's not exactly a string, call its __str__.
-  Object method(&scope, Interpreter::lookupMethod(thread, frame, arg,
-                                                  SymbolId::kDunderStr));
-  DCHECK(!method.isError(),
-         "No __str__ found on the object even though everything inherits one");
-  Object ret(&scope, Interpreter::callMethod1(thread, frame, method, arg));
-  if (!ret.isError() && !runtime->isInstanceOfStr(*ret)) {
-    return thread->raiseTypeErrorWithCStr("__str__ returned non-string");
-  }
-  return *ret;
-}
-
 RawObject StrBuiltins::slice(Thread* thread, const Str& str,
                              const Slice& slice) {
   HandleScope scope(thread);
@@ -867,16 +816,16 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   return strStrip(thread, str, chars, StrStripDirection::Both);
 }
 
-const BuiltinMethod StrIteratorBuiltins::kMethods[] = {
+const NativeMethod StrIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
 
 void StrIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type str_iter(&scope, runtime->addBuiltinTypeWithMethods(
+  Type str_iter(&scope, runtime->addBuiltinTypeWithNativeMethods(
                             SymbolId::kStrIterator, LayoutId::kStrIterator,
-                            LayoutId::kObject, kMethods));
+                            LayoutId::kObject, kNativeMethods));
 }
 
 RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

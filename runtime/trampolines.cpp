@@ -170,8 +170,9 @@ static RawObject processDefaultArguments(Thread* thread,
     Str fn_name_str(&scope, function.name());
     unique_c_ptr<char> fn_name(fn_name_str.toCStr());
     return thread->raiseTypeError(runtime->newStrFromFormat(
-        "TypeError: '%s' takes %ld arguments but %ld given", fn_name.get(),
-        code.totalArgs(), new_argc));
+        "TypeError: '%s' takes %ld positional arguments but %ld given",
+        fn_name.get(), code.argcount(),
+        new_argc - code.hasVarargs() - code.hasVarkeyargs()));
   }
   return NoneType::object();  // value not significant, it's just not an error
 }
@@ -242,8 +243,9 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
       }
       // If we were unable to find a slot to swap into, TypeError
       if (!arg_at(arg_pos)->isError()) {
+        // TODO(T40470525): Print out qualname and formal name in error message
         return Thread::currentThread()->raiseTypeErrorWithCStr(
-            "TypeError: invalid arguments");
+            "TypeError: invalid keyword argument supplied");
       }
     }
     // Now, can we fill that slot with a default argument?
@@ -943,8 +945,40 @@ RawObject extensionTrampolineKw(Thread*, Frame*, word) {
   UNIMPLEMENTED("ExtensionTrampolineKw");
 }
 
-RawObject extensionTrampolineEx(Thread*, Frame*, word) {
-  UNIMPLEMENTED("ExtensionTrampolineEx");
+RawObject extensionTrampolineEx(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+
+  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  Object varargs(&scope, caller->peek(has_varkeywords ? 1 : 0));
+  DCHECK(varargs.isTuple(), "varargs should be tuple");
+  if (Tuple::cast(*varargs)->length() < 1) {
+    return thread->raiseTypeErrorWithCStr("function needs *args");
+  }
+
+  Function function(&scope, caller->peek(has_varkeywords ? 2 : 1));
+  Int address(&scope, function.code());
+
+  Object object(&scope, Tuple::cast(*varargs).at(0));
+  Runtime* runtime = thread->runtime();
+  Str attr_name(&scope, runtime->symbols()->ExtensionPtr());
+  PyObject* none = ApiHandle::borrowedReference(thread, NoneType::object());
+
+  if (object.isType()) {
+    Type type_class(&scope, *object);
+    PyCFunction new_function = bit_cast<PyCFunction>(address.asCPtr());
+    PyObject* new_pyobject = (*new_function)(
+        ApiHandle::borrowedReference(thread, *type_class), none, none);
+    return ApiHandle::fromPyObject(new_pyobject)->asObject();
+  }
+
+  HeapObject instance(&scope, *object);
+  Int object_ptr(&scope, runtime->instanceAt(thread, instance, attr_name));
+  PyObject* self = static_cast<PyObject*>(object_ptr.asCPtr());
+
+  PyCFunction init_function = bit_cast<PyCFunction>(address.asCPtr());
+  (*init_function)(self, none, none);
+
+  return *instance;
 }
 
 RawObject unimplementedTrampoline(Thread*, Frame*, word) {
@@ -953,51 +987,48 @@ RawObject unimplementedTrampoline(Thread*, Frame*, word) {
 
 template <typename InitArgs>
 static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller, word argc,
-                                       word function_idx, Function::Entry entry,
-                                       InitArgs init_args) {
+                                       word function_idx, InitArgs init_args) {
   HandleScope scope(thread);
   Function function(&scope, caller->peek(function_idx));
   DCHECK(!function.code().isNoneType(),
          "builtin functions should have annotated code objects");
   Code code(&scope, function.code());
-  DCHECK(code.code().isNoneType(),
-         "builtin functions should not have bytecode");
+  DCHECK(code.code().isSmallInt(),
+         "builtin functions should contain entrypoint in code.code");
   // The native function has been annotated in managed code, so do some more
   // advanced argument checking.
   Object result(&scope, init_args(function, code));
   if (result.isError()) return *result;
   argc = code.totalArgs();
-  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(entry), argc);
-  result = entry(thread, frame, argc);
+  void* entry = RawSmallInt::cast(code.code()).asCPtr();
+  Frame* frame = thread->pushNativeFrame(entry, argc);
+  result = bit_cast<Function::Entry>(entry)(thread, frame, argc);
   DCHECK(result.isError() == thread->hasPendingException(),
          "error/exception mismatch");
   thread->popFrame();
   return *result;
 }
 
-RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
-                            Function::Entry fn) {
-  return builtinTrampolineImpl(thread, caller, argc, argc, fn,
+RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc) {
+  return builtinTrampolineImpl(thread, caller, argc, argc,
                                [&](const Function& function, const Code& code) {
                                  return preparePositionalCall(
                                      thread, function, code, caller, argc);
                                });
 }
 
-RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc,
-                              Function::Entry fn) {
+RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc) {
   return builtinTrampolineImpl(
       thread, caller, argc, argc + 1 /* skip over implicit tuple of kwargs */,
-      fn, [&](const Function&, const Code&) {
+      [&](const Function&, const Code&) {
         return processKeywordArguments(thread, caller, argc);
       });
 }
 
-RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc,
-                              Function::Entry fn) {
+RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc) {
   return builtinTrampolineImpl(
       thread, caller, argc, (argc & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1,
-      fn, [&](const Function& function, const Code& code) {
+      [&](const Function& function, const Code& code) {
         return prepareExplodeCall(thread, function, code, caller, argc);
       });
 }

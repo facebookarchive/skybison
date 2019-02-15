@@ -63,7 +63,7 @@ class DictBuiltins {
 
  private:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictBuiltins);
 };
@@ -77,7 +77,7 @@ class DictItemIteratorBuiltins {
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemIteratorBuiltins);
 };
@@ -89,7 +89,7 @@ class DictItemsBuiltins {
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemsBuiltins);
 };
@@ -103,7 +103,7 @@ class DictKeyIteratorBuiltins {
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeyIteratorBuiltins);
 };
@@ -115,7 +115,7 @@ class DictKeysBuiltins {
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeysBuiltins);
 };
@@ -129,7 +129,7 @@ class DictValueIteratorBuiltins {
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValueIteratorBuiltins);
 };
@@ -141,7 +141,7 @@ class DictValuesBuiltins {
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValuesBuiltins);
 };

@@ -15,9 +15,6 @@ RawObject builtinClassMethodNew(Thread* thread, Frame*, word) {
 }
 
 RawObject builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("classmethod expected 1 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ClassMethod classmethod(&scope, args.get(0));
@@ -27,9 +24,6 @@ RawObject builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject builtinClassMethodGet(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -42,9 +36,6 @@ RawObject builtinClassMethodGet(Thread* thread, Frame* frame, word nargs) {
 // staticmethod
 
 RawObject builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -57,9 +48,6 @@ RawObject builtinStaticMethodNew(Thread* thread, Frame*, word) {
 }
 
 RawObject builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("staticmethod expected 1 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   StaticMethod staticmethod(&scope, args.get(0));
@@ -71,10 +59,6 @@ RawObject builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
 // property
 
 RawObject builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "property.deleter expects 1 arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(
@@ -141,10 +125,6 @@ RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "property.getter expects 1 arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(
@@ -159,9 +139,6 @@ RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1 || nargs > 4) {
-    return thread->raiseTypeErrorWithCStr("property expects up to 3 arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(
@@ -169,15 +146,9 @@ RawObject builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
   }
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
-  if (nargs > 1) {
-    property.setGetter(args.get(1));
-  }
-  if (nargs > 2) {
-    property.setSetter(args.get(2));
-  }
-  if (nargs > 3) {
-    property.setDeleter(args.get(3));
-  }
+  property.setGetter(args.get(1));
+  property.setSetter(args.get(2));
+  property.setDeleter(args.get(3));
   return *property;
 }
 
@@ -188,10 +159,6 @@ RawObject builtinPropertyNew(Thread* thread, Frame*, word) {
 }
 
 RawObject builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "property.setter expects 1 arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(

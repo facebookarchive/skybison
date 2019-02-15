@@ -35,7 +35,8 @@ class TupleBuiltins {
 
  private:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleBuiltins);
 };
@@ -49,7 +50,7 @@ class TupleIteratorBuiltins {
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIteratorBuiltins);
 };

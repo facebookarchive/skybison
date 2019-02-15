@@ -32,7 +32,7 @@ class BytesBuiltins {
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesBuiltins);
 };

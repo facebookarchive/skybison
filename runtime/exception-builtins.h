@@ -33,7 +33,7 @@ class BaseExceptionBuiltins {
 
  private:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BaseExceptionBuiltins);
 };
@@ -46,7 +46,7 @@ class StopIterationBuiltins {
 
  private:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(StopIterationBuiltins);
 };
@@ -59,7 +59,7 @@ class SystemExitBuiltins {
 
  private:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExitBuiltins);
 };

@@ -7,13 +7,14 @@
 
 namespace python {
 
-const BuiltinMethod ComplexBuiltins::kMethods[] = {
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
 };
 
 void ComplexBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithMethods(SymbolId::kComplex, LayoutId::kComplex,
-                                     LayoutId::kObject, kMethods);
+  runtime->addBuiltinTypeWithBuiltinMethods(SymbolId::kComplex,
+                                            LayoutId::kComplex,
+                                            LayoutId::kObject, kBuiltinMethods);
 }
 
 RawObject complexGetImag(Thread* thread, Frame* frame, word nargs) {
@@ -43,15 +44,6 @@ RawObject complexGetReal(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "complex.__new__(): not enough arguments");
-  }
-  if (nargs > 3) {
-    return thread->raiseTypeErrorWithCStr(
-        "complex() takes at most two arguments");
-  }
-
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -74,13 +66,8 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("complex.__new__(<subtype of complex>, ...)");
   }
 
-  // If there are no arguments other than the type, return a zero complex.
-  if (nargs == 1) {
-    return runtime->newComplex(0, 0);
-  }
-
   Object real_arg(&scope, args.get(1));
-  Object imag_arg(&scope, nargs == 3 ? args.get(2) : runtime->newFloat(0));
+  Object imag_arg(&scope, args.get(2));
   // If it's already exactly a complex, return it immediately.
   if (real_arg.isComplex()) {
     return *real_arg;

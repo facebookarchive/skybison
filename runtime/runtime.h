@@ -24,12 +24,17 @@ struct BuiltinAttribute {
   int offset;
 };
 
-using BuiltinMethodType = RawObject (*)(Thread* thread, Frame* frame,
-                                        word nargs);
+using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
+                                       word nargs);
+
+struct NativeMethod {
+  SymbolId name;
+  NativeMethodType address;
+};
 
 struct BuiltinMethod {
   SymbolId name;
-  BuiltinMethodType address;
+  NativeMethodType address;
 };
 
 enum class SetLookupType { Lookup, Insertion };
@@ -59,6 +64,7 @@ class Runtime {
 
   RawObject newClassMethod();
 
+  RawObject newEmptyCode();
   RawObject newCode(word argcount, word kwonlyargcount, word nlocals,
                     word stacksize, word flags, const Object& code,
                     const Object& consts, const Object& names,
@@ -87,9 +93,12 @@ class Runtime {
   RawObject emptyFrozenSet();
   RawObject newFrozenSet();
 
+  RawObject newNativeFunction(SymbolId name, const Str& qualname,
+                              Function::Entry entry, Function::Entry entry_kw,
+                              Function::Entry entry_ex);
+
   RawObject newBuiltinFunction(SymbolId name, const Str& qualname,
-                               Function::Entry entry, Function::Entry entry_kw,
-                               Function::Entry entry_ex);
+                               Function::Entry entry);
 
   RawObject newExceptionState();
 
@@ -197,9 +206,12 @@ class Runtime {
                             const Object& value);
 
   RawObject moduleAddBuiltinFunction(const Module& module, SymbolId name,
-                                     const Function::Entry entry,
-                                     const Function::Entry entry_kw,
-                                     const Function::Entry entry_ex);
+                                     const Function::Entry entry);
+
+  RawObject moduleAddNativeFunction(const Module& module, SymbolId name,
+                                    const Function::Entry entry,
+                                    const Function::Entry entry_kw,
+                                    const Function::Entry entry_ex);
 
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);
@@ -236,12 +248,21 @@ class Runtime {
   RawObject addBuiltinTypeWithAttrs(SymbolId name, LayoutId subclass_id,
                                     LayoutId superclass_id,
                                     View<BuiltinAttribute> attrs);
+  RawObject addBuiltinTypeWithNativeMethods(SymbolId name, LayoutId subclass_id,
+                                            LayoutId superclass_id,
+                                            View<NativeMethod> methods);
   RawObject addBuiltinTypeWithMethods(SymbolId name, LayoutId subclass_id,
                                       LayoutId superclass_id,
-                                      View<BuiltinMethod> methods);
+                                      View<NativeMethod> methods,
+                                      View<BuiltinMethod> builtins);
+  RawObject addBuiltinTypeWithBuiltinMethods(SymbolId name,
+                                             LayoutId subclass_id,
+                                             LayoutId superclass_id,
+                                             View<BuiltinMethod> methods);
   RawObject addBuiltinType(SymbolId name, LayoutId subclass_id,
                            LayoutId superclass_id, View<BuiltinAttribute> attrs,
-                           View<BuiltinMethod> methods);
+                           View<NativeMethod> methods,
+                           View<BuiltinMethod> builtins);
 
   LayoutId reserveLayoutId();
 
@@ -500,21 +521,23 @@ class Runtime {
 
   // Adds a builtin function with a positional entry point definition
   // using the default keyword and splatting entry points.
-  void typeAddBuiltinFunction(const Type& type, SymbolId name,
-                              Function::Entry entry);
+  void typeAddNativeFunction(const Type& type, SymbolId name,
+                             Function::Entry entry);
 
   // Adds a builtin function with positional and keyword entry point
   // definitions, using the default splatting entry point.
-  void typeAddBuiltinFunctionKw(const Type& type, SymbolId name,
-                                Function::Entry entry,
-                                Function::Entry entry_kw);
+  void typeAddNativeFunctionKw(const Type& type, SymbolId name,
+                               Function::Entry entry, Function::Entry entry_kw);
 
   // Adds a builtin function with positional, keyword & splatting entry point
   // definitions
-  void typeAddBuiltinFunctionKwEx(const Type& type, SymbolId name,
-                                  Function::Entry entry,
-                                  Function::Entry entry_kw,
-                                  Function::Entry entry_ex);
+  void typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
+                                 Function::Entry entry,
+                                 Function::Entry entry_kw,
+                                 Function::Entry entry_ex);
+
+  void typeAddBuiltinFunction(const Type& type, SymbolId name,
+                              Function::Entry entry);
 
   // Helper function to add extension functions to extension classes
   void classAddExtensionFunction(const Type& type, SymbolId name,
@@ -828,6 +851,9 @@ class Runtime {
   //
   // Handles SystemExit thrown both from native and from managed code.
   word handleSysExit(Thread* thread);
+
+  // Joins the type's name and attribute's name to produce a qualname
+  RawObject newQualname(const Type& type, SymbolId name);
 
   // The size listEnsureCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;

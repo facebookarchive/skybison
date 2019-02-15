@@ -1030,20 +1030,22 @@ set.__init__([])
 
 TEST(SetBuiltinsTest, DunderInitWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(
 set.__init__()
 )"),
-                            LayoutId::kTypeError,
-                            "__init__() of 'set' object needs an argument"));
+      LayoutId::kTypeError,
+      "TypeError: '__init__' takes min 1 positional arguments but 0 given"));
 }
 
 TEST(SetBuiltinsTest, DunderInitWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(
 set.__init__(set(), None, None, None)
 )"),
-                            LayoutId::kTypeError,
-                            "set expected at most 1 argument, got 3"));
+      LayoutId::kTypeError,
+      "TypeError: '__init__' takes max 2 positional arguments but 4 given"));
 }
 
 TEST(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {
@@ -1107,11 +1109,11 @@ s = Set([0, 1, 2])
 
 TEST(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
   Runtime runtime;
+  runFromCStr(&runtime, "result = frozenset.__new__(frozenset)");
   HandleScope scope;
-  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
-  Object obj(&scope, runBuiltin(FrozenSetBuiltins::dunderNew, type));
-  EXPECT_TRUE(obj.isFrozenSet());
-  EXPECT_EQ(*obj, runtime.emptyFrozenSet());
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result.isFrozenSet());
+  EXPECT_EQ(*result, runtime.emptyFrozenSet());
 }
 
 TEST(SetBuiltinsTest, SubclassOfFrozenSetDunderNewDoesNotReturnSingleton) {

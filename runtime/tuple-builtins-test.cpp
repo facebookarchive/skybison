@@ -302,8 +302,8 @@ TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
 TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
   Runtime runtime;
   HandleScope scope;
-  Type type(&scope, runtime.typeAt(LayoutId::kTuple));
-  Tuple ret(&scope, runBuiltin(TupleBuiltins::dunderNew, type));
+  runFromCStr(&runtime, "result = tuple.__new__(tuple)");
+  Tuple ret(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(ret.length(), 0);
 }
 

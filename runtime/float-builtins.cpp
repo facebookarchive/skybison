@@ -64,23 +64,23 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
   return runtime->notImplemented();
 }
 
-const BuiltinMethod FloatBuiltins::kMethods[] = {
-    {SymbolId::kDunderAdd, builtinTrampolineWrapper<dunderAdd>},
-    {SymbolId::kDunderTruediv, builtinTrampolineWrapper<dunderTrueDiv>},
-    {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
-    {SymbolId::kDunderFloat, builtinTrampolineWrapper<dunderFloat>},
-    {SymbolId::kDunderGe, builtinTrampolineWrapper<dunderGe>},
-    {SymbolId::kDunderGt, builtinTrampolineWrapper<dunderGt>},
-    {SymbolId::kDunderLe, builtinTrampolineWrapper<dunderLe>},
-    {SymbolId::kDunderLt, builtinTrampolineWrapper<dunderLt>},
-    {SymbolId::kDunderMul, builtinTrampolineWrapper<dunderMul>},
-    {SymbolId::kDunderNe, builtinTrampolineWrapper<dunderNe>},
-    {SymbolId::kDunderNeg, builtinTrampolineWrapper<dunderNeg>},
-    {SymbolId::kDunderNew, builtinTrampolineWrapper<dunderNew>},
-    {SymbolId::kDunderPow, builtinTrampolineWrapper<dunderPow>},
-    {SymbolId::kDunderRepr, builtinTrampolineWrapper<dunderRepr>},
-    {SymbolId::kDunderRtruediv, builtinTrampolineWrapper<dunderRtrueDiv>},
-    {SymbolId::kDunderSub, builtinTrampolineWrapper<dunderSub>},
+const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderTruediv, dunderTrueDiv},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderFloat, dunderFloat},
+    {SymbolId::kDunderGe, dunderGe},
+    {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderLe, dunderLe},
+    {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderMul, dunderMul},
+    {SymbolId::kDunderNe, dunderNe},
+    {SymbolId::kDunderNeg, dunderNeg},
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderPow, dunderPow},
+    {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kDunderRtruediv, dunderRtrueDiv},
+    {SymbolId::kDunderSub, dunderSub},
 };
 
 const BuiltinAttribute FloatBuiltins::kAttributes[] = {
@@ -89,9 +89,10 @@ const BuiltinAttribute FloatBuiltins::kAttributes[] = {
 
 void FloatBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinType(SymbolId::kFloat, LayoutId::kFloat,
-                                    LayoutId::kObject, kAttributes, kMethods));
+  Type type(&scope, runtime->addBuiltinType(SymbolId::kFloat, LayoutId::kFloat,
+                                            LayoutId::kObject, kAttributes,
+                                            View<NativeMethod>(nullptr, 0),
+                                            kBuiltinMethods));
 }
 
 RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,

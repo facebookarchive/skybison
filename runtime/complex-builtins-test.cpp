@@ -13,8 +13,8 @@ using namespace testing;
 TEST(ComplexBuiltinsTest, NewWithNoArgsReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  Object type(&scope, runtime.typeAt(LayoutId::kComplex));
-  Complex cmplx(&scope, runBuiltin(ComplexBuiltins::dunderNew, type));
+  runFromCStr(&runtime, "result = complex.__new__(complex)");
+  Complex cmplx(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(cmplx.real(), 0);
   EXPECT_EQ(cmplx.imag(), 0);
 }
@@ -22,9 +22,8 @@ TEST(ComplexBuiltinsTest, NewWithNoArgsReturnsZero) {
 TEST(ComplexBuiltinsTest, NewWithOneNumberArgReturnsComplexWithReal) {
   Runtime runtime;
   HandleScope scope;
-  Object type(&scope, runtime.typeAt(LayoutId::kComplex));
-  Object int1(&scope, runtime.newInt(1));
-  Complex cmplx(&scope, runBuiltin(ComplexBuiltins::dunderNew, type, int1));
+  runFromCStr(&runtime, "result = complex.__new__(complex, 1)");
+  Complex cmplx(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(cmplx.real(), 1.0);
   EXPECT_EQ(cmplx.imag(), 0);
 }
@@ -44,9 +43,8 @@ TEST(ComplexBuiltinsTest, NewWithTwoNumberArgReturnsComplexWithReal) {
 TEST(ComplexBuiltinsTest, NewWithComplexArgReturnsSameComplex) {
   Runtime runtime;
   HandleScope scope;
-  Object type(&scope, runtime.typeAt(LayoutId::kComplex));
-  Object c(&scope, runtime.newComplex(1.0, 2.0));
-  Complex cmplx(&scope, runBuiltin(ComplexBuiltins::dunderNew, type, c));
+  runFromCStr(&runtime, "result = complex.__new__(complex, complex(1.0, 2.0))");
+  Complex cmplx(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(cmplx.real(), 1.0);
   EXPECT_EQ(cmplx.imag(), 2.0);
 }

@@ -251,7 +251,7 @@ TEST(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.update()"), LayoutId::kTypeError,
-      "TypeError: 'update' takes 2 arguments but 0 given"));
+      "TypeError: 'update' takes 2 positional arguments but 0 given"));
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonDictRaisesTypeError) {

@@ -72,7 +72,7 @@ C(9)
 TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   code.setArgcount(1);
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->pushFrame(code);

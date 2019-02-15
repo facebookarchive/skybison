@@ -749,7 +749,7 @@ TEST(RuntimeTest, Random) {
 
 TEST(RuntimeTest, HashCodeSizeCheck) {
   Runtime runtime;
-  RawObject code = testing::newEmptyCode(&runtime);
+  RawObject code = runtime.newEmptyCode();
   ASSERT_TRUE(code->isHeapObject());
   EXPECT_EQ(RawHeapObject::cast(code)->header()->hashCode(), 0);
   // Verify that large-magnitude random numbers are properly
@@ -894,7 +894,7 @@ TEST(RuntimeTest, CollectAttributes) {
   consts.atPut(2, SmallInt::fromWord(300));
   consts.atPut(3, NoneType::object());
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   code.setNames(*names);
   // Bytecode for the snippet:
   //
@@ -959,7 +959,7 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, NoneType::object());
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   code.setNames(*names);
   // Bytecode for the snippet:
   //
@@ -2295,8 +2295,9 @@ TEST(InstanceAttributeTest, DunderNew) {
   Runtime runtime;
   const char* src = R"(
 class Foo:
-    def __new__(self):
+    def __new__(cls):
         print("New")
+        return object.__new__(cls)
     def __init__(self):
         print("Init")
 a = Foo()
@@ -3445,7 +3446,7 @@ TEST(RuntimeTest, NewBuiltinFunctionAddsQualname) {
   Runtime runtime;
   HandleScope scope;
   Str name(&scope, runtime.newStrFromCStr("Foo.bar"));
-  Function fn(&scope, runtime.newBuiltinFunction(
+  Function fn(&scope, runtime.newNativeFunction(
                           SymbolId::kDummy, name, unimplementedTrampoline,
                           unimplementedTrampoline, unimplementedTrampoline));
   EXPECT_EQ(fn.qualname(), *name);

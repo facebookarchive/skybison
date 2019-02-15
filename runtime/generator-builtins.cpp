@@ -42,7 +42,7 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
   return thread->runtime()->genSend(thread, gen, value);
 }
 
-const BuiltinMethod GeneratorBuiltins::kMethods[] = {
+const NativeMethod GeneratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSend,
@@ -51,9 +51,9 @@ const BuiltinMethod GeneratorBuiltins::kMethods[] = {
 
 void GeneratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type generator(&scope, runtime->addBuiltinTypeWithMethods(
+  Type generator(&scope, runtime->addBuiltinTypeWithNativeMethods(
                              SymbolId::kGenerator, LayoutId::kGenerator,
-                             LayoutId::kObject, kMethods));
+                             LayoutId::kObject, kNativeMethods));
 }
 
 RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -90,16 +90,16 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return thread->runtime()->genSend(thread, gen, value);
 }
 
-const BuiltinMethod CoroutineBuiltins::kMethods[] = {
+const NativeMethod CoroutineBuiltins::kNativeMethods[] = {
     {SymbolId::kSend,
      nativeTrampoline<GeneratorBaseBuiltins::send<LayoutId::kCoroutine>>},
 };
 
 void CoroutineBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type coroutine(&scope, runtime->addBuiltinTypeWithMethods(
+  Type coroutine(&scope, runtime->addBuiltinTypeWithNativeMethods(
                              SymbolId::kCoroutine, LayoutId::kCoroutine,
-                             LayoutId::kObject, kMethods));
+                             LayoutId::kObject, kNativeMethods));
 }
 
 }  // namespace python

@@ -11,11 +11,15 @@
 
 namespace python {
 
-const BuiltinMethod ObjectBuiltins::kMethods[] = {
+const NativeMethod ObjectBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderHash, nativeTrampoline<dunderHash>},
-    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
-    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>}};
+    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+};
+
+const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderInit, dunderInit},
+};
 
 void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
@@ -31,13 +35,15 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   object_type.setInstanceLayout(*layout);
   runtime->layoutAtPut(LayoutId::kObject, *layout);
 
-  for (uword i = 0; i < ARRAYSIZE(kMethods); i++) {
-    runtime->typeAddBuiltinFunction(object_type, kMethods[i].name,
-                                    kMethods[i].address);
+  for (uword i = 0; i < ARRAYSIZE(kNativeMethods); i++) {
+    runtime->typeAddNativeFunction(object_type, kNativeMethods[i].name,
+                                   kNativeMethods[i].address);
   }
-  runtime->typeAddBuiltinFunctionKw(object_type, SymbolId::kDunderNew,
-                                    nativeTrampoline<dunderNew>,
-                                    nativeTrampolineKw<dunderNewKw>);
+
+  for (uword i = 0; i < ARRAYSIZE(kBuiltinMethods); i++) {
+    runtime->typeAddBuiltinFunction(object_type, kBuiltinMethods[i].name,
+                                    kBuiltinMethods[i].address);
+  }
 }
 
 RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
@@ -50,21 +56,21 @@ RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
-  // object.__init__ doesn't do anything except throw a TypeError if the wrong
-  // number of arguments are given. It only throws if __new__ is not overloaded
-  // or __init__ was overloaded, else it allows the excess arguments.
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr("__init__ needs an argument");
-  }
-  if (nargs == 1) {
-    return NoneType::object();
-  }
   // Too many arguments were given. Determine if the __new__ was not overwritten
   // or the __init__ was to throw a TypeError.
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object self(&scope, args.get(0));
+  Tuple starargs(&scope, args.get(1));
+  Dict kwargs(&scope, args.get(2));
+  if (starargs.length() == 0 && kwargs.numItems() == 0) {
+    // object.__init__ doesn't do anything except throw a TypeError if the
+    // wrong number of arguments are given. It only throws if __new__ is not
+    // overloaded or __init__ was overloaded, else it allows the excess
+    // arguments.
+    return NoneType::object();
+  }
   Type type(&scope, runtime->typeOf(*self));
   if (!runtime->isMethodOverloaded(thread, type, SymbolId::kDunderNew) ||
       runtime->isMethodOverloaded(thread, type, SymbolId::kDunderInit)) {
@@ -122,16 +128,16 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return str;
 }
 
-const BuiltinMethod NoneBuiltins::kMethods[] = {
+const NativeMethod NoneBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
 void NoneBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithMethods(
+  Type type(&scope, runtime->addBuiltinTypeWithNativeMethods(
                         SymbolId::kNoneType, LayoutId::kNoneType,
-                        LayoutId::kObject, kMethods));
+                        LayoutId::kObject, kNativeMethods));
 }
 
 RawObject NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {

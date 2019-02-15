@@ -78,12 +78,14 @@ const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
     {SymbolId::kDunderDict, RawModule::kDictOffset},
 };
 
-const BuiltinMethod ModuleBuiltins::kMethods[] = {
-    {SymbolId::kDunderNew, builtinTrampolineWrapper<dunderNew>}};
+const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+};
 
 void ModuleBuiltins::initialize(Runtime* runtime) {
   runtime->addBuiltinType(SymbolId::kModule, LayoutId::kModule,
-                          LayoutId::kObject, kAttributes, kMethods);
+                          LayoutId::kObject, kAttributes,
+                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
 }
 
 RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

@@ -100,15 +100,14 @@ const BuiltinAttribute SliceBuiltins::kAttributes[] = {
     {SymbolId::kStep, RawSlice::kStepOffset},
 };
 
-const BuiltinMethod SliceBuiltins::kMethods[] = {
-    {SymbolId::kDunderNew, builtinTrampolineWrapper<dunderNew>},
+const BuiltinMethod SliceBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
 };
 
 void SliceBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinType(SymbolId::kSlice, LayoutId::kSlice,
-                                    LayoutId::kObject, kAttributes, kMethods));
+  runtime->addBuiltinType(SymbolId::kSlice, LayoutId::kSlice, LayoutId::kObject,
+                          kAttributes, View<NativeMethod>(nullptr, 0),
+                          kBuiltinMethods);
 }
 
 RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

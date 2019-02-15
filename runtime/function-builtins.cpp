@@ -9,7 +9,7 @@
 
 namespace python {
 
-const BuiltinMethod FunctionBuiltins::kMethods[] = {
+const NativeMethod FunctionBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderGet, nativeTrampoline<dunderGet>},
 };
 
@@ -26,7 +26,8 @@ void FunctionBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
   Type function(&scope, runtime->addBuiltinType(
                             SymbolId::kFunction, LayoutId::kFunction,
-                            LayoutId::kObject, kAttributes, kMethods));
+                            LayoutId::kObject, kAttributes, kNativeMethods,
+                            View<BuiltinMethod>(nullptr, 0)));
   Layout layout(&scope, function.instanceLayout());
   layout.setOverflowAttributes(SmallInt::fromWord(RawFunction::kDictOffset));
 }

@@ -155,7 +155,8 @@ set(
   library/operator.py
   library/sys.py
   library/_imp.py
-  library/_warnings.py)
+  library/_warnings.py
+  library/_weakref.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
   ${CMAKE_BINARY_DIR}/bootstrap)

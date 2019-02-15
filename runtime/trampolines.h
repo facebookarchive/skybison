@@ -57,16 +57,6 @@ template <RawObject (*Fn)(Thread*, Frame*, word)>
 RawObject nativeTrampolineKw(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 
-template <RawObject (*Fn)(Thread*, Frame*, word)>
-RawObject builtinTrampolineWrapper(Thread* thread, Frame* caller, word argc)
-    __attribute__((aligned(16)));
-template <RawObject (*Fn)(Thread*, Frame*, word)>
-RawObject builtinTrampolineWrapperKw(Thread* thread, Frame* caller, word argc)
-    __attribute__((aligned(16)));
-template <RawObject (*Fn)(Thread*, Frame*, word)>
-RawObject builtinTrampolineWrapperEx(Thread* thread, Frame* caller, word argc)
-    __attribute__((aligned(16)));
-
 RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller, word argc)
     __attribute__((aligned(16)));
 RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller, word argc)
@@ -106,11 +96,11 @@ RawObject extensionTrampolineEx(Thread* thread, Frame* caller, word argc)
 RawObject unimplementedTrampoline(Thread* thread, Frame* caller_frame,
                                   word argc) __attribute__((aligned(16)));
 
-RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc,
-                            Function::Entry fn);
-RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc,
-                              Function::Entry fn);
-RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc,
-                              Function::Entry fn);
+RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
+RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
+RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc)
+    __attribute__((aligned(16)));
 
 }  // namespace python

@@ -14,7 +14,7 @@ class ComplexBuiltins final {
   static RawObject dunderNew(Thread*, Frame*, word);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ComplexBuiltins);
 };

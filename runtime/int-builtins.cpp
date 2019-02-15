@@ -14,44 +14,44 @@
 
 namespace python {
 
-const BuiltinMethod IntBuiltins::kMethods[] = {
-    {SymbolId::kBitLength, builtinTrampolineWrapper<bitLength>},
-    {SymbolId::kDunderAbs, builtinTrampolineWrapper<dunderAbs>},
-    {SymbolId::kDunderAdd, builtinTrampolineWrapper<dunderAdd>},
-    {SymbolId::kDunderAnd, builtinTrampolineWrapper<dunderAnd>},
-    {SymbolId::kDunderBool, builtinTrampolineWrapper<dunderBool>},
-    {SymbolId::kDunderEq, builtinTrampolineWrapper<dunderEq>},
-    {SymbolId::kDunderFloat, builtinTrampolineWrapper<dunderFloat>},
-    {SymbolId::kDunderGe, builtinTrampolineWrapper<dunderGe>},
-    {SymbolId::kDunderGt, builtinTrampolineWrapper<dunderGt>},
-    {SymbolId::kDunderIndex, builtinTrampolineWrapper<dunderInt>},
-    {SymbolId::kDunderInt, builtinTrampolineWrapper<dunderInt>},
-    {SymbolId::kDunderLe, builtinTrampolineWrapper<dunderLe>},
-    {SymbolId::kDunderLshift, builtinTrampolineWrapper<dunderLshift>},
-    {SymbolId::kDunderLt, builtinTrampolineWrapper<dunderLt>},
-    {SymbolId::kDunderMul, builtinTrampolineWrapper<dunderMul>},
-    {SymbolId::kDunderNe, builtinTrampolineWrapper<dunderNe>},
-    {SymbolId::kDunderNeg, builtinTrampolineWrapper<dunderNeg>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
-    {SymbolId::kDunderOr, builtinTrampolineWrapper<dunderOr>},
-    {SymbolId::kDunderPos, builtinTrampolineWrapper<dunderPos>},
-    {SymbolId::kDunderRepr, builtinTrampolineWrapper<dunderRepr>},
-    {SymbolId::kDunderRshift, builtinTrampolineWrapper<dunderRshift>},
-    {SymbolId::kDunderSub, builtinTrampolineWrapper<dunderSub>},
-    {SymbolId::kDunderXor, builtinTrampolineWrapper<dunderXor>},
+const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kBitLength, bitLength},
+    {SymbolId::kDunderAbs, dunderAbs},
+    {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderAnd, dunderAnd},
+    {SymbolId::kDunderBool, dunderBool},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderFloat, dunderFloat},
+    {SymbolId::kDunderGe, dunderGe},
+    {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderIndex, dunderInt},
+    {SymbolId::kDunderInt, dunderInt},
+    {SymbolId::kDunderLe, dunderLe},
+    {SymbolId::kDunderLshift, dunderLshift},
+    {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderMul, dunderMul},
+    {SymbolId::kDunderNe, dunderNe},
+    {SymbolId::kDunderNeg, dunderNeg},
+    {SymbolId::kDunderOr, dunderOr},
+    {SymbolId::kDunderPos, dunderPos},
+    {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kDunderRshift, dunderRshift},
+    {SymbolId::kDunderSub, dunderSub},
+    {SymbolId::kDunderXor, dunderXor},
+    {SymbolId::kDunderNew, dunderNew},
 };
 
 void IntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinTypeWithMethods(SymbolId::kInt, LayoutId::kInt,
-                                               LayoutId::kObject, kMethods));
-  runtime->typeAddBuiltinFunctionKw(type, SymbolId::kToBytes,
-                                    nativeTrampoline<toBytes>,
-                                    nativeTrampolineKw<toBytesKw>);
-  runtime->typeAddBuiltinFunctionKw(type, SymbolId::kFromBytes,
-                                    nativeTrampoline<fromBytes>,
-                                    nativeTrampolineKw<fromBytesKw>);
+  Type type(&scope, runtime->addBuiltinTypeWithBuiltinMethods(
+                        SymbolId::kInt, LayoutId::kInt, LayoutId::kObject,
+                        kBuiltinMethods));
+  runtime->typeAddNativeFunctionKw(type, SymbolId::kToBytes,
+                                   nativeTrampoline<toBytes>,
+                                   nativeTrampolineKw<toBytesKw>);
+  runtime->typeAddNativeFunctionKw(type, SymbolId::kFromBytes,
+                                   nativeTrampoline<fromBytes>,
+                                   nativeTrampolineKw<fromBytesKw>);
 
   Type largeint_type(
       &scope, runtime->addEmptyBuiltinType(
@@ -67,15 +67,6 @@ RawObject IntBuiltins::asInt(const Int& value) {
 }
 
 RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "int.__new__(): not enough arguments");
-  }
-  if (nargs > 3) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "int() takes at most two arguments, %ld given", nargs - 1));
-  }
-
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -105,7 +96,7 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // No base argument, use 10 as the base.
-  if (nargs == 2) {
+  if (args.get(2).isUnboundValue()) {
     return intFromString(thread, *arg, 10);
   }
 
@@ -203,7 +194,7 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
                     [](Thread*, const Int& self) { return asInt(self); });
 }
 
-const BuiltinMethod SmallIntBuiltins::kMethods[] = {
+const NativeMethod SmallIntBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
     {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
@@ -212,9 +203,9 @@ const BuiltinMethod SmallIntBuiltins::kMethods[] = {
 
 void SmallIntBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithMethods(
+  Type type(&scope, runtime->addBuiltinTypeWithNativeMethods(
                         SymbolId::kSmallInt, LayoutId::kSmallInt,
-                        LayoutId::kInt, kMethods));
+                        LayoutId::kInt, kNativeMethods));
   type.setBuiltinBase(LayoutId::kInt);
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
@@ -937,14 +928,6 @@ RawObject IntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "bool.__new__(): not enough arguments");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeErrorWithCStr("bool() takes at most one argument");
-  }
-
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -971,15 +954,15 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::isTrue(thread, frame, arg);
 }
 
-const BuiltinMethod BoolBuiltins::kMethods[] = {
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
+const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
 };
 
 void BoolBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type type(&scope,
-            runtime->addBuiltinTypeWithMethods(SymbolId::kBool, LayoutId::kBool,
-                                               LayoutId::kInt, kMethods));
+  Type type(&scope, runtime->addBuiltinTypeWithBuiltinMethods(
+                        SymbolId::kBool, LayoutId::kBool, LayoutId::kInt,
+                        kBuiltinMethods));
   type.setBuiltinBase(LayoutId::kInt);
 }
 

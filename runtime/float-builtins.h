@@ -40,7 +40,7 @@ class FloatBuiltins {
  private:
   static RawObject floatFromObject(Thread* thread, Frame* frame, word nargs);
   static RawObject floatFromString(Thread* thread, RawStr str);
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(FloatBuiltins);

@@ -685,7 +685,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -739,7 +739,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -795,7 +795,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -1030,7 +1030,7 @@ sys.displayhook = my_displayhook
 
   Object unique(&scope, runtime.newTuple(1));  // unique object
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *unique);
   consts.atPut(1, NoneType::object());
@@ -1067,7 +1067,7 @@ a = AsyncIterable()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -1082,7 +1082,7 @@ a = AsyncIterable()
 TEST(InterpreterTest, GetAiterOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(123));
   code.setConsts(*consts);
@@ -1114,7 +1114,7 @@ manager = M()
 
   Module main(&scope, findModule(&runtime, "__main__"));
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   code.setNlocals(0);
 
   Tuple consts(&scope, runtime.newTuple(1));
@@ -1151,7 +1151,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(42));
   consts.atPut(1, NoneType::object());
@@ -1680,7 +1680,7 @@ a = AsyncIterator()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -1698,7 +1698,7 @@ a = AsyncIterator()
 TEST(InterpreterTest, GetAnextOnNonIterable) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(123));
   code.setConsts(*consts);
@@ -1722,7 +1722,7 @@ a = AsyncIterator()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -1747,7 +1747,7 @@ a = Awaitable()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -1762,7 +1762,7 @@ a = Awaitable()
 TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, runtime.newStrFromCStr("foo"));
   code.setConsts(*consts);
@@ -2232,7 +2232,7 @@ foo = Foo()
   Object foo(&scope, moduleAt(&runtime, main, "foo"));
 
   // Create a code object and set the foo instance as a const
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *foo);
   code.setConsts(*consts);
@@ -2556,7 +2556,7 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   HandleScope scope;
 
   // Set up a code object that runs: {}.foo
-  Code code(&scope, testing::newEmptyCode(&runtime));
+  Code code(&scope, runtime.newEmptyCode());
   Tuple names(&scope, runtime.newTuple(1));
   Str foo(&scope, runtime.newStrFromCStr("foo"));
   names.atPut(0, *foo);

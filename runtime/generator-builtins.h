@@ -23,7 +23,7 @@ class GeneratorBuiltins {
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 };
 
 class CoroutineBuiltins {
@@ -31,7 +31,7 @@ class CoroutineBuiltins {
   static void initialize(Runtime* runtime);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 };
 
 }  // namespace python

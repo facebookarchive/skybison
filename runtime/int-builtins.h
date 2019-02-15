@@ -52,7 +52,7 @@ class IntBuiltins {
 
  private:
   static RawObject asInt(const Int& value);
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);
 };
@@ -67,7 +67,7 @@ class SmallIntBuiltins {
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntBuiltins);
 };
@@ -79,7 +79,7 @@ class BoolBuiltins {
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoolBuiltins);
 };

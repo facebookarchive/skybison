@@ -64,7 +64,8 @@ class StrBuiltins {
                                          const Tuple& args);
   static RawObject strFormat(Thread* thread, const Str& fmt, const Tuple& args);
   static void byteToHex(byte** buf, byte convert);
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);
 };
@@ -78,7 +79,7 @@ class StrIteratorBuiltins {
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
  private:
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
 };

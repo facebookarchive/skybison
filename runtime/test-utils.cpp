@@ -308,7 +308,7 @@ RawObject setFromRange(word start, word stop) {
   return *result;
 }
 
-RawObject runBuiltinImpl(BuiltinMethodType method,
+RawObject runBuiltinImpl(NativeMethodType method,
                          View<std::reference_wrapper<const Object>> args) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
@@ -325,31 +325,9 @@ RawObject runBuiltinImpl(BuiltinMethodType method,
   return *result;
 }
 
-RawObject runBuiltin(BuiltinMethodType method) {
+RawObject runBuiltin(NativeMethodType method) {
   return runBuiltinImpl(method,
                         View<std::reference_wrapper<const Object>>{nullptr, 0});
-}
-
-RawObject newEmptyCode(Runtime* runtime) {
-  HandleScope scope;
-  Object none(&scope, NoneType::object());
-  Tuple empty_tuple(&scope, runtime->newTuple(0));
-  return runtime->newCode(0,            // argcount
-                          0,            // kwonlyargcount
-                          0,            // nlocals
-                          0,            // stacksize
-                          0,            // flags
-                          none,         // code
-                          none,         // consts
-                          none,         // names
-                          empty_tuple,  // varnames
-                          empty_tuple,  // freevars
-                          empty_tuple,  // cellvars
-                          none,         // filename
-                          none,         // name
-                          0,            // firlineno
-                          none          // lnotab
-  );
 }
 
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {

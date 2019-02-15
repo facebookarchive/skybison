@@ -42,19 +42,5 @@ RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
 // that.
 // TODO(T39316450): Kill this in favor of storing the fn pointer in the
 // Function->Code->code
-template <Function::Entry Fn>
-RawObject builtinTrampolineWrapper(Thread* thread, Frame* caller, word argc) {
-  return builtinTrampoline(thread, caller, argc, Fn);
-}
-
-template <Function::Entry Fn>
-RawObject builtinTrampolineWrapperKw(Thread* thread, Frame* caller, word argc) {
-  return builtinTrampolineKw(thread, caller, argc, Fn);
-}
-
-template <RawObject (*Fn)(Thread*, Frame*, word)>
-RawObject builtinTrampolineWrapperEx(Thread* thread, Frame* caller, word argc) {
-  return builtinTrampolineEx(thread, caller, argc, Fn);
-}
 
 }  // namespace python

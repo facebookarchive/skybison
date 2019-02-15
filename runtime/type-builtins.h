@@ -22,7 +22,8 @@ class TypeBuiltins {
 
  private:
   static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kMethods[];
+  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(TypeBuiltins);
 };

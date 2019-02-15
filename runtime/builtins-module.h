@@ -16,8 +16,8 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
 void printStr(RawStr str, std::ostream* ostream);
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value);
-void copyFunctionEntries(Thread* thread, const Function& to_patch,
-                         const Function& from);
+void copyFunctionEntries(Thread* thread, const Function& base,
+                         const Function& patch);
 
 class Builtins {
  public:

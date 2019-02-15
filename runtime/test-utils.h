@@ -144,16 +144,16 @@ RawLargeInt newLargeIntWithDigits(const std::vector<uword>& digits);
 // Equivalent to evaluating "set(range(start, stop))" in Python.
 RawObject setFromRange(word start, word stop);
 
-RawObject runBuiltinImpl(BuiltinMethodType method,
+RawObject runBuiltinImpl(NativeMethodType method,
                          View<std::reference_wrapper<const Object>> args);
 
-RawObject runBuiltin(BuiltinMethodType method);
+RawObject runBuiltin(NativeMethodType method);
 
 // Helper to compile and run a snippet of Python code.
 RawObject runFromCStr(Runtime* runtime, const char* c_str);
 
 template <typename... Args>
-RawObject runBuiltin(BuiltinMethodType method, const Args&... args) {
+RawObject runBuiltin(NativeMethodType method, const Args&... args) {
   using ref = std::reference_wrapper<const Object>;
   ref args_array[] = {ref(args)...};
   return runBuiltinImpl(method, args_array);
@@ -166,9 +166,6 @@ struct FileDeleter {
   }
 };
 using unique_file_ptr = std::unique_ptr<char, FileDeleter>;
-
-// Create an empty code object for testing purposes
-RawObject newEmptyCode(Runtime* runtime);
 
 RawObject listFromRange(word start, word stop);
 

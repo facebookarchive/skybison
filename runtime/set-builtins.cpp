@@ -353,7 +353,7 @@ const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
     {SymbolId::kAllocated, Set::kNumItemsOffset},
 };
 
-const BuiltinMethod FrozenSetBuiltins::kMethods[] = {
+const NativeMethod FrozenSetBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
@@ -364,24 +364,24 @@ const BuiltinMethod FrozenSetBuiltins::kMethods[] = {
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kIntersection, nativeTrampoline<intersection>}};
 
+const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+};
+
 void FrozenSetBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type frozen_set(&scope, runtime->addBuiltinType(
-                              SymbolId::kFrozenSet, LayoutId::kFrozenSet,
-                              LayoutId::kObject, kAttributes, kMethods));
+  Type frozen_set(
+      &scope, runtime->addBuiltinType(
+                  SymbolId::kFrozenSet, LayoutId::kFrozenSet, LayoutId::kObject,
+                  kAttributes, kNativeMethods, kBuiltinMethods));
   frozen_set.sealAttributes();
 }
 
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
-  if (nargs < 1 || nargs > 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "frozenset.__new__ expects 1-2 arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
@@ -391,34 +391,38 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   if (type.builtinBase() != LayoutId::kFrozenSet) {
     return thread->raiseTypeErrorWithCStr("not a subtype of frozenset");
   }
-  if (nargs == 1 && type.isBuiltin() &&
-      type.builtinBase() == LayoutId::kFrozenSet) {
-    return thread->runtime()->emptyFrozenSet();
-  }
-  if (nargs > 1) {
-    Object iterable(&scope, args.get(1));
-    // frozenset(f) where f is a frozenset is idempotent
-    if (iterable.isFrozenSet()) {
-      return *iterable;
-    }
-    Object dunder_iter(
-        &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                          iterable, SymbolId::kDunderIter));
-    if (dunder_iter.isError()) {
-      return thread->raiseTypeErrorWithCStr(
-          "frozenset.__new__ must be called with an iterable");
-    }
-    FrozenSet result(&scope, thread->runtime()->newFrozenSet());
-    result = thread->runtime()->setUpdate(thread, result, iterable);
-    if (result.numItems() == 0) {
+  if (args.get(1).isUnboundValue()) {
+    // Iterable not provided
+    if (type.isBuiltin() && type.builtinBase() == LayoutId::kFrozenSet) {
+      // Called with exact frozenset type, should return singleton
       return thread->runtime()->emptyFrozenSet();
     }
+    // Not called with exact frozenset type, should return new distinct
+    // frozenset
+    Layout layout(&scope, type.instanceLayout());
+    FrozenSet result(&scope, thread->runtime()->newInstance(layout));
+    result.setNumItems(0);
+    result.setData(thread->runtime()->newTuple(0));
     return *result;
   }
-  Layout layout(&scope, type.instanceLayout());
-  FrozenSet result(&scope, thread->runtime()->newInstance(layout));
-  result.setNumItems(0);
-  result.setData(thread->runtime()->newTuple(0));
+  // Called with iterable, so iterate
+  Object iterable(&scope, args.get(1));
+  // frozenset(f) where f is a frozenset is idempotent
+  if (iterable.isFrozenSet()) {
+    return *iterable;
+  }
+  Object dunder_iter(
+      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
+                                        iterable, SymbolId::kDunderIter));
+  if (dunder_iter.isError()) {
+    return thread->raiseTypeErrorWithCStr(
+        "frozenset.__new__ must be called with an iterable");
+  }
+  FrozenSet result(&scope, thread->runtime()->newFrozenSet());
+  result = thread->runtime()->setUpdate(thread, result, iterable);
+  if (result.numItems() == 0) {
+    return thread->runtime()->emptyFrozenSet();
+  }
   return *result;
 }
 
@@ -427,7 +431,7 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
     {SymbolId::kAllocated, Set::kNumItemsOffset},
 };
 
-const BuiltinMethod SetBuiltins::kMethods[] = {
+const NativeMethod SetBuiltins::kNativeMethods[] = {
     {SymbolId::kAdd, nativeTrampoline<add>},
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
@@ -435,24 +439,27 @@ const BuiltinMethod SetBuiltins::kMethods[] = {
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
     {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
     {SymbolId::kDunderIand, nativeTrampoline<dunderIand>},
-    {SymbolId::kDunderInit, nativeTrampoline<dunderInit>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kIntersection, nativeTrampoline<intersection>},
-    {SymbolId::kPop, nativeTrampoline<pop>}};
+    {SymbolId::kPop, nativeTrampoline<pop>},
+};
+
+const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderInit, dunderInit},
+};
 
 void SetBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type set(&scope,
-           runtime->addBuiltinType(SymbolId::kSet, LayoutId::kSet,
-                                   LayoutId::kObject, kAttributes, kMethods));
+  Type set(&scope, runtime->addBuiltinType(SymbolId::kSet, LayoutId::kSet,
+                                           LayoutId::kObject, kAttributes,
+                                           kNativeMethods, kBuiltinMethods));
   set.sealAttributes();
-  ;
 }
 
 // TODO(T36810889): implement high-level setAdd function with error handling
@@ -640,10 +647,6 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "set.__new__ expects at least 1 argument");
-  }
   Arguments args(frame, nargs);
   if (!args.get(0)->isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
@@ -660,7 +663,7 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-const BuiltinMethod SetIteratorBuiltins::kMethods[] = {
+const NativeMethod SetIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
@@ -668,9 +671,9 @@ const BuiltinMethod SetIteratorBuiltins::kMethods[] = {
 
 void SetIteratorBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
-  Type set_iter(&scope, runtime->addBuiltinTypeWithMethods(
+  Type set_iter(&scope, runtime->addBuiltinTypeWithNativeMethods(
                             SymbolId::kSetIterator, LayoutId::kSetIterator,
-                            LayoutId::kObject, kMethods));
+                            LayoutId::kObject, kNativeMethods));
 }
 
 RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

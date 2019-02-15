@@ -114,20 +114,23 @@ static bool isPass(const Code& code) {
          bytes.byteAt(2) == RETURN_VALUE && bytes.byteAt(3) == 0;
 }
 
-void copyFunctionEntries(Thread* thread, const Function& to_patch,
-                         const Function& from) {
+void copyFunctionEntries(Thread* thread, const Function& base,
+                         const Function& patch) {
   HandleScope scope(thread);
-  Code patch_code(&scope, to_patch.code());
-  if (!isPass(patch_code)) {
-    unique_c_ptr<char> from_name(RawStr::cast(from.name()).toCStr());
-    CHECK(false, "Redefinition of native code method '%s' in managed code",
-          from_name.get());
-  }
-  patch_code.setCode(NoneType::object());
-
-  to_patch.setEntry(from.entry());
-  to_patch.setEntryKw(from.entryKw());
-  to_patch.setEntryEx(from.entryEx());
+  Str method_name(&scope, base.name());
+  Code patch_code(&scope, patch.code());
+  Code base_code(&scope, base.code());
+  CHECK(isPass(patch_code),
+        "Redefinition of native code method '%s' in managed code",
+        method_name.toCStr());
+  CHECK(!base_code.code().isNoneType(),
+        "Useless declaration of native code method %s in managed code",
+        method_name.toCStr());
+  patch_code.setCode(base_code.code());
+  base.setCode(*patch_code);
+  patch.setEntry(base.entry());
+  patch.setEntryKw(base.entryKw());
+  patch.setEntryEx(base.entryEx());
 }
 
 void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
@@ -151,7 +154,7 @@ void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
             "Python annotation of non-function native object");
       Function base_fn(&scope, *base_obj);
 
-      copyFunctionEntries(thread, patch_fn, base_fn);
+      copyFunctionEntries(thread, base_fn, patch_fn);
     }
     runtime->typeDictAtPut(base, key, patch_obj);
   }
@@ -567,7 +570,7 @@ RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("_patch can only patch functions");
   }
   Function base_fn(&scope, *base_fn_obj);
-  copyFunctionEntries(thread, patch_fn, base_fn);
+  copyFunctionEntries(thread, base_fn, patch_fn);
   return *patch_fn;
 }
 
