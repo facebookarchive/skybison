@@ -29,6 +29,7 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderIndex, dunderInt},
     {SymbolId::kDunderInt, dunderInt},
+    {SymbolId::kDunderInvert, dunderInvert},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLshift, dunderLshift},
     {SymbolId::kDunderLt, dunderLt},
@@ -202,7 +203,6 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
 
 const NativeMethod SmallIntBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
-    {SymbolId::kDunderInvert, nativeTrampoline<dunderInvert>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
 };
@@ -280,19 +280,10 @@ RawObject IntBuiltins::dunderFloat(Thread* t, Frame* frame, word nargs) {
   });
 }
 
-RawObject SmallIntBuiltins::dunderInvert(Thread* thread, Frame* frame,
-                                         word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-
-  if (self->isSmallInt()) {
-    RawSmallInt tos = RawSmallInt::cast(self);
-    return SmallInt::fromWord(-(tos->value() + 1));
-  }
-  return thread->raiseTypeErrorWithCStr("unsupported type for __invert__");
+RawObject IntBuiltins::dunderInvert(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
+    return thread->runtime()->intInvert(thread, self);
+  });
 }
 
 RawObject IntBuiltins::dunderLe(Thread* t, Frame* frame, word nargs) {

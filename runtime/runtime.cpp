@@ -4082,6 +4082,23 @@ RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
   return normalizeLargeInt(result);
 }
 
+RawObject Runtime::intInvert(Thread* thread, const Int& value) {
+  word num_digits = value.numDigits();
+  if (num_digits == 1) {
+    word value_word = value.asWord();
+    return newInt(~value_word);
+  }
+  HandleScope scope(thread);
+  LargeInt large_int(&scope, *value);
+  LargeInt result(&scope, heap()->createLargeInt(num_digits));
+  for (word i = 0; i < num_digits; ++i) {
+    uword digit = large_int.digitAt(i);
+    result.digitAtPut(i, ~digit);
+  }
+  DCHECK(result.isValid(), "valid large integer");
+  return *result;
+}
+
 RawObject Runtime::intNegate(Thread* thread, const Int& value) {
   word num_digits = value.numDigits();
   if (num_digits == 1) {

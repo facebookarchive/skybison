@@ -34,6 +34,7 @@ class IntBuiltins {
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNeg(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInt(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInvert(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLshift(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
@@ -62,7 +63,6 @@ class SmallIntBuiltins {
   static void initialize(Runtime* runtime);
 
   static RawObject dunderFloorDiv(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInvert(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
 

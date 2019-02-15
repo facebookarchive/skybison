@@ -227,26 +227,6 @@ a_is_not_c = a is not c
   EXPECT_EQ(*a_is_not_c, Bool::falseObj());
 }
 
-TEST(IntBuiltinsTest, UnaryInvertSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
-
-  const char* src = R"(
-pos = 123
-invert_pos = ~pos
-neg = -456
-invert_neg = ~neg
-)";
-
-  runFromCStr(&runtime, src);
-
-  Object invert_pos(&scope, moduleAt(&runtime, "__main__", "invert_pos"));
-  EXPECT_TRUE(isIntEqualsWord(*invert_pos, -124));
-
-  Object invert_neg(&scope, moduleAt(&runtime, "__main__", "invert_neg"));
-  EXPECT_TRUE(isIntEqualsWord(*invert_neg, 455));
-}
-
 TEST(IntBuiltinsTest, UnaryPositiveSmallInt) {
   Runtime runtime;
   HandleScope scope;
@@ -1593,6 +1573,47 @@ b = int.__int__(7)
   Str str(&scope, runtime.newStrFromCStr("python"));
   Object res(&scope, runBuiltin(IntBuiltins::dunderInt, str));
   EXPECT_TRUE(res.isError());
+}
+
+TEST(IntBuiltinsTest, DunderInvertWithBoolTrueReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_TRUE(isIntEqualsWord(*result, -2));
+}
+
+TEST(IntBuiltinsTest, DunderInvertWithBoolFalseReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_TRUE(isIntEqualsWord(*result, -1));
+}
+
+TEST(IntBuiltinsTest, DunderInvertWithSmallIntReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, SmallInt::fromWord(-224466));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_TRUE(isIntEqualsWord(*result, 224465));
+}
+
+TEST(IntBuiltinsTest, DunderInvertWithLargeIntReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, newIntWithDigits(&runtime, {0x6c5bfcb426758496,
+                                                 0xda8bdbe69c009bc5, 0}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
+  ASSERT_TRUE(result_obj.isLargeInt());
+  Int result(&scope, *result_obj);
+  Int expected(&scope,
+               newIntWithDigits(&runtime, {0x93a4034bd98a7b69,
+                                           0x2574241963ff643a, kMaxUword}));
+  EXPECT_EQ(expected.compare(*result), 0);
 }
 
 TEST(IntBuiltinsTest, DunderBoolOnBool) {

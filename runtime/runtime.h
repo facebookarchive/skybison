@@ -673,6 +673,9 @@ class Runtime {
   // Returns the result of bitwise XOR of the arguments
   RawObject intBinaryXor(Thread* thread, const Int& left, const Int& right);
 
+  // Returns a copy of `value` with all bits flipped.
+  RawObject intInvert(Thread* thread, const Int& value);
+
   // Returns the product of `left` and `right`.
   RawObject intMultiply(Thread* thread, const Int& left, const Int& right);
 

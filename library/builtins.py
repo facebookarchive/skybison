@@ -156,6 +156,9 @@ class int(bootstrap=True):
     def __int__(self) -> int:
         pass
 
+    def __invert__(self) -> int:
+        pass
+
     def __le__(self, n: int) -> bool:
         pass
 
