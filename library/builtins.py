@@ -183,17 +183,108 @@ class int(bootstrap=True):
     def __pos__(self) -> int:
         pass
 
+    def __radd__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__radd__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return n.__add__(self)
+
+    def __rand__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rand__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__and__(n, self)
+
     def __repr__(self) -> str:  # noqa: T484
         pass
 
+    def __rdivmod__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rdivmod__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__divmod__(n, self)  # noqa: T484
+
+    def __rfloordiv__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rfloordiv__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__floordiv__(n, self)  # noqa: T484
+
+    def __rlshift__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rlshift__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__lshift__(n, self)
+
+    def __rmod__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rmod__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__mod__(n, self)  # noqa: T484
+
+    def __rmul__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rmul__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__mul__(n, self)
+
+    def __ror__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__ror__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__or__(n, self)
+
+    def __rpow__(self, n: int, *, mod=None):
+        if not isinstance(self, int):
+            raise TypeError("'__rpow__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__pow__(n, self, mod=mod)  # noqa: T484
+
     def __round__(self) -> int:
         pass
+
+    def __rrshift__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rrshift__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__rshift__(n, self)
 
     def __rshift__(self, n: int) -> int:
         pass
 
     def __str__(self) -> str:  # noqa: T484
         pass
+
+    def __rsub__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rsub__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__sub__(n, self)
+
+    def __rtruediv__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rtruediv__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__truediv__(n, self)  # noqa: T484
+
+    def __rxor__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rxor__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__xor__(n, self)
 
     def __sub__(self, n: int) -> int:
         pass

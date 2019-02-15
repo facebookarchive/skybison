@@ -2084,6 +2084,22 @@ TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaisesTypeError) {
       "from_bytes() takes at most 2 positional arguments (3 given)"));
 }
 
+TEST(IntBuiltinsTest, DunderRaddWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__radd__(True, 41)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 42));
+}
+
+TEST(IntBuiltinsTest, DunderRandWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rand__(0x123456789, 0x987654321)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0x103454301));
+}
+
 TEST(IntBuiltinsTest, DunderReprWithZeroReturnsStr) {
   Runtime runtime;
   HandleScope scope;
@@ -2191,6 +2207,74 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntManyZerosReturnsStr) {
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(isStrEqualsCStr(
       *result, "1234567890000000000000000000000000000000000000"));
+}
+
+TEST(IntBuiltinsTest, DunderRdivmodWithSmallIntsReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rdivmod__(3, 11)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  // int.__divmod__ is not implemented yet.
+  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+}
+
+TEST(IntBuiltinsTest, DunderRfloordivWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rfloordiv__(3, 11)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  // int.__floordiv__ is not implemented yet.
+  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+}
+
+TEST(IntBuiltinsTest, DunderRlshiftWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rlshift__(3, -7)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, -56));
+}
+
+TEST(IntBuiltinsTest, DunderRmodWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rmod__(3, 11)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  // int.__mod__ is not implemented yet.
+  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+}
+
+TEST(IntBuiltinsTest, DunderRmulWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rmul__(-321, 123)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, -39483));
+}
+
+TEST(IntBuiltinsTest, DunderRorWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__ror__(0x123456789, 0x987654321)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0x9a76567a9));
+}
+
+TEST(IntBuiltinsTest, DunderRpowWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rpow__(8, 2)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  // int.__pow__ is not implemented yet.
+  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+}
+
+TEST(IntBuiltinsTest, DunderRrshiftWithSmallIntsReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__rrshift__(16, 0xf00ddead)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xf00d));
 }
 
 TEST(IntBuiltinsTest, DunderRshiftWithBoolsReturnsSmallInt) {
