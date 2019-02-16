@@ -459,8 +459,7 @@ RawObject Marshal::Reader::readLongObject() {
   }
   if (word_offset > 0 && buf != 0) {
     digits[digits_idx++] = buf;
-  } else if ((digits[digits_idx - 1] >> (kBitsPerWord - 1)) &&
-             (n > 0 || digits[digits_idx - 1] << 1)) {
+  } else if (n > 0 && (digits[digits_idx - 1] >> (kBitsPerWord - 1))) {
     // Zero extend if the MSB is set in the top digit and either the result is
     // positive or the top digit has at least one other bit set (in which case
     // we need the extra digit for the negation).
@@ -474,6 +473,9 @@ RawObject Marshal::Reader::readLongObject() {
       digits[i] = digit;
     }
     DCHECK(carry == 0, "Carry should be zero");
+    if ((digits[digits_idx - 1] >> (kBitsPerWord - 1)) == 0) {
+      digits[digits_idx++] = kMaxUword;
+    }
   }
 
   RawObject result =

@@ -561,4 +561,32 @@ TEST(MarshalReaderTest,
   EXPECT_TRUE(runtime.setIncludes(set, three));
 }
 
+TEST(MarshalReaderTest,
+     ReadObjectLongReturnsNegativeLargeIntWithSignExtension) {
+  Runtime runtime;
+  HandleScope scope;
+  // This is: -0x8000000000000000_0000000000000001
+  Marshal::Reader reader(&scope, &runtime,
+                         "l"
+                         "\xf7\xff\xff\xff"
+                         "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                         "\x00\x00\x00\x80\x00");
+  Object result(&scope, reader.readObject());
+  EXPECT_TRUE(isIntEqualsDigits(
+      *result, {kMaxUword, static_cast<uword>(kMaxWord), kMaxUword}));
+}
+
+TEST(MarshalReaderTest,
+     ReadObjectLongReturnsNegativeLargeIntWithoutSignExtension) {
+  Runtime runtime;
+  HandleScope scope;
+  // This is: -0x8000000000000000
+  Marshal::Reader reader(&scope, &runtime,
+                         "l"
+                         "\xfb\xff\xff\xff"
+                         "\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00");
+  Object result(&scope, reader.readObject());
+  EXPECT_TRUE(isIntEqualsWord(*result, -0x8000000000000000));
+}
+
 }  // namespace python
