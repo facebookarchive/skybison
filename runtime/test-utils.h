@@ -220,5 +220,7 @@ class RememberingVisitor : public PointerVisitor {
   std::vector<RawObject> pointers_;
 };
 
+const uword kHighbitUword = uword{1} << (kBitsPerWord - 1);
+
 }  // namespace testing
 }  // namespace python

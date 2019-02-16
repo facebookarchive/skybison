@@ -698,7 +698,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithSmallIntOverflowReturnsLargeInt) {
   Object left(&scope, runtime.newInt(4));
   Object right(&scope, runtime.newInt(kBitsPerWord - 3));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
-  EXPECT_TRUE(isIntEqualsDigits(*result, {uword{1} << (kBitsPerWord - 1), 0}));
+  EXPECT_TRUE(isIntEqualsDigits(*result, {kHighbitUword, 0}));
 }
 
 TEST(IntBuiltinsTest, DunderLshiftWithNegativeSmallIntOverflowReturnsLargeInt) {
@@ -1165,8 +1165,8 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
   HandleScope scope;
 
   uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
-  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
-  Int num(&scope, newIntWithDigits(&runtime, {high_one, mantissa_high_bit}));
+  Int num(&scope,
+          newIntWithDigits(&runtime, {kHighbitUword, mantissa_high_bit}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p116", nullptr));
@@ -1178,9 +1178,8 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
 
   uword mantissa_high_bit_plus_one =
       (static_cast<uword>(1) << kDoubleMantissaBits) + 1;
-  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
-  Int num(&scope,
-          newIntWithDigits(&runtime, {high_one, mantissa_high_bit_plus_one}));
+  Int num(&scope, newIntWithDigits(
+                      &runtime, {kHighbitUword, mantissa_high_bit_plus_one}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(RawFloat::cast(*result)->value(),
@@ -1193,9 +1192,8 @@ TEST(IntBuiltinsTest,
   HandleScope scope;
 
   uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
-  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
   Int num(&scope,
-          newIntWithDigits(&runtime, {0, high_one, ~mantissa_high_bit}));
+          newIntWithDigits(&runtime, {0, kHighbitUword, ~mantissa_high_bit}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(RawFloat::cast(*result)->value(),
@@ -1209,9 +1207,8 @@ TEST(IntBuiltinsTest,
 
   uword mantissa_high_bit_plus_one =
       (static_cast<uword>(1) << kDoubleMantissaBits) | 1;
-  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
-  Int num(&scope, newIntWithDigits(&runtime,
-                                   {0, high_one, ~mantissa_high_bit_plus_one}));
+  Int num(&scope, newIntWithDigits(&runtime, {0, kHighbitUword,
+                                              ~mantissa_high_bit_plus_one}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(RawFloat::cast(*result)->value(),
@@ -1225,8 +1222,8 @@ TEST(IntBuiltinsTest,
 
   uword mantissa_all_one =
       (static_cast<uword>(1) << (kDoubleMantissaBits + 1)) - 1;
-  uword high_one = static_cast<uword>(1) << (kBitsPerWord - 1);
-  Int num(&scope, newIntWithDigits(&runtime, {high_one, mantissa_all_one}));
+  Int num(&scope,
+          newIntWithDigits(&runtime, {kHighbitUword, mantissa_all_one}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
   EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p117", nullptr));
@@ -1289,38 +1286,6 @@ TEST(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {
   EXPECT_TRUE(flt_res.isError());
   EXPECT_EQ(thread->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
-}
-
-TEST(LargeIntBuiltinsTest, UnaryNegateTest) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Object smallint_max(&scope, runtime.newInt(RawSmallInt::kMaxValue));
-  Object a(&scope, runBuiltin(IntBuiltins::dunderNeg, smallint_max));
-  EXPECT_TRUE(isIntEqualsWord(*a, -RawSmallInt::kMaxValue));
-
-  Object smallint_max1(&scope, runtime.newInt(RawSmallInt::kMaxValue + 1));
-  Object b(&scope, runBuiltin(IntBuiltins::dunderNeg, smallint_max1));
-  EXPECT_TRUE(isIntEqualsWord(*b, RawSmallInt::kMinValue));
-
-  Object smallint_min(&scope, runtime.newInt(RawSmallInt::kMinValue));
-  Object c(&scope, runBuiltin(IntBuiltins::dunderNeg, smallint_min));
-  EXPECT_TRUE(isIntEqualsWord(*c, -RawSmallInt::kMinValue));
-
-  Object smallint_min1(&scope, runtime.newInt(RawSmallInt::kMinValue - 1));
-  Object d(&scope, runBuiltin(IntBuiltins::dunderNeg, smallint_min1));
-  EXPECT_TRUE(isIntEqualsWord(*d, -(RawSmallInt::kMinValue - 1)));
-
-  Int min_word(&scope, runtime.newInt(kMinWord));
-  Object e(&scope, runBuiltin(IntBuiltins::dunderNeg, min_word));
-  ASSERT_TRUE(e.isLargeInt());
-  LargeInt large_e(&scope, *e);
-  EXPECT_TRUE(large_e.isPositive());
-  Int max_word(&scope, runtime.newInt(kMaxWord));
-  EXPECT_EQ(RawInt::cast(*large_e)->compare(*max_word), 1);
-  EXPECT_EQ(large_e.numDigits(), 2);
-  EXPECT_EQ(large_e.digitAt(0), uword{1} << (kBitsPerWord - 1));
-  EXPECT_EQ(large_e.digitAt(1), uword{0});
 }
 
 TEST(LargeIntBuiltinsTest, TruthyLargeInt) {
@@ -1728,11 +1693,26 @@ TEST(IntBuiltinsTest, DunderNegWithLargeIntCarriesReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderNegWithLargeIntOverflowsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  Object num(&scope,
-             newIntWithDigits(&runtime, {0, uword{1} << (kBitsPerWord - 1)}));
+  Object num(&scope, newIntWithDigits(&runtime, {0, kHighbitUword}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  EXPECT_TRUE(isIntEqualsDigits(*result, {0, kHighbitUword, 0}));
+}
+
+TEST(IntBuiltinsTest, DunderNegWithLargeIntShrinksReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, newIntWithDigits(&runtime, {kHighbitUword, 0}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
+  EXPECT_TRUE(isIntEqualsDigits(*result, {kHighbitUword}));
+}
+
+TEST(IntBuiltinsTest, DunderNegWithLargeIntNoShrinksReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, newIntWithDigits(&runtime, {1, kHighbitUword, 0}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
   EXPECT_TRUE(
-      isIntEqualsDigits(*result, {0, uword{1} << (kBitsPerWord - 1), 0}));
+      isIntEqualsDigits(*result, {kMaxUword, kHighbitUword - 1, kMaxUword}));
 }
 
 TEST(IntBuiltinsTest, DunderPosAliasesDunderInt) {

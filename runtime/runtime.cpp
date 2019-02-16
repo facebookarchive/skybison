@@ -4113,23 +4113,37 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
   HandleScope scope(thread);
   LargeInt large_int(&scope, *value);
 
-  // The smallest possible negative number (digits == {0, 0, ..., 0x8000...}
-  // is a special case because the negation needs an extra digit.
-  // The result happens to have the same digits with just a zero digit appended
-  // to indicate the positive sign.
-  bool is_min_int =
-      value.digitAt(num_digits - 1) == static_cast<uword>(kMinWord);
-  for (word i = 0; is_min_int && i < num_digits - 1; i++) {
-    if (value.digitAt(i) != 0) {
-      is_min_int = false;
+  auto digits_zero = [&](word up_to_digit) {
+    for (word i = 0; i < up_to_digit; i++) {
+      if (large_int.digitAt(i) != 0) {
+        return false;
+      }
     }
-  }
-  if (is_min_int) {
+    return true;
+  };
+
+  // The result of negating a number like `digits == {0, 0, ..., 0x800000.. }`
+  // needs an extra digit.
+  uword highest_digit = large_int.digitAt(num_digits - 1);
+  if (highest_digit == static_cast<uword>(kMinWord) &&
+      digits_zero(num_digits - 1)) {
     LargeInt result(&scope, heap()->createLargeInt(num_digits + 1));
     for (word i = 0; i < num_digits; i++) {
       result.digitAtPut(i, large_int.digitAt(i));
     }
     result.digitAtPut(num_digits, 0);
+    DCHECK(result.isValid(), "Invalid RawLargeInt");
+    return *result;
+  }
+  // The result of negating a number like `digits == {0, 0, ..., 0x800000.., 0}`
+  // is one digit shorter.
+  if (highest_digit == 0 &&
+      large_int.digitAt(num_digits - 2) == static_cast<uword>(kMinWord) &&
+      digits_zero(num_digits - 2)) {
+    LargeInt result(&scope, heap()->createLargeInt(num_digits - 1));
+    for (word i = 0; i < num_digits - 1; i++) {
+      result.digitAtPut(i, large_int.digitAt(i));
+    }
     DCHECK(result.isValid(), "Invalid RawLargeInt");
     return *result;
   }
