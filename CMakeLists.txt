@@ -127,7 +127,6 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/pathconfig.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pylifecycle.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pystate.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/pystrcmp.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pythonrun.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/random.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/sysmodule.cpp

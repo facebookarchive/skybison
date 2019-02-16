@@ -80,6 +80,7 @@ set(
   "${CPYTHON_DIR}/Python/fileutils.c"
   "${CPYTHON_DIR}/Python/pyarena.c"
   "${CPYTHON_DIR}/Python/pyctype.c"
+  "${CPYTHON_DIR}/Python/pystrcmp.c"
   "${CPYTHON_DIR}/Python/pystrhex.c"
   "${CPYTHON_DIR}/Python/pystrtod.c"
   "${CPYTHON_DIR}/Python/pytime.c"
