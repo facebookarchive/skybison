@@ -268,6 +268,16 @@ RawObject Thread::invokeFunction2(SymbolId module, SymbolId name,
   return Interpreter::callFunction2(this, currentFrame_, func, arg1, arg2);
 }
 
+RawObject Thread::invokeFunction3(SymbolId module, SymbolId name,
+                                  const Object& arg1, const Object& arg2,
+                                  const Object& arg3) {
+  HandleScope scope(this);
+  Object func(&scope, runtime()->lookupNameInModule(this, module, name));
+  if (func.isError()) return *func;
+  return Interpreter::callFunction3(this, currentFrame_, func, arg1, arg2,
+                                    arg3);
+}
+
 RawObject Thread::raise(LayoutId type, RawObject value) {
   setPendingExceptionType(runtime()->typeAt(type));
   setPendingExceptionValue(value);

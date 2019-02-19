@@ -11,7 +11,11 @@ namespace testing {
 // borrowed references. This never increments the reference count.
 class PyObjectPtr {
  public:
-  PyObjectPtr(PyObject* obj) : obj_(obj) {}
+  // PyObjectPtr can only hold a reference for opaque types that are upcastable
+  // to PyObject. Do not use with fully defined types (i.e. PyLong_Type).
+  explicit PyObjectPtr(PyObject* obj) : obj_(obj) {}
+  explicit PyObjectPtr(PyTypeObject* obj)
+      : obj_(reinterpret_cast<PyObject*>(obj)) {}
 
   ~PyObjectPtr() { Py_XDECREF(obj_); }
 
@@ -25,6 +29,12 @@ class PyObjectPtr {
   operator PyObject*() const { return obj_; }
 
   PyObject* get() const { return obj_; }
+
+  PyTypeObject* asTypeObject() const {
+    // Only downcast to PyTypeObject it it's holding a type reference
+    assert(PyType_Check(obj_));
+    return reinterpret_cast<PyTypeObject*>(obj_);
+  }
 
   // disable copy and assignment
   PyObjectPtr(const PyObjectPtr&) = delete;

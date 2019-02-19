@@ -328,6 +328,13 @@ class Runtime;
   V(UnderReadFile, "_readfile")                                                \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
+  V(UnderStructseqField, "_structseq_field")                                   \
+  V(UnderStructseqFieldNames, "_structseq_field_names")                        \
+  V(UnderStructseqGetAttr, "_structseq_getattr")                               \
+  V(UnderStructseqGetItem, "_structseq_getitem")                               \
+  V(UnderStructseqNew, "_structseq_new")                                       \
+  V(UnderStructseqRepr, "_structseq_repr")                                     \
+  V(UnderStructseqSetAttr, "_structseq_setattr")                               \
   V(UnderThread, "_thread")                                                    \
   V(UnderUnboundValue, "_UnboundValue")                                        \
   V(UnderWarnings, "_warnings")                                                \

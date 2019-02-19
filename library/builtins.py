@@ -915,3 +915,77 @@ def ord(c):
 @_patch
 def setattr(obj, name, value):
     pass
+
+
+@_patch
+def _structseq_setattr(obj, name, value):
+    pass
+
+
+@_patch
+def _structseq_getattr(obj, name):
+    pass
+
+
+def _structseq_getitem(self, pos):
+    if pos < 0 or pos >= type(self).n_fields:
+        raise IndexError("index out of bounds")
+    if pos < len(self):
+        return self[pos]
+    else:
+        name = self._structseq_field_names[pos]
+        return _structseq_getattr(self, name)
+
+
+def _structseq_new(cls, sequence, dict={}):  # noqa B006
+    seq_tuple = tuple(sequence)
+    seq_len = len(seq_tuple)
+    max_len = cls.n_fields
+    min_len = cls.n_sequence_fields
+    if seq_len < min_len:
+        raise TypeError(
+            f"{cls.__name__} needs at least a {min_len}-sequence ({seq_len}-sequence given)"
+        )
+    if seq_len > max_len:
+        raise TypeError(
+            f"{cls.__name__} needs at most a {max_len}-sequence ({seq_len}-sequence given)"
+        )
+
+    # Create the tuple of size min_len
+    structseq = tuple.__new__(cls, seq_tuple[:min_len])
+
+    # Fill the rest of the hidden fields
+    for i in range(min_len, seq_len):
+        key = cls._structseq_field_names[i]
+        _structseq_setattr(structseq, key, seq_tuple[min_len])
+
+    # Fill the remaining from the dict or set to None
+    for i in range(seq_len, max_len):
+        key = cls._structseq_field_names[i]
+        _structseq_setattr(structseq, key, dict.get(key))
+
+    return structseq
+
+
+class _structseq_field:
+    def __init__(self, name, index):
+        self.name = name
+        self.index = index
+
+    def __get__(self, instance, owner):
+        if self.index is not None:
+            return instance[self.index]
+        return _structseq_getattr(instance, self.name)
+
+    def __set__(self, instance, value):
+        raise TypeError("readonly attribute")
+
+
+def _structseq_repr(self):
+    if not isinstance(self, tuple):
+        raise TypeError("__repr__(): self is not a tuple")
+    if not hasattr(self, "n_sequence_fields"):
+        raise TypeError("__repr__(): self is not a self")
+    # TODO(T40273054): Iterate attributes and return field names
+    tuple_values = ", ".join([i.__repr__() for i in self])
+    return f"{type(self).__name__}({tuple_values})"

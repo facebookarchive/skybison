@@ -12,10 +12,9 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   Runtime* runtime = thread->runtime();
   runtime->run(Runtime::compileFromCStr(str).get());
   if (!thread->hasPendingException()) return 0;
-
-  // TODO(T36745559): handle exceptions and add tests once we have exception
-  // support
-  UNIMPLEMENTED("print exception, clear, or exit as in PyErr_Print");
+  // TODO(T39917518): Print exception
+  thread->clearPendingException();
+  return -1;
 }
 
 PY_EXPORT void PyErr_Display(PyObject* /* n */, PyObject* /* e */,

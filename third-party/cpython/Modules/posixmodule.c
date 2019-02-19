@@ -1687,10 +1687,11 @@ static PyStructSequence_Field stat_result_fields[] = {
     {"st_uid",     "user ID of owner"},
     {"st_gid",     "group ID of owner"},
     {"st_size",    "total size, in bytes"},
-    /* The NULL is replaced with PyStructSequence_UnnamedField later. */
-    {NULL,   "integer time of last access"},
-    {NULL,   "integer time of last modification"},
-    {NULL,   "integer time of last change"},
+    // Name these fields to remove the use of unnamed fields. This will
+    // make the implementation of struct sequence compatible with posix
+    {"_st_atime_int",   "integer time of last access"},
+    {"_st_mtime_int",   "integer time of last modification"},
+    {"_st_ctime_int",   "integer time of last change"},
     {"st_atime",   "time of last access"},
     {"st_mtime",   "time of last modification"},
     {"st_ctime",   "time of last change"},
@@ -1767,7 +1768,7 @@ static PyStructSequence_Desc stat_result_desc = {
     "stat_result", /* name */
     stat_result__doc__, /* doc */
     stat_result_fields,
-    10
+    13  /* n_in_sequence */
 };
 
 PyDoc_STRVAR(statvfs_result__doc__,
@@ -13030,9 +13031,6 @@ INITFUNC(void)
 #endif
 
         stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
-        stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
-        stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
-        stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
         StatResultType = PyStructSequence_NewType(&stat_result_desc);
         if (StatResultType == NULL) {
             return NULL;

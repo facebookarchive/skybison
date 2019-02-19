@@ -130,6 +130,13 @@ class Thread {
                             const Handle<RawObject>& arg1,
                             const Handle<RawObject>& arg2);
 
+  // Calls out to the interpreter to lookup and call a function with three
+  // arguments
+  RawObject invokeFunction3(SymbolId module, SymbolId name,
+                            const Handle<RawObject>& arg1,
+                            const Handle<RawObject>& arg2,
+                            const Handle<RawObject>& arg3);
+
   // Raises an exception with the given type and returns an Error that must be
   // returned up the stack by the caller.
   RawObject raise(LayoutId type, RawObject value);

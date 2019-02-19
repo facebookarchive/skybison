@@ -1993,6 +1993,10 @@ void Runtime::createBuiltinsModule() {
                            Builtins::underPrintStr);
   moduleAddBuiltinFunction(module, SymbolId::kUnderStrEscapeNonAscii,
                            Builtins::underStrEscapeNonAscii);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderStructseqSetAttr,
+                           underStructseqSetAttr);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderStructseqGetAttr,
+                           underStructseqGetAttr);
   // Add builtin types
   moduleAddBuiltinType(module, SymbolId::kArithmeticError,
                        LayoutId::kArithmeticError);
