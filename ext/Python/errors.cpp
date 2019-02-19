@@ -61,7 +61,7 @@ PY_EXPORT PyObject* _PyErr_FormatFromCause(PyObject* exception,
     Py_DECREF(tb);
   }
   Py_DECREF(exc);
-  DCHECK(!PyErr_Occurred());
+  DCHECK(!PyErr_Occurred(), "error must not have occurred");
 
   va_list vargs;
   va_start(vargs, format);
@@ -95,7 +95,7 @@ PY_EXPORT int PyErr_ExceptionMatches(PyObject* exc) {
 
 PY_EXPORT void PyErr_Fetch(PyObject** pexc, PyObject** pval, PyObject** ptb) {
   Thread* thread = Thread::currentThread();
-  DCHECK(pexe != nullptr, "pexc is null");
+  DCHECK(pexc != nullptr, "pexc is null");
   if (thread->pendingExceptionType().isNoneType()) {
     *pexc = nullptr;
   } else {
@@ -225,12 +225,12 @@ static void setFromErrno(PyObject* type, PyObject* name1, PyObject* name2) {
   }
 
   const char* str = saved_errno ? strerror(saved_errno) : "Error";
-  DCHECK(str != nullptr);
+  DCHECK(str != nullptr, "str must not be null");
   PyObject* msg = PyUnicode_FromString(str);
   PyObject* err = PyLong_FromLong(saved_errno);
   PyObject* result;
   if (name1 == nullptr) {
-    DCHECK(name2 == nullptr);
+    DCHECK(name2 == nullptr, "name2 must be nullptr");
     result = PyObject_CallFunctionObjArgs(type, err, msg, nullptr);
   } else if (name2 == nullptr) {
     result = PyObject_CallFunctionObjArgs(type, err, msg, name1, nullptr);
@@ -243,7 +243,7 @@ static void setFromErrno(PyObject* type, PyObject* name1, PyObject* name2) {
 
   Py_DECREF(msg);
   Py_DECREF(err);
-  DCHECK(result != nullptr);
+  DCHECK(result != nullptr, "result must not be null");
   PyErr_SetObject(type, result);
   Py_DECREF(result);
 }

@@ -46,7 +46,10 @@
   } while (0)
 
 #ifdef NDEBUG
-#define DCHECK(...)
+#define DCHECK(...)                                                            \
+  if (false) {                                                                 \
+    CHECK(__VA_ARGS__);                                                        \
+  }
 #define DCHECK_BOUND(val, high)
 #define DCHECK_INDEX(index, high)
 #else

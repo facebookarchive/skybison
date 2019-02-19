@@ -23,13 +23,13 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
 }
 
 static RawObject extensionSlot(const Type& type, Type::ExtensionSlot slot_id) {
-  DCHECK(!type->extensionSlots()->isNoneType(), "Type is not an extension");
+  DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
   return RawTuple::cast(type.extensionSlots())->at(static_cast<word>(slot_id));
 }
 
 static void setExtensionSlot(const Type& type, Type::ExtensionSlot slot_id,
                              RawObject slot) {
-  DCHECK(!type->extensionSlots()->isNoneType(), "Type is not an extension");
+  DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
   return RawTuple::cast(type.extensionSlots())
       ->atPut(static_cast<word>(slot_id), slot);
 }
@@ -248,7 +248,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
     UNIMPLEMENTED("Get slots from types initialized through Python code");
   }
 
-  DCHECK(!type->extensionSlots()->isNoneType(), "Type is not extension type");
+  DCHECK(!type.extensionSlots().isNoneType(), "Type is not extension type");
   Int address(&scope, extensionSlot(type, field_id));
   return address.asCPtr();
 }
@@ -347,9 +347,9 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
          "Type is unmanaged. Please initialize using PyType_FromSpec");
   HandleScope scope;
   Type type(&scope, handle->asObject());
-  DCHECK(!type->isBuiltin(),
+  DCHECK(!type.isBuiltin(),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
-  DCHECK(!type->extensionSlots()->isNoneType(),
+  DCHECK(!type.extensionSlots().isNoneType(),
          "GenericAlloc from types initialized through Python code");
   Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
   Int item_size(&scope, extensionSlot(type, Type::ExtensionSlot::kItemSize));

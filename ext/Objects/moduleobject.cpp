@@ -205,7 +205,7 @@ PY_EXPORT const char* PyModule_GetName(PyObject* pymodule) {
 }
 
 PY_EXPORT PyObject* PyModule_New(const char* c_name) {
-  DCHECK(name != nullptr, "PyModule_New takes a valid string");
+  DCHECK(c_name != nullptr, "PyModule_New takes a valid string");
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

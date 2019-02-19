@@ -58,7 +58,8 @@ PY_EXPORT int PySlice_GetIndicesEx(PyObject* slice, Py_ssize_t length,
 
 PY_EXPORT int PySlice_Unpack(PyObject* pyobj, Py_ssize_t* start_ptr,
                              Py_ssize_t* stop_ptr, Py_ssize_t* step_ptr) {
-  DCHECK(SmallInt::kMinValue + 1 <= -SmallInt::kMaxValue);
+  DCHECK(SmallInt::kMinValue + 1 <= -SmallInt::kMaxValue,
+         "smallint::min + 1 must be <= smallint::max");
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());

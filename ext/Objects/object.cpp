@@ -158,8 +158,7 @@ PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
     }
     return -1;
   }
-  DCHECK(thread->runtime()->isInstanceOfSmallInt(*result),
-         "__hash__ should return small int");
+  DCHECK(result.isSmallInt(), "__hash__ should return small int");
   SmallInt hash(&scope, *result);
   return hash.value();
 }

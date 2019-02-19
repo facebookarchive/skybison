@@ -40,7 +40,7 @@ PY_EXPORT void PyUnicode_WRITE_Func(enum PyUnicode_Kind kind, void* data,
   } else if (kind == PyUnicode_2BYTE_KIND) {
     static_cast<Py_UCS2*>(data)[index] = static_cast<Py_UCS2>(value);
   } else {
-    DCHECK(kind == PyUnicode_4BYTE_KIND);
+    DCHECK(kind == PyUnicode_4BYTE_KIND, "kind must be PyUnicode_4BYTE_KIND");
     static_cast<Py_UCS4*>(data)[index] = static_cast<Py_UCS4>(value);
   }
 }
@@ -342,7 +342,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
           len = std::sprintf(buffer, "%i", va_arg(*vargs, int));
         }
       }
-      DCHECK(len >= 0);
+      DCHECK(len >= 0, "len must be >= 0");
 
       if (precision < len) precision = len;
 
@@ -381,7 +381,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
       char number[kMaxLongLongChars];
 
       Py_ssize_t len = std::sprintf(number, "%p", va_arg(*vargs, void*));
-      DCHECK(len >= 0);
+      DCHECK(len >= 0, "len must be >= 0");
 
       // %p is ill-defined:  ensure leading 0x.
       if (number[1] == 'X') {
@@ -410,7 +410,9 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
 
     case 'U': {
       PyObject* obj = va_arg(*vargs, PyObject*);
-      DCHECK(obj && _PyUnicode_CHECK(obj));
+      // This used to call _PyUnicode_CHECK, which is deprecated, and which we
+      // have not imported.
+      DCHECK(obj, "obj must not be null");
 
       if (writeStr(writer, obj, width, precision) == -1) {
         return nullptr;
@@ -422,12 +424,13 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
       PyObject* obj = va_arg(*vargs, PyObject*);
       const char* str = va_arg(*vargs, const char*);
       if (obj) {
-        DCHECK(_PyUnicode_CHECK(obj));
+        // This used to DCHECK _PyUnicode_CHECK, which is deprecated, and which
+        // we have not imported.
         if (writeStr(writer, obj, width, precision) == -1) {
           return nullptr;
         }
       } else {
-        DCHECK(str != nullptr);
+        DCHECK(str != nullptr, "str must not be null");
         if (writeCStr(writer, str, width, precision) < 0) {
           return nullptr;
         }
@@ -437,7 +440,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
 
     case 'S': {
       PyObject* obj = va_arg(*vargs, PyObject*);
-      DCHECK(obj);
+      DCHECK(obj, "obj must not be null");
       PyObject* str = PyObject_Str(obj);
       if (!str) return nullptr;
       if (writeStr(writer, str, width, precision) == -1) {
@@ -450,7 +453,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
 
     case 'R': {
       PyObject* obj = va_arg(*vargs, PyObject*);
-      DCHECK(obj);
+      DCHECK(obj, "obj must not be null");
       PyObject* repr = PyObject_Repr(obj);
       if (!repr) return nullptr;
       if (writeStr(writer, repr, width, precision) == -1) {
@@ -463,7 +466,7 @@ static const char* writeArg(_PyUnicodeWriter* writer, const char* f,
 
     case 'A': {
       PyObject* obj = va_arg(*vargs, PyObject*);
-      DCHECK(obj);
+      DCHECK(obj, "obj must not be null");
       PyObject* ascii = PyObject_ASCII(obj);
       if (!ascii) return nullptr;
       if (writeStr(writer, ascii, width, precision) == -1) {
