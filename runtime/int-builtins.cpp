@@ -860,8 +860,8 @@ RawObject IntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   } else {
     uword carry = 1;
     for (word i = 0; i < num_digits; ++i) {
-      temp_digits[i] = ~large_int.digitAt(i) + carry;
-      carry = (temp_digits[i] == 0);
+      uword digit = large_int.digitAt(i);
+      carry = __builtin_uaddl_overflow(~digit, carry, &temp_digits[i]);
     }
     // The complement of the highest bit in a negative number must be 0 so we
     // cannot overflow.

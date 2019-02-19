@@ -2189,6 +2189,16 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntManyZerosReturnsStr) {
       *result, "1234567890000000000000000000000000000000000000"));
 }
 
+TEST(IntBuiltinsTest, DunderReprWithLargeIntCarriesReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object num(&scope, runtime.newIntWithDigits(
+                         {kMaxUword, static_cast<uword>(kMaxWord), kMaxUword}));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(
+      isStrEqualsCStr(*result, "-170141183460469231731687303715884105729"));
+}
+
 TEST(IntBuiltinsTest, DunderRdivmodWithSmallIntsReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
