@@ -122,11 +122,10 @@ TEST(RuntimeByteArrayTest, Extend) {
   runtime.byteArrayExtend(thread, array, hello);
   EXPECT_GE(array.capacity(), 5);
   EXPECT_EQ(array.numItems(), 5);
-  EXPECT_EQ(array.byteAt(0), 'H');
-  EXPECT_EQ(array.byteAt(1), 'e');
-  EXPECT_EQ(array.byteAt(2), 'l');
-  EXPECT_EQ(array.byteAt(3), 'l');
-  EXPECT_EQ(array.byteAt(4), 'o');
+
+  Bytes bytes(&scope, array.bytes());
+  bytes = runtime.bytesSubseq(thread, bytes, 0, 5);
+  EXPECT_TRUE(isBytesEqualsCStr(bytes, "Hello"));
 }
 
 TEST(RuntimeBytesTest, Concat) {
@@ -139,13 +138,7 @@ TEST(RuntimeBytesTest, Concat) {
   View<byte> bar(reinterpret_cast<const byte*>("bar"), 3);
   Bytes other(&scope, runtime.newBytesWithAll(bar));
   Bytes result(&scope, runtime.bytesConcat(thread, self, other));
-  EXPECT_EQ(result.length(), 6);
-  EXPECT_EQ(result.byteAt(0), 'f');
-  EXPECT_EQ(result.byteAt(1), 'o');
-  EXPECT_EQ(result.byteAt(2), 'o');
-  EXPECT_EQ(result.byteAt(3), 'b');
-  EXPECT_EQ(result.byteAt(4), 'a');
-  EXPECT_EQ(result.byteAt(5), 'r');
+  EXPECT_TRUE(isBytesEqualsCStr(result, "foobar"));
 }
 
 TEST(RuntimeBytesTest, Subseq) {
@@ -158,12 +151,7 @@ TEST(RuntimeBytesTest, Subseq) {
   ASSERT_EQ(bytes.length(), 12);
 
   Bytes copy(&scope, runtime.bytesSubseq(thread, bytes, 6, 5));
-  EXPECT_EQ(copy.length(), 5);
-  EXPECT_EQ(copy.byteAt(0), 'w');
-  EXPECT_EQ(copy.byteAt(1), 'o');
-  EXPECT_EQ(copy.byteAt(2), 'r');
-  EXPECT_EQ(copy.byteAt(3), 'l');
-  EXPECT_EQ(copy.byteAt(4), 'd');
+  EXPECT_TRUE(isBytesEqualsCStr(copy, "world"));
 }
 
 TEST(RuntimeDictTest, EmptyDictInvariants) {

@@ -19,9 +19,7 @@ obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
   Object result(&scope, callDunderBytes(thread, obj));
-  ASSERT_TRUE(result.isBytes());
-  Bytes expected(&scope, runtime.newBytes(3, '1'));
-  EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
+  EXPECT_TRUE(isBytesEqualsCStr(result, "111"));
 }
 
 TEST(BytesBuiltinsTest, CallDunderBytesWithNonBytesDunderBytesRaisesTypeError) {
@@ -66,7 +64,7 @@ obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
   Object result(&scope, callDunderBytes(thread, obj));
-  ASSERT_TRUE(result.isNoneType());
+  EXPECT_TRUE(result.isNoneType());
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
@@ -74,14 +72,12 @@ TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
-  Object num(&scope, SmallInt::fromWord(42));
+  Object num(&scope, SmallInt::fromWord('*'));
   runtime.listAdd(list, num);
   runtime.listAdd(list, num);
   runtime.listAdd(list, num);
   Object result(&scope, bytesFromIterable(thread, list));
-  ASSERT_TRUE(result.isBytes());
-  Bytes expected(&scope, runtime.newBytesWithAll({42, 42, 42}));
-  EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
+  EXPECT_TRUE(isBytesEqualsCStr(result, "***"));
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
@@ -93,9 +89,7 @@ TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
   tuple.atPut(1, SmallInt::fromWord(123));
   tuple.atPut(2, SmallInt::fromWord(0));
   Object result(&scope, bytesFromIterable(thread, tuple));
-  ASSERT_TRUE(result.isBytes());
-  Bytes expected(&scope, runtime.newBytesWithAll({42, 123, 0}));
-  EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(result, {42, 123, 0}));
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
@@ -104,9 +98,7 @@ TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
   HandleScope scope(thread);
   Range range(&scope, runtime.newRange('a', 'j', 2));
   Object result(&scope, bytesFromIterable(thread, range));
-  ASSERT_TRUE(result.isBytes());
-  Bytes expected(&scope, runtime.newBytesWithAll({'a', 'c', 'e', 'g', 'i'}));
-  EXPECT_EQ(Bytes::cast(*result).compare(*expected), 0);
+  EXPECT_TRUE(isBytesEqualsCStr(result, "acegi"));
 }
 
 TEST(BytesBuiltinsTest, FromIterableReturnsBytes) {
@@ -121,9 +113,7 @@ obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
   Object result(&scope, bytesFromIterable(thread, obj));
-  ASSERT_TRUE(result.isBytes());
-  Bytes expected(&scope, runtime.newBytesWithAll({97, 98, 99}));
-  EXPECT_EQ(RawBytes::cast(*result).compare(*expected), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(result, {97, 98, 99}));
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaisesTypeError) {
@@ -152,11 +142,7 @@ TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
   tuple.atPut(0, SmallInt::fromWord(42));
   tuple.atPut(1, SmallInt::fromWord(123));
   Object result(&scope, bytesFromTuple(thread, tuple, 2));
-  ASSERT_TRUE(result.isBytes());
-  Bytes bytes(&scope, *result);
-  EXPECT_EQ(bytes.length(), 2);
-  EXPECT_EQ(bytes.byteAt(0), 42);
-  EXPECT_EQ(bytes.byteAt(1), 123);
+  EXPECT_TRUE(isBytesEqualsBytes(result, {42, 123}));
 }
 
 TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaisesTypeError) {
@@ -228,12 +214,7 @@ TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
   Object self(&scope, runtime.newBytes(1, '1'));
   Object other(&scope, runtime.newBytes(2, '2'));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
-  ASSERT_TRUE(sum.isBytes());
-  Bytes result(&scope, *sum);
-  EXPECT_EQ(result.length(), 3);
-  EXPECT_EQ(result.byteAt(0), '1');
-  EXPECT_EQ(result.byteAt(1), '2');
-  EXPECT_EQ(result.byteAt(2), '2');
+  EXPECT_TRUE(isBytesEqualsCStr(sum, "122"));
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithTooFewArgsRaisesTypeError) {
@@ -465,12 +446,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
   index.setStop(SmallInt::fromWord(3));
   index.setStep(SmallInt::fromWord(1));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  ASSERT_TRUE(item.isBytes());
-  Bytes result(&scope, *item);
-  EXPECT_EQ(result.length(), 3);
-  EXPECT_EQ(result.byteAt(0), 'h');
-  EXPECT_EQ(result.byteAt(1), 'e');
-  EXPECT_EQ(result.byteAt(2), 'l');
+  EXPECT_TRUE(isBytesEqualsCStr(item, "hel"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
@@ -483,12 +459,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
   index.setStop(SmallInt::fromWord(6));
   index.setStep(SmallInt::fromWord(2));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  ASSERT_TRUE(item.isBytes());
-  Bytes result(&scope, *item);
-  EXPECT_EQ(result.length(), 3);
-  EXPECT_EQ(result.byteAt(0), 'e');
-  EXPECT_EQ(result.byteAt(1), 'l');
-  EXPECT_EQ(result.byteAt(2), ' ');
+  EXPECT_TRUE(isBytesEqualsCStr(item, "el "));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
@@ -869,8 +840,7 @@ TEST(BytesBuiltinsTest, DunderNewWithoutArgsReturnsEmptyBytes) {
   HandleScope scope;
   runFromCStr(&runtime, "obj = bytes()");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
-  EXPECT_TRUE(obj.isBytes());
-  EXPECT_EQ(RawBytes::cast(*obj).length(), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(obj, {}));
 }
 
 TEST(BytesBuiltinsTest,
@@ -926,11 +896,8 @@ class Foo:
   def __bytes__(self): return b'foo'
 result = bytes(Foo())
 )");
-  Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_EQ(result.length(), 3);
-  EXPECT_EQ(result.byteAt(0), 'f');
-  EXPECT_EQ(result.byteAt(1), 'o');
-  EXPECT_EQ(result.byteAt(2), 'o');
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "foo"));
 }
 
 TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsNullFilledBytes) {
@@ -938,8 +905,7 @@ TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsNullFilledBytes) {
   HandleScope scope;
   runFromCStr(&runtime, "result = bytes(10)");
   Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
-  Bytes expected(&scope, runtime.newBytes(10, 0));
-  EXPECT_EQ(result.compare(*expected), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(result, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
 }
 
 TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
@@ -947,8 +913,7 @@ TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
   HandleScope scope;
   runFromCStr(&runtime, "result = bytes([6, 28])");
   Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
-  Bytes expected(&scope, runtime.newBytesWithAll({6, 28}));
-  EXPECT_EQ(result.compare(*expected), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(result, {6, 28}));
 }
 
 TEST(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {

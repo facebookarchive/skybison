@@ -10,6 +10,8 @@
 #include <sstream>
 
 #include "builtins-module.h"
+#include "bytearray-builtins.h"
+#include "bytes-builtins.h"
 #include "frame.h"
 #include "handles.h"
 #include "os.h"
@@ -54,44 +56,6 @@ std::ostream& operator<<(std::ostream& os, const Int& value) {
 }
 
 namespace testing {
-
-// Turn a Python string object into a standard string.
-static std::string pyStringToStdString(RawStr pystr) {
-  std::string std_str;
-  std_str.reserve(pystr->length());
-  for (word i = 0; i < pystr->length(); i++) {
-    std_str += pystr->charAt(i);
-  }
-  return std_str;
-}
-
-::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
-                                               const char*, RawStr actual_str,
-                                               std::string expected_string) {
-  if (actual_str->equalsCStr(expected_string.c_str())) {
-    return ::testing::AssertionSuccess();
-  }
-
-  return ::testing::AssertionFailure()
-         << "      Expected: " << actual_string_expr << "\n"
-         << "      Which is: \"" << pyStringToStdString(actual_str) << "\"\n"
-         << "To be equal to: \"" << expected_string << "\"";
-}
-
-::testing::AssertionResult AssertPyStringEqual(const char* actual_string_expr,
-                                               const char* expected_string_expr,
-                                               RawStr actual_str,
-                                               RawStr expected_str) {
-  if (actual_str->equals(expected_str)) {
-    return ::testing::AssertionSuccess();
-  }
-
-  return ::testing::AssertionFailure()
-         << "      Expected: " << actual_string_expr << "\n"
-         << "      Which is: \"" << pyStringToStdString(actual_str) << "\"\n"
-         << "To be equal to: \"" << expected_string_expr << "\"\n"
-         << "      Which is: \"" << pyStringToStdString(expected_str) << "\"";
-}
 
 Value::Type Value::type() const { return type_; }
 
@@ -362,6 +326,39 @@ RawObject listFromRange(word start, word stop) {
     thread->runtime()->listAdd(result, value);
   }
   return *result;
+}
+
+::testing::AssertionResult isBytesEqualsBytes(const Object& result,
+                                              View<byte> expected) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (thread->hasPendingException()) {
+    Type type(&scope, thread->pendingExceptionType());
+    return ::testing::AssertionFailure()
+           << "pending '" << typeName(runtime, *type) << "' exception";
+  }
+  if (!runtime->isInstanceOfBytes(*result)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, *result) << "'";
+  }
+  Bytes result_bytes(&scope, *result);
+  Bytes expected_bytes(&scope, runtime->newBytesWithAll(expected));
+  if (result_bytes.compare(*expected_bytes) != 0) {
+    Str result_repr(&scope, bytesReprSmartQuotes(thread, result_bytes));
+    Str expected_repr(&scope, bytesReprSmartQuotes(thread, expected_bytes));
+    return ::testing::AssertionFailure()
+           << result_repr.toCStr() << "is not equal to "
+           << expected_repr.toCStr();
+  }
+  return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult isBytesEqualsCStr(const Object& result,
+                                             const char* expected) {
+  return isBytesEqualsBytes(
+      result, View<byte>(reinterpret_cast<const byte*>(expected),
+                         static_cast<word>(std::strlen(expected))));
 }
 
 ::testing::AssertionResult isStrEquals(const Object& str1, const Object& str2) {

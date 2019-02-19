@@ -2514,12 +2514,7 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  ASSERT_TRUE(result.isBytes());
-  Bytes bytes(&scope, *result);
-  ASSERT_EQ(bytes.length(), 3);
-  EXPECT_EQ(bytes.byteAt(0), 42);
-  EXPECT_EQ(bytes.byteAt(1), 0);
-  EXPECT_EQ(bytes.byteAt(2), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(result, {42, 0, 0}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithByteorderBigEndianReturnsBytes) {
@@ -2531,11 +2526,7 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderBigEndianReturnsBytes) {
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  ASSERT_TRUE(result.isBytes());
-  Bytes bytes(&scope, *result);
-  ASSERT_EQ(bytes.length(), 2);
-  EXPECT_EQ(bytes.byteAt(0), 0);
-  EXPECT_EQ(bytes.byteAt(1), 42);
+  EXPECT_TRUE(isBytesEqualsBytes(result, {0, 42}));
 }
 
 TEST(IntBuiltinsTest, ToBytesKwReturnsBytes) {
@@ -2553,11 +2544,7 @@ x6 = (0x1234).to_bytes(signed=False, byteorder='little', length=2)
 )");
   for (const char* name : {"x0", "x1", "x2", "x3", "x4", "x5", "x6"}) {
     Object x(&scope, moduleAt(&runtime, "__main__", name));
-    ASSERT_TRUE(x.isBytes()) << name;
-    Bytes x_bytes(&scope, *x);
-    ASSERT_EQ(x_bytes.length(), 2) << name;
-    EXPECT_EQ(x_bytes.byteAt(0), 0x34) << name;
-    EXPECT_EQ(x_bytes.byteAt(1), 0x12) << name;
+    EXPECT_TRUE(isBytesEqualsBytes(x, {0x34, 0x12})) << name;
   }
 }
 
@@ -2569,13 +2556,7 @@ TEST(IntBuiltinsTest, ToBytesKwWithNegativeNumberReturnsBytes) {
 x0 = (-777).to_bytes(4, 'little', signed=True)
 )");
   Object x(&scope, moduleAt(&runtime, "__main__", "x0"));
-  ASSERT_TRUE(x.isBytes());
-  Bytes x_bytes(&scope, *x);
-  ASSERT_EQ(x_bytes.length(), 4);
-  EXPECT_EQ(x_bytes.byteAt(0), 0xf7);
-  EXPECT_EQ(x_bytes.byteAt(1), 0xfc);
-  EXPECT_EQ(x_bytes.byteAt(2), 0xff);
-  EXPECT_EQ(x_bytes.byteAt(3), 0xff);
+  EXPECT_TRUE(isBytesEqualsBytes(x, {0xf7, 0xfc, 0xff, 0xff}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithSignedFalseReturnsBytes) {
@@ -2591,36 +2572,19 @@ TEST(IntBuiltinsTest, ToBytesWithSignedFalseReturnsBytes) {
   Int num_128(&scope, SmallInt::fromWord(128));
   Object result_128(
       &scope, runBuiltin(IntBuiltins::toBytes, num_128, length_1, byteorder));
-  ASSERT_TRUE(result_128.isBytes());
-  Bytes bytes_128(&scope, *result_128);
-  ASSERT_EQ(bytes_128.length(), 1);
-  EXPECT_EQ(bytes_128.byteAt(0), 0x80);
+  EXPECT_TRUE(isBytesEqualsBytes(result_128, {0x80}));
 
   Int length_2(&scope, SmallInt::fromWord(2));
   Int num_32768(&scope, SmallInt::fromWord(32768));
   Object result_32768(
       &scope, runBuiltin(IntBuiltins::toBytes, num_32768, length_2, byteorder));
-  EXPECT_TRUE(result_32768.isBytes());
-  Bytes bytes_32768(&scope, *result_32768);
-  ASSERT_EQ(bytes_32768.length(), 2);
-  EXPECT_EQ(bytes_32768.byteAt(0), 0);
-  EXPECT_EQ(bytes_32768.byteAt(1), 0x80);
+  EXPECT_TRUE(isBytesEqualsBytes(result_32768, {0, 0x80}));
 
   Int length_8(&scope, SmallInt::fromWord(8));
   Int num_min_word(&scope, newIntWithDigits(&runtime, {0x8000000000000000, 0}));
   Object result_min_word(&scope, runBuiltin(IntBuiltins::toBytes, num_min_word,
                                             length_8, byteorder));
-  EXPECT_TRUE(result_min_word.isBytes());
-  Bytes bytes_min_word(&scope, *result_min_word);
-  ASSERT_EQ(bytes_min_word.length(), 8);
-  EXPECT_EQ(bytes_min_word.byteAt(0), 0);
-  EXPECT_EQ(bytes_min_word.byteAt(1), 0);
-  EXPECT_EQ(bytes_min_word.byteAt(2), 0);
-  EXPECT_EQ(bytes_min_word.byteAt(3), 0);
-  EXPECT_EQ(bytes_min_word.byteAt(4), 0);
-  EXPECT_EQ(bytes_min_word.byteAt(5), 0);
-  EXPECT_EQ(bytes_min_word.byteAt(6), 0);
-  EXPECT_EQ(bytes_min_word.byteAt(7), 0x80);
+  EXPECT_TRUE(isBytesEqualsBytes(result_min_word, {0, 0, 0, 0, 0, 0, 0, 0x80}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderBigEndianReturnsBytes) {
@@ -2633,19 +2597,8 @@ TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderBigEndianReturnsBytes) {
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  ASSERT_TRUE(result.isBytes());
-  Bytes result_bytes(&scope, *result);
-  ASSERT_EQ(result_bytes.length(), 10);
-  EXPECT_EQ(result_bytes.byteAt(0), 0);
-  EXPECT_EQ(result_bytes.byteAt(1), 0);
-  EXPECT_EQ(result_bytes.byteAt(2), 0);
-  EXPECT_EQ(result_bytes.byteAt(3), 0);
-  EXPECT_EQ(result_bytes.byteAt(4), 0);
-  EXPECT_EQ(result_bytes.byteAt(5), 0);
-  EXPECT_EQ(result_bytes.byteAt(6), 0xca);
-  EXPECT_EQ(result_bytes.byteAt(7), 0xfe);
-  EXPECT_EQ(result_bytes.byteAt(8), 0xba);
-  EXPECT_EQ(result_bytes.byteAt(9), 0xbe);
+  EXPECT_TRUE(
+      isBytesEqualsBytes(result, {0, 0, 0, 0, 0, 0, 0xca, 0xfe, 0xba, 0xbe}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderLittleEndianReturnsBytes) {
@@ -2658,19 +2611,8 @@ TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderLittleEndianReturnsBytes) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  ASSERT_TRUE(result.isBytes());
-  Bytes result_bytes(&scope, *result);
-  ASSERT_EQ(result_bytes.length(), 10);
-  EXPECT_EQ(result_bytes.byteAt(0), 0xbe);
-  EXPECT_EQ(result_bytes.byteAt(1), 0xba);
-  EXPECT_EQ(result_bytes.byteAt(2), 0xfe);
-  EXPECT_EQ(result_bytes.byteAt(3), 0xca);
-  EXPECT_EQ(result_bytes.byteAt(4), 0);
-  EXPECT_EQ(result_bytes.byteAt(5), 0);
-  EXPECT_EQ(result_bytes.byteAt(6), 0);
-  EXPECT_EQ(result_bytes.byteAt(7), 0);
-  EXPECT_EQ(result_bytes.byteAt(8), 0);
-  EXPECT_EQ(result_bytes.byteAt(9), 0);
+  EXPECT_TRUE(
+      isBytesEqualsBytes(result, {0xbe, 0xba, 0xfe, 0xca, 0, 0, 0, 0, 0, 0}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithSignedTrueReturnsBytes) {
@@ -2680,55 +2622,30 @@ TEST(IntBuiltinsTest, ToBytesWithSignedTrueReturnsBytes) {
   runFromCStr(&runtime, R"(
 result = (0x7fffffffffffffff).to_bytes(8, 'little', signed=True)
 )");
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result_obj.isBytes());
-  Bytes result(&scope, *result_obj);
-  EXPECT_EQ(result.length(), 8);
-  EXPECT_EQ(result.byteAt(0), 0xff);
-  EXPECT_EQ(result.byteAt(1), 0xff);
-  EXPECT_EQ(result.byteAt(2), 0xff);
-  EXPECT_EQ(result.byteAt(3), 0xff);
-  EXPECT_EQ(result.byteAt(4), 0xff);
-  EXPECT_EQ(result.byteAt(5), 0xff);
-  EXPECT_EQ(result.byteAt(6), 0xff);
-  EXPECT_EQ(result.byteAt(7), 0x7f);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isBytesEqualsBytes(
+      result, {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f}));
 
   runFromCStr(&runtime, R"(
 result_n_128 = (-128).to_bytes(1, 'little', signed=True)
 )");
   Object result_n_128(&scope, moduleAt(&runtime, "__main__", "result_n_128"));
-  ASSERT_TRUE(result_n_128.isBytes());
-  Bytes bytes_n_128(&scope, *result_n_128);
-  ASSERT_EQ(bytes_n_128.length(), 1);
-  EXPECT_EQ(bytes_n_128.byteAt(0), 0x80);
+  EXPECT_TRUE(isBytesEqualsBytes(result_n_128, {0x80}));
 
   runFromCStr(&runtime, R"(
 result_n_32768 = (-32768).to_bytes(2, 'little', signed=True)
 )");
   Object result_n_32768(&scope,
                         moduleAt(&runtime, "__main__", "result_n_32768"));
-  ASSERT_TRUE(result_n_32768.isBytes());
-  Bytes bytes_n_32768(&scope, *result_n_32768);
-  ASSERT_EQ(bytes_n_32768.length(), 2);
-  EXPECT_EQ(bytes_n_32768.byteAt(0), 0x00);
-  EXPECT_EQ(bytes_n_32768.byteAt(1), 0x80);
+  EXPECT_TRUE(isBytesEqualsBytes(result_n_32768, {0, 0x80}));
 
   runFromCStr(&runtime, R"(
 result_n_min_word = (-9223372036854775808).to_bytes(8, 'little', signed=True)
 )");
   Object result_n_min_word(&scope,
                            moduleAt(&runtime, "__main__", "result_n_min_word"));
-  ASSERT_TRUE(result_n_min_word.isBytes());
-  Bytes bytes_n_min_word(&scope, *result_n_min_word);
-  ASSERT_EQ(bytes_n_min_word.length(), 8);
-  EXPECT_EQ(bytes_n_min_word.byteAt(0), 0x00);
-  EXPECT_EQ(bytes_n_min_word.byteAt(1), 0x00);
-  EXPECT_EQ(bytes_n_min_word.byteAt(2), 0x00);
-  EXPECT_EQ(bytes_n_min_word.byteAt(3), 0x00);
-  EXPECT_EQ(bytes_n_min_word.byteAt(4), 0x00);
-  EXPECT_EQ(bytes_n_min_word.byteAt(5), 0x00);
-  EXPECT_EQ(bytes_n_min_word.byteAt(6), 0x00);
-  EXPECT_EQ(bytes_n_min_word.byteAt(7), 0x80);
+  EXPECT_TRUE(
+      isBytesEqualsBytes(result_n_min_word, {0, 0, 0, 0, 0, 0, 0, 0x80}));
 }
 
 TEST(IntBuiltinsTest,
@@ -2745,16 +2662,8 @@ TEST(IntBuiltinsTest,
 result = (-1024).to_bytes(7, 'big', signed=True)
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(result.isBytes());
-  Bytes result_bytes(&scope, *result);
-  ASSERT_EQ(result_bytes.length(), 7);
-  EXPECT_EQ(result_bytes.byteAt(0), 0xff);
-  EXPECT_EQ(result_bytes.byteAt(1), 0xff);
-  EXPECT_EQ(result_bytes.byteAt(2), 0xff);
-  EXPECT_EQ(result_bytes.byteAt(3), 0xff);
-  EXPECT_EQ(result_bytes.byteAt(4), 0xff);
-  EXPECT_EQ(result_bytes.byteAt(5), 0xfc);
-  EXPECT_EQ(result_bytes.byteAt(6), 0x00);
+  EXPECT_TRUE(
+      isBytesEqualsBytes(result, {0xff, 0xff, 0xff, 0xff, 0xff, 0xfc, 0}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithZeroLengthBigEndianReturnsEmptyBytes) {
@@ -2766,9 +2675,7 @@ TEST(IntBuiltinsTest, ToBytesWithZeroLengthBigEndianReturnsEmptyBytes) {
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  ASSERT_TRUE(result.isBytes());
-  Bytes result_bytes(&scope, *result);
-  ASSERT_EQ(result_bytes.length(), 0);
+  ASSERT_TRUE(isBytesEqualsBytes(result, {}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithZeroLengthLittleEndianReturnsEmptyBytes) {
@@ -2780,9 +2687,7 @@ TEST(IntBuiltinsTest, ToBytesWithZeroLengthLittleEndianReturnsEmptyBytes) {
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope,
                 runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
-  ASSERT_TRUE(result.isBytes());
-  Bytes result_bytes(&scope, *result);
-  ASSERT_EQ(result_bytes.length(), 0);
+  ASSERT_TRUE(isBytesEqualsBytes(result, {}));
 }
 
 TEST(IntBuiltinsTest, ToBytesWithSignedFalseRaisesOverflowError) {

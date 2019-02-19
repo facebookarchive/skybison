@@ -30,15 +30,12 @@ TEST(ByteArrayBuiltinsTest, AsBytes) {
 
   ByteArray array(&scope, runtime.newByteArray());
   Bytes bytes(&scope, byteArrayAsBytes(thread, &runtime, array));
-  EXPECT_EQ(bytes.length(), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, {}));
 
   array.setBytes(runtime.newBytes(10, 0));
   array.setNumItems(3);
   bytes = byteArrayAsBytes(thread, &runtime, array);
-  EXPECT_EQ(bytes.length(), 3);
-  EXPECT_EQ(bytes.byteAt(0), 0);
-  EXPECT_EQ(bytes.byteAt(1), 0);
-  EXPECT_EQ(bytes.byteAt(2), 0);
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, {0, 0, 0}));
 }
 
 }  // namespace python
