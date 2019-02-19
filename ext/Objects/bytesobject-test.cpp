@@ -442,6 +442,65 @@ TEST_F(BytesExtensionApiTest, FromStringWithEmptyStringReturnsEmptyBytes) {
   EXPECT_EQ(PyBytes_Size(bytes), 0);
 }
 
+TEST_F(BytesExtensionApiTest, ReprWithNonBytesRaisesTypeErrorPyro) {
+  PyObjectPtr array(PyByteArray_FromStringAndSize("", 0));
+  ASSERT_EQ(PyBytes_Repr(array, true), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithEmptyBytesReturnsEmptyRepr) {
+  PyObjectPtr bytes(PyBytes_FromString(""));
+  PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  ASSERT_TRUE(PyUnicode_Check(repr));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, "b''"));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithSimpleBytesReturnsRepr) {
+  PyObjectPtr bytes(PyBytes_FromString("Hello world!"));
+  PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, "b'Hello world!'"));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
+  PyObjectPtr bytes(PyBytes_FromString(R"(_"_)"));
+  PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, R"(b'_"_')"));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
+  PyObjectPtr bytes(PyBytes_FromString("_'_"));
+  PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, R"(b"_'_")"));
+}
+
+TEST_F(BytesExtensionApiTest,
+       ReprWithSingleQuoteWithoutSmartquotesUsesSingleQuoteDelimiters) {
+  PyObjectPtr bytes(PyBytes_FromString("_'_"));
+  PyObjectPtr repr(PyBytes_Repr(bytes, false));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, R"(b'_\'_')"));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithBothQuotesUsesSingleQuoteDelimiters) {
+  PyObjectPtr bytes(PyBytes_FromString(R"(_"_'_)"));
+  PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, R"(b'_"_\'_')"));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithSpeciaBytesUsesEscapeSequences) {
+  PyObjectPtr bytes(PyBytes_FromString("\\\t\n\r"));
+  PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, R"(b'\\\t\n\r')"));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithSmallAndLargeBytesUsesHex) {
+  char str[4] = {0, 0x1f, static_cast<char>(0x80), static_cast<char>(0xff)};
+  Py_ssize_t size = static_cast<Py_ssize_t>(sizeof(str));
+  PyObjectPtr bytes(PyBytes_FromStringAndSize(str, size));
+  PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(repr, R"(b'\x00\x1f\x80\xff')"));
+}
+
 TEST_F(BytesExtensionApiTest, ResizeWithNonBytesRaisesSystemError) {
   PyObject* num = PyLong_FromLong(0);
   ASSERT_EQ(_PyBytes_Resize(&num, 1), -1);

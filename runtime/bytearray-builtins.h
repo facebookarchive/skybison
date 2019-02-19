@@ -14,6 +14,9 @@ inline void byteArrayAdd(Thread* thread, Runtime* runtime,
 RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
                            const ByteArray& array);
 
+// Writes the value to the array as two hex digits.
+void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value);
+
 class ByteArrayBuiltins {
  public:
   static void initialize(Runtime* runtime);

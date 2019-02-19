@@ -17,6 +17,13 @@ RawObject bytesFromIterable(Thread* thread, const Object& obj);
 // Creates a new Bytes from the first size elements of items.
 RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size);
 
+// Converts self into a string representation with single quote delimiters.
+RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);
+
+// Converts self into a string representation.
+// Scans self to select an appropriate delimiter (single or double quotes).
+RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
+
 class BytesBuiltins {
  public:
   static void initialize(Runtime* runtime);
@@ -31,6 +38,7 @@ class BytesBuiltins {
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinMethod kBuiltinMethods[];

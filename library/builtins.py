@@ -371,6 +371,9 @@ class bytes(bootstrap=True):
     ):
         pass
 
+    def __repr__(self) -> str:  # noqa: T484
+        pass
+
 
 class tuple(bootstrap=True):
     def __new__(cls, iterable=_UnboundValue):

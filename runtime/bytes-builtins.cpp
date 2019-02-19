@@ -1,5 +1,6 @@
 #include "bytes-builtins.h"
 
+#include "bytearray-builtins.h"
 #include "frame.h"
 #include "runtime.h"
 #include "slice-builtins.h"
@@ -109,6 +110,58 @@ RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
   return *result;
 }
 
+static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
+                                        byte delimiter) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  ByteArray buffer(&scope, runtime->newByteArray());
+  word len = self.length();
+  // each byte will be mapped to one or more ASCII characters
+  // ensure an additional 3 bytes for the delimiters
+  runtime->byteArrayEnsureCapacity(thread, buffer, len + 2);
+  runtime->byteArrayExtend(thread, buffer, {'b', delimiter});
+  for (word i = 0; i < len; i++) {
+    byte current = self.byteAt(i);
+    if (current == delimiter || current == '\\') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', current});
+    } else if (current == '\t') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 't'});
+    } else if (current == '\n') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 'n'});
+    } else if (current == '\r') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 'r'});
+    } else if (current < ' ' || current >= 0x7f) {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 'x'});
+      writeByteAsHexDigits(thread, buffer, current);
+    } else {
+      byteArrayAdd(thread, runtime, buffer, current);
+    }
+  }
+  byteArrayAdd(thread, runtime, buffer, delimiter);
+  return runtime->newStrFromByteArray(buffer);
+}
+
+RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self) {
+  return bytesReprWithDelimiter(thread, self, '\'');
+}
+
+RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self) {
+  word len = self.length();
+  bool has_single_quote = false;
+  for (word i = 0; i < len; i++) {
+    switch (self.byteAt(i)) {
+      case '\'':
+        has_single_quote = true;
+        break;
+      case '"':
+        return bytesReprWithDelimiter(thread, self, '\'');
+      default:
+        break;
+    }
+  }
+  return bytesReprWithDelimiter(thread, self, has_single_quote ? '"' : '\'');
+}
+
 const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderEq, dunderEq},
@@ -120,6 +173,7 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderRepr, dunderRepr},
 };
 
 void BytesBuiltins::initialize(Runtime* runtime) {
@@ -367,6 +421,19 @@ RawObject BytesBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   // last option: source is an iterator that produces bytes
   return bytesFromIterable(thread, source);
+}
+
+RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__repr__' requires a 'bytes' object");
+  }
+  Bytes self(&scope, *self_obj);
+  return bytesReprSmartQuotes(thread, self);
 }
 
 }  // namespace python

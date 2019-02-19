@@ -951,4 +951,79 @@ TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
   EXPECT_EQ(result.compare(*expected), 0);
 }
 
+TEST(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(raisedWithStr(*repr, LayoutId::kTypeError,
+                            "'__repr__' requires a 'bytes' object"));
+}
+
+TEST(BytesBuiltinsTest, DunderReprWithEmptyBytesReturnsEmptyRepr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(0, 0));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "b''"));
+}
+
+TEST(BytesBuiltinsTest, DunderReprWithSimpleBytesReturnsRepr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(10, '*'));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "b'**********'"));
+}
+
+TEST(BytesBuiltinsTest, DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
+  Runtime runtime;
+  HandleScope scope;
+  byte bytes[3] = {'_', '"', '_'};
+  View<byte> view(bytes, sizeof(bytes));
+  Object self(&scope, runtime.newBytesWithAll(view));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'_"_')"));
+}
+
+TEST(BytesBuiltinsTest, DunderReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
+  Runtime runtime;
+  HandleScope scope;
+  byte bytes[3] = {'_', '\'', '_'};
+  View<byte> view(bytes, sizeof(bytes));
+  Object self(&scope, runtime.newBytesWithAll(view));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b"_'_")"));
+}
+
+TEST(BytesBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
+  Runtime runtime;
+  HandleScope scope;
+  byte bytes[5] = {'_', '"', '_', '\'', '_'};
+  View<byte> view(bytes, sizeof(bytes));
+  Object self(&scope, runtime.newBytesWithAll(view));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'_"_\'_')"));
+}
+
+TEST(BytesBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
+  Runtime runtime;
+  HandleScope scope;
+  byte bytes[4] = {'\\', '\t', '\n', '\r'};
+  View<byte> view(bytes, sizeof(bytes));
+  Object self(&scope, runtime.newBytesWithAll(view));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\\\t\n\r')"));
+}
+
+TEST(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
+  Runtime runtime;
+  HandleScope scope;
+  byte bytes[4] = {0, 0x1f, 0x80, 0xff};
+  View<byte> view(bytes, sizeof(bytes));
+  Object self(&scope, runtime.newBytesWithAll(view));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\x00\x1f\x80\xff')"));
+}
+
 }  // namespace python

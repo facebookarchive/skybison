@@ -313,8 +313,19 @@ PY_EXPORT PyObject* PyBytes_FromString(const char* str) {
   return PyBytes_FromStringAndSize(str, static_cast<Py_ssize_t>(size));
 }
 
-PY_EXPORT PyObject* PyBytes_Repr(PyObject* /* j */, int /* s */) {
-  UNIMPLEMENTED("PyBytes_Repr");
+PY_EXPORT PyObject* PyBytes_Repr(PyObject* pyobj, int smartquotes) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  if (!thread->runtime()->isInstanceOfBytes(*obj)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  Bytes self(&scope, *obj);
+  Object result(&scope, smartquotes ? bytesReprSmartQuotes(thread, self)
+                                    : bytesReprSingleQuotes(thread, self));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
