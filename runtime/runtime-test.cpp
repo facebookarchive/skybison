@@ -572,6 +572,24 @@ TEST(RuntimeTest, NewStr) {
   ASSERT_EQ(s300.length(), 300);
 }
 
+TEST(RuntimeTest, NewStrFromByteArrayCopiesByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  ByteArray array(&scope, runtime.newByteArray());
+  Object result(&scope, runtime.newStrFromByteArray(array));
+  EXPECT_TRUE(isStrEqualsCStr(*result, ""));
+
+  runtime.byteArrayExtend(thread, array, {'h', 'e', 'l', 'l', 'o'});
+  result = runtime.newStrFromByteArray(array);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
+
+  runtime.byteArrayExtend(thread, array, {' ', 'w', 'o', 'r', 'l', 'd'});
+  result = runtime.newStrFromByteArray(array);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
+}
+
 TEST(RuntimeTest, NewStrFromFormatWithCStrArg) {
   Runtime runtime;
   HandleScope scope;

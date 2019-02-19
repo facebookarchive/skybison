@@ -149,6 +149,7 @@ class Runtime {
 
   RawObject newStaticMethod();
 
+  RawObject newStrFromByteArray(const ByteArray& array);
   RawObject newStrFromCStr(const char* c_str);
   // Creates a new string constructed from a format and a list of arguments,
   // similar to sprintf.

@@ -1032,6 +1032,23 @@ RawObject Runtime::newStaticMethod() {
   return heap()->create<RawStaticMethod>();
 }
 
+RawObject Runtime::newStrFromByteArray(const ByteArray& array) {
+  HandleScope scope;
+  Bytes bytes(&scope, array.bytes());
+  word length = array.numItems();
+  if (length <= SmallStr::kMaxLength) {
+    // NOTE: small bytes will eventually be immediate objects w/o an address
+    const byte* src = reinterpret_cast<const byte*>(bytes.address());
+    return RawSmallStr::fromBytes(View<byte>(src, length));
+  }
+  LargeStr result(&scope, heap()->createLargeStr(length));
+  DCHECK(result != RawError::object(), "failed to create large string");
+  const byte* src = reinterpret_cast<const byte*>(bytes.address());
+  byte* dst = reinterpret_cast<byte*>(result.address());
+  std::memcpy(dst, src, length);
+  return *result;
+}
+
 RawObject Runtime::newStrFromCStr(const char* c_str) {
   word length = std::strlen(c_str);
   auto data = reinterpret_cast<const byte*>(c_str);
