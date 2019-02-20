@@ -33,7 +33,7 @@ TEST(ModuleBuiltinsDeathTest, DunderNewNotEnoughArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "import sys; type(sys).__new__()"),
       LayoutId::kTypeError,
-      "TypeError: '__new__' takes 2 positional arguments but 0 given"));
+      "TypeError: 'module.__new__' takes 2 positional arguments but 0 given"));
 }
 
 TEST(ModuleBuiltinsDeathTest, DunderNewTooManyArgumentsRaisesTypeError) {
@@ -41,7 +41,8 @@ TEST(ModuleBuiltinsDeathTest, DunderNewTooManyArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "import sys; type(sys).__new__(123, 456, 789)"),
       LayoutId::kTypeError,
-      "TypeError: '__new__' takes max 2 positional arguments but 3 given"));
+      "TypeError: 'module.__new__' takes max 2 positional arguments but 3 "
+      "given"));
 }
 
 TEST(ModuleBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {

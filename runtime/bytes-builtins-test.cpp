@@ -179,15 +179,16 @@ TEST(BytesBuiltinsTest, DunderAddWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__add__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__add__' takes 2 positional arguments but 1 given"));
+      "TypeError: 'bytes.__add__' takes 2 positional arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__add__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__add__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__add__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__add__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderAddWithNonBytesSelfRaisesTypeError) {
@@ -221,15 +222,16 @@ TEST(BytesBuiltinsTest, DunderEqWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__eq__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__eq__' takes 2 positional arguments but 1 given"));
+      "TypeError: 'bytes.__eq__' takes 2 positional arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__eq__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__eq__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__eq__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__eq__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithNonBytesSelfRaisesTypeError) {
@@ -284,15 +286,16 @@ TEST(BytesBuiltinsTest, DunderGeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__ge__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__ge__' takes 2 positional arguments but 1 given"));
+      "TypeError: 'bytes.__ge__' takes 2 positional arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__ge__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__ge__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__ge__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__ge__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
@@ -365,17 +368,19 @@ TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
 
 TEST(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__getitem__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__getitem__' takes 2 positional arguments but 1 given"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.__getitem__(b'')"),
+                            LayoutId::kTypeError,
+                            "TypeError: 'bytes.__getitem__' takes 2 positional "
+                            "arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__getitem__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__getitem__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__getitem__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__getitem__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
@@ -475,15 +480,16 @@ TEST(BytesBuiltinsTest, DunderGtWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__gt__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__gt__' takes 2 positional arguments but 1 given"));
+      "TypeError: 'bytes.__gt__' takes 2 positional arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__gt__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__gt__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__gt__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__gt__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
@@ -558,15 +564,16 @@ TEST(BytesBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__le__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__le__' takes 2 positional arguments but 1 given"));
+      "TypeError: 'bytes.__le__' takes 2 positional arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__le__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__le__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__le__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__le__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
@@ -641,14 +648,15 @@ TEST(BytesBuiltinsTest, DunderLenWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__len__()"), LayoutId::kTypeError,
-      "TypeError: '__len__' takes 1 positional arguments but 0 given"));
+      "TypeError: 'bytes.__len__' takes 1 positional arguments but 0 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__len__(b'', b'')"), LayoutId::kTypeError,
-      "TypeError: '__len__' takes max 1 positional arguments but 2 given"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.__len__(b'', b'')"),
+                            LayoutId::kTypeError,
+                            "TypeError: 'bytes.__len__' takes max 1 positional "
+                            "arguments but 2 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLenWithNonBytesSelfRaisesTypeError) {
@@ -679,15 +687,16 @@ TEST(BytesBuiltinsTest, DunderLtWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__lt__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__lt__' takes 2 positional arguments but 1 given"));
+      "TypeError: 'bytes.__lt__' takes 2 positional arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__lt__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__lt__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__lt__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__lt__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
@@ -762,15 +771,16 @@ TEST(BytesBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__ne__(b'')"), LayoutId::kTypeError,
-      "TypeError: '__ne__' takes 2 positional arguments but 1 given"));
+      "TypeError: 'bytes.__ne__' takes 2 positional arguments but 1 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__ne__(b'', b'', b'')"),
-      LayoutId::kTypeError,
-      "TypeError: '__ne__' takes max 2 positional arguments but 3 given"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.__ne__(b'', b'', b'')"),
+                    LayoutId::kTypeError,
+                    "TypeError: 'bytes.__ne__' takes max 2 positional "
+                    "arguments but 3 given"));
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithNonBytesSelfRaisesTypeError) {

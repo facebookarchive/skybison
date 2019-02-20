@@ -96,7 +96,7 @@ TEST(ObjectBuiltinsTest, DunderInitWithNoArgsRaisesTypeError) {
 object.__init__()
 )"),
       LayoutId::kTypeError,
-      "TypeError: '__init__' takes 1 positional arguments but 0 given"));
+      "TypeError: 'object.__init__' takes 1 positional arguments but 0 given"));
 }
 
 TEST(ObjectBuiltinsTest, DunderInitWithArgsRaisesTypeError) {

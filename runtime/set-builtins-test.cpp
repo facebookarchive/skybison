@@ -1024,22 +1024,22 @@ set.__init__([])
 
 TEST(SetBuiltinsTest, DunderInitWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__()
 )"),
-      LayoutId::kTypeError,
-      "TypeError: '__init__' takes min 1 positional arguments but 0 given"));
+                            LayoutId::kTypeError,
+                            "TypeError: 'set.__init__' takes min 1 positional "
+                            "arguments but 0 given"));
 }
 
 TEST(SetBuiltinsTest, DunderInitWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__(set(), None, None, None)
 )"),
-      LayoutId::kTypeError,
-      "TypeError: '__init__' takes max 2 positional arguments but 4 given"));
+                            LayoutId::kTypeError,
+                            "TypeError: 'set.__init__' takes max 2 positional "
+                            "arguments but 4 given"));
 }
 
 TEST(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {

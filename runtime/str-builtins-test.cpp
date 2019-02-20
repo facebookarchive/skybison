@@ -159,7 +159,7 @@ TEST(StrBuiltinsTest, DunderNewWithNoArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "str.__new__()"), LayoutId::kTypeError,
-      "TypeError: '__new__' takes min 1 positional arguments but 0 given"));
+      "TypeError: 'str.__new__' takes min 1 positional arguments but 0 given"));
 }
 
 TEST(StrBuiltinsTest, DunderNewWithTooManyArgsRaisesTypeError) {
@@ -167,7 +167,7 @@ TEST(StrBuiltinsTest, DunderNewWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "str.__new__(str, 1, 2, 3, 4)"),
       LayoutId::kTypeError,
-      "TypeError: '__new__' takes max 4 positional arguments but 5 given"));
+      "TypeError: 'str.__new__' takes max 4 positional arguments but 5 given"));
 }
 
 TEST(StrBuiltinsTest, DunderNewWithNonTypeArgRaisesTypeError) {
@@ -261,7 +261,7 @@ TEST(StrBuiltinsTest, StringLenWithExtraArgument) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "l = 'aloha'.__len__('arg')"), LayoutId::kTypeError,
-      "TypeError: '__len__' takes max 1 positional arguments but 2 given"));
+      "TypeError: 'str.__len__' takes max 1 positional arguments but 2 given"));
 }
 
 TEST(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {

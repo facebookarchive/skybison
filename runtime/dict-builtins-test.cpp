@@ -251,7 +251,7 @@ TEST(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.update()"), LayoutId::kTypeError,
-      "TypeError: 'update' takes 2 positional arguments but 0 given"));
+      "TypeError: 'dict.update' takes 2 positional arguments but 0 given"));
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonDictRaisesTypeError) {
@@ -569,7 +569,7 @@ TEST(DictBuiltinsTest, GetWithNotEnoughArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.get()"), LayoutId::kTypeError,
-      "TypeError: 'get' takes min 2 positional arguments but 0 given"));
+      "TypeError: 'dict.get' takes min 2 positional arguments but 0 given"));
 }
 
 TEST(DictBuiltinsTest, GetWithTooManyArgumentsRaisesTypeError) {
@@ -577,7 +577,7 @@ TEST(DictBuiltinsTest, GetWithTooManyArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.get({}, 123, 456, 789)"),
       LayoutId::kTypeError,
-      "TypeError: 'get' takes max 3 positional arguments but 4 given"));
+      "TypeError: 'dict.get' takes max 3 positional arguments but 4 given"));
 }
 
 TEST(DictBuiltinsTest, GetWithNonDictRaisesTypeError) {
