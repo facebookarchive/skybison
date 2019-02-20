@@ -429,12 +429,12 @@ class str(bootstrap=True):
             raise TypeError("cls is not a subtype of str")
         if cls != str:
             # TODO(T40529650): Add an unimplemented function
-            raise SystemExit("__new__ with subtype of str")
+            raise NotImplementedError("__new__ with subtype of str")
         if type(obj) is str and obj == "":
             return obj
         if encoding != _UnboundValue or errors != _UnboundValue:
             # TODO(T40529650): Add an unimplemented function
-            raise SystemExit("str encoding not supported yet")
+            raise NotImplementedError("str encoding not supported yet")
         result = obj.__str__()
         if not isinstance(result, str):
             raise TypeError("__str__ returned non-str instance")
