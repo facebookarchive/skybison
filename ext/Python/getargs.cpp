@@ -1221,9 +1221,9 @@ PY_EXPORT int _PyArg_ParseTupleAndKeywords_SizeT(PyObject* args,
   int retval;
   va_list va;
 
-  if ((args == NULL || !PyTuple_Check(args)) ||
-      (keywords != NULL && !PyDict_Check(keywords)) || format == NULL ||
-      kwlist == NULL) {
+  if ((args == nullptr || !PyTuple_Check(args)) ||
+      (keywords != nullptr && !PyDict_Check(keywords)) || format == nullptr ||
+      kwlist == nullptr) {
     PyErr_BadInternalCall();
     return 0;
   }
@@ -1261,9 +1261,9 @@ PY_EXPORT int _PyArg_VaParseTupleAndKeywords_SizeT(PyObject* args,
   int retval;
   va_list lva;
 
-  if ((args == NULL || !PyTuple_Check(args)) ||
-      (keywords != NULL && !PyDict_Check(keywords)) || format == NULL ||
-      kwlist == NULL) {
+  if ((args == nullptr || !PyTuple_Check(args)) ||
+      (keywords != nullptr && !PyDict_Check(keywords)) || format == nullptr ||
+      kwlist == nullptr) {
     PyErr_BadInternalCall();
     return 0;
   }
@@ -1685,6 +1685,44 @@ PY_EXPORT int PyArg_UnpackTuple(PyObject* args, const char* name,
   va_end(vargs);
   return 1;
 }
+
+#pragma push_macro("_PyArg_NoKeywords")
+#undef _PyArg_NoKeywords
+PY_EXPORT int _PyArg_NoKeywords(const char* funcname, PyObject* kwargs) {
+  if (kwargs == nullptr) {
+    return 1;
+  }
+  if (!PyDict_CheckExact(kwargs)) {
+    PyErr_BadInternalCall();
+    return 0;
+  }
+  if (PyDict_Size(kwargs) == 0) {
+    return 1;
+  }
+  PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+               funcname);
+  return 0;
+}
+#pragma pop_macro("_PyArg_NoKeywords")
+
+#pragma push_macro("_PyArg_NoPositional")
+#undef _PyArg_NoPositional
+PY_EXPORT int _PyArg_NoPositional(const char* funcname, PyObject* args) {
+  if (args == nullptr) {
+    return 1;
+  }
+  if (!PyTuple_CheckExact(args)) {
+    PyErr_BadInternalCall();
+    return 0;
+  }
+  if (PyTuple_Size(args) == 0) {
+    return 1;
+  }
+  PyErr_Format(PyExc_TypeError, "%.200s() takes no positional arguments",
+               funcname);
+  return 0;
+}
+#pragma pop_macro("_PyArg_NoPositional")
 
 PY_EXPORT int PyArg_ValidateKeywordArguments(PyObject*) {
   UNIMPLEMENTED("PyArg_ValidateKeywordArguments");

@@ -180,7 +180,7 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleObjectWithIncorrectType) {
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleObjectWithConverter) {
   using converter_func = void (*)(PyObject*, void*);
-  converter_func parseTupleConverter = [](PyObject* ptr, void* out) {
+  converter_func converter = [](PyObject* ptr, void* out) {
     *static_cast<int*>(out) = 1 + PyLong_AsLong(ptr);
   };
 
@@ -188,8 +188,8 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleObjectWithConverter) {
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, PyLong_FromLong(111)));
 
   int out = 0;
-  EXPECT_TRUE(PyArg_ParseTuple(pytuple, "O&", parseTupleConverter,
-                               static_cast<void*>(&out)));
+  EXPECT_TRUE(
+      PyArg_ParseTuple(pytuple, "O&", converter, static_cast<void*>(&out)));
   EXPECT_EQ(out, 112);
 }
 
@@ -256,5 +256,76 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleAndKeywordsWithOptionals) {
   EXPECT_EQ(out1, -1);
   EXPECT_EQ(out2, 42);
 }
+
+#pragma push_macro("_PyArg_NoKeywords")
+#undef _PyArg_NoKeywords
+TEST_F(GetArgsExtensionApiTest, NoKeywordsWithNullptrReturnsTrue) {
+  EXPECT_EQ(_PyArg_NoKeywords("", nullptr), 1);
+}
+#pragma pop_macro("_PyArg_NoKeywords")
+
+#pragma push_macro("_PyArg_NoKeywords")
+#undef _PyArg_NoKeywords
+TEST_F(GetArgsExtensionApiTest, NoKeywordsWithEmptyDictReturnsTrue) {
+  PyObjectPtr empty_dict(PyDict_New());
+  EXPECT_EQ(_PyArg_NoKeywords("", empty_dict), 1);
+}
+#pragma pop_macro("_PyArg_NoKeywords")
+
+#pragma push_macro("_PyArg_NoKeywords")
+#undef _PyArg_NoKeywords
+TEST_F(GetArgsExtensionApiTest, NoKeywordsWithNonDictRaisesSystemError) {
+  PyObjectPtr not_a_dict(PyTuple_New(10));
+  EXPECT_EQ(_PyArg_NoKeywords("", not_a_dict), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+#pragma pop_macro("_PyArg_NoKeywords")
+
+#pragma push_macro("_PyArg_NoKeywords")
+#undef _PyArg_NoKeywords
+TEST_F(GetArgsExtensionApiTest, NoKeywordsWithNonEmptyDictRaisesTypeError) {
+  PyObjectPtr non_empty_dict(PyDict_New());
+  PyDict_SetItemString(non_empty_dict, "my key", PyTuple_New(0));
+  EXPECT_EQ(_PyArg_NoKeywords("", non_empty_dict.get()), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+#pragma pop_macro("_PyArg_NoKeywords")
+
+#pragma push_macro("_PyArg_NoPositional")
+#undef _PyArg_NoPositional
+TEST_F(GetArgsExtensionApiTest, NoPositionalWithNullptrReturnsTrue) {
+  EXPECT_EQ(_PyArg_NoPositional("", nullptr), 1);
+}
+#pragma pop_macro("_PyArg_NoPositional")
+
+#pragma push_macro("_PyArg_NoPositional")
+#undef _PyArg_NoPositional
+TEST_F(GetArgsExtensionApiTest, NoPositionalWitEmptyTupleReturnsTrue) {
+  PyObjectPtr empty_tuple(PyTuple_New(0));
+  EXPECT_EQ(_PyArg_NoPositional("", empty_tuple), 1);
+}
+#pragma pop_macro("_PyArg_NoPositional")
+
+#pragma push_macro("_PyArg_NoPositional")
+#undef _PyArg_NoPositional
+TEST_F(GetArgsExtensionApiTest, NoPositionalWithNonTupleRaisesSystemError) {
+  PyObjectPtr not_a_tuple(PyLong_FromLong(1));
+  EXPECT_EQ(_PyArg_NoPositional("", not_a_tuple), 0);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+#pragma pop_macro("_PyArg_NoPositional")
+
+#pragma push_macro("_PyArg_NoPositional")
+#undef _PyArg_NoPositional
+TEST_F(GetArgsExtensionApiTest, NoPositionalWithNonEmptyTupleRaisesTypeError) {
+  PyObjectPtr non_empty_tuple(PyTuple_New(10));
+  EXPECT_EQ(_PyArg_NoPositional("", non_empty_tuple), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+#pragma pop_macro("_PyArg_NoPositional")
 
 }  // namespace python
