@@ -1576,9 +1576,9 @@ class RawByteArray : public RawHeapObject {
   word capacity() const;
 
   // Layout
-  static const int kNumItemsOffset = RawHeapObject::kSize;
-  static const int kBytesOffset = kNumItemsOffset + kPointerSize;
-  static const int kSize = kBytesOffset + kPointerSize;
+  static const int kBytesOffset = RawHeapObject::kSize;
+  static const int kNumItemsOffset = kBytesOffset + kPointerSize;
+  static const int kSize = kNumItemsOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ByteArray);
 };

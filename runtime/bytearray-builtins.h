@@ -21,7 +21,12 @@ class ByteArrayBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+
  private:
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArrayBuiltins);
 };
 

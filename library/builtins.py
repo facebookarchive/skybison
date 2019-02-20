@@ -338,6 +338,13 @@ class KeyError(bootstrap=True):
         return super(KeyError, self).__str__()
 
 
+class bytearray(bootstrap=True):
+    def __new__(
+        cls, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
+    ):
+        pass
+
+
 class bytes(bootstrap=True):
     def __add__(self, other: bytes) -> bytes:
         pass
