@@ -868,7 +868,7 @@ class Runtime {
   RawObject layouts_;
 
   // Cached instances
-  RawObject empty_byte_array_;
+  RawObject empty_bytes_;
   RawObject empty_frozen_set_;
   RawObject empty_tuple_;
   RawObject ellipsis_;

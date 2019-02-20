@@ -292,14 +292,14 @@ RawObject Runtime::newByteArray() {
   HandleScope scope;
   ByteArray result(&scope, heap()->create<RawByteArray>());
   result.setNumItems(0);
-  result.setBytes(empty_byte_array_);
+  result.setBytes(empty_bytes_);
   return *result;
 }
 
 RawObject Runtime::newBytes(word length, byte fill) {
   DCHECK(length >= 0, "invalid length %ld", length);
   if (length == 0) {
-    return empty_byte_array_;
+    return empty_bytes_;
   }
   RawObject result = heap()->createBytes(length);
   byte* dst = reinterpret_cast<byte*>(RawBytes::cast(result)->address());
@@ -309,7 +309,7 @@ RawObject Runtime::newBytes(word length, byte fill) {
 
 RawObject Runtime::newBytesWithAll(View<byte> array) {
   if (array.length() == 0) {
-    return empty_byte_array_;
+    return empty_bytes_;
   }
   RawObject result = heap()->createBytes(array.length());
   byte* dst = reinterpret_cast<byte*>(RawBytes::cast(result)->address());
@@ -1660,7 +1660,7 @@ void Runtime::initializeThreads() {
 void Runtime::initializePrimitiveInstances() {
   empty_tuple_ = heap()->createTuple(0, NoneType::object());
   empty_frozen_set_ = newFrozenSet();
-  empty_byte_array_ = heap()->createBytes(0);
+  empty_bytes_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->create<RawNotImplemented>();
   callbacks_ = NoneType::object();
@@ -1698,7 +1698,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&layouts_);
 
   // Visit instances
-  visitor->visitPointer(&empty_byte_array_);
+  visitor->visitPointer(&empty_bytes_);
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&ellipsis_);
@@ -2432,7 +2432,7 @@ RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
                                word length) {
   DCHECK_BOUND(start, self.length());
   DCHECK_BOUND(length, self.length() - start);
-  if (length == 0) return empty_byte_array_;
+  if (length == 0) return empty_bytes_;
   HandleScope scope(thread);
   Bytes copy(&scope, heap()->createBytes(length));
   const byte* src = reinterpret_cast<byte*>(self.address());
