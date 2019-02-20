@@ -406,8 +406,7 @@ class Runtime {
   RawObject genSend(Thread* thread, const GeneratorBase& gen,
                     const Object& value);
 
-  // Save the current Frame to the given generator and pop the Frame off of the
-  // stack.
+  // Save the current Frame to the given generator.
   void genSave(Thread* thread, const GeneratorBase& gen);
 
   // Get the RawGeneratorBase corresponding to the given Frame, assuming it is

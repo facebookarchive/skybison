@@ -3168,7 +3168,6 @@ void Runtime::genSave(Thread* thread, const GeneratorBase& gen) {
   DCHECK(live_frame->valueStackSize() <= heap_frame.maxStackSize(),
          "not enough space in RawGeneratorBase to save live stack");
   copyStackFrameToHeapFrame(live_frame, heap_frame);
-  thread->popFrame();
 }
 
 RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {

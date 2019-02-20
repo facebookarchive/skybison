@@ -81,7 +81,7 @@ namespace python {
   V(GET_YIELD_FROM_ITER, 69, doGetYieldFromIter)                               \
   V(PRINT_EXPR, 70, doPrintExpr)                                               \
   V(LOAD_BUILD_CLASS, 71, doLoadBuildClass)                                    \
-  V(YIELD_FROM, 72, doInvalidBytecode)                                         \
+  V(YIELD_FROM, 72, doYieldFrom)                                               \
   V(GET_AWAITABLE, 73, doGetAwaitable)                                         \
   V(UNUSED_BYTECODE_74, 74, doInvalidBytecode)                                 \
   V(INPLACE_LSHIFT, 75, doInplaceLshift)                                       \
@@ -95,7 +95,7 @@ namespace python {
   V(RETURN_VALUE, 83, doReturnValue)                                           \
   V(IMPORT_STAR, 84, doImportStar)                                             \
   V(SETUP_ANNOTATIONS, 85, doSetupAnnotations)                                 \
-  V(YIELD_VALUE, 86, doInvalidBytecode)                                        \
+  V(YIELD_VALUE, 86, doYieldValue)                                             \
   V(POP_BLOCK, 87, doPopBlock)                                                 \
   V(END_FINALLY, 88, doEndFinally)                                             \
   V(POP_EXCEPT, 89, doPopExcept)                                               \

@@ -494,6 +494,7 @@ static RawObject createGenerator(const Code& code, Thread* thread) {
   gen_base.setHeapFrame(runtime->newHeapFrame(code));
   gen_base.setExceptionState(runtime->newExceptionState());
   runtime->genSave(thread, gen_base);
+  thread->popFrame();
   return *gen_base;
 }
 

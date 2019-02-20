@@ -108,14 +108,6 @@ class Interpreter {
                                     const Object& value,
                                     const Object& container);
 
-  // Perform the meat of YIELD_FROM.
-  //
-  // If the subiterator finishes and execution should continue, Error is
-  // returned with no exception set on the current Thread. Otherwise, the return
-  // value is either Error to indicate that an exception was raised, or the
-  // value from the subiterator to be returned to the caller.
-  static RawObject yieldFrom(Thread* thread, Frame* frame);
-
   struct Context {
     Thread* thread;
     Frame* frame;
@@ -220,6 +212,7 @@ class Interpreter {
   static bool doGetYieldFromIter(Context* ctx, word arg);
   static void doPrintExpr(Context* ctx, word);
   static void doLoadBuildClass(Context* ctx, word arg);
+  static bool doYieldFrom(Context* ctx, word arg);
   static bool doGetAwaitable(Context* ctx, word arg);
   static bool doInplaceLshift(Context* ctx, word arg);
   static bool doInplaceRshift(Context* ctx, word arg);
@@ -232,6 +225,7 @@ class Interpreter {
   static bool doReturnValue(Context* ctx, word arg);
   static void doImportStar(Context* ctx, word arg);
   static void doSetupAnnotations(Context* ctx, word arg);
+  static bool doYieldValue(Context* ctx, word arg);
   static void doPopBlock(Context* ctx, word arg);
   static bool doEndFinally(Context* ctx, word arg);
   static bool doPopExcept(Context* ctx, word arg);

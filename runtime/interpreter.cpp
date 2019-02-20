@@ -584,40 +584,6 @@ RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
   return Bool::trueObj();
 }
 
-RawObject Interpreter::yieldFrom(Thread* thread, Frame* frame) {
-  HandleScope scope(thread);
-  Object value(&scope, frame->popValue());
-  Object iterator(&scope, frame->topValue());
-  Object result(&scope, NoneType::object());
-  if (value.isNoneType()) {
-    Object next_method(
-        &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
-    if (next_method.isError()) {
-      return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-    }
-    result = callMethod1(thread, frame, next_method, iterator);
-  } else {
-    Object send_method(&scope,
-                       lookupMethod(thread, frame, iterator, SymbolId::kSend));
-    if (send_method.isError()) {
-      return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-    }
-    result = callMethod2(thread, frame, send_method, iterator, value);
-  }
-  if (result.isError()) {
-    if (thread->hasPendingStopIteration()) {
-      frame->setTopValue(thread->pendingExceptionValue());
-      thread->clearPendingException();
-    }
-    return *result;
-  }
-  // Unlike YIELD_VALUE, don't update PC in the frame: we want this
-  // instruction to re-execute until the subiterator is exhausted.
-  GeneratorBase gen(&scope, thread->runtime()->genFromStackFrame(frame));
-  thread->runtime()->genSave(thread, gen);
-  return *result;
-}
-
 void Interpreter::raise(Context* ctx, RawObject raw_exc, RawObject raw_cause) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -1215,6 +1181,48 @@ void Interpreter::doLoadBuildClass(Context* ctx, word) {
   ctx->frame->pushValue(value_cell->value());
 }
 
+// opcode 72
+bool Interpreter::doYieldFrom(Context* ctx, word) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+
+  Object value(&scope, frame->popValue());
+  Object iterator(&scope, frame->topValue());
+  Object result(&scope, NoneType::object());
+  if (value.isNoneType()) {
+    Object next_method(
+        &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
+    if (next_method.isError()) {
+      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+      return unwind(ctx);
+    }
+    result = callMethod1(thread, frame, next_method, iterator);
+  } else {
+    Object send_method(&scope,
+                       lookupMethod(thread, frame, iterator, SymbolId::kSend));
+    if (send_method.isError()) {
+      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+      return unwind(ctx);
+    }
+    result = callMethod2(thread, frame, send_method, iterator, value);
+  }
+  if (result.isError()) {
+    if (!thread->hasPendingStopIteration()) return unwind(ctx);
+
+    frame->setTopValue(thread->pendingExceptionValue());
+    thread->clearPendingException();
+    return false;
+  }
+
+  // Unlike YIELD_VALUE, don't update PC in the frame: we want this
+  // instruction to re-execute until the subiterator is exhausted.
+  GeneratorBase gen(&scope, thread->runtime()->genFromStackFrame(frame));
+  thread->runtime()->genSave(thread, gen);
+  frame->pushValue(*result);
+  return true;
+}
+
 // opcode 73
 bool Interpreter::doGetAwaitable(Context* ctx, word) {
   Thread* thread = ctx->thread;
@@ -1366,6 +1374,20 @@ void Interpreter::doSetupAnnotations(Context* ctx, word) {
     Object new_dict(&scope, runtime->newDict());
     runtime->dictAtPutInValueCell(implicit_globals, annotations, new_dict);
   }
+}
+
+// opcode 86
+bool Interpreter::doYieldValue(Context* ctx, word) {
+  Frame* frame = ctx->frame;
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+
+  Object result(&scope, frame->popValue());
+  frame->setVirtualPC(ctx->pc);
+  GeneratorBase gen(&scope, thread->runtime()->genFromStackFrame(frame));
+  thread->runtime()->genSave(thread, gen);
+  frame->pushValue(*result);
+  return true;
 }
 
 // opcode 84
@@ -2586,35 +2608,15 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
     frame->setVirtualPC(ctx.pc);
     Bytecode bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
     int32 arg = byte_array.byteAt(ctx.pc++);
-  dispatch:
-    switch (bc) {
-      case Bytecode::EXTENDED_ARG: {
-        bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
-        arg = (arg << 8) | byte_array.byteAt(ctx.pc++);
-        goto dispatch;
-      }
-      case Bytecode::YIELD_FROM: {
-        RawObject result = yieldFrom(thread, frame);
-        if (result.isError() &&
-            (!thread->hasPendingException() || !unwind(&ctx))) {
-          continue;
-        }
-        return result;
-      }
-      case Bytecode::YIELD_VALUE: {
-        Object result(&scope, frame->popValue());
-        frame->setVirtualPC(ctx.pc);
-        GeneratorBase gen(&scope, thread->runtime()->genFromStackFrame(frame));
-        thread->runtime()->genSave(thread, gen);
-        return *result;
-      }
-      default: {
-        if (kOpTable[bc](&ctx, arg)) {
-          RawObject return_val = frame->popValue();
-          thread->popFrame();
-          return return_val;
-        }
-      }
+    while (bc == Bytecode::EXTENDED_ARG) {
+      bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
+      arg = (arg << 8) | byte_array.byteAt(ctx.pc++);
+    }
+
+    if (kOpTable[bc](&ctx, arg)) {
+      RawObject return_val = frame->popValue();
+      thread->popFrame();
+      return return_val;
     }
   }
 }
