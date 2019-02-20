@@ -90,7 +90,8 @@ TEST_F(ErrorsExtensionApiTest, NoMemoryRaisesMemoryError) {
 
 #pragma push_macro("PyErr_BadInternalCall")
 #undef PyErr_BadInternalCall
-TEST_F(ErrorsExtensionApiTest, BadInternalCallRaisesSystemError) {
+// PyErr_BadInternalCall() has an assert(0) in CPython.
+TEST_F(ErrorsExtensionApiTest, BadInternalCallRaisesSystemErrorPyro) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   PyErr_BadInternalCall();
 

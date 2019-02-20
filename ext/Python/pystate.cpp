@@ -4,6 +4,8 @@ namespace python {
 
 typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
 
+PY_EXPORT int PyGILState_Check() { UNIMPLEMENTED("PyGILState_Check"); }
+
 PY_EXPORT PyGILState_STATE PyGILState_Ensure() {
   UNIMPLEMENTED("PyGILState_Ensure");
 }

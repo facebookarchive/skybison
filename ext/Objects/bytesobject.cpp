@@ -111,7 +111,6 @@ PY_EXPORT PyObject* PyBytes_FromFormat(const char* format, ...) {
 
 static void writeBytes(Thread* thread, Runtime* runtime,
                        const ByteArray& writer, const char* buffer) {
-  DCHECK_BOUND(std::strlen(buffer), sizeof(buffer));
   View<byte> array(reinterpret_cast<const byte*>(buffer), std::strlen(buffer));
   runtime->byteArrayExtend(thread, writer, array);
 }

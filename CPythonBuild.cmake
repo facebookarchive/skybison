@@ -239,8 +239,8 @@ target_compile_options(
   cpython
   PUBLIC
   ${OS_DEFINE}
+  PRIVATE
   "-Werror"
-  "-DNDEBUG"
   "-DPy_BUILD_CORE")
 target_link_libraries(
   cpython
@@ -248,4 +248,4 @@ target_link_libraries(
   util
   extension
   capi-headers
- 	Threads::Threads)
+  Threads::Threads)

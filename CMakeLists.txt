@@ -308,13 +308,14 @@ target_compile_options(
   ${PYRO_COMPILE_OPTIONS})
 target_include_directories(
   extension
-  PUBLIC
+  PRIVATE
   runtime)
 target_link_libraries(
   extension
   PUBLIC
-  cpython
-  runtime)
+  runtime
+  PRIVATE
+  cpython)
 
 add_library(
   modules
@@ -393,10 +394,9 @@ target_compile_options(
   ${PYRO_COMPILE_OPTIONS})
 target_link_libraries(
   runtime-tests
-  PUBLIC
+  PRIVATE
   benchmark
   gtest
-  PRIVATE
   runtime
   modules)
 
@@ -449,10 +449,9 @@ target_include_directories(
   ext/test)
 target_link_libraries(
   extension-tests
-  PUBLIC
+  PRIVATE
   benchmark
   gtest
-  PRIVATE
   cpython
   modules)
 
@@ -466,18 +465,24 @@ target_compile_options(
 target_link_libraries(
   python-tests
   PRIVATE
+  benchmark
+  gtest
   ${WHOLE_ARCHIVE} runtime-tests ${NO_WHOLE_ARCHIVE}
   ${WHOLE_ARCHIVE} extension-tests ${NO_WHOLE_ARCHIVE}
   runtime
   modules)
 
 # Extension tests with CPython
+set(CPYTHON_CONFIGURE_FLAGS "")
+if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
+  set(CPYTHON_CONFIGURE_FLAGS "--with-assertions")
+endif()
 set(LIBPYTHON_BIN "libpython3.6m.a")
 set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
 file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
 add_custom_command(
   OUTPUT ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN}
-  COMMAND ${CPYTHON_DIR}/configure && make -j
+  COMMAND ${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS} && make -j
   WORKING_DIRECTORY ${CPYTHON_BUILD_DIR})
 add_custom_target(
   compile-cpython
@@ -508,10 +513,9 @@ target_include_directories(
   third-party/cpython/Include)
 target_link_libraries(
   cpython-extension-tests
-  PUBLIC
+  PRIVATE
   benchmark
   gtest
-  PRIVATE
   libpython)
 
 add_executable(
@@ -529,6 +533,8 @@ endif()
 target_link_libraries(
   cpython-tests
   PRIVATE
+  benchmark
+  gtest
   ${WHOLE_ARCHIVE} cpython-extension-tests ${NO_WHOLE_ARCHIVE}
   ${CPYTHON_LINK_FLAGS})
 # Lib/ is needed for cpython-test, copy it into the build directory
