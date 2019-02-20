@@ -735,10 +735,25 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
   return true;
 }
 
+// If the current frame is executing a Generator, mark it as finished.
+static void finishCurrentGenerator(Interpreter::Context* ctx) {
+  if (!RawCode::cast(ctx->frame->code()).hasGenerator()) return;
+
+  // Write to the Generator's HeapFrame directly so we don't have to save the
+  // live frame to it one last time.
+  HandleScope scope(ctx->thread);
+  GeneratorBase gen(&scope,
+                    ctx->thread->runtime()->genFromStackFrame(ctx->frame));
+  HeapFrame heap_frame(&scope, gen.heapFrame());
+  heap_frame.frame()->setVirtualPC(Frame::kFinishedGeneratorPC);
+}
+
 bool Interpreter::handleReturn(Context* ctx, const Object& retval) {
+  Frame* frame = ctx->frame;
   for (;;) {
-    if (ctx->frame->blockStack()->depth() == 0) {
-      ctx->frame->pushValue(*retval);
+    if (frame->blockStack()->depth() == 0) {
+      finishCurrentGenerator(ctx);
+      frame->pushValue(*retval);
       return true;
     }
     if (popBlock(ctx, TryBlock::Why::kReturn, retval)) return false;
@@ -802,6 +817,7 @@ bool Interpreter::unwind(Context* ctx) {
     return false;
   }
 
+  finishCurrentGenerator(ctx);
   frame->pushValue(Error::object());
   return true;
 }
@@ -1334,17 +1350,7 @@ bool Interpreter::doWithCleanupFinish(Context* ctx, word) {
 // opcode 83
 bool Interpreter::doReturnValue(Context* ctx, word) {
   HandleScope scope(ctx->thread);
-  Frame* frame = ctx->frame;
-
-  Object result(&scope, frame->popValue());
-  Code code(&scope, frame->code());
-  if (code.hasGenerator()) {
-    // TODO(T39845336): This raise should be deferred until after processing the
-    // return normally.
-    ctx->thread->raiseStopIteration(*result);
-    return unwind(ctx);
-  }
-
+  Object result(&scope, ctx->frame->popValue());
   return handleReturn(ctx, result);
 }
 

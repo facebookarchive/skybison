@@ -255,6 +255,7 @@ RawObject moduleAt(Runtime* runtime, const char* module_name,
 }
 
 std::string typeName(Runtime* runtime, RawObject obj) {
+  if (obj.layoutId() == LayoutId::kError) return "Error";
   RawStr name = RawStr::cast(RawType::cast(runtime->typeOf(obj))->name());
   word length = name->length();
   std::string result(length, '\0');

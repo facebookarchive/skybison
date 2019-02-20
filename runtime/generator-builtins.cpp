@@ -12,6 +12,26 @@ void GeneratorBaseBuiltins::initialize(Runtime* runtime) {
   CoroutineBuiltins::initialize(runtime);
 }
 
+// Common work between send() and __next__(): Check if the generator has already
+// finished, run it, then check if it's newly-finished.
+static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
+                          const Object& value) {
+  HandleScope scope(thread);
+  HeapFrame heap_frame(&scope, gen.heapFrame());
+  if (heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC) {
+    // The generator has already finished.
+    return thread->raiseStopIteration(NoneType::object());
+  }
+  Object result(&scope, thread->runtime()->genSend(thread, gen, value));
+  if (!result.isError() &&
+      heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC) {
+    // The generator finished normally. Forward its return value in a
+    // StopIteration.
+    return thread->raiseStopIteration(*result);
+  }
+  return *result;
+}
+
 template <LayoutId target>
 RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
                                       word nargs) {
@@ -39,7 +59,7 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
         "can't send non-None value to a just-started %s", type_name));
   }
   Object value(&scope, args.get(1));
-  return thread->runtime()->genSend(thread, gen, value);
+  return sendImpl(thread, gen, value);
 }
 
 const NativeMethod GeneratorBuiltins::kNativeMethods[] = {
@@ -81,13 +101,13 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isGenerator()) {
-    return thread->raiseAttributeErrorWithCStr(
+    return thread->raiseTypeErrorWithCStr(
         "__next__() must be called with a generator instance as the first "
         "argument");
   }
   Generator gen(&scope, *self);
   Object value(&scope, NoneType::object());
-  return thread->runtime()->genSend(thread, gen, value);
+  return sendImpl(thread, gen, value);
 }
 
 const NativeMethod CoroutineBuiltins::kNativeMethods[] = {

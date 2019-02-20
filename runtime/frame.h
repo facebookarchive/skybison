@@ -267,6 +267,8 @@ class Frame {
   static const int kFastGlobalsOffset = kLocalsOffset + kPointerSize;
   static const int kSize = kFastGlobalsOffset + kPointerSize;
 
+  static const word kFinishedGeneratorPC = RawSmallInt::kMinValue;
+
  private:
   uword address();
   RawObject at(int offset);

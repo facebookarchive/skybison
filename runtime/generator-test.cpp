@@ -22,7 +22,7 @@ result = [i for i in fib(7)]
 
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 1, 1, 2, 3, 5, 8});
 }
@@ -128,6 +128,78 @@ except:
   g.__next__()
 )"),
                             LayoutId::kRuntimeError, "inside generator"));
+}
+
+TEST(GeneratorTest, ReturnFromTrySkipsExcept) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+result = 0
+
+def gen():
+  global result
+  yield 0
+  try:
+    return 123
+  except:
+    result = -1
+  yield 1
+
+g = gen()
+g.__next__()
+try:
+  g.__next__()
+except StopIteration:
+  result = 1
+)");
+
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isSmallInt());
+  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1);
+}
+
+TEST(GeneratorTest, NextAfterReturnRaisesStopIteration) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  EXPECT_EQ(runFromCStr(&runtime, R"(
+def gen():
+  yield 0
+  return "hello there"
+
+g = gen()
+g.__next__()
+)"),
+            NoneType::object());
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "g.__next__()"),
+                            LayoutId::kStopIteration, "hello there"));
+  thread->clearPendingException();
+  EXPECT_TRUE(
+      raised(runFromCStr(&runtime, "g.__next__()"), LayoutId::kStopIteration));
+  thread->clearPendingException();
+  EXPECT_TRUE(
+      raised(runFromCStr(&runtime, "g.__next__()"), LayoutId::kStopIteration));
+}
+
+TEST(GeneratorTest, NextAfterRaiseRaisesStopIteration) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+def gen():
+  yield 0
+  raise RuntimeError("kaboom")
+  yield 1
+
+g = gen()
+g.__next__()
+)")
+                   .isError());
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "g.__next__()"),
+                            LayoutId::kRuntimeError, "kaboom"));
+  thread->clearPendingException();
+  EXPECT_TRUE(
+      raised(runFromCStr(&runtime, "g.__next__()"), LayoutId::kStopIteration));
 }
 
 TEST(CoroutineTest, Basic) {
