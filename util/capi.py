@@ -13,6 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from capi_util import cmd_output
+
 
 CAPI_BLACKLIST = {
     "_Py_NoneStruct",  # expansion of Py_None
@@ -35,17 +37,15 @@ def module_object_files(dirname):
                 yield os.path.join(path, filename)
 
 
-TEXT_RE = re.compile(r"\w+\sT (.+)$")
+CAPI_SYMBOL_RE = re.compile(r"\w+\sT (_?Py.+)$")
 
 
-# Yield all externally-visible symbols defined in the text section of the given
-# object file.
-def find_defined(obj_file):
-    output = subprocess.run(
-        ["nm", "--defined-only", obj_file], stdout=subprocess.PIPE
-    ).stdout.decode(sys.stdout.encoding)
-    for line in output.strip().split("\n"):
-        match = TEXT_RE.match(line)
+# Yield all externally-visible symbols beginning with Py or _Py that are
+# defined in the text section of the given object files.
+def find_defined(obj_files):
+    output = cmd_output("nm", "--defined-only", *obj_files)
+    for line in output.split("\n"):
+        match = CAPI_SYMBOL_RE.match(line)
         if not match:
             continue
         yield match[1]
@@ -105,10 +105,8 @@ UNDEF_RE = re.compile(r"\s*U (_?Py.+)$")
 # - In CAPI_DEFS
 # - Not in CAPI_BLACKLIST
 def find_used_capi(obj_file):
-    output = subprocess.run(
-        ["nm", "--undefined-only", obj_file], stdout=subprocess.PIPE
-    ).stdout.decode(sys.stdout.encoding)
-    for line in output.strip().split("\n"):
+    output = cmd_output("nm", "--undefined-only", obj_file)
+    for line in output.split("\n"):
         match = UNDEF_RE.match(line)
         if not match:
             continue
@@ -175,12 +173,13 @@ def process_modules(args):
     # Remove functions defined in the Modules directory from the search
     # space. This includes things like hash table implementations, etc.
     module_objs = list(module_object_files(cpython_path))
-    for obj in module_objs:
-        CAPI_BLACKLIST |= set(find_defined(obj))
-    assert "_Py_hashtable_clear" in CAPI_BLACKLIST
+    CAPI_BLACKLIST |= set(find_defined(module_objs))
+    if "_Py_hashtable_clear" not in CAPI_BLACKLIST:
+        raise RuntimeError("CAPI_BLACKLIST failed sanity check and is probably broken.")
 
-    CAPI_DEFS = set(find_defined(os.path.join(cpython_path, "python")))
-    assert CAPI_DEFS
+    CAPI_DEFS = set(find_defined([os.path.join(cpython_path, "python")]))
+    if not CAPI_DEFS:
+        raise RuntimeError("Found no defined symbols in python binary.")
 
     used_capi = set()
     if args.scan_modules:
@@ -204,39 +203,33 @@ def group_of(function):
     return found.group(1) if found else "<nogroup>"
 
 
-# Return true if a function needs to be implemented in Pyro, meaning at least
-# one of the following is true:
+# Return true if a function needs to be implemented in Pyro.
+#
+# If PYRO_IMPLEMENTED is non-empty, use it as the authoritative source of
+# implemented functions. Otherwise, check that at least one of the following is
+# true:
 # - An UNIMPLEMENTED line with the given name was found in the source.
 # - The funtion's name does not appear in the source.
 @functools.lru_cache(maxsize=None, typed=False)
 def is_todo(name):
+    if PYRO_IMPLEMENTED:
+        return name not in PYRO_IMPLEMENTED
+
     has_unimplemented = (
         subprocess.run(
             ["grep", "-rqF", f'UNIMPLEMENTED("{name}")', *PYRO_CPP_FILES],
-            stdout=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
         ).returncode
         == 0
     )  # 0 means it has been found
     # TODO: Use a better regular expression to actually check for signature
     definition_found = (
         subprocess.run(
-            ["grep", "-qF", f"{name}(", *PYRO_CPP_FILES], stdout=subprocess.PIPE
+            ["grep", "-qF", f"{name}(", *PYRO_CPP_FILES], stdout=subprocess.DEVNULL
         ).returncode
         == 0
     )  # 0 means it has been found
     return has_unimplemented or not definition_found
-
-
-def list_functions(funcs):
-    for func in sorted(set(map(lambda f: f.name, funcs))):
-        print(func)
-
-
-def print_summary(funcs):
-    funcs = set(map(lambda f: f.name, funcs))
-    completed_funcs = list(filter(lambda f: not is_todo(f), funcs))
-    percent = len(completed_funcs) * 100 / len(funcs)
-    print(f"{len(completed_funcs)} / {len(funcs)} complete ({percent:.1f}%)")
 
 
 def write_grouped_csv(filename, funcs, group_key, summary=False):
@@ -274,8 +267,6 @@ def write_grouped_csv(filename, funcs, group_key, summary=False):
         for group_name, stats in group_completion.items():
             print(f"{group_name}," + ",".join(map(str, stats)), file=out_file)
 
-    print(f"Wrote {filename}", file=sys.stderr)
-
 
 def write_raw_csv(filename, funcs):
     funcs.sort(key=lambda f: f.name)
@@ -290,15 +281,13 @@ def write_raw_csv(filename, funcs):
                 file=out_file,
             )
 
-    print(f"Wrote {filename}", file=sys.stderr)
-
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="""
-Analyze the completeness of Pyro's C-API implementation. Unless one of the
-Actions arguments is given, print a summary line showing how many C-API
-functions are implemented out of the total needed.
+Analyze the completeness of Pyro's C-API implementation. By default, print a
+summary line showing how many C-API functions are implemented out of the total
+needed.
 """
     )
 
@@ -314,6 +303,17 @@ functions are implemented out of the total needed.
     libs.add_argument(
         "--pyro",
         help="Pyro source tree. Defaults to the checkout containing this script.",
+    )
+    libs.add_argument(
+        "--pyro-build",
+        help="Pyro build tree. If given, use the python binary in PYRO_BUILD "
+        "to determine which functions are implemented by Pyro.",
+    )
+    libs.add_argument(
+        "--use-pyro-binary",
+        action="store_true",
+        help="Use the final python binary from PYRO_BUILD rather than the"
+        " intermediate object files.",
     )
     libs.add_argument(
         "--no-modules",
@@ -348,12 +348,15 @@ functions are implemented out of the total needed.
 
     actions = parser.add_argument_group("Actions")
     actions.add_argument(
-        "--csv",
+        "--reports",
         help="""
-In addition to printing the summary line, write out a few csv files: 1)
-groups.csv: One line per function group, with completion stats. 2)
-modules.csv: Like groups.csv, but grouped by module. 3) raw.csv: Raw
-data, one line per function use.
+In addition to printing the summary line, write out a number of files: 1)
+groups.csv: One line per function group, with completion stats. 2) modules.csv:
+Like groups.csv, but grouped by module. 3) raw.csv: Raw data, one line per
+function use. 4) used_funcs.txt: Names of all required C-API functions. 5)
+implemented_funcs.txt: Names of C-API functions implemented by Pyro. 6)
+todo_funcs.txt: Names of C-API functions not implemented by Pyro. 7)
+summary.txt: The same summary line printed to stdout.
 """,
         action="store_true",
     )
@@ -363,45 +366,60 @@ data, one line per function use.
         help="Set the output directory for the --csv option. Defaults to cwd.",
         default=".",
     )
-    actions.add_argument(
-        "--list-funcs", action="store_true", help="List all C-API functions."
-    )
-    actions.add_argument(
-        "--list-todo",
-        action="store_true",
-        help="List all unimplemented C-API functions.",
-    )
     return parser.parse_args()
 
 
-def find_pyro_impl_files(args):
+def get_pyro_root(args):
     if args.pyro:
-        path = os.path.join(args.pyro, "ext")
+        pyro_root = args.pyro
     else:
-        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "ext")
-    if not Path(path).exists():
-        raise RuntimeError(f"Pyro source path {path} does not exist")
+        pyro_root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
+    pyro_root = os.path.realpath(pyro_root)
+    if not Path(os.path.join(pyro_root, "ext", "Objects", "longobject.cpp")).exists():
+        raise RuntimeError(f"{pyro_root} doesn't look like the root of a Pyro tree")
+    return pyro_root
 
-    return subprocess.run(
-        ["find", path, "-name", "*.cpp"],
-        stdout=subprocess.PIPE,
-        encoding=sys.stdout.encoding,
-        check=True,
-    ).stdout.split()
+
+def find_pyro_impl_files(pyro_root):
+    return cmd_output("find", os.path.join(pyro_root, "ext"), "-name", "*.cpp").split()
+
+
+def find_pyro_implemented(args):
+    build_root = args.pyro_build
+
+    if args.use_pyro_binary:
+        pyro_exports = set(find_defined([os.path.join(build_root, "python")]))
+    else:
+        pyro_exports = set(
+            find_defined(cmd_output("find", build_root, "-name", "*.o").split())
+        )
+
+    pyro_unimplemented = find_pyro_unimplemented(PYRO_CPP_FILES)
+    implemented = pyro_exports - pyro_unimplemented
+    return implemented
+
+
+def find_pyro_unimplemented(pyro_files):
+    return set(
+        cmd_output(
+            "sed", "-ne", r's,^.*UNIMPLEMENTED("\(_\?Py\w\+\)").*$,\1,p', *pyro_files
+        ).split()
+    )
 
 
 def main():
     args = parse_args()
-    if args.list_funcs + args.list_todo + args.csv > 1:
-        sys.exit("Don't supply more than one Action argument")
     if args.show_args:
         sys.exit(args)
 
-    global PYRO_CPP_FILES
-    PYRO_CPP_FILES = find_pyro_impl_files(args)
+    pyro_root = get_pyro_root(args)
+    global PYRO_CPP_FILES, PYRO_IMPLEMENTED
+    PYRO_CPP_FILES = find_pyro_impl_files(pyro_root)
     if not PYRO_CPP_FILES:
         # Tolerate running on revs with no cpp files in ext/
         PYRO_CPP_FILES = ["/dev/null"]
+
+    PYRO_IMPLEMENTED = find_pyro_implemented(args) if args.pyro_build else set()
 
     if args.read_csv:
         used_capi = read_raw_csv(args.read_csv)
@@ -410,29 +428,37 @@ def main():
     else:
         used_capi = process_modules(args)
 
-    if args.list_funcs:
-        list_functions(used_capi)
-        return 0
+    used_capi_names = sorted(set(map(lambda f: f.name, used_capi)))
+    unimplemented = list(filter(is_todo, used_capi_names))
+    implemented = list(filter(lambda f: not is_todo(f), used_capi_names))
 
-    if args.list_todo:
-        list_functions(filter(lambda f: is_todo(f.name), used_capi))
-        return 0
+    percent_done = len(implemented) * 100 / len(used_capi_names)
+    summary = (
+        f"{len(implemented)} / {len(used_capi_names)} complete ({percent_done:.1f}%)"
+    )
 
-    if args.csv:
+    if args.reports:
         output_dir = Path(args.output)
         output_dir.mkdir(parents=True, exist_ok=True)
 
         def outfile(f):
-            return os.path.join(output_dir, f)
+            path = os.path.join(output_dir, f)
+            print(f"Writing {path}", file=sys.stderr)
+            return path
 
         write_grouped_csv(outfile("groups.csv"), used_capi, group_of)
         write_grouped_csv(outfile("modules.csv"), used_capi, lambda f: f.filename)
         write_raw_csv(outfile("raw.csv"), used_capi)
+        with open(outfile("used_funcs.txt"), "w") as file:
+            print("\n".join(used_capi_names), file=file)
+        with open(outfile("implemented_funcs.txt"), "w") as file:
+            print("\n".join(implemented), file=file)
+        with open(outfile("todo_funcs.txt"), "w") as file:
+            print("\n".join(unimplemented), file=file)
+        with open(outfile("summary.txt"), "w") as file:
+            print(summary, file=file)
 
-        print_summary(used_capi)
-        return 0
-
-    print_summary(used_capi)
+    print(summary)
     return 0
 
 

@@ -6,8 +6,11 @@ import datetime as dt
 import os
 import subprocess
 import sys
+import tempfile
 from collections import namedtuple
 from pathlib import Path
+
+from capi_util import cmd_output
 
 
 # The commit that introduced Pyro to fbsource.
@@ -27,24 +30,6 @@ Rev = namedtuple("Rev", ("date", "hash", "type"))
 # Parse a date object using DATE_FORMAT.
 def parse_date(date):
     return dt.datetime.strptime(date, DATE_FORMAT).date()
-
-
-# Run the given command, returning its stdout. Exit if the command fails.
-def cmd_output(*args):
-    if os.getenv("TRACE_COMMANDS"):
-        print(">", *args, file=sys.stderr)
-    proc = subprocess.run(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding=sys.stdout.encoding,
-    )
-    if proc.returncode != 0:
-        sys.exit(
-            f"Command\n  {args}\nexited with status {proc.returncode}:\n\n"
-            f"{proc.stderr}"
-        )
-    return proc.stdout.strip()
 
 
 # Return a list of Rev objects for all interesting fbsource commits.
@@ -102,7 +87,10 @@ def get_git_revs(path, start_date):
 # Print one line of CSV output.
 def print_result(rev, result):
     parts = result.split()
-    print(f"{rev.date.strftime(DATE_FORMAT)},{parts[0]},{rev.type},{rev.hash[:10]}")
+    print(
+        f"{rev.date.strftime(DATE_FORMAT)},{parts[0]},{rev.type},{rev.hash[:10]}",
+        flush=True,
+    )
 
 
 def parse_args():
@@ -122,8 +110,8 @@ def parse_args():
     req.add_argument(
         "--func-list",
         required=True,
-        help="The output of --func-list from a previous run of capi.py with "
-        "full access to all external C code.",
+        help="A list of all required C-API functions (usually used_funcs.txt "
+        "from a previous run of capi.py with --reports).",
     )
 
     parser.add_argument("--pyro-git", help="Path to Pyro git repository.")
@@ -145,18 +133,16 @@ def main():
     if not Path(capi_script).is_file():
         sys.exit(f"Couldn't find capi.py at {capi_script}")
 
-    capi_args = ("--read-func-list", func_list)
-
     revs = {}
     git_dir = None
     if args.pyro_git:
-        git_dir = args.pyro_git
+        git_dir = os.path.realpath(args.pyro_git)
         for rev in get_git_revs(git_dir, args.start_date):
             revs[rev.date] = rev
 
     fbs_dir = None
     if args.fbsource:
-        fbs_dir = args.fbsource
+        fbs_dir = os.path.realpath(args.fbsource)
         for rev in get_hg_revs(fbs_dir, args.start_date):
             revs[rev.date] = rev
 
@@ -166,13 +152,48 @@ def main():
         if rev.type == "hg":
             os.chdir(fbs_dir)
             cmd_output("hg", "update", rev.hash)
-            print_result(
-                rev, cmd_output(capi_script, "--pyro", "fbcode/pyro", *capi_args)
-            )
+            pyro_path = "fbcode/pyro"
         else:
             os.chdir(git_dir)
             cmd_output("git", "checkout", rev.hash)
-            print_result(rev, cmd_output(capi_script, "--pyro", ".", *capi_args))
+            pyro_path = "."
+
+        pyro_path = os.path.realpath(pyro_path)
+
+        with tempfile.TemporaryDirectory() as build_dir:
+            os.chdir(build_dir)
+            try:
+                cmd_output(
+                    "cmake",
+                    "-DCMAKE_BUILD_TYPE=Debug",
+                    "-DCMAKE_C_COMPILER=clang.par",
+                    "-DCMAKE_CXX_COMPILER=clang++.par",
+                    pyro_path,
+                )
+                cmd_output("make", "-j", str(os.cpu_count()), "python")
+            except subprocess.CalledProcessError:
+                # Just skip this rev if the build fails.
+                print(
+                    f"Skipping rev {rev.hash} due to failed build",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                continue
+
+            os.chdir(pyro_path)
+            print_result(
+                rev,
+                cmd_output(
+                    capi_script,
+                    "--pyro",
+                    ".",
+                    "--read-func-list",
+                    func_list,
+                    "--pyro-build",
+                    build_dir,
+                    "--use-pyro-objs",
+                ),
+            )
 
 
 if __name__ == "__main__":
