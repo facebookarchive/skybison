@@ -1592,7 +1592,9 @@ RawObject Runtime::run(const char* buffer) {
     Type exc_type(&scope, thread->pendingExceptionType());
     if (exc_type.builtinBase() == LayoutId::kSystemExit) {
       // Exit the runtime.
-      std::exit(handleSysExit(thread));
+      word exit_code = handleSysExit(thread);
+      freeApiHandles();
+      std::exit(exit_code);
     }
   }
   return *result;

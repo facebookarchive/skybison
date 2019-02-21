@@ -238,4 +238,17 @@ TEST(CApiHandlesTest, VisitReferences) {
   EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(LayoutId::kType)));
 }
 
+TEST(CApiHandlesDeathTest, CleanupApiHandlesOnExit) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope;
+  Object obj(&scope, runtime.newStrFromCStr("hello"));
+  ApiHandle::newReference(thread, *obj);
+  ASSERT_EXIT(runFromCStr(&runtime, R"(
+import sys
+sys.exit()
+)"),
+              ::testing::ExitedWithCode(0), "");
+}
+
 }  // namespace python
