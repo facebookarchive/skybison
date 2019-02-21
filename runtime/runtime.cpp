@@ -1965,34 +1965,38 @@ void Runtime::createBuiltinsModule() {
   Module module(&scope, newModule(name));
 
   // Fill in builtins...
-  build_class_ = moduleAddNativeFunction(
-      module, SymbolId::kDunderBuildClass,
-      nativeTrampoline<Builtins::buildClass>,
-      nativeTrampolineKw<Builtins::buildClassKw>, unimplementedTrampoline);
+  build_class_ =
+      moduleAddNativeFunction(module, SymbolId::kDunderBuildClass,
+                              nativeTrampoline<BuiltinsModule::buildClass>,
+                              nativeTrampolineKw<BuiltinsModule::buildClassKw>,
+                              unimplementedTrampoline);
 
-  moduleAddBuiltinFunction(module, SymbolId::kCallable, Builtins::callable);
-  moduleAddBuiltinFunction(module, SymbolId::kChr, Builtins::chr);
-  moduleAddBuiltinFunction(module, SymbolId::kCompile, Builtins::compile);
+  moduleAddBuiltinFunction(module, SymbolId::kCallable,
+                           BuiltinsModule::callable);
+  moduleAddBuiltinFunction(module, SymbolId::kChr, BuiltinsModule::chr);
+  moduleAddBuiltinFunction(module, SymbolId::kCompile, BuiltinsModule::compile);
   moduleAddBuiltinFunction(module, SymbolId::kUnderComplexImag, complexGetImag);
   moduleAddBuiltinFunction(module, SymbolId::kUnderComplexReal, complexGetReal);
-  moduleAddBuiltinFunction(module, SymbolId::kExec, Builtins::exec);
-  moduleAddBuiltinFunction(module, SymbolId::kGetattr, Builtins::getattr);
-  moduleAddBuiltinFunction(module, SymbolId::kHasattr, Builtins::hasattr);
-  moduleAddBuiltinFunction(module, SymbolId::kIsInstance, Builtins::isinstance);
-  moduleAddBuiltinFunction(module, SymbolId::kIsSubclass, Builtins::issubclass);
-  moduleAddBuiltinFunction(module, SymbolId::kOrd, Builtins::ord);
+  moduleAddBuiltinFunction(module, SymbolId::kExec, BuiltinsModule::exec);
+  moduleAddBuiltinFunction(module, SymbolId::kGetattr, BuiltinsModule::getattr);
+  moduleAddBuiltinFunction(module, SymbolId::kHasattr, BuiltinsModule::hasattr);
+  moduleAddBuiltinFunction(module, SymbolId::kIsInstance,
+                           BuiltinsModule::isinstance);
+  moduleAddBuiltinFunction(module, SymbolId::kIsSubclass,
+                           BuiltinsModule::issubclass);
+  moduleAddBuiltinFunction(module, SymbolId::kOrd, BuiltinsModule::ord);
   // _patch is not patched because that would cause a circularity problem.
   moduleAddNativeFunction(module, SymbolId::kUnderPatch,
-                          nativeTrampoline<Builtins::underPatch>,
+                          nativeTrampoline<BuiltinsModule::underPatch>,
                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kRange, Builtins::range);
-  moduleAddBuiltinFunction(module, SymbolId::kSetattr, Builtins::setattr);
+  moduleAddBuiltinFunction(module, SymbolId::kRange, BuiltinsModule::range);
+  moduleAddBuiltinFunction(module, SymbolId::kSetattr, BuiltinsModule::setattr);
   moduleAddBuiltinFunction(module, SymbolId::kUnderAddress,
-                           Builtins::underAddress);
+                           BuiltinsModule::underAddress);
   moduleAddBuiltinFunction(module, SymbolId::kUnderPrintStr,
-                           Builtins::underPrintStr);
+                           BuiltinsModule::underPrintStr);
   moduleAddBuiltinFunction(module, SymbolId::kUnderStrEscapeNonAscii,
-                           Builtins::underStrEscapeNonAscii);
+                           BuiltinsModule::underStrEscapeNonAscii);
   moduleAddBuiltinFunction(module, SymbolId::kUnderStructseqSetAttr,
                            underStructseqSetAttr);
   moduleAddBuiltinFunction(module, SymbolId::kUnderStructseqGetAttr,

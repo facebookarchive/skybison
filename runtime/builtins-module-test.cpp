@@ -193,34 +193,44 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   types.atPut(2, runtime.typeAt(LayoutId::kException));
 
   Object str(&scope, runtime.newStrFromCStr("hello there!"));
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, str, types), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, str, types),
+            Bool::trueObj());
 
   Object an_int(&scope, runtime.newInt(123));
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, an_int, types), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, an_int, types),
+            Bool::falseObj());
 
   Object a_bool(&scope, Bool::falseObj());
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, a_bool, types), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, a_bool, types),
+            Bool::trueObj());
 
   Layout exc_layout(&scope, runtime.layoutAt(LayoutId::kException));
   Object exc(&scope, runtime.newInstance(exc_layout));
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, exc, types), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, exc, types),
+            Bool::trueObj());
 
   Object bytes(&scope, runtime.newBytes(0, 0));
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, bytes, types), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, bytes, types),
+            Bool::falseObj());
 
   Tuple inner(&scope, runtime.newTuple(2));
   inner.atPut(0, runtime.typeAt(LayoutId::kInt));
   inner.atPut(1, runtime.typeAt(LayoutId::kBytes));
   types.atPut(2, *inner);
 
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, str, types), Bool::trueObj());
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, an_int, types), Bool::trueObj());
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, a_bool, types), Bool::trueObj());
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, exc, types), Bool::falseObj());
-  EXPECT_EQ(runBuiltin(Builtins::isinstance, bytes, types), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, str, types),
+            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, an_int, types),
+            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, a_bool, types),
+            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, exc, types),
+            Bool::falseObj());
+  EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, bytes, types),
+            Bool::trueObj());
 
   inner.atPut(1, *an_int);
-  EXPECT_TRUE(raised(runBuiltin(Builtins::isinstance, exc, types),
+  EXPECT_TRUE(raised(runBuiltin(BuiltinsModule::isinstance, exc, types),
                      LayoutId::kTypeError));
 }
 
@@ -819,7 +829,7 @@ exec(*["a = 1338"])
 TEST(BuiltinsModuleTest, CopyFunctionEntriesCopies) {
   Runtime runtime;
   HandleScope scope;
-  Function::Entry entry = Builtins::chr;
+  Function::Entry entry = BuiltinsModule::chr;
   Str qualname(&scope, runtime.symbols()->Chr());
   Function func(&scope,
                 runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
@@ -841,7 +851,7 @@ def chr(self):
 TEST(BuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {
   Runtime runtime;
   HandleScope scope;
-  Function::Entry entry = Builtins::chr;
+  Function::Entry entry = BuiltinsModule::chr;
   Str qualname(&scope, runtime.symbols()->Chr());
   Function func(&scope,
                 runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
@@ -858,7 +868,7 @@ TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object not_func(&scope, runtime.newInt(12));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(Builtins::underPatch, not_func),
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::underPatch, not_func),
                             LayoutId::kTypeError,
                             "_patch expects function argument"));
 }

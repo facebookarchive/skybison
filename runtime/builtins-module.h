@@ -19,7 +19,7 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
 void copyFunctionEntries(Thread* thread, const Function& base,
                          const Function& patch);
 
-class Builtins {
+class BuiltinsModule {
  public:
   static RawObject buildClass(Thread* thread, Frame* frame, word nargs);
   static RawObject buildClassKw(Thread* thread, Frame* frame, word nargs);

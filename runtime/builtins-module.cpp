@@ -63,7 +63,7 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
   return runtime->attributeAtPut(thread, self, name, value);
 }
 
-RawObject Builtins::buildClass(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::buildClass(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -160,7 +160,8 @@ void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
   }
 }
 
-RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::buildClassKw(Thread* thread, Frame* frame,
+                                       word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   KwArguments args(frame, nargs);
@@ -228,7 +229,7 @@ RawObject Builtins::buildClassKw(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::call(thread, frame, 4);
 }
 
-RawObject Builtins::callable(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::callable(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object arg(&scope, args.get(0));
@@ -246,7 +247,7 @@ RawObject Builtins::callable(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(!callable.isError());
 }
 
-RawObject Builtins::chr(Thread* thread, Frame* frame_frame, word nargs) {
+RawObject BuiltinsModule::chr(Thread* thread, Frame* frame_frame, word nargs) {
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);
   if (!arg->isSmallInt()) {
@@ -270,7 +271,7 @@ static RawObject compileStr(Thread* thread, const Str& source) {
   return reader.readObject();
 }
 
-RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   if (!args.get(0).isStr()) {
@@ -305,7 +306,7 @@ RawObject Builtins::compile(Thread* thread, Frame* frame, word nargs) {
   return *code;
 }
 
-RawObject Builtins::exec(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object source_obj(&scope, args.get(0));
@@ -394,7 +395,7 @@ static RawObject isinstanceImpl(Thread* thread, const Object& obj,
 // TODO(mpage): isinstance (somewhat unsurprisingly at this point I guess) is
 // actually far more complicated than one might expect. This is enough to get
 // richards working.
-RawObject Builtins::isinstance(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::isinstance(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
@@ -402,7 +403,7 @@ RawObject Builtins::isinstance(Thread* thread, Frame* frame, word nargs) {
   return isinstanceImpl(thread, obj, type);
 }
 
-RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::issubclass(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -437,7 +438,7 @@ RawObject Builtins::issubclass(Thread* thread, Frame* frame, word nargs) {
   return Bool::falseObj();
 }
 
-RawObject Builtins::ord(Thread* thread, Frame* frame_frame, word nargs) {
+RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);
   if (!arg->isStr()) {
@@ -457,8 +458,8 @@ void printStr(RawStr str, std::ostream* ostream) {
   }
 }
 
-RawObject Builtins::underPrintStr(Thread* thread, Frame* frame_frame,
-                                  word nargs) {
+RawObject BuiltinsModule::underPrintStr(Thread* thread, Frame* frame_frame,
+                                        word nargs) {
   Arguments args(frame_frame, nargs);
   HandleScope scope(thread);
   CHECK(args.get(0).isStr(), "Unsupported argument type for 'obj'");
@@ -477,7 +478,7 @@ RawObject Builtins::underPrintStr(Thread* thread, Frame* frame_frame,
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)
-RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::range(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   for (word i = 0; i < nargs; i++) {
     if (!args.get(i)->isSmallInt() && !args.get(i).isUnboundValue()) {
@@ -508,7 +509,7 @@ RawObject Builtins::range(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRange(start, stop, step);
 }
 
-RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -527,7 +528,7 @@ RawObject Builtins::getattr(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject Builtins::hasattr(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::hasattr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -535,7 +536,7 @@ RawObject Builtins::hasattr(Thread* thread, Frame* frame, word nargs) {
   return hasAttribute(thread, self, name);
 }
 
-RawObject Builtins::setattr(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::setattr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -544,12 +545,13 @@ RawObject Builtins::setattr(Thread* thread, Frame* frame, word nargs) {
   return setAttribute(thread, self, name, value);
 }
 
-RawObject Builtins::underAddress(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::underAddress(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   return thread->runtime()->newInt(args.get(0).raw());
 }
 
-RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
+RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (nargs != 1) {
@@ -574,8 +576,8 @@ RawObject Builtins::underPatch(Thread* thread, Frame* frame, word nargs) {
   return *patch_fn;
 }
 
-RawObject Builtins::underStrEscapeNonAscii(Thread* thread, Frame* frame,
-                                           word nargs) {
+RawObject BuiltinsModule::underStrEscapeNonAscii(Thread* thread, Frame* frame,
+                                                 word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   CHECK(thread->runtime()->isInstanceOfStr(args.get(0)),
