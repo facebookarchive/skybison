@@ -3583,12 +3583,12 @@ inline void RawStaticMethod::setFunction(RawObject function) const {
 // RawByteArray
 
 inline byte RawByteArray::byteAt(word index) const {
-  DCHECK_BOUND(index, numItems());
+  DCHECK_INDEX(index, numItems());
   return RawBytes::cast(bytes())->byteAt(index);
 }
 
 inline void RawByteArray::byteAtPut(word index, byte value) const {
-  DCHECK_BOUND(index, numItems());
+  DCHECK_INDEX(index, numItems());
   RawBytes::cast(bytes())->byteAtPut(index, value);
 }
 
