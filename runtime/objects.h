@@ -1557,10 +1557,12 @@ class RawNotImplemented : public RawHeapObject {
 /**
  * A mutable array of bytes.
  *
+ * Invariant: All allocated bytes past the end of the array are 0.
+ *
  * RawLayout:
  *   [RawType pointer]
- *   [NumItems       ] - Number of bytes currently in the array.
  *   [Bytes          ] - Pointer to a RawBytes with the underlying data.
+ *   [NumItems       ] - Number of bytes currently in the array.
  */
 class RawByteArray : public RawHeapObject {
  public:
@@ -1571,6 +1573,7 @@ class RawByteArray : public RawHeapObject {
   void setBytes(RawObject new_bytes) const;
   word numItems() const;
   void setNumItems(word num_bytes) const;
+  void downsize(word new_length) const;
 
   // The size of the underlying bytes
   word capacity() const;

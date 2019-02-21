@@ -10,6 +10,19 @@ namespace python {
 
 using namespace testing;
 
+TEST(ByteArrayTest, DownsizeMaintainsCapacity) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope;
+  ByteArray array(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, array, {0, 1, 2, 3, 4, 5, 6, 7, 8});
+  ASSERT_EQ(array.numItems(), 9);
+  word capacity = array.capacity();
+  array.downsize(5);
+  EXPECT_EQ(array.numItems(), 5);
+  EXPECT_EQ(array.capacity(), capacity);
+}
+
 TEST(DoubleTest, DoubleTest) {
   Runtime runtime;
   RawObject o = runtime.newFloat(3.14);

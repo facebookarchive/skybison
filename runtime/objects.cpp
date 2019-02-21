@@ -41,6 +41,16 @@ char* RawSmallStr::toCStr() const {
 const word RawSmallInt::kMinValue;
 const word RawSmallInt::kMaxValue;
 
+// RawByteArray
+
+void RawByteArray::downsize(word new_length) const {
+  word original_length = numItems();
+  DCHECK_BOUND(new_length, original_length);
+  byte* dst = reinterpret_cast<byte*>(RawBytes::cast(bytes()).address());
+  std::memset(dst + new_length, 0, original_length - new_length);
+  setNumItems(new_length);
+}
+
 // RawBytes
 
 word RawBytes::compare(RawBytes that) const {

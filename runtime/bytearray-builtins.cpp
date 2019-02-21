@@ -1,5 +1,6 @@
 #include "bytearray-builtins.h"
 
+#include "bytes-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -23,6 +24,7 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
 };
 
@@ -31,6 +33,70 @@ void ByteArrayBuiltins::initialize(Runtime* runtime) {
   runtime->addBuiltinType(SymbolId::kByteArray, LayoutId::kByteArray,
                           LayoutId::kObject, kAttributes,
                           View<NativeMethod>(nullptr, 0), kBuiltinMethods);
+}
+
+RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__init__' requires a 'bytearray' object");
+  }
+  ByteArray self(&scope, *self_obj);
+  // always clear the existing contents of the array
+  if (self.numItems() > 0) {
+    self.downsize(0);
+  }
+  Object source(&scope, args.get(1));
+  Object encoding(&scope, args.get(2));
+  Object errors(&scope, args.get(3));
+  if (source.isUnboundValue()) {
+    if (encoding.isUnboundValue() && errors.isUnboundValue()) {
+      return NoneType::object();
+    }
+    return thread->raiseTypeErrorWithCStr(
+        "encoding or errors without sequence argument");
+  }
+  if (runtime->isInstanceOfStr(*source)) {
+    if (encoding.isUnboundValue()) {
+      return thread->raiseTypeErrorWithCStr(
+          "string argument without an encoding");
+    }
+    UNIMPLEMENTED("string encoding");  // return NoneType::value();
+  }
+  if (!encoding.isUnboundValue() || !errors.isUnboundValue()) {
+    return thread->raiseTypeErrorWithCStr(
+        "encoding or errors without a string argument");
+  }
+  if (runtime->isInstanceOfInt(*source)) {
+    // TODO(T38780562): strict subclass of int
+    if (!source.isSmallInt()) {
+      return thread->raiseOverflowErrorWithCStr(
+          "cannot fit count into an index-sized integer");
+    }
+    word count = RawSmallInt::cast(*source).value();
+    if (count < 0) {
+      return thread->raiseValueErrorWithCStr("negative count");
+    }
+    runtime->byteArrayEnsureCapacity(thread, self, count - 1);
+    self.setNumItems(count);
+  } else if (runtime->isInstanceOfBytes(*source)) {  // TODO(T38246066)
+    Bytes bytes(&scope, *source);
+    runtime->byteArrayIadd(thread, self, bytes, bytes.length());
+  } else if (runtime->isInstanceOfByteArray(*source)) {
+    ByteArray array(&scope, *source);
+    Bytes bytes(&scope, array.bytes());
+    runtime->byteArrayIadd(thread, self, bytes, array.numItems());
+  } else {
+    Object maybe_bytes(&scope, bytesFromIterable(thread, source));
+    if (maybe_bytes.isError()) return *maybe_bytes;
+    Bytes bytes(&scope, *maybe_bytes);
+    runtime->byteArrayIadd(thread, self, bytes, bytes.length());
+  }
+  return NoneType::object();
 }
 
 RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,

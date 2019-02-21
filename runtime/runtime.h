@@ -309,6 +309,8 @@ class Runtime {
 
   // Appends multiple bytes to the end of the array.
   void byteArrayExtend(Thread* thread, const ByteArray& array, View<byte> view);
+  void byteArrayIadd(Thread* thread, const ByteArray& array, const Bytes& bytes,
+                     word length);
 
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);

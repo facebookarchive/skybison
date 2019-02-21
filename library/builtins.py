@@ -351,6 +351,11 @@ class bytearray(bootstrap=True):
     ):
         pass
 
+    def __init__(
+        self, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
+    ):
+        pass
+
 
 class bytes(bootstrap=True):
     def __add__(self, other: bytes) -> bytes:

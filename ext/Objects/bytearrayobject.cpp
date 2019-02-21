@@ -63,9 +63,7 @@ PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
   word current = array.numItems();
   if (requested == current) return 0;
   if (requested < current) {
-    // Ensure no leftover bytes remain past the new end of the array
-    Bytes bytes(&scope, array.bytes());
-    array.setBytes(runtime->bytesSubseq(thread, bytes, 0, requested));
+    array.downsize(requested);
   } else {
     runtime->byteArrayEnsureCapacity(thread, array, requested - 1);
   }

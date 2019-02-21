@@ -2418,6 +2418,17 @@ void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
   array.setNumItems(index + length);
 }
 
+void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
+                            const Bytes& bytes, word length) {
+  DCHECK_BOUND(length, bytes.length());
+  word index = array.numItems();
+  byteArrayEnsureCapacity(thread, array, index + length - 1);
+  const byte* src = reinterpret_cast<const byte*>(bytes.address());
+  byte* dst = reinterpret_cast<byte*>(RawBytes::cast(array.bytes()).address());
+  std::memcpy(dst + index, src, length);
+  array.setNumItems(index + length);
+}
+
 // Bytes
 
 RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,

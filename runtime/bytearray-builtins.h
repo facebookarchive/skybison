@@ -21,6 +21,7 @@ class ByteArrayBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
  private:
