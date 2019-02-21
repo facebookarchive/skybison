@@ -714,10 +714,27 @@ TEST(BuiltinsModuleTest, BuiltinCompile) {
   runFromCStr(&runtime,
               R"(code = compile("a = 1\nb = 2", "<string>", "eval"))");
   Str filename(&scope, runtime.newStrFromCStr("<string>"));
-  Str mode(&scope, runtime.newStrFromCStr("eval"));
   Code code(&scope, moduleAt(&runtime, "__main__", "code"));
   ASSERT_TRUE(code.filename().isStr());
   EXPECT_TRUE(Str::cast(code.filename()).equals(*filename));
+
+  ASSERT_TRUE(code.names().isTuple());
+  Tuple names(&scope, code.names());
+  ASSERT_EQ(names.length(), 2);
+  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("b")));
+}
+
+TEST(BuiltinsModuleTest, BuiltinCompileBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+data = b'a = 1; b = 2'
+code = compile(data, "<string>", "eval")
+)");
+  Code code(&scope, moduleAt(&runtime, "__main__", "code"));
+  Object filename(&scope, code.filename());
+  EXPECT_TRUE(isStrEqualsCStr(*filename, "<string>"));
 
   ASSERT_TRUE(code.names().isTuple());
   Tuple names(&scope, code.names());

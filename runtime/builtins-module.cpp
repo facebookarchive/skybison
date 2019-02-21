@@ -258,12 +258,9 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame_frame, word nargs) {
   return SmallStr::fromCStr(s);
 }
 
-static RawObject compileStr(Thread* thread, const Str& source) {
+static RawObject compileToBytecode(Thread* thread, const char* source) {
   HandleScope scope(thread);
-  unique_c_ptr<char[]> source_str(source.toCStr());
-  std::unique_ptr<char[]> bytecode_str(
-      Runtime::compileFromCStr(source_str.get()));
-  source_str.reset();
+  std::unique_ptr<char[]> bytecode_str(Runtime::compileFromCStr(source));
   Marshal::Reader reader(&scope, thread->runtime(), bytecode_str.get());
   reader.readLong();  // magic
   reader.readLong();  // mtime
@@ -271,14 +268,29 @@ static RawObject compileStr(Thread* thread, const Str& source) {
   return reader.readObject();
 }
 
+static RawObject compileBytes(Thread* thread, const Bytes& source) {
+  word bytes_len = source.length();
+  unique_c_ptr<byte[]> source_bytes(
+      static_cast<byte*>(std::malloc(bytes_len + 1)));
+  source.copyTo(source_bytes.get(), bytes_len);
+  source_bytes[bytes_len] = '\0';
+  return compileToBytecode(thread, reinterpret_cast<char*>(source_bytes.get()));
+}
+
+static RawObject compileStr(Thread* thread, const Str& source) {
+  unique_c_ptr<char[]> source_str(source.toCStr());
+  return compileToBytecode(thread, source_str.get());
+}
+
 RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  if (!args.get(0).isStr()) {
+  // TODO(T40808881): Add compile support for bytearray, buffer, and subclasses
+  Object data(&scope, args.get(0));
+  if (!data.isStr() && !data.isBytes()) {
     return thread->raiseTypeErrorWithCStr(
-        "compile() does not yet support non-str source");
+        "compile() currently only supports a str or bytes source");
   }
-  Str source_str(&scope, args.get(0));
   Str filename(&scope, args.get(1));
   Str mode(&scope, args.get(2));
   // TODO(emacs): Refactor into sane argument-fetching code
@@ -301,7 +313,15 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
         "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
   }
 
-  Code code(&scope, compileStr(thread, source_str));
+  Object code_obj(&scope, NoneType::object());
+  if (data.isStr()) {
+    Str source_str(&scope, *data);
+    code_obj = compileStr(thread, source_str);
+  } else {
+    Bytes source_bytes(&scope, *data);
+    code_obj = compileBytes(thread, source_bytes);
+  }
+  Code code(&scope, *code_obj);
   code.setFilename(*filename);
   return *code;
 }
