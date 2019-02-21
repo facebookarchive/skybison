@@ -70,24 +70,24 @@ class TracebackPrinter : public FrameVisitor {
     lines_.emplace_back(line.str());
   };
 
-  void print(std::ostream* os) {
-    *os << "Traceback (most recent call last)\n";
+  void print(FILE* fp) {
+    fprintf(fp, "Traceback (most recent call last)\n");
     for (auto it = lines_.rbegin(); it != lines_.rend(); it++) {
-      *os << *it << '\n';
+      fprintf(fp, "%s\n", it->c_str());
     }
-    os->flush();
+    fflush(fp);
   }
 
  private:
   std::vector<std::string> lines_;
 };
 
-void Utils::printTraceback() { printTraceback(&std::cerr); }
+void Utils::printTraceback() { printTraceback(stderr); }
 
-void Utils::printTraceback(std::ostream* os) {
+void Utils::printTraceback(FILE* fp) {
   TracebackPrinter printer;
   Thread::currentThread()->visitFrames(&printer);
-  printer.print(os);
+  printer.print(fp);
 }
 
 }  // namespace python

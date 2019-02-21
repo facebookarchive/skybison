@@ -259,9 +259,14 @@ TEST(ScavengerTest, IgnoreCallbackException) {
   const char* src = R"(
 a = 1
 b = 2
-def f():
-  global a
-  a = 3
+callback_ran = False
+callback_returned = False
+def f(ref):
+  global callback_ran
+  callback_ran = True
+  raise AttributeError("aloha")
+  global callback_returned
+  callback_returned = True
 def g(ref, c=4):
   global b
   b = c
@@ -291,15 +296,10 @@ def g(ref, c=4):
     EXPECT_EQ(b.value(), 2);
   }
 
-  std::stringstream tmp_stdout;
-  std::ostream* saved_stdout = builtinStderr;
-  builtinStderr = &tmp_stdout;
   runtime.collectGarbage();
-  builtinStderr = saved_stdout;
-  std::string exception = tmp_stdout.str();
-  EXPECT_EQ(exception,
-            "ignore pending exception: TypeError: 'f' takes max 0 positional "
-            "arguments but 1 given\nTraceback (most recent call last)\n");
+  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+  EXPECT_EQ(moduleAt(&runtime, main, "callback_ran"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime, main, "callback_returned"), Bool::falseObj());
 
   EXPECT_EQ(ref1.referent(), NoneType::object());
   EXPECT_EQ(ref1.callback(), NoneType::object());

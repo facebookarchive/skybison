@@ -415,19 +415,19 @@ void Thread::ignorePendingException() {
   if (!hasPendingException()) {
     return;
   }
-  *builtinStderr << "ignore pending exception";
+  fprintf(stderr, "ignore pending exception");
   if (pendingExceptionValue()->isStr()) {
     RawStr message = RawStr::cast(pendingExceptionValue());
     word len = message->length();
     byte* buffer = new byte[len + 1];
     message->copyTo(buffer, len);
     buffer[len] = 0;
-    *builtinStderr << ": " << buffer;
+    fprintf(stderr, ": %s", buffer);
     delete[] buffer;
   }
-  *builtinStderr << "\n";
+  fprintf(stderr, "\n");
   clearPendingException();
-  Utils::printTraceback(builtinStderr);
+  Utils::printTraceback(stderr);
 }
 
 void Thread::printPendingException() {

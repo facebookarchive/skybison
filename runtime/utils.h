@@ -145,10 +145,10 @@ class Utils {
 #endif
   }
 
-  // Prints a python level stack trace to std::cerr or the ostream of your
+  // Prints a python level stack trace to stderr or the file pointer of your
   // choice.
   static void printTraceback();
-  static void printTraceback(std::ostream* os);
+  static void printTraceback(FILE* fp);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);
