@@ -1747,8 +1747,8 @@ hello.say_hello()
 )";
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, main_src),
-                            LayoutId::kRuntimeError,
-                            "importModule is unimplemented!"));
+                            LayoutId::kModuleNotFoundError,
+                            "No module named 'hello'"));
 }
 
 TEST(ThreadTest, ImportMissingAttributeTest) {

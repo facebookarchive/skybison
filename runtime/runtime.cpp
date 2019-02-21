@@ -98,8 +98,8 @@ Runtime::Runtime(word heap_size)
   initializeInterned();
   initializeSymbols();
   initializeTypes();
-  initializeModules();
   initializeApiData();
+  initializeModules();
 }
 
 Runtime::Runtime() : Runtime(64 * kMiB) {}
@@ -1617,7 +1617,8 @@ RawObject Runtime::executeModule(const char* buffer, const Module& module) {
 extern "C" struct _inittab _PyImport_Inittab[];
 
 RawObject Runtime::importModule(const Object& name) {
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Object cached_module(&scope, findModule(name));
   if (!cached_module.isNoneType()) {
     return *cached_module;
@@ -1630,8 +1631,14 @@ RawObject Runtime::importModule(const Object& name) {
       return *mod;
     }
   }
-  return Thread::currentThread()->raiseRuntimeErrorWithCStr(
-      "importModule is unimplemented!");
+
+  // Call _bootstrap._find_and_load
+  Module importlib(&scope, findModuleById(SymbolId::kUnderFrozenImportlib));
+  Object dunder_import(&scope,
+                       moduleAtById(importlib, SymbolId::kDunderImport));
+  return thread->invokeFunction2(SymbolId::kUnderFrozenImportlib,
+                                 SymbolId::kUnderFindAndLoad, name,
+                                 dunder_import);
 }
 
 // TODO(cshapiro): support fromlist and level. Ideally, we'll never implement
@@ -1824,6 +1831,9 @@ void Runtime::initializeModules() {
   for (uword i = 0; i < ARRAYSIZE(kBuiltinModules); i++) {
     (this->*kBuiltinModules[i].create_module)();
   }
+  // Importlib should be initialized separately as it's not part of
+  // sys.builtin_module_names
+  createImportlibModule();
 }
 
 void Runtime::initializeApiData() {
@@ -2360,6 +2370,43 @@ void Runtime::createUnderIoModule() {
                           unimplementedTrampoline, unimplementedTrampoline);
 
   addModule(module);
+}
+
+void Runtime::createImportlibModule() {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  // CPython's freezing tool creates the following mapping:
+  // `_frozen_importlib`: importlib/_bootstrap.py frozen bytes
+  // `_frozen_importlib_external`: importlib/_external_bootstrap.py frozen bytes
+  // This replicates that mapping for compatibility
+
+  // Run _bootstrap.py
+  Str importlib_name(&scope, symbols()->UnderFrozenImportlib());
+  Module importlib(&scope, newModule(importlib_name));
+  CHECK(!executeModule(kUnderBootstrapModuleData, importlib).isError(),
+        "Failed to initialize _bootstrap module");
+  addModule(importlib);
+
+  // Run _bootstrap_external.py
+  Str importlib_external_name(&scope,
+                              symbols()->UnderFrozenImportlibExternal());
+  Module importlib_external(&scope, newModule(importlib_external_name));
+  moduleAddGlobal(importlib_external, SymbolId::kUnderBootstrap, importlib);
+  CHECK(
+      !executeModule(kUnderBootstrapUnderExternalModuleData, importlib_external)
+           .isError(),
+      "Failed to initialize _bootstrap_external module");
+  addModule(importlib_external);
+
+  // Run _bootstrap._install(sys, _imp)
+  Module sys_module(&scope, findModuleById(SymbolId::kSys));
+  Module imp_module(&scope, findModuleById(SymbolId::kUnderImp));
+  CHECK(!thread
+             ->invokeFunction2(SymbolId::kUnderFrozenImportlib,
+                               SymbolId::kUnderInstall, sys_module, imp_module)
+             .isError(),
+        "Failed to run _bootstrap._install");
 }
 
 RawObject Runtime::createMainModule() {

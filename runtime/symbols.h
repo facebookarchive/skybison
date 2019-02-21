@@ -57,6 +57,7 @@ class Runtime;
   V(DunderIlshift, "__ilshift__")                                              \
   V(DunderImatmul, "__imatmul__")                                              \
   V(DunderImod, "__imod__")                                                    \
+  V(DunderImport, "__import__")                                                \
   V(DunderImul, "__imul__")                                                    \
   V(DunderIndex, "__index__")                                                  \
   V(DunderInit, "__init__")                                                    \
@@ -318,9 +319,14 @@ class Runtime;
   V(TypeError, "TypeError")                                                    \
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderAddress, "_address")                                                  \
+  V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
+  V(UnderFindAndLoad, "_find_and_load")                                        \
+  V(UnderFrozenImportlib, "_frozen_importlib")                                 \
+  V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderImp, "_imp")                                                          \
+  V(UnderInstall, "_install")                                                  \
   V(UnderIo, "_io")                                                            \
   V(UnderPatch, "_patch")                                                      \
   V(UnderPrintStr, "_print_str")                                               \

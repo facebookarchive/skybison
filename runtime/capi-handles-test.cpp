@@ -64,13 +64,9 @@ TEST(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
   Runtime runtime;
   HandleScope scope;
   Dict dict(&scope, runtime.apiHandles());
-
   Object obj(&scope, runtime.newInt(1));
-  ASSERT_FALSE(runtime.dictIncludes(dict, obj));
-
   ApiHandle* handle = ApiHandle::newReference(Thread::currentThread(), *obj);
   EXPECT_NE(handle, nullptr);
-
   EXPECT_TRUE(runtime.dictIncludes(dict, obj));
 }
 
@@ -230,7 +226,6 @@ TEST(CApiHandlesTest, VisitReferences) {
   ApiHandle::visitReferences(runtime.apiHandles(), &visitor);
 
   // We should've visited obj1, obj2, their types, and Type.
-  ASSERT_EQ(visitor.count(), 5);
   EXPECT_TRUE(visitor.hasVisited(*obj1));
   EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(obj1.layoutId())));
   EXPECT_TRUE(visitor.hasVisited(*obj2));

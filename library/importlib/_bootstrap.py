@@ -1156,7 +1156,8 @@ def _setup(sys_module, _imp_module):
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
-    for builtin_name in ("_warnings",):
+    # This is what CPython currently does. See bpo-31370
+    for builtin_name in ("_warnings", "_weakref"):
         if builtin_name not in sys.modules:
             builtin_module = _builtin_from_name(builtin_name)
         else:
@@ -1170,10 +1171,6 @@ def _setup(sys_module, _imp_module):
         # Python was built without threads
         thread_module = None
     setattr(self_module, "_thread", thread_module)
-
-    # Directly load the _weakref module (needed during bootstrap).
-    weakref_module = _builtin_from_name("_weakref")
-    setattr(self_module, "_weakref", weakref_module)
 
 
 def _install(sys_module, _imp_module):

@@ -1466,7 +1466,7 @@ def _setup(_bootstrap_module):
     setattr(self_module, "_thread", thread_module)
 
     # Directly load the _weakref module (needed during bootstrap).
-    weakref_module = _bootstrap._builtin_from_name("_weakref")
+    weakref_module = sys.modules["_weakref"]
     setattr(self_module, "_weakref", weakref_module)
 
     # Directly load the winreg module (needed during bootstrap).

@@ -175,6 +175,7 @@ class Runtime {
   RawObject newWeakRef();
 
   void createBuiltinsModule();
+  void createImportlibModule();
   void createImportModule();
   void createMarshalModule();
   void createOperatorModule();

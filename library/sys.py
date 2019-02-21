@@ -6,6 +6,9 @@ def exit(code=0):
     raise SystemExit(code)
 
 
+path_hooks = []
+
+
 path_importer_cache = {}
 
 
