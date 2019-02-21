@@ -191,7 +191,6 @@ def main():
                     func_list,
                     "--pyro-build",
                     build_dir,
-                    "--use-pyro-objs",
                 ),
             )
 
