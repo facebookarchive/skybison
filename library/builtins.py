@@ -76,7 +76,14 @@ class float(bootstrap=True):
         pass
 
     def __ne__(self, n: float) -> float:  # noqa: T484
-        pass
+        if not isinstance(self, float):
+            raise TypeError(
+                f"'__ne__' requires a 'float' object "
+                f"but received a '{self.__class__.__name__}'"
+            )
+        if not isinstance(n, float) and not isinstance(n, int):
+            return NotImplemented
+        return not float.__eq__(self, n)  # noqa: T484
 
     def __neg__(self) -> float:
         pass

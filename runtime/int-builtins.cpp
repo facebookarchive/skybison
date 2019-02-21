@@ -982,12 +982,13 @@ RawObject asIntObject(Thread* thread, const Object& object) {
   return *int_res;
 }
 
-RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
-  if (value.numDigits() == 1) {
-    *result = static_cast<double>(value.asWord());
-    return NoneType::object();
-  }
-
+// Convert a large int to double.  Returns true and sets `result` if the
+// conversion was successful, false if the integer is too big to fit the
+// double range.  If `is_exact` is not nullptr, it will be set to true if no
+// precision was lost.
+static inline bool convertLargeIntToDouble(const LargeInt& large_int,
+                                           double* result,
+                                           bool* result_zeros_below_mantissa) {
   // The following algorithm looks at the highest n bits of the integer and puts
   // them into the mantissa of the floating point number. It extracts two
   // extra bits to account for the highest bit not being explicitly encoded
@@ -998,9 +999,8 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
   static_assert(kWordSize == kDoubleSize, "expect equal word and double size");
 
   // Extract the highest two digits of the numbers magnitude.
-  HandleScope scope(thread);
-  LargeInt large_int(&scope, *value);
   word num_digits = large_int.numDigits();
+  DCHECK(num_digits > 1, "must have more than 1 digit");
   uword high_digit = large_int.digitAt(num_digits - 1);
   uword second_highest_digit = large_int.digitAt(num_digits - 2);
   bool is_negative = large_int.isNegative();
@@ -1054,7 +1054,8 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
 
   // Returns true if all digits (in the numbers magnitude) below the 2 highest
   // digits are zero.
-  auto lower_digits_zero = [&]() -> bool {
+  auto lower_bits_zero = [&]() -> bool {
+    if (!lesser_significand_bits_zero) return false;
     // Already scanned the digits in the negative case and can look at carry.
     if (is_negative) return carry_to_second_highest != 0;
     for (word i = num_digits - 3; i >= 0; i--) {
@@ -1062,13 +1063,16 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
     }
     return true;
   };
+  if (result_zeros_below_mantissa != nullptr) {
+    *result_zeros_below_mantissa = !(value_as_word & 1) && lower_bits_zero();
+  }
+
   // We need to round down if the least significand bit is zero, we need to
   // round up if the least significand and any other bit is one. If the
   // least significand bit is one and all other bits are zero then we look at
   // second least significand bit to round towards an even number.
   if ((value_as_word & 0x3) == 0x3 ||
-      ((value_as_word & 1) &&
-       (!lesser_significand_bits_zero || !lower_digits_zero()))) {
+      ((value_as_word & 1) && !lower_bits_zero())) {
     value_as_word++;
     // This may have triggered an overflow, so we need to add 1 to the exponent.
     if (value_as_word == (uword{1} << (kDoubleMantissaBits + 2))) {
@@ -1081,8 +1085,7 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
   // The biggest exponent is used to mark special numbers like NAN or INF.
   uword max_exponent = (1 << exponent_bits) - 1;
   if (exponent > max_exponent - 1) {
-    return thread->raiseOverflowErrorWithCStr(
-        "int too large to convert to float");
+    return false;
   }
 
   // Mask out implicit bit, combine mantissa, exponent and sign.
@@ -1090,7 +1093,53 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
   value_as_word |= exponent << kDoubleMantissaBits;
   value_as_word |= uword{is_negative} << (kDoubleMantissaBits + exponent_bits);
   std::memcpy(result, &value_as_word, kDoubleSize);
+  return true;
+}
+
+RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
+  if (value.numDigits() == 1) {
+    *result = static_cast<double>(value.asWord());
+    return NoneType::object();
+  }
+
+  HandleScope scope(thread);
+  LargeInt large_int(&scope, *value);
+  if (!convertLargeIntToDouble(large_int, result, nullptr)) {
+    return thread->raiseOverflowErrorWithCStr(
+        "int too large to convert to float");
+  }
   return NoneType::object();
+}
+
+bool doubleEqualsInt(Thread* thread, double left, const Int& right) {
+  word num_digits = right.numDigits();
+  if (num_digits == 1) {
+    word right_word = right.asWord();
+    uword magnitude = right_word < 0 ? -static_cast<uword>(right_word)
+                                     : static_cast<uword>(right_word);
+    // We have an exact representation if the the magnitude fits into the
+    // mantissa bits including the implicit one or if the magnitude bits past
+    // the mantissa are zero.
+    bool is_exact = magnitude < (uword{1} << (kDoubleMantissaBits + 1));
+    if (!is_exact) {
+      word shift = __builtin_clzl(magnitude) + kDoubleMantissaBits + 1;
+      DCHECK(shift < kBitsPerWord, "must have at least 1 bit left");
+      is_exact = magnitude << shift == 0;
+    }
+    return is_exact && left == static_cast<double>(right_word);
+  }
+
+  if (!std::isfinite(left)) {
+    return false;
+  }
+  double right_double;
+  bool is_exact;
+  HandleScope scope(thread);
+  LargeInt large_int(&scope, *right);
+  if (!convertLargeIntToDouble(large_int, &right_double, &is_exact)) {
+    return false;
+  }
+  return is_exact && left == right_double;
 }
 
 }  // namespace python

@@ -16,6 +16,10 @@ RawObject asIntObject(Thread* thread, const Object& object);
 // raises an error otherwise.
 RawObject convertIntToDouble(Thread* thread, const Int& value, double* result);
 
+// Returns true if the Float `left` is equals Int `right`. Returns false if
+// `right` cannot be exactly represented as a Float.
+bool doubleEqualsInt(Thread* thread, double left, const Int& right);
+
 class IntBuiltins {
  public:
   static void initialize(Runtime* runtime);

@@ -4,6 +4,7 @@
 
 #include "float-builtins.h"
 #include "handles.h"
+#include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "test-utils.h"
@@ -11,26 +12,6 @@
 namespace python {
 
 using namespace testing;
-
-TEST(FloatBuiltinsTest, CompareDoubleEq) {
-  Runtime runtime;
-  HandleScope scope;
-
-  runFromCStr(&runtime, R"(
-a = 1.0
-b = 2.0
-a_eq_b = a == b
-a_eq_a = a == a
-b_eq_b = b == b
-)");
-
-  Object a_eq_b(&scope, moduleAt(&runtime, "__main__", "a_eq_b"));
-  EXPECT_EQ(*a_eq_b, Bool::falseObj());
-  Object a_eq_a(&scope, moduleAt(&runtime, "__main__", "a_eq_a"));
-  EXPECT_EQ(*a_eq_a, Bool::trueObj());
-  Object b_eq_b(&scope, moduleAt(&runtime, "__main__", "b_eq_b"));
-  EXPECT_EQ(*b_eq_b, Bool::trueObj());
-}
 
 TEST(FloatBuiltinsTest, CompareDoubleGe) {
   Runtime runtime;
@@ -162,24 +143,28 @@ TEST(FloatBuiltinsTest, DunderMulWithNonFloatOtherReturnsNotImplemented) {
   EXPECT_TRUE(result.isNotImplemented());
 }
 
-TEST(FloatBuiltinsTest, CompareDoubleNe) {
+TEST(FloatBuiltinsTest, DunderNeWithInequalFloatsReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
+  runFromCStr(&runtime, "result = float.__ne__(12.2, 2.12)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
 
-  runFromCStr(&runtime, R"(
-a = 1.0
-b = 2.0
-a_ne_b = a != b
-a_ne_a = a != a
-b_ne_b = b != b
-)");
+TEST(FloatBuiltinsTest, DunderNeWithEqualFloatIntReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = float.__ne__(34.0, 34)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
 
-  Object a_ne_b(&scope, moduleAt(&runtime, "__main__", "a_ne_b"));
-  EXPECT_EQ(*a_ne_b, Bool::trueObj());
-  Object a_ne_a(&scope, moduleAt(&runtime, "__main__", "a_ne_a"));
-  EXPECT_EQ(*a_ne_a, Bool::falseObj());
-  Object b_ne_b(&scope, moduleAt(&runtime, "__main__", "b_ne_b"));
-  EXPECT_EQ(*b_ne_b, Bool::falseObj());
+TEST(FloatBuiltinsTest, DunderNeWithStringReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = float.__ne__(5.5, '')");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
 }
 
 TEST(FloatBuiltinsTest, BinaryAddDouble) {
@@ -579,16 +564,117 @@ TEST(FloatBuiltinsTest, SubWithNonFloatOtherRaisesTypeError) {
                             "'__sub__' is not supported"));
 }
 
-TEST(FloatBuiltins, NanIsNeqNan) {
+TEST(FloatBuiltinsTest, DunderEqWithFloatsReturnsBool) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
-nan = float("nan")
-)");
   HandleScope scope;
-  Float nan(&scope, moduleAt(&runtime, "__main__", "nan"));
+  Object nan(&scope,
+             runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object f0(&scope, runtime.newFloat(1.0));
+  Object f1(&scope, runtime.newFloat(-42.5));
+  Object zero(&scope, runtime.newFloat(0.0));
+  Object neg_zero(&scope, runtime.newFloat(-0.0));
+  Object null(&scope, runtime.newInt(0));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, f0, f0), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, f0, f1), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, nan, nan), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, zero, neg_zero),
+            Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, neg_zero, null),
+            Bool::trueObj());
+}
 
-  Object result(&scope, runBuiltin(FloatBuiltins::dunderEq, nan, nan));
-  EXPECT_EQ(*result, RawBool::falseObj());
+TEST(FloatBuiltinsTest, DunderEqWithSmallIntExactReturnsBool) {
+  Runtime runtime;
+  HandleScope scope;
+  Object nan(&scope,
+             runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object float0(&scope, runtime.newFloat(31.0));
+  Object float1(&scope, runtime.newFloat(31.125));
+  Object int0(&scope, runtime.newFloat(31));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, float0, int0), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, float1, int0),
+            Bool::falseObj());
+  word mantissa_max = (word{1} << (kDoubleMantissaBits + 1)) - 1;
+  Object max_float(&scope, runtime.newFloat(static_cast<double>(mantissa_max)));
+  Object max_int(&scope, runtime.newFloat(mantissa_max));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, max_float, max_int),
+            Bool::trueObj());
+  Object neg_max_float(&scope,
+                       runtime.newFloat(static_cast<double>(-mantissa_max)));
+  Object neg_max_int(&scope, runtime.newInt(-mantissa_max));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, neg_max_float, neg_max_int),
+            Bool::trueObj());
+
+  word big0 = word(1) << (kDoubleMantissaBits + 2);
+  ASSERT_EQ(static_cast<double>(big0), static_cast<double>(big0) + 1.0);
+  Object big0_float(&scope, runtime.newFloat(static_cast<double>(big0)));
+  Int big0_int(&scope, runtime.newInt(big0));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, big0_float, big0_int),
+            Bool::trueObj());
+
+  word big1 = (word(1) << (kDoubleMantissaBits + 1)) | (word(1) << 11);
+  ASSERT_EQ(static_cast<double>(big1), static_cast<double>(big1) + 1.0);
+  Object big1_float(&scope, runtime.newFloat(static_cast<double>(big1)));
+  Int big1_int(&scope, runtime.newInt(big1));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, big1_float, big1_int),
+            Bool::trueObj());
+}
+
+TEST(FloatBuiltinsTest, DunderEqWithSmallIntInexactReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  word big = (word(1) << (kDoubleMantissaBits + 4)) + 3;
+  ASSERT_EQ(static_cast<double>(big), static_cast<double>(big) + 3.0);
+  Object big_float(&scope, runtime.newFloat(static_cast<double>(big)));
+  Int big_int(&scope, runtime.newInt(big));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, big_float, big_int),
+            Bool::falseObj());
+}
+
+TEST(FloatBuiltinsTest, DunderEqWithLargeIntExactReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object int0(&scope, runtime.newIntWithDigits({0, 1}));
+  Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, float0, int0), Bool::trueObj());
+}
+
+TEST(FloatBuiltinsTest, DunderEqWithLargeIntInexactReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object int0(&scope, runtime.newIntWithDigits({0x400, 1}));
+  Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
+  ASSERT_EQ(RawFloat::cast(runBuiltin(IntBuiltins::dunderFloat, int0)).value(),
+            RawFloat::cast(*float0).value());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, float0, int0),
+            Bool::falseObj());
+}
+
+TEST(FloatBuiltinsTest, DunderEqWithNonFiniteFloatIntReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object nan(&scope,
+             runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object inf(&scope, runtime.newFloat(std::numeric_limits<double>::infinity()));
+  Object int0(&scope, runtime.newInt(7));
+  std::unique_ptr<uword[]> digits(new uword[100]());
+  digits[99] = 1;
+  Object int1(&scope, runtime.newIntWithDigits(View<uword>(digits.get(), 100)));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, nan, int0), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, inf, int0), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, nan, int1), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, inf, int1), Bool::falseObj());
+}
+
+TEST(FloatBuiltinsTest, DunderEqWithFloatOverflowingIntReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object float0(&scope, runtime.newFloat(8.25));
+  std::unique_ptr<uword[]> digits(new uword[100]());
+  digits[99] = 1;
+  Object int0(&scope, runtime.newIntWithDigits(View<uword>(digits.get(), 100)));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, float0, int0),
+            Bool::falseObj());
 }
 
 TEST(FloatBuiltinsTest, DunderFloatWithFloatLiteralReturnsSameObject) {

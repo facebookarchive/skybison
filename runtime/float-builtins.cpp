@@ -74,7 +74,6 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNeg, dunderNeg},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderPow, dunderPow},
@@ -163,18 +162,25 @@ RawObject FloatBuiltins::floatFromString(Thread* thread, RawStr str) {
 }
 
 RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isFloat() && other->isFloat()) {
-    RawFloat left = RawFloat::cast(self);
-    RawFloat right = RawFloat::cast(other);
-    return Bool::fromBool(left->value() == right->value());
+  Object self(&scope, args.get(0));
+  if (!self.isFloat()) {
+    return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'float' object");
   }
-  if (self->isInt() || other->isInt()) {
-    UNIMPLEMENTED("integer to float conversion");
+  double left = RawFloat::cast(*self)->value();
+
+  Object right(&scope, args.get(1));
+  bool result;
+  if (right.isFloat()) {
+    result = left == RawFloat::cast(*right)->value();
+  } else if (right.isInt()) {
+    Int right_int(&scope, *right);
+    result = doubleEqualsInt(thread, left, right_int);
+  } else {
+    return thread->runtime()->notImplemented();
   }
-  return thread->runtime()->notImplemented();
+  return Bool::fromBool(result);
 }
 
 RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
@@ -271,21 +277,6 @@ RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (!maybe_error.isNoneType()) return *maybe_error;
 
   return thread->runtime()->newFloat(left * right);
-}
-
-RawObject FloatBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isFloat() && other->isFloat()) {
-    RawFloat left = RawFloat::cast(self);
-    RawFloat right = RawFloat::cast(other);
-    return Bool::fromBool(left->value() != right->value());
-  }
-  if (self->isInt() || other->isInt()) {
-    UNIMPLEMENTED("integer to float conversion");
-  }
-  return thread->runtime()->notImplemented();
 }
 
 RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
