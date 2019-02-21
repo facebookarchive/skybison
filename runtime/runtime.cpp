@@ -2298,7 +2298,7 @@ void Runtime::createImportModule() {
                           nativeTrampoline<builtinImpReleaseLock>,
                           unimplementedTrampoline, unimplementedTrampoline);
   addModule(module);
-  CHECK(!executeModule(k_impModuleData, module).isError(),
+  CHECK(!executeModule(kUnderImpModuleData, module).isError(),
         "Failed to initialize _imp module");
 }
 
@@ -2309,7 +2309,7 @@ void Runtime::createWarningsModule() {
 
   moduleAddBuiltinFunction(module, SymbolId::kWarn, warningsWarn);
   addModule(module);
-  CHECK(!executeModule(k_warningsModuleData, module).isError(),
+  CHECK(!executeModule(kUnderWarningsModuleData, module).isError(),
         "Failed to initialize _warnings module");
 }
 
@@ -2320,7 +2320,7 @@ void Runtime::createWeakRefModule() {
 
   moduleAddBuiltinType(module, SymbolId::kRef, LayoutId::kWeakRef);
   addModule(module);
-  CHECK(!executeModule(k_weakrefModuleData, module).isError(),
+  CHECK(!executeModule(kUnderWeakrefModuleData, module).isError(),
         "Failed to initialize _weakref module");
 }
 

@@ -5,11 +5,14 @@ import ctypes
 import os
 import pathlib
 import py_compile
+import re
 import sys
 import tempfile
 
+
 NAMESPACE_HEADER = "namespace python {"
 NAMESPACE_FOOTER = "}  // namespace python"
+UPPERCASE_RE = re.compile("_([a-zA-Z])")
 
 
 def compile_file(filename):
@@ -29,6 +32,7 @@ def to_char_array(byte_array):
 def decl(filename):
     """Returns a declaration for the module data constant."""
     symbol = os.path.splitext(os.path.basename(filename).capitalize())[0]
+    symbol = re.sub(UPPERCASE_RE, lambda m: f"Under{m.group(1).upper()}", symbol)
     return f"extern const char k{symbol}ModuleData[]"
 
 
