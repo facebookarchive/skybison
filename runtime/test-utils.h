@@ -5,7 +5,6 @@
 #include "runtime.h"
 
 #include <functional>
-#include <iosfwd>
 #include <string>
 #include "gtest/gtest.h"
 
@@ -28,10 +27,6 @@
 
 namespace python {
 class Runtime;
-
-std::ostream& operator<<(std::ostream& os, const Str& str);
-std::ostream& operator<<(std::ostream& os, CastError err);
-std::ostream& operator<<(std::ostream& os, const Int& value);
 
 namespace testing {
 

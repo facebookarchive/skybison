@@ -74,7 +74,7 @@ Expected: 200.25)";
       "list", "", list, {Value::none(), false, 100, 200.5, "four"});
   ASSERT_FALSE(bad_str);
   const char* str_msg = R"(Value of: list[4]
-  Actual: hello
+  Actual: "hello"
 Expected: four)";
   EXPECT_STREQ(bad_str.message(), str_msg);
 }

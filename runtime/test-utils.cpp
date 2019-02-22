@@ -12,6 +12,7 @@
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "debugging.h"
 #include "frame.h"
 #include "handles.h"
 #include "os.h"
@@ -20,40 +21,6 @@
 #include "utils.h"
 
 namespace python {
-
-std::ostream& operator<<(std::ostream& os, const Str& str) {
-  unique_c_ptr<char[]> data(str.toCStr());
-  return os.write(data.get(), str.length());
-}
-
-std::ostream& operator<<(std::ostream& os, CastError err) {
-  switch (err) {
-    case CastError::None:
-      return os << "None";
-    case CastError::Underflow:
-      return os << "Underflow";
-    case CastError::Overflow:
-      return os << "Overflow";
-  }
-  return os << "<invalid>";
-}
-
-std::ostream& operator<<(std::ostream& os, const Int& value) {
-  word num_digits = value.numDigits();
-  if (num_digits == 1) {
-    return os << value.asWord();
-  }
-
-  os << "largeint([";
-  for (word i = 0; i < num_digits; i++) {
-    uword digit = value.digitAt(i);
-    if (i > 0) {
-      os << ", ";
-    }
-    os << "0x" << std::hex << digit << std::dec;
-  }
-  return os << "])";
-}
 
 namespace testing {
 
@@ -409,7 +376,7 @@ RawObject listFromRange(word start, word stop) {
       Type type(&scope, thread->pendingExceptionType());
       Str type_name(&scope, type.name());
       return ::testing::AssertionFailure()
-             << "pending '" << type_name << "' exception";
+             << "pending " << type_name << " exception";
     }
     return ::testing::AssertionFailure() << "is an Error";
   }
@@ -435,7 +402,7 @@ RawObject listFromRange(word start, word stop) {
       Type type(&scope, thread->pendingExceptionType());
       Str type_name(&scope, type.name());
       return ::testing::AssertionFailure()
-             << "pending " << type_name << "' exception";
+             << "pending " << type_name << " exception";
     }
     return ::testing::AssertionFailure() << "is an Error";
   }

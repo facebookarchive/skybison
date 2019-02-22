@@ -15,6 +15,7 @@
 #include "bytes-builtins.h"
 #include "callback.h"
 #include "complex-builtins.h"
+#include "debugging.h"
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
@@ -90,6 +91,7 @@ static const SymbolId kComparisonSelector[] = {
 
 Runtime::Runtime(word heap_size)
     : heap_(heap_size), new_value_cell_callback_(this) {
+  initializeDebugging();
   initializeRandom();
   initializeThreads();
   // This must be called before initializeTypes is called. Methods in

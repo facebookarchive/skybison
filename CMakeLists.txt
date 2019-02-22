@@ -204,6 +204,8 @@ add_library(
   runtime/capi-handles.h
   runtime/complex-builtins.cpp
   runtime/complex-builtins.h
+  runtime/debugging.h
+  runtime/debugging.cpp
   runtime/descriptor-builtins.cpp
   runtime/descriptor-builtins.h
   runtime/dict-builtins.cpp
@@ -349,6 +351,7 @@ add_library(
   runtime/bytes-builtins-test.cpp
   runtime/capi-handles-test.cpp
   runtime/complex-builtins-test.cpp
+  runtime/debugging-test.cpp
   runtime/descriptor-builtins-test.cpp
   runtime/dict-builtins-test.cpp
   runtime/exception-builtins-test.cpp
