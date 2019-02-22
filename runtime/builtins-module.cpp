@@ -298,9 +298,10 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "compile() does not yet support user-supplied flags");
   }
-  if (args.get(4) != Bool::falseObj()) {  // not the default
+  // TODO(T40872645): Add support for compiler flag forwarding
+  if (args.get(4) == Bool::falseObj()) {
     return thread->raiseTypeErrorWithCStr(
-        "compile() does not yet support user-supplied dont_inherit");
+        "compile() does not yet support compiler flag forwarding");
   }
   if (args.get(5) != SmallInt::fromWord(-1)) {  // not the default
     return thread->raiseTypeErrorWithCStr(

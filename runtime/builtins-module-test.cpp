@@ -711,8 +711,9 @@ d = getattr(list, '__qualname__')
 TEST(BuiltinsModuleTest, BuiltinCompile) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime,
-              R"(code = compile("a = 1\nb = 2", "<string>", "eval"))");
+  runFromCStr(
+      &runtime,
+      R"(code = compile("a = 1\nb = 2", "<string>", "eval", dont_inherit=True))");
   Str filename(&scope, runtime.newStrFromCStr("<string>"));
   Code code(&scope, moduleAt(&runtime, "__main__", "code"));
   ASSERT_TRUE(code.filename().isStr());
@@ -730,7 +731,7 @@ TEST(BuiltinsModuleTest, BuiltinCompileBytes) {
   HandleScope scope;
   runFromCStr(&runtime, R"(
 data = b'a = 1; b = 2'
-code = compile(data, "<string>", "eval")
+code = compile(data, "<string>", "eval", dont_inherit=True)
 )");
   Code code(&scope, moduleAt(&runtime, "__main__", "code"));
   Object filename(&scope, code.filename());
@@ -762,7 +763,8 @@ TEST(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
   Runtime runtime;
   HandleScope scope;
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "compile('hello', 'hello', 'hello')"),
+      runFromCStr(&runtime,
+                  "compile('hello', 'hello', 'hello', dont_inherit=True)"),
       LayoutId::kValueError,
       "Expected mode to be 'exec', 'eval', or 'single' in 'compile'"));
 }

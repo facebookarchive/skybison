@@ -19,3 +19,17 @@ class FlagsStructSeq:
 
 
 flags = FlagsStructSeq()
+
+
+# TODO(T40871632): Add sys.implementation as a namespace object
+class ImplementationType:
+    def __init__(self):
+        # TODO(T40871490): Cache compiles *.py files to a __cache__ directory
+        # Setting cache_tag to None avoids caching or searching for cached files
+        self.cache_tag = None
+
+
+implementation = ImplementationType()
+
+
+dont_write_bytecode = False
