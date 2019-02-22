@@ -23,6 +23,18 @@ def format(obj, fmt_spec):
     return result
 
 
+class type(bootstrap=True):
+    def __call__(self, *args, **kwargs):
+        pass
+
+    def __new__(cls, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
+        pass
+
+    # Not a patch; just empty
+    def __init__(self, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
+        pass
+
+
 class object(bootstrap=True):  # noqa: E999
     def __new__(cls, *args, **kwargs):
         pass
@@ -120,6 +132,29 @@ class float(bootstrap=True):
         pass
 
     def __sub__(self, n: float) -> float:
+        pass
+
+
+class property(bootstrap=True):
+    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
+        pass
+
+    def __init__(self, fget=None, fset=None, fdel=None):
+        pass
+
+    def deleter(self, fn):
+        pass
+
+    def setter(self, fn):
+        pass
+
+    def getter(self, fn):
+        pass
+
+    def __get__(self, instance, owner):
+        pass
+
+    def __set__(self, instance, value):
         pass
 
 
@@ -308,6 +343,18 @@ class int(bootstrap=True):
     def conjugate(self) -> int:
         pass
 
+    @property
+    def denominator(self) -> int:
+        return 1  # noqa: T484
+
+    @property
+    def imag(self) -> int:
+        return 0  # noqa: T484
+
+    numerator = property(__int__)
+
+    real = property(__int__)
+
 
 class ImportError(bootstrap=True):
     def __init__(self, *args, name=None, path=None):
@@ -428,18 +475,6 @@ class list(bootstrap=True):
 
 class slice(bootstrap=True):
     def __new__(cls, start_or_stop, stop=_UnboundValue, step=None):
-        pass
-
-
-class type(bootstrap=True):
-    def __call__(self, *args, **kwargs):
-        pass
-
-    def __new__(cls, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
-        pass
-
-    # Not a patch; just empty
-    def __init__(self, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
         pass
 
 
@@ -739,29 +774,6 @@ class classmethod(bootstrap=True):
         pass
 
     def __get__(self, instance, owner):
-        pass
-
-
-class property(bootstrap=True):
-    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
-        pass
-
-    def __init__(self, fget=None, fset=None, fdel=None):
-        pass
-
-    def deleter(self, fn):
-        pass
-
-    def setter(self, fn):
-        pass
-
-    def getter(self, fn):
-        pass
-
-    def __get__(self, instance, owner):
-        pass
-
-    def __set__(self, instance, value):
         pass
 
 

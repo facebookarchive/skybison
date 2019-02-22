@@ -3230,4 +3230,36 @@ TEST(IntBuiltinsTest, ConjugateAliasesDunderInt) {
   EXPECT_EQ(conjugate.entryEx(), dint.entryEx());
 }
 
+TEST(IntBuiltinsTest, DenominatorReturnsOne) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = (44).denominator");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST(IntBuiltinsTest, ImagReturnsZero) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = (44).imag");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+}
+
+TEST(IntBuiltinsTest, NumeratorReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = (44).numerator");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 44));
+}
+
+TEST(IntBuiltinsTest, RealReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = (44).real");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 44));
+}
+
 }  // namespace python
