@@ -11,20 +11,21 @@ namespace python {
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict);
 
-class TypeBuiltins {
+class TypeBuiltins
+    : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {
  public:
-  static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
   static RawObject dunderCall(Thread* thread, Frame* caller, word nargs);
   static RawObject dunderCallKw(Thread* thread, Frame* caller, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<NativeMethod> kNativeMethods;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TypeBuiltins);
 };
 

@@ -22,16 +22,15 @@ class ObjectBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
 };
 
-class NoneBuiltins {
+class NoneBuiltins
+    : public Builtins<NoneBuiltins, SymbolId::kNoneType, LayoutId::kNoneType> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderNew(Thread*, Frame*, word);
   static RawObject dunderRepr(Thread*, Frame*, word);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);
 };
 

@@ -44,10 +44,9 @@ RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter);
 // Returns Error::object() if there are no more objects
 RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter);
 
-class DictBuiltins {
+class DictBuiltins
+    : public Builtins<DictBuiltins, SymbolId::kDict, LayoutId::kDict> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
@@ -61,88 +60,88 @@ class DictBuiltins {
   static RawObject values(Thread* thread, Frame* frame, word nargs);
   static RawObject get(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictBuiltins);
 };
 
-class DictItemIteratorBuiltins {
+class DictItemIteratorBuiltins
+    : public Builtins<DictItemIteratorBuiltins, SymbolId::kDictItemIterator,
+                      LayoutId::kDictItemIterator> {
  public:
-  static void initialize(Runtime* runtime);
 
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemIteratorBuiltins);
 };
 
-class DictItemsBuiltins {
+class DictItemsBuiltins
+    : public Builtins<DictItemsBuiltins, SymbolId::kDictItems,
+                      LayoutId::kDictItems> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemsBuiltins);
 };
 
-class DictKeyIteratorBuiltins {
+class DictKeyIteratorBuiltins
+    : public Builtins<DictKeyIteratorBuiltins, SymbolId::kDictKeyIterator,
+                      LayoutId::kDictKeyIterator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeyIteratorBuiltins);
 };
 
-class DictKeysBuiltins {
+class DictKeysBuiltins : public Builtins<DictKeysBuiltins, SymbolId::kDictKeys,
+                                         LayoutId::kDictKeys> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeysBuiltins);
 };
 
-class DictValueIteratorBuiltins {
+class DictValueIteratorBuiltins
+    : public Builtins<DictValueIteratorBuiltins, SymbolId::kDictValueIterator,
+                      LayoutId::kDictValueIterator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValueIteratorBuiltins);
 };
 
-class DictValuesBuiltins {
+class DictValuesBuiltins
+    : public Builtins<DictValuesBuiltins, SymbolId::kDictValues,
+                      LayoutId::kDictValues> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValuesBuiltins);
 };
 

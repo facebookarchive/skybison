@@ -174,12 +174,12 @@ RawObject listIteratorNext(Thread* thread, const ListIterator& iter) {
   return item;
 }
 
-const BuiltinAttribute ListBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> ListBuiltins::kAttributes = {
     {SymbolId::kItems, RawList::kItemsOffset},
     {SymbolId::kAllocated, RawList::kAllocatedOffset},
 };
 
-const NativeMethod ListBuiltins::kNativeMethods[] = {
+const View<NativeMethod> ListBuiltins::kNativeMethods = {
     {SymbolId::kAppend, nativeTrampoline<append>},
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
@@ -195,14 +195,9 @@ const NativeMethod ListBuiltins::kNativeMethods[] = {
     {SymbolId::kRemove, nativeTrampoline<remove>},
 };
 
-const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> ListBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderNew, dunderNew},
 };
-
-void ListBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinType(SymbolId::kList, LayoutId::kList, LayoutId::kObject,
-                          kAttributes, kNativeMethods, kBuiltinMethods);
-}
 
 RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
@@ -519,17 +514,11 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newListIterator(self);
 }
 
-const NativeMethod ListIteratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> ListIteratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
-
-void ListIteratorBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type list_iter(&scope, runtime->addBuiltinTypeWithNativeMethods(
-                             SymbolId::kListIterator, LayoutId::kListIterator,
-                             LayoutId::kObject, kNativeMethods));
-}
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+};
 
 RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                            word nargs) {

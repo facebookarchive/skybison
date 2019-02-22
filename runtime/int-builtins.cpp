@@ -14,7 +14,7 @@
 
 namespace python {
 
-const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> IntBuiltins::kBuiltinMethods = {
     {SymbolId::kBitLength, bitLength},
     {SymbolId::kConjugate, dunderInt},
     {SymbolId::kDunderAbs, dunderAbs},
@@ -48,22 +48,14 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
 };
 
-void IntBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithBuiltinMethods(
-                        SymbolId::kInt, LayoutId::kInt, LayoutId::kObject,
-                        kBuiltinMethods));
-  runtime->typeAddNativeFunctionKw(type, SymbolId::kToBytes,
+void IntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  new_type.setBuiltinBase(LayoutId::kInt);
+  runtime->typeAddNativeFunctionKw(new_type, SymbolId::kToBytes,
                                    nativeTrampoline<toBytes>,
                                    nativeTrampolineKw<toBytesKw>);
-  runtime->typeAddNativeFunctionKw(type, SymbolId::kFromBytes,
+  runtime->typeAddNativeFunctionKw(new_type, SymbolId::kFromBytes,
                                    nativeTrampoline<fromBytes>,
                                    nativeTrampolineKw<fromBytesKw>);
-
-  Type largeint_type(
-      &scope, runtime->addEmptyBuiltinType(
-                  SymbolId::kLargeInt, LayoutId::kLargeInt, LayoutId::kInt));
-  largeint_type.setBuiltinBase(LayoutId::kInt);
 }
 
 RawObject IntBuiltins::asInt(const Int& value) {
@@ -201,18 +193,14 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
                     [](Thread*, const Int& self) { return asInt(self); });
 }
 
-const NativeMethod SmallIntBuiltins::kNativeMethods[] = {
+const View<NativeMethod> SmallIntBuiltins::kNativeMethods = {
     {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
 };
 
-void SmallIntBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithNativeMethods(
-                        SymbolId::kSmallInt, LayoutId::kSmallInt,
-                        LayoutId::kInt, kNativeMethods));
-  type.setBuiltinBase(LayoutId::kInt);
+void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
   // We want to lookup the class of an immediate type by using the 5-bit tag
   // value as an index into the class table.  Replicate the class object for
   // SmallInt to all locations that decode to a SmallInt tag.
@@ -220,7 +208,7 @@ void SmallIntBuiltins::initialize(Runtime* runtime) {
     DCHECK(
         runtime->layoutAt(static_cast<LayoutId>(i << 1)) == NoneType::object(),
         "list collision");
-    runtime->layoutAtPut(static_cast<LayoutId>(i << 1), *type);
+    runtime->layoutAtPut(static_cast<LayoutId>(i << 1), *new_type);
   }
 }
 
@@ -943,17 +931,9 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::isTrue(thread, frame, arg);
 }
 
-const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> BoolBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderNew, dunderNew},
 };
-
-void BoolBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithBuiltinMethods(
-                        SymbolId::kBool, LayoutId::kBool, LayoutId::kInt,
-                        kBuiltinMethods));
-  type.setBuiltinBase(LayoutId::kInt);
-}
 
 RawObject asIntObject(Thread* thread, const Object& object) {
   if (object.isInt()) {

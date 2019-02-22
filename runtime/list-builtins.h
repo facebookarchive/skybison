@@ -37,10 +37,9 @@ RawObject listSort(Thread* thread, const List& list);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject listIteratorNext(Thread* thread, const ListIterator& iter);
 
-class ListBuiltins {
+class ListBuiltins
+    : public Builtins<ListBuiltins, SymbolId::kList, LayoutId::kList> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject append(Thread* thread, Frame* frame, word nargs);
   static RawObject extend(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
@@ -56,25 +55,25 @@ class ListBuiltins {
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
   static RawObject remove(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<NativeMethod> kNativeMethods;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListBuiltins);
 };
 
-class ListIteratorBuiltins {
+class ListIteratorBuiltins
+    : public Builtins<ListIteratorBuiltins, SymbolId::kListIterator,
+                      LayoutId::kListIterator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIteratorBuiltins);
 };
 

@@ -9,11 +9,11 @@
 
 namespace python {
 
-const NativeMethod FunctionBuiltins::kNativeMethods[] = {
+const View<NativeMethod> FunctionBuiltins::kNativeMethods = {
     {SymbolId::kDunderGet, nativeTrampoline<dunderGet>},
 };
 
-const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> FunctionBuiltins::kAttributes = {
     {SymbolId::kDunderCode, RawFunction::kCodeOffset},
     {SymbolId::kDunderDoc, RawFunction::kDocOffset},
     {SymbolId::kDunderModule, RawFunction::kModuleOffset},
@@ -22,13 +22,9 @@ const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     {SymbolId::kDunderDict, RawFunction::kDictOffset},
 };
 
-void FunctionBuiltins::initialize(Runtime* runtime) {
+void FunctionBuiltins::postInitialize(Runtime*, const Type& new_type) {
   HandleScope scope;
-  Type function(&scope, runtime->addBuiltinType(
-                            SymbolId::kFunction, LayoutId::kFunction,
-                            LayoutId::kObject, kAttributes, kNativeMethods,
-                            View<BuiltinMethod>(nullptr, 0)));
-  Layout layout(&scope, function.instanceLayout());
+  Layout layout(&scope, new_type.instanceLayout());
   layout.setOverflowAttributes(SmallInt::fromWord(RawFunction::kDictOffset));
 }
 

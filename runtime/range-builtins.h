@@ -6,27 +6,28 @@
 namespace python {
 
 // TODO(dulinr): write this in Python
-class RangeBuiltins {
+class RangeBuiltins
+    : public Builtins<RangeBuiltins, SymbolId::kRange, LayoutId::kRange> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+
+  static const View<NativeMethod> kNativeMethods;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeBuiltins);
 };
 
-class RangeIteratorBuiltins {
+class RangeIteratorBuiltins
+    : public Builtins<RangeIteratorBuiltins, SymbolId::kRangeIterator,
+                      LayoutId::kRangeIterator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);
 };
 

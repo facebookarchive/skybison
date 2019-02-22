@@ -910,4 +910,37 @@ class Runtime {
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
 
+class BuiltinsBase {
+ public:
+  static void postInitialize(Runtime*, const Type&) {}
+
+ protected:
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
+  static const View<NativeMethod> kNativeMethods;
+
+  static const SymbolId kName;
+  static const LayoutId kType;
+  static const LayoutId kSuperType;
+};
+
+template <class T, SymbolId name, LayoutId type,
+          LayoutId supertype = LayoutId::kObject>
+class Builtins : public BuiltinsBase {
+ public:
+  static void initialize(Runtime* runtime) {
+    HandleScope scope;
+    Type new_type(&scope, runtime->addBuiltinType(
+                              T::kName, T::kType, T::kSuperType, T::kAttributes,
+                              T::kNativeMethods, T::kBuiltinMethods));
+    new_type.sealAttributes();
+    T::postInitialize(runtime, new_type);
+  }
+
+ protected:
+  static const SymbolId kName = name;
+  static const LayoutId kType = type;
+  static const LayoutId kSuperType = supertype;
+};
+
 }  // namespace python

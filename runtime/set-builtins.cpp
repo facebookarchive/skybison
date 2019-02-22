@@ -348,12 +348,12 @@ RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(setIsProperSubset(thread, other_set, set));
 }
 
-const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> FrozenSetBuiltins::kAttributes = {
     {SymbolId::kItems, Set::kDataOffset},
     {SymbolId::kAllocated, Set::kNumItemsOffset},
 };
 
-const NativeMethod FrozenSetBuiltins::kNativeMethods[] = {
+const View<NativeMethod> FrozenSetBuiltins::kNativeMethods = {
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
@@ -365,20 +365,12 @@ const NativeMethod FrozenSetBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
-    {SymbolId::kIntersection, nativeTrampoline<intersection>}};
-
-const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kIntersection, nativeTrampoline<intersection>},
 };
 
-void FrozenSetBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type frozen_set(
-      &scope, runtime->addBuiltinType(
-                  SymbolId::kFrozenSet, LayoutId::kFrozenSet, LayoutId::kObject,
-                  kAttributes, kNativeMethods, kBuiltinMethods));
-  frozen_set.sealAttributes();
-}
+const View<BuiltinMethod> FrozenSetBuiltins::kBuiltinMethods = {
+    {SymbolId::kDunderNew, dunderNew},
+};
 
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
@@ -426,12 +418,12 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   return *result;
 }
 
-const BuiltinAttribute SetBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> SetBuiltins::kAttributes = {
     {SymbolId::kItems, Set::kDataOffset},
     {SymbolId::kAllocated, Set::kNumItemsOffset},
 };
 
-const NativeMethod SetBuiltins::kNativeMethods[] = {
+const View<NativeMethod> SetBuiltins::kNativeMethods = {
     {SymbolId::kAdd, nativeTrampoline<add>},
     {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
@@ -449,18 +441,10 @@ const NativeMethod SetBuiltins::kNativeMethods[] = {
     {SymbolId::kPop, nativeTrampoline<pop>},
 };
 
-const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> SetBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderInit, dunderInit},
 };
-
-void SetBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type set(&scope, runtime->addBuiltinType(SymbolId::kSet, LayoutId::kSet,
-                                           LayoutId::kObject, kAttributes,
-                                           kNativeMethods, kBuiltinMethods));
-  set.sealAttributes();
-}
 
 // TODO(T36810889): implement high-level setAdd function with error handling
 RawObject setAdd(Thread* thread, const Set& set, const Object& key) {
@@ -663,18 +647,11 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-const NativeMethod SetIteratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> SetIteratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
 };
-
-void SetIteratorBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type set_iter(&scope, runtime->addBuiltinTypeWithNativeMethods(
-                            SymbolId::kSetIterator, LayoutId::kSetIterator,
-                            LayoutId::kObject, kNativeMethods));
-}
 
 RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                           word nargs) {

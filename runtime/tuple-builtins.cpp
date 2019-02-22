@@ -65,11 +65,11 @@ RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   return item;
 }
 
-const BuiltinAttribute TupleBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> TupleBuiltins::kAttributes = {
     {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
 };
 
-const NativeMethod TupleBuiltins::kNativeMethods[] = {
+const View<NativeMethod> TupleBuiltins::kNativeMethods = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
@@ -78,16 +78,9 @@ const NativeMethod TupleBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
 };
 
-const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> TupleBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderNew, dunderNew},
 };
-
-void TupleBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinType(SymbolId::kTuple, LayoutId::kTuple,
-                                            LayoutId::kObject, kAttributes,
-                                            kNativeMethods, kBuiltinMethods));
-}
 
 RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
@@ -431,18 +424,11 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 
-const NativeMethod TupleIteratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> TupleIteratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
-
-void TupleIteratorBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type tuple_iter(&scope,
-                  runtime->addBuiltinTypeWithNativeMethods(
-                      SymbolId::kTupleIterator, LayoutId::kTupleIterator,
-                      LayoutId::kObject, kNativeMethods));
-}
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+};
 
 RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                             word nargs) {

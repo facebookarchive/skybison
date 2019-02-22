@@ -7,11 +7,6 @@
 
 namespace python {
 
-void GeneratorBaseBuiltins::initialize(Runtime* runtime) {
-  GeneratorBuiltins::initialize(runtime);
-  CoroutineBuiltins::initialize(runtime);
-}
-
 // Common work between send() and __next__(): Check if the generator has already
 // finished, run it, then check if it's newly-finished.
 static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
@@ -62,19 +57,12 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
   return sendImpl(thread, gen, value);
 }
 
-const NativeMethod GeneratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> GeneratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSend,
      nativeTrampoline<GeneratorBaseBuiltins::send<LayoutId::kGenerator>>},
 };
-
-void GeneratorBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type generator(&scope, runtime->addBuiltinTypeWithNativeMethods(
-                             SymbolId::kGenerator, LayoutId::kGenerator,
-                             LayoutId::kObject, kNativeMethods));
-}
 
 RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                         word nargs) {
@@ -110,16 +98,9 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return sendImpl(thread, gen, value);
 }
 
-const NativeMethod CoroutineBuiltins::kNativeMethods[] = {
+const View<NativeMethod> CoroutineBuiltins::kNativeMethods = {
     {SymbolId::kSend,
      nativeTrampoline<GeneratorBaseBuiltins::send<LayoutId::kCoroutine>>},
 };
-
-void CoroutineBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type coroutine(&scope, runtime->addBuiltinTypeWithNativeMethods(
-                             SymbolId::kCoroutine, LayoutId::kCoroutine,
-                             LayoutId::kObject, kNativeMethods));
-}
 
 }  // namespace python

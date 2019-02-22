@@ -11,16 +11,15 @@ namespace python {
 // Runs the executable functions found in the PyModuleDef
 int execDef(Thread* thread, const Module& module, PyModuleDef* def);
 
-class ModuleBuiltins {
+class ModuleBuiltins
+    : public Builtins<ModuleBuiltins, SymbolId::kModule, LayoutId::kModule> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ModuleBuiltins);
 };
 

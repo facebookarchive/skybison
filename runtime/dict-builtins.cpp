@@ -231,12 +231,12 @@ RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
   return Error::object();
 }
 
-const BuiltinAttribute DictBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> DictBuiltins::kAttributes = {
     {SymbolId::kInvalid, RawDict::kNumItemsOffset},
     {SymbolId::kInvalid, RawDict::kDataOffset},
 };
 
-const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> DictBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderDelItem, dunderDelItem},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderIter, dunderIter},
@@ -249,12 +249,6 @@ const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
     {SymbolId::kUpdate, update},
     {SymbolId::kValues, values},
 };
-
-void DictBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinType(SymbolId::kDict, LayoutId::kDict, LayoutId::kObject,
-                          kAttributes, View<NativeMethod>(nullptr, 0),
-                          kBuiltinMethods);
-}
 
 RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
                                       word nargs) {
@@ -487,16 +481,11 @@ RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
 // TODO(T35787656): Instead of re-writing everything for every class, make a
 // helper function that takes a member function (type check) and string for the
 // Python symbol name
-const NativeMethod DictItemIteratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> DictItemIteratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
-
-void DictItemIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithNativeMethods(SymbolId::kDictItemIterator,
-                                           LayoutId::kDictItemIterator,
-                                           LayoutId::kObject, kNativeMethods);
-}
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+};
 
 RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                                word nargs) {
@@ -554,14 +543,9 @@ RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-const NativeMethod DictItemsBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>}};
-
-void DictItemsBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithNativeMethods(SymbolId::kDictItems,
-                                           LayoutId::kDictItems,
-                                           LayoutId::kObject, kNativeMethods);
-}
+const View<NativeMethod> DictItemsBuiltins::kNativeMethods = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+};
 
 RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
                                         word nargs) {
@@ -581,16 +565,11 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
   return thread->runtime()->newDictItemIterator(dict);
 }
 
-const NativeMethod DictKeyIteratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> DictKeyIteratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
-
-void DictKeyIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithNativeMethods(SymbolId::kDictKeyIterator,
-                                           LayoutId::kDictKeyIterator,
-                                           LayoutId::kObject, kNativeMethods);
-}
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+};
 
 RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                               word nargs) {
@@ -648,14 +627,9 @@ RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-const NativeMethod DictKeysBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>}};
-
-void DictKeysBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithNativeMethods(SymbolId::kDictKeys,
-                                           LayoutId::kDictKeys,
-                                           LayoutId::kObject, kNativeMethods);
-}
+const View<NativeMethod> DictKeysBuiltins::kNativeMethods = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+};
 
 RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
                                        word nargs) {
@@ -675,16 +649,11 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
   return thread->runtime()->newDictKeyIterator(dict);
 }
 
-const NativeMethod DictValueIteratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> DictValueIteratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
-
-void DictValueIteratorBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithNativeMethods(SymbolId::kDictValueIterator,
-                                           LayoutId::kDictValueIterator,
-                                           LayoutId::kObject, kNativeMethods);
-}
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+};
 
 RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                                 word nargs) {
@@ -743,14 +712,9 @@ RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
   return SmallInt::fromWord(dict.numItems() - iter.numFound());
 }
 
-const NativeMethod DictValuesBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>}};
-
-void DictValuesBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithNativeMethods(SymbolId::kDictValues,
-                                           LayoutId::kDictValues,
-                                           LayoutId::kObject, kNativeMethods);
-}
+const View<NativeMethod> DictValuesBuiltins::kNativeMethods = {
+    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+};
 
 RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
                                          word nargs) {

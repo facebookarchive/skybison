@@ -73,20 +73,14 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   return 0;
 }
 
-const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> ModuleBuiltins::kAttributes = {
     {SymbolId::kDunderName, RawModule::kNameOffset},
     {SymbolId::kDunderDict, RawModule::kDictOffset},
 };
 
-const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> ModuleBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderNew, dunderNew},
 };
-
-void ModuleBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinType(SymbolId::kModule, LayoutId::kModule,
-                          LayoutId::kObject, kAttributes,
-                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
-}
 
 RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

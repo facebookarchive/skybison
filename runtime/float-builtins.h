@@ -16,10 +16,9 @@ namespace python {
  */
 RawObject asFloatObject(Thread* thread, const Object& obj);
 
-class FloatBuiltins {
+class FloatBuiltins
+    : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
@@ -36,11 +35,12 @@ class FloatBuiltins {
   static RawObject dunderRtrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
 
+  static const View<BuiltinMethod> kBuiltinMethods;
+  static const View<BuiltinAttribute> kAttributes;
+
  private:
   static RawObject floatFromObject(Thread* thread, Frame* frame, word nargs);
   static RawObject floatFromString(Thread* thread, RawStr str);
-  static const BuiltinMethod kBuiltinMethods[];
-  static const BuiltinAttribute kAttributes[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(FloatBuiltins);
 };

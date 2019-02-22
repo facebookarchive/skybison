@@ -26,10 +26,9 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
 
-class TupleBuiltins {
+class TupleBuiltins
+    : public Builtins<TupleBuiltins, SymbolId::kTuple, LayoutId::kTuple> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
@@ -43,25 +42,25 @@ class TupleBuiltins {
   static RawObject sliceWithWords(Thread* thread, const Tuple& tuple,
                                   word start, word stop, word step);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<NativeMethod> kNativeMethods;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleBuiltins);
 };
 
-class TupleIteratorBuiltins {
+class TupleIteratorBuiltins
+    : public Builtins<TupleIteratorBuiltins, SymbolId::kTupleIterator,
+                      LayoutId::kTupleIterator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIteratorBuiltins);
 };
 

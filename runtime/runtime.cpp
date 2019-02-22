@@ -1266,6 +1266,7 @@ void Runtime::initializeHeapTypes() {
   initializeClassMethodType();
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   ComplexBuiltins::initialize(this);
+  CoroutineBuiltins::initialize(this);
   DictBuiltins::initialize(this);
   DictItemsBuiltins::initialize(this);
   DictItemIteratorBuiltins::initialize(this);
@@ -1280,7 +1281,10 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   FrozenSetBuiltins::initialize(this);
   FunctionBuiltins::initialize(this);
+  GeneratorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kLayout, LayoutId::kLayout, LayoutId::kObject);
+  LargeIntBuiltins::initialize(this);
+  LargeStrBuiltins::initialize(this);
   ListBuiltins::initialize(this);
   ListIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kMethod, LayoutId::kBoundMethod,
@@ -1302,7 +1306,6 @@ void Runtime::initializeHeapTypes() {
   StrIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kSeqIterator, LayoutId::kSeqIterator,
                       LayoutId::kObject);
-  GeneratorBaseBuiltins::initialize(this);
   initializeStaticMethodType();
   initializeSuperType();
   addEmptyBuiltinType(SymbolId::kTraceback, LayoutId::kTraceback,
@@ -4616,5 +4619,9 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
   }
   return *result;
 }
+
+const View<BuiltinAttribute> BuiltinsBase::kAttributes = {};
+const View<BuiltinMethod> BuiltinsBase::kBuiltinMethods = {};
+const View<NativeMethod> BuiltinsBase::kNativeMethods = {};
 
 }  // namespace python

@@ -25,52 +25,52 @@ RawObject createException(Thread* thread, const Type& type,
 void normalizeException(Thread* thread, Object* exc, Object* value,
                         Object* traceback);
 
-class BaseExceptionBuiltins {
+class BaseExceptionBuiltins
+    : public Builtins<BaseExceptionBuiltins, SymbolId::kBaseException,
+                      LayoutId::kBaseException> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BaseExceptionBuiltins);
 };
 
-class StopIterationBuiltins {
+class StopIterationBuiltins
+    : public Builtins<StopIterationBuiltins, SymbolId::kStopIteration,
+                      LayoutId::kStopIteration, LayoutId::kException> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StopIterationBuiltins);
 };
 
-class SystemExitBuiltins {
+class SystemExitBuiltins
+    : public Builtins<SystemExitBuiltins, SymbolId::kSystemExit,
+                      LayoutId::kSystemExit, LayoutId::kBaseException> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExitBuiltins);
 };
 
-class ImportErrorBuiltins {
+class ImportErrorBuiltins
+    : public Builtins<ImportErrorBuiltins, SymbolId::kImportError,
+                      LayoutId::kImportError, LayoutId::kException> {
  public:
-  static void initialize(Runtime* runtime);
+  static const View<BuiltinAttribute> kAttributes;
 
  private:
-  static const BuiltinAttribute kAttributes[];
-
   DISALLOW_IMPLICIT_CONSTRUCTORS(ImportErrorBuiltins);
 };
 

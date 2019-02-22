@@ -20,9 +20,10 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result);
 // `right` cannot be exactly represented as a Float.
 bool doubleEqualsInt(Thread* thread, double left, const Int& right);
 
-class IntBuiltins {
+class IntBuiltins
+    : public Builtins<IntBuiltins, SymbolId::kInt, LayoutId::kInt> {
  public:
-  static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
   static RawObject bitLength(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
@@ -55,36 +56,52 @@ class IntBuiltins {
   static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject toBytesKw(Thread* thread, Frame* frame, word nargs);
 
+  static const View<BuiltinMethod> kBuiltinMethods;
+
  private:
   static RawObject asInt(const Int& value);
-  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IntBuiltins);
 };
 
-class SmallIntBuiltins {
+class SmallIntBuiltins : public Builtins<SmallIntBuiltins, SymbolId::kSmallInt,
+                                         LayoutId::kSmallInt, LayoutId::kInt> {
  public:
-  static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
   static RawObject dunderFloorDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntBuiltins);
 };
 
-class BoolBuiltins {
+class LargeIntBuiltins : public Builtins<LargeIntBuiltins, SymbolId::kLargeInt,
+                                         LayoutId::kLargeInt, LayoutId::kInt> {
  public:
-  static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeIntBuiltins);
+};
+
+class BoolBuiltins : public Builtins<BoolBuiltins, SymbolId::kBool,
+                                     LayoutId::kBool, LayoutId::kInt> {
+ public:
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
 
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoolBuiltins);
 };
 

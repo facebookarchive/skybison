@@ -6,8 +6,6 @@ namespace python {
 
 class GeneratorBaseBuiltins {
  public:
-  static void initialize(Runtime* runtime);
-
   template <LayoutId target>
   static RawObject send(Thread* thread, Frame* frame, word nargs);
 
@@ -15,23 +13,27 @@ class GeneratorBaseBuiltins {
   DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBaseBuiltins);
 };
 
-class GeneratorBuiltins {
+class GeneratorBuiltins
+    : public Builtins<GeneratorBuiltins, SymbolId::kGenerator,
+                      LayoutId::kGenerator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
+  static const View<NativeMethod> kNativeMethods;
+
  private:
-  static const NativeMethod kNativeMethods[];
+  DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBuiltins);
 };
 
-class CoroutineBuiltins {
+class CoroutineBuiltins
+    : public Builtins<CoroutineBuiltins, SymbolId::kCoroutine,
+                      LayoutId::kCoroutine> {
  public:
-  static void initialize(Runtime* runtime);
+  static const View<NativeMethod> kNativeMethods;
 
  private:
-  static const NativeMethod kNativeMethods[];
+  DISALLOW_IMPLICIT_CONSTRUCTORS(CoroutineBuiltins);
 };
 
 }  // namespace python

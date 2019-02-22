@@ -17,18 +17,19 @@ RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
 // Writes the value to the array as two hex digits.
 void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value);
 
-class ByteArrayBuiltins {
+class ByteArrayBuiltins
+    : public Builtins<ByteArrayBuiltins, SymbolId::kByteArray,
+                      LayoutId::kByteArray> {
  public:
-  static void initialize(Runtime* runtime);
 
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArrayBuiltins);
 };
 

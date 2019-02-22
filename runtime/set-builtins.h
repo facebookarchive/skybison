@@ -49,49 +49,50 @@ class SetBaseBuiltins {
   static RawObject isDisjoint(Thread* thread, Frame* frame, word nargs);
 };
 
-class SetBuiltins : public SetBaseBuiltins {
+class SetBuiltins
+    : public SetBaseBuiltins,
+      public Builtins<SetBuiltins, SymbolId::kSet, LayoutId::kSet> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIand(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject add(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<NativeMethod> kNativeMethods;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetBuiltins);
 };
 
-class FrozenSetBuiltins : public SetBaseBuiltins {
+class FrozenSetBuiltins
+    : public SetBaseBuiltins,
+      public Builtins<FrozenSetBuiltins, SymbolId::kFrozenSet,
+                      LayoutId::kFrozenSet> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<NativeMethod> kNativeMethods;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(FrozenSetBuiltins);
 };
 
-class SetIteratorBuiltins {
+class SetIteratorBuiltins
+    : public Builtins<SetIteratorBuiltins, SymbolId::kSetIterator,
+                      LayoutId::kSetIterator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetIteratorBuiltins);
 };
 

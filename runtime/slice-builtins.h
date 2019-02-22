@@ -13,16 +13,15 @@ namespace python {
 RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
                       word* stop, word* step);
 
-class SliceBuiltins {
+class SliceBuiltins
+    : public Builtins<SliceBuiltins, SymbolId::kSlice, LayoutId::kSlice> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const BuiltinAttribute kAttributes[];
-  static const BuiltinMethod kBuiltinMethods[];
+  static const View<BuiltinAttribute> kAttributes;
+  static const View<BuiltinMethod> kBuiltinMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SliceBuiltins);
 };
 

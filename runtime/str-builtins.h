@@ -30,15 +30,31 @@ word strRSpan(const Str& src, const Str& str, word rend);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter);
 
-class SmallStrBuiltins {
+class SmallStrBuiltins : public Builtins<SmallStrBuiltins, SymbolId::kSmallStr,
+                                         LayoutId::kSmallStr, LayoutId::kStr> {
  public:
-  static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(SmallStrBuiltins);
 };
 
-class StrBuiltins {
+class LargeStrBuiltins : public Builtins<LargeStrBuiltins, SymbolId::kLargeStr,
+                                         LayoutId::kLargeStr, LayoutId::kStr> {
  public:
-  static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
 
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStrBuiltins);
+};
+
+class StrBuiltins
+    : public Builtins<StrBuiltins, SymbolId::kStr, LayoutId::kStr> {
+ public:
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
@@ -58,29 +74,30 @@ class StrBuiltins {
   static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject strip(Thread* thread, Frame* frame, word nargs);
 
+  static const View<NativeMethod> kNativeMethods;
+  static const View<BuiltinMethod> kBuiltinMethods;
+
  private:
   static RawObject slice(Thread* thread, const Str& str, const Slice& slice);
   static RawObject strFormatBufferLength(Thread* thread, const Str& fmt,
                                          const Tuple& args);
   static RawObject strFormat(Thread* thread, const Str& fmt, const Tuple& args);
   static void byteToHex(byte** buf, byte convert);
-  static const NativeMethod kNativeMethods[];
-  static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrBuiltins);
 };
 
-class StrIteratorBuiltins {
+class StrIteratorBuiltins
+    : public Builtins<StrIteratorBuiltins, SymbolId::kStrIterator,
+                      LayoutId::kStrIterator> {
  public:
-  static void initialize(Runtime* runtime);
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
+  static const View<NativeMethod> kNativeMethods;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);
 };
 

@@ -62,28 +62,26 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   return *type;
 }
 
-const BuiltinAttribute TypeBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> TypeBuiltins::kAttributes = {
     {SymbolId::kDunderMro, RawType::kMroOffset},
     {SymbolId::kDunderName, RawType::kNameOffset},
     {SymbolId::kDunderFlags, RawType::kFlagsOffset},
     {SymbolId::kDunderDict, RawType::kDictOffset},
 };
 
-const NativeMethod TypeBuiltins::kNativeMethods[] = {
+const View<NativeMethod> TypeBuiltins::kNativeMethods = {
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
 
-const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> TypeBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderCall, dunderCall},
     {SymbolId::kDunderNew, dunderNew},
 };
 
-void TypeBuiltins::initialize(Runtime* runtime) {
+void TypeBuiltins::postInitialize(Runtime* /* runtime */,
+                                  const Type& new_type) {
   HandleScope scope;
-  Type type(&scope, runtime->addBuiltinType(SymbolId::kType, LayoutId::kType,
-                                            LayoutId::kObject, kAttributes,
-                                            kNativeMethods, kBuiltinMethods));
-  Layout layout(&scope, type.instanceLayout());
+  Layout layout(&scope, new_type.instanceLayout());
   layout.setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
 }
 

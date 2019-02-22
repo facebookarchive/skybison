@@ -128,17 +128,10 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return str;
 }
 
-const NativeMethod NoneBuiltins::kNativeMethods[] = {
+const View<NativeMethod> NoneBuiltins::kNativeMethods = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
 };
-
-void NoneBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithNativeMethods(
-                        SymbolId::kNoneType, LayoutId::kNoneType,
-                        LayoutId::kObject, kNativeMethods));
-}
 
 RawObject NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
   if (nargs > 1) {

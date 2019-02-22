@@ -8,16 +8,17 @@
 
 namespace python {
 
-class FunctionBuiltins {
+class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
+                                         LayoutId::kFunction> {
  public:
-  static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
   static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
 
- private:
-  static const NativeMethod kNativeMethods[];
-  static const BuiltinAttribute kAttributes[];
+  static const View<NativeMethod> kNativeMethods;
+  static const View<BuiltinAttribute> kAttributes;
 
+ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(FunctionBuiltins);
 };
 

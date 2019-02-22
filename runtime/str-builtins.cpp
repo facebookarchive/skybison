@@ -137,16 +137,7 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   return RawSmallStr::fromCStr(buffer);
 }
 
-void SmallStrBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-
-  Type type(&scope,
-            runtime->addEmptyBuiltinType(SymbolId::kSmallStr,
-                                         LayoutId::kSmallStr, LayoutId::kStr));
-  type.setBuiltinBase(LayoutId::kStr);
-}
-
-const NativeMethod StrBuiltins::kNativeMethods[] = {
+const View<NativeMethod> StrBuiltins::kNativeMethods = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
@@ -164,21 +155,10 @@ const NativeMethod StrBuiltins::kNativeMethods[] = {
     {SymbolId::kStrip, nativeTrampoline<strip>},
 };
 
-const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> StrBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kJoin, join},
 };
-
-void StrBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->addBuiltinTypeWithMethods(
-                        SymbolId::kStr, LayoutId::kStr, LayoutId::kObject,
-                        kNativeMethods, kBuiltinMethods));
-  Type largestr_type(
-      &scope, runtime->addEmptyBuiltinType(
-                  SymbolId::kLargeStr, LayoutId::kLargeStr, LayoutId::kStr));
-  largestr_type.setBuiltinBase(LayoutId::kStr);
-}
 
 RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (nargs == 0) {
@@ -816,17 +796,11 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   return strStrip(thread, str, chars, StrStripDirection::Both);
 }
 
-const NativeMethod StrIteratorBuiltins::kNativeMethods[] = {
+const View<NativeMethod> StrIteratorBuiltins::kNativeMethods = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>}};
-
-void StrIteratorBuiltins::initialize(Runtime* runtime) {
-  HandleScope scope;
-  Type str_iter(&scope, runtime->addBuiltinTypeWithNativeMethods(
-                            SymbolId::kStrIterator, LayoutId::kStrIterator,
-                            LayoutId::kObject, kNativeMethods));
-}
+    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+};
 
 RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                           word nargs) {

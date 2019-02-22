@@ -110,22 +110,16 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
   }
 }
 
-const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> BaseExceptionBuiltins::kAttributes = {
     {SymbolId::kArgs, RawBaseException::kArgsOffset},
     {SymbolId::kTraceback, RawBaseException::kTracebackOffset},
     {SymbolId::kDunderContext, RawBaseException::kContextOffset},
     {SymbolId::kCause, RawBaseException::kCauseOffset},
 };
 
-const BuiltinMethod BaseExceptionBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> BaseExceptionBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderInit, dunderInit},
 };
-
-void BaseExceptionBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinType(SymbolId::kBaseException, LayoutId::kBaseException,
-                          LayoutId::kObject, kAttributes,
-                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
-}
 
 RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
                                             word nargs) {
@@ -143,19 +137,13 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> StopIterationBuiltins::kAttributes = {
     {SymbolId::kValue, RawStopIteration::kValueOffset},
 };
 
-const BuiltinMethod StopIterationBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> StopIterationBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderInit, dunderInit},
 };
-
-void StopIterationBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinType(SymbolId::kStopIteration, LayoutId::kStopIteration,
-                          LayoutId::kException, kAttributes,
-                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
-}
 
 RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
                                             word nargs) {
@@ -177,19 +165,13 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> SystemExitBuiltins::kAttributes = {
     {SymbolId::kValue, RawSystemExit::kCodeOffset},
 };
 
-const BuiltinMethod SystemExitBuiltins::kBuiltinMethods[] = {
+const View<BuiltinMethod> SystemExitBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderInit, dunderInit},
 };
-
-void SystemExitBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinType(SymbolId::kSystemExit, LayoutId::kSystemExit,
-                          LayoutId::kBaseException, kAttributes,
-                          View<NativeMethod>(nullptr, 0), kBuiltinMethods);
-}
 
 RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
                                          word nargs) {
@@ -211,16 +193,10 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
+const View<BuiltinAttribute> ImportErrorBuiltins::kAttributes = {
     {SymbolId::kMsg, RawImportError::kMsgOffset},
     {SymbolId::kName, RawImportError::kNameOffset},
     {SymbolId::kPath, RawImportError::kPathOffset},
 };
-
-void ImportErrorBuiltins::initialize(Runtime* runtime) {
-  runtime->addBuiltinTypeWithAttrs(SymbolId::kImportError,
-                                   LayoutId::kImportError, LayoutId::kException,
-                                   kAttributes);
-}
 
 }  // namespace python
