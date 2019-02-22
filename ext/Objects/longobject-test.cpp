@@ -262,4 +262,23 @@ TEST_F(LongExtensionApiTest, FromLongWithZeroReturnsZero) {
   EXPECT_EQ(PyLong_AsLong(pylong), 0);
 }
 
+TEST_F(LongExtensionApiTest, SignZeroReturnsZero) {
+  PyObjectPtr zero(PyLong_FromLong(0));
+  ASSERT_EQ(_PyLong_Sign(zero), 0);
+}
+
+TEST_F(LongExtensionApiTest, SignPositiveLongReturnsOne) {
+  PyObjectPtr positive1(PyLong_FromLong(1));
+  ASSERT_EQ(_PyLong_Sign(positive1), 1);
+  PyObjectPtr positive1234(PyLong_FromLong(1234));
+  ASSERT_EQ(_PyLong_Sign(positive1234), 1);
+}
+
+TEST_F(LongExtensionApiTest, SignNegativeReturnsNegativeOne) {
+  PyObjectPtr negative1(PyLong_FromLong(-1));
+  ASSERT_EQ(_PyLong_Sign(negative1), -1);
+  PyObjectPtr negative5678(PyLong_FromLong(-5678));
+  ASSERT_EQ(_PyLong_Sign(negative5678), -1);
+}
+
 }  // namespace python

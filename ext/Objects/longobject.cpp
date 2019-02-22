@@ -216,4 +216,17 @@ PY_EXPORT PyObject* PyLong_FromVoidPtr(void* /* p */) {
 
 PY_EXPORT PyObject* PyLong_GetInfo() { UNIMPLEMENTED("PyLong_GetInfo"); }
 
+PY_EXPORT int _PyLong_Sign(PyObject* vv) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(vv)->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfInt(*obj), "requires an integer");
+  if (!obj.isInt()) {
+    UNIMPLEMENTED("int subclass");
+  }
+  Int value(&scope, *obj);
+  return value.isZero() ? 0 : (value.isNegative() ? -1 : 1);
+}
+
 }  // namespace python
