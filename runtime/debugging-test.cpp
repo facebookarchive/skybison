@@ -175,4 +175,52 @@ class MyClass:
   EXPECT_EQ(ss.str(), "<type \"MyClass\">");
 }
 
+TEST(DebuggingTests, FormatFrame) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+def func(arg0, arg1):
+  hello = "world"
+  return arg0 + arg1
+)");
+  Function func(&scope, moduleAt(&runtime, "__main__", "func"));
+
+  Thread* thread = Thread::currentThread();
+  Frame* root = thread->currentFrame();
+  root->setVirtualPC(8);
+  root->pushValue(NoneType::object());
+  ASSERT_EQ(root->previousFrame(), nullptr);
+
+  Frame* frame0 = thread->openAndLinkFrame(0, 1, 1);
+  frame0->setLocal(0, runtime.newStrFromCStr("foo bar"));
+  frame0->pushValue(*func);
+  frame0->setVirtualPC(42);
+  Frame* frame1 = thread->openAndLinkFrame(0, 3, 2);
+  frame1->setVirtualPC(4);
+  frame1->setCode(func.code());
+  frame1->setLocal(0, runtime.newInt(-9));
+  frame1->setLocal(1, runtime.newInt(17));
+  frame1->setLocal(2, runtime.newStrFromCStr("world"));
+
+  std::stringstream ss;
+  ss << thread->currentFrame();
+  EXPECT_EQ(ss.str(), R"(- pc: 8
+- pc: 42
+  function: None
+  0: "foo bar"
+- pc: 4
+  function: <function "func">
+  0 "arg0": -9
+  1 "arg1": 17
+  2 "hello": "world"
+)");
+}
+
+TEST(DebuggingTests, FormatFrameNullptr) {
+  Runtime runtime;
+  std::stringstream ss;
+  ss << static_cast<Frame*>(nullptr);
+  EXPECT_EQ(ss.str(), "<nullptr>");
+}
+
 }  // namespace python

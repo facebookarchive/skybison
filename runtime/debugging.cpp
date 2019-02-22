@@ -174,6 +174,50 @@ std::ostream& operator<<(std::ostream& os, RawType value) {
   return os << "<type " << value.name() << ">";
 }
 
+static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
+  HandleScope scope(thread);
+
+  Tuple var_names(&scope, thread->runtime()->newTuple(0));
+  Object code(&scope, frame->code());
+  if (code.isCode()) {
+    Object names_raw(&scope, RawCode::cast(*code).varnames());
+    if (names_raw.isTuple()) {
+      var_names = *names_raw;
+    }
+  }
+
+  os << "- pc: " << frame->virtualPC() << '\n';
+  if (frame->previousFrame() != nullptr) {
+    os << "  function: " << frame->function() << '\n';
+  }
+  // TODO(matthiasb): Also dump the block stack.
+  word var_names_length = var_names.length();
+  for (word l = 0, num_locals = frame->numLocals(); l < num_locals; l++) {
+    os << "  " << l;
+    if (l < var_names_length) {
+      os << ' ' << var_names.at(l);
+    }
+    os << ": " << frame->local(l) << '\n';
+  }
+}
+
+std::ostream& operator<<(std::ostream& os, Frame* frame) {
+  if (frame == nullptr) {
+    return os << "<nullptr>";
+  }
+
+  Vector<Frame*> frames;
+  for (Frame* f = frame; f != nullptr; f = f->previousFrame()) {
+    frames.push_back(f);
+  }
+
+  Thread* thread = Thread::currentThread();
+  for (word i = frames.size() - 1; i >= 0; i--) {
+    dumpSingleFrame(thread, os, frames[i]);
+  }
+  return os;
+}
+
 __attribute__((used)) void dump(RawObject object) {
   std::cerr << object << '\n';
 }
@@ -181,6 +225,8 @@ __attribute__((used)) void dump(RawObject object) {
 __attribute__((used)) void dump(const Object& object) {
   std::cerr << object << '\n';
 }
+
+__attribute__((used)) void dump(Frame* frame) { std::cerr << frame; }
 
 void initializeDebugging() {
   // This function must be called even though it is empty. If it is not called

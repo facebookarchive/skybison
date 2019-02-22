@@ -29,8 +29,11 @@ std::ostream& operator<<(std::ostream& os, const Handle<T>& value) {
   return os << *value;
 }
 
+std::ostream& operator<<(std::ostream& os, Frame* frame);
+
 void dump(RawObject object);
 void dump(const Object& object);
+void dump(Frame* frame);
 
 void initializeDebugging();
 
