@@ -158,7 +158,6 @@ const NativeMethod StrBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
-    {SymbolId::kJoin, nativeTrampoline<join>},
     {SymbolId::kLower, nativeTrampoline<lower>},
     {SymbolId::kLStrip, nativeTrampoline<lstrip>},
     {SymbolId::kRStrip, nativeTrampoline<rstrip>},
@@ -167,6 +166,7 @@ const NativeMethod StrBuiltins::kNativeMethods[] = {
 
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kJoin, join},
 };
 
 void StrBuiltins::initialize(Runtime* runtime) {

@@ -633,6 +633,9 @@ class str(bootstrap=True):
         before, itself, after = self[::-1].partition(sep[::-1])[::-1]
         return before[::-1], itself[::-1], after[::-1]
 
+    def join(self, items) -> str:
+        pass
+
     def __str__(self):
         return self
 
@@ -643,9 +646,6 @@ class str(bootstrap=True):
         pass
 
     def __len__(self) -> int:
-        pass
-
-    def __contains__(self, s: object) -> bool:
         pass
 
 

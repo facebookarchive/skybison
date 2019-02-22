@@ -741,7 +741,7 @@ class Runtime {
   // function returns false and sets index to the location where the key would
   // be inserted. If the dict is full, it sets index to -1.
   bool dictLookup(const Tuple& data, const Object& key, const Object& key_hash,
-                  word* index);
+                  word* index, DictEq pred);
 
   template <SetLookupType type>
   word setLookup(const Tuple& data, const Object& key, const Object& key_hash);
@@ -904,6 +904,8 @@ class Runtime {
   NewValueCellCallback new_value_cell_callback_;
 
   Symbols* symbols_;
+
+  friend class ApiHandle;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

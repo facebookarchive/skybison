@@ -518,8 +518,9 @@ PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {
   return diff == 0 ? 1 : 0;
 }
 
-PY_EXPORT size_t Py_UNICODE_strlen(const Py_UNICODE* /* u */) {
-  UNIMPLEMENTED("Py_UNICODE_strlen");
+PY_EXPORT size_t Py_UNICODE_strlen(const Py_UNICODE* u) {
+  DCHECK(u != nullptr, "u should not be null");
+  return std::wcslen(u);
 }
 
 PY_EXPORT int _PyUnicode_Ready(PyObject* /* unicode */) {
@@ -1151,37 +1152,117 @@ PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
                         // code units, not bytes
 }
 
-PY_EXPORT PyObject* PyUnicode_InternFromString(const char* /* p */) {
-  UNIMPLEMENTED("PyUnicode_InternFromString");
+PY_EXPORT PyObject* PyUnicode_InternFromString(const char* c_str) {
+  DCHECK(c_str != nullptr, "c_str must not be nullptr");
+  PyObject* str = PyUnicode_FromString(c_str);
+  if (str == nullptr) {
+    return nullptr;
+  }
+  PyUnicode_InternInPlace(&str);
+  return str;
 }
 
 PY_EXPORT void PyUnicode_InternImmortal(PyObject** /* p */) {
   UNIMPLEMENTED("PyUnicode_InternImmortal");
 }
 
-PY_EXPORT void PyUnicode_InternInPlace(PyObject** /* p */) {
-  UNIMPLEMENTED("PyUnicode_InternInPlace");
+PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
+  DCHECK(pobj != nullptr, "pobj should not be null");
+  if (*pobj == nullptr) {
+    return;
+  }
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(*pobj)->asObject());
+  if (!obj.isLargeStr()) {
+    return;
+  }
+  HeapObject heap_obj(&scope, *obj);
+  HeapObject result(&scope, thread->runtime()->internStr(obj));
+  if (result.address() != heap_obj.address()) {
+    *pobj = ApiHandle::newReference(thread, *result);
+  }
 }
 
 PY_EXPORT int PyUnicode_IsIdentifier(PyObject* /* f */) {
   UNIMPLEMENTED("PyUnicode_IsIdentifier");
 }
 
-PY_EXPORT PyObject* PyUnicode_Join(PyObject* /* r */, PyObject* /* q */) {
-  UNIMPLEMENTED("PyUnicode_Join");
+PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
+  DCHECK(sep != nullptr, "sep should not be null");
+  DCHECK(seq != nullptr, "seq should not be null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
+  Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object result(&scope, thread->invokeMethodStatic2(
+                            LayoutId::kStr, SymbolId::kJoin, sep_obj, seq_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call str.join");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyUnicode_Partition(PyObject* /* j */, PyObject* /* j */) {
-  UNIMPLEMENTED("PyUnicode_Partition");
+PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
+  DCHECK(str != nullptr, "str should not be null");
+  DCHECK(sep != nullptr, "sep should not be null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
+  Object result(
+      &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kPartition,
+                                          str_obj, sep_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call str.partition");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* /* j */, PyObject* /* j */) {
-  UNIMPLEMENTED("PyUnicode_RPartition");
+PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
+  DCHECK(str != nullptr, "str should not be null");
+  DCHECK(sep != nullptr, "sep should not be null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
+  Object result(
+      &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kRPartition,
+                                          str_obj, sep_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call str.rpartition");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* /* s */, PyObject* /* p */,
-                                     Py_ssize_t /* t */) {
-  UNIMPLEMENTED("PyUnicode_RSplit");
+PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
+                                     Py_ssize_t maxsplit) {
+  DCHECK(str != nullptr, "str must not be null");
+  DCHECK(sep != nullptr, "sep must not be null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
+  Object maxsplit_obj(&scope, thread->runtime()->newInt(maxsplit));
+  Object result(&scope,
+                thread->invokeMethodStatic3(LayoutId::kStr, SymbolId::kRSplit,
+                                            str_obj, sep_obj, maxsplit_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call str.rsplit");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT Py_UCS4 PyUnicode_ReadChar(PyObject* /* e */, Py_ssize_t /* x */) {
@@ -1202,9 +1283,25 @@ PY_EXPORT PyObject* PyUnicode_RichCompare(PyObject* /* t */, PyObject* /* t */,
   UNIMPLEMENTED("PyUnicode_RichCompare");
 }
 
-PY_EXPORT PyObject* PyUnicode_Split(PyObject* /* s */, PyObject* /* p */,
-                                    Py_ssize_t /* t */) {
-  UNIMPLEMENTED("PyUnicode_Split");
+PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
+                                    Py_ssize_t maxsplit) {
+  DCHECK(str != nullptr, "str must not be null");
+  DCHECK(sep != nullptr, "sep must not be null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
+  Object maxsplit_obj(&scope, thread->runtime()->newInt(maxsplit));
+  Object result(&scope,
+                thread->invokeMethodStatic3(LayoutId::kStr, SymbolId::kSplit,
+                                            str_obj, sep_obj, maxsplit_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call str.split");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyUnicode_Splitlines(PyObject* /* g */, int /* s */) {

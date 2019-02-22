@@ -816,4 +816,181 @@ TEST_F(UnicodeExtensionApiTest, FSConverterWithEmbeddedNullRaisesValueError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
+TEST_F(UnicodeExtensionApiTest, InternInPlaceWritesNewHandleBack) {
+  PyObject* a = PyUnicode_FromString("hello world aaaaaaaaaa");
+  PyObject* b = PyUnicode_FromString("hello world aaaaaaaaaa");
+  PyObject* b_addr = b;
+  EXPECT_NE(a, b);
+  PyUnicode_InternInPlace(&a);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyUnicode_InternInPlace(&b);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_NE(b, b_addr);
+  Py_DECREF(a);
+}
+
+TEST_F(UnicodeExtensionApiTest, InternFromStringReturnsStr) {
+  PyObjectPtr result(PyUnicode_InternFromString("szechuan broccoli"));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(result));
+}
+
+TEST_F(UnicodeExtensionApiTest, JoinWithEmptySeqReturnsEmptyStr) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr seq(PyList_New(0));
+  PyObjectPtr result(PyUnicode_Join(sep, seq));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(result));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, ""), 0);
+}
+
+TEST_F(UnicodeExtensionApiTest, JoinWithSeqJoinsElements) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr seq(PyList_New(0));
+  PyObjectPtr elt0(PyUnicode_FromString("a"));
+  PyList_Append(seq, elt0);
+  PyObjectPtr elt1(PyUnicode_FromString("b"));
+  PyList_Append(seq, elt1);
+  PyObjectPtr result(PyUnicode_Join(sep, seq));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(result));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "a.b"), 0);
+}
+
+TEST_F(UnicodeExtensionApiTest, JoinWithSeqContainingNonStrRaisesTypeError) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr seq(PyList_New(0));
+  PyList_Append(seq, Py_None);
+  PyObjectPtr result(PyUnicode_Join(sep, seq));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, JoinWithSeqContainingBytesRaisesTypeError) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr seq(PyList_New(0));
+  PyObjectPtr elt0(PyBytes_FromString("a"));
+  PyList_Append(seq, elt0);
+  PyObjectPtr result(PyUnicode_Join(sep, seq));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, PartitionWithNonStrStrRaisesTypeError) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_Partition(Py_None, sep));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, PartitionWithNonStrSepRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  PyObjectPtr result(PyUnicode_Partition(str, Py_None));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, PartitionReturnsTuple) {
+  PyObjectPtr str(PyUnicode_FromString("a.b"));
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_Partition(str, sep));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyTuple_CheckExact(result));
+}
+
+TEST_F(UnicodeExtensionApiTest, RPartitionWithNonStrStrRaisesTypeError) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_RPartition(Py_None, sep));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, RPartitionWithNonStrSepRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  PyObjectPtr result(PyUnicode_RPartition(str, Py_None));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, RPartitionReturnsTuple) {
+  PyObjectPtr str(PyUnicode_FromString("a.b"));
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_RPartition(str, sep));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyTuple_CheckExact(result));
+}
+
+TEST_F(UnicodeExtensionApiTest, SplitWithNonStrStrRaisesTypeError) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_Split(Py_None, sep, 5));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, SplitWithNonStrSepRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  PyObjectPtr sep(PyLong_FromLong(8));
+  PyObjectPtr result(PyUnicode_Split(str, sep, 5));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, SplitReturnsList) {
+  PyObjectPtr str(PyUnicode_FromString("a.b"));
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_Split(str, sep, 5));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyList_CheckExact(result));
+}
+
+TEST_F(UnicodeExtensionApiTest, RSplitWithNonStrStrRaisesTypeError) {
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_RSplit(Py_None, sep, 5));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, RSplitWithNonStrSepRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  PyObjectPtr sep(PyLong_FromLong(8));
+  PyObjectPtr result(PyUnicode_RSplit(str, sep, 5));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, RSplitReturnsList) {
+  PyObjectPtr str(PyUnicode_FromString("a.b"));
+  PyObjectPtr sep(PyUnicode_FromString("."));
+  PyObjectPtr result(PyUnicode_RSplit(str, sep, 5));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyList_CheckExact(result));
+}
+
+TEST_F(UnicodeExtensionApiTest, StrlenWithEmptyStrReturnsZero) {
+  const wchar_t* str = L"";
+  ASSERT_EQ(Py_UNICODE_strlen(str), 0U);
+}
+
+TEST_F(UnicodeExtensionApiTest, StrlenWithStrReturnsNumberOfChars) {
+  const wchar_t* str = L"hello";
+  ASSERT_EQ(Py_UNICODE_strlen(str), 5U);
+}
+
 }  // namespace python

@@ -1622,6 +1622,8 @@ class RawDict : public RawHeapObject {
   RAW_OBJECT_COMMON(Dict);
 };
 
+typedef bool (*DictEq)(RawObject a, RawObject b);
+
 // Helper class for manipulating buckets in the RawTuple that backs the
 // dict
 class RawDict::Bucket {
@@ -1634,9 +1636,9 @@ class RawDict::Bucket {
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
-  static bool hasKey(RawTuple data, word index, RawObject that_key) {
-    return !hash(data, index)->isNoneType() &&
-           RawObject::equals(key(data, index), that_key);
+  static bool hasKey(RawTuple data, word index, RawObject that_key,
+                     DictEq pred) {
+    return !hash(data, index)->isNoneType() && pred(key(data, index), that_key);
   }
 
   static RawObject hash(RawTuple data, word index) {

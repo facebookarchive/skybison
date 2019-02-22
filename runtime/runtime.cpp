@@ -2626,11 +2626,11 @@ void Runtime::dictAtPutWithHash(const Dict& dict, const Object& key,
   HandleScope scope;
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
     Tuple new_data(&scope, dictGrow(data));
-    dictLookup(new_data, key, key_hash, &index);
+    dictLookup(new_data, key, key_hash, &index, RawObject::equals);
     DCHECK(index != -1, "invalid index %ld", index);
     dict.setData(*new_data);
     Dict::Bucket::set(*new_data, index, *key_hash, *key, *value);
@@ -2661,7 +2661,7 @@ RawTuple Runtime::dictGrow(const Tuple& data) {
     Object key(&scope, Dict::Bucket::key(*data, i));
     Object hash(&scope, Dict::Bucket::hash(*data, i));
     word index = -1;
-    dictLookup(new_data, key, hash, &index);
+    dictLookup(new_data, key, hash, &index, RawObject::equals);
     DCHECK(index != -1, "invalid index %ld", index);
     Dict::Bucket::set(*new_data, index, *hash, *key,
                       Dict::Bucket::value(*data, i));
@@ -2674,7 +2674,7 @@ RawObject Runtime::dictAtWithHash(const Dict& dict, const Object& key,
   HandleScope scope;
   Tuple data(&scope, dict.data());
   word index = -1;
-  bool found = dictLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
@@ -2694,7 +2694,7 @@ RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
   Tuple data(&scope, dict.data());
   word index = -1;
   Object key_hash(&scope, hash(*key));
-  bool found = dictLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (found) {
     DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
@@ -2703,7 +2703,7 @@ RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
     Tuple new_data(&scope, dictGrow(data));
-    dictLookup(new_data, key, key_hash, &index);
+    dictLookup(new_data, key, key_hash, &index, RawObject::equals);
     DCHECK(index != -1, "invalid index %ld", index);
     dict.setData(*new_data);
     Dict::Bucket::set(*new_data, index, *key_hash, *key, *value);
@@ -2733,7 +2733,7 @@ bool Runtime::dictIncludesWithHash(const Dict& dict, const Object& key,
   HandleScope scope;
   Tuple data(&scope, dict.data());
   word ignore;
-  return dictLookup(data, key, key_hash, &ignore);
+  return dictLookup(data, key, key_hash, &ignore, RawObject::equals);
 }
 
 RawObject Runtime::dictRemove(const Dict& dict, const Object& key) {
@@ -2748,7 +2748,7 @@ RawObject Runtime::dictRemoveWithHash(const Dict& dict, const Object& key,
   Tuple data(&scope, dict.data());
   word index = -1;
   Object result(&scope, Error::object());
-  bool found = dictLookup(data, key, key_hash, &index);
+  bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
     result = Dict::Bucket::value(*data, index);
@@ -2759,7 +2759,7 @@ RawObject Runtime::dictRemoveWithHash(const Dict& dict, const Object& key,
 }
 
 bool Runtime::dictLookup(const Tuple& data, const Object& key,
-                         const Object& key_hash, word* index) {
+                         const Object& key_hash, word* index, DictEq pred) {
   word start = Dict::Bucket::getIndex(*data, *key_hash);
   word current = start;
   word next_free_index = -1;
@@ -2772,7 +2772,7 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
   }
 
   do {
-    if (Dict::Bucket::hasKey(*data, current, *key)) {
+    if (Dict::Bucket::hasKey(*data, current, *key, pred)) {
       *index = current;
       return true;
     }
@@ -3979,13 +3979,14 @@ void Runtime::freeApiHandles() {
   // Clear the allocated ApiHandles
   HandleScope scope;
   Dict dict(&scope, apiHandles());
-  Tuple keys(&scope, dictKeys(dict));
-  for (word i = 0; i < keys.length(); i++) {
-    Object key(&scope, keys.at(i));
-    auto handle =
-        static_cast<ApiHandle*>(RawInt::cast(dictAt(dict, key))->asCPtr());
+  Tuple buckets(&scope, dict.data());
+  word i = Dict::Bucket::kFirst;
+  while (Dict::Bucket::nextItem(*buckets, &i)) {
+    Object value(&scope, Dict::Bucket::value(*buckets, i));
+    auto handle = static_cast<ApiHandle*>(RawInt::cast(*value)->asCPtr());
     std::free(handle->cache());
     std::free(handle);
+    Dict::Bucket::setTombstone(*buckets, i);
   }
 }
 

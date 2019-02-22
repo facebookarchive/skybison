@@ -119,6 +119,21 @@ class Thread {
                           const Handle<RawObject>& arg1,
                           const Handle<RawObject>& arg2);
 
+  // Looks up a method on a type and invokes it with the given receiver and
+  // argument
+  // ex: str.foo(receiver, arg1)
+  RawObject invokeMethodStatic2(LayoutId type, SymbolId method_name,
+                                const Handle<RawObject>& receiver,
+                                const Handle<RawObject>& arg1);
+
+  // Looks up a method on a type and invokes it with the given receiver and
+  // arguments
+  // ex: str.foo(receiver, arg1, arg2)
+  RawObject invokeMethodStatic3(LayoutId type, SymbolId method_name,
+                                const Handle<RawObject>& receiver,
+                                const Handle<RawObject>& arg1,
+                                const Handle<RawObject>& arg2);
+
   // Calls out to the interpreter to lookup and call a function with one
   // argument
   RawObject invokeFunction1(SymbolId module, SymbolId name,

@@ -261,6 +261,7 @@ class Runtime;
   V(Operator, "operator")                                                      \
   V(Ord, "ord")                                                                \
   V(OverflowError, "OverflowError")                                            \
+  V(Partition, "partition")                                                    \
   V(Path, "path")                                                              \
   V(PendingDeprecationWarning, "PendingDeprecationWarning")                    \
   V(PermissionError, "PermissionError")                                        \
@@ -268,7 +269,6 @@ class Runtime;
   V(Pop, "pop")                                                                \
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
-  V(RStrip, "rstrip")                                                          \
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
   V(RecursionError, "RecursionError")                                          \
@@ -278,6 +278,9 @@ class Runtime;
   V(Remove, "remove")                                                          \
   V(Repr, "repr")                                                              \
   V(ResourceWarning, "ResourceWarning")                                        \
+  V(RPartition, "rpartition")                                                  \
+  V(RSplit, "rsplit")                                                          \
+  V(RStrip, "rstrip")                                                          \
   V(RuntimeError, "RuntimeError")                                              \
   V(RuntimeWarning, "RuntimeWarning")                                          \
   V(Send, "send")                                                              \
@@ -291,6 +294,7 @@ class Runtime;
   V(Slice, "slice")                                                            \
   V(SmallInt, "smallint")                                                      \
   V(SmallStr, "smallstr")                                                      \
+  V(Split, "split")                                                            \
   V(Start, "start")                                                            \
   V(StaticMethod, "staticmethod")                                              \
   V(Stderr, "stderr")                                                          \
