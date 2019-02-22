@@ -114,4 +114,48 @@ TEST_F(ModSupportExtensionApiTest, AddIntMacroAddsInt) {
   EXPECT_EQ(PyLong_AsLong(myint), MYINT);
 #pragma pop_macro("MYINT")
 }
+
+TEST_F(ModSupportExtensionApiTest, BuildValue) {
+  testing::PyObjectPtr a_str(Py_BuildValue("s", "hello, world"));
+  ASSERT_NE(a_str, nullptr);
+  ASSERT_TRUE(PyUnicode_Check(a_str));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(a_str, "hello, world"), 0);
+}
+
+TEST_F(ModSupportExtensionApiTest, BuildValueStringLength) {
+  testing::PyObjectPtr a_str(Py_BuildValue("s#", "hello, world", 5));
+  ASSERT_NE(a_str, nullptr);
+  ASSERT_TRUE(PyUnicode_Check(a_str));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(a_str, "hello"), 0);
+}
+
+TEST_F(ModSupportExtensionApiTest, BuildValueInt) {
+  testing::PyObjectPtr an_int(Py_BuildValue("i", 42));
+  ASSERT_NE(an_int, nullptr);
+  ASSERT_TRUE(PyLong_Check(an_int));
+  ASSERT_EQ(PyLong_AsLong(an_int), 42);
+}
+
+TEST_F(ModSupportExtensionApiTest, BuildValueTupleOfInt) {
+  testing::PyObjectPtr a_tuple(Py_BuildValue("iiii", 111, 222, 333, 444));
+  ASSERT_NE(a_tuple, nullptr);
+  ASSERT_TRUE(PyTuple_Check(a_tuple));
+
+  PyObject* item0 = PyTuple_GetItem(a_tuple, 0);
+  ASSERT_NE(item0, nullptr);
+  ASSERT_EQ(PyLong_AsLong(item0), 111);
+
+  PyObject* item1 = PyTuple_GetItem(a_tuple, 1);
+  ASSERT_NE(item1, nullptr);
+  ASSERT_EQ(PyLong_AsLong(item1), 222);
+
+  PyObject* item2 = PyTuple_GetItem(a_tuple, 2);
+  ASSERT_NE(item2, nullptr);
+  ASSERT_EQ(PyLong_AsLong(item2), 333);
+
+  PyObject* item3 = PyTuple_GetItem(a_tuple, 3);
+  ASSERT_NE(item3, nullptr);
+  ASSERT_EQ(PyLong_AsLong(item3), 444);
+}
+
 }  // namespace python
