@@ -23,6 +23,7 @@ class ByteArrayBuiltins {
 
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
  private:
   static const BuiltinAttribute kAttributes[];

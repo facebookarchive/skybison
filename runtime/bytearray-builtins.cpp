@@ -26,6 +26,7 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
 const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderRepr, dunderRepr},
 };
 
 void ByteArrayBuiltins::initialize(Runtime* runtime) {
@@ -116,6 +117,66 @@ RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
   result.setNumItems(0);
   result.setBytes(runtime->newBytes(0, 0));
   return *result;
+}
+
+RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__repr__' requires a 'bytearray' object");
+  }
+
+  ByteArray self(&scope, *self_obj);
+  word length = self.numItems();
+  word affix_length = 14;  // strlen("bytearray(b'')") == 14
+  if (length > (kMaxWord - affix_length) / 4) {
+    return thread->raiseOverflowErrorWithCStr(
+        "bytearray object is too large to make repr");
+  }
+
+  // Figure out which quote to use; single is preferred
+  bool has_single_quote = false;
+  bool has_double_quote = false;
+  for (word i = 0; i < length; i++) {
+    byte current = self.byteAt(i);
+    if (current == '\'') {
+      has_single_quote = true;
+    } else if (current == '"') {
+      has_double_quote = true;
+      break;
+    }
+  }
+  byte quote = (has_single_quote && !has_double_quote) ? '"' : '\'';
+
+  // Each byte will be mapped to one or more ASCII characters.
+  ByteArray buffer(&scope, runtime->newByteArray());
+  runtime->byteArrayEnsureCapacity(thread, buffer, length + affix_length - 1);
+  runtime->byteArrayExtend(
+      thread, buffer,
+      {'b', 'y', 't', 'e', 'a', 'r', 'r', 'a', 'y', '(', 'b', quote});
+  for (word i = 0; i < length; i++) {
+    byte current = self.byteAt(i);
+    if (current == quote || current == '\\') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', current});
+    } else if (current == '\t') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 't'});
+    } else if (current == '\n') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 'n'});
+    } else if (current == '\r') {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 'r'});
+    } else if (current < ' ' || current >= 0x7f) {
+      runtime->byteArrayExtend(thread, buffer, {'\\', 'x'});
+      writeByteAsHexDigits(thread, buffer, current);
+    } else {
+      byteArrayAdd(thread, runtime, buffer, current);
+    }
+  }
+  runtime->byteArrayExtend(thread, buffer, {quote, ')'});
+  return runtime->newStrFromByteArray(buffer);
 }
 
 }  // namespace python

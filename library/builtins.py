@@ -356,6 +356,9 @@ class bytearray(bootstrap=True):
     ):
         pass
 
+    def __repr__(self):
+        pass
+
 
 class bytes(bootstrap=True):
     def __add__(self, other: bytes) -> bytes:

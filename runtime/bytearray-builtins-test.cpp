@@ -207,4 +207,93 @@ TEST(ByteArrayBuiltinsTest, NewByteArray) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "Hello world!"));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderReprWithNonByteArrayRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(0, 0));
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(raisedWithStr(*repr, LayoutId::kTypeError,
+                            "'__repr__' requires a 'bytearray' object"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderReprWithOverlongByteArrayRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  self.setNumItems(kMaxWord / 4);
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(raisedWithStr(*repr, LayoutId::kOverflowError,
+                            "bytearray object is too large to make repr"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderReprWithEmptyByteArrayReturnsEmptyRepr) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "bytearray(b'')"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderReprWithSimpleByteArrayReturnsRepr) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'f', 'o', 'o'});
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "bytearray(b'foo')"));
+}
+
+TEST(ByteArrayBuiltinsTest,
+     DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'_', '"', '_'});
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'_"_'))"));
+}
+
+TEST(ByteArrayBuiltinsTest,
+     DunderReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'_', '\'', '_'});
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b"_'_"))"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'_', '"', '_', '\'', '_'});
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'_"_\'_'))"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'\\', '\t', '\n', '\r'});
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'\\\t\n\r'))"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {0, 0x1f, 0x80, 0xff});
+  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'\x00\x1f\x80\xff'))"));
+}
+
 }  // namespace python
