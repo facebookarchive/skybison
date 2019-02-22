@@ -1164,12 +1164,13 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
-  Int num(&scope,
-          newIntWithDigits(&runtime, {kHighbitUword, mantissa_high_bit}));
+  Int num(
+      &scope,
+      newIntWithDigits(
+          &runtime, {uword{1} << (kBitsPerWord - kDoubleMantissaBits - 1), 1}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p116", nullptr));
+  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p64", nullptr));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {

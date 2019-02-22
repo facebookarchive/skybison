@@ -1044,8 +1044,7 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
   if (shift_left > 0) {
     int lower_shift_right = kBitsPerWord - shift_left;
     value_as_word |= second_highest_digit >> lower_shift_right;
-    lesser_significand_bits_zero =
-        (second_highest_digit << lower_shift_right) == 0;
+    lesser_significand_bits_zero = (second_highest_digit << shift_left) == 0;
   } else {
     lesser_significand_bits_zero =
         second_highest_digit == 0 &&

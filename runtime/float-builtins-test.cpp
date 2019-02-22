@@ -642,7 +642,7 @@ TEST(FloatBuiltinsTest, DunderEqWithLargeIntExactReturnsTrue) {
 TEST(FloatBuiltinsTest, DunderEqWithLargeIntInexactReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
-  Object int0(&scope, runtime.newIntWithDigits({0x400, 1}));
+  Object int0(&scope, runtime.newIntWithDigits({0x800, 1}));
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
   ASSERT_EQ(RawFloat::cast(runBuiltin(IntBuiltins::dunderFloat, int0)).value(),
             RawFloat::cast(*float0).value());
