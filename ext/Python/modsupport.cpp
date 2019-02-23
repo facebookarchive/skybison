@@ -267,7 +267,9 @@ static PyObject* doMakeValue(const char** p_format, va_list* p_va, int flags) {
         if (sizeof(size_t) != sizeof(long)) {
           return PyLong_FromSsize_t(va_arg(*p_va, Py_ssize_t));
         }
-        // Fall through from 'n' to 'l' if Py_ssize_t is long
+        // fall through
+        // Falls through from 'n' to 'l' if Py_ssize_t is long (above comment
+        // avoids compiler warning)
       case 'l':
         return PyLong_FromLong(va_arg(*p_va, long));
 
