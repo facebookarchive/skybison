@@ -214,32 +214,6 @@ RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
       View<NativeMethod>(nullptr, 0), View<BuiltinMethod>(nullptr, 0));
 }
 
-RawObject Runtime::addBuiltinTypeWithAttrs(SymbolId name, LayoutId subclass_id,
-                                           LayoutId superclass_id,
-                                           View<BuiltinAttribute> attrs) {
-  return addBuiltinType(name, subclass_id, superclass_id, attrs,
-                        View<NativeMethod>(nullptr, 0),
-                        View<BuiltinMethod>(nullptr, 0));
-}
-
-RawObject Runtime::addBuiltinTypeWithNativeMethods(SymbolId name,
-                                                   LayoutId subclass_id,
-                                                   LayoutId superclass_id,
-                                                   View<NativeMethod> methods) {
-  return addBuiltinType(name, subclass_id, superclass_id,
-                        View<BuiltinAttribute>(nullptr, 0), methods,
-                        View<BuiltinMethod>(nullptr, 0));
-}
-
-RawObject Runtime::addBuiltinTypeWithMethods(SymbolId name,
-                                             LayoutId subclass_id,
-                                             LayoutId superclass_id,
-                                             View<NativeMethod> methods,
-                                             View<BuiltinMethod> builtins) {
-  return addBuiltinType(name, subclass_id, superclass_id,
-                        View<BuiltinAttribute>(nullptr, 0), methods, builtins);
-}
-
 RawObject Runtime::addBuiltinTypeWithBuiltinMethods(
     SymbolId name, LayoutId subclass_id, LayoutId superclass_id,
     View<BuiltinMethod> methods) {
