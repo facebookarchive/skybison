@@ -8,11 +8,17 @@
 
 namespace python {
 
-RawObject builtinSuperNew(Thread* thread, Frame*, word) {
+const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+RawObject SuperBuiltins::dunderNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newSuper();
 }
 
-RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs) {
+RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   // only support idiomatic usage for now
   // super() -> same as super(__class__, <first argument>)
   // super(type, obj) -> bound super object; requires isinstance(obj, type)

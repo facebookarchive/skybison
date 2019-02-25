@@ -8,7 +8,12 @@
 
 namespace python {
 
-RawObject builtinRefNew(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod RefBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   if (nargs < 2 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr("ref() expected 2 or 3 arguments");

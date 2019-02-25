@@ -3,11 +3,18 @@
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
+#include "runtime.h"
 #include "thread.h"
 
 namespace python {
 
-RawObject builtinSuperInit(Thread* thread, Frame* frame, word nargs);
-RawObject builtinSuperNew(Thread* thread, Frame* frame, word nargs);
+class SuperBuiltins
+    : public Builtins<SuperBuiltins, SymbolId::kSuper, LayoutId::kSuper> {
+ public:
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
+
+  static const BuiltinMethod kBuiltinMethods[];
+};
 
 }  // namespace python

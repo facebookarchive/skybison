@@ -703,13 +703,6 @@ class Runtime {
   void initializeRandom();
   void initializeSymbols();
 
-  void initializeClassMethodType();
-  void initializePropertyType();
-  void initializeRefType();
-
-  void initializeStaticMethodType();
-  void initializeSuperType();
-
   RawObject createMainModule();
 
   RawObject executeModule(const char* buffer, const Module& module);

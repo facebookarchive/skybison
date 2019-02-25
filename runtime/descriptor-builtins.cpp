@@ -10,11 +10,19 @@ namespace python {
 
 // classmethod
 
-RawObject builtinClassMethodNew(Thread* thread, Frame*, word) {
+const BuiltinMethod ClassMethodBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderGet, dunderGet},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+RawObject ClassMethodBuiltins::dunderNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newClassMethod();
 }
 
-RawObject builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
+RawObject ClassMethodBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                          word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   ClassMethod classmethod(&scope, args.get(0));
@@ -23,7 +31,8 @@ RawObject builtinClassMethodInit(Thread* thread, Frame* frame, word nargs) {
   return *classmethod;
 }
 
-RawObject builtinClassMethodGet(Thread* thread, Frame* frame, word nargs) {
+RawObject ClassMethodBuiltins::dunderGet(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -35,7 +44,15 @@ RawObject builtinClassMethodGet(Thread* thread, Frame* frame, word nargs) {
 
 // staticmethod
 
-RawObject builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod StaticMethodBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderGet, dunderGet},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+RawObject StaticMethodBuiltins::dunderGet(Thread* thread, Frame* frame,
+                                          word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -43,11 +60,12 @@ RawObject builtinStaticMethodGet(Thread* thread, Frame* frame, word nargs) {
   return RawStaticMethod::cast(*self)->function();
 }
 
-RawObject builtinStaticMethodNew(Thread* thread, Frame*, word) {
+RawObject StaticMethodBuiltins::dunderNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newStaticMethod();
 }
 
-RawObject builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
+RawObject StaticMethodBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                           word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   StaticMethod staticmethod(&scope, args.get(0));
@@ -58,7 +76,20 @@ RawObject builtinStaticMethodInit(Thread* thread, Frame* frame, word nargs) {
 
 // property
 
-RawObject builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
+// clang-format off
+const BuiltinMethod PropertyBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderGet, dunderGet},
+    {SymbolId::kDunderSet, dunderSet},
+    {SymbolId::kDeleter, deleter},
+    {SymbolId::kGetter, getter},
+    {SymbolId::kSetter, setter},
+    {SymbolId::kSentinelId, nullptr},
+};
+// clang-format on
+
+RawObject PropertyBuiltins::deleter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(
@@ -73,7 +104,8 @@ RawObject builtinPropertyDeleter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-RawObject builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
+RawObject PropertyBuiltins::dunderGet(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs < 3 || nargs > 4) {
     return thread->raiseTypeErrorWithCStr(
         "property.__get__ expects 2-3 arguments");
@@ -100,7 +132,8 @@ RawObject builtinPropertyDunderGet(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callFunction1(thread, frame, getter, obj);
 }
 
-RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
+RawObject PropertyBuiltins::dunderSet(Thread* thread, Frame* frame,
+                                      word nargs) {
   if (nargs != 3) {
     return thread->raiseTypeErrorWithCStr(
         "property.__set__ expects 2 arguments");
@@ -124,7 +157,7 @@ RawObject builtinPropertyDunderSet(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::callFunction2(thread, frame, setter, obj, value);
 }
 
-RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
+RawObject PropertyBuiltins::getter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(
@@ -138,7 +171,8 @@ RawObject builtinPropertyGetter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
-RawObject builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
+RawObject PropertyBuiltins::dunderInit(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(
@@ -152,13 +186,13 @@ RawObject builtinPropertyInit(Thread* thread, Frame* frame, word nargs) {
   return *property;
 }
 
-RawObject builtinPropertyNew(Thread* thread, Frame*, word) {
+RawObject PropertyBuiltins::dunderNew(Thread* thread, Frame*, word) {
   HandleScope scope(thread);
   Object none(&scope, NoneType::object());
   return thread->runtime()->newProperty(none, none, none);
 }
 
-RawObject builtinPropertySetter(Thread* thread, Frame* frame, word nargs) {
+RawObject PropertyBuiltins::setter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0)->isProperty()) {
     return thread->raiseTypeErrorWithCStr(
