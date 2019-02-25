@@ -990,7 +990,6 @@ a, b, c = l
 
 TEST(InterpreterTest, UnpackSequenceTooFewObjects) {
   Runtime runtime;
-  HandleScope scope;
   const char* src = R"(
 l = [1, 2]
 a, b, c = l
@@ -1001,7 +1000,6 @@ a, b, c = l
 
 TEST(InterpreterTest, UnpackSequenceTooManyObjects) {
   Runtime runtime;
-  HandleScope scope;
   const char* src = R"(
 l = [1, 2, 3, 4]
 a, b, c = l
@@ -1485,7 +1483,6 @@ d = {**Foo(), 'd': 4}
 
 TEST(InterpreterTest, UnpackSequenceExWithTooFewObjectsBefore) {
   Runtime runtime;
-  HandleScope scope;
   const char* src = R"(
 l = [1, 2]
 a, b, c, *d  = l
@@ -1496,7 +1493,6 @@ a, b, c, *d  = l
 
 TEST(InterpreterTest, UnpackSequenceExWithTooFewObjectsAfter) {
   Runtime runtime;
-  HandleScope scope;
   const char* src = R"(
 l = [1, 2]
 *a, b, c, d = l
@@ -1547,7 +1543,6 @@ v = outer()
 
 TEST(InterpreterTest, FunctionAccessesUnboundVariable) {
   Runtime runtime;
-  HandleScope scope;
   const char* src = R"(
 def outer():
     var = 1
@@ -2202,7 +2197,6 @@ foo = Foo()
 
 TEST(InterpreterTest, YieldFromIterRaisesException) {
   Runtime runtime;
-  HandleScope scope;
 
   const char* src = R"(
 def yield_from_func():
@@ -2527,7 +2521,6 @@ result = f(*args)
 
 TEST(InterpreterDeathTest, ExplodeWithIterableRaisesNotImplementedError) {
   Runtime runtime;
-  HandleScope scope;
   // TODO(bsimmers): Change this to inspect result once sequenceAsTuple() is
   // fixed.
   EXPECT_TRUE(
@@ -2720,7 +2713,6 @@ result = foo()
 
 TEST(InterpreterTest, WithStatementPropagatesException) {
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Mgr:
     def __enter__(self):
@@ -2797,7 +2789,6 @@ result = 1234
 
 TEST(InterpreterTest, WithStatementWithRaisingExitRaises) {
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class Mgr:
   def __enter__(self):

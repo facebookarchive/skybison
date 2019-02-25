@@ -452,7 +452,6 @@ exc = ModuleNotFoundError(1111, name=2222, path=3333)
 
 TEST(ExceptionBuiltinsTest, DunderReprWithNoArgsHasEmptyParens) {
   Runtime runtime;
-  HandleScope scope;
 
   runFromCStr(&runtime, R"(
 result = NameError().__repr__()
@@ -464,7 +463,6 @@ result = NameError().__repr__()
 
 TEST(ExceptionBuiltinsTest, DunderReprCallsTupleRepr) {
   Runtime runtime;
-  HandleScope scope;
 
   runFromCStr(&runtime, R"(
 n = NameError().__class__.__name__

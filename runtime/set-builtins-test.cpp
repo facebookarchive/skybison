@@ -450,7 +450,6 @@ TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
 
 TEST(SetBuiltinsTest, DunderEqWithSetSubclass) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, R"(
 class Bar(set): pass
 
@@ -472,7 +471,6 @@ cmp4 = (b == b)
 
 TEST(SetBuiltinsTest, DunderNeWithSetSubclass) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, R"(
 class Bar(set): pass
 
@@ -494,7 +492,6 @@ cmp4 = (b != b)
 
 TEST(SetBuiltinsTest, DunderGeWithSetSubclass) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, R"(
 class Bar(set): pass
 
@@ -516,7 +513,6 @@ cmp4 = (b >= b)
 
 TEST(SetBuiltinsTest, DunderGtWithSetSubclass) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, R"(
 class Bar(set): pass
 
@@ -538,7 +534,6 @@ cmp4 = (b > b)
 
 TEST(SetBuiltinsTest, DunderLeWithSetSubclass) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, R"(
 class Bar(set): pass
 
@@ -560,7 +555,6 @@ cmp4 = (b <= b)
 
 TEST(SetBuiltinsTest, DunderLtWithSetSubclass) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, R"(
 class Bar(set): pass
 
@@ -605,7 +599,7 @@ TEST(SetBuiltinsTest, DunderEqWithEqualSetsReturnsTrue) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set));
+  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
@@ -615,8 +609,8 @@ TEST(SetBuiltinsTest, DunderEqWithUnequalSetsReturnsFalse) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(1, 4));
-  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set));
-  ASSERT_EQ(*result, Bool::trueObj());
+  Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set1));
+  ASSERT_EQ(*result, Bool::falseObj());
 }
 
 TEST(SetBuiltinsTest, DunderNeWithEmptySetsReturnsFalse) {
@@ -1319,7 +1313,7 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 5));
   Set set1(&scope, setFromRange(1, 4));
-  ASSERT_FALSE(setIsProperSubset(thread, set, set));
+  ASSERT_FALSE(setIsProperSubset(thread, set, set1));
 }
 
 TEST(SetBuiltinsTest, ReprReturnsElements) {

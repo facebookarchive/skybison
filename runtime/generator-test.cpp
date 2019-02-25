@@ -161,7 +161,6 @@ except StopIteration:
 TEST(GeneratorTest, NextAfterReturnRaisesStopIteration) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
   EXPECT_EQ(runFromCStr(&runtime, R"(
 def gen():
   yield 0
@@ -184,7 +183,6 @@ g.__next__()
 TEST(GeneratorTest, NextAfterRaiseRaisesStopIteration) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
   EXPECT_FALSE(runFromCStr(&runtime, R"(
 def gen():
   yield 0

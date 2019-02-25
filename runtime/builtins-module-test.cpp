@@ -653,7 +653,6 @@ class Foo:
 a = setattr(Foo, 2, 'foo')
 )";
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
                             "setattr(): attribute name must be string"));
 }
@@ -677,9 +676,9 @@ d = getattr(list, '__module__')
   EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  EXPECT_EQ(*a, Bool::trueObj());
+  EXPECT_EQ(*c, Bool::trueObj());
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
-  ASSERT_TRUE(b.isStr());
+  ASSERT_TRUE(d.isStr());
   EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
 }
 
@@ -761,7 +760,6 @@ TEST(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooManyArgs) {
 
 TEST(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime,
                   "compile('hello', 'hello', 'hello', dont_inherit=True)"),
@@ -816,7 +814,6 @@ result = exec("a = 1338", {})
 
 TEST(BuiltinsModuleDeathTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 1337
 result = exec("a = 1338", 7)
@@ -894,7 +891,6 @@ TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
 
 TEST(BuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 not_a_function = 1234
 

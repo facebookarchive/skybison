@@ -368,7 +368,6 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeTwoStep) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
-  Object none(&scope, NoneType::object());
   Slice slice(&scope, runtime.newSlice());
   slice.setStep(SmallInt::fromWord(-2));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));

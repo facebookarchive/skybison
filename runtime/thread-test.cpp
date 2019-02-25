@@ -325,7 +325,6 @@ TEST(ThreadTest, ZeroInitializeBlockStack) {
 
 TEST(ThreadTest, ManipulateValueStack) {
   Runtime runtime;
-  HandleScope scope;
   auto thread = Thread::currentThread();
   auto frame = thread->openAndLinkFrame(0, 0, 3);
 
@@ -353,7 +352,6 @@ TEST(ThreadTest, ManipulateValueStack) {
 
 TEST(ThreadTest, ManipulateBlockStack) {
   Runtime runtime;
-  HandleScope scope;
   auto thread = Thread::currentThread();
   auto frame = thread->openAndLinkFrame(0, 0, 0);
   BlockStack* block_stack = frame->blockStack();
@@ -782,7 +780,7 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
-  Object result(&scope, Interpreter::execute(thread, frame));
+  Interpreter::execute(thread, frame);
 
   Object value_cell2(&scope, runtime.dictAt(globals, key));
   ASSERT_TRUE(value_cell2.isValueCell());
@@ -852,7 +850,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
   frame->setImplicitGlobals(*globals);  // simulate module body
 
-  Object result(&scope, Interpreter::execute(thread, frame));
+  Interpreter::execute(thread, frame);
 
   Object value_cell(&scope, runtime.dictAt(builtins, key));
   ASSERT_TRUE(value_cell.isValueCell());
@@ -1010,7 +1008,7 @@ TEST(ThreadTest, MakeFunction) {
   frame->setBuiltins(*builtins);
   frame->setImplicitGlobals(*implicit_globals);
 
-  Object result(&scope, Interpreter::execute(thread, frame));
+  Interpreter::execute(thread, frame);
 
   Object value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value.isValueCell());
@@ -1463,7 +1461,7 @@ static RawObject getMro(Runtime* runtime, const char* src,
                         const char* desired_class) {
   HandleScope scope;
 
-  Object result(&scope, runFromCStr(runtime, src));
+  runFromCStr(runtime, src);
 
   Dict mod_dict(&scope, getMainModuleDict(runtime));
   Object class_name(&scope, runtime->newStrFromCStr(desired_class));
@@ -1552,7 +1550,6 @@ class D(B,C): pass
 
 TEST(ThreadTest, LoadBuildTypeVerifyMroError) {
   Runtime runtime;
-  HandleScope scope;
 
   const char* src = R"(
 class A: pass
@@ -1569,7 +1566,6 @@ class C(A, B): pass
 
 TEST(ThreadTest, IteratePrint) {
   Runtime runtime;
-  HandleScope scope;
 
   const char* src = R"(
 for i in range(3):
@@ -1739,7 +1735,6 @@ hello.say_hello()
 
 TEST(ThreadTest, FailedImportTest) {
   Runtime runtime;
-  HandleScope scope;
 
   const char* main_src = R"(
 import hello
@@ -2463,7 +2458,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   frame->setFastGlobals(
       runtime.computeFastGlobals(code, implicit_globals, builtins));
 
-  Object result(&scope, Interpreter::execute(thread, frame));
+  Interpreter::execute(thread, frame);
   Object value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value.isValueCell());
   RawObject value_obj = RawValueCell::cast(*value)->value();
@@ -2529,7 +2524,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   Object key0(&scope, runtime.newStrFromCStr("cnt"));
   Object key1(&scope, runtime.newStrFromCStr("s"));
   names.atPut(0, *key0);
-  names.atPut(1, *key0);
+  names.atPut(1, *key1);
   code.setNames(*names);
 
   //  # python code:
@@ -2893,7 +2888,6 @@ def foo(a, b, c):
 foo(1, 2, 3)
 )";
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
                             LayoutId::kUnboundLocalError,
                             "local variable 'a' referenced before assignment"));

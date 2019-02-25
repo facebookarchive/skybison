@@ -12,7 +12,6 @@ TEST(ImpModuleTest, ModuleImporting) {
   runFromCStr(&runtime, R"(
 import _imp
   )");
-  HandleScope scope;
   RawObject imp = moduleAt(&runtime, "__main__", "_imp");
   EXPECT_TRUE(imp->isModule());
 }

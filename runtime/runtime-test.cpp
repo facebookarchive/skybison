@@ -261,7 +261,7 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   // Add new item
   Object k2(&scope, SmallInt::fromWord(2));
   SmallIntCallback cb(222);
-  Object entry2(&scope, runtime.dictAtIfAbsentPut(dict, k2, &cb));
+  runtime.dictAtIfAbsentPut(dict, k2, &cb);
   EXPECT_EQ(dict.numItems(), 2);
   RawObject retrieved = runtime.dictAt(dict, k2);
   EXPECT_TRUE(isIntEqualsWord(retrieved, 222));
@@ -269,7 +269,7 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   // Don't overrwite existing item 1 -> v1
   Object k3(&scope, SmallInt::fromWord(1));
   SmallIntCallback cb3(333);
-  Object entry3(&scope, runtime.dictAtIfAbsentPut(dict, k3, &cb3));
+  runtime.dictAtIfAbsentPut(dict, k3, &cb3);
   EXPECT_EQ(dict.numItems(), 2);
   retrieved = runtime.dictAt(dict, k3);
   EXPECT_EQ(retrieved, *v1);
@@ -1055,7 +1055,6 @@ static RawStr className(Runtime* runtime, RawObject o) {
 
 TEST(RuntimeTest, TypeIds) {
   Runtime runtime;
-  HandleScope scope;
 
   EXPECT_TRUE(isStrEqualsCStr(className(&runtime, Bool::trueObj()), "bool"));
   EXPECT_TRUE(
@@ -2359,7 +2358,6 @@ del foo.bar
 
 TEST(InstanceAttributeDeletionTest, DeleteUnknownAttribute) {
   Runtime runtime;
-  HandleScope scope;
   const char* src = R"(
 class Foo:
     pass
@@ -2487,7 +2485,6 @@ del Foo.attr
 
 TEST(ClassAttributeDeletionTest, DeleteUnknownAttribute) {
   Runtime runtime;
-  HandleScope scope;
   const char* src = R"(
 class Foo:
     pass

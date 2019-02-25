@@ -9,6 +9,9 @@
 #include "test-utils.h"
 #include "visitor.h"
 
+// Put `USE()` around expression or variables to avoid unused variable warnings.
+#define USE(x) static_cast<void>(x)
+
 namespace python {
 
 using namespace testing;
@@ -20,6 +23,7 @@ TEST(HandlesTest, UpCastTest) {
   SmallInt h1(&scope, RawObject{0xFEEDFACEL});
 
   Object h2(&scope, *h1);
+  USE(h2);
 
   RememberingVisitor visitor;
   scope.handles()->visitPointers(&visitor);
@@ -35,6 +39,7 @@ TEST(HandlesTest, DownCastTest) {
   Object h1(&scope, i1);
 
   SmallInt h2(&scope, *h1);
+  USE(h2);
 
   RememberingVisitor visitor;
   scope.handles()->visitPointers(&visitor);
@@ -49,7 +54,7 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   RawObject i1{0xFEEDFACEL};
   Object h1(&scope, i1);
 
-  EXPECT_DEBUG_DEATH(Dict h2(&scope, *h1), "Invalid Handle construction");
+  EXPECT_DEBUG_DEATH(USE(Dict(&scope, *h1)), "Invalid Handle construction");
 }
 
 TEST(HandlesTest, ThreadSubclassTest) {
@@ -65,7 +70,7 @@ TEST(HandlesTest, IllegalCastWithThreadTest) {
   Runtime runtime;
   HandleScope scope;
 
-  EXPECT_DEBUG_DEATH(BaseException(&scope, SmallInt::fromWord(123)),
+  EXPECT_DEBUG_DEATH(USE(BaseException(&scope, SmallInt::fromWord(123))),
                      "Invalid Handle construction");
 }
 
@@ -89,6 +94,7 @@ TEST(HandlesTest, VisitOneHandle) {
   HandleScope scope;
   RawObject object{0xFEEDFACEL};
   Object handle(&scope, object);
+  USE(handle);
   RememberingVisitor visitor;
   scope.handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 1);
@@ -101,8 +107,10 @@ TEST(HandlesTest, VisitTwoHandles) {
   RememberingVisitor visitor;
   RawObject o1{0xFEEDFACEL};
   Object h1(&scope, o1);
+  USE(h1);
   RawObject o2{0xFACEFEEDL};
   Object h2(&scope, o2);
+  USE(h2);
   scope.handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 2);
   EXPECT_TRUE(visitor.hasVisited(o1));
@@ -116,6 +124,7 @@ TEST(HandlesTest, VisitObjectInNestedScope) {
   RawObject object{0xFEEDFACEL};
   {
     HandleScope s1;
+    USE(s1);
     {
       // No handles have been created so s1 should be empty.
       RememberingVisitor visitor;
@@ -126,6 +135,7 @@ TEST(HandlesTest, VisitObjectInNestedScope) {
     {
       HandleScope s2;
       Object handle(&s2, object);
+      USE(handle);
       {
         // Check that one handle has been allocated (in the inner scope).
         RememberingVisitor visitor;
@@ -162,6 +172,7 @@ TEST(HandlesTest, NestedScopes) {
   {
     HandleScope s1;
     Object h1(&s1, o1);
+    USE(h1);
     {
       // Check scope s1 for objects o1.
       RememberingVisitor visitor;
@@ -175,6 +186,7 @@ TEST(HandlesTest, NestedScopes) {
       // Push scope 2.
       HandleScope s2;
       Object h2(&s2, o2);
+      USE(h2);
       {
         // Check s2 for o1 and o2.
         RememberingVisitor visitor;
@@ -185,13 +197,14 @@ TEST(HandlesTest, NestedScopes) {
         EXPECT_FALSE(visitor.hasVisited(o3));
       }
       // Verify abort if handle is created with s1.
-      EXPECT_DEBUG_DEATH(Object h3(&s1, o3), "unexpected");
+      EXPECT_DEBUG_DEATH(USE(Object(&s1, o3)), "unexpected");
     }
     // (Scope 2 is now popped.)
     {
       // Push scope 3 (at the depth previously occupied by s2).
       HandleScope s3;
       Object h3(&s3, o3);
+      USE(h3);
       {
         // Check s2 for o1 and o3 (but not o2).
         RememberingVisitor visitor;
@@ -244,6 +257,7 @@ BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
 
   for (auto _ : state) {
     Object h1(&scope, o1);
+    USE(h1);
   }
 }
 
@@ -267,6 +281,15 @@ BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   Object h7(&scope, RawObject{0xFEEDFAD4L});
   Object h8(&scope, RawObject{0xFEEDFAD5L});
   Object h9(&scope, RawObject{0xFEEDFAD6L});
+  USE(h1);
+  USE(h2);
+  USE(h3);
+  USE(h4);
+  USE(h5);
+  USE(h6);
+  USE(h7);
+  USE(h8);
+  USE(h9);
 
   NothingVisitor visitor;
   for (auto _ : state) {

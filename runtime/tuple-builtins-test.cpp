@@ -111,9 +111,9 @@ b_len_implicit = b.__len__()
                         moduleAt(&runtime, "__main__", "b_len_implicit"));
 
   EXPECT_TRUE(isIntEqualsWord(*a_len, 3));
-  EXPECT_TRUE(isIntEqualsWord(*a_len, 3));
+  EXPECT_TRUE(isIntEqualsWord(*a_len_implicit, 3));
   EXPECT_TRUE(isIntEqualsWord(*b_len, 0));
-  EXPECT_TRUE(isIntEqualsWord(*b_len, 0));
+  EXPECT_TRUE(isIntEqualsWord(*b_len_implicit, 0));
 }
 
 TEST(TupleBuiltinsTest, DunderLenWithTupleSubclassReturnsLen) {
@@ -137,9 +137,9 @@ b_len_implicit = b.__len__()
                         moduleAt(&runtime, "__main__", "b_len_implicit"));
 
   EXPECT_TRUE(isIntEqualsWord(*a_len, 3));
-  EXPECT_TRUE(isIntEqualsWord(*a_len, 3));
+  EXPECT_TRUE(isIntEqualsWord(*a_len_implicit, 3));
   EXPECT_TRUE(isIntEqualsWord(*b_len, 0));
-  EXPECT_TRUE(isIntEqualsWord(*b_len, 0));
+  EXPECT_TRUE(isIntEqualsWord(*b_len_implicit, 0));
 }
 
 // Equivalent to evaluating "tuple(range(start, stop))" in Python

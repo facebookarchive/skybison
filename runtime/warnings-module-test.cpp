@@ -12,7 +12,6 @@ TEST(WarningsModuleTest, ModuleImporting) {
   runFromCStr(&runtime, R"(
 import _warnings
   )");
-  HandleScope scope;
   RawObject warnings = moduleAt(&runtime, "__main__", "_warnings");
   EXPECT_TRUE(warnings->isModule());
 }

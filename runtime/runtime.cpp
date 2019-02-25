@@ -777,8 +777,6 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
   Function function(
       &scope, newNativeFunction(name, qualname, builtinTrampoline,
                                 builtinTrampolineKw, builtinTrampolineEx));
-  Object none(&scope, NoneType::object());
-  Tuple empty_tuple(&scope, empty_tuple_);
   function.setCode(newEmptyCode());
   Code code(&scope, function.code());
   code.setCode(newInt(bit_cast<uword>(entry)));
@@ -2539,7 +2537,6 @@ void Runtime::listEnsureCapacity(const List& list, word index) {
 }
 
 void Runtime::listAdd(const List& list, const Object& value) {
-  HandleScope scope;
   word index = list.numItems();
   listEnsureCapacity(list, index);
   list.setNumItems(index + 1);
@@ -3358,7 +3355,6 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
 
   // A minimal implementation of getattr needed to get richards running.
   RawObject result;
-  HandleScope scope(thread);
   if (isInstanceOfType(*receiver)) {
     result = classGetAttr(thread, receiver, name);
   } else if (receiver.isModule()) {

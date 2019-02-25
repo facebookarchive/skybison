@@ -1399,7 +1399,6 @@ void Interpreter::doImportStar(Context* ctx, word) {
   // that's not necessary anymore. You can't import * inside a function
   // body anymore.
 
-  Code code(&scope, ctx->frame->code());
   Module module(&scope, ctx->frame->popValue());
   CHECK(module.isModule(), "Unexpected type to import from");
 
@@ -1900,8 +1899,7 @@ bool Interpreter::doImportName(Context* ctx, word arg) {
   HandleScope scope;
   Code code(&scope, ctx->frame->code());
   Object name(&scope, RawTuple::cast(code.names())->at(arg));
-  Object fromlist(&scope, ctx->frame->popValue());
-  Object level(&scope, ctx->frame->topValue());
+  ctx->frame->popValue();  // from list
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   Object result(&scope, runtime->importModule(name));
@@ -2554,7 +2552,6 @@ void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
 // opcode 157
 void Interpreter::doBuildString(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   switch (arg) {
     case 0:  // empty

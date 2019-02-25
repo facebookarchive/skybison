@@ -293,7 +293,6 @@ else:
 
 TEST(IntBuiltinsTest, BinaryOps) {
   Runtime runtime;
-  HandleScope scope;
 
   const char* src = R"(
 a = 2
@@ -568,7 +567,7 @@ TEST(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
   ASSERT_TRUE(ceil_obj.isFunction());
   Function ceil(&scope, *ceil_obj);
   Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime.typeDictAt(dict, ceil_name));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *ceil_obj);
   EXPECT_EQ(RawCode::cast(ceil.code()).code(),
@@ -588,7 +587,7 @@ TEST(IntBuiltinsTest, DunderFloorAliasesDunderInt) {
   ASSERT_TRUE(floor_obj.isFunction());
   Function floor(&scope, *floor_obj);
   Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime.typeDictAt(dict, floor_name));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *floor_obj);
   EXPECT_EQ(RawCode::cast(floor.code()).code(),
@@ -1486,7 +1485,7 @@ TEST(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
   ASSERT_TRUE(index_obj.isFunction());
   Function index(&scope, *index_obj);
   Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime.typeDictAt(dict, index_name));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *index_obj);
   EXPECT_EQ(RawCode::cast(index.code()).code(),
@@ -1726,7 +1725,7 @@ TEST(IntBuiltinsTest, DunderPosAliasesDunderInt) {
   ASSERT_TRUE(pos_obj.isFunction());
   Function pos(&scope, *pos_obj);
   Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime.typeDictAt(dict, pos_name));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *pos_obj);
   EXPECT_EQ(RawCode::cast(pos.code()).code(),
@@ -1824,7 +1823,7 @@ TEST(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
   ASSERT_TRUE(round_obj.isFunction());
   Function round(&scope, *round_obj);
   Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime.typeDictAt(dict, round_name));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *round_obj);
   EXPECT_EQ(RawCode::cast(round.code()).code(),
@@ -1844,7 +1843,7 @@ TEST(IntBuiltinsTest, DunderTruncAliasesDunderInt) {
   ASSERT_TRUE(trunc_obj.isFunction());
   Function trunc(&scope, *trunc_obj);
   Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime.typeDictAt(dict, trunc_name));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *trunc_obj);
   EXPECT_EQ(RawCode::cast(trunc.code()).code(),
@@ -2384,7 +2383,7 @@ TEST(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
   ASSERT_TRUE(str_obj.isFunction());
   Function str(&scope, *str_obj);
   Object repr_name(&scope, runtime.newStrFromCStr("__repr__"));
-  Object repr_obj(&scope, runtime.typeDictAt(dict, str_name));
+  Object repr_obj(&scope, runtime.typeDictAt(dict, repr_name));
   ASSERT_TRUE(repr_obj.isFunction());
   Function repr(&scope, *str_obj);
   EXPECT_EQ(RawCode::cast(str.code()).code(),
@@ -2656,9 +2655,6 @@ TEST(IntBuiltinsTest,
 
   // test sign extension for negative number when buffer is larger than
   // necessary.
-  Int num(&scope, SmallInt::fromWord(-1024));
-  Int length(&scope, SmallInt::fromWord(7));
-  Str byteorder(&scope, runtime.newStrFromCStr("big"));
   runFromCStr(&runtime, R"(
 result = (-1024).to_bytes(7, 'big', signed=True)
 )");
@@ -2718,7 +2714,6 @@ TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
 TEST(IntBuiltinsTest, ToBytesWithSignedTrueRaisesOverflowError) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
-  HandleScope scope;
 
   // Now check that signed=True with the same inputs triggers an error.
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -3220,7 +3215,7 @@ TEST(IntBuiltinsTest, ConjugateAliasesDunderInt) {
   ASSERT_TRUE(conjugate_obj.isFunction());
   Function conjugate(&scope, *conjugate_obj);
   Object dint_name(&scope, runtime.newStrFromCStr("__int__"));
-  Object dint_obj(&scope, runtime.typeDictAt(dict, conjugate_name));
+  Object dint_obj(&scope, runtime.typeDictAt(dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *conjugate_obj);
   EXPECT_EQ(RawCode::cast(conjugate.code()).code(),

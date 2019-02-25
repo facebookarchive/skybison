@@ -145,25 +145,19 @@ TEST(FloatBuiltinsTest, DunderMulWithNonFloatOtherReturnsNotImplemented) {
 
 TEST(FloatBuiltinsTest, DunderNeWithInequalFloatsReturnsTrue) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, "result = float.__ne__(12.2, 2.12)");
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(FloatBuiltinsTest, DunderNeWithEqualFloatIntReturnsFalse) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, "result = float.__ne__(34.0, 34)");
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(FloatBuiltinsTest, DunderNeWithStringReturnsNotImplemented) {
   Runtime runtime;
-  HandleScope scope;
   runFromCStr(&runtime, "result = float.__ne__(5.5, '')");
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
 }
 
@@ -546,7 +540,6 @@ a = float.__new__(Foo)
 
 TEST(FloatBuiltinsTest, DunderNewWithInvalidStringRaisesValueError) {
   Runtime runtime;
-  HandleScope scope;
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = float.__new__(float, "abc")
@@ -586,8 +579,6 @@ TEST(FloatBuiltinsTest, DunderEqWithFloatsReturnsBool) {
 TEST(FloatBuiltinsTest, DunderEqWithSmallIntExactReturnsBool) {
   Runtime runtime;
   HandleScope scope;
-  Object nan(&scope,
-             runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
   Object float0(&scope, runtime.newFloat(31.0));
   Object float1(&scope, runtime.newFloat(31.125));
   Object int0(&scope, runtime.newFloat(31));

@@ -894,7 +894,6 @@ result = a
 
 TEST(ListBuiltinsTest, SetItemSliceShortValue) {
   Runtime runtime;
-  HandleScope scope;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, R"(
 a = [1,2,3,4,5,6,7,8,9,10]

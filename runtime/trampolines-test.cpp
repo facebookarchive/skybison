@@ -734,7 +734,6 @@ TEST(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
 
 TEST(TrampolinesTest, BuiltinTrampolineKwWithInvalidArgRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
   createAndPatchBuiltinReturnSecondArg(&runtime);
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "dummy(third=3, first=1)"),
                             LayoutId::kTypeError,

@@ -8,7 +8,7 @@ namespace python {
 template <typename>
 class Handle;
 
-class HandleScope {
+class __attribute__((warn_unused)) HandleScope {
  public:
   explicit HandleScope() : HandleScope(Thread::currentThread()) {}
 
@@ -55,7 +55,7 @@ class HandleScope {
 };
 
 template <typename T>
-class Handle : public T {
+class __attribute__((warn_unused)) Handle : public T {
  public:
   Handle(HandleScope* scope, RawObject obj)
       : T(obj.rawCast<T>()), next_(scope->push(this)), scope_(scope) {

@@ -11,8 +11,6 @@ namespace testing {
 
 TEST(MarshalModuleTest, LoadsWithTooFewArgumentsRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
   EXPECT_TRUE(raised(runBuiltin(MarshalModule::loads), LayoutId::kTypeError));
 }
 
