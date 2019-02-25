@@ -1020,13 +1020,13 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
   int shift_right = Utils::maximum(shift, 0);
   int shift_left = -Utils::minimum(shift, 0);
   uword value_as_word = (high_digit >> shift_right) << shift_left;
-  bool lesser_significand_bits_zero;
+  bool lesser_significant_bits_zero;
   if (shift_left > 0) {
     int lower_shift_right = kBitsPerWord - shift_left;
     value_as_word |= second_highest_digit >> lower_shift_right;
-    lesser_significand_bits_zero = (second_highest_digit << shift_left) == 0;
+    lesser_significant_bits_zero = (second_highest_digit << shift_left) == 0;
   } else {
-    lesser_significand_bits_zero =
+    lesser_significant_bits_zero =
         second_highest_digit == 0 &&
         (shift_right == 0 || (high_digit << (kBitsPerWord - shift_right)) == 0);
   }
@@ -1034,7 +1034,7 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
   // Returns true if all digits (in the numbers magnitude) below the 2 highest
   // digits are zero.
   auto lower_bits_zero = [&]() -> bool {
-    if (!lesser_significand_bits_zero) return false;
+    if (!lesser_significant_bits_zero) return false;
     // Already scanned the digits in the negative case and can look at carry.
     if (is_negative) return carry_to_second_highest != 0;
     for (word i = num_digits - 3; i >= 0; i--) {
@@ -1046,10 +1046,10 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
     *result_zeros_below_mantissa = !(value_as_word & 1) && lower_bits_zero();
   }
 
-  // We need to round down if the least significand bit is zero, we need to
-  // round up if the least significand and any other bit is one. If the
-  // least significand bit is one and all other bits are zero then we look at
-  // second least significand bit to round towards an even number.
+  // We need to round down if the least significant bit is zero, we need to
+  // round up if the least significant and any other bit is one. If the
+  // least significant bit is one and all other bits are zero then we look at
+  // second least significant bit to round towards an even number.
   if ((value_as_word & 0x3) == 0x3 ||
       ((value_as_word & 1) && !lower_bits_zero())) {
     value_as_word++;
