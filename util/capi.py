@@ -17,12 +17,17 @@ from capi_util import cmd_output
 
 
 CAPI_BLACKLIST = {
-    "_Py_NoneStruct",  # expansion of Py_None
-    "_Py_TrueStruct",  # expansion of Py_True
-    "_Py_FalseStruct",  # expansion of Py_False
-    "_Py_NotImplementedStruct",  # expansion of Py_NotImplemented
-    "_PyLong_Zero",  # a const
+    "PyStructSequence_InitType2",  # Non-opaque PyTypeObject is unsupported
+    "_PyArg_ParseStack",  # METH_FASTCALL is unsupported
+    "_PyArg_ParseStack_SizeT",  # METH_FASTCALL is unsupported
+    "_PyArg_ParseTupleAndKeywordsFast",  # METH_FASTCALL is unsupported
+    "_PyArg_ParseTupleAndKeywordsFast_SizeT",  # METH_FASTCALL is unsupported
     "_PyLong_One",  # a const
+    "_PyLong_Zero",  # a const
+    "_Py_FalseStruct",  # expansion of Py_False
+    "_Py_NoneStruct",  # expansion of Py_None
+    "_Py_NotImplementedStruct",  # expansion of Py_NotImplemented
+    "_Py_TrueStruct",  # expansion of Py_True
 }
 
 FBCODE_PLATFORM = "gcc-5-glibc-2.23"

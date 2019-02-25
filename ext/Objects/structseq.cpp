@@ -11,11 +11,6 @@ char* PyStructSequence_UnnamedField = const_cast<char*>("unnamed field");
 
 namespace python {
 
-PY_EXPORT int PyStructSequence_InitType2(PyTypeObject*,
-                                         PyStructSequence_Desc*) {
-  UNIMPLEMENTED("PyStructSequence_InitType2 is not supported");
-}
-
 PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
                                              Py_ssize_t pos) {
   Thread* thread = Thread::currentThread();
