@@ -71,7 +71,10 @@ set(
   -Wno-missing-braces
   -Wno-missing-field-initializers
   -Wpedantic
-  -Wshadow)
+  -Wshadow
+  -fno-exceptions
+  -fno-rtti
+)
 
 # Define the `cpython` target
 set(
