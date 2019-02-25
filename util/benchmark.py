@@ -26,11 +26,10 @@ def get_repo_root(dirname):
 REPO_ROOT = get_repo_root(os.path.dirname(__file__))
 PYRO_PATH = f"{REPO_ROOT}/fbcode/pyro"
 # This is the python currently hardcoded in pyro/runtime/runtime.cpp
-PYTHON = "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6"
+CPYTHON = "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6"
 
 
-def compile_pyro(build_dir):
-    pyro_build_dir = f"{build_dir}/pyro"
+def compile_pyro(pyro_build_dir):
     os.makedirs(pyro_build_dir, exist_ok=True)
     cmake_flags = ["-DCMAKE_BUILD_TYPE=Release"]
     if shutil.which("gcc.par"):
@@ -59,7 +58,7 @@ def compile_benchmark(build_dir, benchmark):
     ).check_returncode()
     benchmark_basename = os.path.basename(benchmark)
     run(
-        [PYTHON, "-m", "compileall", "-q", "-b", benchmark_basename],
+        [CPYTHON, "-m", "compileall", "-q", "-b", benchmark_basename],
         cwd=benchmarks_dir,
         stdout=subprocess.DEVNULL,
     ).check_returncode()
@@ -108,6 +107,7 @@ def main(argv):
     parser.add_argument(
         "--keep", "-k", help="Do not remove build directory", action="store_true"
     )
+    parser.add_argument("--pyro-build", help="Use an already-built Pyro.")
     args = parser.parse_args(argv)
 
     if args.verbose:
@@ -116,25 +116,39 @@ def main(argv):
     if args.benchmarks == []:
         args.benchmarks = [f"{PYRO_PATH}/benchmarks/richards.py"]
 
-    build_dir = tempfile.mkdtemp()
-    samples = []
+    build_root = tempfile.mkdtemp()
+
     try:
+        if args.pyro_build:
+            pyro_build = os.path.realpath(args.pyro_build)
+            do_build = False
+            if not os.path.isfile(os.path.join(pyro_build, "python")):
+                raise RuntimeError(
+                    f"Given build dir of {pyro_build} doesn't exist or doesn't"
+                    " have python in it"
+                )
+        else:
+            pyro_build = os.path.join(build_root, "pyro")
+            do_build = True
+
+        samples = []
         revision = describe_revision()
-        compile_pyro(build_dir)
+        if do_build:
+            compile_pyro(pyro_build)
         for benchmark in args.benchmarks:
-            benchmark_pyc = compile_benchmark(build_dir, benchmark)
+            benchmark_pyc = compile_benchmark(build_root, benchmark)
             results = run_benchmark(
-                build_dir, f"{build_dir}/pyro/python", benchmark_pyc
+                build_root, os.path.join(pyro_build, "python"), benchmark_pyc
             )
             samples.append(make_sample(benchmark, "Pyro", revision, results))
-            results = run_benchmark(build_dir, PYTHON, benchmark_pyc)
+            results = run_benchmark(build_root, CPYTHON, benchmark_pyc)
             samples.append(make_sample(benchmark, "CPython", revision, results))
         for sample in samples:
             print(json.dumps(sample, indent=2, sort_keys=True))
             # TODO(matthiasb): Log to scuba?
     finally:
         if not args.keep:
-            shutil.rmtree(build_dir)
+            shutil.rmtree(build_root)
 
 
 if __name__ == "__main__":
