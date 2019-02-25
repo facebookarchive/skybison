@@ -28,7 +28,7 @@ RawObject ClassMethodBuiltins::dunderInit(Thread* thread, Frame* frame,
   ClassMethod classmethod(&scope, args.get(0));
   Object arg(&scope, args.get(1));
   classmethod.setFunction(*arg);
-  return *classmethod;
+  return NoneType::object();
 }
 
 RawObject ClassMethodBuiltins::dunderGet(Thread* thread, Frame* frame,
@@ -71,7 +71,7 @@ RawObject StaticMethodBuiltins::dunderInit(Thread* thread, Frame* frame,
   StaticMethod staticmethod(&scope, args.get(0));
   Object arg(&scope, args.get(1));
   staticmethod.setFunction(*arg);
-  return *staticmethod;
+  return NoneType::object();
 }
 
 // property
@@ -183,7 +183,7 @@ RawObject PropertyBuiltins::dunderInit(Thread* thread, Frame* frame,
   property.setGetter(args.get(1));
   property.setSetter(args.get(2));
   property.setDeleter(args.get(3));
-  return *property;
+  return NoneType::object();
 }
 
 RawObject PropertyBuiltins::dunderNew(Thread* thread, Frame*, word) {

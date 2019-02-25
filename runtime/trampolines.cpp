@@ -939,7 +939,7 @@ RawObject extensionTrampoline(Thread* thread, Frame* caller, word argc) {
   PyCFunction init_function = bit_cast<PyCFunction>(address.asCPtr());
   (*init_function)(self, none, none);
 
-  return *instance;
+  return NoneType::object();
 }
 
 RawObject extensionTrampolineKw(Thread*, Frame*, word) {
@@ -979,7 +979,7 @@ RawObject extensionTrampolineEx(Thread* thread, Frame* caller, word argc) {
   PyCFunction init_function = bit_cast<PyCFunction>(address.asCPtr());
   (*init_function)(self, none, none);
 
-  return *instance;
+  return NoneType::object();
 }
 
 RawObject unimplementedTrampoline(Thread*, Frame*, word) {

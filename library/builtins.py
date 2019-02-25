@@ -23,9 +23,24 @@ def format(obj, fmt_spec):
     return result
 
 
+# This needs to be patched before type is patched or the call to isinstance in
+# type.__call__ won't properly check isinstance's arguments.
+@_patch
+def isinstance(obj, ty):
+    pass
+
+
 class type(bootstrap=True):
     def __call__(self, *args, **kwargs):
-        pass
+        if not isinstance(self, type):
+            raise TypeError("self must be a type instance")
+        obj = self.__new__(self, *args, **kwargs)
+        # Special case for getting the type of an object with type(obj).
+        if self == type and len(args) == 1 and len(kwargs) == 0:
+            return obj
+        if self.__init__(obj, *args, **kwargs) is not None:
+            raise TypeError(f"{self.__name__}.__init__ returned non None")
+        return obj
 
     def __new__(cls, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
         pass
@@ -921,11 +936,6 @@ def range(start_or_stop, stop=_UnboundValue, step=_UnboundValue):
 
 @_patch
 def hasattr(obj, name):
-    pass
-
-
-@_patch
-def isinstance(obj, ty):
     pass
 
 

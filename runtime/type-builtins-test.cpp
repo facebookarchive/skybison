@@ -69,14 +69,9 @@ C(9)
 
 TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
   Runtime runtime;
-  HandleScope scope;
-  Code code(&scope, runtime.newEmptyCode());
-  code.setArgcount(1);
-  Thread* thread = Thread::currentThread();
-  Frame* frame = thread->pushFrame(code);
-  frame->pushValue(runtime.newStrFromCStr("not_a_cls"));
-  RawObject result = TypeBuiltins::dunderCall(thread, frame, 1);
-  ASSERT_TRUE(raised(result, LayoutId::kTypeError));
+  ASSERT_TRUE(raisedWithStr(runFromCStr(&runtime, "type.__call__(5)"),
+                            LayoutId::kTypeError,
+                            "self must be a type instance"));
 }
 
 TEST(TypeBuiltinTest, BuiltinTypeCallInvokeDunderInitAsCallable) {
@@ -220,6 +215,18 @@ name = ty.__name__
   HandleScope scope;
   Object name(&scope, moduleAt(&runtime, "__main__", "name"));
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
+}
+
+TEST(TypeBuiltinTest, TypeCallWithInitReturningNonNoneRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self, *args, **kwargs):
+    return 5
+C()
+)"),
+                            LayoutId::kTypeError,
+                            "C.__init__ returned non None"));
 }
 
 }  // namespace python

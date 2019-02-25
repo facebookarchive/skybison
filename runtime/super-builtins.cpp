@@ -95,7 +95,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
         "obj must be an instance or subtype of type");
   }
   super.setObjectType(*obj_type_obj);
-  return *super;
+  return NoneType::object();
 }
 
 }  // namespace python
