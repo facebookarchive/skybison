@@ -12,7 +12,7 @@ class ComplexBuiltins
  public:
   static RawObject dunderNew(Thread*, Frame*, word);
 
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ComplexBuiltins);

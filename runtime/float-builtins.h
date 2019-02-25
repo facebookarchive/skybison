@@ -35,8 +35,8 @@ class FloatBuiltins
   static RawObject dunderRtrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinMethod> kBuiltinMethods;
-  static const View<BuiltinAttribute> kAttributes;
+  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinAttribute kAttributes[];
 
  private:
   static RawObject floatFromObject(Thread* thread, Frame* frame, word nargs);

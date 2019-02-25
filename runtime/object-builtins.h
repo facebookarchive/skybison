@@ -28,7 +28,7 @@ class NoneBuiltins
   static RawObject dunderNew(Thread*, Frame*, word);
   static RawObject dunderRepr(Thread*, Frame*, word);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);

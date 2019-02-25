@@ -94,14 +94,16 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
 }
 
 // TODO(T39495507): make these attributes readonly
-const View<BuiltinAttribute> SliceBuiltins::kAttributes = {
+const BuiltinAttribute SliceBuiltins::kAttributes[] = {
     {SymbolId::kStart, RawSlice::kStartOffset},
     {SymbolId::kStop, RawSlice::kStopOffset},
     {SymbolId::kStep, RawSlice::kStepOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<BuiltinMethod> SliceBuiltins::kBuiltinMethods = {
+const BuiltinMethod SliceBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

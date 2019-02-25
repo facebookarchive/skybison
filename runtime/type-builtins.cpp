@@ -62,20 +62,23 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   return *type;
 }
 
-const View<BuiltinAttribute> TypeBuiltins::kAttributes = {
+const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {SymbolId::kDunderMro, RawType::kMroOffset},
     {SymbolId::kDunderName, RawType::kNameOffset},
     {SymbolId::kDunderFlags, RawType::kFlagsOffset},
     {SymbolId::kDunderDict, RawType::kDictOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<NativeMethod> TypeBuiltins::kNativeMethods = {
+const NativeMethod TypeBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
-const View<BuiltinMethod> TypeBuiltins::kBuiltinMethods = {
+const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderCall, dunderCall},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 void TypeBuiltins::postInitialize(Runtime* /* runtime */,

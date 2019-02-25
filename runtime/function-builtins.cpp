@@ -9,17 +9,19 @@
 
 namespace python {
 
-const View<NativeMethod> FunctionBuiltins::kNativeMethods = {
+const NativeMethod FunctionBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderGet, nativeTrampoline<dunderGet>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
-const View<BuiltinAttribute> FunctionBuiltins::kAttributes = {
+const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
     {SymbolId::kDunderCode, RawFunction::kCodeOffset},
     {SymbolId::kDunderDoc, RawFunction::kDocOffset},
     {SymbolId::kDunderModule, RawFunction::kModuleOffset},
     {SymbolId::kDunderName, RawFunction::kNameOffset},
     {SymbolId::kDunderQualname, RawFunction::kQualnameOffset},
     {SymbolId::kDunderDict, RawFunction::kDictOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
 void FunctionBuiltins::postInitialize(Runtime*, const Type& new_type) {

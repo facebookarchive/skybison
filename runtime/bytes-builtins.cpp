@@ -162,7 +162,7 @@ RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self) {
   return bytesReprWithDelimiter(thread, self, has_single_quote ? '"' : '\'');
 }
 
-const View<BuiltinMethod> BytesBuiltins::kBuiltinMethods = {
+const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGe, dunderGe},
@@ -174,6 +174,7 @@ const View<BuiltinMethod> BytesBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {

@@ -57,11 +57,12 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
   return sendImpl(thread, gen, value);
 }
 
-const View<NativeMethod> GeneratorBuiltins::kNativeMethods = {
+const NativeMethod GeneratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSend,
      nativeTrampoline<GeneratorBaseBuiltins::send<LayoutId::kGenerator>>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -98,9 +99,10 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return sendImpl(thread, gen, value);
 }
 
-const View<NativeMethod> CoroutineBuiltins::kNativeMethods = {
+const NativeMethod CoroutineBuiltins::kNativeMethods[] = {
     {SymbolId::kSend,
      nativeTrampoline<GeneratorBaseBuiltins::send<LayoutId::kCoroutine>>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 }  // namespace python

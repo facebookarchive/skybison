@@ -14,7 +14,7 @@
 
 namespace python {
 
-const View<BuiltinMethod> IntBuiltins::kBuiltinMethods = {
+const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kBitLength, bitLength},
     {SymbolId::kConjugate, dunderInt},
     {SymbolId::kDunderAbs, dunderAbs},
@@ -46,6 +46,7 @@ const View<BuiltinMethod> IntBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderTrunc, dunderInt},
     {SymbolId::kDunderXor, dunderXor},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 void IntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
@@ -193,10 +194,11 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
                     [](Thread*, const Int& self) { return asInt(self); });
 }
 
-const View<NativeMethod> SmallIntBuiltins::kNativeMethods = {
+const NativeMethod SmallIntBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
@@ -931,8 +933,9 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return Interpreter::isTrue(thread, frame, arg);
 }
 
-const View<BuiltinMethod> BoolBuiltins::kBuiltinMethods = {
+const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject asIntObject(Thread* thread, const Object& object) {

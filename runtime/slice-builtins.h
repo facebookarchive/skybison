@@ -18,8 +18,8 @@ class SliceBuiltins
  public:
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SliceBuiltins);

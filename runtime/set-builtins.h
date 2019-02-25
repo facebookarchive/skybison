@@ -59,9 +59,9 @@ class SetBuiltins
   static RawObject add(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<NativeMethod> kNativeMethods;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetBuiltins);
@@ -74,9 +74,9 @@ class FrozenSetBuiltins
  public:
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<NativeMethod> kNativeMethods;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(FrozenSetBuiltins);
@@ -90,7 +90,7 @@ class SetIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetIteratorBuiltins);

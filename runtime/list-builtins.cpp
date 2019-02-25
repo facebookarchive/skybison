@@ -174,12 +174,13 @@ RawObject listIteratorNext(Thread* thread, const ListIterator& iter) {
   return item;
 }
 
-const View<BuiltinAttribute> ListBuiltins::kAttributes = {
+const BuiltinAttribute ListBuiltins::kAttributes[] = {
     {SymbolId::kItems, RawList::kItemsOffset},
     {SymbolId::kAllocated, RawList::kAllocatedOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<NativeMethod> ListBuiltins::kNativeMethods = {
+const NativeMethod ListBuiltins::kNativeMethods[] = {
     {SymbolId::kAppend, nativeTrampoline<append>},
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
@@ -193,10 +194,12 @@ const View<NativeMethod> ListBuiltins::kNativeMethods = {
     {SymbolId::kInsert, nativeTrampoline<insert>},
     {SymbolId::kPop, nativeTrampoline<pop>},
     {SymbolId::kRemove, nativeTrampoline<remove>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
-const View<BuiltinMethod> ListBuiltins::kBuiltinMethods = {
+const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -514,10 +517,11 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newListIterator(self);
 }
 
-const View<NativeMethod> ListIteratorBuiltins::kNativeMethods = {
+const NativeMethod ListIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

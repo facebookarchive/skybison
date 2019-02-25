@@ -7,8 +7,9 @@
 
 namespace python {
 
-const View<BuiltinMethod> ComplexBuiltins::kBuiltinMethods = {
+const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject complexGetImag(Thread* thread, Frame* frame, word nargs) {

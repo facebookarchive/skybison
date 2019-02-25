@@ -18,15 +18,17 @@ void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value) {
       thread, array, {hex_digits[value >> 4], hex_digits[value & 0xf]});
 }
 
-const View<BuiltinAttribute> ByteArrayBuiltins::kAttributes = {
+const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
     {SymbolId::kItems, ByteArray::kBytesOffset},
     {SymbolId::kAllocated, ByteArray::kNumItemsOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<BuiltinMethod> ByteArrayBuiltins::kBuiltinMethods = {
+const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,

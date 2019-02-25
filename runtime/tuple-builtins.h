@@ -42,9 +42,9 @@ class TupleBuiltins
   static RawObject sliceWithWords(Thread* thread, const Tuple& tuple,
                                   word start, word stop, word step);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<NativeMethod> kNativeMethods;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleBuiltins);
@@ -58,7 +58,7 @@ class TupleIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIteratorBuiltins);

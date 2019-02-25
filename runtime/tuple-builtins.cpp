@@ -65,21 +65,24 @@ RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   return item;
 }
 
-const View<BuiltinAttribute> TupleBuiltins::kAttributes = {
+const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<NativeMethod> TupleBuiltins::kNativeMethods = {
+const NativeMethod TupleBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
-const View<BuiltinMethod> TupleBuiltins::kBuiltinMethods = {
+const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
@@ -424,10 +427,11 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 
-const View<NativeMethod> TupleIteratorBuiltins::kNativeMethods = {
+const NativeMethod TupleIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

@@ -56,7 +56,7 @@ class IntBuiltins
   static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject toBytesKw(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   static RawObject asInt(const Int& value);
@@ -73,7 +73,7 @@ class SmallIntBuiltins : public Builtins<SmallIntBuiltins, SymbolId::kSmallInt,
   static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntBuiltins);
@@ -99,7 +99,7 @@ class BoolBuiltins : public Builtins<BoolBuiltins, SymbolId::kBool,
 
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BoolBuiltins);

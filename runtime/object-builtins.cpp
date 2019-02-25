@@ -14,12 +14,16 @@ namespace python {
 const NativeMethod ObjectBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderHash, nativeTrampoline<dunderHash>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+    // no sentinel needed because the iteration below is manual
 };
 
+// clang-format off
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderInit, dunderInit},
+    // no sentinel needed because the iteration below is manual
 };
+// clang-format on
 
 void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
@@ -128,9 +132,10 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return str;
 }
 
-const View<NativeMethod> NoneBuiltins::kNativeMethods = {
+const NativeMethod NoneBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {

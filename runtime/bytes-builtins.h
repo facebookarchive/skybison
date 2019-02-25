@@ -39,7 +39,7 @@ class BytesBuiltins
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesBuiltins);

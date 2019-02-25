@@ -11,7 +11,7 @@ class RangeBuiltins
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeBuiltins);
@@ -25,7 +25,7 @@ class RangeIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);

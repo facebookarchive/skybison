@@ -250,11 +250,12 @@ class Runtime {
   RawObject addBuiltinTypeWithBuiltinMethods(SymbolId name,
                                              LayoutId subclass_id,
                                              LayoutId superclass_id,
-                                             View<BuiltinMethod> methods);
+                                             const BuiltinMethod methods[]);
   RawObject addBuiltinType(SymbolId name, LayoutId subclass_id,
-                           LayoutId superclass_id, View<BuiltinAttribute> attrs,
-                           View<NativeMethod> methods,
-                           View<BuiltinMethod> builtins);
+                           LayoutId superclass_id,
+                           const BuiltinAttribute attrs[],
+                           const NativeMethod methods[],
+                           const BuiltinMethod builtins[]);
 
   LayoutId reserveLayoutId();
 
@@ -904,11 +905,11 @@ class BuiltinsBase {
  public:
   static void postInitialize(Runtime*, const Type&) {}
 
- protected:
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<BuiltinMethod> kBuiltinMethods;
-  static const View<NativeMethod> kNativeMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
+  static const NativeMethod kNativeMethods[];
 
+ protected:
   static const SymbolId kName;
   static const LayoutId kType;
   static const LayoutId kSuperType;

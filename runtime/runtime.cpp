@@ -209,32 +209,37 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
 
 RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                                        LayoutId superclass_id) {
-  return addBuiltinType(
-      name, subclass_id, superclass_id, View<BuiltinAttribute>(nullptr, 0),
-      View<NativeMethod>(nullptr, 0), View<BuiltinMethod>(nullptr, 0));
+  return addBuiltinType(name, subclass_id, superclass_id,
+                        BuiltinsBase::kAttributes, BuiltinsBase::kNativeMethods,
+                        BuiltinsBase::kBuiltinMethods);
 }
 
 RawObject Runtime::addBuiltinTypeWithBuiltinMethods(
     SymbolId name, LayoutId subclass_id, LayoutId superclass_id,
-    View<BuiltinMethod> methods) {
+    const BuiltinMethod builtins[]) {
   return addBuiltinType(name, subclass_id, superclass_id,
-                        View<BuiltinAttribute>(nullptr, 0),
-                        View<NativeMethod>(nullptr, 0), methods);
+                        BuiltinsBase::kAttributes, BuiltinsBase::kNativeMethods,
+                        builtins);
 }
 
 RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
                                   LayoutId superclass_id,
-                                  View<BuiltinAttribute> attrs,
-                                  View<NativeMethod> methods,
-                                  View<BuiltinMethod> builtins) {
+                                  const BuiltinAttribute attrs[],
+                                  const NativeMethod methods[],
+                                  const BuiltinMethod builtins[]) {
   HandleScope scope;
 
   // Create a class object for the subclass
   Type subclass(&scope, newType());
   subclass.setName(symbols()->at(name));
 
-  Layout layout(&scope, layoutCreateSubclassWithBuiltins(subclass_id,
-                                                         superclass_id, attrs));
+  word attrs_len = 0;
+  for (word i = 0; attrs[i].name != SymbolId::kSentinelId; i++) {
+    attrs_len++;
+  }
+  View<BuiltinAttribute> attrs_view(attrs, attrs_len);
+  Layout layout(&scope, layoutCreateSubclassWithBuiltins(
+                            subclass_id, superclass_id, attrs_view));
 
   // Assign the layout to the class
   layout.setDescribedType(*subclass);
@@ -251,12 +256,14 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   layoutAtPut(subclass_id, *layout);
 
   // Add the provided methods.
-  for (const NativeMethod& meth : methods) {
+  for (word i = 0; methods[i].name != SymbolId::kSentinelId; i++) {
+    const NativeMethod& meth = methods[i];
     typeAddNativeFunction(subclass, meth.name, meth.address);
   }
 
   // Add the provided methods.
-  for (const BuiltinMethod& meth : builtins) {
+  for (word i = 0; builtins[i].name != SymbolId::kSentinelId; i++) {
+    const BuiltinMethod& meth = builtins[i];
     typeAddBuiltinFunction(subclass, meth.name, meth.address);
   }
 
@@ -1450,6 +1457,7 @@ void Runtime::initializeExceptionTypes() {
 void Runtime::initializeRefType() {
   const static BuiltinMethod builtin_methods[] = {
       {SymbolId::kDunderNew, builtinRefNew},
+      {SymbolId::kSentinelId, nullptr},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kRef, LayoutId::kWeakRef,
                                    LayoutId::kObject, builtin_methods);
@@ -1460,6 +1468,7 @@ void Runtime::initializeClassMethodType() {
       {SymbolId::kDunderNew, builtinClassMethodNew},
       {SymbolId::kDunderInit, builtinClassMethodInit},
       {SymbolId::kDunderGet, builtinClassMethodGet},
+      {SymbolId::kSentinelId, nullptr},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kClassmethod,
                                    LayoutId::kClassMethod, LayoutId::kObject,
@@ -1482,6 +1491,7 @@ void Runtime::initializePropertyType() {
       {SymbolId::kDeleter, builtinPropertyDeleter},
       {SymbolId::kGetter, builtinPropertyGetter},
       {SymbolId::kSetter, builtinPropertySetter},
+      {SymbolId::kSentinelId, nullptr},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kProperty, LayoutId::kProperty,
                                    LayoutId::kObject, builtin_methods);
@@ -1492,6 +1502,7 @@ void Runtime::initializeStaticMethodType() {
       {SymbolId::kDunderNew, builtinStaticMethodNew},
       {SymbolId::kDunderInit, builtinStaticMethodInit},
       {SymbolId::kDunderGet, builtinStaticMethodGet},
+      {SymbolId::kSentinelId, nullptr},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kStaticMethod,
                                    LayoutId::kStaticMethod, LayoutId::kObject,
@@ -3917,6 +3928,7 @@ void Runtime::initializeSuperType() {
   const static BuiltinMethod builtin_methods[] = {
       {SymbolId::kDunderNew, builtinSuperNew},
       {SymbolId::kDunderInit, builtinSuperInit},
+      {SymbolId::kSentinelId, nullptr},
   };
   addBuiltinTypeWithBuiltinMethods(SymbolId::kSuper, LayoutId::kSuper,
                                    LayoutId::kObject, builtin_methods);
@@ -4590,8 +4602,14 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
   return *result;
 }
 
-const View<BuiltinAttribute> BuiltinsBase::kAttributes = {};
-const View<BuiltinMethod> BuiltinsBase::kBuiltinMethods = {};
-const View<NativeMethod> BuiltinsBase::kNativeMethods = {};
+const BuiltinAttribute BuiltinsBase::kAttributes[] = {
+    {SymbolId::kSentinelId, -1},
+};
+const BuiltinMethod BuiltinsBase::kBuiltinMethods[] = {
+    {SymbolId::kSentinelId, nullptr},
+};
+const NativeMethod BuiltinsBase::kNativeMethods[] = {
+    {SymbolId::kSentinelId, nullptr},
+};
 
 }  // namespace python

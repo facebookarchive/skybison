@@ -7,8 +7,9 @@
 
 namespace python {
 
-const View<NativeMethod> RangeBuiltins::kNativeMethods = {
+const NativeMethod RangeBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -26,10 +27,11 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newRangeIterator(self);
 }
 
-const View<NativeMethod> RangeIteratorBuiltins::kNativeMethods = {
+const NativeMethod RangeIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

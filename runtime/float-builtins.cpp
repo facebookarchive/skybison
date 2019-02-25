@@ -64,7 +64,7 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
   return runtime->notImplemented();
 }
 
-const View<BuiltinMethod> FloatBuiltins::kBuiltinMethods = {
+const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderTruediv, dunderTrueDiv},
     {SymbolId::kDunderEq, dunderEq},
@@ -80,10 +80,12 @@ const View<BuiltinMethod> FloatBuiltins::kBuiltinMethods = {
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kDunderRtruediv, dunderRtrueDiv},
     {SymbolId::kDunderSub, dunderSub},
+    {SymbolId::kSentinelId, nullptr},
 };
 
-const View<BuiltinAttribute> FloatBuiltins::kAttributes = {
+const BuiltinAttribute FloatBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawUserFloatBase::kFloatOffset},
+    {SymbolId::kSentinelId, 0},
 };
 
 RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,

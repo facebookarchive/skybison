@@ -15,8 +15,8 @@ class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
 
   static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
-  static const View<BuiltinAttribute> kAttributes;
+  static const NativeMethod kNativeMethods[];
+  static const BuiltinAttribute kAttributes[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(FunctionBuiltins);

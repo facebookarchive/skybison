@@ -31,8 +31,8 @@ class BaseExceptionBuiltins
  public:
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BaseExceptionBuiltins);
@@ -44,8 +44,8 @@ class StopIterationBuiltins
  public:
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StopIterationBuiltins);
@@ -57,8 +57,8 @@ class SystemExitBuiltins
  public:
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemExitBuiltins);
@@ -68,7 +68,7 @@ class ImportErrorBuiltins
     : public Builtins<ImportErrorBuiltins, SymbolId::kImportError,
                       LayoutId::kImportError, LayoutId::kException> {
  public:
-  static const View<BuiltinAttribute> kAttributes;
+  static const BuiltinAttribute kAttributes[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ImportErrorBuiltins);

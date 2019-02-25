@@ -73,13 +73,15 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   return 0;
 }
 
-const View<BuiltinAttribute> ModuleBuiltins::kAttributes = {
+const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
     {SymbolId::kDunderName, RawModule::kNameOffset},
     {SymbolId::kDunderDict, RawModule::kDictOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<BuiltinMethod> ModuleBuiltins::kBuiltinMethods = {
+const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

@@ -110,15 +110,17 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
   }
 }
 
-const View<BuiltinAttribute> BaseExceptionBuiltins::kAttributes = {
+const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
     {SymbolId::kArgs, RawBaseException::kArgsOffset},
     {SymbolId::kTraceback, RawBaseException::kTracebackOffset},
     {SymbolId::kDunderContext, RawBaseException::kContextOffset},
     {SymbolId::kCause, RawBaseException::kCauseOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<BuiltinMethod> BaseExceptionBuiltins::kBuiltinMethods = {
+const BuiltinMethod BaseExceptionBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -137,12 +139,14 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const View<BuiltinAttribute> StopIterationBuiltins::kAttributes = {
+const BuiltinAttribute StopIterationBuiltins::kAttributes[] = {
     {SymbolId::kValue, RawStopIteration::kValueOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<BuiltinMethod> StopIterationBuiltins::kBuiltinMethods = {
+const BuiltinMethod StopIterationBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -165,12 +169,14 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const View<BuiltinAttribute> SystemExitBuiltins::kAttributes = {
+const BuiltinAttribute SystemExitBuiltins::kAttributes[] = {
     {SymbolId::kValue, RawSystemExit::kCodeOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
-const View<BuiltinMethod> SystemExitBuiltins::kBuiltinMethods = {
+const BuiltinMethod SystemExitBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
@@ -193,10 +199,11 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-const View<BuiltinAttribute> ImportErrorBuiltins::kAttributes = {
+const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
     {SymbolId::kMsg, RawImportError::kMsgOffset},
     {SymbolId::kName, RawImportError::kNameOffset},
     {SymbolId::kPath, RawImportError::kPathOffset},
+    {SymbolId::kSentinelId, -1},
 };
 
 }  // namespace python

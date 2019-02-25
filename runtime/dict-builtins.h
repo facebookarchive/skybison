@@ -60,8 +60,8 @@ class DictBuiltins
   static RawObject values(Thread* thread, Frame* frame, word nargs);
   static RawObject get(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictBuiltins);
@@ -76,7 +76,7 @@ class DictItemIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemIteratorBuiltins);
@@ -88,7 +88,7 @@ class DictItemsBuiltins
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictItemsBuiltins);
@@ -102,7 +102,7 @@ class DictKeyIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeyIteratorBuiltins);
@@ -113,7 +113,7 @@ class DictKeysBuiltins : public Builtins<DictKeysBuiltins, SymbolId::kDictKeys,
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictKeysBuiltins);
@@ -127,7 +127,7 @@ class DictValueIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValueIteratorBuiltins);
@@ -139,7 +139,7 @@ class DictValuesBuiltins
  public:
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
-  static const View<NativeMethod> kNativeMethods;
+  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DictValuesBuiltins);

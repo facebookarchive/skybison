@@ -137,7 +137,7 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   return RawSmallStr::fromCStr(buffer);
 }
 
-const View<NativeMethod> StrBuiltins::kNativeMethods = {
+const NativeMethod StrBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
     {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
     {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
@@ -153,11 +153,13 @@ const View<NativeMethod> StrBuiltins::kNativeMethods = {
     {SymbolId::kLStrip, nativeTrampoline<lstrip>},
     {SymbolId::kRStrip, nativeTrampoline<rstrip>},
     {SymbolId::kStrip, nativeTrampoline<strip>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
-const View<BuiltinMethod> StrBuiltins::kBuiltinMethods = {
+const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kJoin, join},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
@@ -796,10 +798,11 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   return strStrip(thread, str, chars, StrStripDirection::Both);
 }
 
-const View<NativeMethod> StrIteratorBuiltins::kNativeMethods = {
+const NativeMethod StrIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
     {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,

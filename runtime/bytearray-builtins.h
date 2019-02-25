@@ -26,8 +26,8 @@ class ByteArrayBuiltins
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
-  static const View<BuiltinAttribute> kAttributes;
-  static const View<BuiltinMethod> kBuiltinMethods;
+  static const BuiltinAttribute kAttributes[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ByteArrayBuiltins);
