@@ -137,39 +137,28 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   return RawSmallStr::fromCStr(buffer);
 }
 
-const NativeMethod StrBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
-    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
-    {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
-    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
-    {SymbolId::kLStrip, nativeTrampoline<lstrip>},
-    {SymbolId::kLower, nativeTrampoline<lower>},
-    {SymbolId::kRStrip, nativeTrampoline<rstrip>},
-    {SymbolId::kStrip, nativeTrampoline<strip>},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderGe, dunderGe},
+    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderMod, dunderMod},
+    {SymbolId::kDunderNe, dunderNe},
+    {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kJoin, join},
+    {SymbolId::kLower, lower},
+    {SymbolId::kLStrip, lstrip},
+    {SymbolId::kRStrip, rstrip},
+    {SymbolId::kStrip, strip},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr("str.__add__ needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 1 arguments, got %ld", nargs - 1));
-  }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -193,9 +182,6 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -208,9 +194,6 @@ RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -223,9 +206,6 @@ RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -238,9 +218,6 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   if (!runtime->isInstanceOfStr(args.get(0))) {
@@ -268,9 +245,6 @@ RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -296,9 +270,6 @@ RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected 0 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
@@ -324,9 +295,6 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -444,9 +412,6 @@ RawObject StrBuiltins::strFormat(Thread* thread, const Str& fmt,
 }
 
 RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(caller, nargs);
@@ -469,9 +434,6 @@ RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
 }
 
 RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -499,9 +461,6 @@ RawObject StrBuiltins::slice(Thread* thread, const Str& str,
 }
 
 RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -568,9 +527,6 @@ void StrBuiltins::byteToHex(byte** buf, byte convert) {
 }
 
 RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("expected 0 arguments");
-  }
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -685,13 +641,6 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr("str.lstrip() needs an argument");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "str.lstrip() takes at most 1 argument (%ld given)", nargs - 1));
-  }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -703,10 +652,6 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str str(&scope, *self);
-  if (nargs == 1) {
-    return strStripSpace(thread, str, StrStripDirection::Left);
-  }
-  // nargs == 2
   Object other(&scope, args.get(1));
   if (other.isNoneType()) {
     return strStripSpace(thread, str, StrStripDirection::Left);
@@ -723,13 +668,6 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr("str.rstrip() needs an argument");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "str.rstrip() takes at most 1 argument (%ld given)", nargs - 1));
-  }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -741,10 +679,6 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str str(&scope, *self);
-  if (nargs == 1) {
-    return strStripSpace(thread, str, StrStripDirection::Right);
-  }
-  // nargs == 2
   Object other(&scope, args.get(1));
   if (other.isNoneType()) {
     return strStripSpace(thread, str, StrStripDirection::Right);
@@ -779,10 +713,6 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str str(&scope, *self);
-  if (nargs == 1) {
-    return strStripSpace(thread, str, StrStripDirection::Both);
-  }
-  // nargs == 2
   Object other(&scope, args.get(1));
   if (other.isNoneType()) {
     return strStripSpace(thread, str, StrStripDirection::Both);
@@ -798,18 +728,15 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   return strStrip(thread, str, chars, StrStripDirection::Both);
 }
 
-const NativeMethod StrIteratorBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+const BuiltinMethod StrIteratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLengthHint, dunderLengthHint},
+    {SymbolId::kDunderNext, dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                           word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -826,9 +753,6 @@ RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                           word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -847,10 +771,6 @@ RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 
 RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                                 word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

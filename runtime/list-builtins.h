@@ -56,7 +56,6 @@ class ListBuiltins
   static RawObject remove(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
@@ -71,7 +70,7 @@ class ListIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ListIteratorBuiltins);

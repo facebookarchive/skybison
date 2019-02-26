@@ -20,7 +20,7 @@ class GeneratorBuiltins
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBuiltins);
@@ -30,7 +30,7 @@ class CoroutineBuiltins
     : public Builtins<CoroutineBuiltins, SymbolId::kCoroutine,
                       LayoutId::kCoroutine> {
  public:
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(CoroutineBuiltins);

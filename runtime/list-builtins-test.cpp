@@ -249,12 +249,13 @@ print(r is None, len(b) == 3)
 
 TEST(ListBuiltinsTest, ListInsertExcept) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(
 a = [1, 2]
 a.insert()
 )"),
-                            LayoutId::kTypeError,
-                            "insert() takes exactly two arguments"));
+      LayoutId::kTypeError,
+      "TypeError: 'list.insert' takes 3 positional arguments but 1 given"));
   Thread::currentThread()->clearPendingException();
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -296,12 +297,13 @@ TEST(ListBuiltinsTest, ListPopExcept) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
 
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(
 a = [1, 2]
 a.pop(1, 2, 3, 4)
 )"),
-                            LayoutId::kTypeError,
-                            "pop() takes at most 1 argument"));
+      LayoutId::kTypeError,
+      "TypeError: 'list.pop' takes max 2 positional arguments but 5 given"));
   thread->clearPendingException();
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "list.pop(1)"),
@@ -944,12 +946,12 @@ result = a
 
 TEST(ListBuiltinsTest, GetItemWithTooFewArgumentsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__getitem__()
 )"),
-                    LayoutId::kTypeError,
-                    "__getitem__() takes exactly one argument (0 given)"));
+                            LayoutId::kTypeError,
+                            "TypeError: 'list.__getitem__' takes 2 positional "
+                            "arguments but 1 given"));
 }
 
 TEST(ListBuiltinsTest, DelItemWithTooFewArgumentsRaisesTypeError) {
@@ -958,7 +960,8 @@ TEST(ListBuiltinsTest, DelItemWithTooFewArgumentsRaisesTypeError) {
 [].__delitem__()
 )"),
                             LayoutId::kTypeError,
-                            "expected 1 arguments, got 0"));
+                            "TypeError: 'list.__delitem__' takes 2 positional "
+                            "arguments but 1 given"));
 }
 
 TEST(ListBuiltinsTest, SetItemWithTooFewArgumentsRaisesTypeError) {
@@ -967,7 +970,8 @@ TEST(ListBuiltinsTest, SetItemWithTooFewArgumentsRaisesTypeError) {
 [].__setitem__(1)
 )"),
                             LayoutId::kTypeError,
-                            "expected 2 arguments, got 1"));
+                            "TypeError: 'list.__setitem__' takes 3 positional "
+                            "arguments but 2 given"));
 }
 
 TEST(ListBuiltinsTest, DelItemWithTooManyArgumentsRaisesTypeError) {
@@ -976,17 +980,18 @@ TEST(ListBuiltinsTest, DelItemWithTooManyArgumentsRaisesTypeError) {
 [].__delitem__(1, 2)
 )"),
                             LayoutId::kTypeError,
-                            "expected 1 arguments, got 2"));
+                            "TypeError: 'list.__delitem__' takes max 2 "
+                            "positional arguments but 3 given"));
 }
 
 TEST(ListBuiltinsTest, GetItemWithTooManyArgumentsRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 [].__getitem__(1, 2)
 )"),
-                    LayoutId::kTypeError,
-                    "__getitem__() takes exactly one argument (2 given)"));
+                            LayoutId::kTypeError,
+                            "TypeError: 'list.__getitem__' takes max 2 "
+                            "positional arguments but 3 given"));
 }
 
 TEST(ListBuiltinsTest, SetItemWithTooManyArgumentsRaisesTypeError) {
@@ -995,7 +1000,8 @@ TEST(ListBuiltinsTest, SetItemWithTooManyArgumentsRaisesTypeError) {
 [].__setitem__(1, 2, 3)
 )"),
                             LayoutId::kTypeError,
-                            "expected 2 arguments, got 3"));
+                            "TypeError: 'list.__setitem__' takes max 3 "
+                            "positional arguments but 4 given"));
 }
 
 TEST(ListBuiltinsTest, GetItemWithNonIntegralIndexRaisesTypeError) {

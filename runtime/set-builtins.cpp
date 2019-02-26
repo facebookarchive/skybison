@@ -10,9 +10,6 @@
 namespace python {
 
 RawObject SetBaseBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -26,9 +23,6 @@ RawObject SetBaseBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
                                           word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("__contains__ takes 1 argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -43,9 +37,6 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
 
 RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -59,10 +50,6 @@ RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "isdisjoint() takes exactly one argument");
-  }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -133,9 +120,6 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
 }
 
 RawObject SetBaseBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("__and__ takes 1 argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -153,10 +137,6 @@ RawObject SetBaseBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
                                         word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "intersection() of 'set' object needs an argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -194,14 +174,6 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
 
 RawObject SetBaseBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "__eq__() of 'set' object needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 arguments, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -220,14 +192,6 @@ RawObject SetBaseBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "__ne__() of 'set' object needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -246,14 +210,6 @@ RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "__le__() of 'set' object needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -272,14 +228,6 @@ RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "__lt__() of 'set' object needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -298,14 +246,6 @@ RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "__ge__() of 'set' object needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -324,14 +264,6 @@ RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "__gt__() of 'set' object needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -354,24 +286,20 @@ const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const NativeMethod FrozenSetBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
-    {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
-    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
-    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kIntersection, nativeTrampoline<intersection>},
-    {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAnd, dunderAnd},
+    {SymbolId::kDunderContains, dunderContains},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderGe, dunderGe},
+    {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLe, dunderLe},
+    {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kIntersection, intersection},
+    {SymbolId::kIsDisjoint, isDisjoint},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -427,28 +355,25 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const NativeMethod SetBuiltins::kNativeMethods[] = {
-    {SymbolId::kAdd, nativeTrampoline<add>},
-    {SymbolId::kDunderAnd, nativeTrampoline<dunderAnd>},
-    {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderGe, nativeTrampoline<dunderGe>},
-    {SymbolId::kDunderGt, nativeTrampoline<dunderGt>},
-    {SymbolId::kDunderIand, nativeTrampoline<dunderIand>},
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLe, nativeTrampoline<dunderLe>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
-    {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kIntersection, nativeTrampoline<intersection>},
-    {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
-    {SymbolId::kPop, nativeTrampoline<pop>},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kAdd, add},
+    {SymbolId::kDunderAnd, dunderAnd},
+    {SymbolId::kDunderContains, dunderContains},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderGe, dunderGe},
+    {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderIand, dunderIand},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLe, dunderLe},
+    {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderNe, dunderNe},
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kIntersection, intersection},
+    {SymbolId::kIsDisjoint, isDisjoint},
+    {SymbolId::kPop, pop},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -550,9 +475,6 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
 }
 
 RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("add() takes exactly one argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -570,9 +492,6 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("__iand__ takes 1 argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -623,9 +542,6 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("pop() takes no arguments");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -653,18 +569,15 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-const NativeMethod SetIteratorBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+const BuiltinMethod SetIteratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLengthHint, dunderLengthHint},
+    {SymbolId::kDunderNext, dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                           word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -678,9 +591,6 @@ RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                           word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -699,10 +609,6 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 
 RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                                 word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

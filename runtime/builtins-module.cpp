@@ -499,37 +499,6 @@ RawObject BuiltinsModule::underPrintStr(Thread* thread, Frame* frame_frame,
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)
-RawObject BuiltinsModule::range(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  for (word i = 0; i < nargs; i++) {
-    if (!args.get(i)->isSmallInt() && !args.get(i).isUnboundValue()) {
-      return thread->raiseTypeErrorWithCStr(
-          "Arguments to range() must be integers");
-    }
-  }
-
-  word start = 0;
-  word stop = 0;
-  word step = 1;
-  if (args.get(1).isUnboundValue() && args.get(2).isUnboundValue()) {
-    stop = RawSmallInt::cast(args.get(0))->value();
-  } else if (args.get(2).isUnboundValue()) {
-    start = RawSmallInt::cast(args.get(0))->value();
-    stop = RawSmallInt::cast(args.get(1))->value();
-  } else {
-    start = RawSmallInt::cast(args.get(0))->value();
-    stop = RawSmallInt::cast(args.get(1))->value();
-    step = RawSmallInt::cast(args.get(2))->value();
-  }
-
-  if (step == 0) {
-    return thread->raiseValueErrorWithCStr(
-        "range() step argument must not be zero");
-  }
-
-  return thread->runtime()->newRange(start, stop, step);
-}
-
 RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

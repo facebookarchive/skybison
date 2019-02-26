@@ -173,16 +173,6 @@ _imp.exec_dynamic("foo")
                "unimplemented: exec_dynamic");
 }
 
-TEST(ImportBuiltinsTest, ExtensionSuffixesWithoutArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object module_name(&scope, runtime.newStrFromCStr("foo"));
-  Object result(&scope, runBuiltin(builtinImpExtensionSuffixes, module_name));
-  ASSERT_TRUE(result.isError());
-  EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
-}
-
 TEST(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
   Runtime runtime;
   HandleScope scope;
@@ -211,13 +201,6 @@ _imp.get_frozen_object("foo")
                "unimplemented: get_frozen_object");
 }
 
-TEST(ImportBuiltinsTest, IsBuiltinWithoutArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object result(&scope, runBuiltin(builtinImpIsBuiltin));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
 TEST(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   Runtime runtime;
   HandleScope scope;
@@ -240,13 +223,6 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   Object module_name(&scope, runtime.newStrFromCStr("errno"));
   Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
-}
-
-TEST(ImportBuiltinsTest, IsFrozenWithNoArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object result(&scope, runBuiltin(builtinImpIsFrozen));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(ImportBuiltinsTest, IsFrozenReturnsFalse) {

@@ -1296,60 +1296,6 @@ l = "1,2,3,4".rsplit(",", 5)
   EXPECT_TRUE(isStrEqualsCStr(result.at(3), "4"));
 }
 
-TEST(StrBuiltinsTest, StrStripWithNoArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-str.strip()
-)"),
-                            LayoutId::kTypeError,
-                            "str.strip() needs an argument"));
-}
-
-TEST(StrBuiltinsTest, StrLStripWithNoArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-str.lstrip()
-)"),
-                            LayoutId::kTypeError,
-                            "str.lstrip() needs an argument"));
-}
-
-TEST(StrBuiltinsTest, StrRStripWithNoArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-str.rstrip()
-)"),
-                            LayoutId::kTypeError,
-                            "str.rstrip() needs an argument"));
-}
-
-TEST(StrBuiltinsTest, StrStripTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-"test".strip(None, "test")
-)"),
-                            LayoutId::kTypeError,
-                            "str.strip() takes at most 1 argument (2 given)"));
-}
-
-TEST(StrBuiltinsTest, StrLStripTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-"test".lstrip(None, "test")
-)"),
-                            LayoutId::kTypeError,
-                            "str.lstrip() takes at most 1 argument (2 given)"));
-}
-
-TEST(StrBuiltinsTest, StrRStripTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-"test".rstrip(None, "test")
-)"),
-                            LayoutId::kTypeError,
-                            "str.rstrip() takes at most 1 argument (2 given)"));
-}
-
 TEST(StrBuiltinsTest, StrStripWithNonStrRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -1435,7 +1381,8 @@ TEST(StrBuiltinsTest, StripWithoutArgsStripsBoth) {
   Runtime runtime;
   HandleScope scope;
   Object str(&scope, runtime.newStrFromCStr(" \n\tHello World\n\t "));
-  Object result(&scope, runBuiltin(StrBuiltins::strip, str));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(StrBuiltins::strip, str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World"));
 }
 
@@ -1443,7 +1390,8 @@ TEST(StrBuiltinsTest, LStripWithoutArgsStripsLeft) {
   Runtime runtime;
   HandleScope scope;
   Object str(&scope, runtime.newStrFromCStr(" \n\tHello World\n\t "));
-  Object result(&scope, runBuiltin(StrBuiltins::lstrip, str));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World\n\t "));
 }
 
@@ -1451,7 +1399,8 @@ TEST(StrBuiltinsTest, RStripWithoutArgsStripsRight) {
   Runtime runtime;
   HandleScope scope;
   Object str(&scope, runtime.newStrFromCStr(" \n\tHello World\n\t "));
-  Object result(&scope, runBuiltin(StrBuiltins::rstrip, str));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, " \n\tHello World"));
 }
 

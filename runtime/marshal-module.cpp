@@ -10,9 +10,6 @@
 namespace python {
 
 RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("marshal.loads takes 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));

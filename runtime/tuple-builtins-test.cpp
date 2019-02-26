@@ -450,26 +450,6 @@ TEST(TupleBuiltinsTest, DunderAddWithNonTupleRightHandSideReturnsError) {
             runtime.typeAt(LayoutId::kTypeError));
 }
 
-TEST(TupleBuiltinsTest, DunderAddWithNoArgumentsReturnsError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd));
-  ASSERT_TRUE(error.isError());
-  EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
-}
-
-TEST(TupleBuiltinsTest, DunderAddWithManyArgumentsReturnsError) {
-  Runtime runtime;
-  HandleScope scope;
-  Tuple empty_tuple(&scope, tupleFromRange(0, 0));
-  Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple,
-                                  empty_tuple, empty_tuple));
-  ASSERT_TRUE(error.isError());
-  EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
-}
-
 TEST(TupleBuiltinsTest, DunderAddWithEmptyTupleReturnsTuple) {
   Runtime runtime;
   HandleScope scope;

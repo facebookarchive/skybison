@@ -16,3 +16,48 @@ def create_builtin(spec):
 @_patch
 def exec_builtin(module):
     pass
+
+
+@_patch
+def acquire_lock():
+    pass
+
+
+@_patch
+def exec_dynamic(mod):
+    pass
+
+
+@_patch
+def extension_suffixes():
+    pass
+
+
+@_patch
+def _fix_co_filename(code, path):
+    pass
+
+
+@_patch
+def get_frozen_object(name):
+    pass
+
+
+@_patch
+def is_builtin(name):
+    pass
+
+
+@_patch
+def is_frozen(name):
+    pass
+
+
+@_patch
+def is_frozen_package(name):
+    pass
+
+
+@_patch
+def release_lock():
+    pass

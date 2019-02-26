@@ -1941,7 +1941,6 @@ void Runtime::createBuiltinsModule() {
   moduleAddNativeFunction(module, SymbolId::kUnderPatch,
                           nativeTrampoline<BuiltinsModule::underPatch>,
                           unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kRange, BuiltinsModule::range);
   moduleAddBuiltinFunction(module, SymbolId::kSetattr, BuiltinsModule::setattr);
   moduleAddBuiltinFunction(module, SymbolId::kUnderAddress,
                            BuiltinsModule::underAddress);
@@ -1984,9 +1983,19 @@ void Runtime::createBuiltinsModule() {
                        LayoutId::kConnectionRefusedError);
   moduleAddBuiltinType(module, SymbolId::kConnectionResetError,
                        LayoutId::kConnectionResetError);
+  moduleAddBuiltinType(module, SymbolId::kCoroutine, LayoutId::kCoroutine);
   moduleAddBuiltinType(module, SymbolId::kDeprecationWarning,
                        LayoutId::kDeprecationWarning);
   moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDict);
+  moduleAddBuiltinType(module, SymbolId::kDictItemIterator,
+                       LayoutId::kDictItemIterator);
+  moduleAddBuiltinType(module, SymbolId::kDictItems, LayoutId::kDictItems);
+  moduleAddBuiltinType(module, SymbolId::kDictKeyIterator,
+                       LayoutId::kDictKeyIterator);
+  moduleAddBuiltinType(module, SymbolId::kDictKeys, LayoutId::kDictKeys);
+  moduleAddBuiltinType(module, SymbolId::kDictValueIterator,
+                       LayoutId::kDictValueIterator);
+  moduleAddBuiltinType(module, SymbolId::kDictValues, LayoutId::kDictValues);
   moduleAddBuiltinType(module, SymbolId::kEOFError, LayoutId::kEOFError);
   moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
   moduleAddBuiltinType(module, SymbolId::kFileExistsError,
@@ -2000,6 +2009,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kFunction, LayoutId::kFunction);
   moduleAddBuiltinType(module, SymbolId::kFutureWarning,
                        LayoutId::kFutureWarning);
+  moduleAddBuiltinType(module, SymbolId::kGenerator, LayoutId::kGenerator);
   moduleAddBuiltinType(module, SymbolId::kGeneratorExit,
                        LayoutId::kGeneratorExit);
   moduleAddBuiltinType(module, SymbolId::kImportError, LayoutId::kImportError);
@@ -2017,12 +2027,15 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kKeyboardInterrupt,
                        LayoutId::kKeyboardInterrupt);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
+  moduleAddBuiltinType(module, SymbolId::kListIterator,
+                       LayoutId::kListIterator);
   moduleAddBuiltinType(module, SymbolId::kLookupError, LayoutId::kLookupError);
   moduleAddBuiltinType(module, SymbolId::kMemoryError, LayoutId::kMemoryError);
   moduleAddBuiltinType(module, SymbolId::kModule, LayoutId::kModule);
   moduleAddBuiltinType(module, SymbolId::kModuleNotFoundError,
                        LayoutId::kModuleNotFoundError);
   moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
+  moduleAddBuiltinType(module, SymbolId::kNoneType, LayoutId::kNoneType);
   moduleAddBuiltinType(module, SymbolId::kNotADirectoryError,
                        LayoutId::kNotADirectoryError);
   moduleAddBuiltinType(module, SymbolId::kNotImplementedError,
@@ -2038,6 +2051,9 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kProcessLookupError,
                        LayoutId::kProcessLookupError);
   moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
+  moduleAddBuiltinType(module, SymbolId::kRange, LayoutId::kRange);
+  moduleAddBuiltinType(module, SymbolId::kRangeIterator,
+                       LayoutId::kRangeIterator);
   moduleAddBuiltinType(module, SymbolId::kRecursionError,
                        LayoutId::kRecursionError);
   moduleAddBuiltinType(module, SymbolId::kReferenceError,
@@ -2049,7 +2065,9 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kRuntimeWarning,
                        LayoutId::kRuntimeWarning);
   moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
+  moduleAddBuiltinType(module, SymbolId::kSetIterator, LayoutId::kSetIterator);
   moduleAddBuiltinType(module, SymbolId::kSlice, LayoutId::kSlice);
+  moduleAddBuiltinType(module, SymbolId::kSmallInt, LayoutId::kSmallInt);
   moduleAddBuiltinType(module, SymbolId::kStaticMethod,
                        LayoutId::kStaticMethod);
   moduleAddBuiltinType(module, SymbolId::kStopAsyncIteration,
@@ -2057,6 +2075,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kStopIteration,
                        LayoutId::kStopIteration);
   moduleAddBuiltinType(module, SymbolId::kStr, LayoutId::kStr);
+  moduleAddBuiltinType(module, SymbolId::kStrIterator, LayoutId::kStrIterator);
   moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
   moduleAddBuiltinType(module, SymbolId::kSyntaxError, LayoutId::kSyntaxError);
   moduleAddBuiltinType(module, SymbolId::kSyntaxWarning,
@@ -2067,6 +2086,8 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kTimeoutError,
                        LayoutId::kTimeoutError);
   moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kTuple);
+  moduleAddBuiltinType(module, SymbolId::kTupleIterator,
+                       LayoutId::kTupleIterator);
   moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
   moduleAddBuiltinType(module, SymbolId::kTypeError, LayoutId::kTypeError);
   moduleAddBuiltinType(module, SymbolId::kUnboundLocalError,
@@ -2142,9 +2163,8 @@ void Runtime::createSysModule() {
   Object modules(&scope, modules_);
   moduleAddGlobal(module, SymbolId::kModules, modules);
 
-  display_hook_ = moduleAddNativeFunction(
-      module, SymbolId::kDisplayhook, nativeTrampoline<builtinSysDisplayhook>,
-      unimplementedTrampoline, unimplementedTrampoline);
+  display_hook_ = moduleAddBuiltinFunction(module, SymbolId::kDisplayhook,
+                                           builtinSysDisplayhook);
 
   // Fill in sys...
   Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
@@ -2196,9 +2216,8 @@ void Runtime::createImportModule() {
   Module module(&scope, newModule(name));
 
   // _imp.acquire_lock
-  moduleAddNativeFunction(module, SymbolId::kAcquireLock,
-                          nativeTrampoline<builtinImpAcquireLock>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kAcquireLock,
+                           builtinImpAcquireLock);
 
   // _imp.create_builtin
   moduleAddBuiltinFunction(module, SymbolId::kCreateBuiltin,
@@ -2209,44 +2228,35 @@ void Runtime::createImportModule() {
                            builtinImpExecBuiltin);
 
   // _imp.exec_dynamic
-  moduleAddNativeFunction(module, SymbolId::kExecDynamic,
-                          nativeTrampoline<builtinImpExecDynamic>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kExecDynamic,
+                           builtinImpExecDynamic);
 
   // _imp.extension_suffixes
-  moduleAddNativeFunction(module, SymbolId::kExtensionSuffixes,
-                          nativeTrampoline<builtinImpExtensionSuffixes>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kExtensionSuffixes,
+                           builtinImpExtensionSuffixes);
 
   // _imp.fix_co_filename
-  moduleAddNativeFunction(module, SymbolId::kFixCoFilename,
-                          nativeTrampoline<builtinImpFixCoFilename>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kFixCoFilename,
+                           builtinImpFixCoFilename);
 
   // _imp.get_frozen_object
-  moduleAddNativeFunction(module, SymbolId::kGetFrozenObject,
-                          nativeTrampoline<builtinImpGetFrozenObject>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kGetFrozenObject,
+                           builtinImpGetFrozenObject);
 
   // _imp.is_builtin
-  moduleAddNativeFunction(module, SymbolId::kIsBuiltin,
-                          nativeTrampoline<builtinImpIsBuiltin>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kIsBuiltin, builtinImpIsBuiltin);
 
   // _imp.is_frozen
-  moduleAddNativeFunction(module, SymbolId::kIsFrozen,
-                          nativeTrampoline<builtinImpIsFrozen>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kIsFrozen, builtinImpIsFrozen);
 
   // _imp.is_frozen_package
-  moduleAddNativeFunction(module, SymbolId::kIsFrozenPackage,
-                          nativeTrampoline<builtinImpIsFrozenPackage>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kIsFrozenPackage,
+                           builtinImpIsFrozenPackage);
 
   // _imp.release_lock
-  moduleAddNativeFunction(module, SymbolId::kReleaseLock,
-                          nativeTrampoline<builtinImpReleaseLock>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kReleaseLock,
+                           builtinImpReleaseLock);
+
   addModule(module);
   CHECK(!executeModule(kUnderImpModuleData, module).isError(),
         "Failed to initialize _imp module");
@@ -2289,11 +2299,11 @@ void Runtime::createTimeModule() {
   Module module(&scope, newModule(name));
 
   // time.time
-  moduleAddNativeFunction(module, SymbolId::kTime,
-                          nativeTrampoline<builtinTime>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kTime, builtinTime);
 
   addModule(module);
+  CHECK(!executeModule(kTimeModuleData, module).isError(),
+        "Failed to initialize time module");
 }
 
 void Runtime::createUnderIoModule() {
@@ -2302,14 +2312,12 @@ void Runtime::createUnderIoModule() {
   Module module(&scope, newModule(name));
 
   // TODO(eelizondo): Remove once _io is fully imported
-  moduleAddNativeFunction(module, SymbolId::kUnderReadFile,
-                          nativeTrampoline<ioReadFile>, unimplementedTrampoline,
-                          unimplementedTrampoline);
-  moduleAddNativeFunction(module, SymbolId::kUnderReadBytes,
-                          nativeTrampoline<ioReadBytes>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderReadFile, ioReadFile);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderReadBytes, ioReadBytes);
 
   addModule(module);
+  CHECK(!executeModule(kUnderIoModuleData, module).isError(),
+        "Failed to initialize _io module");
 }
 
 void Runtime::createImportlibModule() {
@@ -2366,10 +2374,10 @@ void Runtime::createMarshalModule() {
   Object name(&scope, symbols()->Marshal());
   Module module(&scope, newModule(name));
   // marshal.loads
-  moduleAddNativeFunction(module, SymbolId::kLoads,
-                          nativeTrampoline<MarshalModule::loads>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  moduleAddBuiltinFunction(module, SymbolId::kLoads, MarshalModule::loads);
   addModule(module);
+  CHECK(!executeModule(kMarshalModuleData, module).isError(),
+        "Failed to initialize marsal module");
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {

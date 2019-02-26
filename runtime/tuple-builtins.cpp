@@ -70,30 +70,19 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const NativeMethod TupleBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
-    {SymbolId::kDunderEq, nativeTrampoline<dunderEq>},
-    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr("'__add__' of 'tuple' missing self");
-  }
   Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFormat("expected 1 argument, got %ld", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object lhs(&scope, args.get(0));
@@ -135,9 +124,6 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -205,9 +191,6 @@ RawObject TupleBuiltins::sliceWithWords(Thread* thread, const Tuple& tuple,
 
 RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
                                        word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -244,10 +227,6 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
 }
 
 RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "tuple.__len__ takes exactly 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
@@ -265,14 +244,6 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor '__mul__' of 'tuple' object needs an argument");
-  }
-  if (nargs != 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 1 argument, got %ld", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -406,13 +377,9 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfTuple(*self)) {
     return thread->raiseTypeErrorWithCStr(
@@ -427,18 +394,15 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 
-const NativeMethod TupleIteratorBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+const BuiltinMethod TupleIteratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLengthHint, dunderLengthHint},
+    {SymbolId::kDunderNext, dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                             word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -452,9 +416,6 @@ RawObject TupleIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                             word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -473,10 +434,6 @@ RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 
 RawObject TupleIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                                   word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

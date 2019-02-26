@@ -11,16 +11,12 @@
 
 namespace python {
 
-const NativeMethod ObjectBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderHash, nativeTrampoline<dunderHash>},
-    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
-    // no sentinel needed because the iteration below is manual
-};
-
 // clang-format off
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderRepr, dunderRepr},
     // no sentinel needed because the iteration below is manual
 };
 // clang-format on
@@ -39,11 +35,6 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   object_type.setInstanceLayout(*layout);
   runtime->layoutAtPut(LayoutId::kObject, *layout);
 
-  for (uword i = 0; i < ARRAYSIZE(kNativeMethods); i++) {
-    runtime->typeAddNativeFunction(object_type, kNativeMethods[i].name,
-                                   kNativeMethods[i].address);
-  }
-
   for (uword i = 0; i < ARRAYSIZE(kBuiltinMethods); i++) {
     runtime->typeAddBuiltinFunction(object_type, kBuiltinMethods[i].name,
                                     kBuiltinMethods[i].address);
@@ -51,10 +42,6 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
 }
 
 RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "object.__hash__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   return thread->runtime()->hash(args.get(0));
 }
@@ -110,10 +97,6 @@ RawObject ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame,
 }
 
 RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "__repr__ expected 0 arguments, %ld given", nargs - 1));
-  }
   Arguments args(frame, nargs);
 
   Runtime* runtime = thread->runtime();
@@ -132,24 +115,17 @@ RawObject ObjectBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return str;
 }
 
-const NativeMethod NoneBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderNew, nativeTrampoline<dunderNew>},
-    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
+const BuiltinMethod NoneBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject NoneBuiltins::dunderNew(Thread* thread, Frame*, word nargs) {
-  if (nargs > 1) {
-    return thread->raiseTypeErrorWithCStr("__new__ takes no arguments");
-  }
+RawObject NoneBuiltins::dunderNew(Thread*, Frame*, word) {
   return NoneType::object();
 }
 
 RawObject NoneBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "__repr__ takes 0 arguments (%ld given)", nargs - 1));
-  }
   Arguments args(frame, nargs);
   if (!args.get(0).isNoneType()) {
     return thread->raiseTypeErrorWithCStr(

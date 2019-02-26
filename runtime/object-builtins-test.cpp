@@ -137,13 +137,8 @@ TEST(NoneBuiltinsTest, NewReturnsNone) {
 
 TEST(NoneBuiltinsTest, NewWithExtraArgsRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Type type(&scope, runtime.typeAt(LayoutId::kNoneType));
-  Int num1(&scope, runtime.newInt(1));
-  Int num2(&scope, runtime.newInt(2));
-  Int num3(&scope, runtime.newInt(3));
   EXPECT_TRUE(
-      raised(runBuiltin(NoneBuiltins::dunderNew, type, num1, num2, num3),
+      raised(runFromCStr(&runtime, "NoneType.__new__(NoneType, 1, 2, 3, 4, 5)"),
              LayoutId::kTypeError));
 }
 

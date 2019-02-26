@@ -11,10 +11,6 @@
 namespace python {
 
 RawObject builtinSysDisplayhook(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "displayhook() takes exactly one argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));

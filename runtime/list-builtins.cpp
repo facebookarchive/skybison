@@ -180,25 +180,21 @@ const BuiltinAttribute ListBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const NativeMethod ListBuiltins::kNativeMethods[] = {
-    {SymbolId::kAppend, nativeTrampoline<append>},
-    {SymbolId::kDunderAdd, nativeTrampoline<dunderAdd>},
-    {SymbolId::kDunderContains, nativeTrampoline<dunderContains>},
-    {SymbolId::kDunderDelItem, nativeTrampoline<dunderDelItem>},
-    {SymbolId::kDunderGetItem, nativeTrampoline<dunderGetItem>},
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
-    {SymbolId::kDunderMul, nativeTrampoline<dunderMul>},
-    {SymbolId::kDunderSetItem, nativeTrampoline<dunderSetItem>},
-    {SymbolId::kExtend, nativeTrampoline<extend>},
-    {SymbolId::kInsert, nativeTrampoline<insert>},
-    {SymbolId::kPop, nativeTrampoline<pop>},
-    {SymbolId::kRemove, nativeTrampoline<remove>},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderContains, dunderContains},
+    {SymbolId::kDunderDelItem, dunderDelItem},
+    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderMul, dunderMul},
+    {SymbolId::kDunderSetItem, dunderSetItem},
+    {SymbolId::kAppend, append},
+    {SymbolId::kExtend, extend},
+    {SymbolId::kInsert, insert},
+    {SymbolId::kPop, pop},
+    {SymbolId::kRemove, remove},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -220,10 +216,6 @@ RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -281,10 +273,6 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
 }
 
 RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "append() takes exactly one argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -299,10 +287,6 @@ RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "extend() takes exactly one argument");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -320,9 +304,6 @@ RawObject ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__len__() takes no arguments");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
@@ -335,10 +316,6 @@ RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr(
-        "insert() takes exactly two arguments");
-  }
   Arguments args(frame, nargs);
   if (!args.get(1)->isInt()) {
     return thread->raiseTypeErrorWithCStr(
@@ -359,9 +336,6 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
   Arguments args(frame, nargs);
   RawObject other = args.get(1);
   HandleScope scope(thread);
@@ -379,11 +353,8 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
-  if (nargs > 2) {
-    return thread->raiseTypeErrorWithCStr("pop() takes at most 1 argument");
-  }
   Arguments args(frame, nargs);
-  if (nargs == 2 && !args.get(1)->isSmallInt()) {
+  if (!args.get(1).isUnboundValue() && !args.get(1)->isSmallInt()) {
     return thread->raiseTypeErrorWithCStr(
         "index object cannot be interpreted as an integer");
   }
@@ -400,7 +371,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseIndexErrorWithCStr("pop from empty list");
   }
   word index = length - 1;
-  if (nargs == 2) {
+  if (!args.get(1).isUnboundValue()) {
     index = RawSmallInt::cast(args.get(1)).value();
     if (index < 0) index += length;
   }
@@ -412,10 +383,6 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr(
-        "remove() takes exactly one argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -503,9 +470,6 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
 }
 
 RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -516,18 +480,15 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newListIterator(self);
 }
 
-const NativeMethod ListIteratorBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
+const BuiltinMethod ListIteratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLengthHint, dunderLengthHint},
+    {SymbolId::kDunderNext, dunderNext},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                            word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -541,9 +502,6 @@ RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                            word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -562,10 +520,6 @@ RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 
 RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
                                                  word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -689,10 +643,6 @@ static RawObject setItemSlice(Thread* thread, const List& list,
 
 RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 3) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 2 arguments, got %ld", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -730,10 +680,6 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
 
 RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 1 arguments, got %ld", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

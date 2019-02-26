@@ -34,7 +34,6 @@ class BuiltinsModule {
   static RawObject ord(Thread* thread, Frame* frame, word nargs);
   static RawObject print(Thread* thread, Frame* frame, word nargs);
   static RawObject printKw(Thread* thread, Frame* frame, word nargs);
-  static RawObject range(Thread* thread, Frame* frame, word nargs);
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);

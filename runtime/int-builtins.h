@@ -51,13 +51,13 @@ class IntBuiltins
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRshift(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderXor(Thread* thread, Frame* frame, word nargs);
   static RawObject fromBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject fromBytesKw(Thread* thread, Frame* frame, word nargs);
   static RawObject intFromString(Thread* thread, RawObject str, int base);
   static RawObject intFromBool(RawObject bool_obj);
   static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
-  static RawObject toBytesKw(Thread* thread, Frame* frame, word nargs);
 
   // Converts a bool value to a small int, returns other values unchanged.
   static RawObject asInt(const Int& value);
@@ -72,10 +72,6 @@ class SmallIntBuiltins : public Builtins<SmallIntBuiltins, SymbolId::kSmallInt,
                                          LayoutId::kSmallInt, LayoutId::kInt> {
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
-
-  static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
-
-  static const NativeMethod kNativeMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallIntBuiltins);

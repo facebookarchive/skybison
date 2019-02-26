@@ -2,6 +2,12 @@
 """The sys module"""
 
 
+# This is the patch decorator, injected by our boot process. flake8 has no
+# knowledge about its definition and will complain without this gross circular
+# helper here.
+_patch = _patch  # noqa: F821
+
+
 def exit(code=0):
     raise SystemExit(code)
 
@@ -33,3 +39,8 @@ implementation = ImplementationType()
 
 
 dont_write_bytecode = False
+
+
+@_patch
+def displayhook(value):
+    pass

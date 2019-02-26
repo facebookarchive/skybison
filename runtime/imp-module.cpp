@@ -95,11 +95,7 @@ RawObject builtinImpExecDynamic(Thread* /* thread */, Frame* /* frame */,
 }
 
 RawObject builtinImpExtensionSuffixes(Thread* thread, Frame* /* frame */,
-                                      word nargs) {
-  if (nargs != 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "extension_suffixes takes no arguments");
-  }
+                                      word /* nargs */) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   List list(&scope, runtime->newList());
@@ -119,10 +115,6 @@ RawObject builtinImpGetFrozenObject(Thread* /* thread */, Frame* /* frame */,
 }
 
 RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 1 argument, got %ld", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -149,10 +141,6 @@ RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 1 argument, got %ld", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object name(&scope, args.get(0));

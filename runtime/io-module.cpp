@@ -10,7 +10,6 @@
 namespace python {
 
 RawObject ioReadFile(Thread* thread, Frame* frame, word nargs) {
-  DCHECK(nargs == 1, "_readfile only requires the path argument");
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str path(&scope, args.get(0));
@@ -23,7 +22,6 @@ RawObject ioReadFile(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject ioReadBytes(Thread* thread, Frame* frame, word nargs) {
-  DCHECK(nargs == 1, "_readbytes only requires the bytes argument");
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Bytes bytes(&scope, args.get(0));

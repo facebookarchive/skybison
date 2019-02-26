@@ -17,10 +17,8 @@ class TypeBuiltins
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

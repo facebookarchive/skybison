@@ -16,7 +16,6 @@ class ObjectBuiltins {
   static RawObject dunderRepr(Thread*, Frame*, word);
 
  private:
-  static const NativeMethod kNativeMethods[];
   static const BuiltinMethod kBuiltinMethods[];
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(ObjectBuiltins);
@@ -28,7 +27,7 @@ class NoneBuiltins
   static RawObject dunderNew(Thread*, Frame*, word);
   static RawObject dunderRepr(Thread*, Frame*, word);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(NoneBuiltins);

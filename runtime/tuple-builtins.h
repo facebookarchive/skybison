@@ -43,7 +43,6 @@ class TupleBuiltins
                                   word start, word stop, word step);
 
   static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
@@ -58,7 +57,7 @@ class TupleIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(TupleIteratorBuiltins);

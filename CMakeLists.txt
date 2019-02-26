@@ -151,13 +151,16 @@ target_include_directories(
 set(
   FROZEN_MODULE_INPUT
   library/_imp.py
+  library/_io.py
   library/_warnings.py
   library/_weakref.py
   library/builtins.py
   library/importlib/_bootstrap.py
   library/importlib/_bootstrap_external.py
+  library/marshal.py
   library/operator.py
-  library/sys.py)
+  library/sys.py
+  library/time.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
   ${CMAKE_BINARY_DIR}/bootstrap)

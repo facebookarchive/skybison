@@ -59,16 +59,6 @@ s.add("Hello, World")
   EXPECT_TRUE(runtime.setIncludes(s, hello_world));
 }
 
-TEST(SetTest, SetAddException) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-s = set()
-s.add(1, 2)
-)"),
-                            LayoutId::kTypeError,
-                            "add() takes exactly one argument"));
-}
-
 TEST(SetBuiltinsTest, DunderIterReturnsSetIterator) {
   Runtime runtime;
   HandleScope scope;
@@ -845,60 +835,6 @@ TEST(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
   ASSERT_EQ(*result, runtime.notImplemented());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__eq__()
-)"),
-                            LayoutId::kTypeError,
-                            "__eq__() of 'set' object needs an argument"));
-}
-
-TEST(SetBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__ne__()
-)"),
-                            LayoutId::kTypeError,
-                            "__ne__() of 'set' object needs an argument"));
-}
-
-TEST(SetBuiltinsTest, DunderGeWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__ge__()
-)"),
-                            LayoutId::kTypeError,
-                            "__ge__() of 'set' object needs an argument"));
-}
-
-TEST(SetBuiltinsTest, DunderGtWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__gt__()
-)"),
-                            LayoutId::kTypeError,
-                            "__gt__() of 'set' object needs an argument"));
-}
-
-TEST(SetBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__le__()
-)"),
-                            LayoutId::kTypeError,
-                            "__le__() of 'set' object needs an argument"));
-}
-
-TEST(SetBuiltinsTest, DunderLtWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__lt__()
-)"),
-                            LayoutId::kTypeError,
-                            "__lt__() of 'set' object needs an argument"));
-}
-
 TEST(SetBuiltinsTest, DunderEqWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -953,60 +889,6 @@ set.__lt__(None, set())
                             "__lt__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderEqWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__eq__(set(), set(), set())
-)"),
-                            LayoutId::kTypeError,
-                            "expected 1 arguments, got 2"));
-}
-
-TEST(SetBuiltinsTest, DunderNeWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__ne__(set(), set(), set())
-)"),
-                            LayoutId::kTypeError,
-                            "expected 1 argument, got 2"));
-}
-
-TEST(SetBuiltinsTest, DunderGeWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__ge__(set(), set(), set())
-)"),
-                            LayoutId::kTypeError,
-                            "expected 1 argument, got 2"));
-}
-
-TEST(SetBuiltinsTest, DunderGtWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__gt__(set(), set(), set())
-)"),
-                            LayoutId::kTypeError,
-                            "expected 1 argument, got 2"));
-}
-
-TEST(SetBuiltinsTest, DunderLeWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__le__(set(), set(), set())
-)"),
-                            LayoutId::kTypeError,
-                            "expected 1 argument, got 2"));
-}
-
-TEST(SetBuiltinsTest, DunderLtWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__lt__(set(), set(), set())
-)"),
-                            LayoutId::kTypeError,
-                            "expected 1 argument, got 2"));
-}
-
 TEST(SetBuiltinsTest, DunderInitWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -1014,26 +896,6 @@ set.__init__([])
 )"),
                             LayoutId::kTypeError,
                             "__init__() requires a 'set' object"));
-}
-
-TEST(SetBuiltinsTest, DunderInitWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__init__()
-)"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'set.__init__' takes min 1 positional "
-                            "arguments but 0 given"));
-}
-
-TEST(SetBuiltinsTest, DunderInitWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-set.__init__(set(), None, None, None)
-)"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'set.__init__' takes max 2 positional "
-                            "arguments but 4 given"));
 }
 
 TEST(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {

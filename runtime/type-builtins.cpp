@@ -70,11 +70,6 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const NativeMethod TypeBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
-    {SymbolId::kSentinelId, nullptr},
-};
-
 const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
@@ -108,45 +103,6 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Tuple bases(&scope, args.get(2));
   Dict dict(&scope, args.get(3));
   return typeNew(thread, metaclass_id, name, bases, dict);
-}
-
-RawObject TypeBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "type.__repr__(): Need a self argument");
-  }
-  if (nargs > 1) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "expected 0 arguments, got %ld", nargs - 1));
-  }
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfType(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "type.__repr__() requires a 'type' object");
-  }
-
-  Type type(&scope, *self);
-  Str type_name(&scope, type.name());
-  // Make a buffer large enough to store the formatted string.
-  const char prefix[] = "<class '";
-  const char suffix[] = "'>";
-  const word len = sizeof(prefix) - 1 + type_name.length() + sizeof(suffix);
-  char* buf = new char[len];
-  char* ptr = buf;
-  std::copy(prefix, prefix + sizeof(prefix), ptr);
-  ptr += sizeof(prefix) - 1;
-  type_name.copyTo(reinterpret_cast<byte*>(ptr), type_name.length());
-  ptr += type_name.length();
-  std::copy(suffix, suffix + sizeof(suffix), ptr);
-  ptr += sizeof(suffix) - 1;
-  DCHECK(ptr == buf + len - 1, "Didn't write as many as expected");
-  *ptr = '\0';
-  // TODO(T32810595): Handle modules, qualname
-  Str result(&scope, thread->runtime()->newStrFromCStr(buf));
-  delete[] buf;
-  return *result;
 }
 
 }  // namespace python

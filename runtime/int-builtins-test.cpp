@@ -3015,8 +3015,9 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
   Int num(&scope, SmallInt::fromWord(42));
   Int length(&scope, SmallInt::fromWord(3));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(isBytesEqualsBytes(result, {42, 0, 0}));
 }
 
@@ -3027,8 +3028,9 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderBigEndianReturnsBytes) {
   Int num(&scope, SmallInt::fromWord(42));
   Int length(&scope, SmallInt::fromWord(2));
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(isBytesEqualsBytes(result, {0, 42}));
 }
 
@@ -3073,20 +3075,21 @@ TEST(IntBuiltinsTest, ToBytesWithSignedFalseReturnsBytes) {
   // ToBytesWithSignedTrueOverflowRaisesOverflowError)
   Int length_1(&scope, SmallInt::fromWord(1));
   Int num_128(&scope, SmallInt::fromWord(128));
-  Object result_128(
-      &scope, runBuiltin(IntBuiltins::toBytes, num_128, length_1, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result_128(&scope, runBuiltin(IntBuiltins::toBytes, num_128, length_1,
+                                       byteorder, signed_obj));
   EXPECT_TRUE(isBytesEqualsBytes(result_128, {0x80}));
 
   Int length_2(&scope, SmallInt::fromWord(2));
   Int num_32768(&scope, SmallInt::fromWord(32768));
-  Object result_32768(
-      &scope, runBuiltin(IntBuiltins::toBytes, num_32768, length_2, byteorder));
+  Object result_32768(&scope, runBuiltin(IntBuiltins::toBytes, num_32768,
+                                         length_2, byteorder, signed_obj));
   EXPECT_TRUE(isBytesEqualsBytes(result_32768, {0, 0x80}));
 
   Int length_8(&scope, SmallInt::fromWord(8));
   Int num_min_word(&scope, newIntWithDigits(&runtime, {0x8000000000000000, 0}));
   Object result_min_word(&scope, runBuiltin(IntBuiltins::toBytes, num_min_word,
-                                            length_8, byteorder));
+                                            length_8, byteorder, signed_obj));
   EXPECT_TRUE(isBytesEqualsBytes(result_min_word, {0, 0, 0, 0, 0, 0, 0, 0x80}));
 }
 
@@ -3098,8 +3101,9 @@ TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderBigEndianReturnsBytes) {
   Int num(&scope, SmallInt::fromWord(0xcafebabe));
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(
       isBytesEqualsBytes(result, {0, 0, 0, 0, 0, 0, 0xca, 0xfe, 0xba, 0xbe}));
 }
@@ -3112,8 +3116,9 @@ TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderLittleEndianReturnsBytes) {
   Int num(&scope, SmallInt::fromWord(0xcafebabe));
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(
       isBytesEqualsBytes(result, {0xbe, 0xba, 0xfe, 0xca, 0, 0, 0, 0, 0, 0}));
 }
@@ -3173,8 +3178,9 @@ TEST(IntBuiltinsTest, ToBytesWithZeroLengthBigEndianReturnsEmptyBytes) {
   Int num(&scope, SmallInt::fromWord(0));
   Int length(&scope, SmallInt::fromWord(0));
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   ASSERT_TRUE(isBytesEqualsBytes(result, {}));
 }
 
@@ -3185,8 +3191,9 @@ TEST(IntBuiltinsTest, ToBytesWithZeroLengthLittleEndianReturnsEmptyBytes) {
   Int num(&scope, SmallInt::fromWord(0));
   Int length(&scope, SmallInt::fromWord(0));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   ASSERT_TRUE(isBytesEqualsBytes(result, {}));
 }
 
@@ -3197,8 +3204,9 @@ TEST(IntBuiltinsTest, ToBytesWithSignedFalseRaisesOverflowError) {
   Int num(&scope, SmallInt::fromWord(256));
   Int length(&scope, SmallInt::fromWord(1));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
@@ -3209,8 +3217,9 @@ TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
   Int num(&scope, newIntWithDigits(&runtime, {1, 2, 3}));
   Int length(&scope, SmallInt::fromWord(13));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
@@ -3240,28 +3249,6 @@ result = (0x8000000000000000).to_bytes(8, 'little', signed=True)
                             "int too big to convert"));
 }
 
-TEST(IntBuiltinsTest, ToBytesWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Int num(&scope, SmallInt::fromWord(42));
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST(IntBuiltinsTest, ToBytesWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Int num(&scope, SmallInt::fromWord(42));
-  Int length(&scope, SmallInt::fromWord(10));
-  Str byteorder(&scope, runtime.newStrFromCStr("big"));
-  Bool f(&scope, Bool::trueObj());
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder, f));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
 TEST(IntBuiltinsTest, ToBytesWithNonIntRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
@@ -3269,8 +3256,9 @@ TEST(IntBuiltinsTest, ToBytesWithNonIntRaisesTypeError) {
   Str str(&scope, runtime.newStrFromCStr("not an int"));
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, str, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, str, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -3280,8 +3268,9 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesTypeError) {
   Int num(&scope, SmallInt::fromWord(42));
   Str not_a_length(&scope, runtime.newStrFromCStr("not a length"));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, not_a_length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, not_a_length,
+                                   byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -3291,8 +3280,9 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesValueError) {
   Int num(&scope, SmallInt::fromWord(42));
   Int negative_length(&scope, SmallInt::fromWord(-3));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Bool signed_obj(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, negative_length,
-                                   byteorder));
+                                   byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
@@ -3302,8 +3292,9 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesOverflowError) {
   Int num(&scope, SmallInt::fromWord(42));
   Int huge_length(&scope, testing::newIntWithDigits(&runtime, {0, 1024}));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, huge_length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, huge_length,
+                                   byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
@@ -3314,8 +3305,9 @@ TEST(IntBuiltinsTest, ToBytesWithNegativeNumberRaisesOverflowError) {
   Int num(&scope, SmallInt::fromWord(-1));
   Int length(&scope, SmallInt::fromWord(10));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
-  Object result(&scope,
-                runBuiltin(IntBuiltins::toBytes, num, length, byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kOverflowError));
 }
 
@@ -3326,8 +3318,9 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderStringRaisesValueError) {
   Int num(&scope, SmallInt::fromWord(42));
   Int length(&scope, SmallInt::fromWord(3));
   Str invalid_byteorder(&scope, runtime.newStrFromCStr("hello"));
-  Object result(
-      &scope, runBuiltin(IntBuiltins::toBytes, num, length, invalid_byteorder));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length,
+                                   invalid_byteorder, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
@@ -3337,61 +3330,10 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidByteorderTypeRaisesTypeError) {
 
   Int num(&scope, SmallInt::fromWord(42));
   Int length(&scope, SmallInt::fromWord(3));
-  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, num));
+  Bool signed_obj(&scope, Bool::falseObj());
+  Object result(&scope,
+                runBuiltin(IntBuiltins::toBytes, num, length, num, signed_obj));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST(IntBuiltinsTest, ToBytesKwInvalidKeywordRaisesTypeError) {
-  Runtime runtime;
-  Thread* thread = Thread::currentThread();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "(4).to_bytes(signed=False)"), LayoutId::kTypeError,
-      "to_bytes() missing required argument 'length' (pos 1)"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "(4).to_bytes(byteorder='little')"),
-                    LayoutId::kTypeError,
-                    "to_bytes() missing required argument 'length' (pos 1)"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "(4).to_bytes(2, signed=False)"),
-      LayoutId::kTypeError,
-      "to_bytes() missing required argument 'byteorder' (pos 2)"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "(4).to_bytes(length=2, signed=False)"),
-      LayoutId::kTypeError,
-      "to_bytes() missing required argument 'byteorder' (pos 2)"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "(4).to_bytes(2, 'little', not_valid=True)"),
-      LayoutId::kTypeError,
-      "to_bytes() called with invalid keyword arguments"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "(4).to_bytes(2, 'little', True, signed=True)"),
-      LayoutId::kTypeError,
-      "to_bytes() takes at most 2 positional arguments (3 given)"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "(4).to_bytes(2, 'little', length=2)"),
-      LayoutId::kTypeError,
-      "argument for to_bytes() given by name ('length') and "
-      "position (1)"));
-  thread->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "(4).to_bytes(2, 'little', byteorder='little')"),
-      LayoutId::kTypeError,
-      "argument for to_bytes() given by name ('byteorder') and "
-      "position (2)"));
 }
 
 TEST(BoolBuiltinsTest, NewFromNonZeroIntegerReturnsTrue) {
@@ -3506,43 +3448,42 @@ TEST(SmallIntBuiltinsTest, DunderTrueDivWithFloat) {
 
   // Test dividing a positive smallint by a positive float
   Float float1(&scope, runtime.newFloat(1.5));
-  Float result(&scope,
-               runBuiltin(SmallIntBuiltins::dunderTrueDiv, hundred, float1));
+  Float result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, hundred, float1));
   EXPECT_NEAR(result.value(), 66.66666666666667, DBL_EPSILON);
 
   // Test dividing a positive smallint by a negative float
   Float float2(&scope, runtime.newFloat(-1.5));
   Float result1(&scope,
-                runBuiltin(SmallIntBuiltins::dunderTrueDiv, hundred, float2));
+                runBuiltin(IntBuiltins::dunderTrueDiv, hundred, float2));
   EXPECT_NEAR(result1.value(), -66.66666666666667, DBL_EPSILON);
 
   // Test dividing a positive smallint by infinity
   Float float_inf(&scope, runtime.newFloat(INFINITY));
-  Float result2(
-      &scope, runBuiltin(SmallIntBuiltins::dunderTrueDiv, hundred, float_inf));
+  Float result2(&scope,
+                runBuiltin(IntBuiltins::dunderTrueDiv, hundred, float_inf));
   EXPECT_NEAR(result2.value(), 0.0, DBL_EPSILON);
 
   // Test dividing a positive smallint by negative infinity
   Float neg_float_inf(&scope, runtime.newFloat(-INFINITY));
-  Float result3(&scope, runBuiltin(SmallIntBuiltins::dunderTrueDiv, hundred,
-                                   neg_float_inf));
+  Float result3(&scope,
+                runBuiltin(IntBuiltins::dunderTrueDiv, hundred, neg_float_inf));
   EXPECT_NEAR(result3.value(), 0.0, DBL_EPSILON);
 
   // Test dividing a negative smallint by infinity
   Int minus_hundred(&scope, SmallInt::fromWord(-100));
-  Float result4(&scope, runBuiltin(SmallIntBuiltins::dunderTrueDiv,
-                                   minus_hundred, float_inf));
+  Float result4(
+      &scope, runBuiltin(IntBuiltins::dunderTrueDiv, minus_hundred, float_inf));
   EXPECT_NEAR(result4.value(), 0.0, DBL_EPSILON);
 
   // Test dividing a negative smallint by negative infinity
-  Float result5(&scope, runBuiltin(SmallIntBuiltins::dunderTrueDiv,
-                                   minus_hundred, neg_float_inf));
+  Float result5(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, minus_hundred,
+                                   neg_float_inf));
   EXPECT_NEAR(result5.value(), 0.0, DBL_EPSILON);
 
   // Test dividing negative smallint by nan
   Float nan(&scope, runtime.newFloat(NAN));
-  Float result6(
-      &scope, runBuiltin(SmallIntBuiltins::dunderTrueDiv, minus_hundred, nan));
+  Float result6(&scope,
+                runBuiltin(IntBuiltins::dunderTrueDiv, minus_hundred, nan));
   EXPECT_TRUE(std::isnan(result6.value()));
 }
 
@@ -3552,12 +3493,12 @@ TEST(SmallIntBuiltinsTest, DunderTrueDivWithSmallInt) {
 
   Object num1(&scope, SmallInt::fromWord(6));
   Object num2(&scope, SmallInt::fromWord(3));
-  Float result(&scope, runBuiltin(SmallIntBuiltins::dunderTrueDiv, num1, num2));
+  Float result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, num1, num2));
   EXPECT_NEAR(result.value(), 2.0, DBL_EPSILON);
 
   num1 = SmallInt::fromWord(7);
   num2 = SmallInt::fromWord(3);
-  result = runBuiltin(SmallIntBuiltins::dunderTrueDiv, num1, num2);
+  result = runBuiltin(IntBuiltins::dunderTrueDiv, num1, num2);
   EXPECT_NEAR(result.value(), 2.3333333333333335, DBL_EPSILON);
 }
 

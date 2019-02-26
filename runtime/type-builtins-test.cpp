@@ -94,10 +94,9 @@ c = C()
 
 TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
-  HandleScope scope;
-  Type type(&scope, runtime.typeAt(LayoutId::kObject));
-  Object result(&scope, runBuiltin(TypeBuiltins::dunderRepr, type));
-  EXPECT_TRUE(isStrEqualsCStr(*result, "<class 'object'>"));
+  runFromCStr(&runtime, "result = type.__repr__(object)");
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
+                              "<class 'object'>"));
 }
 
 TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
@@ -105,14 +104,12 @@ TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
   runFromCStr(&runtime, R"(
 class Foo:
   pass
+result = type.__repr__(Foo)
 )");
-  HandleScope scope;
-  Object type(&scope, moduleAt(&runtime, "__main__", "Foo"));
-
-  Object result(&scope, runBuiltin(TypeBuiltins::dunderRepr, type));
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".
-  EXPECT_TRUE(isStrEqualsCStr(*result, "<class 'Foo'>"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
+                              "<class 'Foo'>"));
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {

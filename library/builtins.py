@@ -10,6 +10,19 @@ _UnboundValue = _UnboundValue  # noqa: F821
 _stdout = _stdout  # noqa: F821
 
 
+class function(bootstrap=True):
+    def __repr__(self):
+        # TODO(T32655200): Replace 0x with #x when formatting language is
+        # implemented
+        return f"<function {self.__name__} at 0x{_address(self)}>"
+
+    def __call__(self, *args, **kwargs):
+        return self(*args, **kwargs)
+
+    def __get__(self, instance, owner):
+        pass
+
+
 def format(obj, fmt_spec):
     if not isinstance(fmt_spec, str):
         raise TypeError(
@@ -49,6 +62,10 @@ class type(bootstrap=True):
     def __init__(self, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
         pass
 
+    def __repr__(self):
+        # TODO(T32810595): Handle modules, qualname
+        return f"<class '{self.__name__}'>"
+
 
 class object(bootstrap=True):  # noqa: E999
     def __new__(cls, *args, **kwargs):
@@ -65,6 +82,12 @@ class object(bootstrap=True):  # noqa: E999
             raise TypeError("format_spec must be empty string")
         return str(self)
 
+    def __hash__(self):
+        pass
+
+    def __repr__(self):
+        pass
+
 
 class bool(bootstrap=True):
     def __new__(cls, val=False):
@@ -75,6 +98,11 @@ class bool(bootstrap=True):
 
     def __str__(self) -> str:  # noqa: T484
         return bool.__repr__(self)
+
+
+class coroutine(bootstrap=True):
+    def send(self, value):
+        pass
 
 
 class float(bootstrap=True):
@@ -147,6 +175,17 @@ class float(bootstrap=True):
         pass
 
     def __sub__(self, n: float) -> float:
+        pass
+
+
+class generator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def send(self, value):
         pass
 
 
@@ -355,6 +394,9 @@ class int(bootstrap=True):
     def __sub__(self, n: int) -> int:
         pass
 
+    def __truediv__(self, other):
+        pass
+
     def __trunc__(self) -> int:
         pass
 
@@ -378,6 +420,9 @@ class int(bootstrap=True):
     numerator = property(__int__)
 
     real = property(__int__)
+
+    def to_bytes(self, length, byteorder, signed=False):
+        pass
 
 
 class ImportError(bootstrap=True):
@@ -481,6 +526,24 @@ class tuple(bootstrap=True):
     def __new__(cls, iterable=_UnboundValue):
         pass
 
+    def __add__(self, other):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __getitem__(self, index):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __mul__(self, other):
+        pass
+
     def __repr__(self):
         num_elems = len(self)
         if num_elems == 1:
@@ -495,6 +558,17 @@ class tuple(bootstrap=True):
         return output + ")"
 
 
+class tuple_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+
 class list(bootstrap=True):
     def __new__(cls, iterable=()):
         pass
@@ -502,13 +576,86 @@ class list(bootstrap=True):
     def __init__(self, iterable=()):
         self.extend(iterable)
 
+    def __add__(self, other):
+        pass
+
+    def __contains__(self, value):
+        pass
+
+    def __delitem__(self, key):
+        pass
+
+    def __getitem__(self, key):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __mul__(self, other):
+        pass
+
+    def __setitem__(self, key, value):
+        pass
+
     def __repr__(self):
         return "[" + ", ".join([i.__repr__() for i in self]) + "]"
+
+    def append(self, other):
+        pass
+
+    def extend(self, other):
+        pass
+
+    def insert(self, index, value):
+        pass
+
+    def pop(self, index=_UnboundValue):
+        pass
+
+    def remove(self, value):
+        pass
+
+
+class list_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+
+class range(bootstrap=True):
+    def __new__(cls, start_or_stop, stop=_UnboundValue, step=_UnboundValue):
+        pass
+
+    def __iter__(self):
+        pass
+
+
+class range_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
 
 
 class slice(bootstrap=True):
     def __new__(cls, start_or_stop, stop=_UnboundValue, step=None):
         pass
+
+
+class smallint(bootstrap=True):
+    pass
 
 
 class str(bootstrap=True):
@@ -529,6 +676,45 @@ class str(bootstrap=True):
         if not isinstance(result, str):
             raise TypeError("__str__ returned non-str instance")
         return result
+
+    def __add__(self, other):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+    def __getitem__(self, index):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __le__(self, other):
+        pass
+
+    def __lt__(self, other):
+        pass
+
+    def __mod__(self, other):
+        pass
+
+    def __ne__(self, other):
+        pass
+
+    def __str__(self):
+        return self
+
+    def __len__(self) -> int:
+        pass
+
+    def __repr__(self):
+        pass
 
     def partition(self, sep):
         if not isinstance(self, str):
@@ -707,16 +893,27 @@ class str(bootstrap=True):
     def join(self, items) -> str:
         pass
 
-    def __str__(self):
-        return self
-
-    def __mul__(self, n: int) -> str:
+    def lower(self):
         pass
 
-    def __rmul__(self, n: int) -> str:
+    def lstrip(self, other=None):
         pass
 
-    def __len__(self) -> int:
+    def strip(self, other=None):
+        pass
+
+    def rstrip(self, other=None):
+        pass
+
+
+class str_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
         pass
 
 
@@ -768,6 +965,54 @@ class dict(bootstrap=True):
         pass
 
 
+class dict_itemiterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+
+class dict_items(bootstrap=True):
+    def __iter__(self):
+        pass
+
+
+class dict_keyiterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+
+class dict_keys(bootstrap=True):
+    def __iter__(self):
+        pass
+
+
+class dict_valueiterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+
+class dict_values(bootstrap=True):
+    def __iter__(self):
+        pass
+
+
 class module(bootstrap=True):
     def __new__(cls, name):
         pass
@@ -775,6 +1020,42 @@ class module(bootstrap=True):
 
 class frozenset(bootstrap=True):
     def __new__(cls, iterable=_UnboundValue):
+        pass
+
+    def __and__(self, other):
+        pass
+
+    def __contains__(self, value):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __ne__(self, other):
+        pass
+
+    def __le__(self, other):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __lt__(self, other):
+        pass
+
+    def intersection(self, other):
+        pass
+
+    def isdisjoint(self, other):
         pass
 
 
@@ -788,15 +1069,61 @@ class set(bootstrap=True):
     def __repr__(self):
         return f"{{{', '.join([item.__repr__() for item in self])}}}"
 
+    def __and__(self, other):
+        pass
 
-class function(bootstrap=True):
-    def __repr__(self):
-        # TODO(T32655200): Good candidate for #x when formatting language is
-        # implemented
-        return f"<function {self.__name__} at 0x{_address(self)}>"
+    def __contains__(self, value):
+        pass
 
-    def __call__(self, *args, **kwargs):
-        return self(*args, **kwargs)
+    def __eq__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __iand__(self, other):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __ne__(self, other):
+        pass
+
+    def __le__(self, other):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __lt__(self, other):
+        pass
+
+    def add(self, value):
+        pass
+
+    def intersection(self, other):
+        pass
+
+    def isdisjoint(self, other):
+        pass
+
+    def pop(self):
+        pass
+
+
+class set_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
 
 
 class classmethod(bootstrap=True):
@@ -853,6 +1180,14 @@ class complex(bootstrap=True):
     @property
     def real(self):
         return _complex_real(self)
+
+
+class NoneType(bootstrap=True):
+    def __new__(cls):
+        pass
+
+    def __repr__(self):
+        pass
 
 
 def all(iterable):
@@ -945,11 +1280,6 @@ def getattr(obj, key, default=_UnboundValue):
 
 
 # patch is not patched because that would cause a circularity problem.
-
-
-@_patch
-def range(start_or_stop, stop=_UnboundValue, step=_UnboundValue):
-    pass
 
 
 @_patch

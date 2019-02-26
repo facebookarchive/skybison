@@ -36,9 +36,6 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
   const char* type_name =
       target == LayoutId::kGenerator ? "generator" : "coroutine";
 
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("send() takes 1 argument");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -57,19 +54,15 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
   return sendImpl(thread, gen, value);
 }
 
-const NativeMethod GeneratorBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
-    {SymbolId::kSend,
-     nativeTrampoline<GeneratorBaseBuiltins::send<LayoutId::kGenerator>>},
+const BuiltinMethod GeneratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderNext, dunderNext},
+    {SymbolId::kSend, GeneratorBaseBuiltins::send<LayoutId::kGenerator>},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                         word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -83,9 +76,6 @@ RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                         word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -99,9 +89,8 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   return sendImpl(thread, gen, value);
 }
 
-const NativeMethod CoroutineBuiltins::kNativeMethods[] = {
-    {SymbolId::kSend,
-     nativeTrampoline<GeneratorBaseBuiltins::send<LayoutId::kCoroutine>>},
+const BuiltinMethod CoroutineBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kSend, GeneratorBaseBuiltins::send<LayoutId::kCoroutine>},
     {SymbolId::kSentinelId, nullptr},
 };
 

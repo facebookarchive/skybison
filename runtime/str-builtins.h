@@ -74,7 +74,6 @@ class StrBuiltins
   static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject strip(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
@@ -95,7 +94,7 @@ class StrIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(StrIteratorBuiltins);

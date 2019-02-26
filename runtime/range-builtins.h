@@ -9,9 +9,10 @@ namespace python {
 class RangeBuiltins
     : public Builtins<RangeBuiltins, SymbolId::kRange, LayoutId::kRange> {
  public:
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeBuiltins);
@@ -25,7 +26,7 @@ class RangeIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(RangeIteratorBuiltins);

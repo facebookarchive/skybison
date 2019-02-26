@@ -60,7 +60,6 @@ class SetBuiltins
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
@@ -75,7 +74,6 @@ class FrozenSetBuiltins
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
-  static const NativeMethod kNativeMethods[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:
@@ -90,7 +88,7 @@ class SetIteratorBuiltins
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
 
-  static const NativeMethod kNativeMethods[];
+  static const BuiltinMethod kBuiltinMethods[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SetIteratorBuiltins);

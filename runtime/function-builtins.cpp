@@ -9,8 +9,8 @@
 
 namespace python {
 
-const NativeMethod FunctionBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderGet, nativeTrampoline<dunderGet>},
+const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderGet, dunderGet},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -32,9 +32,6 @@ void FunctionBuiltins::postInitialize(Runtime*, const Type& new_type) {
 
 RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr("__get__ needs 3 arguments");
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));

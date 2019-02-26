@@ -9,20 +9,6 @@ namespace python {
 
 namespace testing {
 
-TEST(MarshalModuleTest, LoadsWithTooFewArgumentsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raised(runBuiltin(MarshalModule::loads), LayoutId::kTypeError));
-}
-
-TEST(MarshalModuleTest, LoadsWithTooManyArgumentsRaisesTypeError) {
-  Runtime runtime;
-  Thread* thread = Thread::currentThread();
-  HandleScope scope(thread);
-  Object obj(&scope, RawNoneType::object());
-  EXPECT_TRUE(raised(runBuiltin(MarshalModule::loads, obj, obj, obj),
-                     LayoutId::kTypeError));
-}
-
 TEST(MarshalModuleTest, LoadsReadsSet) {
   Runtime runtime;
   HandleScope scope;
