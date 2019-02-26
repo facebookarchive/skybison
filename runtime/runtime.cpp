@@ -1572,11 +1572,6 @@ RawObject Runtime::importModule(const Object& name) {
     }
   }
 
-  // TODO(T40880963): importlib is disabled pending resolution of some
-  // posixmodule issues.
-  return thread->raiseWithCStr(LayoutId::kNotImplementedError,
-                               "importModule() is not implemented");
-
   // Call _bootstrap._find_and_load
   Module importlib(&scope, findModuleById(SymbolId::kUnderFrozenImportlib));
   Object dunder_import(&scope,
@@ -2318,10 +2313,6 @@ void Runtime::createUnderIoModule() {
 }
 
 void Runtime::createImportlibModule() {
-  // TODO(T40880963): importlib is disabled pending resolution of some
-  // posixmodule issues.
-  return;
-
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
 
