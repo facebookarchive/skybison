@@ -13,7 +13,7 @@ set(BENCHMARK_ENABLE_TESTING CACHE BOOL OFF)
 set(BENCHMARK_ENABLE_EXCEPTIONS CACHE BOOL OFF)
 set(BENCHMARK_ENABLE_INSTALL CACHE BOOL OFF)
 add_subdirectory(third-party/benchmark-1.3.0)
-add_subdirectory(third-party/googletest-1.8.0)
+add_subdirectory(third-party/googletest-1.8.1)
 add_subdirectory(third-party/siphash-20170224)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
