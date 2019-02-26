@@ -66,8 +66,16 @@ PY_EXPORT char* PyByteArray_AsString(PyObject* /* f */) {
   UNIMPLEMENTED("PyByteArray_AsString");
 }
 
-PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* /* t */) {
-  UNIMPLEMENTED("PyByteArray_FromObject");
+PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    return ApiHandle::newReference(thread, thread->runtime()->newByteArray());
+  }
+  HandleScope scope(thread);
+  Object src(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kByteArray, src));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {

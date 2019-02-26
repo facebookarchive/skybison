@@ -72,6 +72,53 @@ TEST_F(ByteArrayExtensionApiTest,
   EXPECT_EQ(PyByteArray_Size(result), len1 + len2);
 }
 
+TEST_F(ByteArrayExtensionApiTest, FromObjectWithNullReturnsEmptyByteArray) {
+  PyObjectPtr array(PyByteArray_FromObject(nullptr));
+  EXPECT_TRUE(PyByteArray_CheckExact(array));
+  EXPECT_EQ(PyByteArray_Size(array), 0);
+}
+
+TEST_F(ByteArrayExtensionApiTest, FromObjectWithByteArrayReturnsByteArray) {
+  const char* hello = "hello";
+  Py_ssize_t size = static_cast<Py_ssize_t>(std::strlen(hello));
+  PyObjectPtr bytes(PyByteArray_FromStringAndSize(hello, size));
+  PyObjectPtr array(PyByteArray_FromObject(bytes));
+  EXPECT_TRUE(PyByteArray_CheckExact(array));
+  EXPECT_EQ(PyByteArray_Size(array), size);
+}
+
+TEST_F(ByteArrayExtensionApiTest, FromObjectWithBytesReturnsByteArray) {
+  PyObjectPtr bytes(PyBytes_FromString("hello"));
+  PyObjectPtr array(PyByteArray_FromObject(bytes));
+  EXPECT_TRUE(PyByteArray_CheckExact(array));
+  EXPECT_EQ(PyByteArray_Size(array), 5);
+}
+
+TEST_F(ByteArrayExtensionApiTest, FromObjectWithIntReturnsByteArray) {
+  Py_ssize_t size = 10;
+  PyObjectPtr value(PyLong_FromSsize_t(size));
+  PyObjectPtr array(PyByteArray_FromObject(value));
+  EXPECT_TRUE(PyByteArray_CheckExact(array));
+  EXPECT_EQ(PyByteArray_Size(array), size);
+}
+
+TEST_F(ByteArrayExtensionApiTest, FromObjectWithListReturnsByteArray) {
+  PyObjectPtr list(PyList_New(3));
+  PyList_SetItem(list, 0, PyLong_FromLong(0));
+  PyList_SetItem(list, 1, PyLong_FromLong(1));
+  PyList_SetItem(list, 2, PyLong_FromLong(2));
+  PyObjectPtr array(PyByteArray_FromObject(list));
+  EXPECT_TRUE(PyByteArray_CheckExact(array));
+  EXPECT_EQ(PyByteArray_Size(array), 3);
+}
+
+TEST_F(ByteArrayExtensionApiTest, FromObjectWithStringRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  EXPECT_EQ(PyByteArray_FromObject(str), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeReturnsByteArray) {
   PyObjectPtr array(PyByteArray_FromStringAndSize("hello", 5));
   EXPECT_TRUE(PyByteArray_Check(array));
