@@ -408,13 +408,13 @@ class KeyError(bootstrap=True):
 
 
 class bytearray(bootstrap=True):
-    def __new__(
-        cls, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
+    def __init__(
+        self, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
     ):
         pass
 
-    def __init__(
-        self, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
+    def __new__(
+        cls, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
     ):
         pass
 

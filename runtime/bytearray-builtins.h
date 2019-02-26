@@ -21,9 +21,8 @@ class ByteArrayBuiltins
     : public Builtins<ByteArrayBuiltins, SymbolId::kByteArray,
                       LayoutId::kByteArray> {
  public:
-
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
