@@ -90,6 +90,96 @@ TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
   EXPECT_EQ(result.byteAt(3), 'd');
 }
 
+TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.__getitem__(1, 2)"),
+      LayoutId::kTypeError, "'__getitem__' requires a 'bytearray' object"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray(5)[1.5]"), LayoutId::kTypeError,
+      "bytearray indices must either be slice or provide '__index__'"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray(5)[2 ** 63]"),
+                            LayoutId::kIndexError,
+                            "cannot fit index into an index-sized integer"));
+}
+
+TEST(ByteArrayBuiltinsTest,
+     DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray(5)[5]"),
+                            LayoutId::kIndexError, "index out of range"));
+}
+
+TEST(ByteArrayBuiltinsTest,
+     DunderGetItemWithNegativeIntGreaterThanLenRaisesIndexError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray(5)[-6]"),
+                            LayoutId::kIndexError, "index out of range"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'h', 'e', 'l', 'l', 'o'});
+  Object index(&scope, runtime.newInt(-5));
+  Object item(&scope,
+              runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
+  EXPECT_EQ(*item, SmallInt::fromWord('h'));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGetItemIndexesFromBeginning) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'h', 'e', 'l', 'l', 'o'});
+  Object index(&scope, SmallInt::fromWord(0));
+  Object item(&scope,
+              runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
+  EXPECT_EQ(*item, SmallInt::fromWord('h'));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceReturnsByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'h', 'e', 'l', 'l', 'o'});
+  Slice index(&scope, runtime.newSlice());
+  index.setStop(SmallInt::fromWord(3));
+  ByteArray item(&scope,
+                 runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
+  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, item));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "hel"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceStepReturnsByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(
+      thread, self, {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'});
+  Slice index(&scope, runtime.newSlice());
+  index.setStart(SmallInt::fromWord(8));
+  index.setStop(SmallInt::fromWord(3));
+  index.setStep(SmallInt::fromWord(-2));
+  ByteArray item(&scope,
+                 runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
+  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, item));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "rwo"));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderIaddWithNonByteArraySelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(

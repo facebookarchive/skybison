@@ -2,6 +2,7 @@
 
 #include "bytes-builtins.h"
 #include "runtime.h"
+#include "slice-builtins.h"
 
 namespace python {
 
@@ -24,16 +25,15 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-// clang-format off
 const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderGetItem, dunderGetItem},
     {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kSentinelId, nullptr},
 };
-// clang-format on
 
 RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
                                        word nargs) {
@@ -68,6 +68,53 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
   runtime->byteArrayIadd(thread, result, self_bytes, self_len);
   runtime->byteArrayIadd(thread, result, other_bytes, other_len);
   return *result;
+}
+
+RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__getitem__' requires a 'bytearray' object");
+  }
+  ByteArray self(&scope, *self_obj);
+  Object index(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*index)) {
+    if (!index.isInt()) {
+      // TODO(T38780562): strict subclass of int
+      UNIMPLEMENTED("subclass of int");
+    }
+    if (!index.isSmallInt()) {
+      return thread->raiseIndexErrorWithCStr(
+          "cannot fit index into an index-sized integer");
+    }
+    word idx = SmallInt::cast(*index).value();
+    word len = self.numItems();
+    if (idx < 0) idx += len;
+    if (idx < 0 || idx >= len) {
+      return thread->raiseIndexErrorWithCStr("index out of range");
+    }
+    return SmallInt::fromWord(self.byteAt(idx));
+  }
+  if (index.isSlice()) {
+    Slice slice(&scope, *index);
+    word start, stop, step;
+    Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
+    if (err.isError()) return *err;
+    word len = Slice::adjustIndices(self.numItems(), &start, &stop, step);
+    ByteArray result(&scope, runtime->newByteArray());
+    runtime->byteArrayEnsureCapacity(thread, result, len);
+    result.setNumItems(len);
+    for (word i = 0, idx = start; i < len; i++, idx += step) {
+      result.byteAtPut(i, self.byteAt(idx));
+    }
+    return *result;
+  }
+  return thread->raiseTypeErrorWithCStr(
+      "bytearray indices must either be slice or provide '__index__'");
 }
 
 RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,

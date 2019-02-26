@@ -411,6 +411,9 @@ class bytearray(bootstrap=True):
     def __add__(self, other) -> bytearray:
         pass
 
+    def __getitem__(self, key):  # -> Union[int, bytearray]
+        pass
+
     def __iadd__(self, other) -> bytearray:
         pass
 
