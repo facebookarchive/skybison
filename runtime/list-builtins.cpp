@@ -12,33 +12,33 @@ namespace python {
 
 RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   HandleScope scope(thread);
-  word index = dst.numItems();
   Runtime* runtime = thread->runtime();
   // Special case for lists
   if (iterable.isList()) {
     List src(&scope, *iterable);
-    if (src.numItems() > 0) {
-      word new_capacity = index + src.numItems();
-      runtime->listEnsureCapacity(dst, new_capacity);
+    word old_length = dst.numItems();
+    word new_length = old_length + src.numItems();
+    if (new_length != old_length) {
+      runtime->listEnsureCapacity(dst, new_length);
       // Save the number of items before adding the two sizes together. This is
       // for the a.extend(a) case (src == dst).
-      word num_items = src.numItems();
-      dst.setNumItems(new_capacity);
-      for (word i = 0; i < num_items; i++) {
-        dst.atPut(index++, src.at(i));
+      dst.setNumItems(new_length);
+      for (word i = 0, j = old_length; j < new_length; i++, j++) {
+        dst.atPut(j, src.at(i));
       }
     }
     return *dst;
   }
   // Special case for tuples
   if (iterable.isTuple()) {
-    Tuple tuple(&scope, *iterable);
-    if (tuple.length() > 0) {
-      word new_capacity = index + tuple.length();
-      runtime->listEnsureCapacity(dst, new_capacity);
-      dst.setNumItems(new_capacity);
-      for (word i = 0; i < tuple.length(); i++) {
-        dst.atPut(index++, tuple.at(i));
+    Tuple src(&scope, *iterable);
+    word old_length = dst.numItems();
+    word new_length = old_length + src.length();
+    if (new_length != old_length) {
+      runtime->listEnsureCapacity(dst, new_length);
+      dst.setNumItems(new_length);
+      for (word i = 0, j = old_length; j < new_length; i++, j++) {
+        dst.atPut(j, src.at(i));
       }
     }
     return *dst;
@@ -226,26 +226,25 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfList(*self)) {
+  if (!runtime->isInstanceOfList(*self_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "__add__() must be called with list instance as first argument");
   }
-
-  Object other(&scope, args.get(1));
-  if (other.isList()) {
-    word new_capacity =
-        RawList::cast(*self)->numItems() + RawList::cast(*other)->numItems();
-    List new_list(&scope, runtime->newList());
-    runtime->listEnsureCapacity(new_list, new_capacity);
-    new_list = listExtend(thread, new_list, self);
-    if (!new_list.isError()) {
-      new_list = listExtend(thread, new_list, other);
-    }
-    return *new_list;
+  Object other_obj(&scope, args.get(1));
+  if (!other_obj.isList()) {
+    return thread->raiseTypeErrorWithCStr("can only concatenate list to list");
   }
-  return thread->raiseTypeErrorWithCStr("can only concatenate list to list");
+  List self(&scope, *self_obj);
+  List other(&scope, *other_obj);
+  List new_list(&scope, runtime->newList());
+  runtime->listEnsureCapacity(new_list, self.numItems() + other.numItems());
+  new_list = listExtend(thread, new_list, self);
+  if (!new_list.isError()) {
+    new_list = listExtend(thread, new_list, other);
+  }
+  return *new_list;
 }
 
 RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
