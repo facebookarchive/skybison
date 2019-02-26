@@ -195,10 +195,16 @@ class int(bootstrap=True):
     def __eq__(self, n: int) -> bool:  # noqa: T484
         pass
 
+    def __divmod__(self, n: int):
+        pass
+
     def __float__(self) -> float:
         pass
 
     def __floor__(self) -> int:
+        pass
+
+    def __floordiv__(self, n: int) -> int:
         pass
 
     def __ge__(self, n: int) -> bool:
@@ -223,6 +229,9 @@ class int(bootstrap=True):
         pass
 
     def __lt__(self, n: int) -> bool:
+        pass
+
+    def __mod__(self, n: int) -> int:
         pass
 
     def __mul__(self, n: int) -> int:

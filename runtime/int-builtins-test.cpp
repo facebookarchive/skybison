@@ -368,7 +368,7 @@ a *= 2
   EXPECT_TRUE(isIntEqualsWord(*b, 5));
 }
 
-TEST(IntBuiltinsTest, InplaceFloorDiv) {
+TEST(IntBuiltinsTest, InplaceFloordiv) {
   Runtime runtime;
   HandleScope scope;
 
@@ -764,6 +764,43 @@ TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   Object left(&scope, runtime.newInt(0));
   Object right(&scope, runtime.newStrFromCStr(""));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  EXPECT_TRUE(result.isNotImplemented());
+}
+
+TEST(IntBuiltinsTest, DunderModWithSmallIntReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(-9876));
+  Object right(&scope, runtime.newInt(123));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
+  EXPECT_TRUE(isIntEqualsWord(*result, 87));
+}
+
+TEST(IntBuiltinsTest, DunderModWithZeroRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(2));
+  Object right(&scope, runtime.newInt(0));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kZeroDivisionError,
+                            "integer division or modulo by zero"));
+}
+
+TEST(IntBuiltinsTest, DunderModWithNonIntSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderModWithNontIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(1));
+  Object right(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
 
@@ -1288,6 +1325,43 @@ TEST(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {
             runtime.typeAt(LayoutId::kTypeError));
 }
 
+TEST(IntBuiltinsTest, DunderFloordivWithSmallIntReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(42));
+  Object right(&scope, runtime.newInt(9));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  EXPECT_TRUE(isIntEqualsWord(*result, 4));
+}
+
+TEST(IntBuiltinsTest, DunderFloordivWithZeroRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(2));
+  Object right(&scope, runtime.newInt(0));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kZeroDivisionError,
+                            "integer division or modulo by zero"));
+}
+
+TEST(IntBuiltinsTest, DunderFloordivWithNonIntSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderFloordivWithNontIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(1));
+  Object right(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
+  EXPECT_TRUE(result.isNotImplemented());
+}
+
 TEST(LargeIntBuiltinsTest, TruthyLargeInt) {
   const char* src = R"(
 a = 4611686018427387903 + 1
@@ -1590,6 +1664,434 @@ TEST(IntBuiltinsTest, DunderBoolOnBool) {
 
   Object false_obj(&scope, Bool::falseObj());
   EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, false_obj), Bool::falseObj());
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithBoolsReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, Bool::trueObj());
+  Object right(&scope, Bool::trueObj());
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithSmallIntReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, RawSmallInt::fromWord(4321));
+  Object right(&scope, RawSmallInt::fromWord(17));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 254));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithSmallIntNegativeDividendNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, RawSmallInt::fromWord(-987654321));
+  Object right(&scope, RawSmallInt::fromWord(-654));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1510174));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), -525));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithSmallIntNegativeDividendReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, RawSmallInt::fromWord(-123456789));
+  Object right(&scope, RawSmallInt::fromWord(456));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -270739));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 195));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithSmallIntNegativeDividendNoRemainderReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, RawSmallInt::fromWord(-94222222181));
+  Object right(&scope, RawSmallInt::fromWord(53));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -1777777777));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithSmallIntNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, RawSmallInt::fromWord(111222333));
+  Object right(&scope, RawSmallInt::fromWord(-444));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -250501));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), -111));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithSmallIntNegativeDivisorNoRemainderReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, RawSmallInt::fromWord(94222222181));
+  Object right(&scope, RawSmallInt::fromWord(-53));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -1777777777));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithSmallIntAndDivisorMinusOneReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(kMinWord));
+  Object right(&scope, runtime.newInt(-1));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0), {kHighbitUword, 0}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithLargeIntAndDivisorMinusOneReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newIntWithDigits({0, kHighbitUword}));
+  Object right(&scope, runtime.newInt(-1));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0), {0, kHighbitUword, 0}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithSingleDigitDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0x4a23475557e990d0, 0x56c1275a8b41bed9}));
+  Object right(&scope, runtime.newInt(77));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(
+      isIntEqualsDigits(result.at(0), {0x79cb7c896c08a31, 0x1206e39b2042db3}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 19));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithSingleDigitNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef}));
+  Object right(&scope, runtime.newInt(-87654));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0),
+                                {0x334af489352d60f6, 0xffffdee26dff7ad9}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), -7591));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithSingleDigitNegativeDivisorNoRemainderReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef}));
+  Object right(&scope, runtime.newInt(-5));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0),
+                                {0x83b5bf245cb913ef, 0xf72442a239fb6c36}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithSingleDigitDivisorNegativeDividendReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0x94472249c23c1189, 0xffe0519aab10d602}));
+  Object right(&scope, runtime.newInt(12345));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0),
+                                {0x5b96544c9be595f3, 0xffffff57d046e6d2}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 7790));
+}
+
+TEST(
+    IntBuiltinsTest,
+    DunderDivmodWithSingleDigitDivisorNegativeDividendNoRemainderReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0x94472249c23c1189, 0xffe0519aab10d602}));
+  Object right(&scope, runtime.newInt(5));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0),
+                                {0x50db06db8d3f36b5, 0xfff9a9ebbbd02acd}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithSingleDigitNegativeDivisorNegativeDividendReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0x91a950df92c04492, 0xd60eebbadb89de2f}));
+  Object right(&scope, runtime.newInt(-1117392329));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0), {0x6aaebd022be4f5c, 0xa1368e9f}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), -108249138));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithJustNotASingleDigitDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(&runtime, {0xaaa, 3}));
+  Object right(&scope, runtime.newInt(-0x100000000));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -12884901889));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), -4294964566));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithBiggerDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(&runtime, {0x575420c5052ae9c6}));
+  Object right(&scope,
+               newIntWithDigits(&runtime, {0x383b89d9e2bb74f5, 0x1234}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 0));
+  // The algorithm should take a shortcut and return the dividend unchanged.
+  EXPECT_EQ(result.at(1), left);
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithNegativeDividendBiggerDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(-55));
+  Object right(&scope, newIntWithDigits(&runtime, {0, 1}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -1));
+  EXPECT_TRUE(isIntEqualsDigits(result.at(1), {~uword{54}, 0}));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithDividendBiggerNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(55));
+  Object right(&scope, newIntWithDigits(&runtime, {0, kHighbitUword}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), -1));
+  EXPECT_TRUE(isIntEqualsDigits(result.at(1), {55, kHighbitUword}));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithNegativeDividendBiggerNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(-55));
+  Object right(&scope, newIntWithDigits(&runtime, {0, kMaxUword}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), -55));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithLargeIntReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(&runtime,
+                                       {0x383b89d9e2bb74f5, 0x410f8dceb8660505,
+                                        0x383b1ab8d7938f4b, 0x87108b9b45b43d}));
+  Object right(&scope, newIntWithDigits(
+                           &runtime, {0x975420c5052ae9c6, 0x3bcd71afac71b2e4}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(
+      isIntEqualsDigits(result.at(0), {0x4015dc39ddfb7863, 0x2422dc41b36a89e}));
+  EXPECT_TRUE(isIntEqualsDigits(result.at(1),
+                                {0x58023143a26c3d63, 0x290c5dcb84cbb46f}));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithLargeIntPowerOfTwoReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0xee31ba892c71000e, 0x7175d128f7c2574a}));
+  Object right(&scope, newIntWithDigits(&runtime, {0, 1}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 0x7175d128f7c2574a));
+  EXPECT_TRUE(isIntEqualsDigits(result.at(1), {0xee31ba892c71000e, 0}));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithZeroDividendBiggerNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(0));
+  Object right(&scope, newIntWithDigits(&runtime, {0, 1}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithLargeIntNegativeDividendReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(&runtime,
+                                       {0x72a8be6d697d55c0, 0x9d95978dc878d9ae,
+                                        0xae86bef7900edb79}));
+  Object right(&scope, newIntWithDigits(
+                           &runtime, {0x9893b50147995ab1, 0x73537a3bc36c3a0e}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0),
+                                {0x4b2538374030ad53, 0xffffffffffffffff}));
+  EXPECT_TRUE(
+      isIntEqualsDigits(result.at(1), {0x2f13a2c4f4b515d, 0x38ab976c676089ea}));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithLargeIntNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(&runtime,
+                                       {0x11000235a5b61b48, 0x54cb34ee1cde8d78,
+                                        0x2ac801d0ae5dcf65}));
+  Object right(&scope, newIntWithDigits(
+                           &runtime, {0xfb2879c8be1e7dda, 0xf8101cf6608d0f6a}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0),
+                                {0x9c248b8175e4f19f, 0xfffffffffffffffa}));
+  EXPECT_TRUE(isIntEqualsDigits(result.at(1),
+                                {0xdc2e58062423b6e2, 0xfa5dd4db30c9589e}));
+}
+
+TEST(IntBuiltinsTest,
+     DunderDivmodWithLargeIntNegativeDividendNegativeDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(
+                          &runtime, {0xc4b749b3bc2eb7e0, 0x74e4cc72dc8a2e9b,
+                                     0x46bb00bd468a1799, 0xc29ae4e0ae05134}));
+  Object right(&scope, newIntWithDigits(&runtime,
+                                        {0x839c30dba1685693, 0xad0140cf78eaee70,
+                                         0xd77ec3cef0613585}));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0), {0xb320ce53675ba5b0}));
+  EXPECT_TRUE(isIntEqualsDigits(
+      result.at(1),
+      {0xfbf66d17996573d0, 0xfb57b237e188be27, 0xe9d7473ac0f6b873}));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithLargeIntTriggeringNegateBugReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, newIntWithDigits(&runtime, {1, 0, 1}));
+  Object right(&scope, runtime.newInt(-5));
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0),
+                                {0xcccccccccccccccc, 0xcccccccccccccccc}));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), -3));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithZeroRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(2));
+  Object right(&scope, runtime.newInt(0));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kZeroDivisionError,
+                            "integer division or modulo by zero"));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithNonIntSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, runtime.newInt(1));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithNontIntReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, runtime.newInt(1));
+  Object right(&scope, runtime.newStrFromCStr(""));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  EXPECT_TRUE(result.isNotImplemented());
 }
 
 TEST(IntBuiltinsTest, DunderEqOnBool) {
@@ -2203,9 +2705,12 @@ TEST(IntBuiltinsTest, DunderRdivmodWithSmallIntsReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, "result = int.__rdivmod__(3, 11)");
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  // int.__divmod__ is not implemented yet.
-  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 3));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
 }
 
 TEST(IntBuiltinsTest, DunderRfloordivWithSmallIntsReturnsSmallInt) {
@@ -2213,8 +2718,7 @@ TEST(IntBuiltinsTest, DunderRfloordivWithSmallIntsReturnsSmallInt) {
   HandleScope scope;
   runFromCStr(&runtime, "result = int.__rfloordiv__(3, 11)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  // int.__floordiv__ is not implemented yet.
-  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
 TEST(IntBuiltinsTest, DunderRlshiftWithSmallIntsReturnsSmallInt) {
@@ -2230,8 +2734,7 @@ TEST(IntBuiltinsTest, DunderRmodWithSmallIntsReturnsSmallInt) {
   HandleScope scope;
   runFromCStr(&runtime, "result = int.__rmod__(3, 11)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  // int.__mod__ is not implemented yet.
-  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 TEST(IntBuiltinsTest, DunderRmulWithSmallIntsReturnsSmallInt) {
@@ -2971,58 +3474,6 @@ bar = Bar()
   }
 }
 
-TEST(SmallIntBuiltinsTest, DunderModZeroDivision) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = 0.0
-a % b
-)"),
-                            LayoutId::kZeroDivisionError, "float modulo"));
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = False
-a % b
-)"),
-                            LayoutId::kZeroDivisionError,
-                            "integer division or modulo by zero"));
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = 0
-a % b
-)"),
-                            LayoutId::kZeroDivisionError,
-                            "integer division or modulo by zero"));
-}
-
-TEST(SmallIntBuiltinsTest, DunderFloorDivZeroDivision) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = 0.0
-a // b
-)"),
-                            LayoutId::kZeroDivisionError, "float divmod()"));
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = False
-a // b
-)"),
-                            LayoutId::kZeroDivisionError,
-                            "integer division or modulo by zero"));
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = 0
-a // b
-)"),
-                            LayoutId::kZeroDivisionError,
-                            "integer division or modulo by zero"));
-}
-
 TEST(SmallIntBuiltinsTest, DunderTrueDivZeroDivision) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
@@ -3046,101 +3497,6 @@ b = 0
 a / b
 )"),
                             LayoutId::kZeroDivisionError, "division by zero"));
-}
-
-TEST(SmallIntBuiltinsTest, DunderModWithFloat) {
-  Runtime runtime;
-  HandleScope scope;
-  Int hundred(&scope, SmallInt::fromWord(100));
-
-  // Test positive smallint mod positive float
-  Float float1(&scope, runtime.newFloat(1.5));
-  Float result(&scope,
-               runBuiltin(SmallIntBuiltins::dunderMod, hundred, float1));
-  EXPECT_NEAR(result.value(), 1.0, DBL_EPSILON);
-
-  // Test positive smallint mod negative float
-  Float float2(&scope, runtime.newFloat(-1.5));
-  Float result1(&scope,
-                runBuiltin(SmallIntBuiltins::dunderMod, hundred, float2));
-  EXPECT_NEAR(result1.value(), -0.5, DBL_EPSILON);
-
-  // Test positive smallint mod infinity
-  Float float_inf(&scope, runtime.newFloat(INFINITY));
-  Float result2(&scope,
-                runBuiltin(SmallIntBuiltins::dunderMod, hundred, float_inf));
-  ASSERT_TRUE(result2.isFloat());
-  EXPECT_NEAR(result2.value(), 100.0, DBL_EPSILON);
-
-  // Test positive smallint mod negative infinity
-  Float neg_float_inf(&scope, runtime.newFloat(-INFINITY));
-  Float result3(
-      &scope, runBuiltin(SmallIntBuiltins::dunderMod, hundred, neg_float_inf));
-  EXPECT_EQ(result3.value(), -INFINITY);
-
-  // Test negative smallint mod infinity
-  Int minus_hundred(&scope, SmallInt::fromWord(-100));
-  Float result4(&scope, runBuiltin(SmallIntBuiltins::dunderMod, minus_hundred,
-                                   float_inf));
-  EXPECT_EQ(result4.value(), INFINITY);
-
-  // Test negative smallint mod negative infinity
-  Float result5(&scope, runBuiltin(SmallIntBuiltins::dunderMod, minus_hundred,
-                                   neg_float_inf));
-  EXPECT_NEAR(result5.value(), -100.0, DBL_EPSILON);
-
-  // Test negative smallint mod nan
-  Float nan(&scope, runtime.newFloat(NAN));
-  Float result6(&scope,
-                runBuiltin(SmallIntBuiltins::dunderMod, minus_hundred, nan));
-  EXPECT_TRUE(std::isnan(result6.value()));
-}
-
-TEST(SmallIntBuiltinsTest, DunderFloorDivWithFloat) {
-  Runtime runtime;
-  HandleScope scope;
-  Int hundred(&scope, SmallInt::fromWord(100));
-
-  // Test dividing a positive smallint by a positive float
-  Float float1(&scope, runtime.newFloat(1.5));
-  Float result(&scope,
-               runBuiltin(SmallIntBuiltins::dunderFloorDiv, hundred, float1));
-  EXPECT_NEAR(result.value(), 66.0, DBL_EPSILON);
-
-  // Test dividing a positive smallint by a negative float
-  Float float2(&scope, runtime.newFloat(-1.5));
-  Float result1(&scope,
-                runBuiltin(SmallIntBuiltins::dunderFloorDiv, hundred, float2));
-  EXPECT_NEAR(result1.value(), -67.0, DBL_EPSILON);
-
-  // Test dividing a positive smallint by infinity
-  Float float_inf(&scope, runtime.newFloat(INFINITY));
-  Float result2(
-      &scope, runBuiltin(SmallIntBuiltins::dunderFloorDiv, hundred, float_inf));
-  EXPECT_NEAR(result2.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing a positive smallint by negative infinity
-  Float neg_float_inf(&scope, runtime.newFloat(-INFINITY));
-  Float result3(&scope, runBuiltin(SmallIntBuiltins::dunderFloorDiv, hundred,
-                                   neg_float_inf));
-  EXPECT_NEAR(result3.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing a negative smallint by infinity
-  SmallInt minus_hundred(&scope, SmallInt::fromWord(-100));
-  Float result4(&scope, runBuiltin(SmallIntBuiltins::dunderFloorDiv,
-                                   minus_hundred, float_inf));
-  EXPECT_NEAR(result4.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing a negative smallint by negative infinity
-  Float result5(&scope, runBuiltin(SmallIntBuiltins::dunderFloorDiv,
-                                   minus_hundred, neg_float_inf));
-  EXPECT_NEAR(result5.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing negative smallint by nan
-  Float nan(&scope, runtime.newFloat(NAN));
-  Float result6(
-      &scope, runBuiltin(SmallIntBuiltins::dunderFloorDiv, minus_hundred, nan));
-  EXPECT_TRUE(std::isnan(result6.value()));
 }
 
 TEST(SmallIntBuiltinsTest, DunderTrueDivWithFloat) {

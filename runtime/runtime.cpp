@@ -4176,6 +4176,432 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
   return *result;
 }
 
+// The division algorithm operates on half words. This is because to implement
+// multiword division we require a doubleword division operation such as
+// (`uint128_t / uint64_t -> uint128_t`). Such an operation does not exist on
+// most architectures (x86_64 only has `uint128_t / uint64_t -> uint64_t`,
+// aarch64 only `uint64_t / uint64_t -> uint64_t`). Instead we perform the
+// algorithm on half words and use a `uint64_t / uint32_t -> uint64_t` division.
+// This is easier and faster than trying to emulate a doubleword division.
+typedef uint32_t halfuword;
+static_assert(sizeof(halfuword) == sizeof(uword) / 2, "halfuword size");
+
+const int kBitsPerHalfWord = kBitsPerByte * sizeof(halfuword);
+
+static void halvesInvert(halfuword* halves, word num_halves) {
+  for (word i = 0; i < num_halves; i++) {
+    halves[i] = ~halves[i];
+  }
+}
+
+static void halvesNegate(halfuword* halves, word num_halves) {
+  uword carry = 1;
+  for (word i = 0; i < num_halves; i++) {
+    halfuword half = uword{~halves[i]} + carry;
+    halves[i] = half;
+    carry &= (half == 0);
+  }
+  DCHECK(carry == 0, "overflow");
+}
+
+static halfuword halvesAdd(halfuword* dest, const halfuword* src,
+                           word num_halves) {
+  halfuword carry = 0;
+  for (word i = 0; i < num_halves; i++) {
+    uword sum = uword{dest[i]} + src[i] + carry;
+    dest[i] = static_cast<halfuword>(sum);
+    carry = sum >> kBitsPerHalfWord;
+  }
+  return carry;
+}
+
+static void halvesIncrement(halfuword* halves, word num_halves,
+                            bool overflow_ok) {
+  for (word i = 0; i < num_halves; i++) {
+    halfuword half = halves[i] + 1;
+    halves[i] = half;
+    // We are done if there was no overflow.
+    if (half != 0) break;
+    DCHECK(overflow_ok || i < num_halves - 1, "overflow");
+  }
+}
+
+static void halvesFromIntMagnitude(halfuword* halves, const Int& number) {
+  word num_digits = number.numDigits();
+  for (word i = 0; i < num_digits; i++) {
+    uword digit = number.digitAt(i);
+    halves[i * 2] = static_cast<halfuword>(digit);
+    halves[i * 2 + 1] = digit >> kBitsPerHalfWord;
+  }
+  if (number.isNegative()) {
+    halvesNegate(halves, num_digits * 2);
+  }
+}
+
+// Given an array of size `num_halves` checks how many items at the end of the
+// array is zero and returns a reduced length without them. Put another way:
+// It drops leading zeros from an arbitrary precision little endian number.
+static word halvesNormalize(halfuword* halves, word num_halves) {
+  while (halves[num_halves - 1] == 0) {
+    num_halves--;
+    DCHECK(num_halves > 0, "must not have every digit zero");
+  }
+  return num_halves;
+}
+
+static void halvesDecrement(halfuword* halves, word num_halves) {
+  DCHECK(num_halves > 0, "must have at least one half");
+  for (word i = 0; i < num_halves; i++) {
+    halfuword half = halves[i] - 1;
+    halves[i] = half;
+    // We are done if there is no borrow left.
+    if (half != ~halfuword{0}) return;
+  }
+  // Must only be used in situations that cannot underflow.
+  UNREACHABLE("underflow");
+}
+
+static void halvesShiftLeft(halfuword* halves, word num_halves, word shift) {
+  DCHECK(shift < kBitsPerHalfWord, "must not shift more than a halfuword");
+  if (shift == 0) return;
+
+  halfuword prev = 0;
+  for (word i = 0; i < num_halves; i++) {
+    halfuword half = halves[i];
+    halves[i] = (half << shift) | (prev >> (kBitsPerHalfWord - shift));
+    prev = half;
+  }
+  DCHECK(prev >> (kBitsPerHalfWord - shift) == 0, "must not overflow");
+}
+
+static void halvesShiftRight(halfuword* halves, word num_halves, word shift) {
+  DCHECK(shift < kBitsPerHalfWord, "must not shift more than a halfuword");
+  if (shift == 0) return;
+
+  halfuword prev = 0;
+  for (word i = num_halves - 1; i >= 0; i--) {
+    halfuword half = halves[i];
+    halves[i] = (half >> shift) | (prev << (kBitsPerHalfWord - shift));
+    prev = half;
+  }
+}
+
+static RawObject largeIntFromHalves(Thread* thread, const halfuword* halves,
+                                    word num_halves) {
+  DCHECK(num_halves % 2 == 0, "must have even number of halves");
+  word digits = num_halves / 2;
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  LargeInt result(&scope, runtime->heap()->createLargeInt(digits));
+  for (word i = 0; i < digits; i++) {
+    uword digit =
+        halves[i * 2] | (uword{halves[i * 2 + 1]} << kBitsPerHalfWord);
+    result.digitAtPut(i, digit);
+  }
+  return runtime->normalizeLargeInt(result);
+}
+
+// Compute quotient and modulo of dividing a large integer through a divisor
+// whose magnitude fits in a `halfuword`.
+static void divideModuloSingleHalfDivisor(Thread* thread, const Int& dividend,
+                                          word divisor, Object* quotient,
+                                          Object* modulo) {
+  DCHECK(divisor >= 0 ? static_cast<halfuword>(divisor) == divisor
+                      : static_cast<halfuword>(-divisor) == -divisor,
+         "divisor magnitude fits in half word");
+
+  word dividend_digits = dividend.numDigits();
+  bool same_sign = dividend.isNegative() == (divisor < 0);
+  halfuword divisor_half = divisor < 0 ? -divisor : divisor;
+  uword result_halves = dividend_digits * 2;
+  std::unique_ptr<halfuword[]> result(new halfuword[result_halves]);
+  halvesFromIntMagnitude(result.get(), dividend);
+  if (!same_sign) {
+    halvesDecrement(result.get(), result_halves);
+  }
+  word significant_result_halves = halvesNormalize(result.get(), result_halves);
+
+  halfuword remainder = 0;
+  for (word i = significant_result_halves - 1; i >= 0; i--) {
+    uword digit = (uword{remainder} << kBitsPerHalfWord) | result[i];
+    result[i] = digit / divisor_half;
+    remainder = digit % divisor_half;
+    // Note that the division result fits into a halfuword, because the upper
+    // half is the remainder from last round and therefore smaller than
+    // `divisor_half`.
+  }
+
+  Runtime* runtime = thread->runtime();
+  if (quotient) {
+    if (!same_sign) {
+      // Compute `-1 - quotient == -1 + (~quotient + 1) == ~quotient`.
+      halvesInvert(result.get(), result_halves);
+    }
+
+    *quotient = largeIntFromHalves(thread, result.get(), result_halves);
+  }
+  if (modulo) {
+    word modulo_word;
+    if (same_sign) {
+      modulo_word = remainder;
+    } else {
+      modulo_word = -static_cast<word>(remainder) + divisor_half - 1;
+    }
+    if (divisor < 0) {
+      modulo_word = -modulo_word;
+    }
+    *modulo = runtime->newInt(modulo_word);
+  }
+}
+
+// Perform unsigned integer division with multi-half dividend and divisor.
+static void unsignedDivideRemainder(halfuword* result, word result_halves,
+                                    halfuword* dividend,
+                                    const halfuword* divisor,
+                                    word divisor_halves) {
+  // See Hackers Delight 9-2 "Multiword Division" and Knuth TAOCP volume 2,
+  // 4.3.1 for this algorithm.
+  DCHECK(divisor_halves > 1, "need at least 2 divisor halves");
+  // Expects the divisor to be normalized by left shifting until the highest bit
+  // is set. This ensures that the guess performed in each iteration step is off
+  // by no more than 2 (see Knuth for details and a proof).
+  DCHECK((divisor[divisor_halves - 1] & (1 << (kBitsPerHalfWord - 1))) != 0,
+         "need normalized divisor");
+
+  // Performs some arithmetic with no more than half the bits of a `uword`.
+  const uword half_mask = (uword{1} << kBitsPerHalfWord) - 1;
+
+  for (word r = result_halves - 1; r >= 0; r--) {
+    // Take the two highest words of the dividend. We implicitly have
+    // `dividend_halves = result_halves + divisor_halves - 1` (the actual
+    // dividend array is guaranteed to have at least one more half filled with
+    // zero on top for the first round). Since the dividend shrinks by 1 half
+    // each round, the two highest digits can be found starting at
+    // `r + divisor_halves - 1`.
+    uword dividend_high_word =
+        (uword{dividend[r + divisor_halves]} << kBitsPerHalfWord) |
+        uword{dividend[r + divisor_halves - 1]};
+    uword divisor_half = divisor[divisor_halves - 1];
+
+    // Guess this result half by dividing the two highest dividend halves.
+    // The guess gets us close: `guess_quot - 2 <= quot <= guess_quot`.
+    uword guess_quot = dividend_high_word / divisor_half;
+    uword guess_remainder = dividend_high_word % divisor_half;
+
+    // Iterate until the guess is exact.
+    while (guess_quot > half_mask ||
+           guess_quot * divisor[divisor_halves - 2] >
+               ((guess_remainder << kBitsPerHalfWord) |
+                dividend[r + divisor_halves - 2])) {
+      guess_quot--;
+      guess_remainder += divisor_half;
+      if (guess_remainder > half_mask) break;
+    }
+
+    // Multiply and subtract from dividend.
+    uword borrow = 0;
+    for (word d = 0; d < divisor_halves; d++) {
+      uword product = guess_quot * divisor[d];
+      word diff =
+          static_cast<word>(dividend[d + r]) - borrow - (product & half_mask);
+      dividend[d + r] = static_cast<halfuword>(diff);
+      borrow = (product >> kBitsPerHalfWord) - (diff >> kBitsPerHalfWord);
+    }
+    word diff = static_cast<word>(dividend[r + divisor_halves]) - borrow;
+    dividend[r + divisor_halves] = static_cast<halfuword>(diff);
+
+    // If we subtracted too much, add back.
+    if (diff < 0) {
+      guess_quot--;
+      halfuword carry = halvesAdd(&dividend[r], divisor, divisor_halves);
+      dividend[r + divisor_halves] += carry;
+    }
+
+    result[r] = guess_quot;
+  }
+}
+
+// Like Runtime::intDivideModulo() but specifically for the case of the
+// divisor's magnitued being bigger than the dividend's.
+static void divideWithBiggerDivisor(Thread* thread, const Int& dividend,
+                                    const Int& divisor, Object* quotient,
+                                    Object* modulo) {
+  if (dividend.isZero()) {
+    if (quotient != nullptr) *quotient = RawSmallInt::fromWord(0);
+    if (modulo != nullptr) *modulo = RawSmallInt::fromWord(0);
+    return;
+  }
+  bool same_sign = dividend.isNegative() == divisor.isNegative();
+  if (quotient != nullptr) {
+    *quotient = RawSmallInt::fromWord(same_sign ? 0 : -1);
+  }
+  if (modulo != nullptr) {
+    if (same_sign) {
+      *modulo = IntBuiltins::asInt(dividend);
+    } else {
+      *modulo = thread->runtime()->intAdd(thread, divisor, dividend);
+    }
+  }
+}
+
+bool Runtime::intDivideModulo(Thread* thread, const Int& dividend,
+                              const Int& divisor, Object* quotient,
+                              Object* modulo) {
+  // Some notes for understanding this code:
+  // - This is built around an unsigned division algorithm in
+  //   `unsignedDivideRemainder()`.
+  // - Remember that this implements floor div and modulo which is different
+  //   from C++ giving you truncated div and remainder when operands are
+  //   negative.
+  // - To build a signed floor division from an unsigned division primitive we
+  //   use the following formula when the sign of dividend and divisor differs:
+  //     floor_div = -1 - (abs(dividend) - 1) / abs(divisor)
+  //     modulo    = divisor_sign *
+  //                 (abs(divisor) - 1 - (abs(dividend) - 1) % abs(divisor))
+
+  // TODO(matthiasb): Optimization idea: Fuse the independent operations/loops
+  // on arrays of `halfuword`s to reduce the number of passes over the data.
+
+  word divisor_digits = divisor.numDigits();
+  word dividend_digits = dividend.numDigits();
+  bool same_sign = dividend.isNegative() == divisor.isNegative();
+  if (divisor_digits == 1) {
+    word divisor_word = divisor.asWord();
+    if (divisor_word == 0) {
+      return false;
+    }
+    // Handle -1 as a special case because for dividend being the smallest
+    // negative number possible for the amount of digits and `divisor == -1`
+    // produces a result that is bigger than the input.
+    if (divisor_word == -1) {
+      if (quotient != nullptr) *quotient = intNegate(thread, dividend);
+      if (modulo != nullptr) *modulo = RawSmallInt::fromWord(0);
+      return true;
+    }
+    if (dividend_digits == 1) {
+      word dividend_word = dividend.asWord();
+      word quotient_word = dividend_word / divisor_word;
+      word modulo_word = dividend_word % divisor_word;
+      if (!same_sign && modulo_word) {
+        DCHECK(quotient_word > kMinWord, "underflow");
+        quotient_word--;
+        modulo_word += divisor_word;
+      }
+      if (quotient != nullptr) *quotient = newInt(quotient_word);
+      if (modulo != nullptr) *modulo = newInt(modulo_word);
+      return true;
+    }
+
+    // Handle the case where `abs(divisor)` fits in single half word.
+    // This helps performance and simplifies `unsignedDivideRemainder()` because
+    // it can assume to have at least 2 divisor half words.
+    word max_half_uword = (word{1} << kBitsPerHalfWord) - 1;
+    if (-max_half_uword <= divisor_word && divisor_word <= max_half_uword) {
+      divideModuloSingleHalfDivisor(thread, dividend, divisor_word, quotient,
+                                    modulo);
+      return true;
+    }
+  }
+
+  if (divisor_digits > dividend_digits) {
+    divideWithBiggerDivisor(thread, dividend, divisor, quotient, modulo);
+    return true;
+  }
+
+  // Convert divisor to `halfuword`s. Normalize by left shifting until the
+  // highest bit (of the highest half) is set as required by
+  // `unsignedDivideRemainder()`. We count the non-zero halves in the
+  // `significant_xxx_halves` variables.
+  word divisor_halves = divisor_digits * 2;
+  std::unique_ptr<halfuword[]> divisor_n(new halfuword[divisor_halves]);
+  halvesFromIntMagnitude(divisor_n.get(), divisor);
+  word significant_divisor_halves =
+      halvesNormalize(divisor_n.get(), divisor_halves);
+  static_assert(sizeof(divisor_n[0]) == sizeof(unsigned),
+                "choose right builtin");
+  int shift = __builtin_clz(divisor_n[significant_divisor_halves - 1]);
+  halvesShiftLeft(divisor_n.get(), significant_divisor_halves, shift);
+
+  // Convert dividend to `halfuword`s and shift by the same amount we used for
+  // the divisor. We reserve 1 extra half so we can save a bounds check in
+  // `unsignedDivideRemainder()` because `dividend_halves` will still be valid
+  // to access at index `significant_divisor_halves`.
+  word dividend_halves = (dividend_digits + 1) * 2;
+  std::unique_ptr<halfuword[]> dividend_n(new halfuword[dividend_halves]);
+  halvesFromIntMagnitude(dividend_n.get(), dividend);
+  dividend_n[dividend_halves - 1] = 0;
+  dividend_n[dividend_halves - 2] = 0;
+  if (!same_sign) {
+    halvesDecrement(dividend_n.get(), dividend_halves);
+  }
+  halvesShiftLeft(dividend_n.get(), dividend_halves, shift);
+  word significant_dividend_halves =
+      halvesNormalize(dividend_n.get(), dividend_halves);
+
+  // Handle special case of divisor being bigger than the dividend.
+  if (significant_divisor_halves > significant_dividend_halves ||
+      (significant_divisor_halves == significant_dividend_halves &&
+       divisor_n[significant_divisor_halves - 1] >
+           dividend_n[significant_divisor_halves - 1])) {
+    divideWithBiggerDivisor(thread, dividend, divisor, quotient, modulo);
+    return true;
+  }
+
+  // Allocate storage for result. Make sure we have an even number of halves.
+  word result_halves = (dividend_halves - divisor_halves + 2) & ~1;
+  DCHECK(result_halves % 2 == 0, "even number of halves");
+  std::unique_ptr<halfuword[]> result(new halfuword[result_halves]);
+  word significant_result_halves =
+      significant_dividend_halves - significant_divisor_halves + 1;
+  DCHECK(significant_result_halves <= result_halves, "no overflow");
+
+  unsignedDivideRemainder(result.get(), significant_result_halves,
+                          dividend_n.get(), divisor_n.get(),
+                          significant_divisor_halves);
+
+  // TODO(matthiasb): We copy the data in result[] to a new LargeInt,
+  // normalizeLargeInt will probably just copy it again. Should we normalize on
+  // result[]? Can we do it without duplicating the normalization code?
+
+  if (quotient != nullptr) {
+    for (word i = significant_result_halves; i < result_halves; i++) {
+      result[i] = 0;
+    }
+    if (!same_sign) {
+      // Compute `-1 - quotient == -1 + (~quotient + 1) == ~quotient`.
+      halvesInvert(result.get(), result_halves);
+    }
+
+    *quotient = largeIntFromHalves(thread, result.get(), result_halves);
+  }
+  if (modulo != nullptr) {
+    // `dividend` contains the remainder now. First revert normalization shift.
+    halvesShiftRight(dividend_n.get(), significant_dividend_halves, shift);
+    if (!same_sign) {
+      // Revert divisor shift.
+      halvesShiftRight(divisor_n.get(), significant_divisor_halves, shift);
+      // Compute `-remainder + divisor - 1`.
+      halvesNegate(dividend_n.get(), dividend_halves);
+      halfuword carry = halvesAdd(dividend_n.get(), divisor_n.get(),
+                                  significant_divisor_halves);
+      DCHECK(carry <= 1, "carry <= 1");
+      if (carry) {
+        halvesIncrement(dividend_n.get() + significant_divisor_halves,
+                        dividend_halves - significant_divisor_halves, true);
+      }
+
+      halvesDecrement(dividend_n.get(), dividend_halves);
+    }
+    if (divisor.isNegative()) {
+      halvesNegate(dividend_n.get(), dividend_halves);
+    }
+
+    *modulo = largeIntFromHalves(thread, dividend_n.get(), dividend_halves);
+  }
+
+  return true;
+}
+
 static uword subtractWithBorrow(uword x, uword y, uword borrow_in,
                                 uword* borrow_out) {
   DCHECK(borrow_in <= 1, "borrow must be 0 or 1");

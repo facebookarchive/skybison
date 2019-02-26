@@ -671,6 +671,15 @@ class Runtime {
   // Returns the result of bitwise XOR of the arguments
   RawObject intBinaryXor(Thread* thread, const Int& left, const Int& right);
 
+  // Computes the floor of the quotient of dividing `left` by `right` and
+  // `left` modulo `right` so that `left = quotient * right + modulo`.
+  // Note that this is different from C++ division (which truncates).
+  // Writes the results to the handles pointed to by `quotient` or `modulo`.
+  // It is allowed to specify a nullptr for any of them.
+  // Returns true on success, false on division by zero.
+  bool intDivideModulo(Thread* thread, const Int& left, const Int& right,
+                       Object* quotient, Object* modulo);
+
   // Returns a copy of `value` with all bits flipped.
   RawObject intInvert(Thread* thread, const Int& value);
 

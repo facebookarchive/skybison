@@ -22,9 +22,11 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAnd, dunderAnd},
     {SymbolId::kDunderBool, dunderBool},
     {SymbolId::kDunderCeil, dunderInt},
+    {SymbolId::kDunderDivmod, dunderDivmod},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderFloat, dunderFloat},
     {SymbolId::kDunderFloor, dunderInt},
+    {SymbolId::kDunderFloordiv, dunderFloordiv},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderIndex, dunderInt},
@@ -33,6 +35,7 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLshift, dunderLshift},
     {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderMod, dunderMod},
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNeg, dunderNeg},
@@ -195,8 +198,6 @@ RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
 }
 
 const NativeMethod SmallIntBuiltins::kNativeMethods[] = {
-    {SymbolId::kDunderFloordiv, nativeTrampoline<dunderFloorDiv>},
-    {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderTruediv, nativeTrampoline<dunderTrueDiv>},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -260,6 +261,26 @@ RawObject IntBuiltins::dunderEq(Thread* t, Frame* frame, word nargs) {
       });
 }
 
+RawObject IntBuiltins::dunderDivmod(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread* thread, const Int& left, const Int& right) -> RawObject {
+        HandleScope scope(thread);
+        Object quotient(&scope, NoneType::object());
+        Object remainder(&scope, NoneType::object());
+        Runtime* runtime = thread->runtime();
+        if (!runtime->intDivideModulo(thread, left, right, &quotient,
+                                      &remainder)) {
+          return thread->raiseZeroDivisionErrorWithCStr(
+              "integer division or modulo by zero");
+        }
+        Tuple result(&scope, runtime->newTuple(2));
+        result.atPut(0, *quotient);
+        result.atPut(1, *remainder);
+        return *result;
+      });
+}
+
 RawObject IntBuiltins::dunderFloat(Thread* t, Frame* frame, word nargs) {
   return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
     HandleScope scope(thread);
@@ -274,6 +295,21 @@ RawObject IntBuiltins::dunderInvert(Thread* t, Frame* frame, word nargs) {
   return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
     return thread->runtime()->intInvert(thread, self);
   });
+}
+
+RawObject IntBuiltins::dunderFloordiv(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread* thread, const Int& left, const Int& right) -> RawObject {
+        HandleScope scope(thread);
+        Object quotient(&scope, NoneType::object());
+        if (!thread->runtime()->intDivideModulo(thread, left, right, &quotient,
+                                                nullptr)) {
+          return thread->raiseZeroDivisionErrorWithCStr(
+              "integer division or modulo by zero");
+        }
+        return *quotient;
+      });
 }
 
 RawObject IntBuiltins::dunderLe(Thread* t, Frame* frame, word nargs) {
@@ -419,41 +455,6 @@ RawObject IntBuiltins::toBytesKw(Thread* thread, Frame* frame, word nargs) {
   return toBytesImpl(thread, frame, self, length, byteorder, is_signed);
 }
 
-RawObject SmallIntBuiltins::dunderFloorDiv(Thread* thread, Frame* frame,
-                                           word nargs) {
-  Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (!self->isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__floordiv__() must be called with int instance as first argument");
-  }
-  word left = RawSmallInt::cast(self)->value();
-  if (other->isFloat()) {
-    double right = RawFloat::cast(other)->value();
-    if (right == 0.0) {
-      return thread->raiseZeroDivisionErrorWithCStr("float divmod()");
-    }
-    return runtime->newFloat(std::floor(left / right));
-  }
-  if (other->isBool()) {
-    other = IntBuiltins::intFromBool(other);
-  }
-  if (other->isInt()) {
-    word right = RawInt::cast(other)->asWord();
-    if (right == 0) {
-      return thread->raiseZeroDivisionErrorWithCStr(
-          "integer division or modulo by zero");
-    }
-    return runtime->newInt(left / right);
-  }
-  return runtime->notImplemented();
-}
-
 RawObject SmallIntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
                                           word nargs) {
   Runtime* runtime = thread->runtime();
@@ -512,49 +513,19 @@ RawObject IntBuiltins::dunderGt(Thread* t, Frame* frame, word nargs) {
       });
 }
 
-RawObject SmallIntBuiltins::dunderMod(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Runtime* runtime = thread->runtime();
-  if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 1 argument");
-  }
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (!self->isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__mod__() must be called with int instance as first argument");
-  }
-  word left = RawSmallInt::cast(self)->value();
-  if (other->isFloat()) {
-    double right = RawFloat::cast(other)->value();
-    if (right == 0.0) {
-      return thread->raiseZeroDivisionErrorWithCStr("float modulo");
-    }
-    double mod = std::fmod(static_cast<double>(left), right);
-    if (mod) {
-      // Ensure that the remainder has the same sign as the denominator.
-      if ((right < 0) != (mod < 0)) {
-        mod += right;
-      }
-    } else {
-      // Avoid signed zeros.
-      mod = std::copysign(0.0, right);
-    }
-    return runtime->newFloat(mod);
-  }
-  if (other->isBool()) {
-    other = IntBuiltins::intFromBool(other);
-  }
-  if (other->isInt()) {
-    word right = RawInt::cast(other)->asWord();
-    if (right == 0) {
-      return thread->raiseZeroDivisionErrorWithCStr(
-          "integer division or modulo by zero");
-    }
-    return runtime->newInt(left % right);
-  }
-  return runtime->notImplemented();
+RawObject IntBuiltins::dunderMod(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs,
+      [](Thread* thread, const Int& left, const Int& right) -> RawObject {
+        HandleScope scope(thread);
+        Object remainder(&scope, NoneType::object());
+        if (!thread->runtime()->intDivideModulo(thread, left, right, nullptr,
+                                                &remainder)) {
+          return thread->raiseZeroDivisionErrorWithCStr(
+              "integer division or modulo by zero");
+        }
+        return *remainder;
+      });
 }
 
 RawObject IntBuiltins::dunderMul(Thread* t, Frame* frame, word nargs) {
