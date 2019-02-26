@@ -65,7 +65,7 @@ PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
   if (requested < current) {
     array.downsize(requested);
   } else {
-    runtime->byteArrayEnsureCapacity(thread, array, requested - 1);
+    runtime->byteArrayEnsureCapacity(thread, array, requested);
   }
   array.setNumItems(requested);
   return 0;

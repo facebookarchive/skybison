@@ -77,7 +77,7 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     if (count < 0) {
       return thread->raiseValueErrorWithCStr("negative count");
     }
-    runtime->byteArrayEnsureCapacity(thread, self, count - 1);
+    runtime->byteArrayEnsureCapacity(thread, self, count);
     self.setNumItems(count);
   } else if (runtime->isInstanceOfBytes(*source)) {  // TODO(T38246066)
     Bytes bytes(&scope, *source);
@@ -149,7 +149,7 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
 
   // Each byte will be mapped to one or more ASCII characters.
   ByteArray buffer(&scope, runtime->newByteArray());
-  runtime->byteArrayEnsureCapacity(thread, buffer, length + affix_length - 1);
+  runtime->byteArrayEnsureCapacity(thread, buffer, length + affix_length);
   runtime->byteArrayExtend(
       thread, buffer,
       {'b', 'y', 't', 'e', 'a', 'r', 'r', 'a', 'y', '(', 'b', quote});

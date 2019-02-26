@@ -116,9 +116,10 @@ static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
   Runtime* runtime = thread->runtime();
   ByteArray buffer(&scope, runtime->newByteArray());
   word len = self.length();
-  // each byte will be mapped to one or more ASCII characters
-  // ensure an additional 3 bytes for the delimiters
-  runtime->byteArrayEnsureCapacity(thread, buffer, len + 2);
+  // Each byte will be mapped to one or more ASCII characters. Add 3 to the
+  // length for the 2-character prefix (b') and the 1-character suffix (').
+  // We expect mostly ASCII bytes, so we usually will not have to resize again.
+  runtime->byteArrayEnsureCapacity(thread, buffer, len + 3);
   runtime->byteArrayExtend(thread, buffer, {'b', delimiter});
   for (word i = 0; i < len; i++) {
     byte current = self.byteAt(i);

@@ -294,10 +294,15 @@ class Runtime {
 
   RawObject unboundValue() { return unbound_value_; }
 
-  // Ensures that the byte array has enough space for a byte at index.
-  // Allocates if the given index is not currently within bounds.
+  // Provides a growth strategy for mutable sequences. Grows by a factor of 2,
+  // scaling up to the smallest power of two satisfying the required miniumum
+  // if the initial factor is insufficient. Always grows the sequence.
+  word newCapacity(word curr_capacity, word min_capacity);
+
+  // Ensures that the byte array has at least the desired capacity.
+  // Allocates if the existing capacity is insufficient.
   void byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
-                               word index);
+                               word min_capacity);
 
   // Appends multiple bytes to the end of the array.
   void byteArrayExtend(Thread* thread, const ByteArray& array, View<byte> view);
@@ -312,10 +317,9 @@ class Runtime {
   RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,
                         word length);
 
-  // Ensures that array has enough space for an atPut at index. If so, returns
-  // array. If not, allocates and returns a new array with sufficient capacity
-  // and identical contents.
-  void listEnsureCapacity(const List& list, word index);
+  // Ensures that the list has at least the desired capacity.
+  // Allocates if the existing capacity is insufficient.
+  void listEnsureCapacity(const List& list, word min_capacity);
 
   // Appends an element to the end of the list.
   void listAdd(const List& list, const Object& value);
@@ -851,7 +855,7 @@ class Runtime {
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(const Type& type, SymbolId name);
 
-  // The size listEnsureCapacity grows to if array is empty
+  // The size newCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 
   Heap heap_;

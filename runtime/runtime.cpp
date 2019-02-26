@@ -2372,18 +2372,24 @@ void Runtime::createMarshalModule() {
   addModule(module);
 }
 
+word Runtime::newCapacity(word curr_capacity, word min_capacity) {
+  word new_capacity = (curr_capacity < kInitialEnsuredCapacity)
+                          ? kInitialEnsuredCapacity
+                          : curr_capacity << 1;
+  if (new_capacity < min_capacity) {
+    return Utils::nextPowerOfTwo(min_capacity);
+  }
+  return new_capacity;
+}
+
 // ByteArray
 
 void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
-                                      word index) {
-  word existing_capacity = array.capacity();
-  if (index < existing_capacity) return;
-  word new_capacity = (existing_capacity < kInitialEnsuredCapacity)
-                          ? kInitialEnsuredCapacity
-                          : existing_capacity << 1;
-  if (new_capacity <= index) {
-    new_capacity = Utils::nextPowerOfTwo(index);
-  }
+                                      word min_capacity) {
+  DCHECK(min_capacity >= 0, "overflow");
+  word curr_capacity = array.capacity();
+  if (min_capacity <= curr_capacity) return;
+  word new_capacity = newCapacity(curr_capacity, min_capacity);
   HandleScope scope(thread);
   Bytes old_bytes(&scope, array.bytes());
   Bytes new_bytes(&scope, newBytes(new_capacity, 0));
@@ -2395,25 +2401,25 @@ void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
 
 void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
                               View<byte> view) {
-  word index = array.numItems();
+  word num_items = array.numItems();
   word length = view.length();
-  byteArrayEnsureCapacity(thread, array, index + length - 1);
+  byteArrayEnsureCapacity(thread, array, num_items + length);
   HandleScope scope(thread);
   Bytes bytes(&scope, array.bytes());
   byte* dst = reinterpret_cast<byte*>(bytes.address());
-  std::memcpy(dst + index, view.data(), length);
-  array.setNumItems(index + length);
+  std::memcpy(dst + num_items, view.data(), length);
+  array.setNumItems(num_items + length);
 }
 
 void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
                             const Bytes& bytes, word length) {
   DCHECK_BOUND(length, bytes.length());
-  word index = array.numItems();
-  byteArrayEnsureCapacity(thread, array, index + length - 1);
+  word num_items = array.numItems();
+  byteArrayEnsureCapacity(thread, array, num_items + length);
   const byte* src = reinterpret_cast<const byte*>(bytes.address());
   byte* dst = reinterpret_cast<byte*>(RawBytes::cast(array.bytes()).address());
-  std::memcpy(dst + index, src, length);
-  array.setNumItems(index + length);
+  std::memcpy(dst + num_items, src, length);
+  array.setNumItems(num_items + length);
 }
 
 // Bytes
@@ -2447,17 +2453,12 @@ RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
 
 // List
 
-void Runtime::listEnsureCapacity(const List& list, word index) {
-  if (index < list.capacity()) {
-    return;
-  }
+void Runtime::listEnsureCapacity(const List& list, word min_capacity) {
+  DCHECK(min_capacity >= 0, "overflow");
+  word curr_capacity = list.capacity();
+  if (min_capacity <= curr_capacity) return;
+  word new_capacity = newCapacity(curr_capacity, min_capacity);
   HandleScope scope;
-  word new_capacity = (list.capacity() < kInitialEnsuredCapacity)
-                          ? kInitialEnsuredCapacity
-                          : list.capacity() << 1;
-  if (new_capacity <= index) {
-    new_capacity = Utils::nextPowerOfTwo(index);
-  }
   Tuple old_array(&scope, list.items());
   Tuple new_array(&scope, newTuple(new_capacity));
   old_array.copyTo(*new_array);
@@ -2466,7 +2467,7 @@ void Runtime::listEnsureCapacity(const List& list, word index) {
 
 void Runtime::listAdd(const List& list, const Object& value) {
   word index = list.numItems();
-  listEnsureCapacity(list, index);
+  listEnsureCapacity(list, index + 1);
   list.setNumItems(index + 1);
   list.atPut(index, *value);
 }

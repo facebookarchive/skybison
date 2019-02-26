@@ -96,19 +96,19 @@ TEST(RuntimeByteArrayTest, EnsureCapacity) {
   Bytes initial_bytes(&scope, runtime.newBytes(10, 0));
   array.setBytes(*initial_bytes);
 
-  word index = 0;
+  word length = 10;
   word expected_capacity = 10;
-  runtime.byteArrayEnsureCapacity(thread, array, index);
+  runtime.byteArrayEnsureCapacity(thread, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
-  index = 10;
+  length = 11;
   expected_capacity = 20;
-  runtime.byteArrayEnsureCapacity(thread, array, index);
+  runtime.byteArrayEnsureCapacity(thread, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
-  index = 40;
+  length = 41;
   expected_capacity = 64;
-  runtime.byteArrayEnsureCapacity(thread, array, index);
+  runtime.byteArrayEnsureCapacity(thread, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 }
 
@@ -406,7 +406,7 @@ TEST(RuntimeListTest, ListGrowth) {
   runtime.listEnsureCapacity(list, 2);
   Tuple array2(&scope, list.items());
   EXPECT_NE(*array1, *array2);
-  EXPECT_GT(array2.length(), 2);
+  EXPECT_GE(array2.length(), 2);
 
   Tuple array4(&scope, runtime.newTuple(4));
   EXPECT_EQ(array4.length(), 4);
@@ -421,7 +421,7 @@ TEST(RuntimeListTest, ListGrowth) {
   EXPECT_NE(*array8, *array16);
   EXPECT_EQ(array16.length(), 16);
   runtime.listEnsureCapacity(list, 32);
-  EXPECT_GT(list.capacity(), 32);
+  EXPECT_GE(list.capacity(), 32);
 }
 
 TEST(RuntimeListTest, EmptyListInvariants) {
@@ -758,27 +758,23 @@ TEST(RuntimeTest, HashCodeSizeCheck) {
   EXPECT_TRUE(isIntEqualsWord(runtime.hash(code), 1));
 }
 
-TEST(RuntimeTest, EnsureCapacity) {
+TEST(RuntimeTest, NewCapacity) {
   Runtime runtime;
-  HandleScope scope;
+  // ensure initial capacity
+  EXPECT_GE(runtime.newCapacity(1, 0), 4);
 
-  // Check that empty arrays expand
-  List list(&scope, runtime.newList());
-  Tuple empty(&scope, list.items());
-  runtime.listEnsureCapacity(list, 0);
-  Tuple orig(&scope, list.items());
-  ASSERT_NE(*empty, *orig);
-  ASSERT_GT(orig.length(), 0);
+  // grow by factor of 2
+  EXPECT_EQ(runtime.newCapacity(10, 12), 20);
+  EXPECT_EQ(runtime.newCapacity(64, 77), 128);
+  EXPECT_EQ(runtime.newCapacity(15, 20), 30);
 
-  // We shouldn't grow the array if there is sufficient capacity
-  runtime.listEnsureCapacity(list, orig.length() - 1);
-  Tuple ensured0(&scope, list.items());
-  ASSERT_EQ(*orig, *ensured0);
+  // ensure growth
+  EXPECT_EQ(runtime.newCapacity(10, 6), 20);
+  EXPECT_EQ(runtime.newCapacity(10, 10), 20);
 
-  // We should double the array if there is insufficient capacity
-  runtime.listEnsureCapacity(list, orig.length());
-  Tuple ensured1(&scope, list.items());
-  ASSERT_EQ(ensured1.length(), orig.length() * 2);
+  // if factor of 2 is insufficient, grow to next power of two
+  EXPECT_EQ(runtime.newCapacity(10, 21), 32);
+  EXPECT_EQ(runtime.newCapacity(10, 50), 64);
 }
 
 TEST(RuntimeTest, InternLargeStr) {
