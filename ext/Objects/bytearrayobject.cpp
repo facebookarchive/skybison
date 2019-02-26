@@ -100,10 +100,8 @@ PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfByteArray(*obj)) {
-    thread->raiseBadArgument();
-    return -1;
-  }
+  DCHECK(runtime->isInstanceOfByteArray(*obj),
+         "argument to PyByteArray_Resize is not a bytearray");
   ByteArray array(&scope, *obj);
   word requested = static_cast<word>(newsize);
   word current = array.numItems();
@@ -122,10 +120,8 @@ PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  if (!thread->runtime()->isInstanceOfByteArray(*obj)) {
-    thread->raiseBadArgument();
-    return -1;
-  }
+  DCHECK(thread->runtime()->isInstanceOfByteArray(*obj),
+         "argument to PyByteArray_Size is not a bytearray");
   return static_cast<Py_ssize_t>(ByteArray::cast(*obj)->numItems());
 }
 
