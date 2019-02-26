@@ -208,12 +208,12 @@ class Runtime {
                             const Object& value);
 
   RawObject moduleAddBuiltinFunction(const Module& module, SymbolId name,
-                                     const Function::Entry entry);
+                                     Function::Entry entry);
 
   RawObject moduleAddNativeFunction(const Module& module, SymbolId name,
-                                    const Function::Entry entry,
-                                    const Function::Entry entry_kw,
-                                    const Function::Entry entry_ex);
+                                    Function::Entry entry,
+                                    Function::Entry entry_kw,
+                                    Function::Entry entry_ex);
 
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);
