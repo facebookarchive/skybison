@@ -11,9 +11,9 @@ namespace python {
 // classmethod
 
 const BuiltinMethod ClassMethodBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderGet, dunderGet},
+    {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -45,9 +45,9 @@ RawObject ClassMethodBuiltins::dunderGet(Thread* thread, Frame* frame,
 // staticmethod
 
 const BuiltinMethod StaticMethodBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderGet, dunderGet},
+    {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -78,11 +78,11 @@ RawObject StaticMethodBuiltins::dunderInit(Thread* thread, Frame* frame,
 
 // clang-format off
 const BuiltinMethod PropertyBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderInit, dunderInit},
-    {SymbolId::kDunderGet, dunderGet},
-    {SymbolId::kDunderSet, dunderSet},
     {SymbolId::kDeleter, deleter},
+    {SymbolId::kDunderGet, dunderGet},
+    {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderSet, dunderSet},
     {SymbolId::kGetter, getter},
     {SymbolId::kSetter, setter},
     {SymbolId::kSentinelId, nullptr},

@@ -485,8 +485,8 @@ RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
 // Python symbol name
 const NativeMethod DictItemIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -571,8 +571,8 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 const NativeMethod DictKeyIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -657,8 +657,8 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 const NativeMethod DictValueIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSentinelId, nullptr},
 };
 

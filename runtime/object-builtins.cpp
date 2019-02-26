@@ -19,8 +19,8 @@ const NativeMethod ObjectBuiltins::kNativeMethods[] = {
 
 // clang-format off
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderNew, dunderNew},
     // no sentinel needed because the iteration below is manual
 };
 // clang-format on

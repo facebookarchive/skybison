@@ -9,8 +9,8 @@
 namespace python {
 
 const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 

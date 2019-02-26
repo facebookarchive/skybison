@@ -519,8 +519,8 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
 
 const NativeMethod ListIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSentinelId, nullptr},
 };
 

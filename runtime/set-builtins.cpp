@@ -365,8 +365,8 @@ const NativeMethod FrozenSetBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kIntersection, nativeTrampoline<intersection>},
+    {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -440,15 +440,15 @@ const NativeMethod SetBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderLen, nativeTrampoline<dunderLen>},
     {SymbolId::kDunderLt, nativeTrampoline<dunderLt>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
-    {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kIntersection, nativeTrampoline<intersection>},
+    {SymbolId::kIsDisjoint, nativeTrampoline<isDisjoint>},
     {SymbolId::kPop, nativeTrampoline<pop>},
     {SymbolId::kSentinelId, nullptr},
 };
 
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -655,8 +655,8 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
 const NativeMethod SetIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSentinelId, nullptr},
 };
 

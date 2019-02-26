@@ -149,8 +149,8 @@ const NativeMethod StrBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderMod, nativeTrampoline<dunderMod>},
     {SymbolId::kDunderNe, nativeTrampoline<dunderNe>},
     {SymbolId::kDunderRepr, nativeTrampoline<dunderRepr>},
-    {SymbolId::kLower, nativeTrampoline<lower>},
     {SymbolId::kLStrip, nativeTrampoline<lstrip>},
+    {SymbolId::kLower, nativeTrampoline<lower>},
     {SymbolId::kRStrip, nativeTrampoline<rstrip>},
     {SymbolId::kStrip, nativeTrampoline<strip>},
     {SymbolId::kSentinelId, nullptr},
@@ -800,8 +800,8 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
 
 const NativeMethod StrIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSentinelId, nullptr},
 };
 

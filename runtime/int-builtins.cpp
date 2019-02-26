@@ -36,6 +36,7 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNeg, dunderNeg},
+    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderOr, dunderOr},
     {SymbolId::kDunderPos, dunderInt},
     {SymbolId::kDunderRepr, dunderRepr},
@@ -45,7 +46,6 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderSub, dunderSub},
     {SymbolId::kDunderTrunc, dunderInt},
     {SymbolId::kDunderXor, dunderXor},
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 

@@ -429,8 +429,8 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
 
 const NativeMethod TupleIteratorBuiltins::kNativeMethods[] = {
     {SymbolId::kDunderIter, nativeTrampoline<dunderIter>},
-    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kDunderLengthHint, nativeTrampoline<dunderLengthHint>},
+    {SymbolId::kDunderNext, nativeTrampoline<dunderNext>},
     {SymbolId::kSentinelId, nullptr},
 };
 

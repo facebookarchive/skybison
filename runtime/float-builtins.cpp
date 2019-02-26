@@ -66,7 +66,6 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
 
 const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderTruediv, dunderTrueDiv},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderFloat, dunderFloat},
     {SymbolId::kDunderGe, dunderGe},
@@ -80,6 +79,7 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kDunderRtruediv, dunderRtrueDiv},
     {SymbolId::kDunderSub, dunderSub},
+    {SymbolId::kDunderTruediv, dunderTrueDiv},
     {SymbolId::kSentinelId, nullptr},
 };
 
