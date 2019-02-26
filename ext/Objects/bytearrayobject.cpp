@@ -3,6 +3,25 @@
 
 namespace python {
 
+PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
+  DCHECK(pyobj != nullptr, "null argument to PyByteArray_AsString");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
+  Object obj(&scope, handle->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfByteArray(*obj),
+         "argument to PyByteArray_AsString is not a bytearray");
+  if (void* cache = handle->cache()) std::free(cache);
+  ByteArray array(&scope, *obj);
+  word len = array.numItems();
+  auto buffer = static_cast<byte*>(std::malloc(len + 1));
+  RawBytes::cast(array.bytes()).copyTo(buffer, len);
+  buffer[len] = '\0';
+  handle->setCache(buffer);
+  return reinterpret_cast<char*>(buffer);
+}
+
 PY_EXPORT int PyByteArray_CheckExact_Func(PyObject* pyobj) {
   return ApiHandle::fromPyObject(pyobj)->asObject()->isByteArray();
 }
@@ -60,10 +79,6 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
     result.setNumItems(capacity);
   }
   return ApiHandle::newReference(thread, *result);
-}
-
-PY_EXPORT char* PyByteArray_AsString(PyObject* /* f */) {
-  UNIMPLEMENTED("PyByteArray_AsString");
 }
 
 PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {

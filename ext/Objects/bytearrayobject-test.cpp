@@ -12,6 +12,26 @@ using namespace testing;
 
 using ByteArrayExtensionApiTest = ExtensionApi;
 
+TEST_F(ByteArrayExtensionApiTest, AsStringWithByteArrayReturnsString) {
+  PyObjectPtr array(PyByteArray_FromStringAndSize("hello world", 7));
+  const char* result = PyByteArray_AsString(array);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(result, "hello w");
+}
+
+TEST_F(ByteArrayExtensionApiTest,
+       AsStringWithModifiedByteArrayReturnsUpdatedString) {
+  PyObjectPtr array(PyByteArray_FromStringAndSize("hello world", 7));
+  const char* result = PyByteArray_AsString(array);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(result, "hello w");
+
+  ASSERT_EQ(PyByteArray_Resize(array, 2), 0);
+  result = PyByteArray_AsString(array);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(result, "he");
+}
+
 TEST_F(ByteArrayExtensionApiTest, CheckWithBytesReturnsFalse) {
   PyObjectPtr bytes(PyBytes_FromString("hello"));
   EXPECT_FALSE(PyByteArray_CheckExact(bytes));
@@ -55,6 +75,7 @@ TEST_F(ByteArrayExtensionApiTest,
   ASSERT_EQ(PyBytes_Size(self), len1);
   ASSERT_TRUE(PyByteArray_CheckExact(result));
   EXPECT_EQ(PyByteArray_Size(result), len1 + len2);
+  EXPECT_STREQ(PyByteArray_AsString(result), "helloworld");
 }
 
 TEST_F(ByteArrayExtensionApiTest,
@@ -70,6 +91,7 @@ TEST_F(ByteArrayExtensionApiTest,
   ASSERT_EQ(PyByteArray_Size(self), len1);
   ASSERT_TRUE(PyByteArray_CheckExact(result));
   EXPECT_EQ(PyByteArray_Size(result), len1 + len2);
+  EXPECT_STREQ(PyByteArray_AsString(result), "helloworld");
 }
 
 TEST_F(ByteArrayExtensionApiTest, FromObjectWithNullReturnsEmptyByteArray) {
