@@ -3,6 +3,9 @@
 lifting."""
 
 
+# Sequence Operations *********************************************************#
+
+
 def countOf(seq, v):
     count = 0
     for item in seq:
@@ -22,3 +25,13 @@ def indexOf(seq, v):
 
 def contains(seq, v):
     return v in seq
+
+
+# In-place Operations *********************************************************#
+
+
+def iconcat(a, b):
+    "Same as a += b, for a and b sequences."
+    # TODO(wmeehan): add __getitem__ attribute check
+    a += b
+    return a

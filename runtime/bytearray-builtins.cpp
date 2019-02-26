@@ -24,12 +24,79 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
+// clang-format off
 const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
+
+RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__add__' requires a 'bytearray' object");
+  }
+  Object other_obj(&scope, args.get(1));
+  word other_len;
+  if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray array(&scope, *other_obj);
+    other_len = array.numItems();
+    other_obj = array.bytes();
+  } else if (runtime->isInstanceOfBytes(*other_obj)) {
+    other_len = Bytes::cast(*other_obj).length();
+  } else {
+    return thread->raiseTypeErrorWithCStr(
+        "can only concatenate bytearray or bytes to bytearray");
+  }
+
+  ByteArray self(&scope, *self_obj);
+  Bytes self_bytes(&scope, self.bytes());
+  word self_len = self.numItems();
+  Bytes other_bytes(&scope, *other_obj);
+
+  ByteArray result(&scope, runtime->newByteArray());
+  runtime->byteArrayEnsureCapacity(thread, result, self_len + other_len);
+  runtime->byteArrayIadd(thread, result, self_bytes, self_len);
+  runtime->byteArrayIadd(thread, result, other_bytes, other_len);
+  return *result;
+}
+
+RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
+                                        word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__iadd__' requires a 'bytearray' object");
+  }
+  ByteArray self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  word other_len;
+  if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray array(&scope, *other_obj);
+    other_len = array.numItems();
+    other_obj = array.bytes();
+  } else if (runtime->isInstanceOfBytes(*other_obj)) {
+    other_len = Bytes::cast(*other_obj).length();
+  } else {
+    return thread->raiseTypeErrorWithCStr(
+        "can only concatenate bytearray or bytes to bytearray");
+  }
+  Bytes other(&scope, *other_obj);
+  runtime->byteArrayIadd(thread, self, other, other_len);
+  return *self;
+}
 
 RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
                                         word nargs) {

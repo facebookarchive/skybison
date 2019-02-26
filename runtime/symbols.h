@@ -203,6 +203,7 @@ class Runtime;
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Hasattr, "hasattr")                                                        \
+  V(Iconcat, "iconcat")                                                        \
   V(ImportError, "ImportError")                                                \
   V(ImportWarning, "ImportWarning")                                            \
   V(IndentationError, "IndentationError")                                      \

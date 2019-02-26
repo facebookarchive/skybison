@@ -1,3 +1,4 @@
+#include "bytearray-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -9,6 +10,32 @@ PY_EXPORT int PyByteArray_CheckExact_Func(PyObject* pyobj) {
 PY_EXPORT int PyByteArray_Check_Func(PyObject* pyobj) {
   return Thread::currentThread()->runtime()->isInstanceOfByteArray(
       ApiHandle::fromPyObject(pyobj)->asObject());
+}
+
+PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
+  DCHECK(a != nullptr, "null argument to PyByteArray_Concat");
+  DCHECK(b != nullptr, "null argument to PyByteArray_Concat");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object left(&scope, ApiHandle::fromPyObject(a)->asObject());
+  Object right(&scope, ApiHandle::fromPyObject(b)->asObject());
+  Runtime* runtime = thread->runtime();
+  bool valid_left = runtime->isInstanceOfByteArray(*left) ||
+                    runtime->isInstanceOfBytes(*left);
+  bool valid_right = runtime->isInstanceOfByteArray(*right) ||
+                     runtime->isInstanceOfBytes(*right);
+  if (!valid_left || !valid_right) {
+    thread->raiseTypeErrorWithCStr("can only concatenate bytearray or bytes");
+    return nullptr;
+  }
+  Object result(&scope, runtime->newByteArray());
+  result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIconcat,
+                                   result, left);
+  if (result.isError()) return nullptr;
+  result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIconcat,
+                                   result, right);
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
@@ -37,10 +64,6 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
 
 PY_EXPORT char* PyByteArray_AsString(PyObject* /* f */) {
   UNIMPLEMENTED("PyByteArray_AsString");
-}
-
-PY_EXPORT PyObject* PyByteArray_Concat(PyObject* /* a */, PyObject* /* b */) {
-  UNIMPLEMENTED("PyByteArray_Concat");
 }
 
 PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* /* t */) {

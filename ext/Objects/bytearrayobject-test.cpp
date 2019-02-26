@@ -18,6 +18,60 @@ TEST_F(ByteArrayExtensionApiTest, CheckWithBytesReturnsFalse) {
   EXPECT_FALSE(PyByteArray_Check(bytes));
 }
 
+TEST_F(ByteArrayExtensionApiTest, ConcatWithNonBytesLikeSelfRaisesTypeError) {
+  PyObjectPtr self(PyList_New(0));
+  PyObjectPtr other(PyByteArray_FromStringAndSize("world", 5));
+  ASSERT_EQ(PyByteArray_Concat(self, other), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ByteArrayExtensionApiTest, ConcatWithNonBytesLikeOtherRaisesTypeError) {
+  PyObjectPtr self(PyByteArray_FromStringAndSize("hello", 5));
+  PyObjectPtr other(PyList_New(0));
+  ASSERT_EQ(PyByteArray_Concat(self, other), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ByteArrayExtensionApiTest, ConcatWithEmptyByteArraysReturnsEmpty) {
+  PyObjectPtr self(PyByteArray_FromStringAndSize("", 0));
+  PyObjectPtr other(PyByteArray_FromStringAndSize("", 0));
+  PyObjectPtr result(PyByteArray_Concat(self, other));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyByteArray_Size(result), 0);
+}
+
+TEST_F(ByteArrayExtensionApiTest,
+       ConcatWithBytesSelfReturnsNewConcatenatedByteArray) {
+  const char* str1 = "hello";
+  const char* str2 = "world";
+  Py_ssize_t len1 = static_cast<Py_ssize_t>(std::strlen(str1));
+  Py_ssize_t len2 = static_cast<Py_ssize_t>(std::strlen(str2));
+  PyObjectPtr self(PyBytes_FromString(str1));
+  PyObjectPtr other(PyBytes_FromString(str2));
+  PyObjectPtr result(PyByteArray_Concat(self, other));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyBytes_Size(self), len1);
+  ASSERT_TRUE(PyByteArray_CheckExact(result));
+  EXPECT_EQ(PyByteArray_Size(result), len1 + len2);
+}
+
+TEST_F(ByteArrayExtensionApiTest,
+       ConcatWithByteArraysReturnsNewConcatenatedByteArray) {
+  const char* str1 = "hello";
+  const char* str2 = "world";
+  Py_ssize_t len1 = static_cast<Py_ssize_t>(std::strlen(str1));
+  Py_ssize_t len2 = static_cast<Py_ssize_t>(std::strlen(str2));
+  PyObjectPtr self(PyByteArray_FromStringAndSize(str1, len1));
+  PyObjectPtr other(PyByteArray_FromStringAndSize(str2, len2));
+  PyObjectPtr result(PyByteArray_Concat(self, other));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(PyByteArray_Size(self), len1);
+  ASSERT_TRUE(PyByteArray_CheckExact(result));
+  EXPECT_EQ(PyByteArray_Size(result), len1 + len2);
+}
+
 TEST_F(ByteArrayExtensionApiTest, FromStringAndSizeReturnsByteArray) {
   PyObjectPtr array(PyByteArray_FromStringAndSize("hello", 5));
   EXPECT_TRUE(PyByteArray_Check(array));

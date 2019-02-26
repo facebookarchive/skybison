@@ -38,6 +38,100 @@ TEST(ByteArrayBuiltinsTest, AsBytes) {
   EXPECT_TRUE(isBytesEqualsBytes(bytes, {0, 0, 0}));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderAddWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.__add__(b'', b'')"),
+      LayoutId::kTypeError, "'__add__' requires a 'bytearray' object"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderAddWithNonBytesLikeRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray(b'') + None"), LayoutId::kTypeError,
+      "can only concatenate bytearray or bytes to bytearray"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderAddWithByteArrayOtherReturnsNewByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, other, {'1', '2', '3'});
+  ByteArray result(&scope,
+                   runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  EXPECT_EQ(self.numItems(), 0);
+  EXPECT_EQ(result.numItems(), 3);
+}
+
+TEST(ByteArrayBuiltinsTest, DunderAddWithBytesOtherReturnsNewByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Bytes other(&scope, runtime.newBytes(2, '1'));
+  ByteArray result(&scope,
+                   runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  EXPECT_EQ(self.numItems(), 0);
+  EXPECT_EQ(result.numItems(), 2);
+}
+
+TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'f', 'o', 'o'});
+  Bytes other(&scope, runtime.newBytes(1, 'd'));
+  ByteArray result(&scope,
+                   runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  EXPECT_EQ(self.numItems(), 3);
+  EXPECT_EQ(result.numItems(), 4);
+  EXPECT_EQ(result.byteAt(3), 'd');
+}
+
+TEST(ByteArrayBuiltinsTest, DunderIaddWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.__iadd__(b'', b'')"),
+      LayoutId::kTypeError, "'__iadd__' requires a 'bytearray' object"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderIaddWithNonBytesLikeRaisesTypeError) {
+  Runtime runtime;
+  const char* test = R"(
+array = bytearray(b'')
+array += None
+)";
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, test), LayoutId::kTypeError,
+                    "can only concatenate bytearray or bytes to bytearray"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderIaddWithByteArrayOtherConcatenatesToSelf) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, other, {'1', '2', '3'});
+  ByteArray result(&scope,
+                   runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  ASSERT_EQ(self, result);
+  EXPECT_EQ(result.numItems(), 3);
+}
+
+TEST(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Bytes other(&scope, runtime.newBytes(2, '1'));
+  ByteArray result(&scope,
+                   runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  ASSERT_EQ(self, result);
+  EXPECT_EQ(result.numItems(), 2);
+}
+
 TEST(ByteArrayBuiltinsTest, DunderInitNoArgsClearsArray) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
