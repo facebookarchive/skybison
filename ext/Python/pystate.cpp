@@ -26,13 +26,48 @@ PY_EXPORT void PyInterpreterState_Delete(PyInterpreterState* /* p */) {
   UNIMPLEMENTED("PyInterpreterState_Delete");
 }
 
-PY_EXPORT int PyState_AddModule(PyObject* /* e */,
-                                struct PyModuleDef* /* f */) {
-  UNIMPLEMENTED("PyState_AddModule");
+PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
+  DCHECK(module != nullptr, "module must not be null");
+  CHECK(def != nullptr, "PyState_AddModule: Module Definition is NULL");
+  Thread* thread = Thread::currentThread();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  DCHECK(def->m_name != nullptr, "def.m_name must not be null");
+  Str module_name(&scope, runtime->internStrFromCStr(def->m_name));
+  CHECK(runtime->findModule(module_name).isNoneType(),
+        "PyState_AddModule: Module already added!");
+  // Below is the body of the port of _PyState_AddModule in CPython.
+  if (def->m_slots != nullptr) {
+    thread->raiseSystemErrorWithCStr(
+        "PyState_AddModule called on module with slots");
+    return -1;
+  }
+  Module module_obj(&scope, runtime->newModule(module_name));
+  module_obj.setDef(runtime->newIntFromCPtr(def));
+  Str doc_key(&scope, runtime->symbols()->DunderDoc());
+  Str doc_value(&scope, runtime->newStrFromCStr(def->m_doc));
+  runtime->moduleAtPut(module_obj, doc_key, doc_value);
+  runtime->addModule(module_obj);
+  return 0;
 }
 
-PY_EXPORT PyObject* PyState_FindModule(struct PyModuleDef* /* e */) {
-  UNIMPLEMENTED("PyState_FindModule");
+PY_EXPORT PyObject* PyState_FindModule(struct PyModuleDef* module) {
+  if (module->m_slots != nullptr) {
+    return nullptr;
+  }
+  Py_ssize_t index = module->m_base.m_index;
+  if (index == 0) {
+    return nullptr;
+  }
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Str module_name(&scope, runtime->internStrFromCStr(module->m_name));
+  Object module_obj(&scope, runtime->findModule(module_name));
+  if (module_obj.isNoneType()) {
+    return nullptr;
+  }
+  return ApiHandle::borrowedReference(thread, *module_obj);
 }
 
 PY_EXPORT int PyState_RemoveModule(struct PyModuleDef* /* f */) {

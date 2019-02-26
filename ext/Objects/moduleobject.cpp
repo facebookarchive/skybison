@@ -19,11 +19,20 @@ PY_EXPORT int PyModule_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
+static PyObject* moduleDefInit(Thread* thread, struct PyModuleDef* def) {
+  if (def->m_base.m_index == 0) {
+    def->m_base.m_index = thread->runtime()->nextModuleIndex();
+  }
+  return reinterpret_cast<PyObject*>(def);
+}
+
 PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
+  if (moduleDefInit(thread, def) == nullptr) {
+    return nullptr;
+  }
   HandleScope scope(thread);
-
+  Runtime* runtime = thread->runtime();
   Object name(&scope, runtime->newStrFromCStr(def->m_name));
   Module module(&scope, runtime->newModule(name));
   module.setDef(runtime->newIntFromCPtr(def));
@@ -148,8 +157,8 @@ PY_EXPORT void* PyModule_GetState(PyObject* mod) {
   return handle->cache();
 }
 
-PY_EXPORT PyObject* PyModuleDef_Init(struct PyModuleDef* /* f */) {
-  UNIMPLEMENTED("PyModuleDef_Init");
+PY_EXPORT PyObject* PyModuleDef_Init(struct PyModuleDef* def) {
+  return moduleDefInit(Thread::currentThread(), def);
 }
 
 PY_EXPORT int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {

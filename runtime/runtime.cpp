@@ -4544,6 +4544,8 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
   return *result;
 }
 
+word Runtime::nextModuleIndex() { return ++max_module_index_; }
+
 const BuiltinAttribute BuiltinsBase::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };

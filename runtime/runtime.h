@@ -689,6 +689,12 @@ class Runtime {
   // zero-extension and convert to a SmallInt when possible.
   RawObject normalizeLargeInt(const LargeInt& large_int);
 
+  // Generate a unique number for successively initialized native modules. We
+  // don't index modules the same way as CPython, but we keep this to get a
+  // unique module index and thereby maintain some CPython invariants for
+  // testing.
+  word nextModuleIndex();
+
  private:
   void initializeThreads();
   void initializeTypes();
@@ -888,6 +894,8 @@ class Runtime {
   NewValueCellCallback new_value_cell_callback_;
 
   Symbols* symbols_;
+
+  word max_module_index_ = 0;
 
   friend class ApiHandle;
 
