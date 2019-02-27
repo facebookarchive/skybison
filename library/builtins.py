@@ -112,6 +112,9 @@ class float(bootstrap=True):
     def __add__(self, n: float) -> float:
         pass
 
+    def __bool__(self) -> bool:
+        pass
+
     def __eq__(self, n: float) -> bool:  # noqa: T484
         pass
 

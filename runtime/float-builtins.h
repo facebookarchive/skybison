@@ -21,6 +21,7 @@ class FloatBuiltins
  public:
   static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderFloat(Thread* thread, Frame* frame, word nargs);

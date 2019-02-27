@@ -237,6 +237,22 @@ TEST(FloatBuiltinsTest, AddWithNonFloatOtherRaisesTypeError) {
                             "'__add__' is not supported"));
 }
 
+TEST(FloatBuiltinsTest, DunderBoolWithZeroReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Float self(&scope, runtime.newFloat(0.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderBool, self));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST(FloatBuiltinsTest, DunderBoolWithNonZeroReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Float self(&scope, runtime.newFloat(1234.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderBool, self));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
 TEST(FloatBuiltinsTest, DunderTrueDivWithDoubleReturnsDouble) {
   Runtime runtime;
   HandleScope scope;
