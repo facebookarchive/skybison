@@ -106,6 +106,9 @@ class coroutine(bootstrap=True):
 
 
 class float(bootstrap=True):
+    def __abs__(self) -> float:
+        pass
+
     def __add__(self, n: float) -> float:
         pass
 

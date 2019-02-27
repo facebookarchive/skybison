@@ -19,6 +19,7 @@ RawObject asFloatObject(Thread* thread, const Object& obj);
 class FloatBuiltins
     : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
  public:
+  static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);

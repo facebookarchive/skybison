@@ -65,6 +65,7 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
 }
 
 const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAbs, dunderAbs},
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderFloat, dunderFloat},
@@ -153,6 +154,19 @@ RawObject FloatBuiltins::floatFromString(Thread* thread, RawStr str) {
     return thread->raiseValueErrorWithCStr("could not convert string to float");
   }
   return thread->runtime()->newFloat(result);
+}
+
+RawObject FloatBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__abs__() must be called with float instance as first argument");
+  }
+  Float self(&scope, *self_obj);
+  return runtime->newFloat(std::fabs(self.value()));
 }
 
 RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {

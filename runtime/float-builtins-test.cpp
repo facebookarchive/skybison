@@ -161,6 +161,33 @@ TEST(FloatBuiltinsTest, DunderNeWithStringReturnsNotImplemented) {
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
 }
 
+TEST(FloatBuiltinsTest, DunderAbsZeroReturnsZero) {
+  Runtime runtime;
+  HandleScope scope;
+  Float self(&scope, runtime.newFloat(0.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 0.0);
+}
+
+TEST(FloatBuiltinsTest, DunderAbsNegativeReturnsPositive) {
+  Runtime runtime;
+  HandleScope scope;
+  Float self(&scope, runtime.newFloat(-1234.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 1234.0);
+}
+
+TEST(FloatBuiltinsTest, DunderAbsPositiveReturnsPositive) {
+  Runtime runtime;
+  HandleScope scope;
+  Float self(&scope, runtime.newFloat(5678.0));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(RawFloat::cast(*result)->value(), 5678.0);
+}
+
 TEST(FloatBuiltinsTest, BinaryAddDouble) {
   Runtime runtime;
   HandleScope scope;
