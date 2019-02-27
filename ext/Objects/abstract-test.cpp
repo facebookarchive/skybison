@@ -1810,4 +1810,29 @@ c = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(AbstractExtensionApiTest, NumberAbsoluteWithNullRaisesSystemError) {
+  EXPECT_EQ(PyNumber_Absolute(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, NumberAbsoluteWithNoDunderAbsRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyNumber_Absolute(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, NumberAbsoluteCallsDunderAbs) {
+  PyObjectPtr negative(PyLong_FromLong(-10));
+  PyObjectPtr positive(PyLong_FromLong(10));
+  EXPECT_EQ(PyNumber_Absolute(negative), positive);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python

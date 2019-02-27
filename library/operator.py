@@ -69,9 +69,6 @@ __all__ = [
     "xor",
 ]
 
-# TODO(wmeehan): fix once we have builtins.abs
-# from builtins import abs as _abs
-
 
 # Comparison Operations *******************************************************#
 
@@ -132,9 +129,12 @@ def is_not(a, b):
 # Mathematical/Bitwise Operations *********************************************#
 
 
-def abs(a):
-    "Same as abs(a)."
-    return a.__abs__()  # TODO(wmeehan): use _abs
+def abs(x):
+    "Same as a.__abs__()."
+    dunder_abs = getattr(x, "__abs__", None)
+    if dunder_abs is None:
+        raise TypeError(f"bad operand type for abs(): '{type(x).__name__}'")
+    return dunder_abs()
 
 
 def add(a, b):

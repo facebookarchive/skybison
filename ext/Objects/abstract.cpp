@@ -300,8 +300,19 @@ PY_EXPORT PyObject* PyMapping_Values(PyObject* mapping) {
   return callMappingMethod(thread, map, SymbolId::kValues, "o.values()");
 }
 
-PY_EXPORT PyObject* PyNumber_Absolute(PyObject* /* o */) {
-  UNIMPLEMENTED("PyNumber_Absolute");
+PY_EXPORT PyObject* PyNumber_Absolute(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
+                                                SymbolId::kAbs, object));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 static RawObject doBinaryOpImpl(Thread* thread, Interpreter::BinaryOp op,

@@ -119,6 +119,7 @@ class Runtime;
   V(DunderTrunc, "__trunc__")                                                  \
   V(DunderValues, "__values__")                                                \
   V(DunderXor, "__xor__")                                                      \
+  V(Abs, "abs")                                                                \
   V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \
   V(Allocated, "allocated")                                                    \
