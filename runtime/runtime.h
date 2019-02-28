@@ -312,6 +312,16 @@ class Runtime {
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
 
+  // Concatenates an iterable of bytes-like objects with a separator. Returns
+  // the concatenated bytes.
+  RawObject bytesJoin(Thread* thread, const Object& sep, const Tuple& src,
+                      word src_length);
+
+  // Copies a bytes-like object into buffer starting at a given index in buffer.
+  // Returns the next index after the copied bytes.
+  word bytesReplaceFromWith(Thread* thread, const Bytes& buffer, word start,
+                            const Object& source);
+
   // Returns a new Bytes containing the subsequence of self
   // with the given start index and length.
   RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,

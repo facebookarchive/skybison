@@ -433,4 +433,22 @@ RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   return bytesReprSmartQuotes(thread, self);
 }
 
+RawObject BytesBuiltins::join(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Bytes self(&scope, args.get(0));
+  Object iterable(&scope, args.get(1));
+  if (iterable.isList()) {
+    List list(&scope, *iterable);
+    Tuple src(&scope, list.items());
+    return thread->runtime()->bytesJoin(thread, self, src, list.numItems());
+  }
+  if (iterable.isTuple()) {
+    Tuple src(&scope, *iterable);
+    return thread->runtime()->bytesJoin(thread, self, src, src.length());
+  }
+  // Slow path: collect items into list in Python and call again
+  return NoneType::object();
+}
+
 }  // namespace python

@@ -970,6 +970,7 @@ class RawBytes : public RawArray {
   byte byteAt(word index) const;
   void byteAtPut(word index, byte value) const;
   void copyTo(byte* dst, word length) const;
+  word replaceFromWith(word start, RawObject src, word length) const;
 
   // Returns a positive value if 'this' is greater that 'other', a negative
   // value if 'this' is less that 'other', and zero if they are the same.

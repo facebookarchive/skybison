@@ -558,6 +558,15 @@ class bytearray(bootstrap=True):
     def __repr__(self):
         pass
 
+    def join(self, iterable) -> bytearray:
+        if not isinstance(self, bytearray):
+            raise TypeError("'join' requires a 'bytearray' object")
+        result = _bytearray_join(self, iterable)
+        if result is not None:
+            return result
+        items = [x for x in iterable]
+        return _bytearray_join(self, items)
+
 
 class bytes(bootstrap=True):
     def __add__(self, other: bytes) -> bytes:
@@ -594,6 +603,15 @@ class bytes(bootstrap=True):
 
     def __repr__(self) -> str:  # noqa: T484
         pass
+
+    def join(self, iterable) -> bytes:
+        if not isinstance(self, bytes):
+            raise TypeError("'join' requires a 'bytes' object")
+        result = _bytes_join(self, iterable)
+        if result is not None:
+            return result
+        items = [x for x in iterable]
+        return _bytes_join(self, items)
 
 
 class tuple(bootstrap=True):
@@ -1280,6 +1298,16 @@ def any(iterable):
 
 @_patch
 def _address(c):
+    pass
+
+
+@_patch
+def _bytearray_join(self: bytearray, iterable) -> bytearray:
+    pass
+
+
+@_patch
+def _bytes_join(self: bytes, iterable) -> bytes:
     pass
 
 

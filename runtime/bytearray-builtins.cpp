@@ -288,4 +288,27 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   return runtime->newStrFromByteArray(buffer);
 }
 
+RawObject ByteArrayBuiltins::join(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  ByteArray sep(&scope, args.get(0));
+  Object iterable(&scope, args.get(1));
+  Object joined(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  if (iterable.isList()) {
+    List list(&scope, *iterable);
+    Tuple src(&scope, list.items());
+    joined = runtime->bytesJoin(thread, sep, src, list.numItems());
+  } else if (iterable.isTuple()) {
+    Tuple src(&scope, *iterable);
+    joined = runtime->bytesJoin(thread, sep, src, src.length());
+  }
+  // Check for error or slow path
+  if (!joined.isBytes()) return *joined;
+  ByteArray result(&scope, runtime->newByteArray());
+  result.setBytes(*joined);
+  result.setNumItems(Bytes::cast(*joined).length());
+  return *result;
+}
+
 }  // namespace python

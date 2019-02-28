@@ -1001,4 +1001,75 @@ TEST(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\x00\x1f\x80\xff')"));
 }
 
+TEST(BytesBuiltinsTest, JoinWithNonBytesRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.join(1, [])"),
+                            LayoutId::kTypeError,
+                            "'join' requires a 'bytes' object"));
+}
+
+TEST(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.join(0)"),
+                            LayoutId::kTypeError, "object is not iterable"));
+}
+
+TEST(BytesBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Bytes self(&scope, runtime.newBytes(3, 'a'));
+  Object iter(&scope, runtime.newTuple(0));
+  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
+  EXPECT_TRUE(isBytesEqualsCStr(result, ""));
+}
+
+TEST(BytesBuiltinsTest, JoinWithEmptySeparatorReturnsBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Bytes self(&scope, runtime.newBytes(0, 0));
+  Tuple iter(&scope, runtime.newTuple(3));
+  iter.atPut(0, runtime.newBytes(1, 'A'));
+  iter.atPut(1, runtime.newBytes(2, 'B'));
+  iter.atPut(2, runtime.newBytes(1, 'A'));
+  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "ABBA"));
+}
+
+TEST(BytesBuiltinsTest, JoinWithNonEmptyListReturnsBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Bytes self(&scope, runtime.newBytes(1, ' '));
+  List iter(&scope, runtime.newList());
+  Bytes value(&scope, runtime.newBytes(1, '*'));
+  runtime.listAdd(iter, value);
+  runtime.listAdd(iter, value);
+  runtime.listAdd(iter, value);
+  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "* * *"));
+}
+
+TEST(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "b' '.join([1])"), LayoutId::kTypeError,
+      "sequence item 0: expected a bytes-like object, smallint found"));
+}
+
+TEST(BytesBuiltinsTest, JoinWithIterableReturnsBytes) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __iter__(self):
+    return [b'ab', b'c', b'def'].__iter__()
+result = b' '.join(Foo())
+)");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "ab c def"));
+}
+
 }  // namespace python

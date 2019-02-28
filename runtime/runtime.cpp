@@ -1922,6 +1922,10 @@ void Runtime::createBuiltinsModule() {
                               nativeTrampolineKw<BuiltinsModule::buildClassKw>,
                               unimplementedTrampoline);
 
+  moduleAddBuiltinFunction(module, SymbolId::kUnderByteArrayJoin,
+                           ByteArrayBuiltins::join);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderBytesJoin,
+                           BytesBuiltins::join);
   moduleAddBuiltinFunction(module, SymbolId::kCallable,
                            BuiltinsModule::callable);
   moduleAddBuiltinFunction(module, SymbolId::kChr, BuiltinsModule::chr);
@@ -2443,6 +2447,68 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
   self.copyTo(buffer, self_len);
   other.copyTo(buffer + self_len, other_len);
   return *result;
+}
+
+RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
+                             const Tuple& src, word src_length) {
+  DCHECK_BOUND(src_length, src.length());
+  Runtime* runtime = thread->runtime();
+  if (src_length == 0) return runtime->newBytes(0, 0);
+  HandleScope scope(thread);
+
+  // first pass to accumulate length and check types
+  word result_length;
+  if (runtime->isInstanceOfBytes(*sep)) {
+    result_length = Bytes::cast(*sep).length() * (src_length - 1);
+  } else if (runtime->isInstanceOfByteArray(*sep)) {
+    result_length = ByteArray::cast(*sep).numItems() * (src_length - 1);
+  } else {
+    UNREACHABLE("separator is not bytes-like");
+  }
+  for (word index = 0; index < src_length; index++) {
+    Object obj(&scope, src.at(index));
+    if (runtime->isInstanceOfBytes(*obj)) {
+      result_length += Bytes::cast(*obj).length();
+    } else if (runtime->isInstanceOfByteArray(*obj)) {
+      result_length += ByteArray::cast(*obj).numItems();
+    } else {
+      Type type(&scope, runtime->typeOf(*obj));
+      Str name(&scope, type.name());
+      unique_c_ptr<char> type_name(name.toCStr());
+      return thread->raiseTypeError(runtime->newStrFromFormat(
+          "sequence item %zd: expected a bytes-like object, %.80s found", index,
+          type_name.get()));
+    }
+  }
+
+  // second pass to accumulate concatenation
+  Bytes result(&scope, runtime->newBytes(result_length, 0));
+  Object item(&scope, src.at(0));
+  word result_index = runtime->bytesReplaceFromWith(thread, result, 0, item);
+  for (word src_index = 1; src_index < src_length; src_index++) {
+    result_index =
+        runtime->bytesReplaceFromWith(thread, result, result_index, sep);
+    item = src.at(src_index);
+    result_index =
+        runtime->bytesReplaceFromWith(thread, result, result_index, item);
+  }
+  DCHECK(result_index == result_length, "unexpected length");
+  return *result;
+}
+
+word Runtime::bytesReplaceFromWith(Thread* thread, const Bytes& buffer,
+                                   word start, const Object& source) {
+  DCHECK_INDEX(start, buffer.length());
+  HandleScope scope(thread);
+  if (isInstanceOfBytes(*source)) {
+    Bytes src(&scope, *source);
+    return buffer.replaceFromWith(start, *src, src.length());
+  }
+  if (isInstanceOfByteArray(*source)) {
+    ByteArray src(&scope, *source);
+    return buffer.replaceFromWith(start, src.bytes(), src.numItems());
+  }
+  UNREACHABLE("source is not bytes-like");
 }
 
 RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
