@@ -354,7 +354,7 @@ class OptInt {
   CastError error;
 };
 
-// Generic wrapper around RawSmallInt/RawLargeInt.
+// Generic wrapper around RawSmallInt/RawLargeInt/RawBool.
 class RawInt : public RawObject {
  public:
   // Getters and setters.
