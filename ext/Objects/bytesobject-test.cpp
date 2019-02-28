@@ -442,6 +442,54 @@ TEST_F(BytesExtensionApiTest, FromStringWithEmptyStringReturnsEmptyBytes) {
   EXPECT_EQ(PyBytes_Size(bytes), 0);
 }
 
+TEST_F(BytesExtensionApiTest, JoinWithEmptyIteratorReturnsBytes) {
+  PyObjectPtr sep(PyBytes_FromString("foo"));
+  PyObjectPtr iter(PyTuple_New(0));
+  PyObjectPtr join(_PyBytes_Join(sep, iter));
+  EXPECT_TRUE(PyBytes_CheckExact(join));
+  EXPECT_STREQ(PyBytes_AsString(join), "");
+}
+
+TEST_F(BytesExtensionApiTest, JoinWithOneElementIteratorReturnsBytes) {
+  PyObjectPtr sep(PyBytes_FromString("foo"));
+  PyObjectPtr iter(PyTuple_New(1));
+  ASSERT_EQ(PyTuple_SetItem(iter, 0, PyBytes_FromString("bar")), 0);
+  PyObjectPtr join(_PyBytes_Join(sep, iter));
+  EXPECT_TRUE(PyBytes_CheckExact(join));
+  EXPECT_STREQ(PyBytes_AsString(join), "bar");
+}
+
+TEST_F(BytesExtensionApiTest, JoinWithEmptySeparatorReturnsBytes) {
+  PyObjectPtr sep(PyBytes_FromString(""));
+  PyObjectPtr iter(PyList_New(3));
+  ASSERT_EQ(PyList_SetItem(iter, 0, PyBytes_FromString("ab")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 1, PyBytes_FromString("cde")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 2, PyBytes_FromString("f")), 0);
+  PyObjectPtr join(_PyBytes_Join(sep, iter));
+  EXPECT_TRUE(PyBytes_CheckExact(join));
+  EXPECT_STREQ(PyBytes_AsString(join), "abcdef");
+}
+
+TEST_F(BytesExtensionApiTest, JoinWithNonEmptySeparatorReturnsBytes) {
+  PyObjectPtr sep(PyBytes_FromString(" "));
+  PyObjectPtr iter(PyList_New(3));
+  ASSERT_EQ(PyList_SetItem(iter, 0, PyBytes_FromString("ab")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 1, PyBytes_FromString("cde")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 2, PyBytes_FromString("f")), 0);
+  PyObjectPtr join(_PyBytes_Join(sep, iter));
+  EXPECT_TRUE(PyBytes_CheckExact(join));
+  EXPECT_STREQ(PyBytes_AsString(join), "ab cde f");
+}
+
+TEST_F(BytesExtensionApiTest, JoinWithMistypedIteratorRaisesTypeError) {
+  PyObjectPtr sep(PyBytes_FromString(" "));
+  PyObjectPtr iter(PyTuple_New(1));
+  ASSERT_EQ(PyTuple_SetItem(iter, 0, PyLong_FromLong(0)), 0);
+  ASSERT_EQ(_PyBytes_Join(sep, iter), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(BytesExtensionApiTest, ReprWithNonBytesRaisesTypeErrorPyro) {
   PyObjectPtr array(PyByteArray_FromStringAndSize("", 0));
   ASSERT_EQ(PyBytes_Repr(array, true), nullptr);

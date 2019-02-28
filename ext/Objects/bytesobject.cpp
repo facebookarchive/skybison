@@ -345,6 +345,20 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
   return bytes.length();
 }
 
+PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {
+  DCHECK(sep != nullptr && iter != nullptr, "null argument to _PyBytes_Join");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfBytes(*obj),
+         "non-bytes argument to _PyBytes_Join");
+  Bytes self(&scope, *obj);
+  Object iterable(&scope, ApiHandle::fromPyObject(iter)->asObject());
+  Object result(&scope, thread->invokeMethod2(self, SymbolId::kJoin, iterable));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+}
+
 PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
   DCHECK(pyobj != nullptr, "_PyBytes_Resize given null argument");
   DCHECK(*pyobj != nullptr, "_PyBytes_Resize given pointer to null");
