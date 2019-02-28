@@ -18,4 +18,7 @@ RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs);
 RawObject builtinImpIsFrozenPackage(Thread* thread, Frame* frame, word nargs);
 RawObject builtinImpReleaseLock(Thread* thread, Frame* frame, word nargs);
 
+void importAcquireLock(Thread* thread);
+bool importReleaseLock(Thread* thread);
+
 }  // namespace python

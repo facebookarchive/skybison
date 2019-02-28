@@ -36,4 +36,14 @@ TEST_F(ImportExtensionApiTest, AddExistingModuleReturnsModule) {
   Py_DECREF(pyname);
 }
 
+TEST_F(ImportExtensionApiTest, PyImportAcquireLockAndReleaseLockDoesNothing) {
+  _PyImport_AcquireLock();
+  EXPECT_EQ(_PyImport_ReleaseLock(), 1);
+}
+
+TEST_F(ImportExtensionApiTest,
+       PyImportReleaseLockWithoutAcquireLockReturnsMinusOne) {
+  EXPECT_EQ(_PyImport_ReleaseLock(), -1);
+}
+
 }  // namespace python

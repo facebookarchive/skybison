@@ -1,4 +1,5 @@
 #include "cpython-func.h"
+#include "imp-module.h"
 #include "runtime.h"
 
 namespace python {
@@ -113,11 +114,11 @@ PY_EXPORT PyObject* PyImport_ReloadModule(PyObject* /* m */) {
 }
 
 PY_EXPORT void _PyImport_AcquireLock() {
-  UNIMPLEMENTED("_PyImport_AcquireLock");
+  importAcquireLock(Thread::currentThread());
 }
 
 PY_EXPORT int _PyImport_ReleaseLock() {
-  UNIMPLEMENTED("_PyImport_ReleaseLock");
+  return importReleaseLock(Thread::currentThread()) ? 1 : -1;
 }
 
 }  // namespace python

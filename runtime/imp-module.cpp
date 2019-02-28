@@ -14,8 +14,7 @@ extern "C" struct _inittab _PyImport_Inittab[];
 static Thread* import_lock_holder;
 static word import_lock_count;
 
-RawObject builtinImpAcquireLock(Thread* thread, Frame* /* frame */,
-                                word /* nargs */) {
+void importAcquireLock(Thread* thread) {
   if (import_lock_holder == nullptr) {
     import_lock_holder = thread;
     DCHECK(import_lock_count == 0, "count should be zero");
@@ -25,7 +24,23 @@ RawObject builtinImpAcquireLock(Thread* thread, Frame* /* frame */,
   } else {
     UNIMPLEMENTED("builtinImpAcquireLock(): thread switching not implemented");
   }
-  return RawNoneType::object();
+}
+
+bool importReleaseLock(Thread* thread) {
+  if (import_lock_holder != thread) {
+    return false;
+  }
+  DCHECK(import_lock_count > 0, "count should be bigger than zero");
+  --import_lock_count;
+  if (import_lock_count == 0) {
+    import_lock_holder = nullptr;
+  }
+  return true;
+}
+
+RawObject builtinImpAcquireLock(Thread* thread, Frame*, word) {
+  importAcquireLock(thread);
+  return NoneType::object();
 }
 
 RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
@@ -156,15 +171,9 @@ RawObject builtinImpIsFrozenPackage(Thread* /* thread */, Frame* /* frame */,
   UNIMPLEMENTED("is_frozen_package");
 }
 
-RawObject builtinImpReleaseLock(Thread* thread, Frame* /* frame */,
-                                word /* nargs */) {
-  if (import_lock_holder == nullptr) {
+RawObject builtinImpReleaseLock(Thread* thread, Frame*, word) {
+  if (!importReleaseLock(thread)) {
     return thread->raiseRuntimeErrorWithCStr("not holding the import lock");
-  }
-  DCHECK(import_lock_count > 0, "count should be bigger than zero");
-  --import_lock_count;
-  if (import_lock_count == 0) {
-    import_lock_holder = nullptr;
   }
   return RawNoneType::object();
 }
