@@ -74,4 +74,14 @@ class ImportErrorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(ImportErrorBuiltins);
 };
 
+class UnicodeErrorBuiltins
+    : public Builtins<UnicodeErrorBuiltins, SymbolId::kUnicodeError,
+                      LayoutId::kUnicodeError, LayoutId::kValueError> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeErrorBuiltins);
+};
+
 }  // namespace python

@@ -1419,8 +1419,7 @@ void Runtime::initializeExceptionTypes() {
                       LayoutId::kIndentationError);
 
   // ValueError subclasses
-  addEmptyBuiltinType(SymbolId::kUnicodeError, LayoutId::kUnicodeError,
-                      LayoutId::kValueError);
+  UnicodeErrorBuiltins::initialize(this);
 
   // UnicodeError subclasses
   addEmptyBuiltinType(SymbolId::kUnicodeEncodeError,

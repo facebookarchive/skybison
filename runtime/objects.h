@@ -299,6 +299,10 @@ class RawObject {
   bool isTuple() const;
   bool isTupleIterator() const;
   bool isUnboundValue() const;
+  bool isUnicodeDecodeError() const;
+  bool isUnicodeEncodeError() const;
+  bool isUnicodeError() const;
+  bool isUnicodeTranslateError() const;
   bool isValueCell() const;
   bool isWeakRef() const;
 
@@ -762,6 +766,48 @@ class RawIndexError : public RawLookupError {
 class RawKeyError : public RawLookupError {
  public:
   RAW_OBJECT_COMMON(KeyError);
+};
+
+class RawUnicodeError : public RawException {
+ public:
+  RawObject encoding() const;
+  void setEncoding(RawObject encoding) const;
+
+  RawObject object() const;
+  void setObject(RawObject object) const;
+
+  RawObject start() const;
+  void setStart(RawObject object) const;
+
+  RawObject end() const;
+  void setEnd(RawObject end) const;
+
+  RawObject reason() const;
+  void setReason(RawObject reason) const;
+
+  static const int kEncodingOffset = RawBaseException::kSize;
+  static const int kObjectOffset = kEncodingOffset + kPointerSize;
+  static const int kStartOffset = kObjectOffset + kPointerSize;
+  static const int kEndOffset = kStartOffset + kPointerSize;
+  static const int kReasonOffset = kEndOffset + kPointerSize;
+  static const int kSize = kReasonOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(UnicodeError);
+};
+
+class RawUnicodeDecodeError : public RawUnicodeError {
+ public:
+  RAW_OBJECT_COMMON(UnicodeDecodeError);
+};
+
+class RawUnicodeEncodeError : public RawUnicodeError {
+ public:
+  RAW_OBJECT_COMMON(UnicodeEncodeError);
+};
+
+class RawUnicodeTranslateError : public RawUnicodeError {
+ public:
+  RAW_OBJECT_COMMON(UnicodeTranslateError);
 };
 
 class RawType : public RawHeapObject {
@@ -2566,6 +2612,22 @@ inline bool RawObject::isUnboundValue() const {
   return isHeapObjectWithLayout(LayoutId::kUnboundValue);
 }
 
+inline bool RawObject::isUnicodeDecodeError() const {
+  return isHeapObjectWithLayout(LayoutId::kUnicodeDecodeError);
+}
+
+inline bool RawObject::isUnicodeEncodeError() const {
+  return isHeapObjectWithLayout(LayoutId::kUnicodeEncodeError);
+}
+
+inline bool RawObject::isUnicodeError() const {
+  return isHeapObjectWithLayout(LayoutId::kUnicodeError);
+}
+
+inline bool RawObject::isUnicodeTranslateError() const {
+  return isHeapObjectWithLayout(LayoutId::kUnicodeTranslateError);
+}
+
 inline bool RawObject::isImportError() const {
   return isHeapObjectWithLayout(LayoutId::kImportError);
 }
@@ -3186,6 +3248,54 @@ inline RawObject RawUserTupleBase::tupleValue() const {
 inline void RawUserTupleBase::setTupleValue(RawObject value) const {
   DCHECK(value->isTuple(), "Only tuple type is permitted as a value");
   instanceVariableAtPut(kTupleOffset, value);
+}
+
+// RawUnicodeError
+
+inline RawObject RawUnicodeError::encoding() const {
+  return instanceVariableAt(kEncodingOffset);
+}
+
+inline void RawUnicodeError::setEncoding(RawObject value) const {
+  DCHECK(value->isStr(), "Only string type is permitted as a value");
+  instanceVariableAtPut(kEncodingOffset, value);
+}
+
+inline RawObject RawUnicodeError::object() const {
+  return instanceVariableAt(kObjectOffset);
+}
+
+inline void RawUnicodeError::setObject(RawObject value) const {
+  // TODO(T39229519): Allow bytearrays to be stored as well
+  DCHECK(value->isBytes(), "Only bytes type is permitted as a value");
+  instanceVariableAtPut(kObjectOffset, value);
+}
+
+inline RawObject RawUnicodeError::start() const {
+  return instanceVariableAt(kStartOffset);
+}
+
+inline void RawUnicodeError::setStart(RawObject value) const {
+  DCHECK(value->isInt(), "Only int type is permitted as a value");
+  instanceVariableAtPut(kStartOffset, value);
+}
+
+inline RawObject RawUnicodeError::end() const {
+  return instanceVariableAt(kEndOffset);
+}
+
+inline void RawUnicodeError::setEnd(RawObject value) const {
+  DCHECK(value->isInt(), "Only int type is permitted as a value");
+  instanceVariableAtPut(kEndOffset, value);
+}
+
+inline RawObject RawUnicodeError::reason() const {
+  return instanceVariableAt(kReasonOffset);
+}
+
+inline void RawUnicodeError::setReason(RawObject value) const {
+  DCHECK(value->isStr(), "Only string type is permitted as a value");
+  instanceVariableAtPut(kReasonOffset, value);
 }
 
 // RawCode

@@ -175,6 +175,10 @@ class __attribute__((warn_unused)) Handle : public T {
   V(Super)                                                                     \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
+  V(UnicodeDecodeError)                                                        \
+  V(UnicodeEncodeError)                                                        \
+  V(UnicodeError)                                                              \
+  V(UnicodeTranslateError)                                                     \
   V(ValueCell)                                                                 \
   V(WeakRef)
 

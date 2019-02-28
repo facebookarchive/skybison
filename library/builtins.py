@@ -431,6 +431,74 @@ class int(bootstrap=True):
         pass
 
 
+class UnicodeError(bootstrap=True):  # noqa: B903
+    def __init__(self, *args):
+        self.args = args
+
+
+def _index(num):
+    if not isinstance(num, int):
+        try:
+            # TODO(T41077650): Truncate the result of __index__ to Py_ssize_t
+            return num.__index__()
+        except AttributeError:
+            raise TypeError(
+                f"'{type(num).__name__}' object cannot be interpreted as" " an integer"
+            )
+    return num
+
+
+class UnicodeDecodeError(UnicodeError, bootstrap=True):
+    def __init__(self, encoding, obj, start, end, reason):
+        super(UnicodeDecodeError, self).__init__(encoding, obj, start, end, reason)
+        if not isinstance(encoding, str):
+            raise TypeError(f"argument 1 must be str, not {type(encoding).__name__}")
+        self.encoding = encoding
+        self.start = _index(start)
+        self.end = _index(end)
+        if not isinstance(reason, str):
+            raise TypeError(f"argument 5 must be str, not {type(reason).__name__}")
+        self.reason = reason
+        # TODO(T38246066): Replace with a check for the buffer protocol
+        if not isinstance(obj, (bytes, bytearray)):
+            raise TypeError(
+                f"a bytes-like object is required, not '{type(obj).__name__}'"
+            )
+        self.object = obj
+
+
+class UnicodeEncodeError(UnicodeError, bootstrap=True):
+    def __init__(self, encoding, obj, start, end, reason):
+        super(UnicodeEncodeError, self).__init__(encoding, obj, start, end, reason)
+        if not isinstance(encoding, str):
+            raise TypeError(f"argument 1 must be str, not {type(encoding).__name__}")
+        self.encoding = encoding
+        self.start = _index(start)
+        self.end = _index(end)
+        if not isinstance(reason, str):
+            raise TypeError(f"argument 5 must be str, not {type(reason).__name__}")
+        self.reason = reason
+        # TODO(T38246066): Replace with a check for the buffer protocol
+        if not isinstance(obj, (bytes, bytearray)):
+            raise TypeError(
+                f"a bytes-like object is required, not '{type(obj).__name__}'"
+            )
+        self.object = obj
+
+
+class UnicodeTranslateError(UnicodeError, bootstrap=True):
+    def __init__(self, obj, start, end, reason):
+        super(UnicodeTranslateError, self).__init__(obj, start, end, reason)
+        if not isinstance(obj, str):
+            raise TypeError(f"argument 1 must be str, not {type(obj).__name__}")
+        self.object = obj
+        self.start = _index(start)
+        self.end = _index(end)
+        if not isinstance(reason, str):
+            raise TypeError(f"argument 4 must be str, not {type(reason).__name__}")
+        self.reason = reason
+
+
 class ImportError(bootstrap=True):
     def __init__(self, *args, name=None, path=None):
         # TODO(mpage): Call super once we have EX calling working for built-in methods

@@ -175,6 +175,7 @@ class Runtime;
   V(Dummy, "dummy")                                                            \
   V(EOFError, "EOFError")                                                      \
   V(Ellipsis, "ellipsis")                                                      \
+  V(Encoding, "encoding")                                                      \
   V(End, "end")                                                                \
   V(Exception, "Exception")                                                    \
   V(ExceptionState, "ExceptionState")                                          \
@@ -273,6 +274,7 @@ class Runtime;
   V(Property, "property")                                                      \
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
+  V(Reason, "reason")                                                          \
   V(RecursionError, "RecursionError")                                          \
   V(Ref, "ref")                                                                \
   V(ReferenceError, "ReferenceError")                                          \

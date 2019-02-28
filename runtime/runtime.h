@@ -575,6 +575,10 @@ class Runtime {
   DEFINE_IS_INSTANCE(SystemExit)
   DEFINE_IS_INSTANCE(Tuple)
   DEFINE_IS_INSTANCE(Type)
+  DEFINE_IS_INSTANCE(UnicodeDecodeError)
+  DEFINE_IS_INSTANCE(UnicodeEncodeError)
+  DEFINE_IS_INSTANCE(UnicodeError)
+  DEFINE_IS_INSTANCE(UnicodeTranslateError)
 #undef DEFINE_IS_INSTANCE
 
   // User-defined subclasses of immediate types have no corresponding LayoutId,
