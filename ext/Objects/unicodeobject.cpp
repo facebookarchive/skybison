@@ -523,9 +523,7 @@ PY_EXPORT size_t Py_UNICODE_strlen(const Py_UNICODE* u) {
   return std::wcslen(u);
 }
 
-PY_EXPORT int _PyUnicode_Ready(PyObject* /* unicode */) {
-  UNIMPLEMENTED("_PyUnicode_Ready");
-}
+PY_EXPORT int _PyUnicode_Ready(PyObject* /* unicode */) { return 0; }
 
 PY_EXPORT int PyUnicode_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject()->isStr();
