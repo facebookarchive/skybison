@@ -98,6 +98,60 @@ TEST(InterpreterTest, IsTrueDunderLen) {
   EXPECT_EQ(Interpreter::isTrue(thread, frame, empty_list), Bool::falseObj());
 }
 
+TEST(InterpreterTest, UnaryOperationWithIntReturnsInt) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object value(&scope, runtime.newInt(23));
+  Object result(
+      &scope, Interpreter::unaryOperation(thread, value, SymbolId::kDunderPos));
+  EXPECT_TRUE(isIntEqualsWord(*result, 23));
+}
+
+TEST(InterpreterTest, UnaryOperationWithBadTypeRaisesTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object value(&scope, NoneType::object());
+  Object result(&scope, Interpreter::unaryOperation(thread, value,
+                                                    SymbolId::kDunderInvert));
+  EXPECT_TRUE(
+      raisedWithStr(*result, LayoutId::kTypeError,
+                    "bad operand type for unary '__invert__': 'NoneType'"));
+}
+
+TEST(InterpreterTest, UnaryOperationWithCustomDunderInvertReturnsString) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  runFromCStr(&runtime, R"(
+class C:
+  def __invert__(self):
+    return "custom invert"
+c = C()
+)");
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(
+      &scope, Interpreter::unaryOperation(thread, c, SymbolId::kDunderInvert));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "custom invert"));
+}
+
+TEST(InterpreterTest, UnaryOperationWithCustomRaisingDunderNegPropagates) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  runFromCStr(&runtime, R"(
+class C:
+  def __neg__(self):
+    raise UserWarning('')
+c = C()
+)");
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope,
+                Interpreter::unaryOperation(thread, c, SymbolId::kDunderNeg));
+  EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
+}
+
 TEST(InterpreterTest, UnaryNotWithRaisingDunderBool) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(

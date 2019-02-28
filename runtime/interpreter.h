@@ -88,8 +88,8 @@ class Interpreter {
                                const Object& arg1, const Object& arg2,
                                const Object& arg3);
 
-  static RawObject unaryOperation(Thread* thread, Frame* caller,
-                                  const Object& receiver, SymbolId selector);
+  static RawObject unaryOperation(Thread* thread, const Object& receiver,
+                                  SymbolId selector);
 
   static RawObject binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
                                    const Object& left, const Object& right);

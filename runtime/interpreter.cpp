@@ -345,19 +345,33 @@ RawObject Interpreter::callMethod4(Thread* thread, Frame* caller,
   return call(thread, caller, nargs);
 }
 
-RawObject Interpreter::unaryOperation(Thread* thread, Frame* caller,
-                                      const Object& self, SymbolId selector) {
+static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
+                                       SymbolId selector) {
   HandleScope scope(thread);
-  Object method(&scope, lookupMethod(thread, caller, self, selector));
-  CHECK(!method.isError(), "unknown unary operation");
-  return callMethod1(thread, caller, method, self);
+  Runtime* runtime = thread->runtime();
+  Str type_name(&scope, Type::cast(runtime->typeOf(*object))->name());
+  // TODO(T41091163) Having a format character for Str objects would be nice.
+  unique_c_ptr<char> type_name_cstr(type_name.toCStr());
+  const char* op_name = runtime->symbols()->literalAt(selector);
+  return thread->raiseTypeError(
+      runtime->newStrFromFormat("bad operand type for unary '%s': '%.200s'",
+                                op_name, type_name_cstr.get()));
+}
+
+RawObject Interpreter::unaryOperation(Thread* thread, const Object& self,
+                                      SymbolId selector) {
+  RawObject result = thread->invokeMethod1(self, selector);
+  if (result.isError() && !thread->hasPendingException()) {
+    return raiseUnaryOpTypeError(thread, self, selector);
+  }
+  return result;
 }
 
 bool Interpreter::doUnaryOperation(SymbolId selector, Context* ctx) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object receiver(&scope, ctx->frame->topValue());
-  RawObject result = unaryOperation(thread, ctx->frame, receiver, selector);
+  RawObject result = unaryOperation(thread, receiver, selector);
   if (result.isError()) return unwind(ctx);
   ctx->frame->setTopValue(result);
   return false;
