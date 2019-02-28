@@ -680,6 +680,141 @@ TEST_F(AbstractExtensionApiTest, PyNumberCheckWithNullReturnsFalse) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberInvertWithIntReturnsInt) {
+  PyObjectPtr num(PyLong_FromLong(7));
+  PyObjectPtr result(PyNumber_Invert(num));
+  EXPECT_EQ(PyLong_AsLong(result), -8);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInvertWithCustomClassCallsDunderInvert) {
+  PyRun_SimpleString(R"(
+class C:
+  def __invert__(self):
+    return "custom invert"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Invert(c));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "custom invert"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInvertWithNullReturnsNull) {
+  EXPECT_EQ(PyNumber_Invert(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInvertWithNonNumberRaisesTypeError) {
+  EXPECT_EQ(PyNumber_Positive(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInvertPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __invert__(self):
+    raise UserWarning()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Invert(c));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberNegativeWithIntReturnsInt) {
+  PyObjectPtr num(PyLong_FromLong(-22));
+  PyObjectPtr result(PyNumber_Negative(num));
+  EXPECT_EQ(PyLong_AsLong(result), 22);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberNegativeWithCustomClassCallsDunderNeg) {
+  PyRun_SimpleString(R"(
+class C:
+  def __neg__(self):
+    return "custom neg"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Negative(c));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "custom neg"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberNegativeWithNullRaisesSystemError) {
+  EXPECT_EQ(PyNumber_Negative(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberNegativeWithNonNumberRaisesTypeError) {
+  EXPECT_EQ(PyNumber_Negative(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberNegativePropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __neg__(self):
+    raise UserWarning()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Negative(c));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberPositiveWithIntReturnsInt) {
+  PyObjectPtr num(PyLong_FromLong(-13));
+  PyObjectPtr result(PyNumber_Positive(num));
+  EXPECT_EQ(PyLong_AsLong(result), -13);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberPositiveWithCustomClassCallsDunderPos) {
+  PyRun_SimpleString(R"(
+class C:
+  def __pos__(self):
+    return "custom pos"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Positive(c));
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "custom pos"), 0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberPositiveWithNullRaisesSystemError) {
+  EXPECT_EQ(PyNumber_Positive(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberPositiveWithNonNumberRaisesTypeError) {
+  EXPECT_EQ(PyNumber_Positive(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberPositivePropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __pos__(self):
+    raise UserWarning()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Positive(c));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
 TEST_F(AbstractExtensionApiTest, GetIterWithNoDunderIterRaises) {
   PyRun_SimpleString(R"(
 class C:

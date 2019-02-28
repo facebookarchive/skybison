@@ -495,20 +495,53 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
   return ApiHandle::newReference(thread, *index);
 }
 
-PY_EXPORT PyObject* PyNumber_Invert(PyObject* /* o */) {
-  UNIMPLEMENTED("PyNumber_Invert");
+PY_EXPORT PyObject* PyNumber_Invert(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
+                                                SymbolId::kInvert, object));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyNumber_Long(PyObject* /* o */) {
   UNIMPLEMENTED("PyNumber_Long");
 }
 
-PY_EXPORT PyObject* PyNumber_Negative(PyObject* /* o */) {
-  UNIMPLEMENTED("PyNumber_Negative");
+PY_EXPORT PyObject* PyNumber_Negative(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
+                                                SymbolId::kNeg, object));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyNumber_Positive(PyObject* /* o */) {
-  UNIMPLEMENTED("PyNumber_Positive");
+PY_EXPORT PyObject* PyNumber_Positive(PyObject* pyobj) {
+  Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
+                                                SymbolId::kPos, object));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* /* m */, PyObject* /* r */) {

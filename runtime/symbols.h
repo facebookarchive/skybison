@@ -215,6 +215,7 @@ class Runtime;
   V(Int, "int")                                                                \
   V(InterruptedError, "InterruptedError")                                      \
   V(Intersection, "intersection")                                              \
+  V(Invert, "invert")                                                          \
   V(IsADirectoryError, "IsADirectoryError")                                    \
   V(IsBuiltin, "is_builtin")                                                   \
   V(IsDisjoint, "isdisjoint")                                                  \
@@ -252,6 +253,7 @@ class Runtime;
   V(NUnnamedFields, "n_unnamed_fields")                                        \
   V(Name, "name")                                                              \
   V(NameError, "NameError")                                                    \
+  V(Neg, "neg")                                                                \
   V(None, "None")                                                              \
   V(NoneType, "NoneType")                                                      \
   V(NotADirectoryError, "NotADirectoryError")                                  \
@@ -270,6 +272,7 @@ class Runtime;
   V(PermissionError, "PermissionError")                                        \
   V(Platform, "platform")                                                      \
   V(Pop, "pop")                                                                \
+  V(Pos, "pos")                                                                \
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
   V(Range, "range")                                                            \
