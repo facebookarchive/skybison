@@ -599,9 +599,37 @@ PY_EXPORT int PyObject_AsWriteBuffer(PyObject* /* j */, void** /* buffer */,
   UNIMPLEMENTED("PyObject_AsWriteBuffer");
 }
 
-PY_EXPORT PyObject* PyObject_Call(PyObject* /* e */, PyObject* /* s */,
-                                  PyObject* /* s */) {
-  UNIMPLEMENTED("PyObject_Call");
+PY_EXPORT PyObject* PyObject_Call(PyObject* callable, PyObject* args,
+                                  PyObject* kwargs) {
+  Thread* thread = Thread::currentThread();
+  if (callable == nullptr) {
+    return nullError(thread);
+  }
+
+  DCHECK(!thread->hasPendingException(),
+         "may accidentally clear pending exception");
+
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  word flags = 0;
+  frame->pushValue(ApiHandle::fromPyObject(callable)->asObject());
+  Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
+  DCHECK(thread->runtime()->isInstanceOfTuple(*args_obj),
+         "args mut be a tuple");
+  frame->pushValue(*args_obj);
+  if (kwargs != nullptr) {
+    Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
+    DCHECK(thread->runtime()->isInstanceOfDict(*kwargs_obj),
+           "kwargs must be a dict");
+    frame->pushValue(*kwargs_obj);
+    flags |= CallFunctionExFlag::VAR_KEYWORDS;
+  }
+
+  // TODO(T30925218): Protect against native stack overflow.
+
+  Object result(&scope, Interpreter::callEx(thread, frame, flags));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyObject_CallFunction(PyObject* /* e */,
@@ -616,8 +644,7 @@ PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
   }
 
   DCHECK(!thread->hasPendingException(),
-         "This function should not be called with an exception set as it might "
-         "be cleared");
+         "may accidentally clear pending exception");
 
   HandleScope scope(thread);
   Object function(&scope, ApiHandle::fromPyObject(callable)->asObject());

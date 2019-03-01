@@ -194,6 +194,45 @@ i = IntLikeClass();
   EXPECT_NE(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectCallWithArgsCalls) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  return f"{args!r}{kwargs!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr args(PyTuple_Pack(3, PyUnicode_FromString("one"),
+                                PyLong_FromLong(2), PyLong_FromLong(3)));
+  PyObjectPtr result(PyObject_Call(func, args, nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "('one', 2, 3){}"));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallWithArgsAndKwargsCalls) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  return f"{args!r}{kwargs!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr args(PyTuple_Pack(3, PyLong_FromLong(1), PyLong_FromLong(2),
+                                PyUnicode_FromString("three")));
+  PyObjectPtr kwargs(PyDict_New());
+  PyDict_SetItem(kwargs, PyUnicode_FromString("kwarg"), PyLong_FromLong(4));
+  PyObjectPtr result(PyObject_Call(func, args, kwargs));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "(1, 2, 'three'){'kwarg': 4}"));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallPropagatesException) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  raise UserWarning()
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr args(PyTuple_New(0));
+  PyObjectPtr result(PyObject_Call(func, args, nullptr));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithBytesReturnsTrue) {
   PyObject* obj(PyBytes_FromString("foo"));
   EXPECT_TRUE(PyObject_CheckBuffer(obj));
