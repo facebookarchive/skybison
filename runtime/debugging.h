@@ -10,6 +10,8 @@ namespace python {
 std::ostream& operator<<(std::ostream& os, CastError value);
 
 std::ostream& operator<<(std::ostream& os, RawBool value);
+std::ostream& operator<<(std::ostream& os, RawCode value);
+std::ostream& operator<<(std::ostream& os, RawDict value);
 std::ostream& operator<<(std::ostream& os, RawError value);
 std::ostream& operator<<(std::ostream& os, RawFloat value);
 std::ostream& operator<<(std::ostream& os, RawFunction value);
@@ -17,6 +19,7 @@ std::ostream& operator<<(std::ostream& os, RawInt value);
 std::ostream& operator<<(std::ostream& os, RawLargeInt value);
 std::ostream& operator<<(std::ostream& os, RawLargeStr value);
 std::ostream& operator<<(std::ostream& os, RawList value);
+std::ostream& operator<<(std::ostream& os, RawModule value);
 std::ostream& operator<<(std::ostream& os, RawNoneType value);
 std::ostream& operator<<(std::ostream& os, RawObject value);
 std::ostream& operator<<(std::ostream& os, RawSmallInt value);

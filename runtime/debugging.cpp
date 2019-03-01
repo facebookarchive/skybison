@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 
+#include "dict-builtins.h"
 #include "frame.h"
 #include "handles.h"
 #include "runtime.h"
@@ -24,6 +25,29 @@ std::ostream& operator<<(std::ostream& os, CastError err) {
 
 std::ostream& operator<<(std::ostream& os, RawBool value) {
   return os << (value.value() ? "True" : "False");
+}
+
+std::ostream& operator<<(std::ostream& os, RawCode value) {
+  return os << "<code " << value.name() << ">";
+}
+
+std::ostream& operator<<(std::ostream& os, RawDict value) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict dict(&scope, value);
+  Object iter_obj(&scope, runtime->newDictItemIterator(dict));
+  if (!iter_obj.isDictItemIterator()) return os;
+  os << '{';
+  DictItemIterator iter(&scope, *iter_obj);
+  const char* delimiter = "";
+  for (Object key_value_obj(&scope, NoneType::object());
+       !(key_value_obj = dictItemIteratorNext(thread, iter)).isError();) {
+    Tuple key_value(&scope, *key_value_obj);
+    os << delimiter << key_value.at(0) << ": " << key_value.at(1);
+    delimiter = ", ";
+  }
+  return os << '}';
 }
 
 std::ostream& operator<<(std::ostream& os, RawError) { return os << "Error"; }
@@ -85,6 +109,10 @@ std::ostream& operator<<(std::ostream& os, RawList value) {
   return os << ']';
 }
 
+std::ostream& operator<<(std::ostream& os, RawModule value) {
+  return os << "<module " << value.name() << ">";
+}
+
 std::ostream& operator<<(std::ostream& os, RawNoneType) { return os << "None"; }
 
 static std::ostream& printObjectGeneric(std::ostream& os,
@@ -109,6 +137,10 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
   switch (layout) {
     case LayoutId::kBool:
       return os << RawBool::cast(value);
+    case LayoutId::kCode:
+      return os << RawCode::cast(value);
+    case LayoutId::kDict:
+      return os << RawDict::cast(value);
     case LayoutId::kError:
       return os << RawError::cast(value);
     case LayoutId::kFloat:
@@ -121,6 +153,8 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
       return os << RawLargeStr::cast(value);
     case LayoutId::kList:
       return os << RawList::cast(value);
+    case LayoutId::kModule:
+      return os << RawModule::cast(value);
     case LayoutId::kNoneType:
       return os << RawNoneType::cast(value);
     case LayoutId::kSmallInt:

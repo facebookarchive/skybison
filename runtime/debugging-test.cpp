@@ -16,6 +16,32 @@ TEST(DebuggingTests, FormatBool) {
   EXPECT_EQ(ss.str(), "True;False");
 }
 
+TEST(DebuggingTests, FormatCode) {
+  Runtime runtime;
+  HandleScope scope;
+  Code code(&scope, runtime.newEmptyCode());
+  code.setName(runtime.newStrFromCStr("foobar"));
+  std::stringstream ss;
+  ss << code;
+  EXPECT_EQ(ss.str(), "<code \"foobar\">");
+}
+
+TEST(DebuggingTests, FormatDict) {
+  Runtime runtime;
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
+  Object key0(&scope, runtime.newStrFromCStr("hello"));
+  Object key1(&scope, NoneType::object());
+  Object value0(&scope, runtime.newInt(88));
+  Object value1(&scope, runtime.newTuple(0));
+  runtime.dictAtPut(dict, key0, value0);
+  runtime.dictAtPut(dict, key1, value1);
+  std::stringstream ss;
+  ss << dict;
+  EXPECT_TRUE(ss.str() == R"({"hello": 88, None: ()})" ||
+              ss.str() == R"({None: (), "hello": 88}")");
+}
+
 TEST(DebuggingTests, FormatError) {
   Runtime runtime;
   std::stringstream ss;
@@ -37,7 +63,7 @@ TEST(DebuggingTests, FormatFunction) {
   Object function(&scope, moduleAt(&runtime, "builtins", "callable"));
   ASSERT_TRUE(function.isFunction());
   ss << function;
-  EXPECT_EQ(ss.str(), "<function \"callable\">");
+  EXPECT_EQ(ss.str(), R"(<function "callable">)");
 }
 
 TEST(DebuggingTests, FormatLargeInt) {
@@ -70,6 +96,16 @@ TEST(DebuggingTests, FormatList) {
   EXPECT_EQ(ss.str(), "[None, 17]");
 }
 
+TEST(DebuggingTests, FormatModule) {
+  Runtime runtime;
+  HandleScope scope;
+  Object name(&scope, runtime.newStrFromCStr("foomodule"));
+  Object module(&scope, runtime.newModule(name));
+  std::stringstream ss;
+  ss << module;
+  EXPECT_EQ(ss.str(), R"(<module "foomodule">)");
+}
+
 TEST(DebuggingTests, FormatNone) {
   Runtime runtime;
   std::stringstream ss;
@@ -81,7 +117,7 @@ TEST(DebuggingTests, FormatObjectWithBuiltinClass) {
   Runtime runtime;
   std::stringstream ss;
   ss << runtime.notImplemented();
-  EXPECT_EQ(ss.str(), "<\"NotImplementedType\" object>");
+  EXPECT_EQ(ss.str(), R"(<"NotImplementedType" object>)");
 }
 
 TEST(DebuggingTests, FormatObjectWithUserDefinedClass) {
@@ -95,7 +131,7 @@ foo = Foo()
   Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
   std::stringstream ss;
   ss << foo;
-  EXPECT_EQ(ss.str(), "<\"Foo\" object>");
+  EXPECT_EQ(ss.str(), R"(<"Foo" object>)");
 }
 
 TEST(DebuggingTests, FormatObjectWithUnknownType) {
@@ -142,7 +178,7 @@ TEST(DebuggingTests, FormatTuple) {
   tuple.atPut(1, runtime.newStrFromCStr("hey"));
   std::stringstream ss;
   ss << tuple;
-  EXPECT_EQ(ss.str(), "(True, \"hey\")");
+  EXPECT_EQ(ss.str(), R"((True, "hey"))");
 }
 
 TEST(DebuggingTests, FormatTupleWithoutElements) {
