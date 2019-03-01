@@ -233,6 +233,41 @@ def func(*args, **kwargs):
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectCallMethodObjArgsCalls) {
+  PyRun_SimpleString(R"(
+class C:
+  x = 23
+  def func(self, *args):
+    return f"{self.x}{args!r}"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr name(PyUnicode_FromString("func"));
+  PyObjectPtr arg0(PyLong_FromLong(-13));
+  PyObjectPtr arg1(PyUnicode_FromString("zzz"));
+  PyObjectPtr result(
+      PyObject_CallMethodObjArgs(c, name, static_cast<PyObject*>(arg0),
+                                 static_cast<PyObject*>(arg1), nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "23(-13, 'zzz')"));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectCallMethodWithNullObjectRaisesSystemError) {
+  PyObjectPtr name(PyUnicode_FromString("func"));
+  PyObjectPtr result(PyObject_CallMethodObjArgs(nullptr, name));
+  ASSERT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectCallMethodWithNullMethodNameRaisesSystemError) {
+  PyObjectPtr result(PyObject_CallMethodObjArgs(Py_None, nullptr));
+  ASSERT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithBytesReturnsTrue) {
   PyObject* obj(PyBytes_FromString("foo"));
   EXPECT_TRUE(PyObject_CheckBuffer(obj));

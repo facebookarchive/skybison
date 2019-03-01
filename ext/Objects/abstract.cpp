@@ -649,35 +649,38 @@ PY_EXPORT PyObject* PyObject_CallFunction(PyObject* /* e */,
   UNIMPLEMENTED("PyObject_CallFunction");
 }
 
+static PyObject* callWithObjArgs(Thread* thread, const Object& callable,
+                                 std::va_list va) {
+  DCHECK(!thread->hasPendingException(),
+         "may accidentally clear pending exception");
+
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(*callable);
+  word nargs = 0;
+  for (PyObject* arg; (arg = va_arg(va, PyObject*)) != nullptr; nargs++) {
+    frame->pushValue(ApiHandle::fromPyObject(arg)->asObject());
+  }
+
+  // TODO(T30925218): CPython tracks recursive calls before calling the function
+  // through Py_EnterRecursiveCall, and we should probably do the same
+  HandleScope scope(thread);
+  Object result(&scope, Interpreter::call(thread, frame, nargs));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
+}
+
 PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
   Thread* thread = Thread::currentThread();
   if (callable == nullptr) {
     return nullError(thread);
   }
-
-  DCHECK(!thread->hasPendingException(),
-         "may accidentally clear pending exception");
-
   HandleScope scope(thread);
-  Object function(&scope, ApiHandle::fromPyObject(callable)->asObject());
-  Frame* frame = thread->currentFrame();
-  frame->pushValue(*function);
-
-  word nargs = 0;
-  {
-    va_list vargs;
-    va_start(vargs, callable);
-    for (PyObject* arg; (arg = va_arg(vargs, PyObject*)) != nullptr; nargs++) {
-      frame->pushValue(ApiHandle::fromPyObject(arg)->asObject());
-    }
-    va_end(vargs);
-  }
-
-  // TODO(T30925218): CPython tracks recursive calls before calling the function
-  // through Py_EnterRecursiveCall, and we should probably do the same
-  Object result(&scope, Interpreter::call(thread, frame, nargs));
-  if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread, *result);
+  Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
+  va_list va;
+  va_start(va, callable);
+  PyObject* result = callWithObjArgs(thread, callable_obj, va);
+  va_end(va);
+  return result;
 }
 
 PY_EXPORT PyObject* _PyObject_CallFunction_SizeT(PyObject* /* e */,
@@ -690,9 +693,24 @@ PY_EXPORT PyObject* PyObject_CallMethod(PyObject* /* j */, const char* /* e */,
   UNIMPLEMENTED("PyObject_CallMethod");
 }
 
-PY_EXPORT PyObject* PyObject_CallMethodObjArgs(PyObject* /* e */,
-                                               PyObject* /* e */, ...) {
-  UNIMPLEMENTED("PyObject_CallMethodObjArgs");
+PY_EXPORT PyObject* PyObject_CallMethodObjArgs(PyObject* pyobj,
+                                               PyObject* py_method_name, ...) {
+  Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr || py_method_name == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object name_obj(&scope, ApiHandle::fromPyObject(py_method_name)->asObject());
+  Object callable(&scope,
+                  thread->runtime()->attributeAt(thread, obj, name_obj));
+  if (callable.isError()) return nullptr;
+
+  va_list va;
+  va_start(va, py_method_name);
+  PyObject* result = callWithObjArgs(thread, callable, va);
+  va_end(va);
+  return result;
 }
 
 PY_EXPORT PyObject* _PyObject_CallMethod_SizeT(PyObject* /* j */,
