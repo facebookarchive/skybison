@@ -570,6 +570,11 @@ class RawStr : public RawObject {
   bool equals(RawObject that) const;
   bool equalsCStr(const char* c_str) const;
 
+  // Codepoints
+  int32 codePointAt(word index, word* length) const;
+  word codePointLength() const;
+  word codePointIndex(word index) const;
+
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
   char* toCStr() const;
@@ -600,6 +605,9 @@ class RawSmallStr : public RawObject {
   word length() const;
   byte charAt(word index) const;
   void copyTo(byte* dst, word length) const;
+
+  // Codepoints
+  word codePointLength() const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -1033,6 +1041,9 @@ class RawLargeStr : public RawArray {
 
   // Equality checks.
   bool equals(RawObject that) const;
+
+  // Codepoints
+  word codePointLength() const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
@@ -4009,6 +4020,14 @@ inline char* RawStr::toCStr() const {
   }
   DCHECK(isLargeStr(), "unexpected type");
   return RawLargeStr::cast(*this)->toCStr();
+}
+
+inline word RawStr::codePointLength() const {
+  if (isSmallStr()) {
+    return RawSmallStr::cast(*this)->codePointLength();
+  }
+  DCHECK(isLargeStr(), "unexpected type");
+  return RawLargeStr::cast(*this)->codePointLength();
 }
 
 // RawLargeStr

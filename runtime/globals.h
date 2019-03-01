@@ -18,6 +18,8 @@ const int kWordSize = sizeof(word);
 const int kPointerSize = sizeof(void*);
 const int kDoubleSize = sizeof(double);
 
+const int kWordSizeLog2 = 3;
+
 const int kUwordDigits10 = 19;
 const uword kUwordDigits10Pow = 10000000000000000000ul;
 

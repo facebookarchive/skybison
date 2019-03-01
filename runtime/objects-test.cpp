@@ -605,6 +605,141 @@ TEST(SmallStrTest, Tests) {
   EXPECT_EQ(array[2], 0);
 }
 
+TEST(SmallStrTest, CodePointLengthWithAsciiReturnsLength) {
+  RawObject len0 = SmallStr::fromCStr("");
+  ASSERT_TRUE(len0->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len0)->length(), 0);
+  EXPECT_EQ(RawStr::cast(len0)->codePointLength(), 0);
+
+  RawObject len1 = SmallStr::fromCStr("1");
+  ASSERT_TRUE(len1->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len1)->length(), 1);
+  EXPECT_EQ(RawStr::cast(len1)->codePointLength(), 1);
+
+  RawObject len2 = SmallStr::fromCStr("12");
+  ASSERT_TRUE(len2->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len2)->length(), 2);
+  EXPECT_EQ(RawStr::cast(len2)->codePointLength(), 2);
+
+  RawObject len3 = SmallStr::fromCStr("123");
+  ASSERT_TRUE(len3->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len3)->length(), 3);
+  EXPECT_EQ(RawStr::cast(len3)->codePointLength(), 3);
+}
+
+TEST(SmallStrTest, CodePointLengthWithOneCodePoint) {
+  RawObject len1 = SmallStr::fromCStr("\x24");
+  ASSERT_TRUE(len1->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len1)->length(), 1);
+  EXPECT_EQ(RawStr::cast(len1)->codePointLength(), 1);
+
+  RawObject len2 = SmallStr::fromCStr("\xC2\xA2");
+  ASSERT_TRUE(len2->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len2)->length(), 2);
+  EXPECT_EQ(RawStr::cast(len2)->codePointLength(), 1);
+
+  RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9");
+  ASSERT_TRUE(len3->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len3)->length(), 3);
+  EXPECT_EQ(RawStr::cast(len3)->codePointLength(), 1);
+
+  RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88");
+  ASSERT_TRUE(len4->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len4)->length(), 4);
+  EXPECT_EQ(RawStr::cast(len4)->codePointLength(), 1);
+}
+
+TEST(SmallStrTest, CodePointLengthWithTwoCodePoints) {
+  RawObject len1 = SmallStr::fromCStr("\x24\x65");
+  ASSERT_TRUE(len1->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len1)->length(), 2);
+  EXPECT_EQ(RawStr::cast(len1)->codePointLength(), 2);
+
+  RawObject len2 = SmallStr::fromCStr("\xC2\xA2\xC2\xA3");
+  ASSERT_TRUE(len2->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len2)->length(), 4);
+  EXPECT_EQ(RawStr::cast(len2)->codePointLength(), 2);
+
+  RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3");
+  ASSERT_TRUE(len3->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len3)->length(), 5);
+  EXPECT_EQ(RawStr::cast(len3)->codePointLength(), 2);
+
+  RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88\xC2\xA3");
+  ASSERT_TRUE(len4->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len4)->length(), 6);
+  EXPECT_EQ(RawStr::cast(len4)->codePointLength(), 2);
+}
+
+TEST(SmallStrTest, CodePointLengthWithThreeCodePoints) {
+  RawObject len1 = SmallStr::fromCStr("\x24\x65\x66");
+  ASSERT_TRUE(len1->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len1)->length(), 3);
+  EXPECT_EQ(RawStr::cast(len1)->codePointLength(), 3);
+
+  RawObject len2 = SmallStr::fromCStr("\xC2\xA2\xC2\xA3\xC2\xA4");
+  ASSERT_TRUE(len2->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len2)->length(), 6);
+  EXPECT_EQ(RawStr::cast(len2)->codePointLength(), 3);
+
+  RawObject len3 = SmallStr::fromCStr("\xE0\xA4\xB9\xC2\xA3\xC2\xA4");
+  ASSERT_TRUE(len3->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len3)->length(), 7);
+  EXPECT_EQ(RawStr::cast(len3)->codePointLength(), 3);
+
+  RawObject len4 = SmallStr::fromCStr("\xF0\x90\x8D\x88\x65\xC2\xA3");
+  ASSERT_TRUE(len4->isSmallStr());
+  EXPECT_EQ(RawStr::cast(len4)->length(), 7);
+  EXPECT_EQ(RawStr::cast(len4)->codePointLength(), 3);
+}
+
+TEST(StrTest, CodePointIndex) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Str ascii(&scope, runtime.newStrFromCStr("abcd"));
+  EXPECT_EQ(ascii.codePointLength(), 4);
+  EXPECT_EQ(ascii.codePointIndex(0), 0);
+  EXPECT_EQ(ascii.codePointIndex(1), 1);
+  EXPECT_EQ(ascii.codePointIndex(2), 2);
+  EXPECT_EQ(ascii.codePointIndex(3), 3);
+
+  Str unicode(&scope,
+              runtime.newStrFromCStr("\xd7\x90\xd7\x91\xd7\x92\xd7\x93"));
+  EXPECT_EQ(unicode.codePointLength(), 4);
+  EXPECT_EQ(unicode.codePointIndex(0), 0);
+  EXPECT_EQ(unicode.codePointIndex(1), 2);
+  EXPECT_EQ(unicode.codePointIndex(2), 4);
+  EXPECT_EQ(unicode.codePointIndex(3), 6);
+}
+
+TEST(LargeStrTest, CodePointLengthAscii) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* code_units = "01234567012345670";
+
+  Str str(&scope, runtime.newStrFromCStr(code_units));
+  EXPECT_TRUE(str.isLargeStr());
+  EXPECT_EQ(str.length(), std::strlen(code_units));
+  EXPECT_EQ(str.codePointLength(), 17);
+}
+
+TEST(LargeStrTest, CodePointLength) {
+  Runtime runtime;
+  HandleScope scope;
+
+  const char* code_units =
+      "\xd7\x99\xd7\xa9 \xd7\x9c\xd7\x99 \xd7\x94\xd7\xa8\xd7\x91\xd7\x94 "
+      "\xd7\x90\xd7\x95\xd7\xaa\xd7\x99\xd7\x95\xd7\xaa "
+      "\xd7\xa2\xd7\x9b\xd7\xa9\xd7\x99\xd7\x95";
+
+  Str str(&scope, runtime.newStrFromCStr(code_units));
+  EXPECT_TRUE(str.isLargeStr());
+  EXPECT_EQ(str.length(), std::strlen(code_units));
+  EXPECT_EQ(str.codePointLength(), 23);
+}
+
 TEST(StringTest, ToCString) {
   Runtime runtime;
   HandleScope scope;

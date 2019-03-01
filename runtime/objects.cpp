@@ -36,6 +36,16 @@ char* RawSmallStr::toCStr() const {
   return reinterpret_cast<char*>(result);
 }
 
+word RawSmallStr::codePointLength() const {
+  uword block = raw() >> kBitsPerByte;
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  block = ((block & mask_7) >> 7) & ((~block) >> 6);
+  // TODO(cshapiro): evaluate using popcount instead of multiplication
+  word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
+  return length() - num_trailing;
+}
+
 // RawSmallInt
 
 const word RawSmallInt::kMinValue;
@@ -101,6 +111,46 @@ char* RawLargeStr::toCStr() const {
   copyTo(result, length);
   result[length] = '\0';
   return reinterpret_cast<char*>(result);
+}
+
+word RawLargeStr::codePointLength() const {
+  // This is a vectorized loop for processing code units in groups the size of a
+  // machine word.  The garbage collector ensures the following invariants that
+  // simplify the algorithm, eliminating the need for a scalar pre-loop or a
+  // scalar-post loop:
+  //
+  //   1) The base address of instance data is always word aligned
+  //   2) The allocation sizes are always rounded-up to the next word
+  //   3) Unused bytes at the end of an allocation are always zero
+  //
+  // This algorithm works by counting the number of UTF-8 trailing bytes found
+  // in the string from the total number of byte in the string.  Because the
+  // unused bytes at the end of a string are zero they are conveniently ignored
+  // by the counting.
+  word length = this->length();
+  word size_in_words = (length + kWordSize - 1) >> kWordSizeLog2;
+  word result = length;
+  const uword* data = reinterpret_cast<const uword*>(address());
+  uword mask_0 = ~uword{0} / 0xFF;  // 0x010101...
+  uword mask_7 = mask_0 << 7;       // 0x808080...
+  for (word i = 0; i < size_in_words; i++) {
+    // Read an entire word of code units.
+    uword block = data[i];
+    // The bit pattern 0b10xxxxxx identifies a UTF-8 trailing byte.  For each
+    // byte in a word, we isolate bit 6 and 7 and logically and the complement
+    // of bit 6 with bit 7.  That leaves one set bit for each trailing byte in a
+    // word.
+    block = ((block & mask_7) >> 7) & ((~block) >> 6);
+    // Count the number of bits leftover in the word.  That is equal to the
+    // number of trailing bytes.
+    // TODO(cshapiro): evaluate using popcount instead of multiplication
+    word num_trailing = (block * mask_0) >> ((kWordSize - 1) * kBitsPerByte);
+    // Finally, subtract the number of trailing bytes from the number of bytes
+    // in the string leaving just the number of ASCII code points and UTF-8
+    // leading bytes in the count.
+    result -= num_trailing;
+  }
+  return result;
 }
 
 // RawInt
@@ -398,6 +448,51 @@ bool RawStr::equalsCStr(const char* c_str) const {
     }
   }
   return *cp == '\0';
+}
+
+int32 RawStr::codePointAt(word index, word* length) const {
+  DCHECK_INDEX(index, this->length());
+  byte ch0 = charAt(index);
+  if (ch0 <= kMaxASCII) {
+    *length = 1;
+    return ch0;
+  }
+  DCHECK_INDEX(index + 1, this->length());
+  byte ch1 = charAt(index + 1) & byte{0x3F};
+  if ((ch0 & 0xE0) == 0xC0) {
+    *length = 2;
+    return ((ch0 & 0x1F) << 6) | ch1;
+  }
+  DCHECK_INDEX(index + 2, this->length());
+  byte ch2 = charAt(index + 2) & byte{0x3F};
+  if ((ch0 & 0xF0) == 0xE0) {
+    *length = 3;
+    return ((ch0 & 0xF) << 12) | (ch1 << 6) | ch2;
+  }
+  DCHECK((ch0 & 0xF8) == 0xF0, "invalid code unit");
+  DCHECK_INDEX(index + 2, this->length());
+  byte ch3 = charAt(index + 3) & byte{0x3F};
+  *length = 4;
+  return ((ch0 & 0x7) << 18) | (ch1 << 12) | (ch2 << 6) | ch3;
+}
+
+word RawStr::codePointIndex(word index) const {
+  DCHECK_INDEX(index, length());
+  word i = 0;
+  while (index--) {
+    byte ch = charAt(i);
+    if (ch <= kMaxASCII) {
+      i++;
+    } else if ((ch & 0xE0) == 0xC0) {
+      i += 2;
+    } else if ((ch & 0xF0) == 0xE0) {
+      i += 3;
+    } else {
+      DCHECK((ch & 0xF8) == 0xF0, "invalid code unit");
+      i += 4;
+    }
+  }
+  return i;
 }
 
 // RawWeakRef
