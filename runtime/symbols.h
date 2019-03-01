@@ -187,6 +187,7 @@ class Runtime;
   V(ExtensionPtr, "___extension___")                                           \
   V(ExtensionSuffixes, "extension_suffixes")                                   \
   V(File, "file")                                                              \
+  V(Fileno, "fileno")                                                          \
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
   V(FixCoFilename, "_fix_co_filename")                                         \
