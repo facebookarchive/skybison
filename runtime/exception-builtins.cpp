@@ -136,6 +136,7 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   self.setArgs(args.get(1));
   self.setCause(runtime->unboundValue());
   self.setContext(runtime->unboundValue());
+  self.setTraceback(runtime->unboundValue());
   return NoneType::object();
 }
 

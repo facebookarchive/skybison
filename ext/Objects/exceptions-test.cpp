@@ -72,4 +72,38 @@ TEST_F(ExceptionsExtensionApiTest, SettingContextWithNullSetsContextToNull) {
   EXPECT_EQ(context, nullptr);
 }
 
+TEST_F(ExceptionsExtensionApiTest,
+       GettingTracebackWithoutSettingItReturnsNull) {
+  PyRun_SimpleString("a = TypeError()");
+  PyObjectPtr exc(moduleGet("__main__", "a"));
+  EXPECT_EQ(PyException_GetTraceback(exc), nullptr);
+}
+
+TEST_F(ExceptionsExtensionApiTest, SetTracebackWithNoneSetsNone) {
+  // TODO(bsimmers): Once we have a way of creating a real traceback object,
+  // test that as well.
+  PyRun_SimpleString("a = TypeError()");
+  PyObjectPtr exc(moduleGet("__main__", "a"));
+  ASSERT_EQ(PyException_SetTraceback(exc, Py_None), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr tb(PyException_GetTraceback(exc));
+  EXPECT_EQ(tb, Py_None);
+}
+
+TEST_F(ExceptionsExtensionApiTest, SetTracebackWithBadArgRaisesTypeError) {
+  PyRun_SimpleString("a = TypeError()");
+  PyObjectPtr exc(moduleGet("__main__", "a"));
+  PyObjectPtr bad_tb(PyLong_FromLong(123));
+  ASSERT_EQ(PyException_SetTraceback(exc, bad_tb), -1);
+  ASSERT_EQ(PyErr_ExceptionMatches(PyExc_TypeError), 1);
+}
+
+TEST_F(ExceptionsExtensionApiTest, SetTracebackWithNullptrRaisesTypeError) {
+  PyRun_SimpleString("a = TypeError()");
+  PyObjectPtr exc(moduleGet("__main__", "a"));
+  ASSERT_EQ(PyException_SetTraceback(exc, nullptr), -1);
+  ASSERT_EQ(PyErr_ExceptionMatches(PyExc_TypeError), 1);
+}
+
 }  // namespace python

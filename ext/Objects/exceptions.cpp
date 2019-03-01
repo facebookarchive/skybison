@@ -264,10 +264,6 @@ PY_EXPORT PyObject* PyExc_ResourceWarning_Ptr() {
   return typeObjectHandle(LayoutId::kResourceWarning);
 }
 
-PY_EXPORT PyObject* PyException_GetTraceback(PyObject* /* f */) {
-  UNIMPLEMENTED("PyException_GetTraceback");
-}
-
 PY_EXPORT void PyException_SetCause(PyObject* self, PyObject* cause) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
@@ -320,8 +316,33 @@ PY_EXPORT void PyException_SetContext(PyObject* self, PyObject* context) {
   new_context->decref();
 }
 
-PY_EXPORT int PyException_SetTraceback(PyObject* /* f */, PyObject* /* b */) {
-  UNIMPLEMENTED("PyException_SetTraceback");
+PY_EXPORT int PyException_SetTraceback(PyObject* self, PyObject* tb) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  if (tb == nullptr) {
+    thread->raiseTypeErrorWithCStr("__traceback__ may not be deleted");
+    return -1;
+  }
+  BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
+  Object tb_obj(&scope, ApiHandle::fromPyObject(tb)->asObject());
+  if (!tb_obj.isNoneType() && !tb_obj.isTraceback()) {
+    thread->raiseTypeErrorWithCStr("__traceback__ must be a traceback or None");
+    return -1;
+  }
+  exc.setTraceback(*tb_obj);
+  return 0;
+}
+
+PY_EXPORT PyObject* PyException_GetTraceback(PyObject* self) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
+  Object tb(&scope, exc.traceback());
+  if (tb.isUnboundValue()) return nullptr;
+
+  return ApiHandle::newReference(thread, exc.traceback());
 }
 
 PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
