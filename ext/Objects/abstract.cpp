@@ -719,8 +719,31 @@ PY_EXPORT PyObject* _PyObject_CallMethod_SizeT(PyObject* /* j */,
   UNIMPLEMENTED("_PyObject_CallMethod_SizeT");
 }
 
-PY_EXPORT PyObject* PyObject_CallObject(PyObject* /* e */, PyObject* /* s */) {
-  UNIMPLEMENTED("PyObject_CallObject");
+PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
+  Thread* thread = Thread::currentThread();
+  if (callable == nullptr) {
+    return nullError(thread);
+  }
+  DCHECK(!thread->hasPendingException(),
+         "may accidentally clear pending exception");
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(ApiHandle::fromPyObject(callable)->asObject());
+  Object result(&scope, NoneType::object());
+  if (args != nullptr) {
+    Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
+    if (!thread->runtime()->isInstanceOfTuple(*args_obj)) {
+      thread->raiseTypeErrorWithCStr("argument list must be a tuple");
+      return nullptr;
+    }
+    frame->pushValue(*args_obj);
+    // TODO(T30925218): Protect against native stack overflow.
+    result = Interpreter::callEx(thread, frame, 0);
+  } else {
+    result = Interpreter::call(thread, frame, 0);
+  }
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_CheckBuffer_Func(PyObject* pyobj) {

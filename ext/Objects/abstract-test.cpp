@@ -268,6 +268,31 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObject_CallObjectCalls) {
+  PyRun_SimpleString(R"(
+class C:
+  x = 9
+  def __call__(self, *args):
+    return f"{self.x}{args!r}"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr args(PyTuple_Pack(
+      3, PyLong_FromLong(1), PyUnicode_FromString("two"), PyLong_FromLong(3)));
+  PyObjectPtr result(PyObject_CallObject(c, args));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "9(1, 'two', 3)"));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObject_CallObjectWithArgsNullptrCalls) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  return f"{args!r}{kwargs!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr result(PyObject_CallObject(func, nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "(){}"));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithBytesReturnsTrue) {
   PyObject* obj(PyBytes_FromString("foo"));
   EXPECT_TRUE(PyObject_CheckBuffer(obj));
