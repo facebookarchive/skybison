@@ -70,6 +70,8 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   UNREACHABLE("RawInt::asInt() gave an invalid CastError");
 }
 
+// Buffer Protocol
+
 PY_EXPORT int PyBuffer_FillInfo(Py_buffer* /* w */, PyObject* /* j */,
                                 void* /* f */, Py_ssize_t /* n */, int /* y */,
                                 int /* s */) {
@@ -84,6 +86,8 @@ PY_EXPORT void PyBuffer_Release(Py_buffer* /* w */) {
   UNIMPLEMENTED("PyBuffer_Release");
 }
 
+// PyIndex_Check
+
 PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
   DCHECK(obj != nullptr, "Got null argument");
   Thread* thread = Thread::currentThread();
@@ -93,6 +97,8 @@ PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
                                     SymbolId::kDunderIndex)
               .isError();
 }
+
+// PyIter_Next
 
 PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
   Thread* thread = Thread::currentThread();
@@ -112,6 +118,8 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
   }
   return ApiHandle::newReference(thread, *next);
 }
+
+// Mapping Protocol
 
 PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
   Thread* thread = Thread::currentThread();
@@ -300,6 +308,8 @@ PY_EXPORT PyObject* PyMapping_Values(PyObject* mapping) {
   return callMappingMethod(thread, map, SymbolId::kValues, "o.values()");
 }
 
+// Number Protocol
+
 PY_EXPORT PyObject* PyNumber_Absolute(PyObject* obj) {
   Thread* thread = Thread::currentThread();
   if (obj == nullptr) {
@@ -385,52 +395,12 @@ PY_EXPORT PyObject* PyNumber_Add(PyObject* v, PyObject* w) {
   return doBinaryOp(v, w, Interpreter::BinaryOp::ADD);
 }
 
-PY_EXPORT PyObject* PyNumber_Subtract(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::SUB);
-}
-
-PY_EXPORT PyObject* PyNumber_Multiply(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::MUL);
-}
-
-PY_EXPORT PyObject* PyNumber_MatrixMultiply(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::MATMUL);
-}
-
-PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::FLOORDIV);
-}
-
-PY_EXPORT PyObject* PyNumber_TrueDivide(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::TRUEDIV);
-}
-
-PY_EXPORT PyObject* PyNumber_Remainder(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::MOD);
-}
-
-PY_EXPORT PyObject* PyNumber_Divmod(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::DIVMOD);
-}
-
-PY_EXPORT PyObject* PyNumber_Lshift(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::LSHIFT);
-}
-
-PY_EXPORT PyObject* PyNumber_Rshift(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::RSHIFT);
-}
-
 PY_EXPORT PyObject* PyNumber_And(PyObject* v, PyObject* w) {
   return doBinaryOp(v, w, Interpreter::BinaryOp::AND);
 }
 
-PY_EXPORT PyObject* PyNumber_Or(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::OR);
-}
-
-PY_EXPORT PyObject* PyNumber_Xor(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::XOR);
+PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* /* m */, PyObject* /* r */) {
+  UNIMPLEMENTED("PyNumber_AsSsize_t");
 }
 
 PY_EXPORT int PyNumber_Check(PyObject* obj) {
@@ -453,17 +423,16 @@ PY_EXPORT int PyNumber_Check(PyObject* obj) {
   return false;
 }
 
+PY_EXPORT PyObject* PyNumber_Divmod(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::DIVMOD);
+}
+
 PY_EXPORT PyObject* PyNumber_Float(PyObject* /* o */) {
   UNIMPLEMENTED("PyNumber_Float");
 }
 
-PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* /* v */, PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceAdd");
-}
-
-PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* /* v */,
-                                             PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceMultiply");
+PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::FLOORDIV);
 }
 
 PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
@@ -495,6 +464,40 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
   return ApiHandle::newReference(thread, *index);
 }
 
+PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* /* v */, PyObject* /* w */) {
+  UNIMPLEMENTED("PyNumber_InPlaceAdd");
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceFloorDivide(PyObject* /* v */,
+                                                PyObject* /* w */) {
+  UNIMPLEMENTED("PyNumber_InPlaceFloorDivide");
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceMatrixMultiply(PyObject* /* v */,
+                                                   PyObject* /* w */) {
+  UNIMPLEMENTED("PyNumber_InPlaceMatrixMultiply");
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* /* v */,
+                                             PyObject* /* w */) {
+  UNIMPLEMENTED("PyNumber_InPlaceMultiply");
+}
+
+PY_EXPORT PyObject* PyNumber_InPlacePower(PyObject* /* v */, PyObject* /* w */,
+                                          PyObject* /* z */) {
+  UNIMPLEMENTED("PyNumber_InPlacePower");
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceRemainder(PyObject* /* v */,
+                                              PyObject* /* w */) {
+  UNIMPLEMENTED("PyNumber_InPlaceRemainder");
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceTrueDivide(PyObject* /* v */,
+                                               PyObject* /* w */) {
+  UNIMPLEMENTED("PyNumber_InPlaceTrueDivide");
+}
+
 PY_EXPORT PyObject* PyNumber_Invert(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
   if (pyobj == nullptr) {
@@ -514,6 +517,18 @@ PY_EXPORT PyObject* PyNumber_Long(PyObject* /* o */) {
   UNIMPLEMENTED("PyNumber_Long");
 }
 
+PY_EXPORT PyObject* PyNumber_Lshift(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::LSHIFT);
+}
+
+PY_EXPORT PyObject* PyNumber_MatrixMultiply(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::MATMUL);
+}
+
+PY_EXPORT PyObject* PyNumber_Multiply(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::MUL);
+}
+
 PY_EXPORT PyObject* PyNumber_Negative(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
   if (pyobj == nullptr) {
@@ -527,6 +542,10 @@ PY_EXPORT PyObject* PyNumber_Negative(PyObject* pyobj) {
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
+}
+
+PY_EXPORT PyObject* PyNumber_Or(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::OR);
 }
 
 PY_EXPORT PyObject* PyNumber_Positive(PyObject* pyobj) {
@@ -544,43 +563,36 @@ PY_EXPORT PyObject* PyNumber_Positive(PyObject* pyobj) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* /* m */, PyObject* /* r */) {
-  UNIMPLEMENTED("PyNumber_AsSsize_t");
-}
-
-PY_EXPORT PyObject* PyNumber_InPlaceFloorDivide(PyObject* /* v */,
-                                                PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceFloorDivide");
-}
-
-PY_EXPORT PyObject* PyNumber_InPlaceMatrixMultiply(PyObject* /* v */,
-                                                   PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceMatrixMultiply");
-}
-
-PY_EXPORT PyObject* PyNumber_InPlacePower(PyObject* /* v */, PyObject* /* w */,
-                                          PyObject* /* z */) {
-  UNIMPLEMENTED("PyNumber_InPlacePower");
-}
-
-PY_EXPORT PyObject* PyNumber_InPlaceRemainder(PyObject* /* v */,
-                                              PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceRemainder");
-}
-
-PY_EXPORT PyObject* PyNumber_InPlaceTrueDivide(PyObject* /* v */,
-                                               PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceTrueDivide");
-}
-
 PY_EXPORT PyObject* PyNumber_Power(PyObject* /* v */, PyObject* /* w */,
                                    PyObject* /* z */) {
   UNIMPLEMENTED("PyNumber_Power");
 }
 
+PY_EXPORT PyObject* PyNumber_Remainder(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::MOD);
+}
+
+PY_EXPORT PyObject* PyNumber_Rshift(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::RSHIFT);
+}
+
+PY_EXPORT PyObject* PyNumber_Subtract(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::SUB);
+}
+
 PY_EXPORT PyObject* PyNumber_ToBase(PyObject* /* n */, int /* e */) {
   UNIMPLEMENTED("PyNumber_ToBase");
 }
+
+PY_EXPORT PyObject* PyNumber_TrueDivide(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::TRUEDIV);
+}
+
+PY_EXPORT PyObject* PyNumber_Xor(PyObject* v, PyObject* w) {
+  return doBinaryOp(v, w, Interpreter::BinaryOp::XOR);
+}
+
+// Object Protocol
 
 PY_EXPORT int PyObject_AsCharBuffer(PyObject* /* j */,
                                     const char** /* buffer */,
@@ -825,6 +837,8 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
   Type type(&scope, runtime->typeOf(*obj));
   return ApiHandle::newReference(thread, *type);
 }
+
+// Sequence Protocol
 
 PY_EXPORT int PySequence_Check(PyObject* py_obj) {
   Thread* thread = Thread::currentThread();
