@@ -2386,18 +2386,18 @@ void Runtime::createMarshalModule() {
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {
   word new_capacity = (curr_capacity < kInitialEnsuredCapacity)
                           ? kInitialEnsuredCapacity
-                          : curr_capacity << 1;
+                          : curr_capacity + (curr_capacity >> 1);
   if (new_capacity < min_capacity) {
-    return Utils::nextPowerOfTwo(min_capacity);
+    return min_capacity;
   }
-  return new_capacity;
+  return Utils::minimum(new_capacity, SmallInt::kMaxValue);
 }
 
 // ByteArray
 
 void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
                                       word min_capacity) {
-  DCHECK(min_capacity >= 0, "overflow");
+  DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);
   word curr_capacity = array.capacity();
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);
@@ -2527,7 +2527,7 @@ RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
 // List
 
 void Runtime::listEnsureCapacity(const List& list, word min_capacity) {
-  DCHECK(min_capacity >= 0, "overflow");
+  DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);
   word curr_capacity = list.capacity();
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);

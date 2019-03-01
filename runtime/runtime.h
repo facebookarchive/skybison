@@ -294,9 +294,9 @@ class Runtime {
 
   RawObject unboundValue() { return unbound_value_; }
 
-  // Provides a growth strategy for mutable sequences. Grows by a factor of 2,
-  // scaling up to the smallest power of two satisfying the required miniumum
-  // if the initial factor is insufficient. Always grows the sequence.
+  // Provides a growth strategy for mutable sequences. Grows by a factor of 1.5,
+  // scaling up to the requested capacity if the initial factor is insufficient.
+  // Always grows the sequence.
   word newCapacity(word curr_capacity, word min_capacity);
 
   // Ensures that the byte array has at least the desired capacity.

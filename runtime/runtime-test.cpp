@@ -101,13 +101,13 @@ TEST(RuntimeByteArrayTest, EnsureCapacity) {
   runtime.byteArrayEnsureCapacity(thread, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
-  length = 11;
-  expected_capacity = 20;
+  length = 14;
+  expected_capacity = 15;
   runtime.byteArrayEnsureCapacity(thread, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 
-  length = 41;
-  expected_capacity = 64;
+  length = 25;
+  expected_capacity = 25;
   runtime.byteArrayEnsureCapacity(thread, array, length);
   EXPECT_EQ(array.capacity(), expected_capacity);
 }
@@ -409,19 +409,17 @@ TEST(RuntimeListTest, ListGrowth) {
   EXPECT_GE(array2.length(), 2);
 
   Tuple array4(&scope, runtime.newTuple(4));
-  EXPECT_EQ(array4.length(), 4);
   list.setItems(*array4);
   runtime.listEnsureCapacity(list, 5);
-  Tuple array8(&scope, list.items());
-  EXPECT_NE(*array4, *array8);
-  EXPECT_EQ(array8.length(), 8);
-  list.setItems(*array8);
-  runtime.listEnsureCapacity(list, 9);
-  Tuple array16(&scope, list.items());
-  EXPECT_NE(*array8, *array16);
-  EXPECT_EQ(array16.length(), 16);
-  runtime.listEnsureCapacity(list, 32);
-  EXPECT_GE(list.capacity(), 32);
+  Tuple array6(&scope, list.items());
+  EXPECT_NE(*array4, *array6);
+  EXPECT_EQ(array6.length(), 6);
+  runtime.listEnsureCapacity(list, 8);
+  Tuple array9(&scope, list.items());
+  EXPECT_NE(*array6, *array9);
+  EXPECT_EQ(array9.length(), 9);
+  runtime.listEnsureCapacity(list, 20);
+  EXPECT_EQ(list.capacity(), 20);
 }
 
 TEST(RuntimeListTest, EmptyListInvariants) {
@@ -436,19 +434,18 @@ TEST(RuntimeListTest, AppendToList) {
   HandleScope scope;
   List list(&scope, runtime.newList());
 
-  // Check that list capacity grows according to a doubling schedule
-  word expected_capacity[] = {4,  4,  4,  4,  8,  8,  8,  8,
-                              16, 16, 16, 16, 16, 16, 16, 16};
-  for (int i = 0; i < 16; i++) {
+  // Check that list capacity grows by 1.5
+  word expected_capacity[] = {4, 4, 4, 4, 6, 6, 9, 9, 9, 13, 13, 13, 13, 19};
+  for (int i = 0; i < 14; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
-    ASSERT_EQ(list.capacity(), expected_capacity[i]);
-    ASSERT_EQ(list.numItems(), i + 1);
+    ASSERT_EQ(list.capacity(), expected_capacity[i]) << i;
+    ASSERT_EQ(list.numItems(), i + 1) << i;
   }
 
   // Sanity check list contents
-  for (int i = 0; i < 16; i++) {
-    EXPECT_TRUE(isIntEqualsWord(list.at(i), i));
+  for (int i = 0; i < 14; i++) {
+    EXPECT_TRUE(isIntEqualsWord(list.at(i), i)) << i;
   }
 }
 
@@ -763,18 +760,22 @@ TEST(RuntimeTest, NewCapacity) {
   // ensure initial capacity
   EXPECT_GE(runtime.newCapacity(1, 0), 4);
 
-  // grow by factor of 2
-  EXPECT_EQ(runtime.newCapacity(10, 12), 20);
-  EXPECT_EQ(runtime.newCapacity(64, 77), 128);
-  EXPECT_EQ(runtime.newCapacity(15, 20), 30);
+  // grow by factor of 1.5, rounding down
+  EXPECT_EQ(runtime.newCapacity(10, 12), 15);
+  EXPECT_EQ(runtime.newCapacity(64, 77), 96);
+  EXPECT_EQ(runtime.newCapacity(15, 20), 22);
 
   // ensure growth
-  EXPECT_EQ(runtime.newCapacity(10, 6), 20);
-  EXPECT_EQ(runtime.newCapacity(10, 10), 20);
+  EXPECT_EQ(runtime.newCapacity(10, 6), 15);
+  EXPECT_EQ(runtime.newCapacity(10, 10), 15);
 
-  // if factor of 2 is insufficient, grow to next power of two
-  EXPECT_EQ(runtime.newCapacity(10, 21), 32);
-  EXPECT_EQ(runtime.newCapacity(10, 50), 64);
+  // if factor of 1.5 is insufficient, grow exactly to minimum capacity
+  EXPECT_EQ(runtime.newCapacity(10, 20), 20);
+  EXPECT_EQ(runtime.newCapacity(10, 50), 50);
+
+  // capacity has ceiling of SmallInt::kMaxValue
+  EXPECT_EQ(runtime.newCapacity(SmallInt::kMaxValue - 1, SmallInt::kMaxValue),
+            SmallInt::kMaxValue);
 }
 
 TEST(RuntimeTest, InternLargeStr) {
