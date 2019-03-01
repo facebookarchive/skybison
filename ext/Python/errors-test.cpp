@@ -323,8 +323,7 @@ class BadException(Exception):
   ASSERT_TRUE(PyTuple_CheckExact(args));
   ASSERT_EQ(PyTuple_Size(args), 1);
   PyObject* str = PyTuple_GetItem(args, 0);
-  ASSERT_TRUE(PyUnicode_CheckExact(str));
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(str, msg), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, msg));
 
   Py_DECREF(val);
   Py_DECREF(exc);
@@ -378,8 +377,7 @@ TEST_F(ErrorsExtensionApiTest, SetStringSetsValue) {
   PyErr_Fetch(&type, &value, &traceback);
   EXPECT_EQ(traceback, nullptr);
   EXPECT_EQ(type, PyExc_Exception);
-  ASSERT_TRUE(PyUnicode_Check(value));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(value, "An exception occured"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(value, "An exception occured"));
 }
 
 TEST_F(ErrorsExtensionApiTest, FormatWithNoArgsSetsAppropriateFields) {
@@ -389,10 +387,7 @@ TEST_F(ErrorsExtensionApiTest, FormatWithNoArgsSetsAppropriateFields) {
   PyObject* traceback = nullptr;
   PyErr_Fetch(&type, &value, &traceback);
   EXPECT_EQ(type, PyExc_TypeError);
-  ASSERT_TRUE(PyUnicode_Check(value));
-  ASSERT_TRUE(PyUnicode_CheckExact(value));
-  EXPECT_EQ(PyUnicode_GetSize(value), 11);
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(value, "hello error"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(value, "hello error"));
   EXPECT_EQ(traceback, nullptr);
 }
 
@@ -404,8 +399,7 @@ TEST_F(ErrorsExtensionApiTest, FormatWithManyArgsSetsAppropriateFields) {
   PyObject* traceback = nullptr;
   PyErr_Fetch(&type, &value, &traceback);
   EXPECT_EQ(type, PyExc_MemoryError);
-  ASSERT_TRUE(PyUnicode_Check(value));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(value, "hello world"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(value, "hello world"));
   EXPECT_EQ(traceback, nullptr);
 }
 

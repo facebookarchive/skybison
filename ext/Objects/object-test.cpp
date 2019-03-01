@@ -324,7 +324,7 @@ TEST_F(ObjectExtensionApiTest, GetAttrIncrementsReferenceCount) {
 TEST_F(ObjectExtensionApiTest, ReprOnNullReturnsSpecialNullString) {
   PyObjectPtr repr(PyObject_Repr(nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(repr, "<NULL>"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(repr, "<NULL>"));
 }
 
 TEST_F(ObjectExtensionApiTest, ReprWithObjectWithBadDunderReprRaisesTypeError) {
@@ -349,13 +349,13 @@ c = C()
   PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
   PyObjectPtr repr(PyObject_Repr(pyc));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(repr, "bongo"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(repr, "bongo"));
 }
 
 TEST_F(ObjectExtensionApiTest, StrOnNullReturnsSpecialNullString) {
   PyObjectPtr str(PyObject_Str(nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_EQ(PyUnicode_CompareWithASCIIString(str, "<NULL>"), 0);
+  ASSERT_TRUE(isUnicodeEqualsCStr(str, "<NULL>"));
 }
 
 TEST_F(ObjectExtensionApiTest, StrCallsClassDunderReprWhenProvided) {
@@ -368,7 +368,7 @@ c = C()
   PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
   PyObjectPtr str(PyObject_Str(pyc));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_EQ(PyUnicode_CompareWithASCIIString(str, "bongo"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, "bongo"));
 }
 
 TEST_F(ObjectExtensionApiTest, StrWithObjectWithBadDunderStrRaisesTypeError) {
@@ -393,7 +393,7 @@ c = C()
   PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
   PyObjectPtr str(PyObject_Str(pyc));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_EQ(PyUnicode_CompareWithASCIIString(str, "bongo"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, "bongo"));
 }
 
 TEST_F(ObjectExtensionApiTest, RichCompareWithNullLhsRaisesSystemError) {
@@ -548,7 +548,7 @@ TEST_F(ObjectExtensionApiTest, ClearWithObjectDecrefsObject) {
 TEST_F(ObjectExtensionApiTest, ASCIIOnNullReturnsSpecialNullString) {
   PyObjectPtr ascii(PyObject_ASCII(nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(ascii, "<NULL>"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(ascii, "<NULL>"));
 }
 
 TEST_F(ObjectExtensionApiTest,
@@ -574,7 +574,7 @@ c = C()
   PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
   PyObjectPtr ascii(PyObject_ASCII(pyc));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(ascii, "bongo"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(ascii, "bongo"));
 }
 
 TEST_F(ObjectExtensionApiTest, SelfIterIncrementsRefcount) {

@@ -136,14 +136,10 @@ class ClassWithDunderAdd:
 
 a = ClassWithDunderAdd()
   )");
-  PyObject* a = testing::moduleGet("__main__", "a");
-  PyObject* i = PyLong_FromLong(7);
-  PyObject* result = PyNumber_Add(a, i);
-  EXPECT_TRUE(PyUnicode_Check(result));
-  EXPECT_STREQ(PyUnicode_AsUTF8(result), "hello");
-  Py_DECREF(a);
-  Py_DECREF(i);
-  Py_DECREF(result);
+  PyObjectPtr a(testing::moduleGet("__main__", "a"));
+  PyObjectPtr i(PyLong_FromLong(7));
+  PyObjectPtr result(PyNumber_Add(a, i));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "hello"));
 }
 
 TEST_F(AbstractExtensionApiTest, PyNumberBinaryOpWithInvalidArgsReturnsNull) {
@@ -1433,9 +1429,7 @@ c = C()
   const char* key = "hello";
   PyObjectPtr result(PyMapping_GetItemString(c, key));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_NE(result, nullptr);
-  ASSERT_TRUE(PyUnicode_Check(result));
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, key), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, key));
 }
 
 TEST_F(AbstractExtensionApiTest, MappingGetItemStringPropagatesException) {
@@ -1558,10 +1552,8 @@ c = C()
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest, MappingKeysCallsReturnsListOfKeysSequence) {
@@ -1576,10 +1568,8 @@ c = C()
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest, MappingKeysWithDictSubclassCallsKeys) {
@@ -1597,10 +1587,8 @@ c["c"] = 3
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest, MappingItemsWithNoItemsRaisesAttributeError) {
@@ -1627,10 +1615,8 @@ c = C()
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest, MappingItemsCallsReturnsListOfItemsSequence) {
@@ -1645,10 +1631,8 @@ c = C()
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest, MappingItemsWithDictSubclassCallsItems) {
@@ -1666,10 +1650,8 @@ c["c"] = 3
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest,
@@ -1697,10 +1679,8 @@ c = C()
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest,
@@ -1716,10 +1696,8 @@ c = C()
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest, MappingValuesWithDictSubclassCallsValues) {
@@ -1737,10 +1715,8 @@ c["c"] = 3
   ASSERT_NE(result, nullptr);
   ASSERT_TRUE(PyList_Check(result));
   ASSERT_EQ(PyList_Size(result), 2);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 0), "hello"), 0);
-  EXPECT_EQ(
-      PyUnicode_CompareWithASCIIString(PyList_GetItem(result, 1), "world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 0), "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyList_GetItem(result, 1), "world"));
 }
 
 TEST_F(AbstractExtensionApiTest, ObjectSetItemWithNullObjRaisesSystemError) {
@@ -1926,7 +1902,7 @@ c = C()
   PyObjectPtr c(moduleGet("__main__", "c"));
   PyObjectPtr result(PyObject_Format(c, nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "foo"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "foo"));
   PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
   EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
 }

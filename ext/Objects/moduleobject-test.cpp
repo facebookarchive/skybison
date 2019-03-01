@@ -68,7 +68,7 @@ TEST_F(ModuleExtensionApiTest, NewWithEmptyStringReturnsModule) {
   ASSERT_TRUE(PyModule_CheckExact(module));
 
   testing::PyObjectPtr mod_name(PyObject_GetAttrString(module, "__name__"));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(mod_name, ""));
+  EXPECT_TRUE(isUnicodeEqualsCStr(mod_name, ""));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -98,7 +98,7 @@ TEST_F(ModuleExtensionApiTest, CreateAddsDocstring) {
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   PyObject* doc = PyObject_GetAttrString(module, "__doc__");
-  ASSERT_STREQ(PyUnicode_AsUTF8(doc), mod_doc);
+  EXPECT_TRUE(isUnicodeEqualsCStr(doc, mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -217,9 +217,7 @@ TEST_F(ModuleExtensionApiTest, SetDocStringChangesDoc) {
   EXPECT_TRUE(PyModule_CheckExact(module));
 
   PyObject* orig_doc = PyObject_GetAttrString(module, "__doc__");
-  ASSERT_NE(orig_doc, nullptr);
-  EXPECT_TRUE(PyUnicode_CheckExact(orig_doc));
-  ASSERT_STREQ(PyUnicode_AsUTF8(orig_doc), mod_doc);
+  EXPECT_TRUE(isUnicodeEqualsCStr(orig_doc, mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 
   const char* edit_mod_doc = "edited doc";
@@ -227,9 +225,7 @@ TEST_F(ModuleExtensionApiTest, SetDocStringChangesDoc) {
   ASSERT_EQ(result, 0);
 
   PyObject* edit_doc = PyObject_GetAttrString(module, "__doc__");
-  ASSERT_NE(edit_doc, nullptr);
-  EXPECT_TRUE(PyUnicode_CheckExact(edit_doc));
-  ASSERT_STREQ(PyUnicode_AsUTF8(edit_doc), edit_mod_doc);
+  EXPECT_TRUE(isUnicodeEqualsCStr(edit_doc, edit_mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -248,7 +244,7 @@ TEST_F(ModuleExtensionApiTest, SetDocStringCreatesDoc) {
   ASSERT_EQ(PyModule_SetDocString(module, edit_mod_doc), 0);
 
   PyObject* doc = PyObject_GetAttrString(module, "__doc__");
-  ASSERT_STREQ(PyUnicode_AsUTF8(doc), edit_mod_doc);
+  EXPECT_TRUE(isUnicodeEqualsCStr(doc, edit_mod_doc));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -278,10 +274,7 @@ TEST_F(ModuleExtensionApiTest, GetNameObjectGetsName) {
   EXPECT_TRUE(PyModule_Check(module));
 
   PyObject* result = PyModule_GetNameObject(module);
-  ASSERT_NE(result, nullptr);
-  EXPECT_TRUE(PyUnicode_Check(result));
-
-  EXPECT_STREQ(PyUnicode_AsUTF8(result), mod_name);
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, mod_name));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   Py_DECREF(result);
 
@@ -336,10 +329,7 @@ TEST_F(ModuleExtensionApiTest, GetFilenameObjectReturnsFilename) {
   const char* filename = "file";
   PyModule_AddObject(module, "__file__", PyUnicode_FromString(filename));
   testing::PyObjectPtr result(PyModule_GetFilenameObject(module));
-
-  ASSERT_NE(result, nullptr);
-  EXPECT_TRUE(PyUnicode_Check(result));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(result, filename));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, filename));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -450,7 +440,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsCorrectSingleSlotPyro) {
   EXPECT_EQ(PyModule_ExecDef(module, &def), 0);
 
   testing::PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(doc, "testing"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(doc, "testing"));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -493,11 +483,11 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrderPyro) {
   EXPECT_EQ(PyModule_ExecDef(module, &def), 0);
 
   testing::PyObjectPtr doc(PyObject_GetAttrString(module, "__doc__"));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(doc, "doc test"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(doc, "doc test"));
   testing::PyObjectPtr test_attr_one(PyObject_GetAttrString(module, "test1"));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(test_attr_one, "testing1"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(test_attr_one, "testing1"));
   testing::PyObjectPtr test_attr_two(PyObject_GetAttrString(module, "test2"));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(test_attr_two, "testing2"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(test_attr_two, "testing2"));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
@@ -612,8 +602,7 @@ TEST_F(ModuleExtensionApiTest, GetNameDoesNotIncrementModuleNameRefcount) {
   EXPECT_TRUE(PyModule_Check(module));
 
   PyObject* name = PyModule_GetNameObject(module);
-  ASSERT_NE(name, nullptr);
-  EXPECT_TRUE(PyUnicode_Check(name));
+  EXPECT_TRUE(isUnicodeEqualsCStr(name, mod_name));
 
   Py_ssize_t name_count = Py_REFCNT(name);
   EXPECT_STREQ(PyModule_GetName(module), mod_name);

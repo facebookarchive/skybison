@@ -6,6 +6,8 @@
 
 namespace python {
 
+using namespace testing;
+
 using ImportExtensionApiTest = ExtensionApi;
 
 TEST_F(ImportExtensionApiTest, AddNonExistingModuleReturnsNewModule) {
@@ -15,7 +17,7 @@ TEST_F(ImportExtensionApiTest, AddNonExistingModuleReturnsNewModule) {
   ASSERT_TRUE(PyModule_CheckExact(new_module));
 
   PyObject* module_name = PyModule_GetNameObject(new_module);
-  EXPECT_STREQ(PyUnicode_AsUTF8(module_name), c_name);
+  EXPECT_TRUE(isUnicodeEqualsCStr(module_name, c_name));
   Py_DECREF(module_name);
 
   PyObject* module = testing::importGetModule(pyname);

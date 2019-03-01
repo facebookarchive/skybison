@@ -42,5 +42,37 @@ PyObject* importGetModule(PyObject* name) {
   return module;
 }
 
+::testing::AssertionResult isUnicodeEqualsCStr(PyObject* obj,
+                                               const char* c_str) {
+  if (obj == nullptr) {
+    PyObjectPtr exception(PyErr_Occurred());
+    if (exception != nullptr) {
+      PyErr_Clear();
+      PyObjectPtr exception_repr(PyObject_Repr(exception));
+      if (exception_repr != nullptr) {
+        const char* exception_cstr = PyUnicode_AsUTF8(exception_repr);
+        if (exception_cstr != nullptr) {
+          return ::testing::AssertionFailure()
+                 << "pending exception: " << exception_cstr;
+        }
+      }
+    }
+    return ::testing::AssertionFailure()
+           << "nullptr is not equal to '" << c_str << "'";
+  }
+  if (!PyUnicode_Check(obj) ||
+      PyUnicode_CompareWithASCIIString(obj, c_str) != 0) {
+    PyObjectPtr repr_str(PyObject_Repr(obj));
+    const char* repr_cstr = nullptr;
+    if (repr_str != nullptr) {
+      repr_cstr = PyUnicode_AsUTF8(repr_str);
+    }
+    repr_cstr = repr_cstr == nullptr ? "NULL" : repr_cstr;
+    return ::testing::AssertionFailure()
+           << repr_cstr << " is not equal to '" << c_str << "'";
+  }
+  return ::testing::AssertionSuccess();
+}
+
 }  // namespace testing
 }  // namespace python

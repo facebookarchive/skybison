@@ -68,8 +68,7 @@ foo = Foo()
   PyObjectPtr foo(moduleGet("__main__", "foo"));
   PyObjectPtr result(PyOS_FSPath(foo));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyUnicode_Check(result));
-  EXPECT_STREQ(PyUnicode_AsUTF8(result), "/some/path");
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "/some/path"));
 }
 
 }  // namespace python

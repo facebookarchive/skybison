@@ -51,5 +51,7 @@ int moduleSet(const char* module, const char* name, PyObject*);
 // If no module is found, return a nullptr
 PyObject* importGetModule(PyObject* name);
 
+::testing::AssertionResult isUnicodeEqualsCStr(PyObject* obj, const char* str);
+
 }  // namespace testing
 }  // namespace python

@@ -70,7 +70,7 @@ TEST_F(ModSupportExtensionApiTest, AddStringConstantAddsToModule) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 
   testing::PyObjectPtr str(PyObject_GetAttrString(module, "mystr"));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, c_str));
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, c_str));
 }
 
 TEST_F(ModSupportExtensionApiTest, RepeatedAddStringConstantOverwritesValue) {
@@ -91,7 +91,7 @@ TEST_F(ModSupportExtensionApiTest, RepeatedAddStringConstantOverwritesValue) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 
   testing::PyObjectPtr str(PyObject_GetAttrString(module, "mystr"));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, c_str));
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, c_str));
 }
 
 TEST_F(ModSupportExtensionApiTest, AddIntMacroAddsInt) {
@@ -117,16 +117,12 @@ TEST_F(ModSupportExtensionApiTest, AddIntMacroAddsInt) {
 
 TEST_F(ModSupportExtensionApiTest, BuildValue) {
   testing::PyObjectPtr a_str(Py_BuildValue("s", "hello, world"));
-  ASSERT_NE(a_str, nullptr);
-  ASSERT_TRUE(PyUnicode_Check(a_str));
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(a_str, "hello, world"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(a_str, "hello, world"));
 }
 
 TEST_F(ModSupportExtensionApiTest, BuildValueStringLength) {
   testing::PyObjectPtr a_str(Py_BuildValue("s#", "hello, world", 5));
-  ASSERT_NE(a_str, nullptr);
-  ASSERT_TRUE(PyUnicode_Check(a_str));
-  EXPECT_EQ(PyUnicode_CompareWithASCIIString(a_str, "hello"), 0);
+  EXPECT_TRUE(isUnicodeEqualsCStr(a_str, "hello"));
 }
 
 TEST_F(ModSupportExtensionApiTest, BuildValueInt) {

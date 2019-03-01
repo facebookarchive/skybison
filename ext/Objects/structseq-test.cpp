@@ -344,8 +344,7 @@ result = Structseq((1,2,3)).__repr__()
 
   PyObjectPtr result(moduleGet("__main__", "result"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_TRUE(PyUnicode_Check(result));
-  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(result, "Structseq(1, 2)"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "Structseq(1, 2)"));
 }
 
 TEST_F(StructSeqExtensionApiTest, SetItemRaisesException) {
