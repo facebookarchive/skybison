@@ -1470,4 +1470,15 @@ a.extend(C([1,2,3]))
   EXPECT_PYLIST_EQ(a, {1, 2, 3, 4, 5, 6});
 }
 
+TEST(ListBuiltinsTest, RecursiveListPrintsNicely) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+ls = []
+ls.append(ls)
+result = ls.__repr__()
+)");
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "[[...]]"));
+}
+
 }  // namespace python

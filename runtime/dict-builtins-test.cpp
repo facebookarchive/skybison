@@ -642,4 +642,24 @@ TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
   ASSERT_FALSE(Dict::Bucket::nextItem(*data, &i));
 }
 
+TEST(DictBuiltinTest, RecursiveDictPrintsNicely) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __init__(self, obj):
+    self.val = obj
+  def __repr__(self):
+    return self.val.__repr__()
+  def __hash__(self):
+    return 5
+
+d = dict()
+c = C(d)
+d['hello'] = c
+result = d.__repr__()
+)");
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
+                              "{'hello': {...}}"));
+}
+
 }  // namespace python

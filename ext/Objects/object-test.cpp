@@ -352,6 +352,18 @@ c = C()
   EXPECT_TRUE(isUnicodeEqualsCStr(repr, "bongo"));
 }
 
+TEST_F(ObjectExtensionApiTest,
+       ReprWithRecursiveObjectDoesNotInfinitelyRecurse) {
+  PyRun_SimpleString(R"(
+a = []
+a.append(a)
+)");
+  PyObjectPtr a(PyObject_GetAttrString(PyImport_AddModule("__main__"), "a"));
+  PyObjectPtr repr(PyObject_Repr(a));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(repr, "[[...]]"));
+}
+
 TEST_F(ObjectExtensionApiTest, StrOnNullReturnsSpecialNullString) {
   PyObjectPtr str(PyObject_Str(nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -700,6 +712,31 @@ TEST_F(ObjectExtensionApiTest, RichCompareBoolNotComparableRaisesTypeError) {
   EXPECT_EQ(PyObject_RichCompareBool(left, right, Py_LT), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ObjectExtensionApiTest, ReprEnterOnceReturnsZero) {
+  PyObjectPtr obj(PyLong_FromLong(7));
+  EXPECT_EQ(Py_ReprEnter(obj), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, ReprEnterSecondTimeReturnsOne) {
+  PyObjectPtr obj(PyLong_FromLong(7));
+  ASSERT_EQ(Py_ReprEnter(obj), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(Py_ReprEnter(obj), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, ReprEnterThenLeaveRemovesFromSet) {
+  PyObjectPtr obj(PyLong_FromLong(7));
+  ASSERT_EQ(Py_ReprEnter(obj), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_EQ(Py_ReprEnter(obj), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_ReprLeave(obj);
+  ASSERT_EQ(Py_ReprEnter(obj), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
 }  // namespace python

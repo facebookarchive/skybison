@@ -1949,6 +1949,10 @@ void Runtime::createBuiltinsModule() {
                            BuiltinsModule::underAddress);
   moduleAddBuiltinFunction(module, SymbolId::kUnderPrintStr,
                            BuiltinsModule::underPrintStr);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderReprEnter,
+                           BuiltinsModule::underReprEnter);
+  moduleAddBuiltinFunction(module, SymbolId::kUnderReprLeave,
+                           BuiltinsModule::underReprLeave);
   moduleAddBuiltinFunction(module, SymbolId::kUnderStrEscapeNonAscii,
                            BuiltinsModule::underStrEscapeNonAscii);
   moduleAddBuiltinFunction(module, SymbolId::kUnderStructseqSetAttr,

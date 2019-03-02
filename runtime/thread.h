@@ -295,6 +295,9 @@ class Thread {
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);
 
+  RawObject reprEnter(const Handle<RawObject>& obj);
+  void reprLeave(const Handle<RawObject>& obj);
+
  private:
   void pushInitialFrame();
 
@@ -324,6 +327,8 @@ class Thread {
   // their private state onto this stack before resuming, and pop it after
   // suspending.
   RawObject caught_exc_stack_;
+
+  RawObject api_repr_list_;
 
   static thread_local Thread* current_thread_;
 

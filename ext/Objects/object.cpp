@@ -322,10 +322,22 @@ PY_EXPORT void Py_IncRef(PyObject* obj) {
   Py_INCREF_Func(obj);
 }
 
-PY_EXPORT int Py_ReprEnter(PyObject* /* j */) { UNIMPLEMENTED("Py_ReprEnter"); }
+PY_EXPORT int Py_ReprEnter(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope, thread->reprEnter(object));
+  if (result.isError()) {
+    return -1;
+  }
+  return RawBool::cast(*result)->value();
+}
 
-PY_EXPORT void Py_ReprLeave(PyObject* /* j */) {
-  UNIMPLEMENTED("Py_ReprLeave");
+PY_EXPORT void Py_ReprLeave(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  thread->reprLeave(object);
 }
 
 PY_EXPORT PyObject* _PyObject_GetAttrId(PyObject* /* v */,

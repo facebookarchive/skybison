@@ -647,4 +647,19 @@ TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
+TEST(TupleBuiltinsTest, RecursiveTuplePrintsNicely) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.val = (self,)
+  def __repr__(self):
+    return self.val.__repr__()
+
+result = C().__repr__()
+)");
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "((...),)"));
+}
+
 }  // namespace python

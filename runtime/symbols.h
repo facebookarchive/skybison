@@ -346,6 +346,8 @@ class Runtime;
   V(UnderPrintStr, "_print_str")                                               \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
+  V(UnderReprEnter, "_repr_enter")                                             \
+  V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStructseqField, "_structseq_field")                                   \

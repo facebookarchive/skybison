@@ -1195,4 +1195,24 @@ TEST(SetBuiltinsTest, ReprReturnsElements) {
   EXPECT_EQ(elts[2], 3);
 }
 
+TEST(SetBuiltinTest, RecursiveSetPrintsNicely) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __init__(self, obj):
+    self.val = obj
+  def __repr__(self):
+    return self.val.__repr__()
+  def __hash__(self):
+    return 5
+
+s = set()
+c = C(s)
+s.add(c)
+result = s.__repr__()
+)");
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "{set(...)}"));
+}
+
 }  // namespace python

@@ -37,7 +37,8 @@ Thread::Thread(word size)
       pending_exc_type_(NoneType::object()),
       pending_exc_value_(NoneType::object()),
       pending_exc_traceback_(NoneType::object()),
-      caught_exc_stack_(NoneType::object()) {
+      caught_exc_stack_(NoneType::object()),
+      api_repr_list_(NoneType::object()) {
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
@@ -534,6 +535,33 @@ void Thread::visitFrames(FrameVisitor* visitor) {
   while (!frame->isSentinelFrame()) {
     visitor->visit(frame);
     frame = frame->previousFrame();
+  }
+}
+
+RawObject Thread::reprEnter(const Object& obj) {
+  HandleScope scope(this);
+  if (api_repr_list_.isNoneType()) {
+    api_repr_list_ = runtime_->newList();
+  }
+  List list(&scope, api_repr_list_);
+  for (word i = list.numItems() - 1; i >= 0; i--) {
+    if (list.at(i).raw() == obj.raw()) {
+      return RawBool::trueObj();
+    }
+  }
+  // TODO(emacs): When there is better error handling, raise an exception.
+  runtime_->listAdd(list, obj);
+  return RawBool::falseObj();
+}
+
+void Thread::reprLeave(const Object& obj) {
+  HandleScope scope(this);
+  List list(&scope, api_repr_list_);
+  for (word i = list.numItems() - 1; i >= 0; i--) {
+    if (list.at(i).raw() == obj.raw()) {
+      list.atPut(i, runtime_->unboundValue());
+      break;
+    }
   }
 }
 

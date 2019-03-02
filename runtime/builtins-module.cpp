@@ -566,6 +566,23 @@ RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {
   return *patch_fn;
 }
 
+RawObject BuiltinsModule::underReprEnter(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object obj(&scope, args.get(0));
+  return thread->reprEnter(obj);
+}
+
+RawObject BuiltinsModule::underReprLeave(Thread* thread, Frame* frame,
+                                         word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object obj(&scope, args.get(0));
+  thread->reprLeave(obj);
+  return NoneType::object();
+}
+
 RawObject BuiltinsModule::underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);

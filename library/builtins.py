@@ -614,6 +614,16 @@ class bytes(bootstrap=True):
         return _bytes_join(self, items)
 
 
+@_patch
+def _repr_enter(obj: object) -> bool:
+    pass
+
+
+@_patch
+def _repr_leave(obj: object) -> None:
+    pass
+
+
 class tuple(bootstrap=True):
     def __new__(cls, iterable=_UnboundValue):
         pass
@@ -637,9 +647,9 @@ class tuple(bootstrap=True):
         pass
 
     def __repr__(self):
+        if _repr_enter(self):
+            return "(...)"
         num_elems = len(self)
-        if num_elems == 1:
-            return f"({self[0]!r},)"
         output = "("
         i = 0
         while i < num_elems:
@@ -647,6 +657,9 @@ class tuple(bootstrap=True):
                 output += ", "
             output += repr(self[i])
             i += 1
+        _repr_leave(self)
+        if num_elems == 1:
+            output += ","
         return output + ")"
 
 
@@ -693,7 +706,11 @@ class list(bootstrap=True):
         pass
 
     def __repr__(self):
-        return "[" + ", ".join([i.__repr__() for i in self]) + "]"
+        if _repr_enter(self):
+            return "[...]"
+        result = "[" + ", ".join([i.__repr__() for i in self]) + "]"
+        _repr_leave(self)
+        return result
 
     def append(self, other):
         pass
@@ -1038,7 +1055,10 @@ class dict(bootstrap=True):
         pass
 
     def __repr__(self):
+        if _repr_enter(self):
+            return "{...}"
         kwpairs = [f"{key!r}: {self[key]!r}" for key in self.keys()]
+        _repr_leave(self)
         return "{" + ", ".join(kwpairs) + "}"
 
     def get(self, key, default=None):
@@ -1159,7 +1179,14 @@ class set(bootstrap=True):
         pass
 
     def __repr__(self):
-        return f"{{{', '.join([item.__repr__() for item in self])}}}"
+        if _repr_enter(self):
+            return f"{type(self).__name__}(...)"
+        if len(self) == 0:
+            _repr_leave(self)
+            return f"{type(self).__name__}()"
+        result = f"{{{', '.join([item.__repr__() for item in self])}}}"
+        _repr_leave(self)
+        return result
 
     def __and__(self, other):
         pass
