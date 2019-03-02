@@ -2,8 +2,8 @@
 
 namespace python {
 
-PY_EXPORT void PyObject_ClearWeakRefs(PyObject* /* t */) {
-  UNIMPLEMENTED("PyObject_ClearWeakRefs");
+PY_EXPORT void PyObject_ClearWeakRefs(PyObject* /* obj */) {
+  // Do nothing and delegated to the garbage collector.
 }
 
 PY_EXPORT PyObject* PyWeakref_GetObject(PyObject* /* f */) {
