@@ -1,5 +1,6 @@
 #include <cstdarg>
 
+#include "../Python/modsupport-internal.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "exception-builtins.h"
@@ -644,9 +645,46 @@ PY_EXPORT PyObject* PyObject_Call(PyObject* callable, PyObject* args,
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyObject_CallFunction(PyObject* /* e */,
-                                          const char* /* t */, ...) {
-  UNIMPLEMENTED("PyObject_CallFunction");
+static word vaBuildValuePushFrame(Frame* frame, const char* format,
+                                  std::va_list* va, int build_value_flags) {
+  if (format == nullptr) return 0;
+  word num_values = 0;
+  for (const char* f = format; *f != '\0';) {
+    PyObject* value = makeValueFromFormat(&f, va, build_value_flags);
+    if (value == nullptr) break;
+    frame->pushValue(ApiHandle::fromPyObject(value)->asObject());
+    num_values++;
+  }
+  return num_values;
+}
+
+static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
+                                 const char* format, std::va_list* va,
+                                 int build_value_flags) {
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(*callable);
+  word nargs = vaBuildValuePushFrame(frame, format, va, build_value_flags);
+
+  HandleScope scope(thread);
+  Object result(&scope, Interpreter::call(thread, frame, nargs));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
+}
+
+PY_EXPORT PyObject* PyObject_CallFunction(PyObject* callable,
+                                          const char* format, ...) {
+  Thread* thread = Thread::currentThread();
+  if (callable == nullptr) {
+    return nullError(thread);
+  }
+
+  HandleScope scope(thread);
+  Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
+  va_list va;
+  va_start(va, format);
+  PyObject* result = callWithVarArgs(thread, callable_obj, format, &va, 0);
+  va_end(va);
+  return result;
 }
 
 static PyObject* callWithObjArgs(Thread* thread, const Object& callable,
@@ -683,14 +721,41 @@ PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
   return result;
 }
 
-PY_EXPORT PyObject* _PyObject_CallFunction_SizeT(PyObject* /* e */,
-                                                 const char* /* t */, ...) {
-  UNIMPLEMENTED("_PyObject_CallFunction_SizeT");
+PY_EXPORT PyObject* _PyObject_CallFunction_SizeT(PyObject* callable,
+                                                 const char* format, ...) {
+  Thread* thread = Thread::currentThread();
+  if (callable == nullptr) {
+    return nullError(thread);
+  }
+
+  HandleScope scope(thread);
+  Object callable_obj(&scope, ApiHandle::fromPyObject(callable)->asObject());
+  va_list va;
+  va_start(va, format);
+  PyObject* result =
+      callWithVarArgs(thread, callable_obj, format, &va, kFlagSizeT);
+  va_end(va);
+  return result;
 }
 
-PY_EXPORT PyObject* PyObject_CallMethod(PyObject* /* j */, const char* /* e */,
-                                        const char* /* t */, ...) {
-  UNIMPLEMENTED("PyObject_CallMethod");
+PY_EXPORT PyObject* PyObject_CallMethod(PyObject* pyobj, const char* name,
+                                        const char* format, ...) {
+  Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    return nullError(thread);
+  }
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object callable(&scope, runtime->attributeAtWithCStr(thread, obj, name));
+  if (callable.isError()) return nullptr;
+
+  va_list va;
+  va_start(va, format);
+  PyObject* result = callWithVarArgs(thread, callable, format, &va, 0);
+  va_end(va);
+  return result;
 }
 
 PY_EXPORT PyObject* PyObject_CallMethodObjArgs(PyObject* pyobj,
@@ -713,10 +778,25 @@ PY_EXPORT PyObject* PyObject_CallMethodObjArgs(PyObject* pyobj,
   return result;
 }
 
-PY_EXPORT PyObject* _PyObject_CallMethod_SizeT(PyObject* /* j */,
-                                               const char* /* e */,
-                                               const char* /* t */, ...) {
-  UNIMPLEMENTED("_PyObject_CallMethod_SizeT");
+PY_EXPORT PyObject* _PyObject_CallMethod_SizeT(PyObject* pyobj,
+                                               const char* name,
+                                               const char* format, ...) {
+  Thread* thread = Thread::currentThread();
+  if (pyobj == nullptr) {
+    return nullError(thread);
+  }
+
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object callable(&scope, runtime->attributeAtWithCStr(thread, obj, name));
+  if (callable.isError()) return nullptr;
+
+  va_list va;
+  va_start(va, format);
+  PyObject* result = callWithVarArgs(thread, callable, format, &va, kFlagSizeT);
+  va_end(va);
+  return result;
 }
 
 PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {

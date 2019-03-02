@@ -124,6 +124,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/getplatform.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/getversion.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/import.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/modsupport-internal.h
   ${CMAKE_SOURCE_DIR}/ext/Python/modsupport.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/mysnprintf.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/pathconfig.cpp

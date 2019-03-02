@@ -464,6 +464,8 @@ PyAPI_FUNC(PyObject*) PyObject_CallFunction(PyObject*, const char*, ...);
 PyAPI_FUNC(PyObject*) PyObject_CallFunctionObjArgs(PyObject*, ...);
 PyAPI_FUNC(PyObject*)
     PyObject_CallMethod(PyObject*, const char*, const char*, ...);
+PyAPI_FUNC(PyObject*)
+    _PyObject_CallMethod_SizeT(PyObject*, const char*, const char*, ...);
 PyAPI_FUNC(PyObject*) PyObject_CallMethodObjArgs(PyObject*, PyObject*, ...);
 PyAPI_FUNC(PyObject*) PyObject_CallObject(PyObject*, PyObject*);
 PyAPI_FUNC(void*) PyObject_Calloc(size_t, size_t);

@@ -3377,6 +3377,13 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
   return result;
 }
 
+RawObject Runtime::attributeAtWithCStr(Thread* thread, const Object& receiver,
+                                       const char* name) {
+  HandleScope scope(thread);
+  Object name_str(&scope, internStrFromCStr(name));
+  return attributeAt(thread, receiver, name_str);
+}
+
 RawObject Runtime::attributeAtPut(Thread* thread, const Object& receiver,
                                   const Object& name, const Object& value) {
   if (!name.isStr()) {

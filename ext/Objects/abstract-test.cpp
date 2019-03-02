@@ -233,6 +233,83 @@ def func(*args, **kwargs):
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectCallFunctionCalls) {
+  PyRun_SimpleString(R"(
+def func(*args):
+  return f"{args!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr result(
+      PyObject_CallFunction(func, "(iI)s#i", 3, 7, "aaaa", 3, 99));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "((3, 7), 'aaa', 99)"));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectCallFunctionWithNonCallableRaisesTypeError) {
+  PyObjectPtr result(PyObject_CallFunction(Py_None, nullptr));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallFunctionPropagatesException) {
+  PyRun_SimpleString(R"(
+def func():
+  raise UserWarning()
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr result(PyObject_CallFunction(func, nullptr));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallFunctionSizeTCalls) {
+  PyRun_SimpleString(R"(
+def func(*args):
+  return f"{args!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr result(
+      PyObject_CallFunction(func, "is#i", 7, "bbb", Py_ssize_t{2}, 14));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "(7, 'bb', 14)"));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallMethodCalls) {
+  PyRun_SimpleString(R"(
+class C:
+  x = 42
+  def func(self, *args):
+    return f"{self.x}{args!r}"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyObject_CallMethod(c, "func", "s#(i)", "ccc", 1, 7));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "42('c', (7,))"));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectCallMethodWithNonExistentMemberRaisesAttributeError) {
+  PyObjectPtr result(PyObject_CallMethod(Py_None, "foo", nullptr));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallMethodPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def func(self):
+    raise UserWarning()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyObject_CallMethod(c, "func", nullptr));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectCallMethodObjArgsCalls) {
   PyRun_SimpleString(R"(
 class C:
@@ -252,7 +329,7 @@ c = C()
 }
 
 TEST_F(AbstractExtensionApiTest,
-       PyObjectCallMethodWithNullObjectRaisesSystemError) {
+       PyObjectCallMethodObjArgsWithNullObjectRaisesSystemError) {
   PyObjectPtr name(PyUnicode_FromString("func"));
   PyObjectPtr result(PyObject_CallMethodObjArgs(nullptr, name));
   ASSERT_EQ(result, nullptr);
@@ -261,11 +338,25 @@ TEST_F(AbstractExtensionApiTest,
 }
 
 TEST_F(AbstractExtensionApiTest,
-       PyObjectCallMethodWithNullMethodNameRaisesSystemError) {
+       PyObjectCallMethodObjArgsWithNullMethodNameRaisesSystemError) {
   PyObjectPtr result(PyObject_CallMethodObjArgs(Py_None, nullptr));
   ASSERT_EQ(result, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectCallMethodSizeTCalls) {
+  PyRun_SimpleString(R"(
+class C:
+  x = -5
+  def func(self, *args):
+    return f"{self.x}{args!r}"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(_PyObject_CallMethod_SizeT(c, "func", "is#i", 9, "ddd",
+                                                Py_ssize_t{2}, 8));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "-5(9, 'dd', 8)"));
 }
 
 TEST_F(AbstractExtensionApiTest, PyObject_CallObjectCalls) {

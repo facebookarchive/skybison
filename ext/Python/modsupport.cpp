@@ -4,10 +4,9 @@
 #include "cpython-data.h"
 #include "cpython-types.h"
 #include "handles.h"
+#include "modsupport-internal.h"
 #include "objects.h"
 #include "runtime.h"
-
-#define FLAG_SIZE_T 1
 
 namespace python {
 
@@ -58,7 +57,6 @@ PY_EXPORT int PyModule_AddStringConstant(PyObject* pymodule, const char* name,
 static PyObject* doMakeTuple(const char**, va_list*, char, Py_ssize_t, int);
 static PyObject* doMakeList(const char**, va_list*, char, Py_ssize_t, int);
 static PyObject* doMakeDict(const char**, va_list*, char, Py_ssize_t, int);
-static PyObject* doMakeValue(const char**, va_list*, int);
 
 static void doIgnore(const char** p_format, va_list* p_va, char endchar,
                      Py_ssize_t n, int flags) {
@@ -67,7 +65,7 @@ static void doIgnore(const char** p_format, va_list* p_va, char endchar,
   for (Py_ssize_t i = 0; i < n; i++) {
     PyObject *exception, *value, *tb;
     PyErr_Fetch(&exception, &value, &tb);
-    PyObject* w = doMakeValue(p_format, p_va, flags);
+    PyObject* w = makeValueFromFormat(p_format, p_va, flags);
     PyErr_Restore(exception, value, tb);
     if (w != nullptr) {
       if (v != nullptr) {
@@ -105,13 +103,13 @@ static PyObject* doMakeDict(const char** p_format, va_list* p_va, char endchar,
     return nullptr;
   }
   for (Py_ssize_t i = 0; i < n; i += 2) {
-    PyObject* k = doMakeValue(p_format, p_va, flags);
+    PyObject* k = makeValueFromFormat(p_format, p_va, flags);
     if (k == nullptr) {
       doIgnore(p_format, p_va, endchar, n - i - 1, flags);
       Py_DECREF(d);
       return nullptr;
     }
-    PyObject* v = doMakeValue(p_format, p_va, flags);
+    PyObject* v = makeValueFromFormat(p_format, p_va, flags);
     if (v == nullptr || PyDict_SetItem(d, k, v) < 0) {
       doIgnore(p_format, p_va, endchar, n - i - 2, flags);
       Py_DECREF(k);
@@ -146,7 +144,7 @@ static PyObject* doMakeList(const char** p_format, va_list* p_va, char endchar,
     return nullptr;
   }
   for (Py_ssize_t i = 0; i < n; i++) {
-    PyObject* w = doMakeValue(p_format, p_va, flags);
+    PyObject* w = makeValueFromFormat(p_format, p_va, flags);
     if (w == nullptr) {
       doIgnore(p_format, p_va, endchar, n - i - 1, flags);
       Py_DECREF(v);
@@ -178,7 +176,7 @@ static PyObject* doMakeTuple(const char** p_format, va_list* p_va, char endchar,
     return nullptr;
   }
   for (Py_ssize_t i = 0; i < n; i++) {
-    PyObject* w = doMakeValue(p_format, p_va, flags);
+    PyObject* w = makeValueFromFormat(p_format, p_va, flags);
     if (w == nullptr) {
       doIgnore(p_format, p_va, endchar, n - i - 1, flags);
       Py_DECREF(v);
@@ -236,7 +234,7 @@ static Py_ssize_t countFormat(const char* format, char endchar) {
   return count;
 }
 
-static PyObject* doMakeValue(const char** p_format, va_list* p_va, int flags) {
+PyObject* makeValueFromFormat(const char** p_format, va_list* p_va, int flags) {
   for (;;) {
     switch (*(*p_format)++) {
       case '(':
@@ -288,7 +286,7 @@ static PyObject* doMakeValue(const char** p_format, va_list* p_va, int flags) {
         Py_ssize_t n;
         if (**p_format == '#') {
           ++*p_format;
-          if (flags & FLAG_SIZE_T) {
+          if (flags & kFlagSizeT) {
             n = va_arg(*p_va, Py_ssize_t);
           } else {
             n = va_arg(*p_va, int);
@@ -331,7 +329,7 @@ static PyObject* doMakeValue(const char** p_format, va_list* p_va, int flags) {
         Py_ssize_t n;
         if (**p_format == '#') {
           ++*p_format;
-          if (flags & FLAG_SIZE_T) {
+          if (flags & kFlagSizeT) {
             n = va_arg(*p_va, Py_ssize_t);
           } else {
             n = va_arg(*p_va, int);
@@ -364,7 +362,7 @@ static PyObject* doMakeValue(const char** p_format, va_list* p_va, int flags) {
         Py_ssize_t n;
         if (**p_format == '#') {
           ++*p_format;
-          if (flags & FLAG_SIZE_T) {
+          if (flags & kFlagSizeT) {
             n = va_arg(*p_va, Py_ssize_t);
           } else {
             n = va_arg(*p_va, int);
@@ -442,7 +440,7 @@ static PyObject* vaBuildValue(const char* format, va_list va, int flags) {
   const char* f = format;
   PyObject* retval;
   if (n == 1) {
-    retval = doMakeValue(&f, &lva, flags);
+    retval = makeValueFromFormat(&f, &lva, flags);
   } else {
     retval = doMakeTuple(&f, &lva, '\0', n, flags);
   }
@@ -455,7 +453,7 @@ PY_EXPORT PyObject* Py_VaBuildValue(const char* format, va_list va) {
 }
 
 PY_EXPORT PyObject* _Py_VaBuildValue_SizeT(const char* format, va_list va) {
-  return vaBuildValue(format, va, FLAG_SIZE_T);
+  return vaBuildValue(format, va, kFlagSizeT);
 }
 
 PY_EXPORT PyObject* Py_BuildValue(const char* format, ...) {
@@ -469,7 +467,7 @@ PY_EXPORT PyObject* Py_BuildValue(const char* format, ...) {
 PY_EXPORT PyObject* _Py_BuildValue_SizeT(const char* format, ...) {
   va_list va;
   va_start(va, format);
-  PyObject* retval = vaBuildValue(format, va, FLAG_SIZE_T);
+  PyObject* retval = vaBuildValue(format, va, kFlagSizeT);
   va_end(va);
   return retval;
 }
