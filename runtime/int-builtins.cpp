@@ -862,13 +862,19 @@ RawObject asIntObject(Thread* thread, const Object& object) {
   return *int_res;
 }
 
+enum RoundingDirection {
+  RoundDown = -1,
+  NoRounding = 0,
+  RoundUp = 1,
+};
+
 // Convert a large int to double.  Returns true and sets `result` if the
 // conversion was successful, false if the integer is too big to fit the
-// double range.  If `is_exact` is not nullptr, it will be set to true if no
-// precision was lost.
+// double range.  If `rounding_direction` is not nullptr, it will be set to a
+// value indicating what rounding occured.
 static inline bool convertLargeIntToDouble(const LargeInt& large_int,
                                            double* result,
-                                           bool* result_zeros_below_mantissa) {
+                                           RoundingDirection* rounding) {
   // The following algorithm looks at the highest n bits of the integer and puts
   // them into the mantissa of the floating point number. It extracts two
   // extra bits to account for the highest bit not being explicitly encoded
@@ -942,9 +948,6 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
     }
     return true;
   };
-  if (result_zeros_below_mantissa != nullptr) {
-    *result_zeros_below_mantissa = !(value_as_word & 1) && lower_bits_zero();
-  }
 
   // We need to round down if the least significant bit is zero, we need to
   // round up if the least significant and any other bit is one. If the
@@ -957,6 +960,12 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
     if (value_as_word == (uword{1} << (kDoubleMantissaBits + 2))) {
       exponent++;
     }
+    if (rounding != nullptr) {
+      *rounding = RoundUp;
+    }
+  } else if (rounding != nullptr) {
+    *rounding =
+        !(value_as_word & 1) && lower_bits_zero() ? NoRounding : RoundDown;
   }
   value_as_word >>= 1;
 
@@ -990,35 +999,78 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
   return NoneType::object();
 }
 
-bool doubleEqualsInt(Thread* thread, double left, const Int& right) {
+bool compareDoubleWithInt(Thread* thread, double left, const Int& right,
+                          CompareOp op) {
+  DCHECK(op == GE || op == GT || op == LE || op == LT, "needs inequality op");
+  bool compare_equal = op == LE || op == GE;
+  bool compare_less = op == LT || op == LE;
+  bool compare_greater = !compare_less;
+  if (!std::isfinite(left)) {
+    if (std::isnan(left)) return false;
+    DCHECK(std::isinf(left), "remaining case must be infinity");
+    return compare_less == (left < 0);
+  }
+
   word num_digits = right.numDigits();
   if (num_digits == 1) {
     word right_word = right.asWord();
-    uword magnitude = right_word < 0 ? -static_cast<uword>(right_word)
-                                     : static_cast<uword>(right_word);
-    // We have an exact representation if the the magnitude fits into the
-    // mantissa bits including the implicit one or if the magnitude bits past
-    // the mantissa are zero.
-    bool is_exact = magnitude < (uword{1} << (kDoubleMantissaBits + 1));
-    if (!is_exact) {
-      word shift = __builtin_clzl(magnitude) + kDoubleMantissaBits + 1;
-      DCHECK(shift < kBitsPerWord, "must have at least 1 bit left");
-      is_exact = magnitude << shift == 0;
-    }
-    return is_exact && left == static_cast<double>(right_word);
+    double right_double = static_cast<double>(right_word);
+    if (left < right_double) return compare_less;
+    if (left > right_double) return compare_greater;
+    // TODO(matthiasb): We could also detect the rounding direction by
+    // performing bit operations on `right_word` which is more complicated but
+    // may be faster; benchmark.
+    word right_double_word = static_cast<word>(right_double);
+    if (right_double_word == right_word) return compare_equal;
+    return compare_less == (right_double_word < right_word);
+  }
+
+  // Shortcut for differing signs.
+  if ((left < 0) != right.isNegative()) {
+    DCHECK((compare_less == (left < 0)) == (compare_greater == (left > 0)),
+           "conditions must be exclusive");
+    return compare_less == (left < 0);
+  }
+
+  double right_double;
+  RoundingDirection rounding;
+  HandleScope scope(thread);
+  LargeInt large_int(&scope, *right);
+  if (!convertLargeIntToDouble(large_int, &right_double, &rounding)) {
+    return compare_less != (left < 0);
+  }
+  if (left < right_double) return compare_less;
+  if (left > right_double) return compare_greater;
+  if (rounding == NoRounding) return compare_equal;
+  return compare_less == (rounding == RoundDown);
+}
+
+bool doubleEqualsInt(Thread* thread, double left, const Int& right) {
+  // This is basically the same code as `doubleCompareWithInt` but can take some
+  // shortcuts because we don't care about the lesser/greater situations.
+  word num_digits = right.numDigits();
+  if (num_digits == 1) {
+    word right_word = right.asWord();
+    double right_double = static_cast<double>(right_word);
+    if (left != right_double) return false;
+    // Check whether any rounding occured when converting to floating-point.
+    // TODO(matthiasb): We can also check this via bit operations on
+    // `right_word` which is more complicated but may be faster; should run
+    // some benchmarks.
+    return static_cast<word>(right_double) == right_word;
   }
 
   if (!std::isfinite(left)) {
     return false;
   }
   double right_double;
-  bool is_exact;
+  RoundingDirection rounding;
   HandleScope scope(thread);
   LargeInt large_int(&scope, *right);
-  if (!convertLargeIntToDouble(large_int, &right_double, &is_exact)) {
+  if (!convertLargeIntToDouble(large_int, &right_double, &rounding)) {
     return false;
   }
-  return is_exact && left == right_double;
+  return rounding == NoRounding && left == right_double;
 }
 
 }  // namespace python

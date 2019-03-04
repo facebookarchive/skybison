@@ -20,6 +20,13 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result);
 // `right` cannot be exactly represented as a Float.
 bool doubleEqualsInt(Thread* thread, double left, const Int& right);
 
+// Performs a `<`, `<=`, `>=` or `>` comparison between the Float `left`
+// and the Int `right`. If `right` cannot be exactly represented as a Float
+// the numbers are considered inequal and the rounding direction determines
+// the lesser/greater status.
+bool compareDoubleWithInt(Thread* thread, double left, const Int& right,
+                          CompareOp op);
+
 class IntBuiltins
     : public Builtins<IntBuiltins, SymbolId::kInt, LayoutId::kInt> {
  public:

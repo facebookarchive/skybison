@@ -187,14 +187,15 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  if (!self.isFloat()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
     return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'float' object");
   }
   double left = RawFloat::cast(*self)->value();
 
   Object right(&scope, args.get(1));
   bool result;
-  if (right.isFloat()) {
+  if (runtime->isInstanceOfFloat(*right)) {
     result = left == RawFloat::cast(*right)->value();
   } else if (right.isInt()) {
     Int right_int(&scope, *right);
@@ -221,63 +222,95 @@ RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isFloat() && other->isFloat()) {
-    RawFloat left = RawFloat::cast(self);
-    RawFloat right = RawFloat::cast(other);
-    return Bool::fromBool(left->value() >= right->value());
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseTypeErrorWithCStr("'__ge__' requires a 'float' object");
   }
-  if (self->isInt() || other->isInt()) {
-    UNIMPLEMENTED("integer to float conversion");
+  double left = RawFloat::cast(*self)->value();
+
+  Object right(&scope, args.get(1));
+  bool result;
+  if (runtime->isInstanceOfFloat(*right)) {
+    result = left >= RawFloat::cast(*right)->value();
+  } else if (right.isInt()) {
+    Int right_int(&scope, *right);
+    result = compareDoubleWithInt(thread, left, right_int, GE);
+  } else {
+    return thread->runtime()->notImplemented();
   }
-  return thread->runtime()->notImplemented();
+  return Bool::fromBool(result);
 }
 
 RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isFloat() && other->isFloat()) {
-    RawFloat left = RawFloat::cast(self);
-    RawFloat right = RawFloat::cast(other);
-    return Bool::fromBool(left->value() > right->value());
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseTypeErrorWithCStr("'__gt__' requires a 'float' object");
   }
-  if (self->isInt() || other->isInt()) {
-    UNIMPLEMENTED("integer to float conversion");
+  double left = RawFloat::cast(*self)->value();
+
+  Object right(&scope, args.get(1));
+  bool result;
+  if (runtime->isInstanceOfFloat(*right)) {
+    result = left > RawFloat::cast(*right)->value();
+  } else if (right.isInt()) {
+    Int right_int(&scope, *right);
+    result = compareDoubleWithInt(thread, left, right_int, GT);
+  } else {
+    return thread->runtime()->notImplemented();
   }
-  return thread->runtime()->notImplemented();
+  return Bool::fromBool(result);
 }
 
 RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isFloat() && other->isFloat()) {
-    RawFloat left = RawFloat::cast(self);
-    RawFloat right = RawFloat::cast(other);
-    return Bool::fromBool(left->value() <= right->value());
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseTypeErrorWithCStr("'__le__' requires a 'float' object");
   }
-  if (self->isInt() || other->isInt()) {
-    UNIMPLEMENTED("integer to float conversion");
+  double left = RawFloat::cast(*self)->value();
+
+  Object right(&scope, args.get(1));
+  bool result;
+  if (runtime->isInstanceOfFloat(*right)) {
+    result = left <= RawFloat::cast(*right)->value();
+  } else if (right.isInt()) {
+    Int right_int(&scope, *right);
+    result = compareDoubleWithInt(thread, left, right_int, LE);
+  } else {
+    return thread->runtime()->notImplemented();
   }
-  return thread->runtime()->notImplemented();
+  return Bool::fromBool(result);
 }
 
 RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  if (self->isFloat() && other->isFloat()) {
-    RawFloat left = RawFloat::cast(self);
-    RawFloat right = RawFloat::cast(other);
-    return Bool::fromBool(left->value() < right->value());
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseTypeErrorWithCStr("'__lt__' requires a 'float' object");
   }
-  if (self->isInt() || other->isInt()) {
-    UNIMPLEMENTED("integer to float conversion");
+  double left = RawFloat::cast(*self)->value();
+
+  Object right(&scope, args.get(1));
+  bool result;
+  if (runtime->isInstanceOfFloat(*right)) {
+    result = left < RawFloat::cast(*right)->value();
+  } else if (right.isInt()) {
+    Int right_int(&scope, *right);
+    result = compareDoubleWithInt(thread, left, right_int, LT);
+  } else {
+    return thread->runtime()->notImplemented();
   }
-  return thread->runtime()->notImplemented();
+  return Bool::fromBool(result);
 }
 
 RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
