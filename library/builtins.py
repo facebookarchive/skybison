@@ -1129,6 +1129,11 @@ class module(bootstrap=True):
     def __new__(cls, name):
         pass
 
+    def __repr__(self):
+        import _frozen_importlib
+
+        return _frozen_importlib._module_repr(self)
+
 
 class frozenset(bootstrap=True):
     def __new__(cls, iterable=_UnboundValue):

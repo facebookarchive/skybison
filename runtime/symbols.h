@@ -342,6 +342,7 @@ class Runtime;
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
   V(UnderIo, "_io")                                                            \
+  V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderPatch, "_patch")                                                      \
   V(UnderPrintStr, "_print_str")                                               \
   V(UnderReadBytes, "_readbytes")                                              \

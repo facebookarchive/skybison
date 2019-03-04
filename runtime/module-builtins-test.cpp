@@ -101,4 +101,25 @@ result = sys.__dict__
   EXPECT_TRUE(result.isDict());
 }
 
+TEST(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  Object name(&scope, runtime.newStrFromCStr("hello"));
+  Object module(&scope, runtime.newModule(name));
+  Object result(&scope, Thread::currentThread()->invokeMethod1(
+                            module, SymbolId::kDunderRepr));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'hello'>"));
+}
+
+TEST(ModuleBuiltinsTest, BuiltinModuleDunderReprReturnsString) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+import sys
+result = sys.__repr__()
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));
+}
+
 }  // namespace python
