@@ -116,12 +116,16 @@ PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
   return PyObject_GenericGetAttr(v, name);
 }
 
-PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* v, const char* name) {
-  PyObject* str = PyUnicode_FromString(name);
-  if (str == nullptr) return nullptr;
-  PyObject* attr = PyObject_GetAttr(v, str);
-  Py_DECREF(str);
-  return attr;
+PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* pyobj, const char* name) {
+  DCHECK(pyobj != nullptr, "pyobj must not be nullptr");
+  DCHECK(name != nullptr, "name must not be nullptr");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object result(&scope,
+                thread->runtime()->attributeAtWithCStr(thread, object, name));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyObject_HasAttr(PyObject* pyobj, PyObject* pyname) {
