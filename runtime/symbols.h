@@ -210,7 +210,20 @@ class Runtime;
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Hasattr, "hasattr")                                                        \
+  V(Iadd, "iadd")                                                              \
+  V(Iand, "iand")                                                              \
   V(Iconcat, "iconcat")                                                        \
+  V(Ifloordiv, "ifloordiv")                                                    \
+  V(Ilshift, "ilshift")                                                        \
+  V(Imatmul, "imatmul")                                                        \
+  V(Imod, "imod")                                                              \
+  V(Imul, "imul")                                                              \
+  V(Ior, "ior")                                                                \
+  V(Ipow, "ipow")                                                              \
+  V(Irshift, "irshift")                                                        \
+  V(Isub, "isub")                                                              \
+  V(Itruediv, "itruediv")                                                      \
+  V(Ixor, "ixor")                                                              \
   V(ImportError, "ImportError")                                                \
   V(ImportWarning, "ImportWarning")                                            \
   V(IndentationError, "IndentationError")                                      \

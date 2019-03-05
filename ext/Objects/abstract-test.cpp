@@ -319,6 +319,263 @@ i = IntLikeClass();
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceAddWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceAdd(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceAddWithIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(4));
+  PyObjectPtr y(PyLong_FromLong(2));
+  PyObjectPtr result(PyNumber_InPlaceAdd(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 6);
+  EXPECT_EQ(PyLong_AsLong(x), 4);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceAndWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceAnd(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceAndWithIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(5));  // 0b0101
+  PyObjectPtr y(PyLong_FromLong(3));  // 0b0011
+  PyObjectPtr result(PyNumber_InPlaceAnd(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 1);  // 0b0001
+  EXPECT_EQ(PyLong_AsLong(x), 5);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceFloorDivideWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceFloorDivide(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceFloorDivideWithIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(42));
+  PyObjectPtr y(PyLong_FromLong(5));
+  PyObjectPtr result(PyNumber_InPlaceFloorDivide(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 8);
+  EXPECT_EQ(PyLong_AsLong(x), 42);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceLshiftWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceLshift(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceLshiftIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(5));
+  PyObjectPtr y(PyLong_FromLong(3));
+  PyObjectPtr result(PyNumber_InPlaceLshift(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 40);
+  EXPECT_EQ(PyLong_AsLong(x), 5);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceMatrixMultiplyWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceMatrixMultiply(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceMatrixMultiplyCallsDunderImatmul) {
+  PyRun_SimpleString(R"(
+class C:
+  def __init__(self):
+    self.called = False
+  def __imatmul__(self, other):
+    self.called = True
+    return 1
+x = C()
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr y(PyLong_FromLong(3));
+  PyObjectPtr called1(PyObject_GetAttrString(x, "called"));
+  EXPECT_EQ(called1, Py_False);
+  PyObjectPtr result(PyNumber_InPlaceMatrixMultiply(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 1);
+  PyObjectPtr called2(PyObject_GetAttrString(x, "called"));
+  EXPECT_EQ(called2, Py_True);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceMultiplyWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceMultiply(x, Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceMultiplyWithIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(3));
+  PyObjectPtr y(PyLong_FromLong(2));
+  PyObjectPtr result(PyNumber_InPlaceMultiply(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 6);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceOrWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceOr(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceOrWithIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(5));  // 0b0101
+  PyObjectPtr y(PyLong_FromLong(3));  // 0b0011
+  PyObjectPtr result(PyNumber_InPlaceOr(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 7);  // 0b0111
+  EXPECT_EQ(PyLong_AsLong(x), 5);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlacePowerWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlacePower(x, y, Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlacePowerCallsDunderIpow) {
+  PyRun_SimpleString(R"(
+class C:
+  def __init__(self):
+    self.called = False
+  def __ipow__(self, other):
+    self.called = True
+    return 1
+x = C()
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr y(PyLong_FromLong(3));
+  PyObjectPtr called1(PyObject_GetAttrString(x, "called"));
+  EXPECT_EQ(called1, Py_False);
+  PyObjectPtr result(PyNumber_InPlacePower(x, y, Py_None));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 1);
+  PyObjectPtr called2(PyObject_GetAttrString(x, "called"));
+  EXPECT_EQ(called2, Py_True);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceRemainderWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyList_New(0));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceRemainder(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceRemainderWithIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(42));
+  PyObjectPtr y(PyLong_FromLong(5));
+  PyObjectPtr result(PyNumber_InPlaceRemainder(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 2);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceRshiftWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceRshift(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceRshiftIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(42));
+  PyObjectPtr y(PyLong_FromLong(3));
+  PyObjectPtr result(PyNumber_InPlaceRshift(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 5);
+  EXPECT_EQ(PyLong_AsLong(x), 42);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceSubtractWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceSubtract(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceSubtractIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(5));
+  PyObjectPtr y(PyLong_FromLong(3));
+  PyObjectPtr result(PyNumber_InPlaceSubtract(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 2);
+  EXPECT_EQ(PyLong_AsLong(x), 5);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceTrueDivideWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceTrueDivide(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceTrueDivideWithFloatsReturnsFloat) {
+  PyObjectPtr x(PyLong_FromLong(42.0));
+  PyObjectPtr y(PyLong_FromLong(5));
+  PyObjectPtr result(PyNumber_InPlaceTrueDivide(x, y));
+  ASSERT_TRUE(PyFloat_CheckExact(result));
+  EXPECT_EQ(PyFloat_AsDouble(result), 8.4);
+  EXPECT_EQ(PyFloat_AsDouble(x), 42.0);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberInPlaceXorWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_InPlaceXor(x, y), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberInPlaceXorWithIntsReturnsInt) {
+  PyObjectPtr x(PyLong_FromLong(5));  // 0b0101
+  PyObjectPtr y(PyLong_FromLong(3));  // 0b0011
+  PyObjectPtr result(PyNumber_InPlaceXor(x, y));
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 6);  // 0b0110
+  EXPECT_EQ(PyLong_AsLong(x), 5);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberInvertWithIntReturnsInt) {
   PyObjectPtr num(PyLong_FromLong(7));
   PyObjectPtr result(PyNumber_Invert(num));
@@ -545,6 +802,22 @@ c = C()
   EXPECT_EQ(result, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberPowerWithNonNumberRaisesTypeError) {
+  PyObjectPtr x(PyUnicode_FromString("foo"));
+  PyObjectPtr y(PyLong_FromLong(2));
+  ASSERT_EQ(PyNumber_Power(x, y, Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberPowerWithFloatReturnsFloat) {
+  PyObjectPtr x(PyFloat_FromDouble(2.0));
+  PyObjectPtr y(PyLong_FromLong(3));
+  PyObjectPtr result(PyNumber_Power(x, y, Py_None));
+  ASSERT_TRUE(PyFloat_CheckExact(result));
+  EXPECT_EQ(PyFloat_AsDouble(result), 8.0);
 }
 
 TEST_F(AbstractExtensionApiTest, PyNumberRemainderWithNonIntRaisesTypeError) {

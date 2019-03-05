@@ -413,38 +413,63 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
   return ApiHandle::newReference(thread, *index);
 }
 
-PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* /* v */, PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceAdd");
+PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kIadd, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_InPlaceFloorDivide(PyObject* /* v */,
-                                                PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceFloorDivide");
+PY_EXPORT PyObject* PyNumber_InPlaceAnd(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kIand, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_InPlaceMatrixMultiply(PyObject* /* v */,
-                                                   PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceMatrixMultiply");
+PY_EXPORT PyObject* PyNumber_InPlaceFloorDivide(PyObject* left,
+                                                PyObject* right) {
+  return doBinaryOp(SymbolId::kIfloordiv, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* /* v */,
-                                             PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceMultiply");
+PY_EXPORT PyObject* PyNumber_InPlaceLshift(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kIlshift, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_InPlacePower(PyObject* /* v */, PyObject* /* w */,
-                                          PyObject* /* z */) {
-  UNIMPLEMENTED("PyNumber_InPlacePower");
+PY_EXPORT PyObject* PyNumber_InPlaceMatrixMultiply(PyObject* left,
+                                                   PyObject* right) {
+  return doBinaryOp(SymbolId::kImatmul, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_InPlaceRemainder(PyObject* /* v */,
-                                              PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceRemainder");
+PY_EXPORT PyObject* PyNumber_InPlaceMultiply(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kImul, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_InPlaceTrueDivide(PyObject* /* v */,
-                                               PyObject* /* w */) {
-  UNIMPLEMENTED("PyNumber_InPlaceTrueDivide");
+PY_EXPORT PyObject* PyNumber_InPlaceOr(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kIor, left, right);
+}
+
+PY_EXPORT PyObject* PyNumber_InPlacePower(PyObject* base, PyObject* exponent,
+                                          PyObject* divisor) {
+  if (divisor == Py_None) {
+    return doBinaryOp(SymbolId::kIpow, base, exponent);
+  }
+  UNIMPLEMENTED("ipow(base, exponent, divisor)");
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceRemainder(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kImod, left, right);
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceRshift(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kIrshift, left, right);
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceSubtract(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kIsub, left, right);
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceTrueDivide(PyObject* left,
+                                               PyObject* right) {
+  return doBinaryOp(SymbolId::kItruediv, left, right);
+}
+
+PY_EXPORT PyObject* PyNumber_InPlaceXor(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kIxor, left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Invert(PyObject* pyobj) {
@@ -479,9 +504,12 @@ PY_EXPORT PyObject* PyNumber_Positive(PyObject* pyobj) {
   return doUnaryOp(SymbolId::kPos, pyobj);
 }
 
-PY_EXPORT PyObject* PyNumber_Power(PyObject* /* v */, PyObject* /* w */,
-                                   PyObject* /* z */) {
-  UNIMPLEMENTED("PyNumber_Power");
+PY_EXPORT PyObject* PyNumber_Power(PyObject* base, PyObject* exponent,
+                                   PyObject* divisor) {
+  if (divisor == Py_None) {
+    return doBinaryOp(SymbolId::kPow, base, exponent);
+  }
+  UNIMPLEMENTED("pow(base, exponent, divisor)");
 }
 
 PY_EXPORT PyObject* PyNumber_Remainder(PyObject* left, PyObject* right) {
