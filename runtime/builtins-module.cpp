@@ -327,6 +327,10 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
   return *code;
 }
 
+RawObject BuiltinsModule::divmod(Thread*, Frame*, word) {
+  UNIMPLEMENTED("divmod(a, b)");
+}
+
 RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

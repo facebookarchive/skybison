@@ -1404,6 +1404,11 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
 
 
 @_patch
+def divmod(a, b):
+    pass
+
+
+@_patch
 def exec(source, globals=None, locals=None):
     pass
 

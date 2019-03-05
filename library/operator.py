@@ -70,6 +70,9 @@ __all__ = [
 ]
 
 
+from builtins import divmod as _divmod
+
+
 # Comparison Operations *******************************************************#
 
 
@@ -150,6 +153,11 @@ def and_(a, b):
 def floordiv(a, b):
     "Same as a // b."
     return a // b
+
+
+def divmod(a, b):
+    "Same as divmod(a, b)."
+    return _divmod(a, b)
 
 
 def index(a):

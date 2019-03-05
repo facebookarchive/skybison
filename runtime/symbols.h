@@ -123,6 +123,7 @@ class Runtime;
   V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \
   V(Allocated, "allocated")                                                    \
+  V(AndUnder, "and_")                                                          \
   V(Append, "append")                                                          \
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
@@ -152,6 +153,7 @@ class Runtime;
   V(Code, "code")                                                              \
   V(Compile, "compile")                                                        \
   V(Complex, "complex")                                                        \
+  V(Concat, "concat")                                                          \
   V(Conjugate, "conjugate")                                                    \
   V(ConnectionAbortedError, "ConnectionAbortedError")                          \
   V(ConnectionError, "ConnectionError")                                        \
@@ -171,6 +173,7 @@ class Runtime;
   V(DictValues, "dict_values")                                                 \
   V(DictValueIterator, "dict_valueiterator")                                   \
   V(Displayhook, "displayhook")                                                \
+  V(Divmod, "divmod")                                                          \
   V(DotSo, ".so")                                                              \
   V(Dummy, "dummy")                                                            \
   V(EOFError, "EOFError")                                                      \
@@ -194,6 +197,7 @@ class Runtime;
   V(Format, "format")                                                          \
   V(Float, "float")                                                            \
   V(FloatingPointError, "FloatingPointError")                                  \
+  V(Floordiv, "floordiv")                                                      \
   V(Frame, "frame")                                                            \
   V(FromBytes, "from_bytes")                                                   \
   V(FrozenSet, "frozenset")                                                    \
@@ -240,15 +244,19 @@ class Runtime;
   V(Loads, "loads")                                                            \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
+  V(Lshift, "lshift")                                                          \
   V(Marshal, "marshal")                                                        \
+  V(Matmul, "matmul")                                                          \
   V(MemoryError, "MemoryError")                                                \
   V(MetaPath, "meta_path")                                                     \
   V(Metaclass, "metaclass")                                                    \
   V(Method, "method")                                                          \
+  V(Mod, "mod")                                                                \
   V(Module, "module")                                                          \
   V(ModuleNotFoundError, "ModuleNotFoundError")                                \
   V(Modules, "modules")                                                        \
   V(Msg, "msg")                                                                \
+  V(Mul, "mul")                                                                \
   V(NFields, "n_fields")                                                       \
   V(NSequenceFields, "n_sequence_fields")                                      \
   V(NUnnamedFields, "n_unnamed_fields")                                        \
@@ -266,6 +274,7 @@ class Runtime;
   V(ObjectTypename, "object")                                                  \
   V(Operator, "operator")                                                      \
   V(Ord, "ord")                                                                \
+  V(OrUnder, "or_")                                                            \
   V(OverflowError, "OverflowError")                                            \
   V(Partition, "partition")                                                    \
   V(Path, "path")                                                              \
@@ -274,6 +283,7 @@ class Runtime;
   V(Platform, "platform")                                                      \
   V(Pop, "pop")                                                                \
   V(Pos, "pos")                                                                \
+  V(Pow, "pow")                                                                \
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
   V(Range, "range")                                                            \
@@ -287,6 +297,7 @@ class Runtime;
   V(Repr, "repr")                                                              \
   V(ResourceWarning, "ResourceWarning")                                        \
   V(RPartition, "rpartition")                                                  \
+  V(Rshift, "rshift")                                                          \
   V(RSplit, "rsplit")                                                          \
   V(RStrip, "rstrip")                                                          \
   V(RuntimeError, "RuntimeError")                                              \
@@ -314,6 +325,7 @@ class Runtime;
   V(Str, "str")                                                                \
   V(StrIterator, "str_iterator")                                               \
   V(Strip, "strip")                                                            \
+  V(Sub, "sub")                                                                \
   V(Super, "super")                                                            \
   V(SyntaxError, "SyntaxError")                                                \
   V(SyntaxWarning, "SyntaxWarning")                                            \
@@ -325,6 +337,7 @@ class Runtime;
   V(TimeoutError, "TimeoutError")                                              \
   V(ToBytes, "to_bytes")                                                       \
   V(Traceback, "traceback")                                                    \
+  V(Truediv, "truediv")                                                        \
   V(Tuple, "tuple")                                                            \
   V(TupleIterator, "tuple_iterator")                                           \
   V(Type, "type")                                                              \
@@ -377,6 +390,7 @@ class Runtime;
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
   V(Warning, "Warning")                                                        \
+  V(Xor, "xor")                                                                \
   V(ZeroDivisionError, "ZeroDivisionError")
 
 // clang-format off

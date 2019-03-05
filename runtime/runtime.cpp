@@ -1932,6 +1932,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinFunction(module, SymbolId::kCompile, BuiltinsModule::compile);
   moduleAddBuiltinFunction(module, SymbolId::kUnderComplexImag, complexGetImag);
   moduleAddBuiltinFunction(module, SymbolId::kUnderComplexReal, complexGetReal);
+  moduleAddBuiltinFunction(module, SymbolId::kDivmod, BuiltinsModule::divmod);
   moduleAddBuiltinFunction(module, SymbolId::kExec, BuiltinsModule::exec);
   moduleAddBuiltinFunction(module, SymbolId::kGetattr, BuiltinsModule::getattr);
   moduleAddBuiltinFunction(module, SymbolId::kHasattr, BuiltinsModule::hasattr);

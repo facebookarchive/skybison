@@ -17,6 +17,31 @@ static PyObject* nullError(Thread* thread) {
   return nullptr;
 }
 
+static PyObject* doUnaryOp(SymbolId op, PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    return nullError(thread);
+  }
+
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope,
+                thread->invokeFunction1(SymbolId::kOperator, op, object));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+}
+
+static PyObject* doBinaryOp(SymbolId op, PyObject* left, PyObject* right) {
+  Thread* thread = Thread::currentThread();
+  DCHECK(left != nullptr && right != nullptr, "null argument to binary op %s",
+         thread->runtime()->symbols()->literalAt(op));
+  HandleScope scope(thread);
+  Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
+  Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
+  Object result(&scope, thread->invokeFunction2(SymbolId::kOperator, op,
+                                                left_obj, right_obj));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+}
+
 static Py_ssize_t objectLength(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
   if (pyobj == nullptr) {
@@ -312,92 +337,15 @@ PY_EXPORT PyObject* PyMapping_Values(PyObject* mapping) {
 // Number Protocol
 
 PY_EXPORT PyObject* PyNumber_Absolute(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
-  if (obj == nullptr) {
-    return nullError(thread);
-  }
-  HandleScope scope(thread);
-  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
-                                                SymbolId::kAbs, object));
-  if (result.isError()) {
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result);
+  return doUnaryOp(SymbolId::kAbs, obj);
 }
 
-static RawObject doBinaryOpImpl(Thread* thread, Interpreter::BinaryOp op,
-                                const Object& left, const Object& right) {
-  Frame* caller = thread->currentFrame();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  SymbolId selector = runtime->binaryOperationSelector(op);
-  Object left_method(&scope,
-                     Interpreter::lookupMethod(thread, caller, left, selector));
-
-  SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
-  Object left_reversed_method(
-      &scope,
-      Interpreter::lookupMethod(thread, caller, left, swapped_selector));
-  Object right_reversed_method(
-      &scope,
-      Interpreter::lookupMethod(thread, caller, right, swapped_selector));
-
-  bool try_other = true;
-  if (!left_method.isError()) {
-    if (runtime->shouldReverseBinaryOperation(
-            thread, left, left_reversed_method, right, right_reversed_method)) {
-      Object result(
-          &scope, Interpreter::callMethod2(thread, caller,
-                                           right_reversed_method, right, left));
-      if (!result.isNotImplemented()) return *result;
-      try_other = false;
-    }
-    Object result(&scope, Interpreter::callMethod2(thread, caller, left_method,
-                                                   left, right));
-    if (!result.isNotImplemented()) return *result;
-  }
-  if (try_other && !right_reversed_method.isError()) {
-    Object result(
-        &scope, Interpreter::callMethod2(thread, caller, right_reversed_method,
-                                         right, left));
-    if (!result.isNotImplemented()) return *result;
-  }
-  return Error::object();
+PY_EXPORT PyObject* PyNumber_Add(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kAdd, left, right);
 }
 
-static PyObject* doBinaryOp(PyObject* v, PyObject* w,
-                            Interpreter::BinaryOp op) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object left(&scope, ApiHandle::fromPyObject(v)->asObject());
-  Object right(&scope, ApiHandle::fromPyObject(w)->asObject());
-  Object result(&scope, doBinaryOpImpl(thread, op, left, right));
-  if (!result.isError()) {
-    return ApiHandle::newReference(thread, *result);
-  }
-
-  // TODO(T32655200): Once we have a real string formatter, use that instead of
-  // converting the names to C strings here.
-  Str ltype(&scope, Type::cast(runtime->typeOf(*left))->name());
-  Str rtype(&scope, Type::cast(runtime->typeOf(*right))->name());
-  unique_c_ptr<char> ltype_name(ltype.toCStr());
-  unique_c_ptr<char> rtype_name(rtype.toCStr());
-  thread->raiseTypeError(runtime->newStrFromFormat(
-      "Cannot do binary op %ld for types '%s' and '%s'", static_cast<word>(op),
-      ltype_name.get(), rtype_name.get()));
-  return nullptr;
-}
-
-PY_EXPORT PyObject* PyNumber_Add(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::ADD);
-}
-
-PY_EXPORT PyObject* PyNumber_And(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::AND);
+PY_EXPORT PyObject* PyNumber_And(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kAndUnder, left, right);
 }
 
 PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* /* m */, PyObject* /* r */) {
@@ -424,16 +372,16 @@ PY_EXPORT int PyNumber_Check(PyObject* obj) {
   return false;
 }
 
-PY_EXPORT PyObject* PyNumber_Divmod(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::DIVMOD);
+PY_EXPORT PyObject* PyNumber_Divmod(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kDivmod, left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Float(PyObject* /* o */) {
   UNIMPLEMENTED("PyNumber_Float");
 }
 
-PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::FLOORDIV);
+PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kFloordiv, left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
@@ -500,68 +448,35 @@ PY_EXPORT PyObject* PyNumber_InPlaceTrueDivide(PyObject* /* v */,
 }
 
 PY_EXPORT PyObject* PyNumber_Invert(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
-  if (pyobj == nullptr) {
-    return nullError(thread);
-  }
-  HandleScope scope(thread);
-  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
-                                                SymbolId::kInvert, object));
-  if (result.isError()) {
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result);
+  return doUnaryOp(SymbolId::kInvert, pyobj);
 }
 
 PY_EXPORT PyObject* PyNumber_Long(PyObject* /* o */) {
   UNIMPLEMENTED("PyNumber_Long");
 }
 
-PY_EXPORT PyObject* PyNumber_Lshift(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::LSHIFT);
+PY_EXPORT PyObject* PyNumber_Lshift(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kLshift, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_MatrixMultiply(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::MATMUL);
+PY_EXPORT PyObject* PyNumber_MatrixMultiply(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kMatmul, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_Multiply(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::MUL);
+PY_EXPORT PyObject* PyNumber_Multiply(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kMul, left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Negative(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
-  if (pyobj == nullptr) {
-    return nullError(thread);
-  }
-  HandleScope scope(thread);
-  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
-                                                SymbolId::kNeg, object));
-  if (result.isError()) {
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result);
+  return doUnaryOp(SymbolId::kNeg, pyobj);
 }
 
-PY_EXPORT PyObject* PyNumber_Or(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::OR);
+PY_EXPORT PyObject* PyNumber_Or(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kOrUnder, left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_Positive(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
-  if (pyobj == nullptr) {
-    return nullError(thread);
-  }
-  HandleScope scope(thread);
-  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object result(&scope, thread->invokeFunction1(SymbolId::kOperator,
-                                                SymbolId::kPos, object));
-  if (result.isError()) {
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result);
+  return doUnaryOp(SymbolId::kPos, pyobj);
 }
 
 PY_EXPORT PyObject* PyNumber_Power(PyObject* /* v */, PyObject* /* w */,
@@ -569,28 +484,28 @@ PY_EXPORT PyObject* PyNumber_Power(PyObject* /* v */, PyObject* /* w */,
   UNIMPLEMENTED("PyNumber_Power");
 }
 
-PY_EXPORT PyObject* PyNumber_Remainder(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::MOD);
+PY_EXPORT PyObject* PyNumber_Remainder(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kMod, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_Rshift(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::RSHIFT);
+PY_EXPORT PyObject* PyNumber_Rshift(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kRshift, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_Subtract(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::SUB);
+PY_EXPORT PyObject* PyNumber_Subtract(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kSub, left, right);
 }
 
 PY_EXPORT PyObject* PyNumber_ToBase(PyObject* /* n */, int /* e */) {
   UNIMPLEMENTED("PyNumber_ToBase");
 }
 
-PY_EXPORT PyObject* PyNumber_TrueDivide(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::TRUEDIV);
+PY_EXPORT PyObject* PyNumber_TrueDivide(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kTruediv, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_Xor(PyObject* v, PyObject* w) {
-  return doBinaryOp(v, w, Interpreter::BinaryOp::XOR);
+PY_EXPORT PyObject* PyNumber_Xor(PyObject* left, PyObject* right) {
+  return doBinaryOp(SymbolId::kXor, left, right);
 }
 
 // Object Protocol
