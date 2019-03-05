@@ -4,7 +4,6 @@ import collections
 import os
 import re
 import sys
-from shutil import copyfile
 
 
 # Tuple that specifies a regex and the position where a symbol will be found
@@ -215,6 +214,19 @@ def create_output_file_dict(source_paths, header_symbols_dict, source_symbols_di
     return output_file_dict
 
 
+def write_if_different(dest_path, new_contents):
+    """If `dest_path` does not exist or its content are different from
+    `new_contents` write `new_contents to it."""
+    try:
+        current_contents = open(dest_path, "rb").read()
+        if current_contents == new_contents:
+            return
+    except FileNotFoundError:
+        pass
+    with open(dest_path, "wb") as dest_fp:
+        dest_fp.write(new_contents)
+
+
 # Given a dictionary of files, write the files to the output directory
 def output_files_to_directory(output_directory, output_file_dict):
     for file_path, lines in output_file_dict.items():
@@ -233,12 +245,14 @@ def output_files_to_directory(output_directory, output_file_dict):
 
         # Copy those files that were not modified
         if lines is None:
-            copyfile(file_path, output_gen_path)
+            with open(file_path, "rb") as source_fp:
+                contents = source_fp.read()
+            write_if_different(output_gen_path, contents)
             continue
 
         # Write files
-        with open(output_gen_path, "w+", encoding="utf-8") as f:
-            f.writelines(lines)
+        contents = b"".join([line.encode("utf-8") for line in lines])
+        write_if_different(output_gen_path, contents)
 
 
 def main(args):
