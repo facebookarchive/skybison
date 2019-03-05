@@ -12,6 +12,8 @@ PY_EXPORT int PyOS_InterruptOccurred() {
   UNIMPLEMENTED("PyOS_InterruptOccurred");
 }
 
-PY_EXPORT void PyOS_AfterFork() { UNIMPLEMENTED("PyOS_AfterFork"); }
+PY_EXPORT void PyOS_AfterFork() {
+  // TODO(T39596544): do nothing until we have a GIL.
+}
 
 }  // namespace python
