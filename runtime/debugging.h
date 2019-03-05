@@ -7,6 +7,10 @@
 
 namespace python {
 
+std::ostream& dumpExtendedCode(std::ostream& os, RawCode value);
+std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value);
+std::ostream& dumpExtended(std::ostream& os, RawObject value);
+
 std::ostream& operator<<(std::ostream& os, CastError value);
 
 std::ostream& operator<<(std::ostream& os, RawBool value);

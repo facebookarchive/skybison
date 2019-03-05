@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 
+#include "bytecode.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "handles.h"
@@ -10,6 +11,69 @@
 #include "vector.h"
 
 namespace python {
+
+static const char* kOpNames[] = {
+#define OPNAME(name, num, handler) #name,
+    FOREACH_BYTECODE(OPNAME)};
+
+std::ostream& dumpExtendedCode(std::ostream& os, RawCode value) {
+  HandleScope scope;
+  Code code(&scope, value);
+  os << "name: " << code.name() << " argcount: " << code.argcount()
+     << " kwonlyargcount: " << code.kwonlyargcount()
+     << " nlocals: " << code.nlocals() << " stacksize: " << code.stacksize()
+     << '\n'
+     << "filename: " << code.filename() << '\n'
+     << "consts: " << code.consts() << '\n'
+     << "names: " << code.names() << '\n'
+     << "freevars: " << code.freevars() << '\n'
+     << "varnames: " << code.varnames() << '\n';
+  Object bytecode_obj(&scope, code.code());
+  if (bytecode_obj.isBytes()) {
+    Bytes bytecode(&scope, *bytecode_obj);
+    for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
+      byte op = bytecode.byteAt(i);
+      byte arg = bytecode.byteAt(i + 1);
+      std::ios_base::fmtflags saved_flags = os.flags();
+      os << std::setw(4) << std::hex << i << ' ';
+      os.flags(saved_flags);
+      os << kOpNames[op] << " " << static_cast<unsigned>(arg) << '\n';
+    }
+  }
+
+  return os;
+}
+
+std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
+  HandleScope scope;
+  Function function(&scope, value);
+  os << "name: " << function.name() << '\n'
+     << "qualname: " << function.qualname() << '\n'
+     << "module: " << function.module() << '\n'
+     << "annotations: " << function.annotations() << '\n'
+     << "closure: " << function.closure() << '\n'
+     << "defaults: " << function.defaults() << '\n'
+     << "kwdefaults: " << function.kwDefaults() << '\n'
+     << "code: ";
+  if (function.code().isCode()) {
+    dumpExtendedCode(os, RawCode::cast(function.code()));
+  } else {
+    os << function.code() << '\n';
+  }
+  return os;
+}
+
+std::ostream& dumpExtended(std::ostream& os, RawObject value) {
+  LayoutId layout = value.layoutId();
+  switch (layout) {
+    case LayoutId::kCode:
+      return dumpExtendedCode(os, RawCode::cast(value));
+    case LayoutId::kFunction:
+      return dumpExtendedFunction(os, RawFunction::cast(value));
+    default:
+      return os << value;
+  }
+}
 
 std::ostream& operator<<(std::ostream& os, CastError err) {
   switch (err) {
@@ -253,11 +317,13 @@ std::ostream& operator<<(std::ostream& os, Frame* frame) {
 }
 
 __attribute__((used)) void dump(RawObject object) {
-  std::cerr << object << '\n';
+  dumpExtended(std::cerr, object);
+  std::cerr << '\n';
 }
 
 __attribute__((used)) void dump(const Object& object) {
-  std::cerr << object << '\n';
+  dumpExtended(std::cerr, *object);
+  std::cerr << '\n';
 }
 
 __attribute__((used)) void dump(Frame* frame) { std::cerr << frame; }

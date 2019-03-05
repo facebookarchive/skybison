@@ -9,6 +9,81 @@ namespace python {
 
 using namespace testing;
 
+static RawObject makeTestCode(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope;
+  Bytes bytes(&scope, runtime->newBytesWithAll({100, 0, 83, 0}));
+  Tuple consts(&scope, runtime->newTuple(1));
+  consts.atPut(0, runtime->newStrFromCStr("const0"));
+  Tuple names(&scope, runtime->newTuple(1));
+  names.atPut(0, runtime->newStrFromCStr("name0"));
+  Tuple varnames(&scope, runtime->newTuple(1));
+  varnames.atPut(0, runtime->newStrFromCStr("variable0"));
+  Tuple freevars(&scope, runtime->newTuple(1));
+  freevars.atPut(0, runtime->newStrFromCStr("freevar0"));
+  Tuple cellvars(&scope, runtime->newTuple(1));
+  cellvars.atPut(0, runtime->newStrFromCStr("cellvar0"));
+  Str filename(&scope, runtime->newStrFromCStr("filename0"));
+  Str name(&scope, runtime->newStrFromCStr("name0"));
+  Object lnotab(&scope, NoneType::object());
+  return runtime->newCode(1, 0, 0, 1, 0, bytes, consts, names, varnames,
+                          freevars, cellvars, filename, name, 0, lnotab);
+}
+
+TEST(DebuggingTests, DumpExtendedCode) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object code(&scope, makeTestCode(thread));
+
+  std::stringstream ss;
+  dumpExtended(ss, *code);
+  EXPECT_EQ(
+      ss.str(),
+      R"(name: "name0" argcount: 1 kwonlyargcount: 0 nlocals: 0 stacksize: 1
+filename: "filename0"
+consts: ("const0",)
+names: ("name0",)
+freevars: ("freevar0",)
+varnames: ("variable0",)
+   0 LOAD_CONST 0
+   2 RETURN_VALUE 0
+)");
+}
+
+TEST(DebuggingTests, DumpExtendedFunction) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Function func(&scope, runtime.newFunction());
+  func.setAnnotations(runtime.newDict());
+  func.setClosure(runtime.newTuple(0));
+  func.setDefaults(runtime.newTuple(0));
+  func.setKwDefaults(runtime.newDict());
+  func.setModule(runtime.newStrFromCStr("barmodule"));
+  func.setName(runtime.newStrFromCStr("baz"));
+  func.setQualname(runtime.newStrFromCStr("footype.baz"));
+  func.setCode(makeTestCode(thread));
+  std::stringstream ss;
+  dumpExtended(ss, *func);
+  EXPECT_EQ(ss.str(), R"(name: "baz"
+qualname: "footype.baz"
+module: "barmodule"
+annotations: {}
+closure: ()
+defaults: ()
+kwdefaults: {}
+code: name: "name0" argcount: 1 kwonlyargcount: 0 nlocals: 0 stacksize: 1
+filename: "filename0"
+consts: ("const0",)
+names: ("name0",)
+freevars: ("freevar0",)
+varnames: ("variable0",)
+   0 LOAD_CONST 0
+   2 RETURN_VALUE 0
+)");
+}
+
 TEST(DebuggingTests, FormatBool) {
   Runtime runtime;
   std::stringstream ss;
