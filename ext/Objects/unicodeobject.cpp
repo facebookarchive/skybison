@@ -1126,8 +1126,11 @@ PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* pyobj) {
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* pyobj) {
-  // The API documentation for this function claims that it returns the number
-  // of code units, but it actually returns the number of code points.
+  // This function returns the number of UTF-16 or UTF-32 code units, depending
+  // on the size of wchar_t on the operating system. On the machines that we
+  // currently use for testing, this is the same as the number of Unicode code
+  // points. This must be modified when we support operating systems with
+  // different wchar_t (e.g. Windows).
   return PyUnicode_GetLength(pyobj);
 }
 
