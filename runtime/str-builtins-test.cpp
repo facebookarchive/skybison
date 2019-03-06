@@ -226,7 +226,7 @@ d = a.__add__(b)
   EXPECT_TRUE(isStrEqualsCStr(*d, "helloworld"));
 }
 
-TEST(StrBuiltinsTest, StringLen) {
+TEST(StrBuiltinsTest, DunderLenReturnsLength) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 l1 = len("aloha")
@@ -234,30 +234,38 @@ l2 = str.__len__("aloha")
 l3 = "aloha".__len__()
 )");
   HandleScope scope;
-  SmallInt l1(&scope, moduleAt(&runtime, "__main__", "l1"));
-  EXPECT_EQ(5, l1.value());
-  SmallInt l2(&scope, moduleAt(&runtime, "__main__", "l2"));
-  EXPECT_EQ(5, l2.value());
-  SmallInt l3(&scope, moduleAt(&runtime, "__main__", "l3"));
-  EXPECT_EQ(5, l3.value());
+  Object l1(&scope, moduleAt(&runtime, "__main__", "l1"));
+  Object l2(&scope, moduleAt(&runtime, "__main__", "l2"));
+  Object l3(&scope, moduleAt(&runtime, "__main__", "l3"));
+  EXPECT_TRUE(isIntEqualsWord(*l1, 5));
+  EXPECT_TRUE(isIntEqualsWord(*l2, 5));
+  EXPECT_TRUE(isIntEqualsWord(*l3, 5));
 }
 
 TEST(StrBuiltinsTest, StringLenWithEmptyString) {
   Runtime runtime;
   runFromCStr(&runtime, "l = len('')");
   HandleScope scope;
-  SmallInt l(&scope, moduleAt(&runtime, "__main__", "l"));
-  EXPECT_EQ(0, l.value());
+  Object length(&scope, moduleAt(&runtime, "__main__", "l"));
+  EXPECT_TRUE(isIntEqualsWord(*length, 0));
 }
 
-TEST(StrBuiltinsTest, StringLenWithInt) {
+TEST(StrBuiltinsTest, DunderLenWithNonAsciiReturnsCodePointLength) {
+  Runtime runtime;
+  runFromCStr(&runtime, "l = len('\xc3\xa9')");
+  HandleScope scope;
+  SmallInt length(&scope, moduleAt(&runtime, "__main__", "l"));
+  EXPECT_TRUE(isIntEqualsWord(*length, 1));
+}
+
+TEST(StrBuiltinsTest, DunderLenWithIntRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "l = str.__len__(3)"),
                             LayoutId::kTypeError,
                             "descriptor '__len__' requires a 'str' object"));
 }
 
-TEST(StrBuiltinsTest, StringLenWithExtraArgument) {
+TEST(StrBuiltinsTest, DunderLenWithExtraArgumentRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "l = 'aloha'.__len__('arg')"), LayoutId::kTypeError,

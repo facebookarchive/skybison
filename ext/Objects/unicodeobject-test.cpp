@@ -222,52 +222,43 @@ TEST_F(UnicodeExtensionApiTest, CompareWithASCIIStringASCII) {
 
 TEST_F(UnicodeExtensionApiTest, GetLengthWithEmptyStrReturnsZero) {
   PyObjectPtr str(PyUnicode_FromString(""));
-  EXPECT_EQ(PyUnicode_GetLength(str), 0);
+  Py_ssize_t expected = 0;
+  EXPECT_EQ(PyUnicode_GetLength(str), expected);
+  EXPECT_EQ(PyUnicode_GetSize(str), expected);
+  EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
+  EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), expected);
 }
 
 TEST_F(UnicodeExtensionApiTest, GetLengthWithNonEmptyString) {
   PyObjectPtr str(PyUnicode_FromString("foo"));
-  EXPECT_EQ(PyUnicode_GetLength(str), 3);
+  Py_ssize_t expected = 3;
+  EXPECT_EQ(PyUnicode_GetLength(str), expected);
+  EXPECT_EQ(PyUnicode_GetSize(str), expected);
+  EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
+  EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), expected);
 }
 
-TEST_F(UnicodeExtensionApiTest, GetLengthWithNonStrReturnsNegative) {
+TEST_F(UnicodeExtensionApiTest, GetLengthWithUTF8ReturnsCodePointLength) {
+  PyObjectPtr str(PyUnicode_FromString("\xc3\xa9"));
+  Py_ssize_t expected = 1;
+  EXPECT_EQ(PyUnicode_GetLength(str), expected);
+  EXPECT_EQ(PyUnicode_GetSize(str), expected);
+  EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), expected);
+  EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), expected);
+}
+
+TEST_F(UnicodeExtensionApiTest, GetLengthWithNonStrRaisesTypeError) {
   PyObjectPtr list(PyList_New(3));
   EXPECT_EQ(PyUnicode_GetLength(list), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
-TEST_F(UnicodeExtensionApiTest, GETLENGTHAndGetLengthSame) {
-  PyObjectPtr mty(PyUnicode_FromString(""));
-  PyObjectPtr str(PyUnicode_FromString("some string"));
-
-  EXPECT_EQ(PyUnicode_GET_LENGTH(mty.get()), PyUnicode_GetLength(mty));
-  EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), PyUnicode_GetLength(str));
-}
-
-TEST_F(UnicodeExtensionApiTest, GetSizeWithEmptyStrReturnsZero) {
-  PyObjectPtr str(PyUnicode_FromString(""));
-  EXPECT_EQ(PyUnicode_GetSize(str), 0);
-}
-
-TEST_F(UnicodeExtensionApiTest, GetSizeWithNonEmptyString) {
-  PyObjectPtr str(PyUnicode_FromString("bar"));
-  EXPECT_EQ(PyUnicode_GetSize(str), 3);
-}
-
-TEST_F(UnicodeExtensionApiTest, GetSizeWithNonStrReturnsNegative) {
-  PyObjectPtr dict(PyDict_New());
-  EXPECT_EQ(PyUnicode_GetSize(dict), -1);
+TEST_F(UnicodeExtensionApiTest, GetSizeWithNonStrRaisesTypeError) {
+  PyObjectPtr list(PyList_New(3));
+  EXPECT_EQ(PyUnicode_GetSize(list), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
-}
-
-TEST_F(UnicodeExtensionApiTest, GETSIZEAndGetSizeSame) {
-  PyObjectPtr mty(PyUnicode_FromString(""));
-  PyObjectPtr str(PyUnicode_FromString("another string"));
-
-  EXPECT_EQ(PyUnicode_GET_SIZE(mty.get()), PyUnicode_GetSize(mty));
-  EXPECT_EQ(PyUnicode_GET_SIZE(str.get()), PyUnicode_GetSize(str));
 }
 
 TEST_F(UnicodeExtensionApiTest, FromUnicodeWithASCIIReturnsString) {

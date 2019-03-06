@@ -260,13 +260,12 @@ RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (self.isStr()) {
-    // TODO(T33085486): __len__ for unicode should return number of code points,
-    // not bytes
-    return SmallInt::fromWord(RawStr::cast(*self)->length());
+  if (!thread->runtime()->isInstanceOfStr(*self)) {
+    return thread->raiseTypeErrorWithCStr(
+        "descriptor '__len__' requires a 'str' object");
   }
-  return thread->raiseTypeErrorWithCStr(
-      "descriptor '__len__' requires a 'str' object");
+  Str str(&scope, *self);
+  return SmallInt::fromWord(str.codePointLength());
 }
 
 RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {

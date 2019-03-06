@@ -1110,44 +1110,25 @@ PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
   UNIMPLEMENTED("PyUnicode_GetDefaultEncoding");
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* py_str) {
+PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* pyobj) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
-  Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
-  if (!runtime->isInstanceOfStr(*str_obj)) {
+  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  if (!thread->runtime()->isInstanceOfStr(*obj)) {
     thread->raiseBadArgument();
     return -1;
   }
-
-  if (!str_obj.isStr()) {
+  if (!obj.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-
-  Str str(&scope, *str_obj);
-  return str.length();  // TODO(T36613745): this should return the number of
-                        // code points, not bytes
+  Str str(&scope, *obj);
+  return str.codePointLength();
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* py_str) {
-  Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  Object str_obj(&scope, ApiHandle::fromPyObject(py_str)->asObject());
-  if (!runtime->isInstanceOfStr(*str_obj)) {
-    thread->raiseBadArgument();
-    return -1;
-  }
-
-  if (!str_obj.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-
-  Str str(&scope, *str_obj);
-  return str.length();  // TODO(T36613745): this should return the number of
-                        // code units, not bytes
+PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* pyobj) {
+  // The API documentation for this function claims that it returns the number
+  // of code units, but it actually returns the number of code points.
+  return PyUnicode_GetLength(pyobj);
 }
 
 PY_EXPORT PyObject* PyUnicode_InternFromString(const char* c_str) {
