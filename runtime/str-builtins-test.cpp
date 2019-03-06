@@ -1019,6 +1019,25 @@ d = "hellllo".split("ll")
   EXPECT_TRUE(isStrEqualsCStr(d.at(2), "o"));
 }
 
+TEST(StrBuiltinsTest, SplitWithMaxSplitZeroReturnsList) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+a = "hello".split("x", 0)
+b = "hello".split("l", 0)
+)");
+  HandleScope scope;
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b_obj(&scope, moduleAt(&runtime, "__main__", "b"));
+  ASSERT_TRUE(a_obj.isList());
+  ASSERT_TRUE(b_obj.isList());
+  List a(&scope, *a_obj);
+  List b(&scope, *b_obj);
+  ASSERT_EQ(a.numItems(), 1);
+  ASSERT_EQ(b.numItems(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "hello"));
+}
+
 TEST(StrBuiltinsTest, SplitWithMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
@@ -1248,6 +1267,25 @@ l = "hellllo".rsplit("ll")
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "he"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), ""));
   EXPECT_TRUE(isStrEqualsCStr(result.at(2), "o"));
+}
+
+TEST(StrBuiltinsTest, RsplitWithMaxSplitZeroReturnsList) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+a = "hello".rsplit("x", 0)
+b = "hello".rsplit("l", 0)
+)");
+  HandleScope scope;
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b_obj(&scope, moduleAt(&runtime, "__main__", "b"));
+  ASSERT_TRUE(a_obj.isList());
+  ASSERT_TRUE(b_obj.isList());
+  List a(&scope, *a_obj);
+  List b(&scope, *b_obj);
+  ASSERT_EQ(a.numItems(), 1);
+  ASSERT_EQ(b.numItems(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(0), "hello"));
 }
 
 TEST(StrBuiltinsTest,

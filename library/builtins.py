@@ -852,7 +852,7 @@ class str(bootstrap=True):
 
     def split(self, sep=None, maxsplit=-1):
         if maxsplit == 0:
-            return self
+            return [self]
         # If the separator is not specified, split on all whitespace characters.
         if sep is None:
             raise NotImplementedError("Splitting on whitespace not yet implemented")
