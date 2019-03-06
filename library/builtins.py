@@ -1520,3 +1520,28 @@ def _structseq_repr(self):
     # TODO(T40273054): Iterate attributes and return field names
     tuple_values = ", ".join([i.__repr__() for i in self])
     return f"{type(self).__name__}({tuple_values})"
+
+
+def _long_of_obj(obj):
+    # TODO(T41279675): Unify this into one user-visible int type
+    if type(obj) is smallint or type(obj) is largeint:  # noqa: F821
+        return obj
+    if hasattr(obj, "__int__"):
+        result = obj.__int__()
+        result_type = type(result)
+        # TODO(T41279675): Unify this into one user-visible int type
+        if result_type is not smallint and result_type is not largeint:  # noqa: F821
+            raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
+        return result
+    if hasattr(obj, "__trunc__"):
+        trunc_result = obj.__trunc__()
+        if isinstance(trunc_result, int):
+            return trunc_result
+        return trunc_result.__int__()
+    if isinstance(obj, str) or isinstance(obj, bytes) or isinstance(obj, bytearray):
+        return int(obj, 10)
+    # TODO(T41277979): Create from an object that implements the buffer protocol
+    raise TypeError(
+        f"int() argument must be a string, a bytes-like object or a number, not"
+        f" {type(obj).__name__}"
+    )

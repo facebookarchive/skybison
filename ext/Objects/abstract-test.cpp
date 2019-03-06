@@ -621,6 +621,89 @@ c = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberLongWithNullRaisesSystemError) {
+  EXPECT_EQ(PyNumber_Long(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberLongWithIntReturnsInt) {
+  PyObjectPtr intobj(PyLong_FromLong(7));
+  Py_ssize_t refcnt = Py_REFCNT(intobj);
+  PyObjectPtr result(PyNumber_Long(intobj));
+  EXPECT_EQ(result, intobj);
+  EXPECT_EQ(Py_REFCNT(result), refcnt + 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberLongDunderLongReturnsNonIntRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  def __int__(self):
+    return "foo"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyNumber_Long(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberLongCallsDunderTrunc) {
+  PyRun_SimpleString(R"(
+class C:
+  def __trunc__(self):
+    return 7
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Long(c));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 7);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberLongCallsDunderTruncAndDunderInt) {
+  PyRun_SimpleString(R"(
+class D:
+  def __int__(self):
+    return 8
+
+class C:
+  def __trunc__(self):
+    return D()
+
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr result(PyNumber_Long(c));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 8);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberLongWithStringReturnsInt) {
+  PyObjectPtr str(PyUnicode_FromString("7"));
+  PyObjectPtr result(PyNumber_Long(str));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 7);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberLongWithUnsupportedTypeRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyNumber_Long(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberLshiftWithNonIntSelfRaisesTypeError) {
   PyObjectPtr x(PyFloat_FromDouble(5.0));
   PyObjectPtr y(PyLong_FromLong(2));

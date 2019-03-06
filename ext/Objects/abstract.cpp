@@ -476,8 +476,20 @@ PY_EXPORT PyObject* PyNumber_Invert(PyObject* pyobj) {
   return doUnaryOp(SymbolId::kInvert, pyobj);
 }
 
-PY_EXPORT PyObject* PyNumber_Long(PyObject* /* o */) {
-  UNIMPLEMENTED("PyNumber_Long");
+PY_EXPORT PyObject* PyNumber_Long(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object result(&scope,
+                thread->invokeFunction1(SymbolId::kBuiltins,
+                                        SymbolId::kUnderLongOfObj, object));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyNumber_Lshift(PyObject* left, PyObject* right) {

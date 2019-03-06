@@ -108,6 +108,14 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     // TODO(dulinr): Call __index__ on base to convert it.
     UNIMPLEMENTED("Can't handle non-integer base");
   }
+  if (runtime->isInstanceOfBytes(*arg)) {
+    // TODO(T41277914): Int from bytes
+    UNIMPLEMENTED("int.__new__(bytes)");
+  }
+  if (runtime->isInstanceOfByteArray(*arg)) {
+    // TODO(T41277959): Int from bytearray
+    UNIMPLEMENTED("int.__new__(bytearray)");
+  }
   return intFromString(thread, *arg, RawInt::cast(*base)->asWord());
 }
 

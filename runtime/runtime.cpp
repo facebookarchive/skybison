@@ -2034,6 +2034,7 @@ void Runtime::createBuiltinsModule() {
   moduleAddBuiltinType(module, SymbolId::kKeyError, LayoutId::kKeyError);
   moduleAddBuiltinType(module, SymbolId::kKeyboardInterrupt,
                        LayoutId::kKeyboardInterrupt);
+  moduleAddBuiltinType(module, SymbolId::kLargeInt, LayoutId::kLargeInt);
   moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
   moduleAddBuiltinType(module, SymbolId::kListIterator,
                        LayoutId::kListIterator);
