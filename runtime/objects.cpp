@@ -477,7 +477,7 @@ int32 RawStr::codePointAt(word index, word* length) const {
 }
 
 word RawStr::codePointIndex(word index) const {
-  DCHECK_INDEX(index, length());
+  DCHECK_INDEX(index, codePointLength());
   word i = 0;
   while (index--) {
     byte ch = charAt(i);

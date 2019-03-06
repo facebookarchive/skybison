@@ -713,6 +713,16 @@ TEST(StrTest, CodePointIndex) {
   EXPECT_EQ(unicode.codePointIndex(3), 6);
 }
 
+TEST(StrDeathTest, CodePointIndex) {
+  Runtime runtime;
+  HandleScope scope;
+  Str unicode(&scope,
+              runtime.newStrFromCStr("\xd7\x90\xd7\x91\xd7\x92\xd7\x93"));
+  EXPECT_EQ(unicode.codePointLength(), 4);
+  EXPECT_DEBUG_ONLY_DEATH(unicode.codePointIndex(4),
+                          "index out of range, 4 not in 0..3");
+}
+
 TEST(LargeStrTest, CodePointLengthAscii) {
   Runtime runtime;
   HandleScope scope;
