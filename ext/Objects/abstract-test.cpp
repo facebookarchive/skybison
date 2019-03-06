@@ -262,6 +262,63 @@ TEST_F(AbstractExtensionApiTest, PyNumberAndWithIntsReturnsBitwiseAnd) {
   EXPECT_EQ(PyLong_AsLong(result), 1);  // 0b0001
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithNullRaisesSystemError) {
+  ASSERT_EQ(PyNumber_AsSsize_t(nullptr, PyExc_TypeError), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithStringRaisesTypeError) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  ASSERT_EQ(PyNumber_AsSsize_t(str, nullptr), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithIntReturnsInt) {
+  PyObjectPtr num(PyLong_FromLong(10));
+  Py_ssize_t result = PyNumber_AsSsize_t(num, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, 10);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberAsSsizeTWithNegativeOneReturnsNegativeOne) {
+  PyObjectPtr num(PyLong_FromLong(-1));
+  Py_ssize_t result = PyNumber_AsSsize_t(num, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, -1);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberAsSsizeTWithOverflowAndNullClearsError) {
+  const unsigned char bytes[] = {0x01, 0x00, 0x00, 0x00, 0x00,
+                                 0x00, 0x00, 0x00, 0x00};
+  PyObjectPtr num(_PyLong_FromByteArray(bytes, sizeof(bytes), false, true));
+  Py_ssize_t result = PyNumber_AsSsize_t(num, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, 0x7fffffffffffffff);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberAsSsizeTWithUnderflowAndNullClearsError) {
+  const unsigned char bytes[] = {0xff, 0x00, 0x00, 0x00, 0x00,
+                                 0x00, 0x00, 0x00, 0x00};
+  PyObjectPtr num(_PyLong_FromByteArray(bytes, sizeof(bytes), false, true));
+  Py_ssize_t result = PyNumber_AsSsize_t(num, nullptr);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, -0x8000000000000000);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithOverflowSetsGivenError) {
+  const unsigned char bytes[] = {0x01, 0x00, 0x00, 0x00, 0x00,
+                                 0x00, 0x00, 0x00, 0x00};
+  PyObjectPtr num(_PyLong_FromByteArray(bytes, sizeof(bytes), false, true));
+  ASSERT_EQ(PyNumber_AsSsize_t(num, PyExc_ModuleNotFoundError), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ModuleNotFoundError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberCheckWithFloatReturnsTrue) {
   PyObjectPtr float_num(PyFloat_FromDouble(1.1));
   EXPECT_EQ(PyNumber_Check(float_num), 1);
