@@ -37,6 +37,7 @@
 #include "marshal.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
+#include "operator-module.h"
 #include "os.h"
 #include "range-builtins.h"
 #include "ref-builtins.h"
@@ -55,6 +56,7 @@
 #include "utils.h"
 #include "visitor.h"
 #include "warnings-module.h"
+#include "weakref-module.h"
 
 namespace python {
 
@@ -1750,25 +1752,26 @@ void Runtime::moduleAtPut(const Module& module, const Object& key,
   moduleDictAtPut(dict, key, value);
 }
 
-struct {
-  SymbolId name;
-  void (Runtime::*create_module)();
-} kBuiltinModules[] = {
-    {SymbolId::kBuiltins, &Runtime::createBuiltinsModule},
-    {SymbolId::kSys, &Runtime::createSysModule},
-    {SymbolId::kTime, &Runtime::createTimeModule},
-    {SymbolId::kUnderImp, &Runtime::createImportModule},
-    {SymbolId::kUnderIo, &Runtime::createUnderIoModule},
-    {SymbolId::kMarshal, &Runtime::createMarshalModule},
-    {SymbolId::kUnderWarnings, &Runtime::createWarningsModule},
-    {SymbolId::kUnderWeakRef, &Runtime::createWeakRefModule},
-    {SymbolId::kOperator, &Runtime::createOperatorModule},
+// TODO(emacs): Move these names into the modules themselves, so there is only
+// once source of truth.
+const ModuleInitializer Runtime::kBuiltinModules[] = {
+    {SymbolId::kBuiltins, &BuiltinsModule::initialize},
+    {SymbolId::kSys, &SysModule::initialize},
+    {SymbolId::kTime, &TimeModule::initialize},
+    {SymbolId::kUnderImp, &UnderImpModule::initialize},
+    {SymbolId::kUnderIo, &UnderIoModule::initialize},
+    {SymbolId::kMarshal, &MarshalModule::initialize},
+    {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
+    {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
+    {SymbolId::kOperator, &OperatorModule::initialize},
+    {SymbolId::kSentinelId, nullptr},
 };
 
 void Runtime::initializeModules() {
   modules_ = newDict();
-  for (uword i = 0; i < ARRAYSIZE(kBuiltinModules); i++) {
-    (this->*kBuiltinModules[i].create_module)();
+  Thread* thread = Thread::currentThread();
+  for (size_t i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
+    kBuiltinModules[i].create_module(thread);
   }
   // Importlib should be initialized separately as it's not part of
   // sys.builtin_module_names
@@ -1910,236 +1913,6 @@ RawObject Runtime::moduleAddNativeFunction(const Module& module, SymbolId name,
   return dictAtPutInValueCell(dict, key, value);
 }
 
-void Runtime::createBuiltinsModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->Builtins());
-  Module module(&scope, newModule(name));
-
-  // Fill in builtins...
-  build_class_ =
-      moduleAddNativeFunction(module, SymbolId::kDunderBuildClass,
-                              nativeTrampoline<BuiltinsModule::buildClass>,
-                              nativeTrampolineKw<BuiltinsModule::buildClassKw>,
-                              unimplementedTrampoline);
-
-  moduleAddBuiltinFunction(module, SymbolId::kUnderByteArrayJoin,
-                           ByteArrayBuiltins::join);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderBytesJoin,
-                           BytesBuiltins::join);
-  moduleAddBuiltinFunction(module, SymbolId::kCallable,
-                           BuiltinsModule::callable);
-  moduleAddBuiltinFunction(module, SymbolId::kChr, BuiltinsModule::chr);
-  moduleAddBuiltinFunction(module, SymbolId::kCompile, BuiltinsModule::compile);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderComplexImag, complexGetImag);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderComplexReal, complexGetReal);
-  moduleAddBuiltinFunction(module, SymbolId::kDivmod, BuiltinsModule::divmod);
-  moduleAddBuiltinFunction(module, SymbolId::kExec, BuiltinsModule::exec);
-  moduleAddBuiltinFunction(module, SymbolId::kGetattr, BuiltinsModule::getattr);
-  moduleAddBuiltinFunction(module, SymbolId::kHasattr, BuiltinsModule::hasattr);
-  moduleAddBuiltinFunction(module, SymbolId::kIsInstance,
-                           BuiltinsModule::isinstance);
-  moduleAddBuiltinFunction(module, SymbolId::kIsSubclass,
-                           BuiltinsModule::issubclass);
-  moduleAddBuiltinFunction(module, SymbolId::kOrd, BuiltinsModule::ord);
-  // _patch is not patched because that would cause a circularity problem.
-  moduleAddNativeFunction(module, SymbolId::kUnderPatch,
-                          nativeTrampoline<BuiltinsModule::underPatch>,
-                          unimplementedTrampoline, unimplementedTrampoline);
-  moduleAddBuiltinFunction(module, SymbolId::kSetattr, BuiltinsModule::setattr);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderAddress,
-                           BuiltinsModule::underAddress);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderPrintStr,
-                           BuiltinsModule::underPrintStr);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderReprEnter,
-                           BuiltinsModule::underReprEnter);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderReprLeave,
-                           BuiltinsModule::underReprLeave);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderStrEscapeNonAscii,
-                           BuiltinsModule::underStrEscapeNonAscii);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderStructseqSetAttr,
-                           underStructseqSetAttr);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderStructseqGetAttr,
-                           underStructseqGetAttr);
-  // Add builtin types
-  moduleAddBuiltinType(module, SymbolId::kArithmeticError,
-                       LayoutId::kArithmeticError);
-  moduleAddBuiltinType(module, SymbolId::kAssertionError,
-                       LayoutId::kAssertionError);
-  moduleAddBuiltinType(module, SymbolId::kAttributeError,
-                       LayoutId::kAttributeError);
-  moduleAddBuiltinType(module, SymbolId::kBaseException,
-                       LayoutId::kBaseException);
-  moduleAddBuiltinType(module, SymbolId::kBlockingIOError,
-                       LayoutId::kBlockingIOError);
-  moduleAddBuiltinType(module, SymbolId::kBool, LayoutId::kBool);
-  moduleAddBuiltinType(module, SymbolId::kBrokenPipeError,
-                       LayoutId::kBrokenPipeError);
-  moduleAddBuiltinType(module, SymbolId::kBufferError, LayoutId::kBufferError);
-  moduleAddBuiltinType(module, SymbolId::kByteArray, LayoutId::kByteArray);
-  moduleAddBuiltinType(module, SymbolId::kBytes, LayoutId::kBytes);
-  moduleAddBuiltinType(module, SymbolId::kBytesWarning,
-                       LayoutId::kBytesWarning);
-  moduleAddBuiltinType(module, SymbolId::kChildProcessError,
-                       LayoutId::kChildProcessError);
-  moduleAddBuiltinType(module, SymbolId::kClassmethod, LayoutId::kClassMethod);
-  moduleAddBuiltinType(module, SymbolId::kComplex, LayoutId::kComplex);
-  moduleAddBuiltinType(module, SymbolId::kConnectionAbortedError,
-                       LayoutId::kConnectionAbortedError);
-  moduleAddBuiltinType(module, SymbolId::kConnectionError,
-                       LayoutId::kConnectionError);
-  moduleAddBuiltinType(module, SymbolId::kConnectionRefusedError,
-                       LayoutId::kConnectionRefusedError);
-  moduleAddBuiltinType(module, SymbolId::kConnectionResetError,
-                       LayoutId::kConnectionResetError);
-  moduleAddBuiltinType(module, SymbolId::kCoroutine, LayoutId::kCoroutine);
-  moduleAddBuiltinType(module, SymbolId::kDeprecationWarning,
-                       LayoutId::kDeprecationWarning);
-  moduleAddBuiltinType(module, SymbolId::kDict, LayoutId::kDict);
-  moduleAddBuiltinType(module, SymbolId::kDictItemIterator,
-                       LayoutId::kDictItemIterator);
-  moduleAddBuiltinType(module, SymbolId::kDictItems, LayoutId::kDictItems);
-  moduleAddBuiltinType(module, SymbolId::kDictKeyIterator,
-                       LayoutId::kDictKeyIterator);
-  moduleAddBuiltinType(module, SymbolId::kDictKeys, LayoutId::kDictKeys);
-  moduleAddBuiltinType(module, SymbolId::kDictValueIterator,
-                       LayoutId::kDictValueIterator);
-  moduleAddBuiltinType(module, SymbolId::kDictValues, LayoutId::kDictValues);
-  moduleAddBuiltinType(module, SymbolId::kEOFError, LayoutId::kEOFError);
-  moduleAddBuiltinType(module, SymbolId::kException, LayoutId::kException);
-  moduleAddBuiltinType(module, SymbolId::kFileExistsError,
-                       LayoutId::kFileExistsError);
-  moduleAddBuiltinType(module, SymbolId::kFileNotFoundError,
-                       LayoutId::kFileNotFoundError);
-  moduleAddBuiltinType(module, SymbolId::kFloat, LayoutId::kFloat);
-  moduleAddBuiltinType(module, SymbolId::kFloatingPointError,
-                       LayoutId::kFloatingPointError);
-  moduleAddBuiltinType(module, SymbolId::kFrozenSet, LayoutId::kFrozenSet);
-  moduleAddBuiltinType(module, SymbolId::kFunction, LayoutId::kFunction);
-  moduleAddBuiltinType(module, SymbolId::kFutureWarning,
-                       LayoutId::kFutureWarning);
-  moduleAddBuiltinType(module, SymbolId::kGenerator, LayoutId::kGenerator);
-  moduleAddBuiltinType(module, SymbolId::kGeneratorExit,
-                       LayoutId::kGeneratorExit);
-  moduleAddBuiltinType(module, SymbolId::kImportError, LayoutId::kImportError);
-  moduleAddBuiltinType(module, SymbolId::kImportWarning,
-                       LayoutId::kImportWarning);
-  moduleAddBuiltinType(module, SymbolId::kIndentationError,
-                       LayoutId::kIndentationError);
-  moduleAddBuiltinType(module, SymbolId::kIndexError, LayoutId::kIndexError);
-  moduleAddBuiltinType(module, SymbolId::kInt, LayoutId::kInt);
-  moduleAddBuiltinType(module, SymbolId::kInterruptedError,
-                       LayoutId::kInterruptedError);
-  moduleAddBuiltinType(module, SymbolId::kIsADirectoryError,
-                       LayoutId::kIsADirectoryError);
-  moduleAddBuiltinType(module, SymbolId::kKeyError, LayoutId::kKeyError);
-  moduleAddBuiltinType(module, SymbolId::kKeyboardInterrupt,
-                       LayoutId::kKeyboardInterrupt);
-  moduleAddBuiltinType(module, SymbolId::kLargeInt, LayoutId::kLargeInt);
-  moduleAddBuiltinType(module, SymbolId::kList, LayoutId::kList);
-  moduleAddBuiltinType(module, SymbolId::kListIterator,
-                       LayoutId::kListIterator);
-  moduleAddBuiltinType(module, SymbolId::kLookupError, LayoutId::kLookupError);
-  moduleAddBuiltinType(module, SymbolId::kMemoryError, LayoutId::kMemoryError);
-  moduleAddBuiltinType(module, SymbolId::kModule, LayoutId::kModule);
-  moduleAddBuiltinType(module, SymbolId::kModuleNotFoundError,
-                       LayoutId::kModuleNotFoundError);
-  moduleAddBuiltinType(module, SymbolId::kNameError, LayoutId::kNameError);
-  moduleAddBuiltinType(module, SymbolId::kNoneType, LayoutId::kNoneType);
-  moduleAddBuiltinType(module, SymbolId::kNotADirectoryError,
-                       LayoutId::kNotADirectoryError);
-  moduleAddBuiltinType(module, SymbolId::kNotImplementedError,
-                       LayoutId::kNotImplementedError);
-  moduleAddBuiltinType(module, SymbolId::kOSError, LayoutId::kOSError);
-  moduleAddBuiltinType(module, SymbolId::kObjectTypename, LayoutId::kObject);
-  moduleAddBuiltinType(module, SymbolId::kOverflowError,
-                       LayoutId::kOverflowError);
-  moduleAddBuiltinType(module, SymbolId::kPendingDeprecationWarning,
-                       LayoutId::kPendingDeprecationWarning);
-  moduleAddBuiltinType(module, SymbolId::kPermissionError,
-                       LayoutId::kPermissionError);
-  moduleAddBuiltinType(module, SymbolId::kProcessLookupError,
-                       LayoutId::kProcessLookupError);
-  moduleAddBuiltinType(module, SymbolId::kProperty, LayoutId::kProperty);
-  moduleAddBuiltinType(module, SymbolId::kRange, LayoutId::kRange);
-  moduleAddBuiltinType(module, SymbolId::kRangeIterator,
-                       LayoutId::kRangeIterator);
-  moduleAddBuiltinType(module, SymbolId::kRecursionError,
-                       LayoutId::kRecursionError);
-  moduleAddBuiltinType(module, SymbolId::kReferenceError,
-                       LayoutId::kReferenceError);
-  moduleAddBuiltinType(module, SymbolId::kResourceWarning,
-                       LayoutId::kResourceWarning);
-  moduleAddBuiltinType(module, SymbolId::kRuntimeError,
-                       LayoutId::kRuntimeError);
-  moduleAddBuiltinType(module, SymbolId::kRuntimeWarning,
-                       LayoutId::kRuntimeWarning);
-  moduleAddBuiltinType(module, SymbolId::kSet, LayoutId::kSet);
-  moduleAddBuiltinType(module, SymbolId::kSetIterator, LayoutId::kSetIterator);
-  moduleAddBuiltinType(module, SymbolId::kSlice, LayoutId::kSlice);
-  moduleAddBuiltinType(module, SymbolId::kSmallInt, LayoutId::kSmallInt);
-  moduleAddBuiltinType(module, SymbolId::kStaticMethod,
-                       LayoutId::kStaticMethod);
-  moduleAddBuiltinType(module, SymbolId::kStopAsyncIteration,
-                       LayoutId::kStopAsyncIteration);
-  moduleAddBuiltinType(module, SymbolId::kStopIteration,
-                       LayoutId::kStopIteration);
-  moduleAddBuiltinType(module, SymbolId::kStr, LayoutId::kStr);
-  moduleAddBuiltinType(module, SymbolId::kStrIterator, LayoutId::kStrIterator);
-  moduleAddBuiltinType(module, SymbolId::kSuper, LayoutId::kSuper);
-  moduleAddBuiltinType(module, SymbolId::kSyntaxError, LayoutId::kSyntaxError);
-  moduleAddBuiltinType(module, SymbolId::kSyntaxWarning,
-                       LayoutId::kSyntaxWarning);
-  moduleAddBuiltinType(module, SymbolId::kSystemError, LayoutId::kSystemError);
-  moduleAddBuiltinType(module, SymbolId::kSystemExit, LayoutId::kSystemExit);
-  moduleAddBuiltinType(module, SymbolId::kTabError, LayoutId::kTabError);
-  moduleAddBuiltinType(module, SymbolId::kTimeoutError,
-                       LayoutId::kTimeoutError);
-  moduleAddBuiltinType(module, SymbolId::kTuple, LayoutId::kTuple);
-  moduleAddBuiltinType(module, SymbolId::kTupleIterator,
-                       LayoutId::kTupleIterator);
-  moduleAddBuiltinType(module, SymbolId::kType, LayoutId::kType);
-  moduleAddBuiltinType(module, SymbolId::kTypeError, LayoutId::kTypeError);
-  moduleAddBuiltinType(module, SymbolId::kUnboundLocalError,
-                       LayoutId::kUnboundLocalError);
-  moduleAddBuiltinType(module, SymbolId::kUnicodeDecodeError,
-                       LayoutId::kUnicodeDecodeError);
-  moduleAddBuiltinType(module, SymbolId::kUnicodeEncodeError,
-                       LayoutId::kUnicodeEncodeError);
-  moduleAddBuiltinType(module, SymbolId::kUnicodeError,
-                       LayoutId::kUnicodeError);
-  moduleAddBuiltinType(module, SymbolId::kUnicodeTranslateError,
-                       LayoutId::kUnicodeTranslateError);
-  moduleAddBuiltinType(module, SymbolId::kUnicodeWarning,
-                       LayoutId::kUnicodeWarning);
-  moduleAddBuiltinType(module, SymbolId::kUserWarning, LayoutId::kUserWarning);
-  moduleAddBuiltinType(module, SymbolId::kValueError, LayoutId::kValueError);
-  moduleAddBuiltinType(module, SymbolId::kWarning, LayoutId::kWarning);
-  moduleAddBuiltinType(module, SymbolId::kZeroDivisionError,
-                       LayoutId::kZeroDivisionError);
-
-  Object not_implemented(&scope, notImplemented());
-  moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
-
-  Object unbound_value(&scope, unbound_value_);
-  moduleAddGlobal(module, SymbolId::kUnderUnboundValue, unbound_value);
-
-  // For use in builtins :(
-  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
-  moduleAddGlobal(module, SymbolId::kUnderStdout, stdout_val);
-
-  addModule(module);
-  if (executeModule(kBuiltinsModuleData, module).isError()) {
-    Thread::currentThread()->printPendingException();
-    std::exit(EXIT_FAILURE);
-  }
-
-  // TODO(T39575976): Create a consistent way to remove from global dict
-  // Explicitly remove module as this is not exposed in CPython
-  Dict module_dict(&scope, module.dict());
-  Object module_name(&scope, symbols()->Module());
-  dictRemove(module_dict, module_name);
-}
-
 void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
                                    LayoutId layout_id) {
   HandleScope scope;
@@ -2162,171 +1935,6 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
       dictAtPutInValueCell(dict, symbol_name, value);
     }
   }
-}
-
-void Runtime::createSysModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->Sys());
-  Module module(&scope, newModule(name));
-
-  Object modules(&scope, modules_);
-  moduleAddGlobal(module, SymbolId::kModules, modules);
-
-  display_hook_ = moduleAddBuiltinFunction(module, SymbolId::kDisplayhook,
-                                           builtinSysDisplayhook);
-
-  // Fill in sys...
-  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
-  moduleAddGlobal(module, SymbolId::kStdout, stdout_val);
-
-  Object stderr_val(&scope, SmallInt::fromWord(STDERR_FILENO));
-  moduleAddGlobal(module, SymbolId::kStderr, stderr_val);
-
-  Object meta_path(&scope, newList());
-  moduleAddGlobal(module, SymbolId::kMetaPath, meta_path);
-
-  Object path(&scope, initialSysPath(Thread::currentThread()));
-  moduleAddGlobal(module, SymbolId::kPath, path);
-
-  Object platform(&scope, newStrFromCStr(OS::name()));
-  moduleAddGlobal(module, SymbolId::kPlatform, platform);
-
-  // Count the number of modules and create a tuple
-  word num_external_modules = 0;
-  while (_PyImport_Inittab[num_external_modules].name != nullptr) {
-    num_external_modules++;
-  }
-  word num_modules = ARRAYSIZE(kBuiltinModules) + num_external_modules;
-  Tuple builtins_tuple(&scope, newTuple(num_modules));
-
-  // Add all the available builtin modules
-  for (uword i = 0; i < ARRAYSIZE(kBuiltinModules); i++) {
-    Object module_name(&scope, symbols()->at(kBuiltinModules[i].name));
-    builtins_tuple.atPut(i, *module_name);
-  }
-
-  // Add all the available extension builtin modules
-  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    Object module_name(&scope, newStrFromCStr(_PyImport_Inittab[i].name));
-    builtins_tuple.atPut(ARRAYSIZE(kBuiltinModules) + i, *module_name);
-  }
-
-  // Create builtin_module_names tuple
-  Object builtins(&scope, *builtins_tuple);
-  moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
-
-  addModule(module);
-  executeModule(kSysModuleData, module);
-}
-
-void Runtime::createImportModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->UnderImp());
-  Module module(&scope, newModule(name));
-
-  // _imp.acquire_lock
-  moduleAddBuiltinFunction(module, SymbolId::kAcquireLock,
-                           builtinImpAcquireLock);
-
-  // _imp.create_builtin
-  moduleAddBuiltinFunction(module, SymbolId::kCreateBuiltin,
-                           builtinImpCreateBuiltin);
-
-  // _imp.exec_builtin
-  moduleAddBuiltinFunction(module, SymbolId::kExecBuiltin,
-                           builtinImpExecBuiltin);
-
-  // _imp.exec_dynamic
-  moduleAddBuiltinFunction(module, SymbolId::kExecDynamic,
-                           builtinImpExecDynamic);
-
-  // _imp.extension_suffixes
-  moduleAddBuiltinFunction(module, SymbolId::kExtensionSuffixes,
-                           builtinImpExtensionSuffixes);
-
-  // _imp.fix_co_filename
-  moduleAddBuiltinFunction(module, SymbolId::kFixCoFilename,
-                           builtinImpFixCoFilename);
-
-  // _imp.get_frozen_object
-  moduleAddBuiltinFunction(module, SymbolId::kGetFrozenObject,
-                           builtinImpGetFrozenObject);
-
-  // _imp.is_builtin
-  moduleAddBuiltinFunction(module, SymbolId::kIsBuiltin, builtinImpIsBuiltin);
-
-  // _imp.is_frozen
-  moduleAddBuiltinFunction(module, SymbolId::kIsFrozen, builtinImpIsFrozen);
-
-  // _imp.is_frozen_package
-  moduleAddBuiltinFunction(module, SymbolId::kIsFrozenPackage,
-                           builtinImpIsFrozenPackage);
-
-  // _imp.release_lock
-  moduleAddBuiltinFunction(module, SymbolId::kReleaseLock,
-                           builtinImpReleaseLock);
-
-  addModule(module);
-  CHECK(!executeModule(kUnderImpModuleData, module).isError(),
-        "Failed to initialize _imp module");
-}
-
-void Runtime::createWarningsModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->UnderWarnings());
-  Module module(&scope, newModule(name));
-
-  moduleAddBuiltinFunction(module, SymbolId::kWarn, warningsWarn);
-  addModule(module);
-  CHECK(!executeModule(kUnderWarningsModuleData, module).isError(),
-        "Failed to initialize _warnings module");
-}
-
-void Runtime::createWeakRefModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->UnderWeakRef());
-  Module module(&scope, newModule(name));
-
-  moduleAddBuiltinType(module, SymbolId::kRef, LayoutId::kWeakRef);
-  addModule(module);
-  CHECK(!executeModule(kUnderWeakrefModuleData, module).isError(),
-        "Failed to initialize _weakref module");
-}
-
-void Runtime::createOperatorModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->Operator());
-  Module module(&scope, newModule(name));
-  addModule(module);
-  CHECK(!executeModule(kOperatorModuleData, module).isError(),
-        "Failed to initialize operator module");
-}
-
-void Runtime::createTimeModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->Time());
-  Module module(&scope, newModule(name));
-
-  // time.time
-  moduleAddBuiltinFunction(module, SymbolId::kTime, builtinTime);
-
-  addModule(module);
-  CHECK(!executeModule(kTimeModuleData, module).isError(),
-        "Failed to initialize time module");
-}
-
-void Runtime::createUnderIoModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->UnderIo());
-  Module module(&scope, newModule(name));
-
-  // TODO(eelizondo): Remove once _io is fully imported
-  moduleAddBuiltinFunction(module, SymbolId::kUnderReadFile, ioReadFile);
-  moduleAddBuiltinFunction(module, SymbolId::kUnderReadBytes, ioReadBytes);
-
-  addModule(module);
-  CHECK(!executeModule(kUnderIoModuleData, module).isError(),
-        "Failed to initialize _io module");
 }
 
 void Runtime::createImportlibModule() {
@@ -2376,17 +1984,6 @@ RawObject Runtime::createMainModule() {
   addModule(module);
 
   return *module;
-}
-
-void Runtime::createMarshalModule() {
-  HandleScope scope;
-  Object name(&scope, symbols()->Marshal());
-  Module module(&scope, newModule(name));
-  // marshal.loads
-  moduleAddBuiltinFunction(module, SymbolId::kLoads, MarshalModule::loads);
-  addModule(module);
-  CHECK(!executeModule(kMarshalModuleData, module).isError(),
-        "Failed to initialize marsal module");
 }
 
 word Runtime::newCapacity(word curr_capacity, word min_capacity) {
@@ -5058,6 +4655,13 @@ const BuiltinMethod BuiltinsBase::kBuiltinMethods[] = {
 };
 const NativeMethod BuiltinsBase::kNativeMethods[] = {
     {SymbolId::kSentinelId, nullptr},
+};
+
+const BuiltinMethod ModuleBaseBase::kBuiltinMethods[] = {
+    {SymbolId::kSentinelId, nullptr},
+};
+const BuiltinType ModuleBaseBase::kBuiltinTypes[] = {
+    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
 }  // namespace python

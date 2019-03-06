@@ -3,8 +3,12 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "bytearray-builtins.h"
+#include "bytes-builtins.h"
+#include "complex-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
+#include "frozen-modules.h"
 #include "globals.h"
 #include "handles.h"
 #include "int-builtins.h"
@@ -14,6 +18,8 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
+#include "trampolines-inl.h"
+#include "tuple-builtins.h"
 #include "type-builtins.h"
 
 namespace python {
@@ -61,6 +67,176 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
         "setattr(): attribute name must be string");
   }
   return runtime->attributeAtPut(thread, self, name, value);
+}
+
+const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
+    {SymbolId::kCallable, callable},
+    {SymbolId::kChr, chr},
+    {SymbolId::kCompile, compile},
+    {SymbolId::kDivmod, divmod},
+    {SymbolId::kExec, exec},
+    {SymbolId::kGetattr, getattr},
+    {SymbolId::kHasattr, hasattr},
+    {SymbolId::kIsInstance, isinstance},
+    {SymbolId::kIsSubclass, issubclass},
+    {SymbolId::kOrd, ord},
+    {SymbolId::kSetattr, setattr},
+    {SymbolId::kUnderAddress, underAddress},
+    {SymbolId::kUnderByteArrayJoin, ByteArrayBuiltins::join},
+    {SymbolId::kUnderBytesJoin, BytesBuiltins::join},
+    {SymbolId::kUnderComplexImag, complexGetImag},
+    {SymbolId::kUnderComplexReal, complexGetReal},
+    {SymbolId::kUnderPrintStr, underPrintStr},
+    {SymbolId::kUnderReprEnter, underReprEnter},
+    {SymbolId::kUnderReprLeave, underReprLeave},
+    {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
+    {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
+    {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
+    {SymbolId::kArithmeticError, LayoutId::kArithmeticError},
+    {SymbolId::kAssertionError, LayoutId::kAssertionError},
+    {SymbolId::kAttributeError, LayoutId::kAttributeError},
+    {SymbolId::kBaseException, LayoutId::kBaseException},
+    {SymbolId::kBlockingIOError, LayoutId::kBlockingIOError},
+    {SymbolId::kBool, LayoutId::kBool},
+    {SymbolId::kBrokenPipeError, LayoutId::kBrokenPipeError},
+    {SymbolId::kBufferError, LayoutId::kBufferError},
+    {SymbolId::kByteArray, LayoutId::kByteArray},
+    {SymbolId::kBytes, LayoutId::kBytes},
+    {SymbolId::kBytesWarning, LayoutId::kBytesWarning},
+    {SymbolId::kChildProcessError, LayoutId::kChildProcessError},
+    {SymbolId::kClassmethod, LayoutId::kClassMethod},
+    {SymbolId::kComplex, LayoutId::kComplex},
+    {SymbolId::kConnectionAbortedError, LayoutId::kConnectionAbortedError},
+    {SymbolId::kConnectionError, LayoutId::kConnectionError},
+    {SymbolId::kConnectionRefusedError, LayoutId::kConnectionRefusedError},
+    {SymbolId::kConnectionResetError, LayoutId::kConnectionResetError},
+    {SymbolId::kCoroutine, LayoutId::kCoroutine},
+    {SymbolId::kDeprecationWarning, LayoutId::kDeprecationWarning},
+    {SymbolId::kDict, LayoutId::kDict},
+    {SymbolId::kDictItemIterator, LayoutId::kDictItemIterator},
+    {SymbolId::kDictItems, LayoutId::kDictItems},
+    {SymbolId::kDictKeyIterator, LayoutId::kDictKeyIterator},
+    {SymbolId::kDictKeys, LayoutId::kDictKeys},
+    {SymbolId::kDictValueIterator, LayoutId::kDictValueIterator},
+    {SymbolId::kDictValues, LayoutId::kDictValues},
+    {SymbolId::kEOFError, LayoutId::kEOFError},
+    {SymbolId::kException, LayoutId::kException},
+    {SymbolId::kFileExistsError, LayoutId::kFileExistsError},
+    {SymbolId::kFileNotFoundError, LayoutId::kFileNotFoundError},
+    {SymbolId::kFloat, LayoutId::kFloat},
+    {SymbolId::kFloatingPointError, LayoutId::kFloatingPointError},
+    {SymbolId::kFrozenSet, LayoutId::kFrozenSet},
+    {SymbolId::kFunction, LayoutId::kFunction},
+    {SymbolId::kFutureWarning, LayoutId::kFutureWarning},
+    {SymbolId::kGenerator, LayoutId::kGenerator},
+    {SymbolId::kGeneratorExit, LayoutId::kGeneratorExit},
+    {SymbolId::kImportError, LayoutId::kImportError},
+    {SymbolId::kImportWarning, LayoutId::kImportWarning},
+    {SymbolId::kIndentationError, LayoutId::kIndentationError},
+    {SymbolId::kIndexError, LayoutId::kIndexError},
+    {SymbolId::kInt, LayoutId::kInt},
+    {SymbolId::kInterruptedError, LayoutId::kInterruptedError},
+    {SymbolId::kIsADirectoryError, LayoutId::kIsADirectoryError},
+    {SymbolId::kKeyError, LayoutId::kKeyError},
+    {SymbolId::kKeyboardInterrupt, LayoutId::kKeyboardInterrupt},
+    {SymbolId::kLargeInt, LayoutId::kLargeInt},
+    {SymbolId::kList, LayoutId::kList},
+    {SymbolId::kListIterator, LayoutId::kListIterator},
+    {SymbolId::kLookupError, LayoutId::kLookupError},
+    {SymbolId::kMemoryError, LayoutId::kMemoryError},
+    {SymbolId::kModule, LayoutId::kModule},
+    {SymbolId::kModuleNotFoundError, LayoutId::kModuleNotFoundError},
+    {SymbolId::kNameError, LayoutId::kNameError},
+    {SymbolId::kNoneType, LayoutId::kNoneType},
+    {SymbolId::kNotADirectoryError, LayoutId::kNotADirectoryError},
+    {SymbolId::kNotImplementedError, LayoutId::kNotImplementedError},
+    {SymbolId::kOSError, LayoutId::kOSError},
+    {SymbolId::kObjectTypename, LayoutId::kObject},
+    {SymbolId::kOverflowError, LayoutId::kOverflowError},
+    {SymbolId::kPendingDeprecationWarning,
+     LayoutId::kPendingDeprecationWarning},
+    {SymbolId::kPermissionError, LayoutId::kPermissionError},
+    {SymbolId::kProcessLookupError, LayoutId::kProcessLookupError},
+    {SymbolId::kProperty, LayoutId::kProperty},
+    {SymbolId::kRange, LayoutId::kRange},
+    {SymbolId::kRangeIterator, LayoutId::kRangeIterator},
+    {SymbolId::kRecursionError, LayoutId::kRecursionError},
+    {SymbolId::kReferenceError, LayoutId::kReferenceError},
+    {SymbolId::kResourceWarning, LayoutId::kResourceWarning},
+    {SymbolId::kRuntimeError, LayoutId::kRuntimeError},
+    {SymbolId::kRuntimeWarning, LayoutId::kRuntimeWarning},
+    {SymbolId::kSet, LayoutId::kSet},
+    {SymbolId::kSetIterator, LayoutId::kSetIterator},
+    {SymbolId::kSlice, LayoutId::kSlice},
+    {SymbolId::kSmallInt, LayoutId::kSmallInt},
+    {SymbolId::kStaticMethod, LayoutId::kStaticMethod},
+    {SymbolId::kStopAsyncIteration, LayoutId::kStopAsyncIteration},
+    {SymbolId::kStopIteration, LayoutId::kStopIteration},
+    {SymbolId::kStr, LayoutId::kStr},
+    {SymbolId::kStrIterator, LayoutId::kStrIterator},
+    {SymbolId::kSuper, LayoutId::kSuper},
+    {SymbolId::kSyntaxError, LayoutId::kSyntaxError},
+    {SymbolId::kSyntaxWarning, LayoutId::kSyntaxWarning},
+    {SymbolId::kSystemError, LayoutId::kSystemError},
+    {SymbolId::kSystemExit, LayoutId::kSystemExit},
+    {SymbolId::kTabError, LayoutId::kTabError},
+    {SymbolId::kTimeoutError, LayoutId::kTimeoutError},
+    {SymbolId::kTuple, LayoutId::kTuple},
+    {SymbolId::kTupleIterator, LayoutId::kTupleIterator},
+    {SymbolId::kType, LayoutId::kType},
+    {SymbolId::kTypeError, LayoutId::kTypeError},
+    {SymbolId::kUnboundLocalError, LayoutId::kUnboundLocalError},
+    {SymbolId::kUnicodeDecodeError, LayoutId::kUnicodeDecodeError},
+    {SymbolId::kUnicodeEncodeError, LayoutId::kUnicodeEncodeError},
+    {SymbolId::kUnicodeError, LayoutId::kUnicodeError},
+    {SymbolId::kUnicodeTranslateError, LayoutId::kUnicodeTranslateError},
+    {SymbolId::kUnicodeWarning, LayoutId::kUnicodeWarning},
+    {SymbolId::kUserWarning, LayoutId::kUserWarning},
+    {SymbolId::kValueError, LayoutId::kValueError},
+    {SymbolId::kWarning, LayoutId::kWarning},
+    {SymbolId::kZeroDivisionError, LayoutId::kZeroDivisionError},
+    {SymbolId::kSentinelId, LayoutId::kSentinelId},
+};
+
+void BuiltinsModule::postInitialize(Thread* thread, Runtime* runtime,
+                                    const Module& module) {
+  runtime->build_class_ = runtime->moduleAddNativeFunction(
+      module, SymbolId::kDunderBuildClass,
+      nativeTrampoline<BuiltinsModule::buildClass>,
+      nativeTrampolineKw<BuiltinsModule::buildClassKw>,
+      unimplementedTrampoline);
+
+  // _patch is not patched because that would cause a circularity problem.
+  runtime->moduleAddNativeFunction(module, SymbolId::kUnderPatch,
+                                   nativeTrampoline<BuiltinsModule::underPatch>,
+                                   unimplementedTrampoline,
+                                   unimplementedTrampoline);
+
+  HandleScope scope(thread);
+  Object not_implemented(&scope, runtime->notImplemented());
+  runtime->moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
+
+  Object unbound_value(&scope, runtime->unboundValue());
+  runtime->moduleAddGlobal(module, SymbolId::kUnderUnboundValue, unbound_value);
+
+  // For use in builtins :(
+  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
+  runtime->moduleAddGlobal(module, SymbolId::kUnderStdout, stdout_val);
+
+  if (runtime->executeModule(kBuiltinsModuleData, module).isError()) {
+    thread->printPendingException();
+    std::exit(EXIT_FAILURE);
+  }
+
+  // TODO(T39575976): Create a consistent way to remove from global dict
+  // Explicitly remove module as this is not exposed in CPython
+  Dict module_dict(&scope, module.dict());
+  Object module_name(&scope, runtime->symbols()->Module());
+  runtime->dictRemove(module_dict, module_name);
 }
 
 RawObject BuiltinsModule::buildClass(Thread* thread, Frame* frame, word nargs) {

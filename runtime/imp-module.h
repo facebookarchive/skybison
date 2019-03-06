@@ -3,22 +3,30 @@
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
+#include "runtime.h"
 
 namespace python {
 
-RawObject builtinImpAcquireLock(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpExecBuiltin(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpExecDynamic(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpExtensionSuffixes(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpFixCoFilename(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpGetFrozenObject(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpIsFrozenPackage(Thread* thread, Frame* frame, word nargs);
-RawObject builtinImpReleaseLock(Thread* thread, Frame* frame, word nargs);
-
 void importAcquireLock(Thread* thread);
 bool importReleaseLock(Thread* thread);
+
+class UnderImpModule : public ModuleBase<UnderImpModule, SymbolId::kUnderImp> {
+ public:
+  static void postInitialize(Thread* thread, Runtime* runtime,
+                             const Module& module);
+  static RawObject acquireLock(Thread* thread, Frame* frame, word nargs);
+  static RawObject createBuiltin(Thread* thread, Frame* frame, word nargs);
+  static RawObject execBuiltin(Thread* thread, Frame* frame, word nargs);
+  static RawObject execDynamic(Thread* thread, Frame* frame, word nargs);
+  static RawObject extensionSuffixes(Thread* thread, Frame* frame, word nargs);
+  static RawObject fixCoFilename(Thread* thread, Frame* frame, word nargs);
+  static RawObject getFrozenObject(Thread* thread, Frame* frame, word nargs);
+  static RawObject isBuiltin(Thread* thread, Frame* frame, word nargs);
+  static RawObject isFrozen(Thread* thread, Frame* frame, word nargs);
+  static RawObject isFrozenPackage(Thread* thread, Frame* frame, word nargs);
+  static RawObject releaseLock(Thread* thread, Frame* frame, word nargs);
+
+  static const BuiltinMethod kBuiltinMethods[];
+};
 
 }  // namespace python

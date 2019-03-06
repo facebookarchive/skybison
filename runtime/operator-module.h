@@ -7,15 +7,10 @@
 
 namespace python {
 
-extern word marshalVersion;
-
-class MarshalModule : public ModuleBase<MarshalModule, SymbolId::kMarshal> {
+class OperatorModule : public ModuleBase<OperatorModule, SymbolId::kOperator> {
  public:
   static void postInitialize(Thread* thread, Runtime* runtime,
                              const Module& module);
-  static RawObject loads(Thread* thread, Frame* frame, word nargs);
-
-  static const BuiltinMethod kBuiltinMethods[];
 };
 
 }  // namespace python

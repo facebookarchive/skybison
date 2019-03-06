@@ -1,6 +1,7 @@
 #include "io-module.h"
 
 #include "frame.h"
+#include "frozen-modules.h"
 #include "globals.h"
 #include "objects.h"
 #include "os.h"
@@ -9,7 +10,20 @@
 
 namespace python {
 
-RawObject ioReadFile(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
+    {SymbolId::kUnderReadFile, underReadFile},
+    {SymbolId::kUnderReadBytes, underReadBytes},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void UnderIoModule::postInitialize(Thread*, Runtime* runtime,
+                                   const Module& module) {
+  CHECK(!runtime->executeModule(kUnderIoModuleData, module).isError(),
+        "Failed to initialize _io module");
+}
+
+RawObject UnderIoModule::underReadFile(Thread* thread, Frame* frame,
+                                       word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Str path(&scope, args.get(0));
@@ -21,7 +35,8 @@ RawObject ioReadFile(Thread* thread, Frame* frame, word nargs) {
   return *bytes;
 }
 
-RawObject ioReadBytes(Thread* thread, Frame* frame, word nargs) {
+RawObject UnderIoModule::underReadBytes(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Bytes bytes(&scope, args.get(0));

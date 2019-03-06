@@ -37,7 +37,17 @@ struct BuiltinMethod {
   NativeMethodType address;
 };
 
+struct BuiltinType {
+  SymbolId name;
+  LayoutId type;
+};
+
 enum class SetLookupType { Lookup, Insertion };
+
+struct ModuleInitializer {
+  SymbolId name;
+  void (*create_module)(Thread*);
+};
 
 class Runtime {
  public:
@@ -174,16 +184,7 @@ class Runtime {
 
   RawObject newWeakRef();
 
-  void createBuiltinsModule();
   void createImportlibModule();
-  void createImportModule();
-  void createMarshalModule();
-  void createOperatorModule();
-  void createSysModule();
-  void createTimeModule();
-  void createUnderIoModule();
-  void createWarningsModule();
-  void createWeakRefModule();
 
   RawObject internStr(const Object& str);
   RawObject internStrFromCStr(const char* c_str);
@@ -724,6 +725,8 @@ class Runtime {
   // testing.
   word nextModuleIndex();
 
+  RawObject executeModule(const char* buffer, const Module& module);
+
  private:
   void initializeThreads();
   void initializeTypes();
@@ -739,8 +742,6 @@ class Runtime {
   void initializeSymbols();
 
   RawObject createMainModule();
-
-  RawObject executeModule(const char* buffer, const Module& module);
 
   void visitRuntimeRoots(PointerVisitor* visitor);
   void visitThreadRoots(PointerVisitor* visitor);
@@ -883,6 +884,8 @@ class Runtime {
   // The size newCapacity grows to if array is empty
   static const int kInitialEnsuredCapacity = 4;
 
+  static const ModuleInitializer kBuiltinModules[];
+
   Heap heap_;
 
   // A List of Layout objects, indexed by layout id.
@@ -927,6 +930,13 @@ class Runtime {
   word max_module_index_ = 0;
 
   friend class ApiHandle;
+  // ModuleBase uses moduleAddBuiltinType
+  template <typename T, SymbolId id>
+  friend class ModuleBase;
+  // BuiltinsModule sets build_class_ directly
+  friend class BuiltinsModule;
+  // SysModule sets display_hook_ directly and uses modules_
+  friend class SysModule;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
@@ -962,6 +972,35 @@ class Builtins : public BuiltinsBase {
   static const SymbolId kName = name;
   static const LayoutId kType = type;
   static const LayoutId kSuperType = supertype;
+};
+
+class ModuleBaseBase {
+ public:
+  static void postInitialize(Thread*, Runtime*, const Module&) {}
+
+  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinType kBuiltinTypes[];
+};
+
+template <typename T, SymbolId name>
+class ModuleBase : public ModuleBaseBase {
+ public:
+  static void initialize(Thread* thread) {
+    HandleScope scope(thread);
+    Runtime* runtime = thread->runtime();
+    Str name_str(&scope, runtime->symbols()->at(name));
+    Module module(&scope, runtime->newModule(name_str));
+    for (word i = 0; T::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
+      runtime->moduleAddBuiltinFunction(module, T::kBuiltinMethods[i].name,
+                                        T::kBuiltinMethods[i].address);
+    }
+    for (word i = 0; T::kBuiltinTypes[i].name != SymbolId::kSentinelId; i++) {
+      runtime->moduleAddBuiltinType(module, T::kBuiltinTypes[i].name,
+                                    T::kBuiltinTypes[i].type);
+    }
+    runtime->addModule(module);
+    T::postInitialize(thread, runtime, module);
+  }
 };
 
 }  // namespace python

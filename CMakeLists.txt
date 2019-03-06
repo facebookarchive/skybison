@@ -252,6 +252,8 @@ add_library(
   runtime/object-builtins.cpp
   runtime/objects.cpp
   runtime/objects.h
+  runtime/operator-module.h
+  runtime/operator-module.cpp
   runtime/os.cpp
   runtime/os.h
   runtime/range-builtins.cpp
@@ -293,6 +295,8 @@ add_library(
   runtime/visitor.h
   runtime/warnings-module.cpp
   runtime/warnings-module.h
+  runtime/weakref-module.cpp
+  runtime/weakref-module.h
   ${RUNTIME_OS_SOURCES})
 target_compile_options(
   runtime

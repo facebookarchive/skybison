@@ -2,6 +2,7 @@
 
 #include "builtins-module.h"
 #include "frame.h"
+#include "frozen-modules.h"
 #include "globals.h"
 #include "module-builtins.h"
 #include "objects.h"
@@ -38,12 +39,34 @@ bool importReleaseLock(Thread* thread) {
   return true;
 }
 
-RawObject builtinImpAcquireLock(Thread* thread, Frame*, word) {
+const BuiltinMethod UnderImpModule::kBuiltinMethods[] = {
+    {SymbolId::kAcquireLock, acquireLock},
+    {SymbolId::kCreateBuiltin, createBuiltin},
+    {SymbolId::kExecBuiltin, execBuiltin},
+    {SymbolId::kExecDynamic, execDynamic},
+    {SymbolId::kExtensionSuffixes, extensionSuffixes},
+    {SymbolId::kFixCoFilename, fixCoFilename},
+    {SymbolId::kGetFrozenObject, getFrozenObject},
+    {SymbolId::kIsBuiltin, isBuiltin},
+    {SymbolId::kIsFrozen, isFrozen},
+    {SymbolId::kIsFrozenPackage, isFrozenPackage},
+    {SymbolId::kReleaseLock, releaseLock},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void UnderImpModule::postInitialize(Thread*, Runtime* runtime,
+                                    const Module& module) {
+  CHECK(!runtime->executeModule(kUnderImpModuleData, module).isError(),
+        "Failed to initialize _imp module");
+}
+
+RawObject UnderImpModule::acquireLock(Thread* thread, Frame*, word) {
   importAcquireLock(thread);
   return NoneType::object();
 }
 
-RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
+RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
+                                        word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -79,7 +102,8 @@ RawObject builtinImpCreateBuiltin(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
-RawObject builtinImpExecBuiltin(Thread* thread, Frame* frame, word nargs) {
+RawObject UnderImpModule::execBuiltin(Thread* thread, Frame* frame,
+                                      word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -104,13 +128,13 @@ RawObject builtinImpExecBuiltin(Thread* thread, Frame* frame, word nargs) {
   return runtime->newInt(execDef(thread, module, def));
 }
 
-RawObject builtinImpExecDynamic(Thread* /* thread */, Frame* /* frame */,
-                                word /* nargs */) {
+RawObject UnderImpModule::execDynamic(Thread* /* thread */, Frame* /* frame */,
+                                      word /* nargs */) {
   UNIMPLEMENTED("exec_dynamic");
 }
 
-RawObject builtinImpExtensionSuffixes(Thread* thread, Frame* /* frame */,
-                                      word /* nargs */) {
+RawObject UnderImpModule::extensionSuffixes(Thread* thread, Frame* /* frame */,
+                                            word /* nargs */) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   List list(&scope, runtime->newList());
@@ -119,17 +143,18 @@ RawObject builtinImpExtensionSuffixes(Thread* thread, Frame* /* frame */,
   return *list;
 }
 
-RawObject builtinImpFixCoFilename(Thread* /* thread */, Frame* /* frame */,
-                                  word /* nargs */) {
+RawObject UnderImpModule::fixCoFilename(Thread* /* thread */,
+                                        Frame* /* frame */, word /* nargs */) {
   UNIMPLEMENTED("_fix_co_filename");
 }
 
-RawObject builtinImpGetFrozenObject(Thread* /* thread */, Frame* /* frame */,
-                                    word /* nargs */) {
+RawObject UnderImpModule::getFrozenObject(Thread* /* thread */,
+                                          Frame* /* frame */,
+                                          word /* nargs */) {
   UNIMPLEMENTED("get_frozen_object");
 }
 
-RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs) {
+RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -155,7 +180,7 @@ RawObject builtinImpIsBuiltin(Thread* thread, Frame* frame, word nargs) {
   return RawSmallInt::fromWord(0);
 }
 
-RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs) {
+RawObject UnderImpModule::isFrozen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object name(&scope, args.get(0));
@@ -166,12 +191,13 @@ RawObject builtinImpIsFrozen(Thread* thread, Frame* frame, word nargs) {
   return RawBool::falseObj();
 }
 
-RawObject builtinImpIsFrozenPackage(Thread* /* thread */, Frame* /* frame */,
-                                    word /* nargs */) {
+RawObject UnderImpModule::isFrozenPackage(Thread* /* thread */,
+                                          Frame* /* frame */,
+                                          word /* nargs */) {
   UNIMPLEMENTED("is_frozen_package");
 }
 
-RawObject builtinImpReleaseLock(Thread* thread, Frame*, word) {
+RawObject UnderImpModule::releaseLock(Thread* thread, Frame*, word) {
   if (!importReleaseLock(thread)) {
     return thread->raiseRuntimeErrorWithCStr("not holding the import lock");
   }

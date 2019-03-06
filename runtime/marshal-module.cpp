@@ -1,6 +1,7 @@
 #include "marshal-module.h"
 
 #include "frame.h"
+#include "frozen-modules.h"
 #include "globals.h"
 #include "marshal.h"
 #include "objects.h"
@@ -8,6 +9,17 @@
 #include "thread.h"
 
 namespace python {
+
+const BuiltinMethod MarshalModule::kBuiltinMethods[] = {
+    {SymbolId::kLoads, loads},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void MarshalModule::postInitialize(Thread*, Runtime* runtime,
+                                   const Module& module) {
+  CHECK(!runtime->executeModule(kMarshalModuleData, module).isError(),
+        "Failed to initialize marshal module");
+}
 
 RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
+#include "runtime.h"
 
 namespace python {
 
@@ -19,8 +20,10 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
 void copyFunctionEntries(Thread* thread, const Function& base,
                          const Function& patch);
 
-class BuiltinsModule {
+class BuiltinsModule : public ModuleBase<BuiltinsModule, SymbolId::kBuiltins> {
  public:
+  static void postInitialize(Thread* thread, Runtime* runtime,
+                             const Module& module);
   static RawObject buildClass(Thread* thread, Frame* frame, word nargs);
   static RawObject buildClassKw(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
@@ -43,6 +46,9 @@ class BuiltinsModule {
   static RawObject underReprLeave(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);
+
+  static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinType kBuiltinTypes[];
 };
 
 }  // namespace python

@@ -18,8 +18,8 @@ import _imp
 
 TEST(ImportBuiltins, AcquireLockAndReleaseLockWorks) {
   Runtime runtime;
-  runBuiltin(builtinImpAcquireLock);
-  runBuiltin(builtinImpReleaseLock);
+  runBuiltin(UnderImpModule::acquireLock);
+  runBuiltin(UnderImpModule::releaseLock);
 }
 
 TEST(ImportBuiltinsTest, CreateBuiltinWithoutArgsRaisesTypeError) {
@@ -108,7 +108,7 @@ TEST(ImportBuiltins, ExecBuiltinWithNonModuleReturnsZero) {
   Runtime runtime;
   HandleScope scope;
   Int not_mod(&scope, runtime.newInt(1));
-  Object a(&scope, runBuiltin(builtinImpExecBuiltin, not_mod));
+  Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, not_mod));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
 }
 
@@ -122,10 +122,10 @@ spec = DummyModuleSpec("errno")
 )");
   HandleScope scope;
   Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
-  Object module(&scope, runBuiltin(builtinImpCreateBuiltin, spec));
+  Object module(&scope, runBuiltin(UnderImpModule::createBuiltin, spec));
   ASSERT_TRUE(module.isModule());
 
-  Object a(&scope, runBuiltin(builtinImpExecBuiltin, module));
+  Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, module));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
 }
 
@@ -157,7 +157,7 @@ TEST(ImportBuiltins, ExecBuiltinWithSingleSlotExecutesCorrectly) {
   Module module(&scope, runtime.newModule(name));
   module.setDef(runtime.newIntFromCPtr(&def));
 
-  Object a(&scope, runBuiltin(builtinImpExecBuiltin, module));
+  Object a(&scope, runBuiltin(UnderImpModule::execBuiltin, module));
   EXPECT_TRUE(isIntEqualsWord(*a, 0));
 
   Str mod_name(&scope, module.name());
@@ -176,7 +176,7 @@ _imp.exec_dynamic("foo")
 TEST(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
   Runtime runtime;
   HandleScope scope;
-  Object result(&scope, runBuiltin(builtinImpExtensionSuffixes));
+  Object result(&scope, runBuiltin(UnderImpModule::extensionSuffixes));
   ASSERT_TRUE(result.isList());
   EXPECT_PYLIST_EQ(result, {".so"});
 }
@@ -205,7 +205,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsZero) {
   Runtime runtime;
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
-  Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
+  Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -213,7 +213,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsNegativeOne) {
   Runtime runtime;
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("sys"));
-  Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
+  Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
 
@@ -221,7 +221,7 @@ TEST(ImportBuiltinsTest, IsBuiltinReturnsOne) {
   Runtime runtime;
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("errno"));
-  Object result(&scope, runBuiltin(builtinImpIsBuiltin, module_name));
+  Object result(&scope, runBuiltin(UnderImpModule::isBuiltin, module_name));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -229,7 +229,7 @@ TEST(ImportBuiltinsTest, IsFrozenReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
-  Object result(&scope, runBuiltin(builtinImpIsFrozen, module_name));
+  Object result(&scope, runBuiltin(UnderImpModule::isFrozen, module_name));
   ASSERT_TRUE(result.isBool());
   EXPECT_FALSE(Bool::cast(*result)->value());
 }
@@ -246,19 +246,19 @@ _imp.is_frozen_package("foo")
 TEST(ImportBuiltinsTest, ReleaseLockWithoutAcquireRaisesRuntimeError) {
   Runtime runtime;
   HandleScope scope;
-  Object result(&scope, runBuiltin(builtinImpReleaseLock));
+  Object result(&scope, runBuiltin(UnderImpModule::releaseLock));
   EXPECT_TRUE(raised(*result, LayoutId::kRuntimeError));
 }
 
 TEST(ImportBuiltins, AcquireLockCheckRecursiveCallsWorks) {
   Runtime runtime;
   HandleScope scope;
-  runBuiltin(builtinImpAcquireLock);
-  runBuiltin(builtinImpAcquireLock);
-  runBuiltin(builtinImpReleaseLock);
-  runBuiltin(builtinImpReleaseLock);
+  runBuiltin(UnderImpModule::acquireLock);
+  runBuiltin(UnderImpModule::acquireLock);
+  runBuiltin(UnderImpModule::releaseLock);
+  runBuiltin(UnderImpModule::releaseLock);
   // Make sure that additional releases raise.
-  Object result(&scope, runBuiltin(builtinImpReleaseLock));
+  Object result(&scope, runBuiltin(UnderImpModule::releaseLock));
   EXPECT_TRUE(result.isError());
 }
 

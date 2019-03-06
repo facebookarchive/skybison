@@ -185,6 +185,7 @@ enum class LayoutId : word {
   // clang-format on
 
   kLastBuiltinId = kLastException,
+  kSentinelId = kLastBuiltinId + 1,
 };
 
 // Map from type to its corresponding LayoutId:

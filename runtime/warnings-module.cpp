@@ -1,6 +1,7 @@
 #include "warnings-module.h"
 
 #include "frame.h"
+#include "frozen-modules.h"
 #include "handles.h"
 #include "runtime.h"
 #include "thread.h"
@@ -32,7 +33,18 @@ RawObject getCategory(Thread* thread, const Object& message,
 }
 }  // namespace
 
-RawObject warningsWarn(Thread* thread, Frame* frame, word nargs) {
+const BuiltinMethod UnderWarningsModule::kBuiltinMethods[] = {
+    {SymbolId::kWarn, warn},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+void UnderWarningsModule::postInitialize(Thread*, Runtime* runtime,
+                                         const Module& module) {
+  CHECK(!runtime->executeModule(kUnderWarningsModuleData, module).isError(),
+        "Failed to initialize _warnings module");
+}
+
+RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 

@@ -56,6 +56,8 @@ static const char* layoutIdName(LayoutId id) {
     return #name;
       INTRINSIC_CLASS_NAMES(CASE)
 #undef CASE
+    case LayoutId::kSentinelId:
+      return "<SentinelId>";
   }
   return "<invalid>";
 }
