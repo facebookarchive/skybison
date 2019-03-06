@@ -51,6 +51,8 @@ TEST_F(StructSeqExtensionApiTest,
   ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
   // TODO(T40700664): Use PyRun_String and test for raised exception
   EXPECT_EQ(PyRun_SimpleString(R"(
+import sys
+sys.excepthook = lambda *args: None
 Structseq()
 )"),
             -1);
@@ -65,6 +67,8 @@ TEST_F(StructSeqExtensionApiTest, NewInstanceWithNonSequenceRaisesException) {
   ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
   // TODO(T40700664): Use PyRun_String and test for raised exception
   EXPECT_EQ(PyRun_SimpleString(R"(
+import sys
+sys.excepthook = lambda *args: None
 Structseq(1)
 )"),
             -1);
@@ -80,6 +84,8 @@ TEST_F(StructSeqExtensionApiTest,
   ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
   // TODO(T40700664): Use PyRun_String and test for raised exception
   EXPECT_EQ(PyRun_SimpleString(R"(
+import sys
+sys.excepthook = lambda *args: None
 Structseq((1,2,3,4,5,6))
 )"),
             -1);
@@ -212,6 +218,8 @@ TEST_F(StructSeqExtensionApiTest,
   ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
   // TODO(T40700664): Use PyRun_String and test for raised exception
   EXPECT_EQ(PyRun_SimpleString(R"(
+import sys
+sys.excepthook = lambda *args: None
 Structseq((1,2,3))[2]
 )"),
             -1);
@@ -290,6 +298,8 @@ TEST_F(StructSeqExtensionApiTest,
   ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
   // TODO(T40700664): Use PyRun_String and test for raised exception
   EXPECT_EQ(PyRun_SimpleString(R"(
+import sys
+sys.excepthook = lambda *args: None
 Structseq((1,2), {"badattr": 3}).badattr
 )"),
             -1);
@@ -356,6 +366,8 @@ TEST_F(StructSeqExtensionApiTest, SetItemRaisesException) {
   ASSERT_EQ(moduleSet("__main__", "Structseq", type), 0);
   // TODO(T40700664): Use PyRun_String and test for raised exception
   EXPECT_EQ(PyRun_SimpleString(R"(
+import sys
+sys.excepthook = lambda *args: None
 structseq = Structseq((1,2,3))
 structseq.first = 4
 )"),
