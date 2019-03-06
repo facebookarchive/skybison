@@ -34,6 +34,7 @@ typedef Py_ssize_t Py_hash_t;
 #define Py_TPFLAGS_READYING (1UL << 13)
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)
 
+typedef struct _longobject PyLongObject;
 typedef struct _typeobject PyTypeObject;
 
 typedef struct _object {

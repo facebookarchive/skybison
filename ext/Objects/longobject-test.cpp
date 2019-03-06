@@ -262,6 +262,198 @@ TEST_F(LongExtensionApiTest, FromLongWithZeroReturnsZero) {
   EXPECT_EQ(PyLong_AsLong(pylong), 0);
 }
 
+TEST_F(LongExtensionApiTest,
+       AsByteArrayUnsignedWithNegativeRaisesOverflowError) {
+  PyObjectPtr num(PyLong_FromLong(-1));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, false), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, AsByteArrayUnsignedWithZeroWritesZero) {
+  PyObjectPtr num(PyLong_FromLong(0));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, false), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArrayUnsignedWritesMaxUnsignedByte) {
+  PyObjectPtr num(PyLong_FromLong(0xff));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, false), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0xff);
+}
+
+TEST_F(LongExtensionApiTest,
+       AsByteArrayUnsignedOverflowWritesByteAndRaisesOverflowError) {
+  PyObjectPtr num(PyLong_FromLong(0x0100));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+  EXPECT_EQ(dst[0], 0x00);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArrayUnsignedWritesBytesBigEndian) {
+  PyObjectPtr num(PyLong_FromLong(0xface));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[3];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, false), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0x00);
+  EXPECT_EQ(dst[1], 0xfa);
+  EXPECT_EQ(dst[2], 0xce);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArrayUnsigedWritesBytesLittleEndian) {
+  PyObjectPtr num(PyLong_FromLong(0xface));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[3];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), true, false), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0xce);
+  EXPECT_EQ(dst[1], 0xfa);
+  EXPECT_EQ(dst[2], 0x00);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArraySignedWritesMaxSignedByte) {
+  PyObjectPtr num(PyLong_FromLong(0x7f));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0x7f);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArraySignedWritesMinSignedByte) {
+  PyObjectPtr num(PyLong_FromLong(-0x80));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0x80);
+}
+
+TEST_F(LongExtensionApiTest,
+       AsByteArraySignedOverflowWritesByteAndRaisesOverflowError) {
+  PyObjectPtr num(PyLong_FromLong(0x80));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+  EXPECT_EQ(dst[0], 0x80);
+}
+
+TEST_F(LongExtensionApiTest,
+       AsByteArraySignedUnderflowWritesByteAndRaisesOverflowError) {
+  PyObjectPtr num(PyLong_FromLong(-0x81));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[1];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+  EXPECT_EQ(dst[0], 0x7f);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArraySignedPositiveWritesBytesBigEndian) {
+  PyObjectPtr num(PyLong_FromLong(0xface));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[3];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0x00);
+  EXPECT_EQ(dst[1], 0xfa);
+  EXPECT_EQ(dst[2], 0xce);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArraySignedPositiveWritesBytesLittleEndian) {
+  PyObjectPtr num(PyLong_FromLong(0xface));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[3];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), true, true), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0xce);
+  EXPECT_EQ(dst[1], 0xfa);
+  EXPECT_EQ(dst[2], 0x00);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArraySignedNegativeWritesBytesBigEndian) {
+  PyObjectPtr num(PyLong_FromLong(-0xface));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[3];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0xff);
+  EXPECT_EQ(dst[1], 0x05);
+  EXPECT_EQ(dst[2], 0x32);
+}
+
+TEST_F(LongExtensionApiTest, AsByteArraySignedNegativeWritesBytesLittleEndian) {
+  PyObjectPtr num(PyLong_FromLong(-0xface));
+  PyLongObject* obj = num.asLongObject();
+  unsigned char dst[3];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), true, true), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0x32);
+  EXPECT_EQ(dst[1], 0x05);
+  EXPECT_EQ(dst[2], 0xff);
+}
+
+TEST_F(LongExtensionApiTest, FromByteArrayWithZeroSizeReturnsZero) {
+  PyObjectPtr num(_PyLong_FromByteArray(nullptr, 0, false, false));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(num));
+  EXPECT_EQ(PyLong_AsLong(num), 0);
+}
+
+TEST_F(LongExtensionApiTest, FromByteArrayBigEndianUnsignedReturnsBytes) {
+  const unsigned char source[] = {0x2c, 0xff, 0x00, 0x42};
+  PyObjectPtr num(_PyLong_FromByteArray(source, 4, false, false));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(num));
+  EXPECT_EQ(PyLong_AsLong(num), 0x2cff0042);
+}
+
+TEST_F(LongExtensionApiTest, FromByteArrayLittleEndianUnsignedReturnsBytes) {
+  const unsigned char source[] = {0x2c, 0xff, 0x00, 0x42};
+  PyObjectPtr num(_PyLong_FromByteArray(source, 4, true, false));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(num));
+  EXPECT_EQ(PyLong_AsLong(num), 0x4200ff2c);
+}
+
+TEST_F(LongExtensionApiTest, FromByteArrayBigEndianSignedPositiveReturnsBytes) {
+  const unsigned char source[] = {0x2c, 0xff, 0x00, 0x42};
+  PyObjectPtr num(_PyLong_FromByteArray(source, 4, false, true));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(num));
+  EXPECT_EQ(PyLong_AsLong(num), 0x2cff0042);
+}
+
+TEST_F(LongExtensionApiTest, FromByteArrayBigEndianSignedNegativeReturnsBytes) {
+  const unsigned char source[] = {0xff, 0x2c, 0x00, 0x42};
+  PyObjectPtr num(_PyLong_FromByteArray(source, 4, false, true));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(num));
+  EXPECT_EQ(PyLong_AsLong(num), -0x00d3ffbe);
+}
+
+TEST_F(LongExtensionApiTest, FromByteArrayReturnsBytesWithSize) {
+  const unsigned char source[] = {0x01, 0x02, 0x03};
+  PyObjectPtr num(_PyLong_FromByteArray(source, 2, true, true));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(num));
+  EXPECT_EQ(PyLong_AsLong(num), 0x0201);
+}
+
 TEST_F(LongExtensionApiTest, SignZeroReturnsZero) {
   PyObjectPtr zero(PyLong_FromLong(0));
   ASSERT_EQ(_PyLong_Sign(zero), 0);

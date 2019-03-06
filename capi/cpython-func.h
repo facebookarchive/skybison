@@ -844,7 +844,11 @@ PyAPI_FUNC(PyObject*) _PyUnicode_AsUTF8String(PyObject*, const char*);
 PyAPI_FUNC(char*) _PyMem_Strdup(const char*);
 PyAPI_FUNC(int) _PyBytes_Resize(PyObject**, Py_ssize_t);
 PyAPI_FUNC(int) _PyImport_ReleaseLock();
+PyAPI_FUNC(int)
+    _PyLong_AsByteArray(PyLongObject*, unsigned char*, size_t, int, int);
 PyAPI_FUNC(int) _PyLong_AsInt(PyObject*);
+PyAPI_FUNC(PyObject*)
+    _PyLong_FromByteArray(const unsigned char*, size_t, int, int);
 PyAPI_FUNC(int) _PyOS_URandom(void*, Py_ssize_t);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void*, Py_ssize_t);
 PyAPI_FUNC(int) _Py_normalize_encoding(const char*, char*, size_t);

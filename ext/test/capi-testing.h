@@ -30,6 +30,12 @@ class PyObjectPtr {
 
   PyObject* get() const { return obj_; }
 
+  PyLongObject* asLongObject() const {
+    // Only downcast to PyLongObject it it's holding a long reference
+    assert(PyLong_Check(obj_));
+    return reinterpret_cast<PyLongObject*>(obj_);
+  }
+
   PyTypeObject* asTypeObject() const {
     // Only downcast to PyTypeObject it it's holding a type reference
     assert(PyType_Check(obj_));

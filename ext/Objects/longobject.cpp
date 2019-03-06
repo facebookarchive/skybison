@@ -216,6 +216,52 @@ PY_EXPORT PyObject* PyLong_FromVoidPtr(void* /* p */) {
 
 PY_EXPORT PyObject* PyLong_GetInfo() { UNIMPLEMENTED("PyLong_GetInfo"); }
 
+PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
+                                  size_t n, int little_endian, int is_signed) {
+  DCHECK(longobj != nullptr, "null argument to _PyLong_AsByteArray");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  PyObject* pyobj = reinterpret_cast<PyObject*>(longobj);
+  Int self(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  if (!is_signed && self.isNegative()) {
+    thread->raiseOverflowErrorWithCStr(
+        "can't convert negative int to unsigned");
+    return -1;
+  }
+  word length = static_cast<word>(n);
+  endian endianness = little_endian ? endian::little : endian::big;
+  Bytes result(&scope, runtime->intToBytes(thread, self, length, endianness));
+  result.copyTo(dst, length);
+
+  // Check for overflow.
+  word num_digits = self.numDigits();
+  uword high_digit = self.digitAt(num_digits - 1);
+  word bit_length =
+      num_digits * kBitsPerWord - Utils::numRedundantSignBits(high_digit);
+  if (bit_length > length * kBitsPerByte + !is_signed) {
+    thread->raiseOverflowErrorWithCStr("int too big to convert");
+    return -1;
+  }
+  return 0;
+}
+
+PY_EXPORT PyObject* _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
+                                          int little_endian, int is_signed) {
+  if (n == 0) return PyLong_FromLong(0);
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  // This copies the bytes an extra time, but it is more important for the
+  // runtime to accommodate int.from_bytes(), so allow the extra copy.
+  Bytes source(&scope, runtime->newBytesWithAll(
+                           View<byte>(bytes, static_cast<word>(n))));
+  endian endianness = little_endian ? endian::little : endian::big;
+  Object result(&scope,
+                runtime->bytesToInt(thread, source, endianness, is_signed));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+}
+
 PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
