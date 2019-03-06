@@ -29,20 +29,25 @@ PY_EXPORT void PyInterpreterState_Delete(PyInterpreterState* /* p */) {
 PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
   DCHECK(module != nullptr, "module must not be null");
   CHECK(def != nullptr, "PyState_AddModule: Module Definition is NULL");
+  DCHECK(def->m_name != nullptr, "def.m_name must not be null");
+
   Thread* thread = Thread::currentThread();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  DCHECK(def->m_name != nullptr, "def.m_name must not be null");
   Str module_name(&scope, runtime->internStrFromCStr(def->m_name));
-  CHECK(runtime->findModule(module_name).isNoneType(),
-        "PyState_AddModule: Module already added!");
+  if (!runtime->findModule(module_name).isNoneType()) {
+    return 0;
+  }
   // Below is the body of the port of _PyState_AddModule in CPython.
   if (def->m_slots != nullptr) {
     thread->raiseSystemErrorWithCStr(
         "PyState_AddModule called on module with slots");
     return -1;
   }
-  Module module_obj(&scope, runtime->newModule(module_name));
+  // CPython adds the module into a separate module list to do an index lookup
+  // rather than a dict for lookup efficiency. Given that we are avoiding the
+  // use of the PyModuleDef.m_base.m_index value, just insert to the module dict
+  Module module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
   module_obj.setDef(runtime->newIntFromCPtr(def));
   Str doc_key(&scope, runtime->symbols()->DunderDoc());
   Str doc_value(&scope, runtime->newStrFromCStr(def->m_doc));

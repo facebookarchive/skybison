@@ -81,6 +81,11 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
         "spec name must be an instance of str");
   }
   Str name(&scope, *name_obj);
+  Object existing_module(&scope, runtime->findModule(name));
+  if (!existing_module.isNoneType()) {
+    return *existing_module;
+  }
+
   for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
     if (name.equalsCStr(_PyImport_Inittab[i].name)) {
       PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();

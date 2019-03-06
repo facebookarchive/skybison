@@ -15,22 +15,26 @@ TEST_F(PystateExtensionApiTest, AddModuleWithNullDefDeathTest) {
                "Module Definition is NULL");
 }
 
-TEST_F(PystateExtensionApiTest, AddModuleWithExistingModuleDeathTest) {
+TEST_F(PystateExtensionApiTest, AddExistingModuleDoesNotOverridePyro) {
   static struct PyModuleDef def = {
       PyModuleDef_HEAD_INIT,
-      "rutabaga",
-      "I'm sure this module will turnip somewhere.",
+      "foo",
+      "docs",
       0,
       nullptr,
       nullptr,
       nullptr,
       nullptr,
   };
-  PyObject* module = PyModule_Create(&def);
+  PyModuleDef_Init(&def);
+  PyObjectPtr module(PyModule_New("foo"));
   ASSERT_NE(module, nullptr);
   ASSERT_EQ(PyState_AddModule(module, &def), 0);
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_DEATH(PyState_AddModule(module, &def), "Module already added");
+  PyObjectPtr module2(PyModule_New("foo"));
+  ASSERT_EQ(PyState_AddModule(module2, &def), 0);
+  PyObjectPtr found_module(PyState_FindModule(&def));
+  EXPECT_EQ(module.get(), found_module.get());
+  EXPECT_NE(module2.get(), found_module.get());
 }
 
 TEST_F(PystateExtensionApiTest, AddModuleWithSlotsRaisesSystemError) {

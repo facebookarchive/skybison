@@ -262,4 +262,26 @@ TEST(ImportBuiltins, AcquireLockCheckRecursiveCallsWorks) {
   EXPECT_TRUE(result.isError());
 }
 
+TEST(ImportBuiltins, CreateExistingBuiltinDoesNotOverride) {
+  Runtime runtime;
+  // Mock of importlib._bootstrap.ModuleSpec
+  runFromCStr(&runtime, R"(
+import _imp
+class DummyModuleSpec:
+  def __init__(self, name):
+    self.name = name
+spec = (DummyModuleSpec("errno"),)
+result1 = _imp.create_builtin(*spec)
+result2 = _imp.create_builtin(*spec)
+)");
+  HandleScope scope;
+  Object result1(&scope, moduleAt(&runtime, "__main__", "result1"));
+  ASSERT_TRUE(result1.isModule());
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result1)->name(), "errno"));
+  Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
+  ASSERT_TRUE(result2.isModule());
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result2)->name(), "errno"));
+  EXPECT_EQ(*result1, *result2);
+}
+
 }  // namespace python
