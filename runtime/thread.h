@@ -168,6 +168,9 @@ class Thread {
   // Raises a SystemError exception for PyErr_BadInternalCall.
   void raiseBadInternalCall();
 
+  RawObject raiseBufferError(RawObject value);
+  RawObject raiseBufferErrorWithCStr(const char* message);
+
   // Raises an Index exception and returns an Error object that must be returned
   // up the stack by the caller.
   RawObject raiseIndexError(RawObject value);

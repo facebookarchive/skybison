@@ -382,6 +382,14 @@ void Thread::raiseBadInternalCall() {
   raiseSystemErrorWithCStr("bad argument to internal function");
 }
 
+RawObject Thread::raiseBufferError(RawObject value) {
+  return raise(LayoutId::kBufferError, value);
+}
+
+RawObject Thread::raiseBufferErrorWithCStr(const char* message) {
+  return raiseBufferError(runtime()->newStrFromCStr(message));
+}
+
 RawObject Thread::raiseKeyError(RawObject value) {
   return raise(LayoutId::kKeyError, value);
 }

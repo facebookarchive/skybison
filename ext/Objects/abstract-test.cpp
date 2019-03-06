@@ -10,6 +10,71 @@ using namespace testing;
 
 using AbstractExtensionApiTest = ExtensionApi;
 
+TEST_F(AbstractExtensionApiTest, PyBufferFillInfoSimpleFillsInfo) {
+  Py_buffer buffer;
+  char buf[13];
+  PyObjectPtr pyobj(Py_None);
+  long prev_refcount = Py_REFCNT(pyobj);
+  int readonly = 1;
+  int result = PyBuffer_FillInfo(&buffer, pyobj, buf, sizeof(buf), readonly,
+                                 PyBUF_SIMPLE);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(Py_REFCNT(pyobj), prev_refcount + 1);
+  EXPECT_EQ(buffer.obj, pyobj);
+  EXPECT_EQ(buffer.buf, buf);
+  EXPECT_EQ(buffer.len, (Py_ssize_t)sizeof(buf));
+  EXPECT_EQ(buffer.readonly, 1);
+  EXPECT_EQ(buffer.itemsize, 1);
+  EXPECT_EQ(buffer.format, nullptr);
+  EXPECT_EQ(buffer.ndim, 1);
+  EXPECT_EQ(buffer.shape, nullptr);
+  EXPECT_EQ(buffer.strides, nullptr);
+  EXPECT_EQ(buffer.suboffsets, nullptr);
+  EXPECT_EQ(buffer.internal, nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyBufferFillInfoWithWritableFormatNdStridesFillsInfo) {
+  Py_buffer buffer;
+  char buf[7];
+  PyObjectPtr pyobj(Py_None);
+  long prev_refcount = Py_REFCNT(pyobj);
+  int readonly = 0;
+  int result = PyBuffer_FillInfo(
+      &buffer, pyobj, buf, sizeof(buf), readonly,
+      PyBUF_WRITABLE | PyBUF_FORMAT | PyBUF_ND | PyBUF_STRIDES);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(Py_REFCNT(pyobj), prev_refcount + 1);
+  EXPECT_EQ(buffer.obj, pyobj);
+  EXPECT_EQ(buffer.buf, buf);
+  EXPECT_EQ(buffer.len, (Py_ssize_t)sizeof(buf));
+  EXPECT_EQ(buffer.readonly, 0);
+  EXPECT_EQ(buffer.itemsize, 1);
+  EXPECT_EQ(strcmp(buffer.format, "B"), 0);
+  EXPECT_EQ(buffer.ndim, 1);
+  EXPECT_EQ(buffer.shape, &buffer.len);
+  EXPECT_EQ(buffer.strides, &buffer.itemsize);
+  EXPECT_EQ(buffer.suboffsets, nullptr);
+  EXPECT_EQ(buffer.internal, nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyBufferFillInfoWithNullptrRaisesBufferError) {
+  int result = PyBuffer_FillInfo(nullptr, Py_None, nullptr, 0, 1, PyBUF_SIMPLE);
+  EXPECT_EQ(result, -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_BufferError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyBufferFillInfoWithWritableFlagAndReadonlyRaisesBufferError) {
+  Py_buffer buffer;
+  int result =
+      PyBuffer_FillInfo(&buffer, Py_None, nullptr, 0, 1, PyBUF_WRITABLE);
+  EXPECT_EQ(result, -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_BufferError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyMappingCheckWithoutGetItemReturnsFalse) {
   PyRun_SimpleString(R"(
 class ClassWithoutDunderGetItem: pass

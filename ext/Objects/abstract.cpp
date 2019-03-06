@@ -98,10 +98,43 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
 
 // Buffer Protocol
 
-PY_EXPORT int PyBuffer_FillInfo(Py_buffer* /* w */, PyObject* /* j */,
-                                void* /* f */, Py_ssize_t /* n */, int /* y */,
-                                int /* s */) {
-  UNIMPLEMENTED("PyBuffer_FillInfo");
+PY_EXPORT int PyBuffer_FillInfo(Py_buffer* view, PyObject* exporter, void* buf,
+                                Py_ssize_t len, int readonly, int flags) {
+  if (view == nullptr) {
+    Thread::currentThread()->raiseBufferErrorWithCStr(
+        "PyBuffer_FillInfo: view==NULL argument is obsolete");
+    return -1;
+  }
+  if ((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE && readonly == 1) {
+    Thread::currentThread()->raiseBufferErrorWithCStr(
+        "Object is not writable.");
+    return -1;
+  }
+
+  if (exporter != nullptr) {
+    Py_INCREF(exporter);
+  }
+  view->obj = exporter;
+  view->buf = buf;
+  view->len = len;
+  view->readonly = readonly;
+  view->itemsize = 1;
+  view->format = nullptr;
+  if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
+    view->format = const_cast<char*>("B");
+  }
+  view->ndim = 1;
+  view->shape = nullptr;
+  if ((flags & PyBUF_ND) == PyBUF_ND) {
+    view->shape = &(view->len);
+  }
+  view->strides = nullptr;
+  if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) {
+    view->strides = &(view->itemsize);
+  }
+  view->suboffsets = nullptr;
+  view->internal = nullptr;
+  return 0;
 }
 
 PY_EXPORT int PyBuffer_IsContiguous(const Py_buffer* /* w */, char /* r */) {
