@@ -8,6 +8,11 @@
 
 namespace python {
 
+const BuiltinAttribute RefBuiltins::kAttributes[] = {
+    {SymbolId::kUnderReferent, WeakRef::kReferentOffset},
+    {SymbolId::kSentinelId, -1},
+};
+
 const BuiltinMethod RefBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},

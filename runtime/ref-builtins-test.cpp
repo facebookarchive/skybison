@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "ref-builtins.h"
 #include "runtime.h"
 #include "super-builtins.h"
 #include "test-utils.h"
@@ -8,7 +9,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(RefTest, ReferentTest) {
+TEST(RefBuiltinsTest, ReferentTest) {
   const char* src = R"(
 from _weakref import ref
 class Foo: pass
@@ -33,7 +34,7 @@ weak = ref(a)
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), NoneType::object());
 }
 
-TEST(RefTest, CallbackTest) {
+TEST(RefBuiltinsTest, CallbackTest) {
   const char* src = R"(
 from _weakref import ref
 class Foo: pass
@@ -64,6 +65,31 @@ weak = ref(a, f)
   EXPECT_TRUE(isIntEqualsWord(b, 2));
   EXPECT_EQ(RawWeakRef::cast(weak)->referent(), NoneType::object());
   EXPECT_EQ(RawWeakRef::cast(weak)->callback(), NoneType::object());
+}
+
+TEST(RefBuiltinsTest, DunderCallReturnsObject) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+from _weakref import ref
+class C: pass
+c = C()
+r = ref(c)
+result = r()
+)");
+  HandleScope scope;
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(c, result);
+}
+
+TEST(RefBuiltinsTest, DunderCallWithNonRefRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+from _weakref import ref
+ref.__call__(None)
+)"),
+                            LayoutId::kTypeError,
+                            "'__call__' requires a 'ref' object"));
 }
 
 }  // namespace python

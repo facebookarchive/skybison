@@ -374,6 +374,7 @@ class Runtime;
   V(UnderPrintStr, "_print_str")                                               \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
+  V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderStdout, "_stdout")                                                    \
