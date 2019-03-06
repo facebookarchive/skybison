@@ -272,7 +272,7 @@ class Interpreter {
   static void doDeleteDeref(Context* ctx, word arg);
   static bool doCallFunctionKw(Context* ctx, word arg);
   static bool doCallFunctionEx(Context* ctx, word arg);
-  static void doSetupWith(Context* ctx, word arg);
+  static bool doSetupWith(Context* ctx, word arg);
   static void doListAppend(Context* ctx, word arg);
   static void doSetAdd(Context* ctx, word arg);
   static void doMapAdd(Context* ctx, word arg);

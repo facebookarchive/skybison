@@ -2765,6 +2765,42 @@ result = foo()
   EXPECT_TRUE(isStrEqualsCStr(*sequence, "enter in foo exit"));
 }
 
+TEST(InterpreterTest,
+     WithStatementWithManagerWithoutEnterRaisesAttributeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+with None:
+  pass
+)"),
+                            LayoutId::kAttributeError, "__enter__"));
+}
+
+TEST(InterpreterTest, WithStatementWithManagerWithoutExitRaisesAttributeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class C:
+  def __enter__(self):
+    pass
+with C():
+  pass
+)"),
+                            LayoutId::kAttributeError, "__exit__"));
+}
+
+TEST(InterpreterTest, WithStatementWithManagerEnterRaisingPropagatesException) {
+  Runtime runtime;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+class C:
+  def __enter__(self):
+    raise UserWarning('')
+  def __exit__(self, *args):
+    pass
+with C():
+  pass
+)"),
+                     LayoutId::kUserWarning));
+}
+
 TEST(InterpreterTest, WithStatementPropagatesException) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(

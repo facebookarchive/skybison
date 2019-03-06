@@ -2279,23 +2279,39 @@ bool Interpreter::doCallFunctionEx(Context* ctx, word arg) {
 }
 
 // opcode 143
-void Interpreter::doSetupWith(Context* ctx, word arg) {
+bool Interpreter::doSetupWith(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   Frame* frame = ctx->frame;
   Object mgr(&scope, frame->topValue());
-  Object exit_selector(&scope, runtime->symbols()->DunderExit());
   Object enter(&scope,
                lookupMethod(thread, frame, mgr, SymbolId::kDunderEnter));
-  BoundMethod exit(&scope, runtime->attributeAt(thread, mgr, exit_selector));
-  frame->setTopValue(*exit);
+  if (enter.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseAttributeError(
+          runtime->symbols()->at(SymbolId::kDunderEnter));
+    }
+    return unwind(ctx);
+  }
+  Object exit(&scope, lookupMethod(thread, frame, mgr, SymbolId::kDunderExit));
+  if (exit.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseAttributeError(
+          runtime->symbols()->at(SymbolId::kDunderExit));
+    }
+    return unwind(ctx);
+  }
+  Object exit_bound(&scope, runtime->newBoundMethod(exit, mgr));
+  frame->setTopValue(*exit_bound);
   Object result(&scope, callMethod1(thread, frame, enter, mgr));
+  if (result.isError()) return unwind(ctx);
 
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
   frame->pushValue(*result);
+  return false;
 }
 
 // opcode 145
