@@ -403,8 +403,8 @@ PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* obj, PyObject* overflow_err) {
   if (overflow_err == nullptr) {
     // If no error-handling is desired, then silently fit into a word.
     DCHECK(PyLong_Check(index), "PyNumber_Index returned non-integer");
-    result = _PyLong_Sign(index) < 0 ? static_cast<Py_ssize_t>(kMinWord)
-                                     : static_cast<Py_ssize_t>(kMaxWord);
+    result =
+        _PyLong_Sign(index) < 0 ? Py_ssize_t{kMinWord} : Py_ssize_t{kMaxWord};
   } else {
     // Otherwise replace the error with caller's error object.
     PyErr_Format(overflow_err, "cannot fit index into an index-sized integer");
