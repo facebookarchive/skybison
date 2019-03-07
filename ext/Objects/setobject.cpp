@@ -37,7 +37,7 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
   Set set(&scope, *set_obj);
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
 
-  if (setAdd(thread, set, key_obj)->isError()) {
+  if (setAdd(thread, set, key_obj).isError()) {
     return -1;
   }
 

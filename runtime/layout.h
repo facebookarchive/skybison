@@ -9,7 +9,7 @@ namespace python {
 class AttributeInfo {
  public:
   explicit AttributeInfo(RawObject value) {
-    DCHECK(value->isSmallInt(), "expected small integer");
+    DCHECK(value.isSmallInt(), "expected small integer");
     value_ = value.raw();
   }
 

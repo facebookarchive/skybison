@@ -207,8 +207,6 @@ INTRINSIC_CLASS_NAMES(CASE)
    * Right now it exists to prevent implicit conversion of Handle<T> to T. */  \
   template <typename T>                                                        \
   Raw##ty(const Handle<T>&) = delete;                                          \
-                                                                               \
-  const Raw##ty* operator->() const { return this; }                           \
   DISALLOW_HEAP_ALLOCATION()
 
 #define RAW_OBJECT_COMMON(ty)                                                  \
@@ -1689,38 +1687,38 @@ class RawDict::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
   static word getIndex(RawTuple data, RawObject hash) {
-    word nbuckets = data->length() / kNumPointers;
+    word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
-    word value = RawSmallInt::cast(hash)->value();
+    word value = RawSmallInt::cast(hash).value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
   static bool hasKey(RawTuple data, word index, RawObject that_key,
                      DictEq pred) {
-    return !hash(data, index)->isNoneType() && pred(key(data, index), that_key);
+    return !hash(data, index).isNoneType() && pred(key(data, index), that_key);
   }
 
   static RawObject hash(RawTuple data, word index) {
-    return data->at(index + kHashOffset);
+    return data.at(index + kHashOffset);
   }
 
   static bool isEmpty(RawTuple data, word index) {
-    return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
+    return hash(data, index).isNoneType() && key(data, index).isNoneType();
   }
 
   static bool isTombstone(RawTuple data, word index) {
-    return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
+    return hash(data, index).isNoneType() && !key(data, index).isNoneType();
   }
 
   static RawObject key(RawTuple data, word index) {
-    return data->at(index + kKeyOffset);
+    return data.at(index + kKeyOffset);
   }
 
   static void set(RawTuple data, word index, RawObject hash, RawObject key,
                   RawObject value) {
-    data->atPut(index + kHashOffset, hash);
-    data->atPut(index + kKeyOffset, key);
-    data->atPut(index + kValueOffset, value);
+    data.atPut(index + kHashOffset, hash);
+    data.atPut(index + kKeyOffset, key);
+    data.atPut(index + kValueOffset, value);
   }
 
   static void setTombstone(RawTuple data, word index) {
@@ -1729,7 +1727,7 @@ class RawDict::Bucket {
   }
 
   static RawObject value(RawTuple data, word index) {
-    return data->at(index + kValueOffset);
+    return data.at(index + kValueOffset);
   }
 
   static bool nextItem(RawTuple data, word* idx) {
@@ -1858,36 +1856,36 @@ class RawSetBase::Bucket {
  public:
   // none of these operations do bounds checking on the backing array
   static word getIndex(RawTuple data, RawObject hash) {
-    word nbuckets = data->length() / kNumPointers;
+    word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld not a power of 2", nbuckets);
-    word value = RawSmallInt::cast(hash)->value();
+    word value = RawSmallInt::cast(hash).value();
     return (value & (nbuckets - 1)) * kNumPointers;
   }
 
   static RawObject hash(RawTuple data, word index) {
-    return data->at(index + kHashOffset);
+    return data.at(index + kHashOffset);
   }
 
   static bool hasKey(RawTuple data, word index, RawObject that_key) {
-    return !hash(data, index)->isNoneType() &&
+    return !hash(data, index).isNoneType() &&
            RawObject::equals(key(data, index), that_key);
   }
 
   static bool isEmpty(RawTuple data, word index) {
-    return hash(data, index)->isNoneType() && key(data, index)->isNoneType();
+    return hash(data, index).isNoneType() && key(data, index).isNoneType();
   }
 
   static bool isTombstone(RawTuple data, word index) {
-    return hash(data, index)->isNoneType() && !key(data, index)->isNoneType();
+    return hash(data, index).isNoneType() && !key(data, index).isNoneType();
   }
 
   static RawObject key(RawTuple data, word index) {
-    return data->at(index + kKeyOffset);
+    return data.at(index + kKeyOffset);
   }
 
   static void set(RawTuple data, word index, RawObject hash, RawObject key) {
-    data->atPut(index + kHashOffset, hash);
-    data->atPut(index + kKeyOffset, key);
+    data.atPut(index + kHashOffset, hash);
+    data.atPut(index + kKeyOffset, key);
   }
 
   static void setTombstone(RawTuple data, word index) {
@@ -2354,7 +2352,7 @@ inline bool RawObject::isObject() const { return true; }
 
 inline LayoutId RawObject::layoutId() const {
   if (isHeapObject()) {
-    return RawHeapObject::cast(*this)->header()->layoutId();
+    return RawHeapObject::cast(*this).header().layoutId();
   }
   if (isSmallInt()) {
     return LayoutId::kSmallInt;
@@ -2402,7 +2400,7 @@ inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
   if (!isHeapObject()) {
     return false;
   }
-  return RawHeapObject::cast(*this)->header()->layoutId() == layout_id;
+  return RawHeapObject::cast(*this).header().layoutId() == layout_id;
 }
 
 inline bool RawObject::isLayout() const {
@@ -2465,7 +2463,7 @@ inline bool RawObject::isInstance() const {
   if (!isHeapObject()) {
     return false;
   }
-  return RawHeapObject::cast(*this)->header()->layoutId() >
+  return RawHeapObject::cast(*this).header().layoutId() >
          LayoutId::kLastBuiltinId;
 }
 
@@ -2659,7 +2657,7 @@ inline bool RawObject::isModuleNotFoundError() const {
 
 inline bool RawObject::equals(RawObject lhs, RawObject rhs) {
   return (lhs == rhs) ||
-         (lhs->isLargeStr() && RawLargeStr::cast(lhs)->equals(rhs));
+         (lhs.isLargeStr() && RawLargeStr::cast(lhs).equals(rhs));
 }
 
 inline bool RawObject::operator==(const RawObject& other) const {
@@ -2679,62 +2677,61 @@ T RawObject::rawCast() const {
 
 inline word RawInt::asWord() const {
   if (isSmallInt()) {
-    return RawSmallInt::cast(*this)->value();
+    return RawSmallInt::cast(*this).value();
   }
   if (isBool()) {
-    return RawBool::cast(*this)->value();
+    return RawBool::cast(*this).value();
   }
-  return RawLargeInt::cast(*this)->asWord();
+  return RawLargeInt::cast(*this).asWord();
 }
 
 inline void* RawInt::asCPtr() const {
   if (isSmallInt()) {
-    return RawSmallInt::cast(*this)->asCPtr();
+    return RawSmallInt::cast(*this).asCPtr();
   }
-  return RawLargeInt::cast(*this)->asCPtr();
+  return RawLargeInt::cast(*this).asCPtr();
 }
 
 template <typename T>
 OptInt<T> RawInt::asInt() const {
-  if (isSmallInt()) return RawSmallInt::cast(*this)->asInt<T>();
-  return RawLargeInt::cast(*this)->asInt<T>();
+  if (isSmallInt()) return RawSmallInt::cast(*this).asInt<T>();
+  return RawLargeInt::cast(*this).asInt<T>();
 }
 
 inline word RawInt::bitLength() const {
   if (isSmallInt()) {
-    uword self =
-        static_cast<uword>(std::abs(RawSmallInt::cast(*this)->value()));
+    uword self = static_cast<uword>(std::abs(RawSmallInt::cast(*this).value()));
     return Utils::highestBit(self);
   }
   if (isBool()) {
     return RawBool::cast(*this) == RawBool::trueObj() ? 1 : 0;
   }
-  return RawLargeInt::cast(*this)->bitLength();
+  return RawLargeInt::cast(*this).bitLength();
 }
 
 inline bool RawInt::isPositive() const {
   if (isSmallInt()) {
-    return RawSmallInt::cast(*this)->value() > 0;
+    return RawSmallInt::cast(*this).value() > 0;
   }
   if (isBool()) {
     return RawBool::cast(*this) == RawBool::trueObj();
   }
-  return RawLargeInt::cast(*this)->isPositive();
+  return RawLargeInt::cast(*this).isPositive();
 }
 
 inline bool RawInt::isNegative() const {
   if (isSmallInt()) {
-    return RawSmallInt::cast(*this)->value() < 0;
+    return RawSmallInt::cast(*this).value() < 0;
   }
   if (isBool()) {
     return false;
   }
-  return RawLargeInt::cast(*this)->isNegative();
+  return RawLargeInt::cast(*this).isNegative();
 }
 
 inline bool RawInt::isZero() const {
   if (isSmallInt()) {
-    return RawSmallInt::cast(*this)->value() == 0;
+    return RawSmallInt::cast(*this).value() == 0;
   }
   if (isBool()) {
     return RawBool::cast(*this) == RawBool::falseObj();
@@ -2748,19 +2745,19 @@ inline word RawInt::numDigits() const {
   if (isSmallInt() || isBool()) {
     return 1;
   }
-  return RawLargeInt::cast(*this)->numDigits();
+  return RawLargeInt::cast(*this).numDigits();
 }
 
 inline uword RawInt::digitAt(word index) const {
   if (isSmallInt()) {
     DCHECK(index == 0, "RawSmallInt digit index out of bounds");
-    return RawSmallInt::cast(*this)->value();
+    return RawSmallInt::cast(*this).value();
   }
   if (isBool()) {
     DCHECK(index == 0, "RawBool digit index out of bounds");
-    return RawBool::cast(*this)->value();
+    return RawBool::cast(*this).value();
   }
-  return RawLargeInt::cast(*this)->digitAt(index);
+  return RawLargeInt::cast(*this).digitAt(index);
 }
 
 // RawSmallInt
@@ -2895,7 +2892,7 @@ inline RawBool RawBool::trueObj() { return fromBool(true); }
 inline RawBool RawBool::falseObj() { return fromBool(false); }
 
 inline RawBool RawBool::negate(RawObject value) {
-  DCHECK(value->isBool(), "not a boolean instance");
+  DCHECK(value.isBool(), "not a boolean instance");
   return (value == trueObj()) ? falseObj() : trueObj();
 }
 
@@ -2915,7 +2912,7 @@ inline uword RawHeapObject::address() const {
 
 inline uword RawHeapObject::baseAddress() const {
   uword result = address() - RawHeader::kSize;
-  if (header()->hasOverflow()) {
+  if (header().hasOverflow()) {
     result -= kPointerSize;
   }
   return result;
@@ -2930,8 +2927,8 @@ inline void RawHeapObject::setHeader(RawHeader header) const {
 }
 
 inline word RawHeapObject::headerOverflow() const {
-  DCHECK(header()->hasOverflow(), "expected Overflow");
-  return RawSmallInt::cast(instanceVariableAt(kHeaderOverflowOffset))->value();
+  DCHECK(header().hasOverflow(), "expected Overflow");
+  return RawSmallInt::cast(instanceVariableAt(kHeaderOverflowOffset)).value();
 }
 
 inline void RawHeapObject::setHeaderAndOverflow(word count, word hash,
@@ -2950,16 +2947,16 @@ inline RawHeapObject RawHeapObject::fromAddress(uword address) {
 }
 
 inline word RawHeapObject::headerCountOrOverflow() const {
-  if (header()->hasOverflow()) {
+  if (header().hasOverflow()) {
     return headerOverflow();
   }
-  return header()->count();
+  return header().count();
 }
 
 inline word RawHeapObject::size() const {
   word count = headerCountOrOverflow();
   word result = headerSize(count);
-  switch (header()->format()) {
+  switch (header().format()) {
     case ObjectFormat::kDataArray8:
       result += count;
       break;
@@ -3000,8 +2997,8 @@ inline void RawHeapObject::initialize(word size, RawObject value) const {
 }
 
 inline bool RawHeapObject::isRoot() const {
-  return header()->format() == ObjectFormat::kObjectArray ||
-         header()->format() == ObjectFormat::kObjectInstance;
+  return header().format() == ObjectFormat::kObjectArray ||
+         header().format() == ObjectFormat::kObjectInstance;
 }
 
 inline bool RawHeapObject::isForwarding() const {
@@ -3181,7 +3178,7 @@ inline void RawType::setExtensionSlots(RawObject slots) const {
 }
 
 inline bool RawType::isBuiltin() const {
-  return RawLayout::cast(instanceLayout())->id() <= LayoutId::kLastBuiltinId;
+  return RawLayout::cast(instanceLayout()).id() <= LayoutId::kLastBuiltinId;
 }
 
 inline bool RawType::isBaseExceptionSubclass() const {
@@ -3259,7 +3256,7 @@ inline RawObject RawUserTupleBase::tupleValue() const {
 }
 
 inline void RawUserTupleBase::setTupleValue(RawObject value) const {
-  DCHECK(value->isTuple(), "Only tuple type is permitted as a value");
+  DCHECK(value.isTuple(), "Only tuple type is permitted as a value");
   instanceVariableAtPut(kTupleOffset, value);
 }
 
@@ -3270,7 +3267,7 @@ inline RawObject RawUnicodeError::encoding() const {
 }
 
 inline void RawUnicodeError::setEncoding(RawObject value) const {
-  DCHECK(value->isStr(), "Only string type is permitted as a value");
+  DCHECK(value.isStr(), "Only string type is permitted as a value");
   instanceVariableAtPut(kEncodingOffset, value);
 }
 
@@ -3280,7 +3277,7 @@ inline RawObject RawUnicodeError::object() const {
 
 inline void RawUnicodeError::setObject(RawObject value) const {
   // TODO(T39229519): Allow bytearrays to be stored as well
-  DCHECK(value->isBytes(), "Only bytes type is permitted as a value");
+  DCHECK(value.isBytes(), "Only bytes type is permitted as a value");
   instanceVariableAtPut(kObjectOffset, value);
 }
 
@@ -3289,7 +3286,7 @@ inline RawObject RawUnicodeError::start() const {
 }
 
 inline void RawUnicodeError::setStart(RawObject value) const {
-  DCHECK(value->isInt(), "Only int type is permitted as a value");
+  DCHECK(value.isInt(), "Only int type is permitted as a value");
   instanceVariableAtPut(kStartOffset, value);
 }
 
@@ -3298,7 +3295,7 @@ inline RawObject RawUnicodeError::end() const {
 }
 
 inline void RawUnicodeError::setEnd(RawObject value) const {
-  DCHECK(value->isInt(), "Only int type is permitted as a value");
+  DCHECK(value.isInt(), "Only int type is permitted as a value");
   instanceVariableAtPut(kEndOffset, value);
 }
 
@@ -3307,14 +3304,14 @@ inline RawObject RawUnicodeError::reason() const {
 }
 
 inline void RawUnicodeError::setReason(RawObject value) const {
-  DCHECK(value->isStr(), "Only string type is permitted as a value");
+  DCHECK(value.isStr(), "Only string type is permitted as a value");
   instanceVariableAtPut(kReasonOffset, value);
 }
 
 // RawCode
 
 inline word RawCode::argcount() const {
-  return RawSmallInt::cast(instanceVariableAt(kArgcountOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kArgcountOffset)).value();
 }
 
 inline void RawCode::setArgcount(word value) const {
@@ -3351,11 +3348,11 @@ inline void RawCode::setCellvars(RawObject value) const {
 
 inline word RawCode::numCellvars() const {
   RawObject object = cellvars();
-  DCHECK(object->isNoneType() || object->isTuple(), "not an object array");
-  if (object->isNoneType()) {
+  DCHECK(object.isNoneType() || object.isTuple(), "not an object array");
+  if (object.isNoneType()) {
     return 0;
   }
-  return RawTuple::cast(object)->length();
+  return RawTuple::cast(object).length();
 }
 
 inline RawObject RawCode::code() const {
@@ -3383,7 +3380,7 @@ inline void RawCode::setFilename(RawObject value) const {
 }
 
 inline word RawCode::firstlineno() const {
-  return RawSmallInt::cast(instanceVariableAt(kFirstlinenoOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kFirstlinenoOffset)).value();
 }
 
 inline void RawCode::setFirstlineno(word value) const {
@@ -3391,7 +3388,7 @@ inline void RawCode::setFirstlineno(word value) const {
 }
 
 inline word RawCode::flags() const {
-  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value();
 }
 
 inline void RawCode::setFlags(word value) const {
@@ -3414,15 +3411,15 @@ inline void RawCode::setFreevars(RawObject value) const {
 
 inline word RawCode::numFreevars() const {
   RawObject object = freevars();
-  DCHECK(object->isNoneType() || object->isTuple(), "not an object array");
-  if (object->isNoneType()) {
+  DCHECK(object.isNoneType() || object.isTuple(), "not an object array");
+  if (object.isNoneType()) {
     return 0;
   }
-  return RawTuple::cast(object)->length();
+  return RawTuple::cast(object).length();
 }
 
 inline word RawCode::kwonlyargcount() const {
-  return RawSmallInt::cast(instanceVariableAt(kKwonlyargcountOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kKwonlyargcountOffset)).value();
 }
 
 inline void RawCode::setKwonlyargcount(word value) const {
@@ -3454,7 +3451,7 @@ inline void RawCode::setNames(RawObject value) const {
 }
 
 inline word RawCode::nlocals() const {
-  return RawSmallInt::cast(instanceVariableAt(kNlocalsOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kNlocalsOffset)).value();
 }
 
 inline void RawCode::setNlocals(word value) const {
@@ -3466,7 +3463,7 @@ inline word RawCode::totalVars() const {
 }
 
 inline word RawCode::stacksize() const {
-  return RawSmallInt::cast(instanceVariableAt(kStacksizeOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kStacksizeOffset)).value();
 }
 
 inline void RawCode::setStacksize(word value) const {
@@ -3608,14 +3605,14 @@ inline RawObject RawUserFloatBase::floatValue() const {
 }
 
 inline void RawUserFloatBase::setFloatValue(RawObject value) const {
-  DCHECK(value->isFloat(), "Only float type is permitted as a value");
+  DCHECK(value.isFloat(), "Only float type is permitted as a value");
   instanceVariableAtPut(kFloatOffset, value);
 }
 
 // RawRange
 
 inline word RawRange::start() const {
-  return RawSmallInt::cast(instanceVariableAt(kStartOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kStartOffset)).value();
 }
 
 inline void RawRange::setStart(word value) const {
@@ -3623,7 +3620,7 @@ inline void RawRange::setStart(word value) const {
 }
 
 inline word RawRange::stop() const {
-  return RawSmallInt::cast(instanceVariableAt(kStopOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kStopOffset)).value();
 }
 
 inline void RawRange::setStop(word value) const {
@@ -3631,7 +3628,7 @@ inline void RawRange::setStop(word value) const {
 }
 
 inline word RawRange::step() const {
-  return RawSmallInt::cast(instanceVariableAt(kStepOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kStepOffset)).value();
 }
 
 inline void RawRange::setStep(word value) const {
@@ -3669,7 +3666,7 @@ inline void RawProperty::setDeleter(RawObject function) const {
 inline void RawRangeIterator::setRange(RawObject range) const {
   auto r = RawRange::cast(range);
   instanceVariableAtPut(kRangeOffset, r);
-  instanceVariableAtPut(kCurValueOffset, RawSmallInt::fromWord(r->start()));
+  instanceVariableAtPut(kCurValueOffset, RawSmallInt::fromWord(r.start()));
 }
 
 // RawSlice
@@ -3712,16 +3709,16 @@ inline void RawStaticMethod::setFunction(RawObject function) const {
 
 inline byte RawByteArray::byteAt(word index) const {
   DCHECK_INDEX(index, numItems());
-  return RawBytes::cast(bytes())->byteAt(index);
+  return RawBytes::cast(bytes()).byteAt(index);
 }
 
 inline void RawByteArray::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, numItems());
-  RawBytes::cast(bytes())->byteAtPut(index, value);
+  RawBytes::cast(bytes()).byteAtPut(index, value);
 }
 
 inline word RawByteArray::numItems() const {
-  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
 }
 
 inline void RawByteArray::setNumItems(word num_bytes) const {
@@ -3737,13 +3734,13 @@ inline void RawByteArray::setBytes(RawObject new_bytes) const {
 }
 
 inline word RawByteArray::capacity() const {
-  return RawBytes::cast(bytes())->length();
+  return RawBytes::cast(bytes()).length();
 }
 
 // RawDict
 
 inline word RawDict::numItems() const {
-  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
 }
 
 inline void RawDict::setNumItems(word num_items) const {
@@ -3761,7 +3758,7 @@ inline void RawDict::setData(RawObject data) const {
 // RawDictIteratorBase
 
 inline word RawDictIteratorBase::numFound() const {
-  return RawSmallInt::cast(instanceVariableAt(kNumFoundOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kNumFoundOffset)).value();
 }
 
 inline void RawDictIteratorBase::setNumFound(word num_found) const {
@@ -3813,7 +3810,7 @@ inline void RawFunction::setDefaults(RawObject defaults) const {
 }
 
 inline bool RawFunction::hasDefaults() const {
-  return !defaults()->isNoneType();
+  return !defaults().isNoneType();
 }
 
 inline RawObject RawFunction::doc() const {
@@ -3826,7 +3823,7 @@ inline void RawFunction::setDoc(RawObject doc) const {
 
 inline RawFunction::Entry RawFunction::entry() const {
   RawObject object = instanceVariableAt(kEntryOffset);
-  DCHECK(object->isSmallInt(), "entry address must look like a RawSmallInt");
+  DCHECK(object.isSmallInt(), "entry address must look like a RawSmallInt");
   return bit_cast<RawFunction::Entry>(object);
 }
 
@@ -3837,7 +3834,7 @@ inline void RawFunction::setEntry(RawFunction::Entry thunk) const {
 
 inline RawFunction::Entry RawFunction::entryKw() const {
   RawObject object = instanceVariableAt(kEntryKwOffset);
-  DCHECK(object->isSmallInt(), "entryKw address must look like a RawSmallInt");
+  DCHECK(object.isSmallInt(), "entryKw address must look like a RawSmallInt");
   return bit_cast<RawFunction::Entry>(object);
 }
 
@@ -3848,7 +3845,7 @@ inline void RawFunction::setEntryKw(RawFunction::Entry thunk) const {
 
 RawFunction::Entry RawFunction::entryEx() const {
   RawObject object = instanceVariableAt(kEntryExOffset);
-  DCHECK(object->isSmallInt(), "entryEx address must look like a RawSmallInt");
+  DCHECK(object.isSmallInt(), "entryEx address must look like a RawSmallInt");
   return bit_cast<RawFunction::Entry>(object);
 }
 
@@ -3932,11 +3929,11 @@ inline void RawList::setItems(RawObject new_items) const {
 }
 
 inline word RawList::capacity() const {
-  return RawTuple::cast(items())->length();
+  return RawTuple::cast(items()).length();
 }
 
 inline word RawList::numItems() const {
-  return RawSmallInt::cast(instanceVariableAt(kAllocatedOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kAllocatedOffset)).value();
 }
 
 inline void RawList::setNumItems(word num_items) const {
@@ -3946,12 +3943,12 @@ inline void RawList::setNumItems(word num_items) const {
 inline void RawList::atPut(word index, RawObject value) const {
   DCHECK_INDEX(index, numItems());
   RawObject items = instanceVariableAt(kItemsOffset);
-  RawTuple::cast(items)->atPut(index, value);
+  RawTuple::cast(items).atPut(index, value);
 }
 
 inline RawObject RawList::at(word index) const {
   DCHECK_INDEX(index, numItems());
-  return RawTuple::cast(items())->at(index);
+  return RawTuple::cast(items()).at(index);
 }
 
 // RawModule
@@ -3984,18 +3981,18 @@ inline void RawModule::setDef(RawObject dict) const {
 
 inline byte RawStr::charAt(word index) const {
   if (isSmallStr()) {
-    return RawSmallStr::cast(*this)->charAt(index);
+    return RawSmallStr::cast(*this).charAt(index);
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return RawLargeStr::cast(*this)->charAt(index);
+  return RawLargeStr::cast(*this).charAt(index);
 }
 
 inline word RawStr::length() const {
   if (isSmallStr()) {
-    return RawSmallStr::cast(*this)->length();
+    return RawSmallStr::cast(*this).length();
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return RawLargeStr::cast(*this)->length();
+  return RawLargeStr::cast(*this).length();
 }
 
 inline bool RawStr::equals(RawObject that) const {
@@ -4003,32 +4000,32 @@ inline bool RawStr::equals(RawObject that) const {
     return *this == that;
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return RawLargeStr::cast(*this)->equals(that);
+  return RawLargeStr::cast(*this).equals(that);
 }
 
 inline void RawStr::copyTo(byte* dst, word length) const {
   if (isSmallStr()) {
-    RawSmallStr::cast(*this)->copyTo(dst, length);
+    RawSmallStr::cast(*this).copyTo(dst, length);
     return;
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return RawLargeStr::cast(*this)->copyTo(dst, length);
+  return RawLargeStr::cast(*this).copyTo(dst, length);
 }
 
 inline char* RawStr::toCStr() const {
   if (isSmallStr()) {
-    return RawSmallStr::cast(*this)->toCStr();
+    return RawSmallStr::cast(*this).toCStr();
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return RawLargeStr::cast(*this)->toCStr();
+  return RawLargeStr::cast(*this).toCStr();
 }
 
 inline word RawStr::codePointLength() const {
   if (isSmallStr()) {
-    return RawSmallStr::cast(*this)->codePointLength();
+    return RawSmallStr::cast(*this).codePointLength();
   }
   DCHECK(isLargeStr(), "unexpected type");
-  return RawLargeStr::cast(*this)->codePointLength();
+  return RawLargeStr::cast(*this).codePointLength();
 }
 
 // RawLargeStr
@@ -4061,7 +4058,7 @@ inline void RawValueCell::makeUnbound() const { setValue(*this); }
 // RawSetBase
 
 inline word RawSetBase::numItems() const {
-  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
 }
 
 inline void RawSetBase::setNumItems(word num_items) const {
@@ -4133,11 +4130,11 @@ inline void RawWeakRef::setLink(RawObject reference) const {
 // RawLayout
 
 inline LayoutId RawLayout::id() const {
-  return static_cast<LayoutId>(header()->hashCode());
+  return static_cast<LayoutId>(header().hashCode());
 }
 
 inline void RawLayout::setId(LayoutId id) const {
-  setHeader(header()->withHashCode(static_cast<word>(id)));
+  setHeader(header().withHashCode(static_cast<word>(id)));
 }
 
 inline void RawLayout::setDescribedType(RawObject type) const {
@@ -4192,7 +4189,7 @@ inline word RawLayout::overflowOffset() const {
 
 inline word RawLayout::numInObjectAttributes() const {
   return RawSmallInt::cast(instanceVariableAt(kNumInObjectAttributesOffset))
-      ->value();
+      .value();
 }
 
 inline void RawLayout::setNumInObjectAttributes(word count) const {
@@ -4207,7 +4204,7 @@ inline void RawLayout::sealAttributes() const {
 // RawSetIterator
 
 inline word RawSetIterator::consumedCount() const {
-  return RawSmallInt::cast(instanceVariableAt(kConsumedCountOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kConsumedCountOffset)).value();
 }
 
 inline void RawSetIterator::setConsumedCount(word consumed) const {
@@ -4225,7 +4222,7 @@ inline void RawIteratorBase::setIterable(RawObject iterable) const {
 }
 
 inline word RawIteratorBase::index() const {
-  return RawSmallInt::cast(instanceVariableAt(kIndexOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kIndexOffset)).value();
 }
 
 inline void RawIteratorBase::setIndex(word index) const {
@@ -4239,7 +4236,7 @@ inline RawObject RawSuper::type() const {
 }
 
 inline void RawSuper::setType(RawObject tp) const {
-  DCHECK(tp->isType(), "expected type");
+  DCHECK(tp.isType(), "expected type");
   instanceVariableAtPut(kTypeOffset, tp);
 }
 
@@ -4256,7 +4253,7 @@ inline RawObject RawSuper::objectType() const {
 }
 
 inline void RawSuper::setObjectType(RawObject tp) const {
-  DCHECK(tp->isType(), "expected type");
+  DCHECK(tp.isType(), "expected type");
   instanceVariableAtPut(kObjectTypeOffset, tp);
 }
 
@@ -4330,11 +4327,11 @@ inline Frame* RawHeapFrame::frame() const {
 }
 
 inline word RawHeapFrame::numFrameWords() const {
-  return header()->count() - kNumOverheadWords;
+  return header().count() - kNumOverheadWords;
 }
 
 inline word RawHeapFrame::maxStackSize() const {
-  return RawSmallInt::cast(instanceVariableAt(kMaxStackSizeOffset))->value();
+  return RawSmallInt::cast(instanceVariableAt(kMaxStackSizeOffset)).value();
 }
 
 inline void RawHeapFrame::setMaxStackSize(word offset) const {

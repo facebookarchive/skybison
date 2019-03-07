@@ -26,7 +26,7 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
 }
 
 PY_EXPORT int PyList_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isList();
+  return ApiHandle::fromPyObject(obj)->asObject().isList();
 }
 
 PY_EXPORT int PyList_Check_Func(PyObject* obj) {

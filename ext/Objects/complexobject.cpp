@@ -4,7 +4,7 @@
 namespace python {
 
 PY_EXPORT int PyComplex_CheckExact_Func(PyObject* p) {
-  return ApiHandle::fromPyObject(p)->asObject()->isComplex();
+  return ApiHandle::fromPyObject(p)->asObject().isComplex();
 }
 
 PY_EXPORT int PyComplex_Check_Func(PyObject* p) {
@@ -76,7 +76,7 @@ PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
   if (!runtime->isInstanceOfComplex(*obj)) {
     Object float_or_err(&scope, asFloatObject(thread, obj));
     if (float_or_err.isError()) return -1;
-    return RawFloat::cast(*float_or_err)->value();
+    return RawFloat::cast(*float_or_err).value();
   }
   // TODO(T36619862): strict subclass of complex
   Complex comp(&scope, *obj);

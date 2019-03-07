@@ -122,8 +122,8 @@ b = type.__new__(type, "hello");
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
   Type b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  EXPECT_EQ(RawLayout::cast(a.instanceLayout())->id(), LayoutId::kSmallInt);
-  EXPECT_EQ(RawLayout::cast(b.instanceLayout())->id(), LayoutId::kSmallStr);
+  EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kSmallInt);
+  EXPECT_EQ(RawLayout::cast(b.instanceLayout()).id(), LayoutId::kSmallStr);
 }
 
 TEST(TypeBuiltinTest, DunderNewWithOneMetaclassArgReturnsType) {
@@ -135,7 +135,7 @@ class Foo(type):
 a = type.__new__(type, Foo);
 )");
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_EQ(RawLayout::cast(a.instanceLayout())->id(), LayoutId::kType);
+  EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kType);
 }
 
 TEST(TypeBuiltinsTest, TypeHasDunderMroAttribute) {

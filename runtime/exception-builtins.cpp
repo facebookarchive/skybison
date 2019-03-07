@@ -160,7 +160,7 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   }
   StopIteration self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
-  if (result->isError()) {
+  if (result.isError()) {
     return result;
   }
   Tuple tuple(&scope, self.args());
@@ -190,7 +190,7 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   }
   SystemExit self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
-  if (result->isError()) {
+  if (result.isError()) {
     return result;
   }
   Tuple tuple(&scope, self.args());

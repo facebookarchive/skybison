@@ -23,7 +23,7 @@ PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
 }
 
 PY_EXPORT int PyByteArray_CheckExact_Func(PyObject* pyobj) {
-  return ApiHandle::fromPyObject(pyobj)->asObject()->isByteArray();
+  return ApiHandle::fromPyObject(pyobj)->asObject().isByteArray();
 }
 
 PY_EXPORT int PyByteArray_Check_Func(PyObject* pyobj) {
@@ -122,7 +122,7 @@ PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   DCHECK(thread->runtime()->isInstanceOfByteArray(*obj),
          "argument to PyByteArray_Size is not a bytearray");
-  return static_cast<Py_ssize_t>(ByteArray::cast(*obj)->numItems());
+  return static_cast<Py_ssize_t>(ByteArray::cast(*obj).numItems());
 }
 
 }  // namespace python

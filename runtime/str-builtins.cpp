@@ -187,7 +187,7 @@ RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self)->compare(*other) == 0);
+    return Bool::fromBool(RawStr::cast(*self).compare(*other) == 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -199,7 +199,7 @@ RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self)->compare(*other) >= 0);
+    return Bool::fromBool(RawStr::cast(*self).compare(*other) >= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -211,7 +211,7 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self)->compare(*other) > 0);
+    return Bool::fromBool(RawStr::cast(*self).compare(*other) > 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -250,7 +250,7 @@ RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self)->compare(*other) <= 0);
+    return Bool::fromBool(RawStr::cast(*self).compare(*other) <= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -299,7 +299,7 @@ RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self)->compare(*other) < 0);
+    return Bool::fromBool(RawStr::cast(*self).compare(*other) < 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -320,28 +320,28 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
     switch (fmt.charAt(fmt_idx)) {
       case 'd': {
         len--;
-        if (!args.at(arg_idx)->isInt()) {
+        if (!args.at(arg_idx).isInt()) {
           return thread->raiseTypeErrorWithCStr("Argument mismatch");
         }
         len += snprintf(nullptr, 0, "%ld",
-                        RawInt::cast(args.at(arg_idx))->asWord());
+                        RawInt::cast(args.at(arg_idx)).asWord());
         arg_idx++;
       } break;
       case 'g': {
         len--;
-        if (!args.at(arg_idx)->isFloat()) {
+        if (!args.at(arg_idx).isFloat()) {
           return thread->raiseTypeErrorWithCStr("Argument mismatch");
         }
         len += snprintf(nullptr, 0, "%g",
-                        RawFloat::cast(args.at(arg_idx))->value());
+                        RawFloat::cast(args.at(arg_idx)).value());
         arg_idx++;
       } break;
       case 's': {
         len--;
-        if (!args.at(arg_idx)->isStr()) {
+        if (!args.at(arg_idx).isStr()) {
           return thread->raiseTypeErrorWithCStr("Argument mismatch");
         }
-        len += RawStr::cast(args.at(arg_idx))->length();
+        len += RawStr::cast(args.at(arg_idx)).length();
         arg_idx++;
       } break;
       case '%':
@@ -370,17 +370,17 @@ static void stringFormatToBuffer(const Str& fmt, const Tuple& args, char* dst,
     }
     switch (fmt.charAt(++fmt_idx)) {
       case 'd': {
-        word value = RawInt::cast(args.at(arg_idx++))->asWord();
+        word value = RawInt::cast(args.at(arg_idx++)).asWord();
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%ld", value);
       } break;
       case 'g': {
-        double value = RawFloat::cast(args.at(arg_idx++))->value();
+        double value = RawFloat::cast(args.at(arg_idx++)).value();
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%g", value);
       } break;
       case 's': {
         RawStr value = RawStr::cast(args.at(arg_idx));
-        value->copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value->length());
-        dst_idx += value->length();
+        value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value.length());
+        dst_idx += value.length();
         arg_idx++;
       } break;
       case '%':
@@ -438,7 +438,7 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self)->compare(*other) != 0);
+    return Bool::fromBool(RawStr::cast(*self).compare(*other) != 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
@@ -478,7 +478,7 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseIndexErrorWithCStr(
           "cannot fit index into an index-sized integer");
     }
-    word idx = RawSmallInt::cast(*index)->value();
+    word idx = RawSmallInt::cast(*index).value();
     if (idx < 0) {
       idx += string.length();
     }

@@ -20,7 +20,7 @@ exc = BaseException()
   BaseException base_exception(&scope, *exc);
 
   // No constructor arguments means args should contain an empty tuple.
-  ASSERT_TRUE(base_exception.args()->isTuple());
+  ASSERT_TRUE(base_exception.args().isTuple());
   ASSERT_EQ(base_exception.args(), runtime.newTuple(0));
 }
 
@@ -37,7 +37,7 @@ exc = BaseException(1,2,3)
   BaseException base_exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(base_exception.args()->isTuple());
+  ASSERT_TRUE(base_exception.args().isTuple());
   Tuple args(&scope, base_exception.args());
   EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
   EXPECT_EQ(args.at(1), SmallInt::fromWord(2));
@@ -93,7 +93,7 @@ exc = Exception(1,2,3)
   Exception exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(exception.args()->isTuple());
+  ASSERT_TRUE(exception.args().isTuple());
   Tuple args(&scope, exception.args());
   EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
   EXPECT_EQ(args.at(1), SmallInt::fromWord(2));
@@ -207,7 +207,7 @@ exc = TypeError()
   BaseException exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(exception.args()->isTuple());
+  ASSERT_TRUE(exception.args().isTuple());
   Tuple args(&scope, exception.args());
   EXPECT_EQ(args.length(), 0);
 }
@@ -225,10 +225,10 @@ exc = StopIteration()
   StopIteration stop_iteration(&scope, *exc);
 
   // No constructor arguments so value should be none.
-  EXPECT_TRUE(stop_iteration.value()->isNoneType());
+  EXPECT_TRUE(stop_iteration.value().isNoneType());
 
   // No constructor arguments means args should contain an empty tuple.
-  ASSERT_TRUE(stop_iteration.args()->isTuple());
+  ASSERT_TRUE(stop_iteration.args().isTuple());
   Tuple args(&scope, stop_iteration.args());
   EXPECT_EQ(args.length(), 0);
 }
@@ -249,7 +249,7 @@ exc = StopIteration(1)
   EXPECT_EQ(stop_iteration.value(), SmallInt::fromWord(1));
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(stop_iteration.args()->isTuple());
+  ASSERT_TRUE(stop_iteration.args().isTuple());
   Tuple args(&scope, stop_iteration.args());
   ASSERT_EQ(args.length(), 1);
   EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
@@ -271,7 +271,7 @@ exc = StopIteration(4, 5, 6)
   EXPECT_EQ(stop_iteration.value(), SmallInt::fromWord(4));
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(stop_iteration.args()->isTuple());
+  ASSERT_TRUE(stop_iteration.args().isTuple());
   Tuple args(&scope, stop_iteration.args());
   ASSERT_EQ(args.length(), 3);
   EXPECT_EQ(args.at(0), SmallInt::fromWord(4));
@@ -308,10 +308,10 @@ exc = SystemExit()
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
-  ASSERT_TRUE(system_exit.args()->isTuple());
+  ASSERT_TRUE(system_exit.args().isTuple());
 
   // No constructor arguments so code should be none.
-  EXPECT_TRUE(system_exit.code()->isNoneType());
+  EXPECT_TRUE(system_exit.code().isNoneType());
 
   // No constructor arguments means args should contain an empty tuple.
   Tuple args(&scope, system_exit.args());
@@ -329,7 +329,7 @@ exc = SystemExit(1)
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
-  ASSERT_TRUE(system_exit.args()->isTuple());
+  ASSERT_TRUE(system_exit.args().isTuple());
 
   // The code attribute should contain the first constructor argument.
   EXPECT_EQ(system_exit.code(), SmallInt::fromWord(1));
@@ -356,7 +356,7 @@ exc = SystemExit(4, 5, 6)
   EXPECT_EQ(system_exit.code(), SmallInt::fromWord(4));
 
   // The args attribute contains a tuple of the constructor arguments.
-  ASSERT_TRUE(system_exit.args()->isTuple());
+  ASSERT_TRUE(system_exit.args().isTuple());
   Tuple args(&scope, system_exit.args());
   ASSERT_EQ(args.length(), 3);
   EXPECT_EQ(args.at(0), SmallInt::fromWord(4));

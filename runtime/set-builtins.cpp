@@ -306,7 +306,7 @@ const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0)->isType()) {
+  if (!args.get(0).isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
   }
   HandleScope scope(thread);
@@ -484,7 +484,7 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, *self);
 
-  if (setAdd(thread, set, key)->isError()) {
+  if (setAdd(thread, set, key).isError()) {
     return Error::object();
   }
 
@@ -509,8 +509,8 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
     return *intersection;
   }
   RawSet intersection_set = RawSet::cast(*intersection);
-  set.setData(intersection_set->data());
-  set.setNumItems(intersection_set->numItems());
+  set.setData(intersection_set.data());
+  set.setNumItems(intersection_set.numItems());
   return *set;
 }
 
@@ -554,7 +554,7 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0)->isType()) {
+  if (!args.get(0).isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
   }
   HandleScope scope(thread);

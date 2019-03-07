@@ -86,14 +86,14 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
 RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
   RawObject* sp = frame->valueStackTop() + nargs + 1;
   RawObject callable = frame->peek(nargs);
-  if (!callable->isFunction()) {
+  if (!callable.isFunction()) {
     callable = prepareCallableCall(thread, frame, nargs, &nargs);
   }
-  if (callable->isError()) {
+  if (callable.isError()) {
     frame->setValueStackTop(sp);
     return callable;
   }
-  RawObject result = RawFunction::cast(callable)->entry()(thread, frame, nargs);
+  RawObject result = RawFunction::cast(callable).entry()(thread, frame, nargs);
   // Clear the stack of the function object and return.
   frame->setValueStackTop(sp);
   return result;
@@ -105,11 +105,11 @@ RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   RawObject* sp = frame->valueStackTop() + nargs + 2;
   RawObject result;
   RawObject callable = frame->peek(nargs + 1);
-  if (callable->isFunction()) {
-    result = RawFunction::cast(callable)->entryKw()(thread, frame, nargs);
+  if (callable.isFunction()) {
+    result = RawFunction::cast(callable).entryKw()(thread, frame, nargs);
   } else {
     callable = prepareCallableCall(thread, frame, nargs + 1, &nargs);
-    result = RawFunction::cast(callable)->entryKw()(thread, frame, nargs);
+    result = RawFunction::cast(callable).entryKw()(thread, frame, nargs);
   }
   frame->setValueStackTop(sp);
   return result;
@@ -153,7 +153,7 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
     callable = *target;
   }
   RawObject result =
-      RawFunction::cast(*callable)->entryEx()(thread, frame, flags);
+      RawFunction::cast(*callable).entryEx()(thread, frame, flags);
   frame->setValueStackTop(sp);
   return result;
 }
@@ -161,10 +161,10 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
 RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   word new_len = 0;
   for (word i = num - 1; i >= 0; i--) {
-    if (!sp[i]->isStr()) {
+    if (!sp[i].isStr()) {
       UNIMPLEMENTED("Conversion of non-string values not supported.");
     }
-    new_len += RawStr::cast(sp[i])->length();
+    new_len += RawStr::cast(sp[i]).length();
   }
 
   if (new_len <= RawSmallStr::kMaxLength) {
@@ -172,8 +172,8 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
     byte* ptr = buffer;
     for (word i = num - 1; i >= 0; i--) {
       RawStr str = RawStr::cast(sp[i]);
-      word len = str->length();
-      str->copyTo(ptr, len);
+      word len = str.length();
+      str.copyTo(ptr, len);
       ptr += len;
     }
     return SmallStr::fromBytes(View<byte>(buffer, new_len));
@@ -184,8 +184,8 @@ RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {
   word offset = RawLargeStr::kDataOffset;
   for (word i = num - 1; i >= 0; i--) {
     RawStr str = RawStr::cast(sp[i]);
-    word len = str->length();
-    str->copyTo(reinterpret_cast<byte*>(result.address() + offset), len);
+    word len = str.length();
+    str.copyTo(reinterpret_cast<byte*>(result.address() + offset), len);
     offset += len;
   }
   return *result;
@@ -349,7 +349,7 @@ static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
                                        SymbolId selector) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Str type_name(&scope, Type::cast(runtime->typeOf(*object))->name());
+  Str type_name(&scope, Type::cast(runtime->typeOf(*object)).name());
   // TODO(T41091163) Having a format character for Str objects would be nice.
   unique_c_ptr<char> type_name_cstr(type_name.toCStr());
   const char* op_name = runtime->symbols()->literalAt(selector);
@@ -803,12 +803,12 @@ bool Interpreter::unwind(Context* ctx) {
 }
 
 static Bytecode currentBytecode(const Interpreter::Context* ctx) {
-  RawBytes code = RawBytes::cast(RawCode::cast(ctx->frame->code())->code());
+  RawBytes code = RawBytes::cast(RawCode::cast(ctx->frame->code()).code());
   word pc = ctx->pc;
   word result;
   do {
     pc -= 2;
-    result = code->byteAt(pc);
+    result = code.byteAt(pc);
   } while (result == Bytecode::EXTENDED_ARG);
   return static_cast<Bytecode>(result);
 }
@@ -1192,7 +1192,7 @@ void Interpreter::doPrintExpr(Context* ctx, word) {
 void Interpreter::doLoadBuildClass(Context* ctx, word) {
   Thread* thread = ctx->thread;
   RawValueCell value_cell = RawValueCell::cast(thread->runtime()->buildClass());
-  ctx->frame->pushValue(value_cell->value());
+  ctx->frame->pushValue(value_cell.value());
 }
 
 // opcode 72
@@ -1485,11 +1485,11 @@ bool Interpreter::doPopExcept(Context* ctx, word) {
 void Interpreter::doStoreName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  DCHECK(frame->implicitGlobals()->isDict(), "expected dict");
+  DCHECK(frame->implicitGlobals().isDict(), "expected dict");
   HandleScope scope;
   Dict implicit_globals(&scope, frame->implicitGlobals());
-  RawObject names = RawCode::cast(frame->code())->names();
-  Object key(&scope, RawTuple::cast(names)->at(arg));
+  RawObject names = RawCode::cast(frame->code()).names();
+  Object key(&scope, RawTuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
   thread->runtime()->dictAtPutInValueCell(implicit_globals, key, value);
 }
@@ -1498,12 +1498,12 @@ void Interpreter::doStoreName(Context* ctx, word arg) {
 void Interpreter::doDeleteName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  DCHECK(frame->implicitGlobals()->isDict(), "expected dict");
+  DCHECK(frame->implicitGlobals().isDict(), "expected dict");
   HandleScope scope;
   Dict implicit_globals(&scope, frame->implicitGlobals());
-  RawObject names = RawCode::cast(frame->code())->names();
-  Object key(&scope, RawTuple::cast(names)->at(arg));
-  if (thread->runtime()->dictRemove(implicit_globals, key)->isError()) {
+  RawObject names = RawCode::cast(frame->code()).names();
+  Object key(&scope, RawTuple::cast(names).at(arg));
+  if (thread->runtime()->dictRemove(implicit_globals, key).isError()) {
     UNIMPLEMENTED("item not found in delete name");
   }
 }
@@ -1668,8 +1668,8 @@ bool Interpreter::doStoreAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Object receiver(&scope, ctx->frame->popValue());
-  auto names = RawCode::cast(ctx->frame->code())->names();
-  Object name(&scope, RawTuple::cast(names)->at(arg));
+  auto names = RawCode::cast(ctx->frame->code()).names();
+  Object name(&scope, RawTuple::cast(names).at(arg));
   Object value(&scope, ctx->frame->popValue());
   if (thread->runtime()
           ->attributeAtPut(thread, receiver, name, value)
@@ -1684,8 +1684,8 @@ bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Object receiver(&scope, ctx->frame->popValue());
-  auto names = RawCode::cast(ctx->frame->code())->names();
-  Object name(&scope, RawTuple::cast(names)->at(arg));
+  auto names = RawCode::cast(ctx->frame->code()).names();
+  Object name(&scope, RawTuple::cast(names).at(arg));
   if (thread->runtime()->attributeDel(ctx->thread, receiver, name).isError()) {
     return unwind(ctx);
   }
@@ -1694,8 +1694,8 @@ bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
 
 // opcode 97
 void Interpreter::doStoreGlobal(Context* ctx, word arg) {
-  RawValueCell::cast(RawTuple::cast(ctx->frame->fastGlobals())->at(arg))
-      ->setValue(ctx->frame->popValue());
+  RawValueCell::cast(RawTuple::cast(ctx->frame->fastGlobals()).at(arg))
+      .setValue(ctx->frame->popValue());
 }
 
 // opcode 98
@@ -1704,26 +1704,25 @@ void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   ValueCell value_cell(
-      &scope,
-      RawValueCell::cast(RawTuple::cast(frame->fastGlobals())->at(arg)));
-  CHECK(!value_cell.value()->isValueCell(), "Unbound Globals");
+      &scope, RawValueCell::cast(RawTuple::cast(frame->fastGlobals()).at(arg)));
+  CHECK(!value_cell.value().isValueCell(), "Unbound Globals");
   Object key(&scope,
-             RawTuple::cast(RawCode::cast(frame->code())->names())->at(arg));
+             RawTuple::cast(RawCode::cast(frame->code()).names()).at(arg));
   Dict builtins(&scope, frame->builtins());
   Runtime* runtime = thread->runtime();
   Object value_in_builtin(&scope, runtime->dictAt(builtins, key));
   if (value_in_builtin.isError()) {
     value_in_builtin =
         runtime->dictAtPutInValueCell(builtins, key, value_in_builtin);
-    RawValueCell::cast(*value_in_builtin)->makeUnbound();
+    RawValueCell::cast(*value_in_builtin).makeUnbound();
   }
   value_cell.setValue(*value_in_builtin);
 }
 
 // opcode 100
 void Interpreter::doLoadConst(Context* ctx, word arg) {
-  RawObject consts = RawCode::cast(ctx->frame->code())->consts();
-  ctx->frame->pushValue(RawTuple::cast(consts)->at(arg));
+  RawObject consts = RawCode::cast(ctx->frame->code()).consts();
+  ctx->frame->pushValue(RawTuple::cast(consts).at(arg));
 }
 
 static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
@@ -1739,19 +1738,19 @@ bool Interpreter::doLoadName(Context* ctx, word arg) {
   Runtime* runtime = ctx->thread->runtime();
   HandleScope scope(ctx->thread);
 
-  Object names(&scope, RawCode::cast(frame->code())->names());
-  Str key(&scope, RawTuple::cast(*names)->at(arg));
+  Object names(&scope, RawCode::cast(frame->code()).names());
+  Str key(&scope, RawTuple::cast(*names).at(arg));
 
   // 1. implicitGlobals
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject value = runtime->dictAt(implicit_globals, key);
-  if (value->isValueCell()) {
+  if (value.isValueCell()) {
     // 3a. found in [implicit]/globals but with up to 2-layers of indirection
-    DCHECK(!RawValueCell::cast(value)->isUnbound(), "unbound globals");
-    value = RawValueCell::cast(value)->value();
-    if (value->isValueCell()) {
-      DCHECK(!RawValueCell::cast(value)->isUnbound(), "unbound builtins");
-      value = RawValueCell::cast(value)->value();
+    DCHECK(!RawValueCell::cast(value).isUnbound(), "unbound globals");
+    value = RawValueCell::cast(value).value();
+    if (value.isValueCell()) {
+      DCHECK(!RawValueCell::cast(value).isUnbound(), "unbound builtins");
+      value = RawValueCell::cast(value).value();
     }
     frame->pushValue(value);
     return false;
@@ -1764,13 +1763,13 @@ bool Interpreter::doLoadName(Context* ctx, word arg) {
     Dict globals(&scope, frame->globals());
     value = runtime->dictAt(globals, key);
   }
-  if (value->isValueCell()) {
+  if (value.isValueCell()) {
     // 3a. found in [implicit]/globals but with up to 2-layers of indirection
-    DCHECK(!RawValueCell::cast(value)->isUnbound(), "unbound globals");
-    value = RawValueCell::cast(value)->value();
-    if (value->isValueCell()) {
-      DCHECK(!RawValueCell::cast(value)->isUnbound(), "unbound builtins");
-      value = RawValueCell::cast(value)->value();
+    DCHECK(!RawValueCell::cast(value).isUnbound(), "unbound globals");
+    value = RawValueCell::cast(value).value();
+    if (value.isValueCell()) {
+      DCHECK(!RawValueCell::cast(value).isUnbound(), "unbound builtins");
+      value = RawValueCell::cast(value).value();
     }
     frame->pushValue(value);
     return false;
@@ -1779,12 +1778,12 @@ bool Interpreter::doLoadName(Context* ctx, word arg) {
   // 3b. not found; check builtins -- one layer of indirection
   Dict builtins(&scope, frame->builtins());
   value = runtime->dictAt(builtins, key);
-  if (value->isValueCell()) {
-    DCHECK(!RawValueCell::cast(value)->isUnbound(), "unbound builtins");
-    value = RawValueCell::cast(value)->value();
+  if (value.isValueCell()) {
+    DCHECK(!RawValueCell::cast(value).isUnbound(), "unbound builtins");
+    value = RawValueCell::cast(value).value();
   }
 
-  if (value->isError()) {
+  if (value.isError()) {
     raiseUndefinedName(ctx->thread, key);
     return unwind(ctx);
   }
@@ -1812,8 +1811,8 @@ void Interpreter::doBuildList(Context* ctx, word arg) {
     array.atPut(i, ctx->frame->popValue());
   }
   RawList list = RawList::cast(thread->runtime()->newList());
-  list->setItems(*array);
-  list->setNumItems(array.length());
+  list.setItems(*array);
+  list.setNumItems(array.length());
   ctx->frame->pushValue(list);
 }
 
@@ -1848,8 +1847,8 @@ bool Interpreter::doLoadAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
   Object receiver(&scope, ctx->frame->topValue());
-  auto names = RawCode::cast(ctx->frame->code())->names();
-  Object name(&scope, RawTuple::cast(names)->at(arg));
+  auto names = RawCode::cast(ctx->frame->code()).names();
+  Object name(&scope, RawTuple::cast(names).at(arg));
   RawObject result = thread->runtime()->attributeAt(thread, receiver, name);
   if (result.isError()) return unwind(ctx);
   ctx->frame->setTopValue(result);
@@ -1912,7 +1911,7 @@ bool Interpreter::doCompareOp(Context* ctx, word arg) {
 bool Interpreter::doImportName(Context* ctx, word arg) {
   HandleScope scope;
   Code code(&scope, ctx->frame->code());
-  Object name(&scope, RawTuple::cast(code.names())->at(arg));
+  Object name(&scope, RawTuple::cast(code.names()).at(arg));
   ctx->frame->popValue();  // from list
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -1927,7 +1926,7 @@ bool Interpreter::doImportFrom(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Code code(&scope, ctx->frame->code());
-  Object name(&scope, RawTuple::cast(code.names())->at(arg));
+  Object name(&scope, RawTuple::cast(code.names()).at(arg));
   CHECK(name.isStr(), "name not found");
   Module module(&scope, ctx->frame->topValue());
   Runtime* runtime = thread->runtime();
@@ -1996,15 +1995,14 @@ void Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
 // opcode 116
 void Interpreter::doLoadGlobal(Context* ctx, word arg) {
   RawObject value =
-      RawValueCell::cast(RawTuple::cast(ctx->frame->fastGlobals())->at(arg))
-          ->value();
-  if (value->isValueCell()) {
-    CHECK(
-        !RawValueCell::cast(value)->isUnbound(), "Unbound global '%s'",
-        RawStr::cast(
-            RawTuple::cast(RawCode::cast(ctx->frame->code())->names())->at(arg))
-            ->toCStr());
-    value = RawValueCell::cast(value)->value();
+      RawValueCell::cast(RawTuple::cast(ctx->frame->fastGlobals()).at(arg))
+          .value();
+  if (value.isValueCell()) {
+    CHECK(!RawValueCell::cast(value).isUnbound(), "Unbound global '%s'",
+          RawStr::cast(
+              RawTuple::cast(RawCode::cast(ctx->frame->code()).names()).at(arg))
+              .toCStr());
+    value = RawValueCell::cast(value).value();
   }
   ctx->frame->pushValue(value);
   DCHECK(ctx->frame->topValue() != Error::object(), "unexpected error object");
@@ -2045,12 +2043,12 @@ void Interpreter::doSetupFinally(Context* ctx, word arg) {
 bool Interpreter::doLoadFast(Context* ctx, word arg) {
   // TODO(cshapiro): Need to handle unbound local error
   RawObject value = ctx->frame->local(arg);
-  if (value->isError()) {
+  if (value.isError()) {
     Thread* thread = ctx->thread;
     HandleScope scope(thread);
     Str name(
         &scope,
-        RawTuple::cast(RawCode::cast(ctx->frame->code())->varnames())->at(arg));
+        RawTuple::cast(RawCode::cast(ctx->frame->code()).varnames()).at(arg));
     Str msg(&scope, thread->runtime()->newStrFromFormat(
                         "local variable '%.200s' referenced before assignment",
                         unique_c_ptr<char[]>(name.toCStr()).get()));
@@ -2073,8 +2071,8 @@ void Interpreter::doDeleteFast(Context* ctx, word arg) {
   // local
   if (ctx->frame->local(arg) == Error::object()) {
     RawObject name =
-        RawTuple::cast(RawCode::cast(ctx->frame->code())->varnames())->at(arg);
-    UNIMPLEMENTED("unbound local %s", RawStr::cast(name)->toCStr());
+        RawTuple::cast(RawCode::cast(ctx->frame->code()).varnames()).at(arg);
+    UNIMPLEMENTED("unbound local %s", RawStr::cast(name).toCStr());
   }
   ctx->frame->setLocal(arg, Error::object());
 }
@@ -2083,15 +2081,15 @@ void Interpreter::doDeleteFast(Context* ctx, word arg) {
 void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Runtime* runtime = ctx->thread->runtime();
-  Object names(&scope, RawCode::cast(ctx->frame->code())->names());
+  Object names(&scope, RawCode::cast(ctx->frame->code()).names());
   Object value(&scope, ctx->frame->popValue());
-  Object key(&scope, RawTuple::cast(*names)->at(arg));
+  Object key(&scope, RawTuple::cast(*names).at(arg));
 
   Dict implicit_globals(&scope, ctx->frame->implicitGlobals());
   Object annotations(&scope,
                      runtime->symbols()->at(SymbolId::kDunderAnnotations));
   Object value_cell(&scope, runtime->dictAt(implicit_globals, annotations));
-  Dict anno_dict(&scope, RawValueCell::cast(*value_cell)->value());
+  Dict anno_dict(&scope, RawValueCell::cast(*value_cell).value());
   runtime->dictAtPut(anno_dict, key, value);
 }
 
@@ -2137,21 +2135,21 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Function function(&scope, runtime->newFunction());
   function.setQualname(frame->popValue());
   function.setCode(frame->popValue());
-  function.setName(RawCode::cast(function.code())->name());
+  function.setName(RawCode::cast(function.code()).name());
   Dict globals(&scope, frame->globals());
   function.setGlobals(*globals);
   Object name_key(&scope, runtime->symbols()->at(SymbolId::kDunderName));
   Object value_cell(&scope, runtime->dictAt(globals, name_key));
   if (value_cell.isValueCell()) {
-    DCHECK(!RawValueCell::cast(*value_cell)->isUnbound(), "unbound globals");
-    function.setModule(RawValueCell::cast(*value_cell)->value());
+    DCHECK(!RawValueCell::cast(*value_cell).isUnbound(), "unbound globals");
+    function.setModule(RawValueCell::cast(*value_cell).value());
   }
   Dict builtins(&scope, frame->builtins());
   Code code(&scope, function.code());
   Object consts_obj(&scope, code.consts());
-  if (consts_obj.isTuple() && RawTuple::cast(*consts_obj)->length() >= 1) {
+  if (consts_obj.isTuple() && RawTuple::cast(*consts_obj).length() >= 1) {
     Tuple consts(&scope, *consts_obj);
-    if (consts.at(0)->isStr()) {
+    if (consts.at(0).isStr()) {
       function.setDoc(consts.at(0));
     }
   }
@@ -2178,19 +2176,19 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
     }
   }
   if (arg & MakeFunctionFlag::CLOSURE) {
-    DCHECK((frame->topValue())->isTuple(), "Closure expects tuple");
+    DCHECK((frame->topValue()).isTuple(), "Closure expects tuple");
     function.setClosure(frame->popValue());
   }
   if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
-    DCHECK((frame->topValue())->isDict(), "Parameter annotations expect dict");
+    DCHECK((frame->topValue()).isDict(), "Parameter annotations expect dict");
     function.setAnnotations(frame->popValue());
   }
   if (arg & MakeFunctionFlag::DEFAULT_KW) {
-    DCHECK((frame->topValue())->isDict(), "Keyword arguments expect dict");
+    DCHECK((frame->topValue()).isDict(), "Keyword arguments expect dict");
     function.setKwDefaults(frame->popValue());
   }
   if (arg & MakeFunctionFlag::DEFAULT) {
-    DCHECK((frame->topValue())->isTuple(), "Default arguments expect tuple");
+    DCHECK((frame->topValue()).isTuple(), "Default arguments expect tuple");
     function.setDefaults(frame->popValue());
   }
   frame->pushValue(*function);
@@ -2210,7 +2208,7 @@ void Interpreter::doBuildSlice(Context* ctx, word arg) {
 // opcode 135
 void Interpreter::doLoadClosure(Context* ctx, word arg) {
   RawCode code = RawCode::cast(ctx->frame->code());
-  ctx->frame->pushValue(ctx->frame->local(code->nlocals() + arg));
+  ctx->frame->pushValue(ctx->frame->local(code.nlocals() + arg));
 }
 
 static RawObject raiseUnboundCellFreeVar(Thread* thread, const Code& code,
@@ -2252,14 +2250,14 @@ bool Interpreter::doLoadDeref(Context* ctx, word arg) {
 // opcode 137
 void Interpreter::doStoreDeref(Context* ctx, word arg) {
   RawCode code = RawCode::cast(ctx->frame->code());
-  RawValueCell::cast(ctx->frame->local(code->nlocals() + arg))
-      ->setValue(ctx->frame->popValue());
+  RawValueCell::cast(ctx->frame->local(code.nlocals() + arg))
+      .setValue(ctx->frame->popValue());
 }
 
 // opcode 138
 void Interpreter::doDeleteDeref(Context* ctx, word arg) {
   RawCode code = RawCode::cast(ctx->frame->code());
-  RawValueCell::cast(ctx->frame->local(code->nlocals() + arg))->makeUnbound();
+  RawValueCell::cast(ctx->frame->local(code.nlocals() + arg)).makeUnbound();
 }
 
 // opcode 141
@@ -2344,17 +2342,17 @@ void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Code code(&scope, ctx->frame->code());
   word idx = arg - code.numCellvars();
-  Object name(&scope, RawTuple::cast(code.freevars())->at(idx));
+  Object name(&scope, RawTuple::cast(code.freevars()).at(idx));
   Dict implicit_global(&scope, ctx->frame->implicitGlobals());
   Object result(&scope, ctx->thread->runtime()->dictAt(implicit_global, name));
   if (result.isError()) {
     ValueCell value_cell(&scope, ctx->frame->local(code.nlocals() + arg));
     if (value_cell.isUnbound()) {
-      UNIMPLEMENTED("unbound free var %s", RawStr::cast(*name)->toCStr());
+      UNIMPLEMENTED("unbound free var %s", RawStr::cast(*name).toCStr());
     }
     ctx->frame->pushValue(value_cell.value());
   } else {
-    ctx->frame->pushValue(RawValueCell::cast(*result)->value());
+    ctx->frame->pushValue(RawValueCell::cast(*result).value());
   }
 }
 

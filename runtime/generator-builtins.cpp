@@ -45,8 +45,8 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
         type_name));
   }
   GeneratorBase gen(&scope, *self);
-  if (RawHeapFrame::cast(gen.heapFrame())->frame()->virtualPC() == 0 &&
-      !args.get(1)->isNoneType()) {
+  if (RawHeapFrame::cast(gen.heapFrame()).frame()->virtualPC() == 0 &&
+      !args.get(1).isNoneType()) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
         "can't send non-None value to a just-started %s", type_name));
   }

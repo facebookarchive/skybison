@@ -11,7 +11,7 @@
 namespace python {
 
 PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isModule();
+  return ApiHandle::fromPyObject(obj)->asObject().isModule();
 }
 
 PY_EXPORT int PyModule_Check_Func(PyObject* obj) {
@@ -107,7 +107,7 @@ PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
     return nullptr;
   }
   Module module(&scope, *module_obj);
-  if (!module.def()->isInt()) {
+  if (!module.def().isInt()) {
     return nullptr;
   }
   Int def(&scope, module.def());

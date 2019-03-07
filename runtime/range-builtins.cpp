@@ -15,7 +15,7 @@ const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
 
 RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0)->isType()) {
+  if (!args.get(0).isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
   }
   HandleScope scope(thread);
@@ -24,7 +24,7 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("not a subtype of range");
   }
   for (word i = 1; i < nargs; i++) {
-    if (!args.get(i)->isSmallInt() && !args.get(i).isUnboundValue()) {
+    if (!args.get(i).isSmallInt() && !args.get(i).isUnboundValue()) {
       return thread->raiseTypeErrorWithCStr(
           "Arguments to range() must be integers");
     }
@@ -34,14 +34,14 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   word stop = 0;
   word step = 1;
   if (args.get(2).isUnboundValue() && args.get(3).isUnboundValue()) {
-    stop = RawSmallInt::cast(args.get(1))->value();
+    stop = RawSmallInt::cast(args.get(1)).value();
   } else if (args.get(3).isUnboundValue()) {
-    start = RawSmallInt::cast(args.get(1))->value();
-    stop = RawSmallInt::cast(args.get(2))->value();
+    start = RawSmallInt::cast(args.get(1)).value();
+    stop = RawSmallInt::cast(args.get(2)).value();
   } else {
-    start = RawSmallInt::cast(args.get(1))->value();
-    stop = RawSmallInt::cast(args.get(2))->value();
-    step = RawSmallInt::cast(args.get(3))->value();
+    start = RawSmallInt::cast(args.get(1)).value();
+    stop = RawSmallInt::cast(args.get(2)).value();
+    step = RawSmallInt::cast(args.get(3)).value();
   }
 
   if (step == 0) {
@@ -94,7 +94,7 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "__next__() must be called with a range iterator instance as the first "
         "argument");
   }
-  Object value(&scope, RawRangeIterator::cast(*self)->next());
+  Object value(&scope, RawRangeIterator::cast(*self).next());
   if (value.isError()) {
     return thread->raiseStopIteration(NoneType::object());
   }

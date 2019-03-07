@@ -160,13 +160,13 @@ Frame* Thread::pushModuleFunctionFrame(const Module& module, const Code& code) {
 Frame* Thread::pushClassFunctionFrame(const Function& function,
                                       const Dict& dict) {
   HandleScope scope(this);
-  Code code(&scope, RawFunction::cast(*function)->code());
-  Dict globals(&scope, RawFunction::cast(*function)->globals());
+  Code code(&scope, RawFunction::cast(*function).code());
+  Dict globals(&scope, RawFunction::cast(*function).globals());
   Frame* result = pushExecFrame(code, globals, dict);
 
   word num_locals = code.nlocals();
   word num_cellvars = code.numCellvars();
-  DCHECK(code.cell2arg()->isNoneType(), "class body cannot have cell2arg.");
+  DCHECK(code.cell2arg().isNoneType(), "class body cannot have cell2arg.");
   for (word i = 0; i < code.numCellvars(); i++) {
     result->setLocal(num_locals + i, runtime()->newValueCell());
   }
@@ -175,12 +175,12 @@ Frame* Thread::pushClassFunctionFrame(const Function& function,
   DCHECK(
       code.numFreevars() == 0 ||
           code.numFreevars() ==
-              RawTuple::cast(RawFunction::cast(*function)->closure())->length(),
+              RawTuple::cast(RawFunction::cast(*function).closure()).length(),
       "Number of freevars is different than the closure.");
   for (word i = 0; i < code.numFreevars(); i++) {
     result->setLocal(
         num_locals + num_cellvars + i,
-        RawTuple::cast(RawFunction::cast(*function)->closure())->at(i));
+        RawTuple::cast(RawFunction::cast(*function).closure()).at(i));
   }
   return result;
 }
@@ -430,10 +430,10 @@ RawObject Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
   return raiseZeroDivisionError(runtime()->newStrFromCStr(message));
 }
 
-bool Thread::hasPendingException() { return !pending_exc_type_->isNoneType(); }
+bool Thread::hasPendingException() { return !pending_exc_type_.isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {
-  return pending_exc_type_->isType() &&
+  return pending_exc_type_.isType() &&
          RawType::cast(pending_exc_type_).builtinBase() ==
              LayoutId::kStopIteration;
 }
@@ -451,11 +451,11 @@ void Thread::ignorePendingException() {
     return;
   }
   fprintf(stderr, "ignore pending exception");
-  if (pendingExceptionValue()->isStr()) {
+  if (pendingExceptionValue().isStr()) {
     RawStr message = RawStr::cast(pendingExceptionValue());
-    word len = message->length();
+    word len = message.length();
     byte* buffer = new byte[len + 1];
-    message->copyTo(buffer, len);
+    message.copyTo(buffer, len);
     buffer[len] = 0;
     fprintf(stderr, ": %s", buffer);
     delete[] buffer;

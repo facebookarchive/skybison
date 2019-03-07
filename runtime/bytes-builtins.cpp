@@ -250,7 +250,7 @@ RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
       return thread->raiseIndexErrorWithCStr(
           "cannot fit index into an index-sized integer");
     }
-    word idx = RawSmallInt::cast(*index)->value();
+    word idx = RawSmallInt::cast(*index).value();
     word len = self.length();
     if (idx < 0) idx += len;
     if (idx < 0 || idx >= len) {

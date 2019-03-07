@@ -63,19 +63,19 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   }
 
   // Make sure the weak references point to the expected referents.
-  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0))->referent());
-  EXPECT_EQ(strongrefs.at(1), RawWeakRef::cast(weakrefs.at(1))->referent());
-  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2))->referent());
-  EXPECT_EQ(strongrefs.at(3), RawWeakRef::cast(weakrefs.at(3))->referent());
+  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(strongrefs.at(1), RawWeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(strongrefs.at(3), RawWeakRef::cast(weakrefs.at(3)).referent());
 
   // Now do a garbage collection.
   runtime.collectGarbage();
 
   // Make sure that the weak references still point to the expected referents.
-  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0))->referent());
-  EXPECT_EQ(strongrefs.at(1), RawWeakRef::cast(weakrefs.at(1))->referent());
-  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2))->referent());
-  EXPECT_EQ(strongrefs.at(3), RawWeakRef::cast(weakrefs.at(3))->referent());
+  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(strongrefs.at(1), RawWeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(strongrefs.at(3), RawWeakRef::cast(weakrefs.at(3)).referent());
 
   // Clear the odd indexed strong references.
   strongrefs.atPut(1, NoneType::object());
@@ -87,10 +87,10 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
 
   // Check that the strongly referenced referents are preserved and the weakly
   // referenced referents are now cleared.
-  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0))->referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(1))->referent());
-  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2))->referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(3))->referent());
+  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(3)).referent());
 
   // Clear the even indexed strong references.
   strongrefs.atPut(0, NoneType::object());
@@ -101,10 +101,10 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   runtime.collectGarbage();
 
   // Check that all of the referents are cleared.
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(0))->referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(1))->referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(2))->referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(3))->referent());
+  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(3)).referent());
 }
 
 TEST(ScavengerTest, BaseCallback) {

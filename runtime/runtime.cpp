@@ -287,7 +287,7 @@ RawObject Runtime::newBytes(word length, byte fill) {
     return empty_bytes_;
   }
   RawObject result = heap()->createBytes(length);
-  byte* dst = reinterpret_cast<byte*>(RawBytes::cast(result)->address());
+  byte* dst = reinterpret_cast<byte*>(RawBytes::cast(result).address());
   std::memset(dst, fill, length);
   return result;
 }
@@ -297,7 +297,7 @@ RawObject Runtime::newBytesWithAll(View<byte> array) {
     return empty_bytes_;
   }
   RawObject result = heap()->createBytes(array.length());
-  byte* dst = reinterpret_cast<byte*>(RawBytes::cast(result)->address());
+  byte* dst = reinterpret_cast<byte*>(RawBytes::cast(result).address());
   std::memcpy(dst, array.data(), array.length());
   return result;
 }
@@ -321,7 +321,7 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
   Type type(&scope, *receiver);
   Type meta_type(&scope, typeOf(*receiver));
 
-  if (RawStr::cast(*name)->equals(symbols()->DunderClass())) {
+  if (RawStr::cast(*name).equals(symbols()->DunderClass())) {
     // TODO(T27735822): Make __class__ a descriptor
     return *meta_type;
   }
@@ -430,7 +430,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
   // No delete descriptor found, attempt to delete from the type dict
   Dict type_dict(&scope, type.dict());
-  if (dictRemove(type_dict, name)->isError()) {
+  if (dictRemove(type_dict, name).isError()) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
     return thread->raiseAttributeErrorWithCStr("missing attribute");
@@ -443,7 +443,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
                                    const Object& name) {
   DCHECK(name.isStr(), "Name is not a string");
-  if (RawStr::cast(*name)->equals(symbols()->DunderClass())) {
+  if (RawStr::cast(*name).equals(symbols()->DunderClass())) {
     // TODO(T27735822): Make __class__ a descriptor
     return typeOf(*receiver);
   }
@@ -545,7 +545,7 @@ RawObject Runtime::functionGetAttr(Thread* thread, const Object& receiver,
   // Initialize Dict if non-existent
   HandleScope scope(thread);
   Function func(&scope, *receiver);
-  if (func.dict()->isNoneType()) {
+  if (func.dict().isNoneType()) {
     func.setDict(newDict());
   }
 
@@ -559,7 +559,7 @@ RawObject Runtime::functionSetAttr(Thread* thread, const Object& receiver,
   // Initialize Dict if non-existent
   HandleScope scope(thread);
   Function func(&scope, *receiver);
-  if (func.dict()->isNoneType()) {
+  if (func.dict().isNoneType()) {
     func.setDict(newDict());
   }
 
@@ -621,7 +621,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, attempt to delete from the module dict
   Module module(&scope, *receiver);
   Dict module_dict(&scope, module.dict());
-  if (dictRemove(module_dict, name)->isError()) {
+  if (dictRemove(module_dict, name).isError()) {
     // TODO(T25140871): Refactor this into something like:
     //     thread->throwMissingAttributeError(name)
     return thread->raiseAttributeErrorWithCStr("missing attribute");
@@ -642,21 +642,21 @@ bool Runtime::isDataDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderSet)->isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderSet).isError();
 }
 
 bool Runtime::isNonDataDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGet)->isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGet).isError();
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderDelete)->isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderDelete).isError();
 }
 
 bool Runtime::isMapping(Thread* thread, const Object& obj) {
@@ -728,7 +728,7 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
     bool value_set = false;
     for (word i = 0; i < result.numCellvars(); i++) {
       for (word j = 0; j < result.totalArgs(); j++) {
-        if (Tuple::cast(*cellvars)->at(i) == Tuple::cast(*varnames)->at(j)) {
+        if (Tuple::cast(*cellvars).at(i) == Tuple::cast(*varnames).at(j)) {
           cell2arg.atPut(i, newInt(j));
           value_set = true;
         }
@@ -858,7 +858,7 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
 
 void Runtime::classAddExtensionFunction(const Type& type, SymbolId name,
                                         void* c_function) {
-  DCHECK(!type.extensionSlots()->isNoneType(), "Type is not an extension");
+  DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
 
   HandleScope scope;
   Function function(&scope, newFunction());
@@ -987,9 +987,9 @@ RawObject Runtime::newProperty(const Object& getter, const Object& setter,
 
 RawObject Runtime::newRange(word start, word stop, word step) {
   auto range = RawRange::cast(heap()->createRange());
-  range->setStart(start);
-  range->setStop(stop);
-  range->setStep(step);
+  range.setStart(start);
+  range.setStop(stop);
+  range.setStep(step);
   return range;
 }
 
@@ -1068,7 +1068,7 @@ RawObject Runtime::newStrFromUTF32(View<int32> code_units) {
   }
   RawObject result = heap()->createLargeStr(length);
   DCHECK(result != Error::object(), "failed to create large string");
-  byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result)->address());
+  byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result).address());
   for (word i = 0; i < length; ++i) {
     int32 ch = code_units.get(i);
     if (ch > kMaxASCII) {
@@ -1087,7 +1087,7 @@ RawObject Runtime::newStrWithAll(View<byte> code_units) {
   }
   RawObject result = heap()->createLargeStr(length);
   DCHECK(result != Error::object(), "failed to create large string");
-  byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result)->address());
+  byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result).address());
   const byte* src = code_units.data();
   memcpy(dst, src, length);
   return result;
@@ -1112,23 +1112,23 @@ RawObject Runtime::internStr(const Object& str) {
 }
 
 RawObject Runtime::hash(RawObject object) {
-  if (!object->isHeapObject()) {
+  if (!object.isHeapObject()) {
     return immediateHash(object);
   }
-  if (object->isBytes() || object->isLargeStr()) {
+  if (object.isBytes() || object.isLargeStr()) {
     return valueHash(object);
   }
   return identityHash(object);
 }
 
 RawObject Runtime::immediateHash(RawObject object) {
-  if (object->isSmallInt()) {
+  if (object.isSmallInt()) {
     return object;
   }
-  if (object->isBool()) {
-    return SmallInt::fromWord(RawBool::cast(object)->value() ? 1 : 0);
+  if (object.isBool()) {
+    return SmallInt::fromWord(RawBool::cast(object).value() ? 1 : 0);
   }
-  if (object->isSmallStr()) {
+  if (object.isSmallStr()) {
     return SmallInt::fromWord(object.raw() >> RawSmallStr::kTagSize);
   }
   return SmallInt::fromWord(object.raw());
@@ -1163,11 +1163,11 @@ void Runtime::setArgv(int argc, const char** argv) {
 
 RawObject Runtime::identityHash(RawObject object) {
   RawHeapObject src = RawHeapObject::cast(object);
-  word code = src->header()->hashCode();
+  word code = src.header().hashCode();
   if (code == 0) {
     code = random() & RawHeader::kHashCodeMask;
     code = (code == 0) ? 1 : code;
-    src->setHeader(src->header()->withHashCode(code));
+    src.setHeader(src.header().withHashCode(code));
   }
   return SmallInt::fromWord(code);
 }
@@ -1182,15 +1182,15 @@ word Runtime::siphash24(View<byte> array) {
 
 RawObject Runtime::valueHash(RawObject object) {
   RawHeapObject src = RawHeapObject::cast(object);
-  RawHeader header = src->header();
-  word code = header->hashCode();
+  RawHeader header = src.header();
+  word code = header.hashCode();
   if (code == 0) {
-    word size = src->headerCountOrOverflow();
-    code = siphash24(View<byte>(reinterpret_cast<byte*>(src->address()), size));
+    word size = src.headerCountOrOverflow();
+    code = siphash24(View<byte>(reinterpret_cast<byte*>(src.address()), size));
     code &= RawHeader::kHashCodeMask;
     code = (code == 0) ? 1 : code;
-    src->setHeader(header->withHashCode(code));
-    DCHECK(code == src->header()->hashCode(), "hash failure");
+    src.setHeader(header.withHashCode(code));
+    DCHECK(code == src.header().hashCode(), "hash failure");
   }
   return SmallInt::fromWord(code);
 }
@@ -1215,7 +1215,7 @@ void Runtime::initializeLayouts() {
 RawObject Runtime::createMro(const Layout& subclass_layout,
                              LayoutId superclass_id) {
   HandleScope scope;
-  CHECK(subclass_layout.describedType()->isType(),
+  CHECK(subclass_layout.describedType().isType(),
         "subclass layout must have a described class");
   Type superclass(&scope, typeAt(superclass_id));
   Tuple src(&scope, superclass.mro());
@@ -1477,10 +1477,10 @@ void Runtime::processCallbacks() {
   HandleScope scope(thread);
   while (callbacks_ != NoneType::object()) {
     Object weak(&scope, WeakRef::dequeueReference(&callbacks_));
-    Object callback(&scope, RawWeakRef::cast(*weak)->callback());
+    Object callback(&scope, RawWeakRef::cast(*weak).callback());
     Interpreter::callMethod1(thread, frame, callback, weak);
     thread->ignorePendingException();
-    RawWeakRef::cast(*weak)->setCallback(NoneType::object());
+    RawWeakRef::cast(*weak).setCallback(NoneType::object());
   }
 }
 
@@ -1565,7 +1565,7 @@ RawObject Runtime::importModule(const Object& name) {
     return *cached_module;
   }
   for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (RawStr::cast(*name)->equalsCStr(_PyImport_Inittab[i].name)) {
+    if (RawStr::cast(*name).equalsCStr(_PyImport_Inittab[i].name)) {
       PyObject* module = (*_PyImport_Inittab[i].initfunc)();
       Module mod(&scope, ApiHandle::fromPyObject(module)->asObject());
       addModule(mod);
@@ -1695,7 +1695,7 @@ RawObject Runtime::findModule(const Object& name) {
   HandleScope scope;
   Dict dict(&scope, modules());
   RawObject value = dictAt(dict, name);
-  if (value->isError()) {
+  if (value.isError()) {
     return NoneType::object();
   }
   return value;
@@ -1725,7 +1725,7 @@ RawObject Runtime::moduleDictAt(const Dict& dict, const Object& key) {
   }
   CHECK(value_cell.isValueCell(),
         "dict in moduleDictAt should return ValueCell");
-  return RawValueCell::cast(*value_cell)->value();
+  return RawValueCell::cast(*value_cell).value();
 }
 
 RawObject Runtime::moduleAt(const Module& module, const Object& key) {
@@ -1785,21 +1785,21 @@ void Runtime::initializeApiData() {
 
 RawObject Runtime::typeOf(RawObject object) {
   HandleScope scope;
-  Layout layout(&scope, layoutAt(object->layoutId()));
+  Layout layout(&scope, layoutAt(object.layoutId()));
   return layout.describedType();
 }
 
 RawObject Runtime::layoutAt(LayoutId layout_id) {
   DCHECK(layout_id != LayoutId::kError, "Error has no Layout");
-  return RawList::cast(layouts_)->at(static_cast<word>(layout_id));
+  return RawList::cast(layouts_).at(static_cast<word>(layout_id));
 }
 
 void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
-  RawList::cast(layouts_)->atPut(static_cast<word>(layout_id), object);
+  RawList::cast(layouts_).atPut(static_cast<word>(layout_id), object);
 }
 
 RawObject Runtime::typeAt(LayoutId layout_id) {
-  return RawLayout::cast(layoutAt(layout_id))->describedType();
+  return RawLayout::cast(layoutAt(layout_id)).describedType();
 }
 
 RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
@@ -1809,7 +1809,7 @@ RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
     return Error::object();
   }
   CHECK(value_cell.isValueCell(), "dict in typeDictAt should return ValueCell");
-  return RawValueCell::cast(*value_cell)->value();
+  return RawValueCell::cast(*value_cell).value();
 }
 
 RawObject Runtime::typeDictAtPut(const Dict& dict, const Object& key,
@@ -2333,7 +2333,7 @@ RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
 RawObject Runtime::dictAtPutInValueCell(const Dict& dict, const Object& key,
                                         const Object& value) {
   RawObject result = dictAtIfAbsentPut(dict, key, newValueCellCallback());
-  RawValueCell::cast(result)->setValue(*value);
+  RawValueCell::cast(result).setValue(*value);
   return result;
 }
 
@@ -2892,10 +2892,10 @@ RawObject Runtime::classConstructor(const Type& type) {
   Dict type_dict(&scope, type.dict());
   Object init(&scope, symbols()->DunderInit());
   RawObject value = dictAt(type_dict, init);
-  if (value->isError()) {
+  if (value.isError()) {
     return NoneType::object();
   }
-  return RawValueCell::cast(value)->value();
+  return RawValueCell::cast(value).value();
 }
 
 RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
@@ -2920,7 +2920,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
     }
     Function init(&scope, *maybe_init);
     RawObject maybe_code = init.code();
-    if (!maybe_code->isCode()) {
+    if (!maybe_code.isCode()) {
       continue;  // native trampoline
     }
     Code code(&scope, maybe_code);
@@ -2946,7 +2946,7 @@ RawObject Runtime::lookupNameInMro(Thread* thread, const Type& type,
     Dict dict(&scope, mro_type.dict());
     Object value_cell(&scope, dictAt(dict, name));
     if (!value_cell.isError()) {
-      return RawValueCell::cast(*value_cell)->value();
+      return RawValueCell::cast(*value_cell).value();
     }
   }
   return Error::object();
@@ -3143,18 +3143,18 @@ RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
     }
     Object key(&scope, names.at(arg));
     RawObject value = dictAt(globals, key);
-    if (value->isError()) {
+    if (value.isError()) {
       value = dictAt(builtins, key);
-      if (value->isError()) {
+      if (value.isError()) {
         // insert a place holder to allow {STORE|DELETE}_GLOBAL
         Object handle(&scope, value);
         value = dictAtPutInValueCell(builtins, key, handle);
-        RawValueCell::cast(value)->makeUnbound();
+        RawValueCell::cast(value).makeUnbound();
       }
       Object handle(&scope, value);
       value = dictAtPutInValueCell(globals, key, handle);
     }
-    DCHECK(value->isValueCell(), "not  value cell");
+    DCHECK(value.isValueCell(), "not  value cell");
     fast_globals.atPut(arg, value);
   }
   return *fast_globals;
@@ -3226,7 +3226,7 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
   Type object_type(&scope, typeAt(LayoutId::kObject));
   Type candidate(&scope, *object_type);
   // Skip itself since builtin class won't go through this.
-  DCHECK(*type == mro.at(0) && type.instanceLayout()->isNoneType(),
+  DCHECK(*type == mro.at(0) && type.instanceLayout().isNoneType(),
          "type's layout should not be set at this point");
   for (word i = 1; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
@@ -3236,7 +3236,7 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
     if (*candidate == *object_type) {
       candidate = *mro_type;
     } else if (*mro_type != *object_type &&
-               !RawTuple::cast(candidate.mro())->contains(*mro_type)) {
+               !RawTuple::cast(candidate.mro()).contains(*mro_type)) {
       return thread->raiseTypeErrorWithCStr(
           "multiple bases have instance lay-out conflict");
     }
@@ -3327,7 +3327,7 @@ RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,
   }
 
   if (has_new_layout_id) {
-    instance.setHeader(instance.header()->withLayoutId(layout.id()));
+    instance.setHeader(instance.header().withLayoutId(layout.id()));
   }
 
   return NoneType::object();
@@ -3343,8 +3343,8 @@ RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
   if (result.isError()) {
     return Error::object();
   }
-  LayoutId new_layout_id = RawLayout::cast(*result)->id();
-  instance.setHeader(instance.header()->withLayoutId(new_layout_id));
+  LayoutId new_layout_id = RawLayout::cast(*result).id();
+  instance.setHeader(instance.header().withLayoutId(new_layout_id));
 
   // Remove the reference to the attribute value from the instance
   AttributeInfo info;
@@ -3458,7 +3458,7 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
   // Check if a edge for the attribute addition already exists
   List edges(&scope, layout.additions());
   RawObject result = layoutFollowEdge(edges, iname);
-  if (!result->isError()) {
+  if (!result.isError()) {
     return result;
   }
 
@@ -3498,7 +3498,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   Object iname(&scope, internStr(name));
   List edges(&scope, layout.deletions());
   RawObject next_layout = layoutFollowEdge(edges, iname);
-  if (!next_layout->isError()) {
+  if (!next_layout.isError()) {
     return next_layout;
   }
 
@@ -3535,7 +3535,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
       if (is_deleted) {
         // Need to shift everything down by 1 once we've deleted the attribute
         entry = newTuple(2);
-        entry.atPut(0, RawTuple::cast(old_overflow.at(i))->at(0));
+        entry.atPut(0, RawTuple::cast(old_overflow.at(i)).at(0));
         entry.atPut(1, AttributeInfo(j, info.flags()).asSmallInt());
       }
       new_overflow.atPut(j, *entry);
@@ -3572,7 +3572,7 @@ RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
     if (value_cell.isError()) {
       continue;
     }
-    Object value(&scope, RawValueCell::cast(*value_cell)->value());
+    Object value(&scope, RawValueCell::cast(*value_cell).value());
     if (!isNonDataDescriptor(thread, value)) {
       return *value;
     }
@@ -3596,7 +3596,7 @@ void Runtime::freeApiHandles() {
   word i = Dict::Bucket::kFirst;
   while (Dict::Bucket::nextItem(*buckets, &i)) {
     Object value(&scope, Dict::Bucket::value(*buckets, i));
-    auto handle = static_cast<ApiHandle*>(RawInt::cast(*value)->asCPtr());
+    auto handle = static_cast<ApiHandle*>(RawInt::cast(*value).asCPtr());
     std::free(handle->cache());
     std::free(handle);
     Dict::Bucket::setTombstone(*buckets, i);
@@ -3613,7 +3613,7 @@ RawObject Runtime::lookupSymbolInMro(Thread* thread, const Type& type,
     Dict dict(&scope, mro_type.dict());
     Object value_cell(&scope, dictAt(dict, key));
     if (!value_cell.isError()) {
-      return RawValueCell::cast(*value_cell)->value();
+      return RawValueCell::cast(*value_cell).value();
     }
   }
   return Error::object();
@@ -3718,8 +3718,8 @@ static uword addWithCarry(uword x, uword y, uword carry_in, uword* carry_out) {
 RawObject Runtime::intAdd(Thread* thread, const Int& left, const Int& right) {
   if (left.isSmallInt() && right.isSmallInt()) {
     // Take a shortcut because we know the result fits in a word.
-    word left_digit = RawSmallInt::cast(*left)->value();
-    word right_digit = RawSmallInt::cast(*right)->value();
+    word left_digit = RawSmallInt::cast(*left).value();
+    word right_digit = RawSmallInt::cast(*right).value();
     return newInt(left_digit + right_digit);
   }
 
@@ -4480,7 +4480,7 @@ RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
   word amount_word = amount.asWord();
   if (amount_word == 0) {
     if (num.isBool()) {
-      return RawSmallInt::fromWord(RawBool::cast(*num)->value() ? 1 : 0);
+      return RawSmallInt::fromWord(RawBool::cast(*num).value() ? 1 : 0);
     }
     return *num;
   }
@@ -4565,8 +4565,8 @@ RawObject Runtime::intSubtract(Thread* thread, const Int& left,
                                const Int& right) {
   if (left.isSmallInt() && right.isSmallInt()) {
     // Take a shortcut because we know the result fits in a word.
-    word left_digit = RawSmallInt::cast(*left)->value();
-    word right_digit = RawSmallInt::cast(*right)->value();
+    word left_digit = RawSmallInt::cast(*left).value();
+    word right_digit = RawSmallInt::cast(*right).value();
     return newInt(left_digit - right_digit);
   }
 

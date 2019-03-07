@@ -34,13 +34,13 @@ RawObject Scavenger::scavenge() {
 }
 
 void Scavenger::scavengePointer(RawObject* pointer) {
-  if (!(*pointer)->isHeapObject()) {
+  if (!(*pointer).isHeapObject()) {
     return;
   }
   RawHeapObject object = RawHeapObject::cast(*pointer);
-  if (from_->contains(object->address())) {
-    if (object->isForwarding()) {
-      *pointer = object->forward();
+  if (from_->contains(object.address())) {
+    if (object.isForwarding()) {
+      *pointer = object.forward();
     } else {
       *pointer = transport(object);
     }
@@ -51,28 +51,28 @@ void Scavenger::processRoots() { runtime_->visitRoots(visitor()); }
 
 bool Scavenger::hasWhiteReferent(RawObject reference) {
   RawWeakRef weak = RawWeakRef::cast(reference);
-  if (!weak->referent()->isHeapObject()) {
+  if (!weak.referent().isHeapObject()) {
     return false;
   }
-  return !RawHeapObject::cast(weak->referent())->isForwarding();
+  return !RawHeapObject::cast(weak.referent()).isForwarding();
 }
 
 void Scavenger::processGrayObjects() {
   uword scan = to_->start();
   while (scan < to_->fill()) {
-    if (!(*reinterpret_cast<RawObject*>(scan))->isHeader()) {
+    if (!(*reinterpret_cast<RawObject*>(scan)).isHeader()) {
       // Skip immediate values for alignment padding or header overflow.
       scan += kPointerSize;
     } else {
       RawHeapObject object = HeapObject::fromAddress(scan + RawHeader::kSize);
-      uword end = object->baseAddress() + object->size();
+      uword end = object.baseAddress() + object.size();
       // Scan pointers that follow the header word, if any.
-      if (!object->isRoot()) {
+      if (!object.isRoot()) {
         scan = end;
         continue;
       }
       scan += RawHeader::kSize;
-      if (object->isWeakRef() && hasWhiteReferent(object)) {
+      if (object.isWeakRef() && hasWhiteReferent(object)) {
         // Delay the reference object for later processing.
         WeakRef::enqueueReference(object, &delayed_references_);
         // Skip over the referent field and continue scavenging.
@@ -89,15 +89,15 @@ void Scavenger::processDelayedReferences() {
   while (delayed_references_ != NoneType::object()) {
     RawWeakRef weak =
         RawWeakRef::cast(WeakRef::dequeueReference(&delayed_references_));
-    if (!weak->referent()->isHeapObject()) {
+    if (!weak.referent().isHeapObject()) {
       continue;
     }
-    RawHeapObject referent = RawHeapObject::cast(weak->referent());
-    if (referent->isForwarding()) {
-      weak->setReferent(referent->forward());
+    RawHeapObject referent = RawHeapObject::cast(weak.referent());
+    if (referent.isForwarding()) {
+      weak.setReferent(referent.forward());
     } else {
-      weak->setReferent(NoneType::object());
-      if (!weak->callback()->isNoneType()) {
+      weak.setReferent(NoneType::object());
+      if (!weak.callback().isNoneType()) {
         WeakRef::enqueueReference(weak, &delayed_callbacks_);
       }
     }
@@ -106,14 +106,14 @@ void Scavenger::processDelayedReferences() {
 
 RawObject Scavenger::transport(RawObject old_object) {
   RawHeapObject from_object = RawHeapObject::cast(old_object);
-  word size = from_object->size();
+  word size = from_object.size();
   uword address = to_->allocate(size);
   auto dst = reinterpret_cast<void*>(address);
-  auto src = reinterpret_cast<void*>(from_object->baseAddress());
+  auto src = reinterpret_cast<void*>(from_object.baseAddress());
   std::memcpy(dst, src, size);
-  word offset = from_object->address() - from_object->baseAddress();
+  word offset = from_object.address() - from_object.baseAddress();
   RawHeapObject to_object = HeapObject::fromAddress(address + offset);
-  from_object->forwardTo(to_object);
+  from_object.forwardTo(to_object);
   return to_object;
 }
 

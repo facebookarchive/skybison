@@ -187,14 +187,14 @@ right = C()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isTuple());
-  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
-  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(RawTuple::cast(result)->at(1)->isStr());
-  RawStr name = RawStr::cast(RawTuple::cast(result)->at(1));
-  EXPECT_TRUE(name->equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
+  ASSERT_TRUE(result.isTuple());
+  ASSERT_EQ(RawTuple::cast(result).length(), 4);
+  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
+  ASSERT_TRUE(RawTuple::cast(result).at(1).isStr());
+  RawStr name = RawStr::cast(RawTuple::cast(result).at(1));
+  EXPECT_TRUE(name.equalsCStr("__sub__"));
+  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
@@ -222,14 +222,14 @@ right = C()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isTuple());
-  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
-  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
-  ASSERT_TRUE(RawTuple::cast(result)->at(1)->isStr());
-  RawStr name = RawStr::cast(RawTuple::cast(result)->at(1));
-  EXPECT_TRUE(name->equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
+  ASSERT_TRUE(result.isTuple());
+  ASSERT_EQ(RawTuple::cast(result).length(), 4);
+  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
+  ASSERT_TRUE(RawTuple::cast(result).at(1).isStr());
+  RawStr name = RawStr::cast(RawTuple::cast(result).at(1));
+  EXPECT_TRUE(name.equalsCStr("__sub__"));
+  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
@@ -259,13 +259,13 @@ right = D()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isTuple());
-  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
-  EXPECT_EQ(RawTuple::cast(result)->at(0), *d_class);
+  ASSERT_TRUE(result.isTuple());
+  ASSERT_EQ(RawTuple::cast(result).length(), 4);
+  EXPECT_EQ(RawTuple::cast(result).at(0), *d_class);
   EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__rsub__"));
-  EXPECT_EQ(RawTuple::cast(result)->at(2), *right);
-  EXPECT_EQ(RawTuple::cast(result)->at(3), *left);
+      RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__rsub__"));
+  EXPECT_EQ(RawTuple::cast(result).at(2), *right);
+  EXPECT_EQ(RawTuple::cast(result).at(3), *left);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
@@ -294,13 +294,13 @@ right = D()
 
   RawObject result = Interpreter::binaryOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isTuple());
-  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
-  EXPECT_EQ(RawTuple::cast(result)->at(0), *d_class);
+  ASSERT_TRUE(result.isTuple());
+  ASSERT_EQ(RawTuple::cast(result).length(), 4);
+  EXPECT_EQ(RawTuple::cast(result).at(0), *d_class);
   EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__rsub__"));
-  EXPECT_EQ(RawTuple::cast(result)->at(2), *right);
-  EXPECT_EQ(RawTuple::cast(result)->at(3), *left);
+      RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__rsub__"));
+  EXPECT_EQ(RawTuple::cast(result).at(2), *right);
+  EXPECT_EQ(RawTuple::cast(result).at(3), *left);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
@@ -326,13 +326,13 @@ right = C()
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isTuple());
-  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
-  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
+  ASSERT_TRUE(result.isTuple());
+  ASSERT_EQ(RawTuple::cast(result).length(), 4);
+  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
   EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__isub__"));
-  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
+      RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__isub__"));
+  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
@@ -358,13 +358,12 @@ right = C()
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isTuple());
-  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
-  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
-  EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
+  ASSERT_TRUE(result.isTuple());
+  ASSERT_EQ(RawTuple::cast(result).length(), 4);
+  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
+  EXPECT_TRUE(RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__sub__"));
+  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
@@ -392,13 +391,12 @@ right = C()
 
   RawObject result = Interpreter::inplaceOperation(
       thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result->isTuple());
-  ASSERT_EQ(RawTuple::cast(result)->length(), 4);
-  EXPECT_EQ(RawTuple::cast(result)->at(0), *c_class);
-  EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result)->at(1))->equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result)->at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result)->at(3), *right);
+  ASSERT_TRUE(result.isTuple());
+  ASSERT_EQ(RawTuple::cast(result).length(), 4);
+  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
+  EXPECT_TRUE(RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__sub__"));
+  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
+  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the
@@ -1090,7 +1088,7 @@ sys.displayhook = my_displayhook
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isNoneType());
+  ASSERT_TRUE(result.isNoneType());
 
   Module sys(&scope, findModule(&runtime, "sys"));
   Object displayhook(&scope, moduleAt(&runtime, sys, "displayhook"));
@@ -2280,10 +2278,10 @@ b = getattr(baz, '__module__')
 )");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isStr());
-  EXPECT_TRUE(Str::cast(*a)->equalsCStr("foo"));
+  EXPECT_TRUE(Str::cast(*a).equalsCStr("foo"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b.isStr());
-  EXPECT_TRUE(Str::cast(*b)->equalsCStr("__main__"));
+  EXPECT_TRUE(Str::cast(*b).equalsCStr("__main__"));
 }
 
 TEST(InterpreterTest, MakeFunctionSetsDunderQualname) {
@@ -2298,10 +2296,10 @@ b = getattr(baz, '__qualname__')
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isStr());
-  EXPECT_TRUE(Str::cast(*a)->equalsCStr("Foo.bar"));
+  EXPECT_TRUE(Str::cast(*a).equalsCStr("Foo.bar"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b.isStr());
-  EXPECT_TRUE(Str::cast(*b)->equalsCStr("baz"));
+  EXPECT_TRUE(Str::cast(*b).equalsCStr("baz"));
 }
 
 TEST(InterpreterTest, MakeFunctionSetsDunderDoc) {
@@ -2315,13 +2313,13 @@ def bar(): pass
   HandleScope scope;
   Object foo(&scope, testing::moduleAt(&runtime, "__main__", "foo"));
   ASSERT_TRUE(foo.isFunction());
-  Object foo_docstring(&scope, RawFunction::cast(*foo)->doc());
+  Object foo_docstring(&scope, RawFunction::cast(*foo).doc());
   ASSERT_TRUE(foo_docstring.isStr());
-  EXPECT_TRUE(RawStr::cast(*foo_docstring)->equalsCStr("This is a docstring"));
+  EXPECT_TRUE(RawStr::cast(*foo_docstring).equalsCStr("This is a docstring"));
 
   Object bar(&scope, testing::moduleAt(&runtime, "__main__", "bar"));
   ASSERT_TRUE(bar.isFunction());
-  Object bar_docstring(&scope, RawFunction::cast(*bar)->doc());
+  Object bar_docstring(&scope, RawFunction::cast(*bar).doc());
   EXPECT_TRUE(bar_docstring.isNoneType());
 }
 
@@ -2333,7 +2331,7 @@ TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   Str not_a_func(&scope, runtime.newStrFromCStr(""));
   frame->pushValue(*not_a_func);
   RawObject result = Interpreter::call(thread, frame, 0);
-  EXPECT_TRUE(result->isError());
+  EXPECT_TRUE(result.isError());
   EXPECT_TRUE(thread->hasPendingException());
 }
 
@@ -2412,7 +2410,7 @@ except Exception as e:
   Object exc_obj(&scope, testing::moduleAt(&runtime, "__main__", "exc"));
   ASSERT_EQ(exc_obj.layoutId(), LayoutId::kTypeError);
   BaseException exc(&scope, *exc_obj);
-  EXPECT_EQ(exc.cause()->layoutId(), LayoutId::kRuntimeError);
+  EXPECT_EQ(exc.cause().layoutId(), LayoutId::kRuntimeError);
 }
 
 TEST(InterpreterTest, ExceptWithRightTypeCatches) {
@@ -2555,7 +2553,7 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
 
   // Execute the code and make sure to get the unwinded Error
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
 }
 
 TEST(InterpreterTest, ExplodeCallAcceptsList) {

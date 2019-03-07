@@ -20,7 +20,7 @@ TEST(FloatBuiltinsTest, DunderMulWithDoubleReturnsDouble) {
   Float right(&scope, runtime.newFloat(1.5));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderMul, left, right));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 3.0);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 3.0);
 }
 
 TEST(FloatBuiltinsTest, DunderMulWithSmallIntReturnsDouble) {
@@ -30,7 +30,7 @@ TEST(FloatBuiltinsTest, DunderMulWithSmallIntReturnsDouble) {
   Int right(&scope, runtime.newInt(1));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderMul, left, right));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 2.5);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 2.5);
 }
 
 TEST(FloatBuiltinsTest, DunderMulWithNonFloatSelfRaisesTypeError) {
@@ -75,7 +75,7 @@ TEST(FloatBuiltinsTest, DunderAbsZeroReturnsZero) {
   Float self(&scope, runtime.newFloat(0.0));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderAbs, self));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 0.0);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 0.0);
 }
 
 TEST(FloatBuiltinsTest, DunderAbsNegativeReturnsPositive) {
@@ -84,7 +84,7 @@ TEST(FloatBuiltinsTest, DunderAbsNegativeReturnsPositive) {
   Float self(&scope, runtime.newFloat(-1234.0));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderAbs, self));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 1234.0);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 1234.0);
 }
 
 TEST(FloatBuiltinsTest, DunderAbsPositiveReturnsPositive) {
@@ -93,7 +93,7 @@ TEST(FloatBuiltinsTest, DunderAbsPositiveReturnsPositive) {
   Float self(&scope, runtime.newFloat(5678.0));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderAbs, self));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 5678.0);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 5678.0);
 }
 
 TEST(FloatBuiltinsTest, BinaryAddDouble) {
@@ -108,7 +108,7 @@ c = a + b
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
-  EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
+  EXPECT_EQ(RawFloat::cast(*c).value(), 3.5);
 }
 
 TEST(FloatBuiltinsTest, BinaryAddSmallInt) {
@@ -123,7 +123,7 @@ c = a + b
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
-  EXPECT_EQ(RawFloat::cast(*c)->value(), 3.5);
+  EXPECT_EQ(RawFloat::cast(*c).value(), 3.5);
 }
 
 TEST(FloatBuiltinsTest, AddWithNonFloatSelfRaisesTypeError) {
@@ -168,7 +168,7 @@ TEST(FloatBuiltinsTest, DunderTrueDivWithDoubleReturnsDouble) {
   Float right(&scope, runtime.newFloat(2.0));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderTrueDivWithSmallIntReturnsDouble) {
@@ -178,7 +178,7 @@ TEST(FloatBuiltinsTest, DunderTrueDivWithSmallIntReturnsDouble) {
   Int right(&scope, runtime.newInt(2));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderTrueDivWithNonFloatSelfRaisesTypeError) {
@@ -233,7 +233,7 @@ TEST(FloatBuiltinsTest, DunderRtrueDivWithDoubleReturnsDouble) {
   Float right(&scope, runtime.newFloat(3.0));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderRtrueDivWithSmallIntReturnsDouble) {
@@ -243,7 +243,7 @@ TEST(FloatBuiltinsTest, DunderRtrueDivWithSmallIntReturnsDouble) {
   Int right(&scope, runtime.newInt(3));
   Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), 1.5);
+  EXPECT_EQ(RawFloat::cast(*result).value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderRtrueDivWithNonFloatSelfRaisesTypeError) {
@@ -285,7 +285,7 @@ c = a - b
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
-  EXPECT_EQ(RawFloat::cast(*c)->value(), 0.5);
+  EXPECT_EQ(RawFloat::cast(*c).value(), 0.5);
 }
 
 TEST(FloatBuiltinsTest, BinarySubtractSmallInt) {
@@ -300,7 +300,7 @@ c = a - b
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
-  EXPECT_EQ(RawFloat::cast(*c)->value(), 1.5);
+  EXPECT_EQ(RawFloat::cast(*c).value(), 1.5);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
@@ -313,7 +313,7 @@ a = float.__new__(float)
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
-  EXPECT_EQ(RawFloat::cast(*a)->value(), 0.0);
+  EXPECT_EQ(RawFloat::cast(*a).value(), 0.0);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
@@ -326,7 +326,7 @@ a = float.__new__(float, 1.0)
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
-  EXPECT_EQ(RawFloat::cast(*a)->value(), 1.0);
+  EXPECT_EQ(RawFloat::cast(*a).value(), 1.0);
 }
 
 TEST(FloatBuiltinsTest, DunderNewWithUserDefinedTypeReturnsFloat) {
@@ -377,7 +377,7 @@ subfloat_foo = subfloat.foo
   UserFloatBase user_float(&scope, *subfloat);
   Object float_value(&scope, user_float.floatValue());
   ASSERT_TRUE(float_value.isFloat());
-  EXPECT_EQ(Float::cast(*float_value)->value(), 1.5);
+  EXPECT_EQ(Float::cast(*float_value).value(), 1.5);
 
   Object foo_attr(&scope, moduleAt(&runtime, "__main__", "subfloat_foo"));
   EXPECT_TRUE(isIntEqualsWord(*foo_attr, 3));
@@ -395,7 +395,7 @@ class Test(float):
   ASSERT_TRUE(value.isType());
 
   Type type(&scope, *value);
-  ASSERT_TRUE(type.mro()->isTuple());
+  ASSERT_TRUE(type.mro().isTuple());
 
   Tuple mro(&scope, type.mro());
   ASSERT_EQ(mro.length(), 3);
@@ -626,7 +626,7 @@ TEST(FloatBuiltinsTest, DunderFloatWithFloatLiteralReturnsSameObject) {
   runFromCStr(&runtime, "a = (7.0).__float__()");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
-  EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
+  EXPECT_EQ(RawFloat::cast(*a).value(), 7.0);
 }
 
 TEST(FloatBuiltinsTest, DunderFloatFromFloatClassReturnsSameValue) {
@@ -636,7 +636,7 @@ TEST(FloatBuiltinsTest, DunderFloatFromFloatClassReturnsSameValue) {
   Float a_float(&scope, runtime.newFloat(7.0));
   Object a(&scope, runBuiltin(FloatBuiltins::dunderFloat, a_float));
   ASSERT_TRUE(a.isFloat());
-  EXPECT_EQ(RawFloat::cast(*a)->value(), 7.0);
+  EXPECT_EQ(RawFloat::cast(*a).value(), 7.0);
 }
 
 TEST(FloatBuiltinsTest, DunderFloatWithFloatSubclassReturnsSameValue) {
@@ -649,7 +649,7 @@ class FloatSub(float):
 a = FloatSub(1.0).__float__())");
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
-  EXPECT_EQ(RawFloat::cast(*a)->value(), 1.0);
+  EXPECT_EQ(RawFloat::cast(*a).value(), 1.0);
 }
 
 TEST(FloatBuiltinsTest, DunderFloatWithNonFloatReturnsError) {

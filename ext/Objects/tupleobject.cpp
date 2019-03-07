@@ -18,7 +18,7 @@ PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
 }
 
 PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isTuple();
+  return ApiHandle::fromPyObject(obj)->asObject().isTuple();
 }
 
 PY_EXPORT int PyTuple_Check_Func(PyObject* obj) {

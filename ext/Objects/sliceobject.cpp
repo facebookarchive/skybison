@@ -5,7 +5,7 @@
 namespace python {
 
 PY_EXPORT int PySlice_Check_Func(PyObject* pyobj) {
-  return ApiHandle::fromPyObject(pyobj)->asObject()->isSlice();
+  return ApiHandle::fromPyObject(pyobj)->asObject().isSlice();
 }
 
 PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,

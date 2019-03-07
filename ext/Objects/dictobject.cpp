@@ -9,7 +9,7 @@
 namespace python {
 
 PY_EXPORT int PyDict_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isDict();
+  return ApiHandle::fromPyObject(obj)->asObject().isDict();
 }
 
 PY_EXPORT int PyDict_Check_Func(PyObject* obj) {

@@ -13,7 +13,7 @@ TEST(ImpModuleTest, ModuleImporting) {
 import _imp
   )");
   RawObject imp = moduleAt(&runtime, "__main__", "_imp");
-  EXPECT_TRUE(imp->isModule());
+  EXPECT_TRUE(imp.isModule());
 }
 
 TEST(ImportBuiltins, AcquireLockAndReleaseLockWorks) {
@@ -84,7 +84,7 @@ result = _imp.create_builtin(spec)
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isModule());
-  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result)->name(), "errno"));
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result).name(), "errno"));
 }
 
 TEST(ImportBuiltinsTest, CreateBuiltinWithExArgsReturnsModule) {
@@ -101,7 +101,7 @@ result = _imp.create_builtin(*spec)
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isModule());
-  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result)->name(), "errno"));
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result).name(), "errno"));
 }
 
 TEST(ImportBuiltins, ExecBuiltinWithNonModuleReturnsZero) {
@@ -231,7 +231,7 @@ TEST(ImportBuiltinsTest, IsFrozenReturnsFalse) {
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
   Object result(&scope, runBuiltin(UnderImpModule::isFrozen, module_name));
   ASSERT_TRUE(result.isBool());
-  EXPECT_FALSE(Bool::cast(*result)->value());
+  EXPECT_FALSE(Bool::cast(*result).value());
 }
 
 TEST(ImportBuiltinsDeathTest, IsFrozenPackage) {
@@ -277,10 +277,10 @@ result2 = _imp.create_builtin(*spec)
   HandleScope scope;
   Object result1(&scope, moduleAt(&runtime, "__main__", "result1"));
   ASSERT_TRUE(result1.isModule());
-  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result1)->name(), "errno"));
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result1).name(), "errno"));
   Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
   ASSERT_TRUE(result2.isModule());
-  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result2)->name(), "errno"));
+  EXPECT_TRUE(isStrEqualsCStr(Module::cast(*result2).name(), "errno"));
   EXPECT_EQ(*result1, *result2);
 }
 

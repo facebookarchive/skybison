@@ -247,10 +247,10 @@ RawObject BuiltinsModule::buildClass(Thread* thread, Frame* frame, word nargs) {
     std::abort();  // TODO(cshapiro): throw a TypeError exception.
   }
   Arguments args(frame, nargs);
-  if (!args.get(0)->isFunction()) {
+  if (!args.get(0).isFunction()) {
     std::abort();  // TODO(cshapiro): throw a TypeError exception.
   }
-  if (!args.get(1)->isStr()) {
+  if (!args.get(1).isStr()) {
     std::abort();  // TODO(cshapiro): throw a TypeError exception.
   }
 
@@ -344,11 +344,11 @@ RawObject BuiltinsModule::buildClassKw(Thread* thread, Frame* frame,
   if (args.numArgs() < 2) {
     return thread->raiseTypeErrorWithCStr("not enough args for build class.");
   }
-  if (!args.get(0)->isFunction()) {
+  if (!args.get(0).isFunction()) {
     return thread->raiseTypeErrorWithCStr("class body is not function.");
   }
 
-  if (!args.get(1)->isStr()) {
+  if (!args.get(1).isStr()) {
     return thread->raiseTypeErrorWithCStr("class name is not string.");
   }
 
@@ -426,10 +426,10 @@ RawObject BuiltinsModule::callable(Thread* thread, Frame* frame, word nargs) {
 RawObject BuiltinsModule::chr(Thread* thread, Frame* frame_frame, word nargs) {
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);
-  if (!arg->isSmallInt()) {
+  if (!arg.isSmallInt()) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'chr'");
   }
-  word w = RawSmallInt::cast(arg)->value();
+  word w = RawSmallInt::cast(arg).value();
   const char s[2]{static_cast<char>(w), 0};
   return SmallStr::fromCStr(s);
 }
@@ -608,7 +608,7 @@ RawObject BuiltinsModule::issubclass(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (!args.get(0)->isType()) {
+  if (!args.get(0).isType()) {
     return thread->raiseTypeErrorWithCStr("issubclass arg 1 must be a type");
   }
   Type type(&scope, args.get(0));
@@ -642,20 +642,20 @@ RawObject BuiltinsModule::issubclass(Thread* thread, Frame* frame, word nargs) {
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);
-  if (!arg->isStr()) {
+  if (!arg.isStr()) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'ord'");
   }
   auto str = RawStr::cast(arg);
-  if (str->length() != 1) {
+  if (str.length() != 1) {
     return thread->raiseTypeErrorWithCStr(
         "Builtin 'ord' expects string of length 1");
   }
-  return SmallInt::fromWord(str->charAt(0));
+  return SmallInt::fromWord(str.charAt(0));
 }
 
 void printStr(RawStr str, std::ostream* ostream) {
-  for (word i = 0; i < str->length(); i++) {
-    *ostream << str->charAt(i);
+  for (word i = 0; i < str.length(); i++) {
+    *ostream << str.charAt(i);
   }
 }
 

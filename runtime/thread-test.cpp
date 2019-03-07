@@ -233,13 +233,13 @@ TEST(ThreadTest, OverlappingFrames) {
 
   // Make sure we can read the args from the frame
   RawObject local = frame->local(0);
-  EXPECT_TRUE(isIntEqualsWord(local, arg1->value()));
+  EXPECT_TRUE(isIntEqualsWord(local, arg1.value()));
 
   local = frame->local(1);
-  EXPECT_TRUE(isIntEqualsWord(local, arg2->value()));
+  EXPECT_TRUE(isIntEqualsWord(local, arg2.value()));
 
   local = frame->local(2);
-  EXPECT_TRUE(isIntEqualsWord(local, arg3->value()));
+  EXPECT_TRUE(isIntEqualsWord(local, arg3.value()));
 }
 
 TEST(ThreadTest, EncodeTryBlock) {
@@ -387,7 +387,7 @@ TEST(ThreadTest, CallFunction) {
   callee_code.setArgcount(2);
   callee_code.setStacksize(1);
   callee_code.setConsts(runtime.newTuple(1));
-  RawTuple::cast(callee_code.consts())->atPut(0, expected_result);
+  RawTuple::cast(callee_code.consts()).atPut(0, expected_result);
   const byte callee_bc[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   callee_code.setCode(runtime.newBytesWithAll(callee_bc));
 
@@ -410,7 +410,7 @@ TEST(ThreadTest, CallFunction) {
 
   // Execute the caller and make sure we get back the expected result
   RawObject result = Thread::currentThread()->run(caller_code);
-  EXPECT_TRUE(isIntEqualsWord(result, expected_result->value()));
+  EXPECT_TRUE(isIntEqualsWord(result, expected_result.value()));
 }
 
 TEST(ThreadTest, ExtendedArg) {
@@ -745,7 +745,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
 
   Object value(&scope, runtime.dictAt(globals, key));
   ASSERT_TRUE(value.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*value)->value());
+  EXPECT_EQ(*result, RawValueCell::cast(*value).value());
 }
 
 TEST(ThreadTest, StoreGlobalReuseValueCell) {
@@ -820,7 +820,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
 
   Object value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*value)->value());
+  EXPECT_EQ(*result, RawValueCell::cast(*value).value());
 }
 
 TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
@@ -854,7 +854,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   Object value_cell(&scope, runtime.dictAt(builtins, key));
   ASSERT_TRUE(value_cell.isValueCell());
-  EXPECT_EQ(*builtins_value, RawValueCell::cast(*value_cell)->value());
+  EXPECT_EQ(*builtins_value, RawValueCell::cast(*value_cell).value());
 }
 
 TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
@@ -892,7 +892,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   ASSERT_TRUE(val0.isValueCell());
   Object val1(&scope, RawValueCell::cast(*val0));
   ASSERT_TRUE(val1.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*val1)->value());
+  EXPECT_EQ(*result, RawValueCell::cast(*val1).value());
 }
 
 TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
@@ -932,7 +932,7 @@ TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
   ASSERT_TRUE(val0.isValueCell());
   Object val1(&scope, RawValueCell::cast(*val0));
   ASSERT_TRUE(val1.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*val1)->value());
+  EXPECT_EQ(*result, RawValueCell::cast(*val1).value());
 }
 
 TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
@@ -970,7 +970,7 @@ TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
 
   Object val(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(val.isValueCell());  // 1-level indirection
-  EXPECT_EQ(*result, RawValueCell::cast(*val)->value());
+  EXPECT_EQ(*result, RawValueCell::cast(*val).value());
 }
 
 TEST(ThreadTest, MakeFunction) {
@@ -1012,9 +1012,9 @@ TEST(ThreadTest, MakeFunction) {
 
   Object value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value.isValueCell());
-  ASSERT_TRUE(RawValueCell::cast(*value)->value()->isFunction());
+  ASSERT_TRUE(RawValueCell::cast(*value).value().isFunction());
 
-  Function function(&scope, RawValueCell::cast(*value)->value());
+  Function function(&scope, RawValueCell::cast(*value).value());
   EXPECT_EQ(function.code(), consts.at(0));
   EXPECT_EQ(function.qualname(), consts.at(1));
   EXPECT_EQ(function.entry(), &interpreterTrampoline);
@@ -1037,16 +1037,16 @@ TEST(ThreadTest, BuildList) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isList());
+  ASSERT_TRUE(result.isList());
 
   RawList list = RawList::cast(result);
-  EXPECT_EQ(list->capacity(), 3);
+  EXPECT_EQ(list.capacity(), 3);
 
-  EXPECT_TRUE(isIntEqualsWord(list->at(0), 111));
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 111));
 
-  ASSERT_TRUE(list->at(1)->isSmallStr());
-  EXPECT_EQ(list->at(1), SmallStr::fromCStr("qqq"));
-  EXPECT_EQ(list->at(2), NoneType::object());
+  ASSERT_TRUE(list.at(1).isSmallStr());
+  EXPECT_EQ(list.at(1), SmallStr::fromCStr("qqq"));
+  EXPECT_EQ(list.at(2), NoneType::object());
 }
 
 TEST(ThreadTest, BuildSetEmpty) {
@@ -1058,7 +1058,7 @@ TEST(ThreadTest, BuildSetEmpty) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSet());
+  ASSERT_TRUE(result.isSet());
 
   Set set(&scope, result);
   EXPECT_EQ(set.numItems(), 0);
@@ -1080,7 +1080,7 @@ TEST(ThreadTest, BuildSetWithOneItem) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSet());
+  ASSERT_TRUE(result.isSet());
 
   Set set(&scope, result);
   EXPECT_EQ(set.numItems(), 1);
@@ -1112,7 +1112,7 @@ TEST(ThreadTest, BuildSet) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isSet());
+  ASSERT_TRUE(result.isSet());
 
   Set set(&scope, result);
   EXPECT_EQ(set.numItems(), 3);
@@ -1268,8 +1268,8 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   // If the condition is false, we should return the top of the stack, which is
   // the condition itself
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isBool());
-  EXPECT_FALSE(RawBool::cast(result)->value());
+  ASSERT_TRUE(result.isBool());
+  EXPECT_FALSE(RawBool::cast(result).value());
 
   // If the condition is true, we should pop the top of the stack (the
   // condition) and continue execution. In our case that loads a const and
@@ -1295,8 +1295,8 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   // If the condition is true, we should return the top of the stack, which is
   // the condition itself
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isBool());
-  EXPECT_TRUE(RawBool::cast(result)->value());
+  ASSERT_TRUE(result.isBool());
+  EXPECT_TRUE(RawBool::cast(result).value());
 
   // If the condition is false, we should pop the top of the stack (the
   // condition) and continue execution. In our case that loads a const and
@@ -1321,14 +1321,14 @@ TEST(ThreadTest, UnaryNot) {
 
   // If the condition is true, we should return false
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isBool());
-  EXPECT_FALSE(RawBool::cast(result)->value());
+  ASSERT_TRUE(result.isBool());
+  EXPECT_FALSE(RawBool::cast(result).value());
 
   // If the condition is false, we should return true
   consts.atPut(0, Bool::falseObj());
   result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isBool());
-  EXPECT_TRUE(RawBool::cast(result)->value());
+  ASSERT_TRUE(result.isBool());
+  EXPECT_TRUE(RawBool::cast(result).value());
 }
 
 static RawDict getMainModuleDict(Runtime* runtime) {
@@ -1359,8 +1359,8 @@ class C:
   Object value(&scope, runtime.dictAt(dict, key));
   ASSERT_TRUE(value.isValueCell());
 
-  Type cls(&scope, RawValueCell::cast(*value)->value());
-  ASSERT_TRUE(cls.name()->isSmallStr());
+  Type cls(&scope, RawValueCell::cast(*value).value());
+  ASSERT_TRUE(cls.name().isSmallStr());
   EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
   Tuple mro(&scope, cls.mro());
@@ -1392,7 +1392,7 @@ class C:
   Object cls_name(&scope, runtime.newStrFromCStr("C"));
   Object value(&scope, runtime.dictAt(mod_dict, cls_name));
   ASSERT_TRUE(value.isValueCell());
-  Type cls(&scope, RawValueCell::cast(*value)->value());
+  Type cls(&scope, RawValueCell::cast(*value).value());
 
   // Check class MRO
   Tuple mro(&scope, cls.mro());
@@ -1401,7 +1401,7 @@ class C:
   EXPECT_EQ(mro.at(1), runtime.typeAt(LayoutId::kObject));
 
   // Check class name
-  ASSERT_TRUE(cls.name()->isSmallStr());
+  ASSERT_TRUE(cls.name().isSmallStr());
   EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
   Dict cls_dict(&scope, cls.dict());
@@ -1412,7 +1412,7 @@ class C:
   ASSERT_TRUE(runtime.dictIncludes(cls_dict, meth_name));
   value = runtime.dictAt(cls_dict, meth_name);
   ASSERT_TRUE(value.isValueCell());
-  ASSERT_TRUE(RawValueCell::cast(*value)->value()->isFunction());
+  ASSERT_TRUE(RawValueCell::cast(*value).value().isFunction());
 }
 
 static RawObject nativeExceptionTest(Thread* thread, Frame*, word) {
@@ -1467,7 +1467,7 @@ static RawObject getMro(Runtime* runtime, const char* src,
   Object class_name(&scope, runtime->newStrFromCStr(desired_class));
 
   Object value(&scope, runtime->dictAt(mod_dict, class_name));
-  Type cls(&scope, RawValueCell::cast(*value)->value());
+  Type cls(&scope, RawValueCell::cast(*value).value());
 
   return cls.mro();
 }
@@ -1694,14 +1694,14 @@ class Foo(object):
   // Look up the class Foo
   HandleScope scope;
   RawObject object = findModule(&runtime, "__main__");
-  ASSERT_TRUE(object->isModule());
+  ASSERT_TRUE(object.isModule());
   Module main(&scope, object);
   object = moduleAt(&runtime, main, "Foo");
-  ASSERT_TRUE(object->isType());
+  ASSERT_TRUE(object.isType());
   Type type(&scope, object);
 
   // Check that its MRO is itself and object
-  ASSERT_TRUE(type.mro()->isTuple());
+  ASSERT_TRUE(type.mro().isTuple());
   Tuple mro(&scope, type.mro());
   ASSERT_EQ(mro.length(), 2);
   EXPECT_EQ(mro.at(0), *type);
@@ -2028,8 +2028,8 @@ TEST(BuildString, buildStringEmpty) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
-  EXPECT_TRUE(obj->isStr());
-  EXPECT_TRUE(obj->isSmallStr());
+  EXPECT_TRUE(obj.isStr());
+  EXPECT_TRUE(obj.isSmallStr());
 
   Str result(&scope, obj);
   EXPECT_TRUE(result.equalsCStr(""));
@@ -2050,8 +2050,8 @@ TEST(BuildString, buildStringSingle) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
-  EXPECT_TRUE(obj->isStr());
-  EXPECT_TRUE(obj->isSmallStr());
+  EXPECT_TRUE(obj.isStr());
+  EXPECT_TRUE(obj.isSmallStr());
 
   Str result(&scope, obj);
   EXPECT_TRUE(result.equalsCStr(expected));
@@ -2074,8 +2074,8 @@ TEST(BuildString, buildStringMultiSmall) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
-  EXPECT_TRUE(obj->isStr());
-  EXPECT_TRUE(obj->isSmallStr());
+  EXPECT_TRUE(obj.isStr());
+  EXPECT_TRUE(obj.isSmallStr());
 
   Str result(&scope, obj);
   EXPECT_TRUE(result.equalsCStr("foobar"));
@@ -2100,8 +2100,8 @@ TEST(BuildString, buildStringMultiLarge) {
   code.setCode(runtime.newBytesWithAll(bc));
 
   RawObject obj = Thread::currentThread()->run(code);
-  EXPECT_TRUE(obj->isStr());
-  EXPECT_TRUE(obj->isLargeStr());
+  EXPECT_TRUE(obj.isStr());
+  EXPECT_TRUE(obj.isLargeStr());
 
   Str result(&scope, obj);
   EXPECT_TRUE(result.equalsCStr("helloworldpython"));
@@ -2461,7 +2461,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   Interpreter::execute(thread, frame);
   Object value(&scope, runtime.dictAt(implicit_globals, key));
   ASSERT_TRUE(value.isValueCell());
-  RawObject value_obj = RawValueCell::cast(*value)->value();
+  RawObject value_obj = RawValueCell::cast(*value).value();
   EXPECT_TRUE(isIntEqualsWord(value_obj, 3));
 }
 

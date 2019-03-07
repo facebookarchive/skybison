@@ -132,7 +132,7 @@ TEST(NoneBuiltinsTest, NewReturnsNone) {
   Runtime runtime;
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kNoneType));
-  EXPECT_TRUE(runBuiltin(NoneBuiltins::dunderNew, type)->isNoneType());
+  EXPECT_TRUE(runBuiltin(NoneBuiltins::dunderNew, type).isNoneType());
 }
 
 TEST(NoneBuiltinsTest, NewWithExtraArgsRaisesTypeError) {

@@ -65,10 +65,10 @@ void RawByteArray::downsize(word new_length) const {
 
 word RawBytes::compare(RawBytes that) const {
   word this_len = this->length();
-  word that_len = that->length();
+  word that_len = that.length();
   word len = Utils::minimum(this_len, that_len);
   auto b1 = reinterpret_cast<void*>(this->address());
-  auto b2 = reinterpret_cast<void*>(that->address());
+  auto b2 = reinterpret_cast<void*>(that.address());
   word diff = std::memcmp(b1, b2, len);
   if (diff != 0 || this_len == that_len) return diff;
   return this_len < that_len ? -1 : 1;
@@ -87,15 +87,15 @@ bool RawLargeStr::equals(RawObject that) const {
   if (*this == that) {
     return true;
   }
-  if (!that->isLargeStr()) {
+  if (!that.isLargeStr()) {
     return false;
   }
   auto that_str = RawLargeStr::cast(that);
-  if (length() != that_str->length()) {
+  if (length() != that_str.length()) {
     return false;
   }
   auto s1 = reinterpret_cast<void*>(address());
-  auto s2 = reinterpret_cast<void*>(that_str->address());
+  auto s2 = reinterpret_cast<void*>(that_str.address());
   return std::memcmp(s1, s2, length()) == 0;
 }
 
@@ -156,16 +156,16 @@ word RawLargeStr::codePointLength() const {
 // RawInt
 
 word RawInt::compare(RawInt that) const {
-  if (this->isSmallInt() && that->isSmallInt()) {
-    return this->asWord() - that->asWord();
+  if (this->isSmallInt() && that.isSmallInt()) {
+    return this->asWord() - that.asWord();
   }
   // compare with large ints always returns -1, 0, or 1
-  if (this->isNegative() != that->isNegative()) {
+  if (this->isNegative() != that.isNegative()) {
     return this->isNegative() ? -1 : 1;
   }
 
   word left_digits = this->numDigits();
-  word right_digits = that->numDigits();
+  word right_digits = that.numDigits();
 
   if (left_digits > right_digits) {
     return 1;
@@ -175,7 +175,7 @@ word RawInt::compare(RawInt that) const {
   }
   for (word i = left_digits - 1; i >= 0; i--) {
     uword left_digit = this->digitAt(i);
-    uword right_digit = that->digitAt(i);
+    uword right_digit = that.digitAt(i);
     if (left_digit > right_digit) {
       return 1;
     }
@@ -188,12 +188,12 @@ word RawInt::compare(RawInt that) const {
 
 word RawInt::copyTo(byte* dst, word max_length) const {
   if (isLargeInt()) {
-    return RawLargeInt::cast(*this)->copyTo(dst, max_length);
+    return RawLargeInt::cast(*this).copyTo(dst, max_length);
   }
 
   DCHECK(isSmallInt() || isBool(), "not an integer");
-  uword val = isSmallInt() ? RawSmallInt::cast(*this)->value()
-                           : RawBool::cast(*this)->value();
+  uword val = isSmallInt() ? RawSmallInt::cast(*this).value()
+                           : RawBool::cast(*this).value();
   word memcpy_length = std::min(word{kWordSize}, max_length);
   std::memcpy(dst, &val, memcpy_length);
   return memcpy_length;
@@ -276,19 +276,19 @@ bool RawTuple::contains(RawObject object) const {
 void RawTuple::copyTo(RawObject array) const {
   RawTuple dst = RawTuple::cast(array);
   word len = length();
-  DCHECK_BOUND(len, dst->length());
+  DCHECK_BOUND(len, dst.length());
   for (word i = 0; i < len; i++) {
     RawObject elem = at(i);
-    dst->atPut(i, elem);
+    dst.atPut(i, elem);
   }
 }
 
 void RawTuple::replaceFromWith(word start, RawObject array) const {
   RawTuple src = RawTuple::cast(array);
-  word count = Utils::minimum(this->length() - start, src->length());
+  word count = Utils::minimum(this->length() - start, src.length());
   word stop = start + count;
   for (word i = start, j = 0; i < stop; i++, j++) {
-    atPut(i, src->at(j));
+    atPut(i, src.at(j));
   }
 }
 
@@ -312,10 +312,9 @@ bool RawRangeIterator::isOutOfRange(word cur, word stop, word step) {
 
 word RawRangeIterator::pendingLength() const {
   RawRange range = RawRange::cast(instanceVariableAt(kRangeOffset));
-  word stop = range->stop();
-  word step = range->step();
-  word current =
-      RawSmallInt::cast(instanceVariableAt(kCurValueOffset))->value();
+  word stop = range.stop();
+  word step = range.step();
+  word current = RawSmallInt::cast(instanceVariableAt(kCurValueOffset)).value();
   if (isOutOfRange(current, stop, step)) {
     return 0;
   }
@@ -324,11 +323,11 @@ word RawRangeIterator::pendingLength() const {
 
 RawObject RawRangeIterator::next() const {
   RawSmallInt ret = RawSmallInt::cast(instanceVariableAt(kCurValueOffset));
-  word cur = ret->value();
+  word cur = ret.value();
 
   RawRange range = RawRange::cast(instanceVariableAt(kRangeOffset));
-  word stop = range->stop();
-  word step = range->step();
+  word stop = range.stop();
+  word step = range.step();
 
   // TODO(jeethu): range overflow is unchecked. Since a correct implementation
   // has to support arbitrary precision anyway, there's no point in checking
@@ -345,13 +344,13 @@ RawObject RawRangeIterator::next() const {
 // RawSlice
 
 void RawSlice::unpack(word* start, word* stop, word* step) const {
-  if (this->step()->isNoneType()) {
+  if (this->step().isNoneType()) {
     *step = 1;
   } else {
     // TODO(T27897506): CPython uses _PyEval_SliceIndex to convert any
     //       integer to eval any object into a valid index. For now, it'll
     //       assume that all indices are SmallInts.
-    *step = RawSmallInt::cast(this->step())->value();
+    *step = RawSmallInt::cast(this->step()).value();
     if (*step == 0) {
       UNIMPLEMENTED("Throw ValueError. slice step cannot be zero");
     }
@@ -364,16 +363,16 @@ void RawSlice::unpack(word* start, word* stop, word* step) const {
     }
   }
 
-  if (this->start()->isNoneType()) {
+  if (this->start().isNoneType()) {
     *start = (*step < 0) ? RawSmallInt::kMaxValue : 0;
   } else {
-    *start = RawSmallInt::cast(this->start())->value();
+    *start = RawSmallInt::cast(this->start()).value();
   }
 
-  if (this->stop()->isNoneType()) {
+  if (this->stop().isNoneType()) {
     *stop = (*step < 0) ? RawSmallInt::kMinValue : RawSmallInt::kMaxValue;
   } else {
-    *stop = RawSmallInt::cast(this->stop())->value();
+    *stop = RawSmallInt::cast(this->stop()).value();
   }
 }
 
@@ -414,14 +413,14 @@ word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
 
 word RawStr::compare(RawObject string) const {
   RawStr that = RawStr::cast(string);
-  word length = Utils::minimum(this->length(), that->length());
+  word length = Utils::minimum(this->length(), that.length());
   for (word i = 0; i < length; i++) {
-    word diff = this->charAt(i) - that->charAt(i);
+    word diff = this->charAt(i) - that.charAt(i);
     if (diff != 0) {
       return (diff > 0) ? 1 : -1;
     }
   }
-  word diff = this->length() - that->length();
+  word diff = this->length() - that.length();
   return (diff > 0) ? 1 : ((diff < 0) ? -1 : 0);
 }
 
@@ -499,25 +498,25 @@ word RawStr::codePointIndex(word index) const {
 
 void RawWeakRef::enqueueReference(RawObject reference, RawObject* tail) {
   if (*tail == RawNoneType::object()) {
-    RawWeakRef::cast(reference)->setLink(reference);
+    RawWeakRef::cast(reference).setLink(reference);
   } else {
-    RawObject head = RawWeakRef::cast(*tail)->link();
-    RawWeakRef::cast(*tail)->setLink(reference);
-    RawWeakRef::cast(reference)->setLink(head);
+    RawObject head = RawWeakRef::cast(*tail).link();
+    RawWeakRef::cast(*tail).setLink(reference);
+    RawWeakRef::cast(reference).setLink(head);
   }
   *tail = reference;
 }
 
 RawObject RawWeakRef::dequeueReference(RawObject* tail) {
   DCHECK(*tail != RawNoneType::object(), "empty queue");
-  RawObject head = RawWeakRef::cast(*tail)->link();
+  RawObject head = RawWeakRef::cast(*tail).link();
   if (head == *tail) {
     *tail = RawNoneType::object();
   } else {
-    RawObject next = RawWeakRef::cast(head)->link();
-    RawWeakRef::cast(*tail)->setLink(next);
+    RawObject next = RawWeakRef::cast(head).link();
+    RawWeakRef::cast(*tail).setLink(next);
   }
-  RawWeakRef::cast(head)->setLink(RawNoneType::object());
+  RawWeakRef::cast(head).setLink(RawNoneType::object());
   return head;
 }
 
@@ -533,10 +532,10 @@ RawObject RawWeakRef::spliceQueue(RawObject tail1, RawObject tail2) {
     return tail1;
   }
   // merge two list, tail1 -> head2 -> ... -> tail2 -> head1
-  RawObject head1 = RawWeakRef::cast(tail1)->link();
-  RawObject head2 = RawWeakRef::cast(tail2)->link();
-  RawWeakRef::cast(tail1)->setLink(head2);
-  RawWeakRef::cast(tail2)->setLink(head1);
+  RawObject head1 = RawWeakRef::cast(tail1).link();
+  RawObject head2 = RawWeakRef::cast(tail2).link();
+  RawWeakRef::cast(tail1).setLink(head2);
+  RawWeakRef::cast(tail2).setLink(head1);
   return tail2;
 }
 

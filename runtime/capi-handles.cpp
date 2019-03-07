@@ -20,7 +20,7 @@ ApiHandle* ApiHandle::alloc(Thread* thread, RawObject reference) {
 }
 
 static bool identityEqual(RawObject a, RawObject b) {
-  return a->raw() == b->raw();
+  return a.raw() == b.raw();
 }
 
 // Look up the value associated with key. Checks for identity equality, not
@@ -118,7 +118,7 @@ ApiHandle* ApiHandle::ensure(Thread* thread, RawObject obj) {
 
   // Get the PyObject pointer from extension instances
   RawObject extension_ptr = getExtensionPtrAttr(thread, key);
-  if (!extension_ptr->isError()) {
+  if (!extension_ptr.isError()) {
     return castFromObject(extension_ptr);
   }
 
@@ -165,7 +165,7 @@ void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
 }
 
 ApiHandle* ApiHandle::castFromObject(RawObject value) {
-  return static_cast<ApiHandle*>(RawInt::cast(value)->asCPtr());
+  return static_cast<ApiHandle*>(RawInt::cast(value).asCPtr());
 }
 
 RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
@@ -183,7 +183,7 @@ RawObject ApiHandle::asInstance(RawObject obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  DCHECK(obj->isType(), "not a RawType object");
+  DCHECK(obj.isType(), "not a RawType object");
   Type type(&scope, obj);
   Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime->newInstance(layout));
@@ -225,7 +225,7 @@ void* ApiHandle::cache() {
   Dict caches(&scope, runtime->apiCaches());
   Object cache(&scope, dictAtIdentityEquals(thread, caches, key, key_hash));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
-  if (!cache.isError()) return RawInt::cast(*cache)->asCPtr();
+  if (!cache.isError()) return RawInt::cast(*cache).asCPtr();
   return nullptr;
 }
 
@@ -254,7 +254,7 @@ void ApiHandle::dispose() {
   dict = runtime->apiCaches();
   Object cache(&scope, dictRemoveIdentityEquals(thread, dict, key, key_hash));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
-  if (!cache.isError()) std::free(RawInt::cast(*cache)->asCPtr());
+  if (!cache.isError()) std::free(RawInt::cast(*cache).asCPtr());
 
   std::free(this);
 }

@@ -18,8 +18,8 @@ class TracebackPrinter : public FrameVisitor {
   void visit(Frame* frame) {
     std::stringstream line;
 
-    if (frame->code()->isInt()) {
-      void* ptr = RawInt::cast(frame->code())->asCPtr();
+    if (frame->code().isInt()) {
+      void* ptr = RawInt::cast(frame->code()).asCPtr();
       line << "  <native function at " << ptr << " (";
 
       Dl_info info = Dl_info();
@@ -32,7 +32,7 @@ class TracebackPrinter : public FrameVisitor {
       lines_.emplace_back(line.str());
       return;
     }
-    if (!frame->code()->isCode()) {
+    if (!frame->code().isCode()) {
       lines_.emplace_back("  <unknown>");
       return;
     }
@@ -42,8 +42,8 @@ class TracebackPrinter : public FrameVisitor {
     Code code(&scope, frame->code());
 
     // Extract filename
-    if (code.filename()->isStr()) {
-      char* filename = RawStr::cast(code.filename())->toCStr();
+    if (code.filename().isStr()) {
+      char* filename = RawStr::cast(code.filename()).toCStr();
       line << "  File '" << filename << "', ";
       std::free(filename);
     } else {
@@ -51,7 +51,7 @@ class TracebackPrinter : public FrameVisitor {
     }
 
     // Extract line number
-    if (code.lnotab()->isBytes()) {
+    if (code.lnotab().isBytes()) {
       Runtime* runtime = thread->runtime();
       word linenum =
           runtime->codeOffsetToLineNum(thread, code, frame->virtualPC());
@@ -59,8 +59,8 @@ class TracebackPrinter : public FrameVisitor {
     }
 
     // Extract function
-    if (code.name()->isStr()) {
-      char* name = RawStr::cast(code.name())->toCStr();
+    if (code.name().isStr()) {
+      char* name = RawStr::cast(code.name()).toCStr();
       line << "in " << name;
       std::free(name);
     } else {

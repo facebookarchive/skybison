@@ -266,7 +266,7 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   }
   Dict dict(&scope, *self);
   // Remove the key. If it doesn't exist, throw a KeyError.
-  if (runtime->dictRemove(dict, key)->isError()) {
+  if (runtime->dictRemove(dict, key).isError()) {
     return thread->raiseKeyError(*key);
   }
   return NoneType::object();
@@ -445,7 +445,7 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
 
 RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0)->isType()) {
+  if (!args.get(0).isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
   }
   HandleScope scope(thread);
@@ -565,7 +565,7 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
         "argument");
   }
 
-  Dict dict(&scope, DictItems::cast(*self)->dict());
+  Dict dict(&scope, DictItems::cast(*self).dict());
   return thread->runtime()->newDictItemIterator(dict);
 }
 
@@ -651,7 +651,7 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
         "argument");
   }
 
-  Dict dict(&scope, DictKeys::cast(*self)->dict());
+  Dict dict(&scope, DictKeys::cast(*self).dict());
   return thread->runtime()->newDictKeyIterator(dict);
 }
 
@@ -738,7 +738,7 @@ RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
         "argument");
   }
 
-  Dict dict(&scope, DictValues::cast(*self)->dict());
+  Dict dict(&scope, DictValues::cast(*self).dict());
   return thread->runtime()->newDictValueIterator(dict);
 }
 

@@ -35,7 +35,7 @@ unsigned char _PyLong_DigitValue[256] = {
 namespace python {
 
 PY_EXPORT int PyLong_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isInt();
+  return ApiHandle::fromPyObject(obj)->asObject().isInt();
 }
 
 PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
@@ -105,7 +105,7 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
     return -1;
   }
 
-  auto const result = RawInt::cast(*longobj)->asInt<T>();
+  auto const result = RawInt::cast(*longobj).asInt<T>();
   if (result.error == CastError::None) {
     if (overflow) *overflow = 0;
     return result.value;

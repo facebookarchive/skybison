@@ -92,7 +92,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   Object val(&scope, runtime.newInt(0));
   runtime.dictAtPut(dict, key, val);
   RawObject result = runBuiltin(DictBuiltins::dunderDelItem, dict, key);
-  EXPECT_TRUE(result->isNoneType());
+  EXPECT_TRUE(result.isNoneType());
 }
 
 TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
@@ -107,7 +107,7 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
   // cause a KeyError.
   Object key2(&scope, runtime.newStrFromCStr("bar"));
   RawObject result = runBuiltin(DictBuiltins::dunderDelItem, dict, key2);
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
 }
 
 TEST(DictBuiltinsTest, DelOnExistingKeyDeletesKey) {
@@ -404,13 +404,13 @@ TEST(DictItemIteratorBuiltinsTest, CallDunderNextReadsItemsSequentially) {
 
   Object item1(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1.isTuple());
-  EXPECT_EQ(Tuple::cast(*item1)->at(0), hello);
-  EXPECT_EQ(Tuple::cast(*item1)->at(1), world);
+  EXPECT_EQ(Tuple::cast(*item1).at(0), hello);
+  EXPECT_EQ(Tuple::cast(*item1).at(1), world);
 
   Object item2(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item2.isTuple());
-  EXPECT_EQ(Tuple::cast(*item2)->at(0), goodbye);
-  EXPECT_EQ(Tuple::cast(*item2)->at(1), moon);
+  EXPECT_EQ(Tuple::cast(*item2).at(0), goodbye);
+  EXPECT_EQ(Tuple::cast(*item2).at(1), moon);
 
   Object item3(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item3.isError());
@@ -528,8 +528,8 @@ TEST(DictBuiltinsTest, ItemIteratorNextOnOneElementDictReturnsElement) {
   DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
   Object next(&scope, dictItemIteratorNext(Thread::currentThread(), iter));
   ASSERT_TRUE(next.isTuple());
-  EXPECT_EQ(Tuple::cast(*next)->at(0), key);
-  EXPECT_EQ(Tuple::cast(*next)->at(1), value);
+  EXPECT_EQ(Tuple::cast(*next).at(0), key);
+  EXPECT_EQ(Tuple::cast(*next).at(1), value);
 
   next = dictItemIteratorNext(Thread::currentThread(), iter);
   ASSERT_TRUE(next.isError());

@@ -45,7 +45,7 @@ TEST(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
   Thread* thread = Thread::currentThread();
   EXPECT_EQ(thread->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
-  EXPECT_TRUE(thread->pendingExceptionValue()->isStr());
+  EXPECT_TRUE(thread->pendingExceptionValue().isStr());
 }
 
 TEST(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {

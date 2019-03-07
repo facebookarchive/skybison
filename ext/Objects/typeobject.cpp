@@ -14,7 +14,7 @@
 namespace python {
 
 PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isType();
+  return ApiHandle::fromPyObject(obj)->asObject().isType();
 }
 
 PY_EXPORT int PyType_Check_Func(PyObject* obj) {
@@ -24,14 +24,14 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
 
 static RawObject extensionSlot(const Type& type, Type::ExtensionSlot slot_id) {
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
-  return RawTuple::cast(type.extensionSlots())->at(static_cast<word>(slot_id));
+  return RawTuple::cast(type.extensionSlots()).at(static_cast<word>(slot_id));
 }
 
 static void setExtensionSlot(const Type& type, Type::ExtensionSlot slot_id,
                              RawObject slot) {
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
   return RawTuple::cast(type.extensionSlots())
-      ->atPut(static_cast<word>(slot_id), slot);
+      .atPut(static_cast<word>(slot_id), slot);
 }
 
 PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
@@ -46,7 +46,7 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
     UNIMPLEMENTED("GetFlags from built-in types");
   }
 
-  if (type.extensionSlots()->isNoneType()) {
+  if (type.extensionSlots().isNoneType()) {
     UNIMPLEMENTED("GetFlags from types initialized through Python code");
   }
 
@@ -244,7 +244,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
     return nullptr;
   }
 
-  if (type.extensionSlots()->isNoneType()) {
+  if (type.extensionSlots().isNoneType()) {
     UNIMPLEMENTED("Get slots from types initialized through Python code");
   }
 

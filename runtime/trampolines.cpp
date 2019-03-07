@@ -49,21 +49,21 @@ static void processFreevarsAndCellvars(Thread* thread, const Function& function,
     ValueCell value_cell(&scope, runtime->newValueCell());
 
     // Allocate a cell for a local variable if cell2arg is not preset
-    if (code.cell2arg()->isNoneType()) {
+    if (code.cell2arg().isNoneType()) {
       callee_frame->setLocal(num_locals + i, *value_cell);
       continue;
     }
 
     // Allocate a cell for a local variable if cell2arg is present but
     // the cell does not match any argument
-    Object arg_index(&scope, Tuple::cast(code.cell2arg())->at(i));
+    Object arg_index(&scope, Tuple::cast(code.cell2arg()).at(i));
     if (arg_index.isNoneType()) {
       callee_frame->setLocal(num_locals + i, *value_cell);
       continue;
     }
 
     // Allocate a cell for an argument
-    word local_idx = Int::cast(*arg_index)->asWord();
+    word local_idx = Int::cast(*arg_index).asWord();
     value_cell.setValue(callee_frame->local(local_idx));
     callee_frame->setLocal(local_idx, NoneType::object());
     callee_frame->setLocal(num_locals + i, *value_cell);
@@ -71,11 +71,11 @@ static void processFreevarsAndCellvars(Thread* thread, const Function& function,
 
   // initialize free variables
   DCHECK(code.numFreevars() == 0 ||
-             code.numFreevars() == RawTuple::cast(function.closure())->length(),
+             code.numFreevars() == RawTuple::cast(function.closure()).length(),
          "Number of freevars is different than the closure.");
   for (word i = 0; i < code.numFreevars(); i++) {
     callee_frame->setLocal(num_locals + num_cellvars + i,
-                           RawTuple::cast(function.closure())->at(i));
+                           RawTuple::cast(function.closure()).at(i));
   }
 }
 
@@ -128,7 +128,7 @@ static RawObject processDefaultArguments(Thread* thread,
   // If there are any keyword-only args, there must be defaults for them
   // because we arrived here via CALL_FUNCTION (and thus, no keywords were
   // supplied at the call site).
-  if (code.kwonlyargcount() != 0 && !function.kwDefaults()->isNoneType()) {
+  if (code.kwonlyargcount() != 0 && !function.kwDefaults().isNoneType()) {
     Dict kw_defaults(&scope, function.kwDefaults());
     if (!kw_defaults.isNoneType()) {
       Tuple formal_names(&scope, code.varnames());
@@ -136,7 +136,7 @@ static RawObject processDefaultArguments(Thread* thread,
       for (word i = 0; i < code.kwonlyargcount(); i++) {
         Object name(&scope, formal_names.at(first_kw + i));
         RawObject val = thread->runtime()->dictAt(kw_defaults, name);
-        if (!val->isError()) {
+        if (!val.isError()) {
           caller->pushValue(val);
           new_argc++;
         } else {
@@ -178,9 +178,9 @@ static RawObject processDefaultArguments(Thread* thread,
 }
 
 static word findName(RawObject name, RawTuple name_list) {
-  word len = name_list->length();
+  word len = name_list.length();
   for (word i = 0; i < len; i++) {
-    if (name == name_list->at(i)) {
+    if (name == name_list.at(i)) {
       return i;
     }
   }
@@ -233,16 +233,16 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
     }
     // Can't find an Actual for this Formal.
     // If we have a real actual in current slot, move it somewhere safe.
-    if (!arg_at(arg_pos)->isError()) {
+    if (!arg_at(arg_pos).isError()) {
       for (word i = arg_pos + 1; i < num_actuals; i++) {
-        if (arg_at(i)->isError()) {
+        if (arg_at(i).isError()) {
           // Found an uninitialized slot.  Use it to save current actual.
           swap(arg_pos, i);
           break;
         }
       }
       // If we were unable to find a slot to swap into, TypeError
-      if (!arg_at(arg_pos)->isError()) {
+      if (!arg_at(arg_pos).isError()) {
         // TODO(T40470525): Print out qualname and formal name in error message
         return Thread::currentThread()->raiseTypeErrorWithCStr(
             "TypeError: invalid keyword argument supplied");
@@ -254,7 +254,7 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
     word absolute_pos = arg_pos + start;
     if (absolute_pos < code.argcount()) {
       word defaults_size = function.hasDefaults()
-                               ? RawTuple::cast(function.defaults())->length()
+                               ? RawTuple::cast(function.defaults()).length()
                                : 0;
       word defaults_start = code.argcount() - defaults_size;
       if (absolute_pos >= (defaults_start)) {
@@ -264,13 +264,13 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
             default_args.at(absolute_pos - defaults_start);
         continue;  // Got it, move on to the next
       }
-    } else if (!function.kwDefaults()->isNoneType()) {
+    } else if (!function.kwDefaults().isNoneType()) {
       // How about a kwonly default?
       Dict kw_defaults(&scope, function.kwDefaults());
       Thread* thread = Thread::currentThread();
       Object name(&scope, formal_names.at(arg_pos + start));
       RawObject val = thread->runtime()->dictAt(kw_defaults, name);
-      if (!val->isError()) {
+      if (!val.isError()) {
         *(kw_arg_base - arg_pos) = val;
         continue;  // Got it, move on to the next
       }
@@ -394,10 +394,10 @@ static RawObject processKeywordArguments(Thread* thread, Frame* caller,
   // Now we've got the right number.  Do they match up?
   RawObject res = checkArgs(function, kw_arg_base, keywords, formal_parm_names,
                             num_positional_args);
-  if (res->isError()) {
+  if (res.isError()) {
     return res;  // TypeError created by checkArgs.
   }
-  CHECK(res->isNoneType(), "checkArgs should return an Error or None");
+  CHECK(res.isNoneType(), "checkArgs should return an Error or None");
   // If we're a vararg form, need to push the tuple/dict.
   if (code.hasVarargs()) {
     caller->pushValue(*tmp_varargs);
@@ -451,7 +451,7 @@ RawObject preparePositionalCall(Thread* thread, const Function& function,
   if (argc != code.argcount() || !(code.flags() & Code::SIMPLE_CALL)) {
     RawObject result =
         processDefaultArguments(thread, function, code, caller, argc);
-    if (result->isError()) {
+    if (result.isError()) {
       return result;
     }
   }
@@ -469,7 +469,7 @@ static RawObject prepareExplodeCall(Thread* thread, const Function& function,
 
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     RawObject result = processKeywordArguments(thread, caller, new_argc);
-    if (result->isError()) {
+    if (result.isError()) {
       return result;
     }
   } else {
@@ -477,7 +477,7 @@ static RawObject prepareExplodeCall(Thread* thread, const Function& function,
     if (new_argc != code.argcount() || !(code.flags() & Code::SIMPLE_CALL)) {
       RawObject result =
           processDefaultArguments(thread, function, code, caller, new_argc);
-      if (result->isError()) {
+      if (result.isError()) {
         return result;
       }
     }
@@ -503,7 +503,7 @@ RawObject generatorTrampoline(Thread* thread, Frame* caller, word arg) {
   Function function(&scope, caller->peek(arg));
   Code code(&scope, function.code());
   RawObject error = preparePositionalCall(thread, function, code, caller, arg);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   pushCallee(thread, function, caller, code);
@@ -516,7 +516,7 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* caller, word argc) {
   // one to skip over the keyword dictionary to read the function object.
   Function function(&scope, caller->peek(argc + 1));
   RawObject error = processKeywordArguments(thread, caller, argc);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Code code(&scope, function.code());
@@ -532,7 +532,7 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
   Code code(&scope, function.code());
   RawObject error = prepareExplodeCall(thread, function, code, caller, arg);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   pushCallee(thread, function, caller, code);
@@ -544,7 +544,7 @@ RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word arg) {
   Function function(&scope, caller->peek(arg));
   Code code(&scope, function.code());
   RawObject error = preparePositionalCall(thread, function, code, caller, arg);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function, caller, code);
@@ -559,7 +559,7 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, caller->peek(argc + 1));
   RawObject error = processKeywordArguments(thread, caller, argc);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Code code(&scope, function.code());
@@ -577,7 +577,7 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
   Code code(&scope, function.code());
   RawObject error = prepareExplodeCall(thread, function, code, caller, arg);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function, caller, code);
@@ -590,7 +590,7 @@ RawObject interpreterTrampoline(Thread* thread, Frame* caller, word argc) {
   Function function(&scope, caller->peek(argc));
   Code code(&scope, function.code());
   RawObject error = preparePositionalCall(thread, function, code, caller, argc);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function, caller, code);
@@ -603,7 +603,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller, word argc) {
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, caller->peek(argc + 1));
   RawObject error = processKeywordArguments(thread, caller, argc);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Code code(&scope, function.code());
@@ -619,7 +619,7 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word arg) {
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
   Code code(&scope, function.code());
   RawObject error = prepareExplodeCall(thread, function, code, caller, arg);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function, caller, code);
@@ -632,7 +632,7 @@ RawObject interpreterClosureTrampoline(Thread* thread, Frame* caller,
   Function function(&scope, caller->peek(argc));
   Code code(&scope, function.code());
   RawObject error = preparePositionalCall(thread, function, code, caller, argc);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function, caller, code);
@@ -647,7 +647,7 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, caller->peek(argc + 1));
   RawObject error = processKeywordArguments(thread, caller, argc);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Code code(&scope, function.code());
@@ -665,7 +665,7 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
   Code code(&scope, function.code());
   RawObject error = prepareExplodeCall(thread, function, code, caller, arg);
-  if (error->isError()) {
+  if (error.isError()) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function, caller, code);
@@ -677,7 +677,7 @@ static RawObject callMethNoArgs(Thread* thread, const Function& function) {
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  DCHECK(function.module()->isModule(), "Function must have a module");
+  DCHECK(function.module().isModule(), "Function must have a module");
   PyObject* module = ApiHandle::borrowedReference(thread, function.module());
   PyObject* result = (*method)(module, nullptr);
   if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
@@ -709,13 +709,13 @@ RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc) {
   bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
   Object varargs(&scope, caller->peek(has_varkeywords));
   if (!varargs.isTuple()) UNIMPLEMENTED("sequence varargs");
-  if (Tuple::cast(*varargs)->length() != 0) {
+  if (Tuple::cast(*varargs).length() != 0) {
     return thread->raiseTypeErrorWithCStr("function takes no arguments");
   }
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(*kw_args)->numItems() != 0) {
+    if (Dict::cast(*kw_args).numItems() != 0) {
       return thread->raiseTypeErrorWithCStr(
           "function takes no keyword arguments");
     }
@@ -729,7 +729,7 @@ static RawObject callMethOneArg(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  DCHECK(function.module()->isModule(), "Function must have a module");
+  DCHECK(function.module().isModule(), "Function must have a module");
   PyObject* module = ApiHandle::borrowedReference(thread, function.module());
   PyObject* arg = ApiHandle::borrowedReference(thread, *object);
   PyObject* result = (*method)(module, arg);
@@ -771,7 +771,7 @@ RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* caller, word argc) {
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(*kw_args)->numItems() != 0) {
+    if (Dict::cast(*kw_args).numItems() != 0) {
       return thread->raiseTypeErrorWithCStr(
           "function takes no keyword arguments");
     }
@@ -793,7 +793,7 @@ static RawObject callMethVarArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   binaryfunc method = bit_cast<binaryfunc>(address.asCPtr());
-  DCHECK(function.module()->isModule(), "Function must have a module");
+  DCHECK(function.module().isModule(), "Function must have a module");
   PyObject* module = ApiHandle::borrowedReference(thread, function.module());
   PyObject* args = ApiHandle::borrowedReference(thread, *varargs);
   PyObject* result = (*method)(module, args);
@@ -833,7 +833,7 @@ RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller, word argc) {
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
-    if (Dict::cast(*kw_args)->numItems() != 0) {
+    if (Dict::cast(*kw_args).numItems() != 0) {
       return thread->raiseTypeErrorWithCStr(
           "function takes no keyword arguments");
     }
@@ -851,7 +851,7 @@ static RawObject callMethKeywordArgs(Thread* thread, const Function& function,
   HandleScope scope(thread);
   Int address(&scope, function.code());
   ternaryfunc method = bit_cast<ternaryfunc>(address.asCPtr());
-  DCHECK(function.module()->isModule(), "Function must have a module");
+  DCHECK(function.module().isModule(), "Function must have a module");
   PyObject* module = ApiHandle::borrowedReference(thread, function.module());
   PyObject* args = ApiHandle::borrowedReference(thread, *varargs);
   PyObject* kwargs = ApiHandle::borrowedReference(thread, *keywords);
@@ -952,7 +952,7 @@ RawObject extensionTrampolineEx(Thread* thread, Frame* caller, word argc) {
   bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
   Object varargs(&scope, caller->peek(has_varkeywords ? 1 : 0));
   DCHECK(varargs.isTuple(), "varargs should be tuple");
-  if (Tuple::cast(*varargs)->length() < 1) {
+  if (Tuple::cast(*varargs).length() < 1) {
     return thread->raiseTypeErrorWithCStr("function needs *args");
   }
 

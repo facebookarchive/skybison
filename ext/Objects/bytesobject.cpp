@@ -10,7 +10,7 @@
 namespace python {
 
 PY_EXPORT int PyBytes_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isBytes();
+  return ApiHandle::fromPyObject(obj)->asObject().isBytes();
 }
 
 PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {

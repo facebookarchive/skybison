@@ -637,11 +637,11 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isTuple());
+  ASSERT_TRUE(result.isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 2);
   EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 1234));
-  EXPECT_TRUE(RawStr::cast(tuple.at(1))->equalsCStr("bar"));
+  EXPECT_TRUE(RawStr::cast(tuple.at(1)).equalsCStr("bar"));
 }
 
 // test "builtin-kw" func that returns a list of first position arg
@@ -695,7 +695,7 @@ TEST(TrampolinesTest,
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isTuple());
+  ASSERT_TRUE(result.isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 3);
   EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 1234));
@@ -758,7 +758,7 @@ TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   Code code(&scope,
             runtime.newCode(1, 0, nlocals, 0, 0, bc, none, none, varnames,
                             empty_tuple, cellvars, none, none, 0, none));
-  ASSERT_TRUE(!code.cell2arg()->isNoneType());
+  ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   // Create a function
   runFromCStr(&runtime, R"(
@@ -801,7 +801,7 @@ TEST(TrampolinesTest, InterpreterClosureUsesCellValue) {
   Code code(&scope,
             runtime.newCode(1, 0, nlocals, 0, 0, bc, consts, none, varnames,
                             empty_tuple, cellvars, none, none, 0, none));
-  ASSERT_TRUE(!code.cell2arg()->isNoneType());
+  ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   // Create a function
   runFromCStr(&runtime, R"(
@@ -896,7 +896,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
@@ -925,7 +925,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
@@ -1427,7 +1427,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
 
   // Execute the code and make sure we get back the result we expect
   RawObject result = Thread::currentThread()->run(code);
-  ASSERT_TRUE(result->isError());
+  ASSERT_TRUE(result.isError());
   Thread* thread = Thread::currentThread();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());

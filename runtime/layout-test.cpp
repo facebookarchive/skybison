@@ -36,7 +36,7 @@ TEST(LayoutTest, FindAttribute) {
               AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
   Tuple array(&scope, runtime.newTuple(1));
   array.atPut(0, *entry);
-  RawLayout::cast(*layout)->setInObjectAttributes(*array);
+  RawLayout::cast(*layout).setInObjectAttributes(*array);
 
   // Should find the attribute
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
@@ -134,24 +134,24 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
 
   // Deleting the attribute should succeed and return a new layout
   RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr);
-  ASSERT_TRUE(result->isLayout());
+  ASSERT_TRUE(result.isLayout());
   Layout layout2(&scope, result);
   EXPECT_NE(layout.id(), layout2.id());
 
   // The new layout should have the entry for the attribute marked as deleted
-  ASSERT_TRUE(layout2.inObjectAttributes()->isTuple());
+  ASSERT_TRUE(layout2.inObjectAttributes().isTuple());
   Tuple inobject(&scope, layout2.inObjectAttributes());
   ASSERT_EQ(inobject.length(), 1);
-  ASSERT_TRUE(inobject.at(0)->isTuple());
+  ASSERT_TRUE(inobject.at(0).isTuple());
   entry = inobject.at(0);
   EXPECT_EQ(entry.at(0), NoneType::object());
-  ASSERT_TRUE(entry.at(1)->isSmallInt());
+  ASSERT_TRUE(entry.at(1).isSmallInt());
   EXPECT_EQ(AttributeInfo(entry.at(1)).flags(), 2);
 
   // Performing the same deletion should follow the edge created by the
   // previous deletion and arrive at the same layout
   result = runtime.layoutDeleteAttribute(thread, layout, attr);
-  ASSERT_TRUE(result->isLayout());
+  ASSERT_TRUE(result.isLayout());
   Layout layout3(&scope, result);
   EXPECT_EQ(*layout3, *layout2);
 }
@@ -179,7 +179,7 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   // Delete the middle attribute. Make sure a new layout is created and the
   // entry after the deleted attribute has its offset updated correctly.
   RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr2);
-  ASSERT_TRUE(result->isLayout());
+  ASSERT_TRUE(result.isLayout());
   Layout layout2(&scope, result);
   EXPECT_NE(layout2.id(), layout.id());
   // The first attribute should have the same offset
@@ -195,7 +195,7 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   // Delete the first attribute. A new layout should be created and the last
   // entry is shifted into the first position.
   result = runtime.layoutDeleteAttribute(thread, layout2, attr);
-  ASSERT_TRUE(result->isLayout());
+  ASSERT_TRUE(result.isLayout());
   Layout layout3(&scope, result);
   EXPECT_NE(layout3.id(), layout.id());
   EXPECT_NE(layout3.id(), layout2.id());
@@ -211,7 +211,7 @@ TEST(LayoutTest, DeleteOverflowAttribute) {
   // Delete the remaining attribute. A new layout should be created and the
   // overflow array should be empty.
   result = runtime.layoutDeleteAttribute(thread, layout3, attr3);
-  ASSERT_TRUE(result->isLayout());
+  ASSERT_TRUE(result.isLayout());
   Layout layout4(&scope, result);
   EXPECT_NE(layout4.id(), layout.id());
   EXPECT_NE(layout4.id(), layout2.id());
@@ -250,10 +250,10 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   // Delete the in-object attribute and add it back. It should be re-added as
   // an overflow attribute.
   RawObject result = runtime.layoutDeleteAttribute(thread, layout, inobject);
-  ASSERT_TRUE(result->isLayout());
+  ASSERT_TRUE(result.isLayout());
   Layout layout2(&scope, result);
   result = runtime.layoutAddAttribute(thread, layout2, inobject, 0);
-  ASSERT_TRUE(result->isLayout());
+  ASSERT_TRUE(result.isLayout());
   Layout layout3(&scope, result);
   AttributeInfo info;
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout3, inobject, &info));
@@ -276,9 +276,9 @@ TEST(LayoutTest, VerifyChildLayout) {
   // Child should have an additional overflow attribute
   EXPECT_NE(child.overflowAttributes(), parent.overflowAttributes());
   EXPECT_NE(child.additions(), parent.additions());
-  EXPECT_EQ(RawList::cast(child.additions())->numItems(), 0);
+  EXPECT_EQ(RawList::cast(child.additions()).numItems(), 0);
   EXPECT_NE(child.deletions(), parent.deletions());
-  EXPECT_EQ(RawList::cast(child.deletions())->numItems(), 0);
+  EXPECT_EQ(RawList::cast(child.deletions()).numItems(), 0);
   EXPECT_EQ(child.describedType(), parent.describedType());
   EXPECT_EQ(child.instanceSize(), parent.instanceSize());
 }

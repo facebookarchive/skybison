@@ -28,8 +28,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
   Object class_cell(&scope, runtime->dictAt(dict, class_cell_key));
   if (!class_cell.isError()) {
-    RawValueCell::cast(RawValueCell::cast(*class_cell)->value())
-        ->setValue(*type);
+    RawValueCell::cast(RawValueCell::cast(*class_cell).value()).setValue(*type);
     runtime->dictRemove(dict, class_cell_key);
   }
   type.setDict(*dict);
@@ -41,7 +40,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   }
   Type builtin_base_type(&scope, *builtin_base);
   LayoutId base_layout_id =
-      RawLayout::cast(builtin_base_type.instanceLayout())->id();
+      RawLayout::cast(builtin_base_type.instanceLayout()).id();
 
   // Initialize instance layout
   Layout layout(&scope,
@@ -87,7 +86,7 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type metaclass(&scope, args.get(0));
-  LayoutId metaclass_id = RawLayout::cast(metaclass.instanceLayout())->id();
+  LayoutId metaclass_id = RawLayout::cast(metaclass.instanceLayout()).id();
   // If the first argument is exactly type, and there are no other arguments,
   // then this call acts like a "typeof" operator, and returns the type of the
   // argument.

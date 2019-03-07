@@ -133,18 +133,18 @@ def test(a, b):
   // We can move these tests into the python code above once we can
   // call classes.
   RawObject object = testing::findModule(&runtime, "__main__");
-  ASSERT_TRUE(object->isModule());
+  ASSERT_TRUE(object.isModule());
   Module main(&scope, object);
 
   // Create an instance of D
   Object type_d(&scope, moduleAt(&runtime, main, "D"));
   ASSERT_TRUE(type_d.isType());
-  Layout layout(&scope, RawType::cast(*type_d)->instanceLayout());
+  Layout layout(&scope, RawType::cast(*type_d).instanceLayout());
   Object instance(&scope, runtime.newInstance(layout));
 
   // Fetch the test function
   object = moduleAt(&runtime, main, "test");
-  ASSERT_TRUE(object->isFunction());
+  ASSERT_TRUE(object.isFunction());
   Function isinstance(&scope, object);
 
   // isinstance(1, D) should be false
@@ -673,13 +673,13 @@ d = getattr(list, '__module__')
   EXPECT_EQ(*a, Bool::trueObj());
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b.isStr());
-  EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
+  EXPECT_TRUE(Str::cast(*b).equalsCStr("builtins"));
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(*c, Bool::trueObj());
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
   ASSERT_TRUE(d.isStr());
-  EXPECT_TRUE(Str::cast(*b)->equalsCStr("builtins"));
+  EXPECT_TRUE(Str::cast(*b).equalsCStr("builtins"));
 }
 
 TEST(BuiltinsModuleTest, QualnameAttrReturnsTypeName) {
@@ -698,13 +698,13 @@ d = getattr(list, '__qualname__')
   EXPECT_EQ(*a, Bool::trueObj());
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   ASSERT_TRUE(b.isStr());
-  EXPECT_TRUE(Str::cast(*b)->equalsCStr("object"));
+  EXPECT_TRUE(Str::cast(*b).equalsCStr("object"));
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(*c, Bool::trueObj());
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
   ASSERT_TRUE(d.isStr());
-  EXPECT_TRUE(Str::cast(*d)->equalsCStr("list"));
+  EXPECT_TRUE(Str::cast(*d).equalsCStr("list"));
 }
 
 TEST(BuiltinsModuleTest, BuiltinCompile) {

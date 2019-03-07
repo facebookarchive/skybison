@@ -212,7 +212,7 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
 RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0)->isType()) {
+  if (!args.get(0).isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
   }
   HandleScope scope(thread);

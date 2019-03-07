@@ -1120,12 +1120,12 @@ TEST(IntBuiltinsTest, DunderFloatWithBoolReturnsFloat) {
   Object a(&scope, Bool::trueObj());
   Object a_float(&scope, runBuiltin(IntBuiltins::dunderFloat, a));
   ASSERT_TRUE(a_float.isFloat());
-  EXPECT_EQ(RawFloat::cast(*a_float)->value(), 1.0);
+  EXPECT_EQ(RawFloat::cast(*a_float).value(), 1.0);
 
   Object b(&scope, Bool::falseObj());
   Object b_float(&scope, runBuiltin(IntBuiltins::dunderFloat, b));
   ASSERT_TRUE(b_float.isFloat());
-  EXPECT_EQ(RawFloat::cast(*b_float)->value(), 0.0);
+  EXPECT_EQ(RawFloat::cast(*b_float).value(), 0.0);
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithSmallIntReturnsFloat) {
@@ -1135,7 +1135,7 @@ TEST(IntBuiltinsTest, DunderFloatWithSmallIntReturnsFloat) {
   Int num(&scope, RawSmallInt::fromWord(-7));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), -7.0);
+  EXPECT_EQ(RawFloat::cast(*result).value(), -7.0);
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
@@ -1145,7 +1145,7 @@ TEST(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, {static_cast<uword>(kMinWord)}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), static_cast<double>(kMinWord));
+  EXPECT_EQ(RawFloat::cast(*result).value(), static_cast<double>(kMinWord));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
@@ -1155,7 +1155,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, {0x85b3f6fb0496ac6f, 0x129ef6}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(),
+  EXPECT_EQ(RawFloat::cast(*result).value(),
             std::strtod("0x1.29ef685b3f6fbp+84", nullptr));
 }
 
@@ -1167,7 +1167,7 @@ TEST(IntBuiltinsTest, DunderFloatWithNegativeLargeIntReturnsFloat) {
           newIntWithDigits(&runtime, {0x937822557f9bad3f, 0xb31911a86c86a071}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(),
+  EXPECT_EQ(RawFloat::cast(*result).value(),
             std::strtod("-0x1.339bb95e4de58p+126", nullptr));
 }
 
@@ -1179,7 +1179,7 @@ TEST(IntBuiltinsTest,
   Int num(&scope, newIntWithDigits(&runtime, {1, 0, 0, 0xfffedcc000000000}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(),
+  EXPECT_EQ(RawFloat::cast(*result).value(),
             std::strtod("-0x1.234p240", nullptr));
 }
 
@@ -1193,7 +1193,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, {0, mantissa_high_bit}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p116", nullptr));
+  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("0x1.p116", nullptr));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
@@ -1206,7 +1206,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
           &runtime, {uword{1} << (kBitsPerWord - kDoubleMantissaBits - 1), 1}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p64", nullptr));
+  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("0x1.p64", nullptr));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
@@ -1219,7 +1219,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
                       &runtime, {kHighbitUword, mantissa_high_bit_plus_one}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(),
+  EXPECT_EQ(RawFloat::cast(*result).value(),
             std::strtod("0x1.0000000000002p116", nullptr));
 }
 
@@ -1233,8 +1233,7 @@ TEST(IntBuiltinsTest,
           newIntWithDigits(&runtime, {0, kHighbitUword, ~mantissa_high_bit}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(),
-            std::strtod("-0x1.p180", nullptr));
+  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("-0x1.p180", nullptr));
 }
 
 TEST(IntBuiltinsTest,
@@ -1248,7 +1247,7 @@ TEST(IntBuiltinsTest,
                                               ~mantissa_high_bit_plus_one}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(),
+  EXPECT_EQ(RawFloat::cast(*result).value(),
             std::strtod("-0x1.0000000000002p180", nullptr));
 }
 
@@ -1263,7 +1262,7 @@ TEST(IntBuiltinsTest,
           newIntWithDigits(&runtime, {kHighbitUword, mantissa_all_one}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(), std::strtod("0x1.p117", nullptr));
+  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("0x1.p117", nullptr));
 }
 
 static RawObject largestIntBeforeFloatOverflow(Runtime* runtime) {
@@ -1291,7 +1290,7 @@ TEST(IntBuiltinsTest,
   Int num(&scope, largestIntBeforeFloatOverflow(&runtime));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result)->value(),
+  EXPECT_EQ(RawFloat::cast(*result).value(),
             std::numeric_limits<double>::max());
 }
 

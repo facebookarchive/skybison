@@ -88,7 +88,7 @@ class __attribute__((warn_unused)) Handle : public T {
   Handle& operator=(S other) {
     static_assert(std::is_base_of<S, T>::value || std::is_base_of<T, S>::value,
                   "Only up- and down-casts are permitted.");
-    *static_cast<T*>(this) = other->template rawCast<T>();
+    *static_cast<T*>(this) = other.template rawCast<T>();
     DCHECK(isValidType(), "Invalid Handle assignment");
     return *this;
   }

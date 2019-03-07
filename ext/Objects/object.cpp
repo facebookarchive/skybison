@@ -134,7 +134,7 @@ PY_EXPORT int PyObject_HasAttr(PyObject* pyobj, PyObject* pyname) {
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object name(&scope, ApiHandle::fromPyObject(pyname)->asObject());
   Object result(&scope, hasAttribute(thread, obj, name));
-  if (result.isBool()) return Bool::cast(*result)->value();
+  if (result.isBool()) return Bool::cast(*result).value();
   thread->clearPendingException();
   return false;
 }
@@ -334,7 +334,7 @@ PY_EXPORT int Py_ReprEnter(PyObject* obj) {
   if (result.isError()) {
     return -1;
   }
-  return RawBool::cast(*result)->value();
+  return RawBool::cast(*result).value();
 }
 
 PY_EXPORT void Py_ReprLeave(PyObject* obj) {

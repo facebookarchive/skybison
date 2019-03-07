@@ -16,7 +16,7 @@ PY_EXPORT PyObject* PyFalse_Ptr() {
 }
 
 PY_EXPORT int PyBool_Check_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isBool();
+  return ApiHandle::fromPyObject(obj)->asObject().isBool();
 }
 
 PY_EXPORT PyObject* PyBool_FromLong(long v) {

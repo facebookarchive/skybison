@@ -35,7 +35,7 @@ PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
     }
     object = *result;
   }
-  auto const optint = RawInt::cast(*object)->asInt<int>();
+  auto const optint = RawInt::cast(*object).asInt<int>();
   if (optint.error == CastError::Overflow) {
     thread->raiseOverflowErrorWithCStr(
         "integer too big to convert to file descriptor");

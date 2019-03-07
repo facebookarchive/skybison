@@ -63,7 +63,7 @@ void IntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
 
 RawObject IntBuiltins::asInt(const Int& value) {
   if (value.isBool()) {
-    return RawSmallInt::fromWord(RawBool::cast(*value)->value() ? 1 : 0);
+    return RawSmallInt::fromWord(RawBool::cast(*value).value() ? 1 : 0);
   }
   return *value;
 }
@@ -116,7 +116,7 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     // TODO(T41277959): Int from bytearray
     UNIMPLEMENTED("int.__new__(bytearray)");
   }
-  return intFromString(thread, *arg, RawInt::cast(*base)->asWord());
+  return intFromString(thread, *arg, RawInt::cast(*base).asWord());
 }
 
 RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
@@ -248,7 +248,7 @@ RawObject IntBuiltins::dunderBool(Thread* t, Frame* frame, word nargs) {
   return intUnaryOp(t, frame, nargs, [](Thread*, const Int& self) -> RawObject {
     if (self.isBool()) return *self;
     if (self.isSmallInt()) {
-      return Bool::fromBool(SmallInt::cast(*self)->value() != 0);
+      return Bool::fromBool(SmallInt::cast(*self).value() != 0);
     }
     DCHECK(self.isLargeInt(), "remaining case should be LargeInt");
     return Bool::trueObj();
@@ -398,23 +398,23 @@ RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
-  if (!self->isSmallInt()) {
+  if (!self.isSmallInt()) {
     return thread->raiseTypeErrorWithCStr(
         "__truediv__() must be called with int instance as first argument");
   }
-  word left = RawSmallInt::cast(self)->value();
-  if (other->isFloat()) {
-    double right = RawFloat::cast(other)->value();
+  word left = RawSmallInt::cast(self).value();
+  if (other.isFloat()) {
+    double right = RawFloat::cast(other).value();
     if (right == 0.0) {
       return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
     }
     return runtime->newFloat(left / right);
   }
-  if (other->isBool()) {
+  if (other.isBool()) {
     other = IntBuiltins::intFromBool(other);
   }
-  if (other->isInt()) {
-    word right = RawInt::cast(other)->asWord();
+  if (other.isInt()) {
+    word right = RawInt::cast(other).asWord();
     if (right == 0) {
       return thread->raiseZeroDivisionErrorWithCStr("division by zero");
     }

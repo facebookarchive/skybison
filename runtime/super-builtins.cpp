@@ -25,7 +25,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   // super(type, type2) -> bound super object; requires issubclass(type2, type)
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  if (!args.get(0)->isSuper()) {
+  if (!args.get(0).isSuper()) {
     return thread->raiseTypeErrorWithCStr("requires a super object");
   }
   Super super(&scope, args.get(0));
@@ -42,7 +42,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseRuntimeErrorWithCStr("super(): no current frame");
     }
     caller_frame = caller_frame->previousFrame();
-    if (!caller_frame->code()->isCode()) {
+    if (!caller_frame->code().isCode()) {
       return thread->raiseRuntimeErrorWithCStr("super(): no code object");
     }
     Code code(&scope, caller_frame->code());
@@ -53,16 +53,16 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     RawObject cell = Error::object();
     for (word i = 0; i < free_vars.length(); i++) {
       if (RawStr::cast(free_vars.at(i))
-              ->equals(thread->runtime()->symbols()->DunderClass())) {
+              .equals(thread->runtime()->symbols()->DunderClass())) {
         cell = caller_frame->local(code.nlocals() + i);
         break;
       }
     }
-    if (cell->isError() || !cell->isValueCell()) {
+    if (cell.isError() || !cell.isValueCell()) {
       return thread->raiseRuntimeErrorWithCStr(
           "super(): __class__ cell not found");
     }
-    type_obj = RawValueCell::cast(cell)->value();
+    type_obj = RawValueCell::cast(cell).value();
     // TODO(zekun): handle cell2arg case
     obj = caller_frame->local(0);
   } else {

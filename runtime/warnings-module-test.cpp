@@ -13,7 +13,7 @@ TEST(WarningsModuleTest, ModuleImporting) {
 import _warnings
   )");
   RawObject warnings = moduleAt(&runtime, "__main__", "_warnings");
-  EXPECT_TRUE(warnings->isModule());
+  EXPECT_TRUE(warnings.isModule());
 }
 
 TEST(WarningsModuleTest, WarnDoesNothing) {

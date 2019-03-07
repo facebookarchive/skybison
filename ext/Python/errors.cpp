@@ -349,7 +349,7 @@ PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,
     ApiHandle::fromPyObject(value)->decref();
   }
   if (traceback != nullptr &&
-      !ApiHandle::fromPyObject(traceback)->asObject()->isTraceback()) {
+      !ApiHandle::fromPyObject(traceback)->asObject().isTraceback()) {
     ApiHandle::fromPyObject(traceback)->decref();
     // Can only store traceback instances as the traceback
     traceback = nullptr;

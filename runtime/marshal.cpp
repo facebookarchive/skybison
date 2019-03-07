@@ -341,7 +341,7 @@ RawObject Marshal::Reader::doTupleElements(int32 length) {
   }
   for (int32 i = 0; i < length; i++) {
     RawObject value = readObject();
-    RawTuple::cast(result)->atPut(i, value);
+    RawTuple::cast(result).atPut(i, value);
   }
   return result;
 }

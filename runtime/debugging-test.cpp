@@ -214,7 +214,7 @@ TEST(DebuggingTests, FormatObjectWithUnknownType) {
   HandleScope scope;
   Object obj(&scope, runtime.notImplemented());
   // Phabricate a nameless type...
-  RawType::cast(runtime.typeOf(*obj))->setName(NoneType::object());
+  RawType::cast(runtime.typeOf(*obj)).setName(NoneType::object());
 
   std::stringstream ss;
   std::stringstream expected;

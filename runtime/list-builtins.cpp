@@ -200,7 +200,7 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
 
 RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(0)->isType()) {
+  if (!args.get(0).isType()) {
     return thread->raiseTypeErrorWithCStr("not a type object");
   }
   HandleScope scope(thread);
@@ -317,7 +317,7 @@ RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
 RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(1)->isInt()) {
+  if (!args.get(1).isInt()) {
     return thread->raiseTypeErrorWithCStr(
         "index object cannot be interpreted as an integer");
   }
@@ -329,7 +329,7 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
         "descriptor 'insert' requires a 'list' object");
   }
   List list(&scope, *self);
-  word index = RawSmallInt::cast(args.get(1))->value();
+  word index = RawSmallInt::cast(args.get(1)).value();
   Object value(&scope, args.get(2));
   listInsert(thread, list, value, index);
   return NoneType::object();
@@ -344,8 +344,8 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr(
         "__mul__() must be called with list instance as first argument");
   }
-  if (other->isSmallInt()) {
-    word ntimes = RawSmallInt::cast(other)->value();
+  if (other.isSmallInt()) {
+    word ntimes = RawSmallInt::cast(other).value();
     List list(&scope, *self);
     return listReplicate(thread, list, ntimes);
   }
@@ -354,7 +354,7 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 
 RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(1).isUnboundValue() && !args.get(1)->isSmallInt()) {
+  if (!args.get(1).isUnboundValue() && !args.get(1).isSmallInt()) {
     return thread->raiseTypeErrorWithCStr(
         "index object cannot be interpreted as an integer");
   }
@@ -451,8 +451,8 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   List list(&scope, *self);
   word length = list.numItems();
   RawObject index = args.get(1);
-  if (index->isSmallInt()) {
-    word idx = RawSmallInt::cast(index)->value();
+  if (index.isSmallInt()) {
+    word idx = RawSmallInt::cast(index).value();
     if (idx < 0) {
       idx += length;
     }
@@ -461,7 +461,7 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     }
     return list.at(idx);
   }
-  if (index->isSlice()) {
+  if (index.isSlice()) {
     Slice slice(&scope, index);
     return listSlice(thread, list, slice);
   }
@@ -599,7 +599,7 @@ static RawObject setItemSlice(Thread* thread, const List& list,
       return thread->raiseTypeErrorWithCStr(
           "slice assignment: unable to get length of assigned sequence");
     }
-    word iter_length = SmallInt::cast(*iter_length_val)->value();
+    word iter_length = SmallInt::cast(*iter_length_val).value();
     if (slice_length != iter_length) {
       return thread->raiseValueError(thread->runtime()->newStrFromFormat(
           "attempt to assign sequence of size %ld to extended slice of size "
@@ -658,7 +658,7 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   Object src(&scope, args.get(2));
 
   if (index.isSmallInt()) {
-    word idx = RawSmallInt::cast(*index)->value();
+    word idx = RawSmallInt::cast(*index).value();
     word length = list.numItems();
     if (idx < 0) {
       idx += length;
@@ -693,8 +693,8 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   List list(&scope, *self);
   word length = list.numItems();
   RawObject index = args.get(1);
-  if (index->isSmallInt()) {
-    word idx = RawSmallInt::cast(index)->value();
+  if (index.isSmallInt()) {
+    word idx = RawSmallInt::cast(index).value();
     if (idx < 0) {
       idx += length;
     }

@@ -526,7 +526,7 @@ PY_EXPORT size_t Py_UNICODE_strlen(const Py_UNICODE* u) {
 PY_EXPORT int _PyUnicode_Ready(PyObject* /* unicode */) { return 0; }
 
 PY_EXPORT int PyUnicode_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject()->isStr();
+  return ApiHandle::fromPyObject(obj)->asObject().isStr();
 }
 
 PY_EXPORT int PyUnicode_Check_Func(PyObject* obj) {
@@ -741,8 +741,8 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
     return left_str.compare(*right_obj);
   }
 
-  Str ltype(&scope, Type::cast(runtime->typeOf(*left_obj))->name());
-  Str rtype(&scope, Type::cast(runtime->typeOf(*right_obj))->name());
+  Str ltype(&scope, Type::cast(runtime->typeOf(*left_obj)).name());
+  Str rtype(&scope, Type::cast(runtime->typeOf(*right_obj)).name());
   // TODO(T32655200): Once we have a real string formatter, use that instead of
   // converting the names to C strings here.
   unique_c_ptr<char> ltype_name(ltype.toCStr());

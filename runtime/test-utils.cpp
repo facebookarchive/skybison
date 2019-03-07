@@ -119,7 +119,7 @@ template <typename T1, typename T2>
 
       case Value::Type::Float: {
         if (!actual_item.isFloat()) return bad_type("float");
-        auto const actual_val = RawFloat::cast(*actual_item)->value();
+        auto const actual_val = RawFloat::cast(*actual_item).value();
         auto const expected_val = expected_item.floatVal();
         if (std::abs(actual_val - expected_val) >= DBL_EPSILON) {
           return badListValue(actual_expr, i, actual_val, expected_val);
@@ -223,10 +223,10 @@ RawObject moduleAt(Runtime* runtime, const char* module_name,
 
 std::string typeName(Runtime* runtime, RawObject obj) {
   if (obj.layoutId() == LayoutId::kError) return "Error";
-  RawStr name = RawStr::cast(RawType::cast(runtime->typeOf(obj))->name());
-  word length = name->length();
+  RawStr name = RawStr::cast(RawType::cast(runtime->typeOf(obj)).name());
+  word length = name.length();
   std::string result(length, '\0');
-  name->copyTo(reinterpret_cast<byte*>(&result[0]), length);
+  name.copyTo(reinterpret_cast<byte*>(&result[0]), length);
   return result;
 }
 

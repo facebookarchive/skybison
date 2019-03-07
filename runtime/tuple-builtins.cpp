@@ -209,7 +209,7 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Tuple tuple(&scope, *self);
   Object index(&scope, args.get(1));
   if (index.isSmallInt()) {
-    word idx = RawSmallInt::cast(*index)->value();
+    word idx = RawSmallInt::cast(*index).value();
     if (idx < 0) {
       idx = tuple.length() - idx;
     }
@@ -337,7 +337,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
                      runtime->lookupSymbolInMro(thread, iter_type,
                                                 SymbolId::kDunderLengthHint));
   if (length_hint.isSmallInt()) {
-    max_len = RawSmallInt::cast(*length_hint)->value();
+    max_len = RawSmallInt::cast(*length_hint).value();
   }
 
   word curr = 0;

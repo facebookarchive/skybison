@@ -1313,7 +1313,7 @@ TEST(ListBuiltinsTest, ExtendTuple) {
   object_array1.atPut(0, NoneType::object());
   listExtend(Thread::currentThread(), list, object_array1_handle);
   ASSERT_GE(list.numItems(), 5);
-  ASSERT_TRUE(list.at(4)->isNoneType());
+  ASSERT_TRUE(list.at(4).isNoneType());
 
   for (word i = 0; i < 4; i++) {
     object_array16.atPut(i, SmallInt::fromWord(i));
@@ -1347,7 +1347,7 @@ TEST(ListBuiltinsTest, ExtendSet) {
   EXPECT_EQ(list.numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
-    sum -= RawSmallInt::cast(list.at(i))->value();
+    sum -= RawSmallInt::cast(list.at(i)).value();
   }
   ASSERT_EQ(sum, 0);
 }
@@ -1371,7 +1371,7 @@ TEST(ListBuiltinsTest, ExtendDict) {
   EXPECT_EQ(list.numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
-    sum -= RawSmallInt::cast(list.at(i))->value();
+    sum -= RawSmallInt::cast(list.at(i)).value();
   }
   ASSERT_EQ(sum, 0);
 }

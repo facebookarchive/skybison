@@ -514,7 +514,7 @@ TEST(TupleBuiltinsTest, DunderEqWithDifferentSizeTuplesReturnsFalse) {
   Object right(&scope, runtime.newTuple(3));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   ASSERT_TRUE(a.isBool());
-  EXPECT_FALSE(Bool::cast(*a)->value());
+  EXPECT_FALSE(Bool::cast(*a).value());
 }
 
 TEST(TupleBuiltinsTest, DunderEqWithDifferentValueTuplesReturnsFalse) {
@@ -528,7 +528,7 @@ TEST(TupleBuiltinsTest, DunderEqWithDifferentValueTuplesReturnsFalse) {
   right.atPut(1, runtime.newInt(3));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   ASSERT_TRUE(a.isBool());
-  EXPECT_FALSE(Bool::cast(*a)->value());
+  EXPECT_FALSE(Bool::cast(*a).value());
 }
 
 TEST(TupleBuiltinsTest, DunderEqWithTupleSubclassReturnsTrue) {
@@ -546,7 +546,7 @@ right = Foo((1, 2))
   ASSERT_TRUE(runtime.isInstanceOfTuple(*right));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   ASSERT_TRUE(a.isBool());
-  EXPECT_TRUE(Bool::cast(*a)->value());
+  EXPECT_TRUE(Bool::cast(*a).value());
 }
 
 TEST(TupleBuiltinsTest, DunderEqWithNonTupleSecondArgReturnsNotImplemented) {

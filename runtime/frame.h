@@ -42,7 +42,7 @@ class TryBlock {
   };
 
   explicit TryBlock(RawObject value) {
-    DCHECK(value->isSmallInt(), "expected small integer");
+    DCHECK(value.isSmallInt(), "expected small integer");
     value_ = value.raw();
   }
 
@@ -311,13 +311,13 @@ class KwArguments : public Arguments {
   KwArguments(Frame* frame, word nargs)
       : Arguments(frame, nargs),
         kwnames_(RawTuple::cast(frame->local(nargs - 1))),
-        num_keywords_(kwnames_->length()) {
+        num_keywords_(kwnames_.length()) {
     num_args_ = nargs - num_keywords_ - 1;
   }
 
   RawObject getKw(RawObject name) const {
     for (word i = 0; i < num_keywords_; i++) {
-      if (RawStr::cast(name)->equals(kwnames_->at(i))) {
+      if (RawStr::cast(name).equals(kwnames_.at(i))) {
         return frame_->local(num_args_ + i);
       }
     }
@@ -346,7 +346,7 @@ inline BlockStack* Frame::blockStack() {
 }
 
 inline word Frame::virtualPC() {
-  return RawSmallInt::cast(at(kVirtualPCOffset))->value();
+  return RawSmallInt::cast(at(kVirtualPCOffset)).value();
 }
 
 inline void Frame::setVirtualPC(word pc) {
@@ -406,17 +406,17 @@ inline void Frame::resetLocals(word num_locals) {
   // Bias locals by 1 word to avoid doing so during {get,set}Local
   RawObject locals{address() + Frame::kSize +
                    ((num_locals - 1) * kPointerSize)};
-  DCHECK(locals->isSmallInt(), "expected small integer");
+  DCHECK(locals.isSmallInt(), "expected small integer");
   atPut(kLocalsOffset, locals);
 }
 
 inline word Frame::numLocals() {
-  return RawSmallInt::cast(at(kNumLocalsOffset))->value();
+  return RawSmallInt::cast(at(kNumLocalsOffset)).value();
 }
 
 inline Frame* Frame::previousFrame() {
   RawObject frame = at(kPreviousFrameOffset);
-  return static_cast<Frame*>(RawSmallInt::cast(frame)->asCPtr());
+  return static_cast<Frame*>(RawSmallInt::cast(frame).asCPtr());
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
@@ -430,7 +430,7 @@ inline RawObject* Frame::valueStackBase() {
 
 inline RawObject* Frame::valueStackTop() {
   RawObject top = at(kValueStackTopOffset);
-  return static_cast<RawObject*>(RawSmallInt::cast(top)->asCPtr());
+  return static_cast<RawObject*>(RawSmallInt::cast(top).asCPtr());
 }
 
 inline void Frame::setValueStackTop(RawObject* top) {
@@ -498,13 +498,13 @@ inline bool Frame::isSentinelFrame() { return previousFrame() == nullptr; }
 
 inline void* Frame::nativeFunctionPointer() {
   DCHECK(isNativeFrame(), "not native frame");
-  return RawInt::cast(code())->asCPtr();
+  return RawInt::cast(code()).asCPtr();
 }
 
-inline bool Frame::isNativeFrame() { return code()->isInt(); }
+inline bool Frame::isNativeFrame() { return code().isInt(); }
 
 inline void Frame::makeNativeFrame(RawObject fn_pointer_as_int) {
-  DCHECK(fn_pointer_as_int->isInt(), "expected integer");
+  DCHECK(fn_pointer_as_int.isInt(), "expected integer");
   setCode(fn_pointer_as_int);
 }
 
@@ -522,7 +522,7 @@ inline void Frame::unstashInternalPointers() {
 
 inline RawObject TryBlock::asSmallInt() const {
   RawObject obj{value_};
-  DCHECK(obj->isSmallInt(), "expected small integer");
+  DCHECK(obj.isSmallInt(), "expected small integer");
   return obj;
 }
 
@@ -570,7 +570,7 @@ inline void BlockStack::atPut(int offset, RawObject value) {
 }
 
 inline word BlockStack::depth() {
-  return RawSmallInt::cast(at(kTopOffset))->value();
+  return RawSmallInt::cast(at(kTopOffset)).value();
 }
 
 inline void BlockStack::setDepth(word new_top) {

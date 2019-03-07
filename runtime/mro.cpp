@@ -75,7 +75,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
 
   Object object_class(
       &scope,
-      RawLayout::cast(runtime->layoutAt(LayoutId::kObject))->describedType());
+      RawLayout::cast(runtime->layoutAt(LayoutId::kObject)).describedType());
 
   // Special case for no explicit ancestors.
   if (parents.length() == 0) {
@@ -104,7 +104,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   // CPython's implementation, so we can rest assured no real program
   // is going to cause a major problem here.
   RawObject next_head = Error::object();
-  while (!(next_head = findNext(merge_lists, merge_list_indices))->isError()) {
+  while (!(next_head = findNext(merge_lists, merge_list_indices)).isError()) {
     Type next_head_cls(&scope, next_head);
     for (word i = 0; i < merge_list_indices.size(); i++) {
       auto& cur_idx = merge_list_indices[i];
@@ -119,7 +119,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   }
 
   for (word i = 0; i < merge_list_indices.size(); i++) {
-    if (merge_list_indices[i] != RawTuple::cast(merge_lists.at(i))->length()) {
+    if (merge_list_indices[i] != RawTuple::cast(merge_lists.at(i)).length()) {
       // TODO(T36404516): list bases in error message.
       return thread->raiseTypeErrorWithCStr(
           "Cannot create a consistent method resolution order (MRO)");

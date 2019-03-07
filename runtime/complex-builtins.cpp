@@ -72,17 +72,17 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // For now, it will only work with small integers and floats.
   double real = 0.0;
   if (real_arg.isSmallInt()) {
-    real = RawSmallInt::cast(*real_arg)->value();
+    real = RawSmallInt::cast(*real_arg).value();
   } else if (real_arg.isFloat()) {
-    real = RawFloat::cast(*real_arg)->value();
+    real = RawFloat::cast(*real_arg).value();
   } else {
     UNIMPLEMENTED("Convert non-numeric to numeric");
   }
   double imag = 0.0;
   if (imag_arg.isSmallInt()) {
-    imag = RawSmallInt::cast(*imag_arg)->value();
+    imag = RawSmallInt::cast(*imag_arg).value();
   } else if (imag_arg.isFloat()) {
-    imag = RawFloat::cast(*imag_arg)->value();
+    imag = RawFloat::cast(*imag_arg).value();
   } else {
     UNIMPLEMENTED("Convert non-numeric to numeric");
   }
