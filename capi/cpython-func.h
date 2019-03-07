@@ -890,6 +890,8 @@ PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT_Func(PyObject*);
 PyAPI_FUNC(void) Py_XDECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_XINCREF_Func(PyObject*);
+PyAPI_FUNC(Py_ssize_t) _PyObject_SIZE_Func(PyObject*);
+PyAPI_FUNC(Py_ssize_t) _PyObject_VAR_SIZE_Func(PyObject*, Py_ssize_t);
 
 PyAPI_FUNC(void*) PyMem_New_Func(size_t size, size_t n);
 PyAPI_FUNC(void*) PyMem_Resize_Func(void* p, size_t size, size_t n);
@@ -989,10 +991,24 @@ PyAPI_FUNC(void)
 #define Py_XDECREF(op) Py_DecRef((PyObject*)op)
 #define Py_XINCREF(op) Py_IncRef((PyObject*)op)
 
+#define PyObject_MALLOC PyObject_Malloc
+#define PyObject_REALLOC PyObject_Realloc
+#define PyObject_FREE PyObject_Free
+#define PyObject_Del PyObject_Free
+#define PyObject_DEL PyObject_Free
+#define _PyObject_SIZE(typeobj) _PyObject_SIZE_Func((PyObject*)typeobj)
+#define _PyObject_VAR_SIZE(typeobj, nitems)                                    \
+  _PyObject_VAR_SIZE_Func((PyObject*)typeobj, nitems)
 #define PyObject_INIT(op, typeobj)                                             \
   PyObject_Init((PyObject*)op, (PyTypeObject*)typeobj)
 #define PyObject_INIT_VAR(op, typeobj, size)                                   \
   PyObject_InitVar((PyVarObject*)op, (PyTypeObject*)typeobj, size)
+#define PyObject_New(type, typeobj)                                            \
+  ((type*)_PyObject_New((PyTypeObject*)typeobj))
+#define PyObject_NEW(type, typeobj) PyObject_New(type, typeobj)
+#define PyObject_NewVar(type, typeobj, n)                                      \
+  ((type*)_PyObject_NewVar((PyTypeObject*)typeobj, n))
+#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
 
 /* Memory macros from pymem.h */
 #define PyMem_DEL(p) PyMem_Del(p)

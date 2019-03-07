@@ -173,14 +173,19 @@ PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
   return -1;
 }
 
-PY_EXPORT PyObject* PyObject_Init(PyObject* /* p */, PyTypeObject* /* p */) {
-  UNIMPLEMENTED("PyObject_Init");
+PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
+  if (obj == nullptr) return PyErr_NoMemory();
+  obj->ob_type = typeobj;
+  obj->ob_refcnt = 1;
+  return obj;
 }
 
-PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* /* p */,
-                                        PyTypeObject* /* p */,
-                                        Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyObject_InitVar");
+PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* obj, PyTypeObject* type,
+                                        Py_ssize_t size) {
+  if (obj == nullptr) return reinterpret_cast<PyVarObject*>(PyErr_NoMemory());
+  obj->ob_size = size;
+  PyObject_Init(reinterpret_cast<PyObject*>(obj), type);
+  return obj;
 }
 
 PY_EXPORT int PyObject_IsTrue(PyObject* obj) {
@@ -353,13 +358,17 @@ PY_EXPORT int _PyObject_HasAttrId(PyObject* /* v */, _Py_Identifier* /* e */) {
   UNIMPLEMENTED("_PyObject_HasAttrId");
 }
 
-PY_EXPORT PyObject* _PyObject_New(PyTypeObject* /* p */) {
-  UNIMPLEMENTED("_PyObject_New");
+PY_EXPORT PyObject* _PyObject_New(PyTypeObject* type) {
+  PyObject* obj = static_cast<PyObject*>(PyObject_MALLOC(_PyObject_SIZE(type)));
+  if (obj == nullptr) return PyErr_NoMemory();
+  return PyObject_INIT(obj, type);
 }
 
-PY_EXPORT PyVarObject* _PyObject_NewVar(PyTypeObject* /* p */,
-                                        Py_ssize_t /* s */) {
-  UNIMPLEMENTED("_PyObject_NewVar");
+PY_EXPORT PyVarObject* _PyObject_NewVar(PyTypeObject* type, Py_ssize_t nitems) {
+  PyObject* obj =
+      static_cast<PyObject*>(PyObject_MALLOC(_PyObject_VAR_SIZE(type, nitems)));
+  if (obj == nullptr) return reinterpret_cast<PyVarObject*>(PyErr_NoMemory());
+  return PyObject_INIT_VAR(obj, type, nitems);
 }
 
 PY_EXPORT int _PyObject_SetAttrId(PyObject* /* v */, _Py_Identifier* /* e */,

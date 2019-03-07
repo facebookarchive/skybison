@@ -739,4 +739,65 @@ TEST_F(ObjectExtensionApiTest, ReprEnterThenLeaveRemovesFromSet) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ObjectExtensionApiTest, InitWithNullRaisesNoMemoryError) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+  PyObject_Init(nullptr, reinterpret_cast<PyTypeObject*>(type.get()));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_MemoryError));
+}
+
+TEST_F(ObjectExtensionApiTest, NewReturnsAllocatedObject) {
+  struct BarObject {
+    PyObject_HEAD int value;
+  };
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  BarObject* instance =
+      PyObject_New(BarObject, reinterpret_cast<PyTypeObject*>(type.get()));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(Py_REFCNT(instance), 1);
+  PyObject_Free(instance);
+}
+
+TEST_F(ObjectExtensionApiTest, NewVarReturnsAllocatedObject) {
+  struct BarObject {
+    PyObject_HEAD int value;
+  };
+  struct BarContainer {
+    PyObject_VAR_HEAD BarObject* items[1];
+  };
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", sizeof(BarContainer), sizeof(BarObject), Py_TPFLAGS_DEFAULT,
+      slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  BarContainer* instance = PyObject_NewVar(
+      BarContainer, reinterpret_cast<PyTypeObject*>(type.get()), 5);
+  ASSERT_NE(instance, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(Py_REFCNT(instance), 1);
+  EXPECT_EQ(Py_SIZE(instance), 5);
+  PyObject_Free(instance);
+}
+
 }  // namespace python

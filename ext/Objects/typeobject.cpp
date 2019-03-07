@@ -366,6 +366,22 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
   return pyobj;
 }
 
+PY_EXPORT Py_ssize_t _PyObject_SIZE_Func(PyObject* obj) {
+  HandleScope scope;
+  Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
+  return basic_size.asWord();
+}
+
+PY_EXPORT Py_ssize_t _PyObject_VAR_SIZE_Func(PyObject* obj, Py_ssize_t nitems) {
+  HandleScope scope;
+  Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
+  Int item_size(&scope, extensionSlot(type, Type::ExtensionSlot::kItemSize));
+  return Utils::roundUp(nitems * item_size.asWord() + basic_size.asWord(),
+                        kWordSize);
+}
+
 PY_EXPORT unsigned int PyType_ClearCache() {
   UNIMPLEMENTED("PyType_ClearCache");
 }
