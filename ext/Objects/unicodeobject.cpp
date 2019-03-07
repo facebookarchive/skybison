@@ -1290,9 +1290,36 @@ PY_EXPORT PyObject* PyUnicode_Splitlines(PyObject* /* g */, int /* s */) {
   UNIMPLEMENTED("PyUnicode_Splitlines");
 }
 
-PY_EXPORT PyObject* PyUnicode_Substring(PyObject* /* f */, Py_ssize_t /* t */,
-                                        Py_ssize_t /* d */) {
-  UNIMPLEMENTED("PyUnicode_Substring");
+PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
+                                        Py_ssize_t end) {
+  DCHECK(pyobj != nullptr, "null argument to PyUnicode_Substring");
+  Thread* thread = Thread::currentThread();
+  if (start < 0 || end < 0) {
+    thread->raiseIndexErrorWithCStr("string index out of range");
+    return nullptr;
+  }
+  HandleScope scope(thread);
+  ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
+  Object obj(&scope, handle->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfStr(*obj),
+         "PyUnicode_Substring requires a 'str' instance");
+  Str self(&scope, *obj);
+  word len = self.length();
+  word start_index = self.offsetByCodePoints(0, start);
+  if (start_index == len || end <= start) {
+    return ApiHandle::newReference(thread, runtime->newStrFromCStr(""));
+  }
+  word end_index = self.offsetByCodePoints(start_index, end - start);
+  if (end_index == len) {
+    if (start_index == 0) {
+      handle->incref();
+      return pyobj;
+    }
+  }
+  return ApiHandle::newReference(
+      thread,
+      runtime->strSubstr(thread, self, start_index, end_index - start_index));
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_Tailmatch(PyObject* /* r */, PyObject* /* r */,

@@ -906,4 +906,49 @@ TEST_F(UnicodeExtensionApiTest, StrlenWithStrReturnsNumberOfChars) {
   ASSERT_EQ(Py_UNICODE_strlen(str), 5U);
 }
 
+TEST_F(UnicodeExtensionApiTest, SubstringWithNegativeStartRaisesIndexError) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  ASSERT_EQ(PyUnicode_Substring(str, -1, 3), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(UnicodeExtensionApiTest, SubstringWithNegativeEndRaisesIndexError) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  ASSERT_EQ(PyUnicode_Substring(str, 0, -3), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(UnicodeExtensionApiTest, SubstringWithFullStringReturnsSameObject) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  PyObjectPtr result(PyUnicode_Substring(str, 0, 5));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, str);
+}
+
+TEST_F(UnicodeExtensionApiTest, SubstringWithSameStartAndEndReturnsEmpty) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  PyObjectPtr result(PyUnicode_Substring(str, 2, 2));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(result));
+  EXPECT_STREQ(PyUnicode_AsUTF8(result), "");
+}
+
+TEST_F(UnicodeExtensionApiTest, SubstringWithASCIIReturnsSubstring) {
+  PyObjectPtr str(PyUnicode_FromString("Hello world!"));
+  PyObjectPtr result(PyUnicode_Substring(str, 3, 8));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(result));
+  EXPECT_STREQ(PyUnicode_AsUTF8(result), "lo wo");
+}
+
+TEST_F(UnicodeExtensionApiTest, SubstringCountsCodePoints) {
+  PyObjectPtr str(PyUnicode_FromString("cre\u0300me bru\u0302le\u0301e"));
+  PyObjectPtr result(PyUnicode_Substring(str, 2, 11));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(result));
+  EXPECT_STREQ(PyUnicode_AsUTF8(result), "e\u0300me bru\u0302");
+}
+
 }  // namespace python
