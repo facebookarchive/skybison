@@ -75,16 +75,20 @@ PY_EXPORT int Py_AddPendingCall(int (*/* func */)(void*), void* /* g */) {
   UNIMPLEMENTED("Py_AddPendingCall");
 }
 
-PY_EXPORT int Py_GetRecursionLimit() { UNIMPLEMENTED("Py_GetRecursionLimit"); }
+PY_EXPORT int Py_GetRecursionLimit() {
+  return Thread::currentThread()->recursionLimit();
+}
 
 PY_EXPORT int Py_MakePendingCalls() { UNIMPLEMENTED("Py_MakePendingCalls"); }
 
-PY_EXPORT void Py_SetRecursionLimit(int /* t */) {
-  UNIMPLEMENTED("Py_SetRecursionLimit");
+PY_EXPORT void Py_SetRecursionLimit(int limit) {
+  Thread::currentThread()->setRecursionLimit(limit);
 }
 
-PY_EXPORT int _Py_CheckRecursiveCall(const char* /* e */) {
-  UNIMPLEMENTED("_Py_CheckRecursiveCall");
+PY_EXPORT int _Py_CheckRecursiveCall(const char* /* where */) {
+  // We don't implement this function because this recursion checking is left
+  // up to the runtime.
+  return 0;
 }
 
 PY_EXPORT void PyEval_SetProfile(Py_tracefunc /* c */, PyObject* /* g */) {

@@ -573,4 +573,10 @@ void Thread::reprLeave(const Object& obj) {
   }
 }
 
+int Thread::recursionLimit() { return recursion_limit_; }
+
+void Thread::setRecursionLimit(int /* limit */) {
+  UNIMPLEMENTED("Thread::setRecursionLimit");
+}
+
 }  // namespace python

@@ -301,6 +301,9 @@ class Thread {
   RawObject reprEnter(const Handle<RawObject>& obj);
   void reprLeave(const Handle<RawObject>& obj);
 
+  int recursionLimit();
+  void setRecursionLimit(int limit);
+
  private:
   void pushInitialFrame();
 
@@ -332,6 +335,9 @@ class Thread {
   RawObject caught_exc_stack_;
 
   RawObject api_repr_list_;
+
+  // Recursion limit as set from C-API via Py_SetRecursionLimit.
+  int recursion_limit_;
 
   static thread_local Thread* current_thread_;
 
