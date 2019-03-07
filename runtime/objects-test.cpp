@@ -693,34 +693,73 @@ TEST(SmallStrTest, CodePointLengthWithThreeCodePoints) {
   EXPECT_EQ(RawStr::cast(len4).codePointLength(), 3);
 }
 
-TEST(StrTest, CodePointIndex) {
+TEST(StrTest, OffsetByCodePoints) {
   Runtime runtime;
   HandleScope scope;
+
+  Str empty(&scope, runtime.newStrFromCStr(""));
+  EXPECT_EQ(empty.length(), 0);
+  EXPECT_EQ(empty.codePointLength(), 0);
+  EXPECT_EQ(empty.offsetByCodePoints(0, 1), 0);
+  EXPECT_EQ(empty.offsetByCodePoints(2, 0), 0);
+  EXPECT_EQ(empty.offsetByCodePoints(2, 1), 0);
 
   Str ascii(&scope, runtime.newStrFromCStr("abcd"));
+  EXPECT_EQ(ascii.length(), 4);
   EXPECT_EQ(ascii.codePointLength(), 4);
-  EXPECT_EQ(ascii.codePointIndex(0), 0);
-  EXPECT_EQ(ascii.codePointIndex(1), 1);
-  EXPECT_EQ(ascii.codePointIndex(2), 2);
-  EXPECT_EQ(ascii.codePointIndex(3), 3);
+
+  // for ASCII, each code point is one byte wide
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 0), 0);
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 3), 3);
+  EXPECT_EQ(ascii.offsetByCodePoints(1, 0), 1);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 0), 2);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 1), 3);
+  EXPECT_EQ(ascii.offsetByCodePoints(3, 0), 3);
+
+  // return the length once we reach the end of the string
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 4), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(0, 5), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(1, 3), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(1, 4), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 2), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(2, 3), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(3, 1), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(3, 2), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(4, 0), 4);
+  EXPECT_EQ(ascii.offsetByCodePoints(6, 0), 4);
 
   Str unicode(&scope,
-              runtime.newStrFromCStr("\xd7\x90\xd7\x91\xd7\x92\xd7\x93"));
-  EXPECT_EQ(unicode.codePointLength(), 4);
-  EXPECT_EQ(unicode.codePointIndex(0), 0);
-  EXPECT_EQ(unicode.codePointIndex(1), 2);
-  EXPECT_EQ(unicode.codePointIndex(2), 4);
-  EXPECT_EQ(unicode.codePointIndex(3), 6);
-}
+              runtime.newStrFromCStr("\xd7\x90pq\xd7\x91\xd7\x92-\xd7\x93"));
+  EXPECT_EQ(unicode.length(), 11);
+  EXPECT_EQ(unicode.codePointLength(), 7);
 
-TEST(StrDeathTest, CodePointIndex) {
-  Runtime runtime;
-  HandleScope scope;
-  Str unicode(&scope,
-              runtime.newStrFromCStr("\xd7\x90\xd7\x91\xd7\x92\xd7\x93"));
-  EXPECT_EQ(unicode.codePointLength(), 4);
-  EXPECT_DEBUG_ONLY_DEATH(unicode.codePointIndex(4),
-                          "index out of range, 4 not in 0..3");
+  // for Unicode, code points may be more than one byte wide
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 0), 0);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 1), 2);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 2), 3);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 3), 4);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 4), 6);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 5), 8);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 6), 9);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 0), 2);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 1), 3);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 2), 4);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 3), 6);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 4), 8);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 5), 9);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 6), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(4, 0), 4);
+  EXPECT_EQ(unicode.offsetByCodePoints(4, 1), 6);
+  EXPECT_EQ(unicode.offsetByCodePoints(6, 0), 6);
+
+  // return the length once we reach the end of the string
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 7), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(0, 9), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(2, 7), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(3, 6), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(4, 5), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(8, 3), 11);
+  EXPECT_EQ(unicode.offsetByCodePoints(12, 0), 11);
 }
 
 TEST(LargeStrTest, CodePointLengthAscii) {

@@ -475,23 +475,22 @@ int32 RawStr::codePointAt(word index, word* length) const {
   return ((ch0 & 0x7) << 18) | (ch1 << 12) | (ch2 << 6) | ch3;
 }
 
-word RawStr::codePointIndex(word index) const {
-  DCHECK_INDEX(index, codePointLength());
-  word i = 0;
-  while (index--) {
-    byte ch = charAt(i);
+word RawStr::offsetByCodePoints(word index, word count) const {
+  word len = length();
+  while (count-- && index < len) {
+    byte ch = charAt(index);
     if (ch <= kMaxASCII) {
-      i++;
+      index++;
     } else if ((ch & 0xE0) == 0xC0) {
-      i += 2;
+      index += 2;
     } else if ((ch & 0xF0) == 0xE0) {
-      i += 3;
+      index += 3;
     } else {
       DCHECK((ch & 0xF8) == 0xF0, "invalid code unit");
-      i += 4;
+      index += 4;
     }
   }
-  return i;
+  return Utils::minimum(index, len);
 }
 
 // RawWeakRef

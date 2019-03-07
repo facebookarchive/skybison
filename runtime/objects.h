@@ -572,7 +572,11 @@ class RawStr : public RawObject {
   // Codepoints
   int32 codePointAt(word index, word* length) const;
   word codePointLength() const;
-  word codePointIndex(word index) const;
+
+  // Counts forward through the code points of the string, starting at the
+  // specified code unit index. Returns the code unit index at the offset,
+  // or length() if the offset reaches the end of the string.
+  word offsetByCodePoints(word index, word count) const;
 
   // Conversion to an unescaped C string.  The underlying memory is allocated
   // with malloc and must be freed by the caller.
