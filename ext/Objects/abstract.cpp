@@ -438,8 +438,16 @@ PY_EXPORT PyObject* PyNumber_Divmod(PyObject* left, PyObject* right) {
   return doBinaryOp(SymbolId::kDivmod, left, right);
 }
 
-PY_EXPORT PyObject* PyNumber_Float(PyObject* /* o */) {
-  UNIMPLEMENTED("PyNumber_Float");
+PY_EXPORT PyObject* PyNumber_Float(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object flt(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                             SymbolId::kFloat, object));
+  return flt.isError() ? nullptr : ApiHandle::newReference(thread, *flt);
 }
 
 PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* left, PyObject* right) {

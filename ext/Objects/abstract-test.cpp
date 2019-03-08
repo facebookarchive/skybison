@@ -377,6 +377,50 @@ TEST_F(AbstractExtensionApiTest, PyNumberCheckWithNullReturnsFalse) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberFloatWithNullRaisesSystemError) {
+  EXPECT_EQ(PyNumber_Float(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberFloatWithStringReturnsFloat) {
+  PyObjectPtr str(PyUnicode_FromString("4.2"));
+  PyObjectPtr flt(PyNumber_Float(str));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 4.2);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberFloatWithIntReturnsFloat) {
+  PyObjectPtr num(PyLong_FromLong(42));
+  PyObjectPtr flt(PyNumber_Float(num));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 42.0);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberFloatWithFloatReturnsSameFloat) {
+  PyObjectPtr num(PyFloat_FromDouble(4.2));
+  Py_ssize_t refcnt = Py_REFCNT(num);
+  PyObjectPtr flt(PyNumber_Float(num));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(num, flt);
+  EXPECT_EQ(Py_REFCNT(num), refcnt + 1);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberFloatWithFloatSubclassReturnsFloat) {
+  PyRun_SimpleString(R"(
+class C(float):
+  pass
+x = C(4.2)
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyObjectPtr flt(PyNumber_Float(x));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyFloat_CheckExact(flt));
+  EXPECT_EQ(PyFloat_AsDouble(flt), 4.2);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberFloorDivideWithNonIntRaisesTypeError) {
   PyObjectPtr x(PyUnicode_FromString("foo"));
   PyObjectPtr y(PyLong_FromLong(2));
