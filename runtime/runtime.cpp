@@ -1508,7 +1508,7 @@ word Runtime::handleSysExit(Thread* thread) {
     // The calls below can't have an exception pending
     thread->clearPendingException();
     // No __repr__ method or __repr__ raised. Either way, we can't handle it.
-    result = newStrFromCStr("");
+    result = Str::empty();
   }
   Str result_str(&scope, *result);
   printStr(*result_str, builtinStderr);
@@ -3100,7 +3100,7 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
                              word length) {
   DCHECK(start >= 0, "from should be > 0");
   if (length <= 0) {
-    return SmallStr::fromCStr("");
+    return Str::empty();
   }
   word str_len = str.length();
   DCHECK(start + length <= str_len, "overflow");

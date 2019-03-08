@@ -79,7 +79,7 @@ RawObject strStripSpace(Thread* thread, const Str& src,
     return *src;
   }
   if (length == 1 && isAsciiSpace(src.charAt(0))) {
-    return SmallStr::fromCStr("");
+    return Str::empty();
   }
 
   word first = 0;

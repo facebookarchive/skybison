@@ -697,7 +697,7 @@ TEST(StrTest, OffsetByCodePoints) {
   Runtime runtime;
   HandleScope scope;
 
-  Str empty(&scope, runtime.newStrFromCStr(""));
+  Str empty(&scope, Str::empty());
   EXPECT_EQ(empty.length(), 0);
   EXPECT_EQ(empty.codePointLength(), 0);
   EXPECT_EQ(empty.offsetByCodePoints(0, 1), 0);
@@ -793,7 +793,7 @@ TEST(StringTest, ToCString) {
   Runtime runtime;
   HandleScope scope;
 
-  Str empty(&scope, runtime.newStrFromCStr(""));
+  Str empty(&scope, Str::empty());
   char* c_empty = empty.toCStr();
   ASSERT_NE(c_empty, nullptr);
   EXPECT_STREQ(c_empty, "");

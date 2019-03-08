@@ -1308,7 +1308,7 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
   word len = self.length();
   word start_index = self.offsetByCodePoints(0, start);
   if (start_index == len || end <= start) {
-    return ApiHandle::newReference(thread, runtime->newStrFromCStr(""));
+    return ApiHandle::newReference(thread, Str::empty());
   }
   word end_index = self.offsetByCodePoints(start_index, end - start);
   if (end_index == len) {

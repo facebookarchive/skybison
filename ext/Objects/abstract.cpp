@@ -877,12 +877,11 @@ PY_EXPORT PyObject* _PyObject_FastCallKeywords(PyObject* /* e */,
 PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
   DCHECK(obj != nullptr, "obj should not be null");
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object format_spec_obj(&scope,
                          format_spec == nullptr
-                             ? runtime->newStrFromCStr("")
+                             ? Str::empty()
                              : ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope,
                 thread->invokeFunction2(SymbolId::kBuiltins, SymbolId::kFormat,

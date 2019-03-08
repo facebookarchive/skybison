@@ -2490,7 +2490,7 @@ bool Interpreter::doFormatValue(Context* ctx, word flags) {
   int conv = (flags & FVC_MASK_FLAG);
   int have_fmt_spec = (flags & FVS_MASK_FLAG) == FVS_HAVE_SPEC_FLAG;
   Runtime* runtime = thread->runtime();
-  Object fmt_spec(&scope, runtime->newStrFromCStr(""));
+  Object fmt_spec(&scope, Str::empty());
   if (have_fmt_spec) {
     fmt_spec = ctx->frame->popValue();
   }

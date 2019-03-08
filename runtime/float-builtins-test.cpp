@@ -687,7 +687,7 @@ TEST(FloatBuiltinsTest, DunderGeWithNonFloatReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newFloat(0.0));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   EXPECT_TRUE(
       runBuiltin(FloatBuiltins::dunderGe, left, right).isNotImplemented());
 }
@@ -804,7 +804,7 @@ TEST(FloatBuiltinsTest, DunderGtWithNonFloatReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newFloat(0.0));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   EXPECT_TRUE(
       runBuiltin(FloatBuiltins::dunderGt, left, right).isNotImplemented());
 }
@@ -846,7 +846,7 @@ TEST(FloatBuiltinsTest, DunderLeWithNonFloatReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newFloat(0.0));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   EXPECT_TRUE(
       runBuiltin(FloatBuiltins::dunderLe, left, right).isNotImplemented());
 }
@@ -900,7 +900,7 @@ TEST(FloatBuiltinsTest, DunderLtWithNonFloatReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newFloat(0.0));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   EXPECT_TRUE(
       runBuiltin(FloatBuiltins::dunderLt, left, right).isNotImplemented());
 }

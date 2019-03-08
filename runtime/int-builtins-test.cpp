@@ -543,7 +543,7 @@ TEST(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -551,7 +551,7 @@ TEST(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
 TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -752,7 +752,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithNegativeShiftAmountRaiseValueError) {
 TEST(IntBuiltinsTest, DunderLshiftWithNonIntSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   Object right(&scope, runtime.newInt(0));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -762,7 +762,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(0));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -789,7 +789,7 @@ TEST(IntBuiltinsTest, DunderModWithZeroRaisesZeroDivisionError) {
 TEST(IntBuiltinsTest, DunderModWithNonIntSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   Object right(&scope, runtime.newInt(1));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -799,7 +799,7 @@ TEST(IntBuiltinsTest, DunderModWithNontIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(1));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -919,7 +919,7 @@ TEST(IntBuiltinsTest, DunderMulWithNonIntSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
 
-  Str str(&scope, runtime.newStrFromCStr(""));
+  Str str(&scope, Str::empty());
   Int right(&scope, runtime.newInt(1));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, str, right));
   ASSERT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -930,7 +930,7 @@ TEST(IntBuiltinsTest, DunderMulWithNonIntRightReturnsNotImplemented) {
   HandleScope scope;
 
   Int left(&scope, runtime.newInt(1));
-  Str str(&scope, runtime.newStrFromCStr(""));
+  Str str(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, str));
   ASSERT_TRUE(result.isNotImplemented());
 }
@@ -957,7 +957,7 @@ TEST(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -965,7 +965,7 @@ TEST(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
 TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -1346,7 +1346,7 @@ TEST(IntBuiltinsTest, DunderFloordivWithZeroRaisesZeroDivisionError) {
 TEST(IntBuiltinsTest, DunderFloordivWithNonIntSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   Object right(&scope, runtime.newInt(1));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -1356,7 +1356,7 @@ TEST(IntBuiltinsTest, DunderFloordivWithNontIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(1));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -1539,7 +1539,7 @@ TEST(IntBuiltinsTest, StringToIntDNeg) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
 
-  Object str1(&scope, runtime.newStrFromCStr(""));
+  Object str1(&scope, Str::empty());
   Object res1(&scope, IntBuiltins::intFromString(thread, *str1, 10));
   EXPECT_TRUE(res1.isError());
 
@@ -2078,7 +2078,7 @@ TEST(IntBuiltinsTest, DunderDivmodWithZeroRaisesZeroDivisionError) {
 TEST(IntBuiltinsTest, DunderDivmodWithNonIntSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   Object right(&scope, runtime.newInt(1));
   Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -2088,7 +2088,7 @@ TEST(IntBuiltinsTest, DunderDivmodWithNontIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(1));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -2860,7 +2860,7 @@ TEST(IntBuiltinsTest, DunderRshiftWithNegativeShiftAmountRaisesValueError) {
 TEST(IntBuiltinsTest, DunderRshiftWithNonIntSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   Object right(&scope, runtime.newInt(0));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -2870,7 +2870,7 @@ TEST(IntBuiltinsTest, DunderRshiftWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(0));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -2955,7 +2955,7 @@ TEST(IntBuiltinsTest, DunderSubWithNonIntSelfRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
 
-  Str str(&scope, runtime.newStrFromCStr(""));
+  Str str(&scope, Str::empty());
   Int right(&scope, runtime.newInt(1));
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, str, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -2966,7 +2966,7 @@ TEST(IntBuiltinsTest, DunderSubWithNonIntRightReturnsNotImplemented) {
   HandleScope scope;
 
   Int left(&scope, runtime.newInt(1));
-  Str str(&scope, runtime.newStrFromCStr(""));
+  Str str(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, str));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -2993,7 +2993,7 @@ TEST(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
   Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
-  Object right(&scope, runtime.newStrFromCStr(""));
+  Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
   EXPECT_TRUE(result.isNotImplemented());
 }
@@ -3001,7 +3001,7 @@ TEST(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {
 TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
-  Object left(&scope, runtime.newStrFromCStr(""));
+  Object left(&scope, Str::empty());
   LargeInt right(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));

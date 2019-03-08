@@ -558,6 +558,9 @@ class RawError : public RawObject {
 // Super class of common string functionality
 class RawStr : public RawObject {
  public:
+  // Singletons.
+  static RawStr empty();
+
   // Getters and setters.
   byte charAt(word index) const;
   word length() const;
@@ -3982,6 +3985,10 @@ inline void RawModule::setDef(RawObject dict) const {
 }
 
 // RawStr
+
+inline RawStr RawStr::empty() {
+  return RawSmallStr::fromCStr("").rawCast<RawStr>();
+}
 
 inline byte RawStr::charAt(word index) const {
   if (isSmallStr()) {

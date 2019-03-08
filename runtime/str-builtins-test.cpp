@@ -195,7 +195,7 @@ TEST(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {
 TEST(StrBuiltinsTest, DunderAddWithLeftEmptyAndReturnsRight) {
   Runtime runtime;
   HandleScope scope;
-  Object str1(&scope, runtime.newStrFromCStr(""));
+  Object str1(&scope, Str::empty());
   Object str2(&scope, runtime.newStrFromCStr("world"));
   Object result(&scope, runBuiltin(StrBuiltins::dunderAdd, str1, str2));
   EXPECT_TRUE(isStrEqualsCStr(*result, "world"));
@@ -205,7 +205,7 @@ TEST(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
   Runtime runtime;
   HandleScope scope;
   Object str1(&scope, runtime.newStrFromCStr("hello"));
-  Object str2(&scope, runtime.newStrFromCStr(""));
+  Object str2(&scope, Str::empty());
   Object result(&scope, runBuiltin(StrBuiltins::dunderAdd, str1, str2));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 }
@@ -355,7 +355,7 @@ TEST(StrBuiltinsTest, IndexWithSliceWithStep) {
 TEST(StrBuiltinsTest, EmptyStringIndexWithSliceWithNegativeOneStep) {
   Runtime runtime;
   HandleScope scope;
-  Str hello(&scope, runtime.newStrFromCStr(""));
+  Str hello(&scope, Str::empty());
   Slice slice(&scope, runtime.newSlice());
   slice.setStep(SmallInt::fromWord(-1));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, slice));
@@ -1480,7 +1480,7 @@ TEST(StrBuiltinsTest, RStripWithCharsStripsCharsToRight) {
 TEST(StrBuiltinsTest, DunderIterReturnsStrIter) {
   Runtime runtime;
   HandleScope scope;
-  Str empty_str(&scope, runtime.newStrFromCStr(""));
+  Str empty_str(&scope, Str::empty());
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
   ASSERT_TRUE(iter.isStrIterator());
 }
@@ -1505,7 +1505,7 @@ TEST(StrIteratorBuiltinsTest, CallDunderNextReadsCharactersSequentially) {
 TEST(StrIteratorBuiltinsTest, DunderIterReturnsSelf) {
   Runtime runtime;
   HandleScope scope;
-  Str empty_str(&scope, runtime.newStrFromCStr(""));
+  Str empty_str(&scope, Str::empty());
 
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
   ASSERT_TRUE(iter.isStrIterator());
@@ -1518,7 +1518,7 @@ TEST(StrIteratorBuiltinsTest, DunderIterReturnsSelf) {
 TEST(StrIteratorBuiltinsTest, DunderLengthHintOnEmptyStrIteratorReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  Str empty_str(&scope, runtime.newStrFromCStr(""));
+  Str empty_str(&scope, Str::empty());
 
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
   ASSERT_TRUE(iter.isStrIterator());
@@ -1554,7 +1554,7 @@ TEST(StrIteratorBuiltinsTest,
 TEST(StrBuiltinsTest, StripSpaceWithEmptyStrIsIdentity) {
   Runtime runtime;
   HandleScope scope;
-  Str empty_str(&scope, runtime.newStrFromCStr(""));
+  Str empty_str(&scope, Str::empty());
   Thread* thread = Thread::currentThread();
   Str lstripped_empty_str(
       &scope, strStripSpace(thread, empty_str, StrStripDirection::Left));
@@ -1703,7 +1703,7 @@ TEST(StrBuiltinsTest, StripSpaceBoth) {
 TEST(StrBuiltinsTest, StripWithEmptyStrIsIdentity) {
   Runtime runtime;
   HandleScope scope;
-  Str empty_str(&scope, runtime.newStrFromCStr(""));
+  Str empty_str(&scope, Str::empty());
   Str chars(&scope, runtime.newStrFromCStr("abc"));
   Thread* thread = Thread::currentThread();
   Str lstripped_empty_str(
@@ -1742,7 +1742,7 @@ TEST(StrBuiltinsTest, StripWithEmptyCharsIsIdentity) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" Just another string "));
-  Str chars(&scope, runtime.newStrFromCStr(""));
+  Str chars(&scope, Str::empty());
   Thread* thread = Thread::currentThread();
   Str lstripped_str(&scope,
                     strStrip(thread, str, chars, StrStripDirection::Left));

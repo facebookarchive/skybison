@@ -2328,7 +2328,7 @@ TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   HandleScope scope;
   Thread* thread = Thread::currentThread();
   Frame* frame = thread->currentFrame();
-  Str not_a_func(&scope, runtime.newStrFromCStr(""));
+  Str not_a_func(&scope, Str::empty());
   frame->pushValue(*not_a_func);
   RawObject result = Interpreter::call(thread, frame, 0);
   EXPECT_TRUE(result.isError());
