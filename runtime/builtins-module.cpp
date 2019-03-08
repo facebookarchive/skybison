@@ -24,7 +24,7 @@
 
 namespace python {
 
-std::ostream* builtInStdout = &std::cout;
+std::ostream* builtinStdout = &std::cout;
 std::ostream* builtinStderr = &std::cerr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
@@ -657,7 +657,7 @@ RawObject BuiltinsModule::underPrintStr(Thread* thread, Frame* frame_frame,
   CHECK(args.get(1).isSmallInt(), "Unsupported argument type for 'file'");
   word fileno = RawSmallInt::cast(args.get(1)).value();
   if (fileno == STDOUT_FILENO) {
-    printStr(*str, builtInStdout);
+    printStr(*str, builtinStdout);
   } else if (fileno == STDERR_FILENO) {
     printStr(*str, builtinStderr);
   } else {

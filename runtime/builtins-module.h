@@ -9,7 +9,7 @@
 
 namespace python {
 
-extern std::ostream* builtInStdout;
+extern std::ostream* builtinStdout;
 extern std::ostream* builtinStderr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name);

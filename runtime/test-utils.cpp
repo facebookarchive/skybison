@@ -155,7 +155,7 @@ static std::string compileAndRunImpl(Runtime* runtime, const char* src,
 }
 
 std::string compileAndRunToString(Runtime* runtime, const char* src) {
-  return compileAndRunImpl(runtime, src, &builtInStdout);
+  return compileAndRunImpl(runtime, src, &builtinStdout);
 }
 
 std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
@@ -164,13 +164,13 @@ std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
 
 std::string callFunctionToString(const Function& func, const Tuple& args) {
   std::stringstream stream;
-  std::ostream* old_stream = builtInStdout;
-  builtInStdout = &stream;
+  std::ostream* old_stream = builtinStdout;
+  builtinStdout = &stream;
   Thread* thread = Thread::currentThread();
   thread->pushNativeFrame(bit_cast<void*>(&callFunctionToString), 0);
   callFunction(func, args);
   thread->popFrame();
-  builtInStdout = old_stream;
+  builtinStdout = old_stream;
   return stream.str();
 }
 
