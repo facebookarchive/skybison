@@ -10,6 +10,8 @@ using namespace testing;
 
 using AbstractExtensionApiTest = ExtensionApi;
 
+// Buffer Protocol
+
 TEST_F(AbstractExtensionApiTest, PyBufferFillInfoSimpleFillsInfo) {
   Py_buffer buffer;
   char buf[13];
@@ -74,6 +76,95 @@ TEST_F(AbstractExtensionApiTest,
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_BufferError));
 }
+
+// PyIndex_Check
+
+TEST_F(AbstractExtensionApiTest, PyIndexCheckWithIntReturnsTrue) {
+  PyObjectPtr int_num(PyLong_FromLong(1));
+  EXPECT_TRUE(PyIndex_Check(int_num.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyIndexCheckWithFloatReturnsFalse) {
+  PyObjectPtr float_num(PyFloat_FromDouble(1.1));
+  EXPECT_FALSE(PyIndex_Check(float_num.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyIndexCheckWithUncallableDunderIndexReturnsTrue) {
+  PyRun_SimpleString(R"(
+class C:
+  __index__ = None
+idx = C()
+  )");
+  PyObjectPtr idx(moduleGet("__main__", "idx"));
+  EXPECT_TRUE(PyIndex_Check(idx.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyIndexCheckWithDunderIndexReturnsTrue) {
+  PyRun_SimpleString(R"(
+class C:
+  def __index__(self):
+    return 1
+idx = C()
+  )");
+  PyObjectPtr idx(moduleGet("__main__", "idx"));
+  EXPECT_TRUE(PyIndex_Check(idx.get()));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+// PyIter_Next
+
+TEST_F(AbstractExtensionApiTest, PyIterNextReturnsNext) {
+  PyObjectPtr tuple(PyTuple_Pack(3, PyLong_FromLong(1), PyLong_FromLong(2),
+                                 PyLong_FromLong(3)));
+  PyObjectPtr iter(PyObject_GetIter(tuple));
+  ASSERT_NE(iter, nullptr);
+  PyObjectPtr next(PyIter_Next(iter));
+  ASSERT_NE(next, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(next), 1);
+  next = PyIter_Next(iter);
+  ASSERT_NE(next, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(next), 2);
+  next = PyIter_Next(iter);
+  ASSERT_NE(next, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(next), 3);
+  next = PyIter_Next(iter);
+  ASSERT_EQ(next, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyIterNextOnNonIterRaises) {
+  ASSERT_EQ(PyObject_GetIter(Py_None), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyIterNextPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __iter__(self):
+    return self
+  def __next__(self):
+    raise ValueError("hi")
+
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr iter(PyObject_GetIter(c));
+  ASSERT_NE(iter, nullptr);
+  PyObjectPtr next(PyIter_Next(iter));
+  ASSERT_EQ(next, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+// Mapping Protocol
 
 TEST_F(AbstractExtensionApiTest, PyMappingCheckWithoutGetItemReturnsFalse) {
   PyRun_SimpleString(R"(
@@ -1407,6 +1498,65 @@ def func(*args, **kwargs):
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "(){}"));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjCallFunctionObjArgsWithNullReturnsNull) {
+  testing::PyObjectPtr test(PyObject_CallFunctionObjArgs(nullptr, nullptr));
+  EXPECT_EQ(nullptr, test);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjCallFunctionObjArgsWithNonFunctionReturnsNull) {
+  testing::PyObjectPtr non_func(PyTuple_New(0));
+  testing::PyObjectPtr test(PyObject_CallFunctionObjArgs(non_func, nullptr));
+  EXPECT_EQ(test, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, CallFunctionObjArgsWithNoArgsReturnsValue) {
+  PyRun_SimpleString(R"(
+def func():
+  return 5
+  )");
+
+  testing::PyObjectPtr func(testing::moduleGet("__main__", "func"));
+  testing::PyObjectPtr func_result(PyObject_CallFunctionObjArgs(func, nullptr));
+  EXPECT_EQ(PyLong_AsLong(func_result), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       CallFunctionObjArgsWithCallableClassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo():
+  def __call__(self):
+    return 5
+f = Foo()
+  )");
+
+  testing::PyObjectPtr f(testing::moduleGet("__main__", "f"));
+  testing::PyObjectPtr f_result(PyObject_CallFunctionObjArgs(f, nullptr));
+  EXPECT_EQ(PyLong_AsLong(f_result), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       CallFunctionObjArgsWithManyArgumentsReturnsValue) {
+  PyRun_SimpleString(R"(
+def func(a, b, c, d, e, f):
+  return a + b + c + d + e + f
+  )");
+
+  testing::PyObjectPtr func(testing::moduleGet("__main__", "func"));
+  PyObject* one = PyLong_FromLong(1);
+  PyObject* two = PyLong_FromLong(2);
+  testing::PyObjectPtr func_result(PyObject_CallFunctionObjArgs(
+      func, one, one, two, two, one, two, nullptr));
+  Py_DECREF(one);
+  Py_DECREF(two);
+  EXPECT_EQ(PyLong_AsLong(func_result), 9);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithBytesReturnsTrue) {
   PyObject* obj(PyBytes_FromString("foo"));
   EXPECT_TRUE(PyObject_CheckBuffer(obj));
@@ -1526,6 +1676,56 @@ def func(*args, **kwargs):
   ASSERT_EQ(result, nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(AbstractExtensionApiTest, GetIterWithNoDunderIterRaises) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  ASSERT_EQ(PyObject_GetIter(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, GetIterWithNonCallableDunderIterRaises) {
+  PyRun_SimpleString(R"(
+class C:
+  __iter__ = 4
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  ASSERT_EQ(PyObject_GetIter(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, GetIterWithDunderIterReturningNonIterRaises) {
+  PyRun_SimpleString(R"(
+class C:
+  def __iter__(self):
+    return 4
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  ASSERT_EQ(PyObject_GetIter(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, GetIterPropagatesException) {
+  PyRun_SimpleString(R"(
+class C:
+  def __iter__(self):
+    raise ValueError("hi")
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  ASSERT_EQ(PyObject_GetIter(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjectLengthOnNullRaisesSystemError) {
@@ -1692,12 +1892,14 @@ TEST_F(AbstractExtensionApiTest, PyObjectTypeReturnsType) {
   EXPECT_TRUE(PyType_Check(type));
 }
 
+// Sequence Protocol
+
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithoutGetItemReturnsFalse) {
   PyRun_SimpleString(R"(
 class ClassWithoutDunderGetItem: pass
 
 obj = ClassWithoutDunderGetItem()
-  )");
+)");
 
   PyObjectPtr obj(moduleGet("__main__", "obj"));
   EXPECT_FALSE(PySequence_Check(obj));
@@ -1710,7 +1912,7 @@ class ClassWithoutDunderGetItem: pass
 
 obj = ClassWithoutDunderGetItem()
 obj.__getitem__ = lambda self, key : 1
-  )");
+)");
 
   PyObjectPtr obj(moduleGet("__main__", "obj"));
   EXPECT_FALSE(PySequence_Check(obj));
@@ -1754,7 +1956,7 @@ class ClassWithDunderGetItemMethod:
     return None
 
 obj = ClassWithDunderGetItemMethod()
-  )");
+)");
 
   PyObjectPtr obj(moduleGet("__main__", "obj"));
   EXPECT_TRUE(PySequence_Check(obj));
@@ -1766,7 +1968,7 @@ class ClassWithDunderGetItemAttr:
   __getitem__ = 42
 
 obj = ClassWithDunderGetItemAttr()
-  )");
+)");
 
   PyObjectPtr obj(moduleGet("__main__", "obj"));
   EXPECT_TRUE(PySequence_Check(obj));
@@ -1780,254 +1982,6 @@ TEST_F(AbstractExtensionApiTest, PySequenceCheckWithStringReturnsTrue) {
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithListReturnsTrue) {
   PyObjectPtr list(PyList_New(3));
   EXPECT_TRUE(PySequence_Check(list));
-}
-
-TEST_F(AbstractExtensionApiTest, PySequenceLengthOnNull) {
-  EXPECT_EQ(PySequence_Length(nullptr), -1);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
-}
-
-TEST_F(AbstractExtensionApiTest, PySequenceLengthWithNonSequenceReturnsValue) {
-  PyRun_SimpleString(R"(
-class Foo:
-  def __len__(self):
-    return 1
-obj = Foo()
-  )");
-
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
-  EXPECT_EQ(PySequence_Length(obj), 1);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-}
-
-// PySequence_Length fails on `dict` in CPython, but succeeds on subclasses
-TEST_F(AbstractExtensionApiTest,
-       PySequenceLengthWithEmptyDictSubclassReturnsZero) {
-  PyRun_SimpleString(R"(
-class Foo(dict):
-  pass
-obj = Foo()
-  )");
-
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
-  EXPECT_EQ(PySequence_Length(obj), 0);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest,
-       PySequenceLengthWithNonEmptyDictSubclassReturnsValue) {
-  PyRun_SimpleString(R"(
-class Foo(dict):
-  pass
-obj = Foo()
-  )");
-
-  PyObjectPtr obj(moduleGet("__main__", "obj"));
-  PyObjectPtr one(PyLong_FromLong(1));
-  PyObjectPtr two(PyLong_FromLong(2));
-
-  ASSERT_EQ(PyDict_SetItem(obj, one, two), 0);
-  ASSERT_EQ(PyDict_SetItem(obj, two, one), 0);
-
-  EXPECT_EQ(PySequence_Length(obj), 2);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest, PySequenceSizeOnNull) {
-  EXPECT_EQ(PySequence_Size(nullptr), -1);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
-}
-
-TEST_F(AbstractExtensionApiTest, PyObjCallFunctionObjArgsWithNullReturnsNull) {
-  testing::PyObjectPtr test(PyObject_CallFunctionObjArgs(nullptr, nullptr));
-  EXPECT_EQ(nullptr, test);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
-}
-
-TEST_F(AbstractExtensionApiTest,
-       PyObjCallFunctionObjArgsWithNonFunctionReturnsNull) {
-  testing::PyObjectPtr non_func(PyTuple_New(0));
-  testing::PyObjectPtr test(PyObject_CallFunctionObjArgs(non_func, nullptr));
-  EXPECT_EQ(test, nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
-}
-
-TEST_F(AbstractExtensionApiTest, CallFunctionObjArgsWithNoArgsReturnsValue) {
-  PyRun_SimpleString(R"(
-def func():
-  return 5
-  )");
-
-  testing::PyObjectPtr func(testing::moduleGet("__main__", "func"));
-  testing::PyObjectPtr func_result(PyObject_CallFunctionObjArgs(func, nullptr));
-  EXPECT_EQ(PyLong_AsLong(func_result), 5);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest,
-       CallFunctionObjArgsWithCallableClassReturnsValue) {
-  PyRun_SimpleString(R"(
-class Foo():
-  def __call__(self):
-    return 5
-f = Foo()
-  )");
-
-  testing::PyObjectPtr f(testing::moduleGet("__main__", "f"));
-  testing::PyObjectPtr f_result(PyObject_CallFunctionObjArgs(f, nullptr));
-  EXPECT_EQ(PyLong_AsLong(f_result), 5);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest,
-       CallFunctionObjArgsWithManyArgumentsReturnsValue) {
-  PyRun_SimpleString(R"(
-def func(a, b, c, d, e, f):
-  return a + b + c + d + e + f
-  )");
-
-  testing::PyObjectPtr func(testing::moduleGet("__main__", "func"));
-  PyObject* one = PyLong_FromLong(1);
-  PyObject* two = PyLong_FromLong(2);
-  testing::PyObjectPtr func_result(PyObject_CallFunctionObjArgs(
-      func, one, one, two, two, one, two, nullptr));
-  Py_DECREF(one);
-  Py_DECREF(two);
-  EXPECT_EQ(PyLong_AsLong(func_result), 9);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest, PyIndexCheckWithIntReturnsTrue) {
-  PyObjectPtr int_num(PyLong_FromLong(1));
-  EXPECT_TRUE(PyIndex_Check(int_num.get()));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest, PyIndexCheckWithFloatReturnsFalse) {
-  PyObjectPtr float_num(PyFloat_FromDouble(1.1));
-  EXPECT_FALSE(PyIndex_Check(float_num.get()));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest,
-       PyIndexCheckWithUncallableDunderIndexReturnsTrue) {
-  PyRun_SimpleString(R"(
-class C:
-  __index__ = None
-idx = C()
-  )");
-  PyObjectPtr idx(moduleGet("__main__", "idx"));
-  EXPECT_TRUE(PyIndex_Check(idx.get()));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest, PyIndexCheckWithDunderIndexReturnsTrue) {
-  PyRun_SimpleString(R"(
-class C:
-  def __index__(self):
-    return 1
-idx = C()
-  )");
-  PyObjectPtr idx(moduleGet("__main__", "idx"));
-  EXPECT_TRUE(PyIndex_Check(idx.get()));
-  ASSERT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest, GetIterWithNoDunderIterRaises) {
-  PyRun_SimpleString(R"(
-class C:
-  pass
-c = C()
-)");
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  ASSERT_EQ(PyObject_GetIter(c), nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
-}
-
-TEST_F(AbstractExtensionApiTest, GetIterWithNonCallableDunderIterRaises) {
-  PyRun_SimpleString(R"(
-class C:
-  __iter__ = 4
-c = C()
-)");
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  ASSERT_EQ(PyObject_GetIter(c), nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
-}
-
-TEST_F(AbstractExtensionApiTest, GetIterWithDunderIterReturningNonIterRaises) {
-  PyRun_SimpleString(R"(
-class C:
-  def __iter__(self):
-    return 4
-c = C()
-)");
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  ASSERT_EQ(PyObject_GetIter(c), nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
-}
-
-TEST_F(AbstractExtensionApiTest, GetIterPropagatesException) {
-  PyRun_SimpleString(R"(
-class C:
-  def __iter__(self):
-    raise ValueError("hi")
-c = C()
-)");
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  ASSERT_EQ(PyObject_GetIter(c), nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
-}
-
-TEST_F(AbstractExtensionApiTest, PyIterNextReturnsNext) {
-  PyObjectPtr tuple(PyTuple_Pack(3, PyLong_FromLong(1), PyLong_FromLong(2),
-                                 PyLong_FromLong(3)));
-  PyObjectPtr iter(PyObject_GetIter(tuple));
-  ASSERT_NE(iter, nullptr);
-  PyObjectPtr next(PyIter_Next(iter));
-  ASSERT_NE(next, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyLong_AsLong(next), 1);
-  next = PyIter_Next(iter);
-  ASSERT_NE(next, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyLong_AsLong(next), 2);
-  next = PyIter_Next(iter);
-  ASSERT_NE(next, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_EQ(PyLong_AsLong(next), 3);
-  next = PyIter_Next(iter);
-  ASSERT_EQ(next, nullptr);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-}
-
-TEST_F(AbstractExtensionApiTest, PyIterNextOnNonIterRaises) {
-  ASSERT_EQ(PyObject_GetIter(Py_None), nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
-}
-
-TEST_F(AbstractExtensionApiTest, PyIterNextPropagatesException) {
-  PyRun_SimpleString(R"(
-class C:
-  def __iter__(self):
-    return self
-  def __next__(self):
-    raise ValueError("hi")
-
-c = C()
-)");
-  PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr iter(PyObject_GetIter(c));
-  ASSERT_NE(iter, nullptr);
-  PyObjectPtr next(PyIter_Next(iter));
-  ASSERT_EQ(next, nullptr);
-  ASSERT_NE(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceConcatWithNullLeftRaises) {
@@ -2264,6 +2218,57 @@ c = C()
   EXPECT_TRUE(PyList_CheckExact(result));
 }
 
+TEST_F(AbstractExtensionApiTest, PySequenceLengthOnNull) {
+  EXPECT_EQ(PySequence_Length(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceLengthWithNonSequenceReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo:
+  def __len__(self):
+    return 1
+obj = Foo()
+)");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PySequence_Length(obj), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+// PySequence_Length fails on `dict` in CPython, but succeeds on subclasses
+TEST_F(AbstractExtensionApiTest,
+       PySequenceLengthWithEmptyDictSubclassReturnsZero) {
+  PyRun_SimpleString(R"(
+class Foo(dict):
+  pass
+obj = Foo()
+)");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PySequence_Length(obj), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceLengthWithNonEmptyDictSubclassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo(dict):
+  pass
+obj = Foo()
+)");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+
+  ASSERT_EQ(PyDict_SetItem(obj, one, two), 0);
+  ASSERT_EQ(PyDict_SetItem(obj, two, one), 0);
+
+  EXPECT_EQ(PySequence_Length(obj), 2);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceListWithNullSeqRaisesSystemError) {
   ASSERT_EQ(PySequence_List(nullptr), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -2400,6 +2405,11 @@ c = C()
   PyObjectPtr sideeffect(moduleGet("__main__", "sideeffect"));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyLong_AsLong(sideeffect), 10);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceSizeWithNullRaisesSystemError) {
+  EXPECT_EQ(PySequence_Size(nullptr), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceTupleWithNullSeqRaisesSystemError) {
