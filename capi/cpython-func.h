@@ -886,6 +886,7 @@ PyAPI_FUNC(int) PyType_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyType_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyUnicode_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyUnicode_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyWeakref_Check_Func(PyObject*);
 
 PyAPI_FUNC(void) Py_DECREF_Func(PyObject*);
 PyAPI_FUNC(void) Py_INCREF_Func(PyObject*);
@@ -939,6 +940,7 @@ PyAPI_FUNC(void)
 #define PyType_CheckExact(op) (PyType_CheckExact_Func((PyObject*)(op)))
 #define PyUnicode_Check(op) (PyUnicode_Check_Func((PyObject*)(op)))
 #define PyUnicode_CheckExact(op) (PyUnicode_CheckExact_Func((PyObject*)(op)))
+#define PyWeakref_Check(op) (PyWeakref_Check_Func((PyObject*)(op)))
 
 #define PYTHON_API_VERSION 1013
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)

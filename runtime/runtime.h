@@ -182,7 +182,8 @@ class Runtime {
 
   RawObject newValueCell();
 
-  RawObject newWeakRef();
+  RawObject newWeakref(Thread* thread, const Object& referent,
+                       const Object& callback);
 
   void createImportlibModule();
 
@@ -639,6 +640,14 @@ class Runtime {
 
   // Explicitly seed the random number generator
   void seedRandom(const uword random_state[2], const uword hash_secret[2]);
+
+  // Returns whether object's class provides a __call__ method
+  //
+  // If its type defines a __call__, it is also callable (even if __call__ is
+  // not actually callable).
+  // Note that this does not include __call__ defined on the particular
+  // instance, only __call__ defined on the type.
+  bool isCallable(Thread* thread, const Object& object);
 
   // Returns whether object's class provides a __set__ method
   bool isDataDescriptor(Thread* thread, const Object& object);

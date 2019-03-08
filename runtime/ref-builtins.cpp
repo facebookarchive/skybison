@@ -19,16 +19,14 @@ const BuiltinMethod RefBuiltins::kBuiltinMethods[] = {
 };
 
 RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
   if (nargs < 2 || nargs > 3) {
     return thread->raiseTypeErrorWithCStr("ref() expected 2 or 3 arguments");
   }
   Arguments args(frame, nargs);
-  WeakRef ref(&scope, thread->runtime()->newWeakRef());
-  ref.setReferent(args.get(1));
-  ref.setCallback(args.get(2));
-
-  return *ref;
+  HandleScope scope(thread);
+  Object referent(&scope, args.get(1));
+  Object callback(&scope, args.get(2));
+  return thread->runtime()->newWeakref(thread, referent, callback);
 }
 
 }  // namespace python

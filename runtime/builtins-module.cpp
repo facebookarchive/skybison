@@ -409,18 +409,7 @@ RawObject BuiltinsModule::callable(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object arg(&scope, args.get(0));
-  if (arg.isFunction() || arg.isBoundMethod() || arg.isType()) {
-    return Bool::trueObj();
-  }
-  Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(*arg));
-  // If its type defines a __call__, it is also callable (even if __call__ is
-  // not actually callable).
-  // Note that this does not include __call__ defined on the particular
-  // instance, only __call__ defined on the type.
-  Object callable(&scope, thread->runtime()->lookupSymbolInMro(
-                              thread, type, SymbolId::kDunderCall));
-  return Bool::fromBool(!callable.isError());
+  return Bool::fromBool(thread->runtime()->isCallable(thread, arg));
 }
 
 RawObject BuiltinsModule::chr(Thread* thread, Frame* frame_frame, word nargs) {

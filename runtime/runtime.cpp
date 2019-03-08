@@ -638,6 +638,15 @@ void Runtime::seedRandom(const uword random_state[2],
   hash_secret_[1] = hash_secret[1];
 }
 
+bool Runtime::isCallable(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  if (obj.isFunction() || obj.isBoundMethod() || obj.isType()) {
+    return true;
+  }
+  Type type(&scope, typeOf(*obj));
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderCall).isError();
+}
+
 bool Runtime::isDataDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
@@ -2858,7 +2867,14 @@ RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {
 
 RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }
 
-RawObject Runtime::newWeakRef() { return heap()->create<RawWeakRef>(); }
+RawObject Runtime::newWeakref(Thread* thread, const Object& referent,
+                              const Object& callback) {
+  HandleScope scope(thread);
+  WeakRef ref(&scope, heap()->create<RawWeakRef>());
+  ref.setReferent(*referent);
+  ref.setCallback(*callback);
+  return *ref;
+}
 
 void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
   HandleScope scope;

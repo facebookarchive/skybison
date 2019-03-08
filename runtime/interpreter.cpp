@@ -49,6 +49,8 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
   } else {
     Runtime* runtime = thread->runtime();
     for (;;) {
+      // This does not use Runtime::isCallable because that would involve two
+      // loads.
       Type type(&scope, runtime->typeOf(*callable));
       Object attr(&scope, runtime->lookupSymbolInMro(thread, type,
                                                      SymbolId::kDunderCall));

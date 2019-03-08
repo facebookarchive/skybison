@@ -11,19 +11,22 @@ using namespace testing;
 
 TEST(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   Runtime runtime;
-  HandleScope scope;
-  WeakRef ref(&scope, runtime.newWeakRef());
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Tuple array(&scope, runtime.newTuple(10));
-  ref.setReferent(*array);
+  Object none(&scope, NoneType::object());
+  WeakRef ref(&scope, runtime.newWeakref(thread, array, none));
   runtime.collectGarbage();
   EXPECT_EQ(ref.referent(), *array);
 }
 
 TEST(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
   Runtime runtime;
-  HandleScope scope;
-  WeakRef ref(&scope, runtime.newWeakRef());
-  ref.setReferent(SmallInt::fromWord(1234));
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Int obj(&scope, SmallInt::fromWord(1234));
+  Object none(&scope, NoneType::object());
+  WeakRef ref(&scope, runtime.newWeakref(thread, obj, none));
   runtime.collectGarbage();
   EXPECT_EQ(ref.referent(), SmallInt::fromWord(1234));
 }
@@ -31,20 +34,24 @@ TEST(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
 TEST(ScavengerTest, ClearWeakReference) {
   Runtime runtime;
   HandleScope scope;
-  WeakRef ref(&scope, runtime.newWeakRef());
+  Object none(&scope, NoneType::object());
+  Object ref(&scope, *none);
   {
     Tuple array(&scope, runtime.newTuple(10));
-    ref.setReferent(*array);
+    WeakRef ref_inner(&scope,
+                      runtime.newWeakref(Thread::currentThread(), array, none));
+    ref = *ref_inner;
     runtime.collectGarbage();
-    EXPECT_EQ(ref.referent(), *array);
+    EXPECT_EQ(ref_inner.referent(), *array);
   }
   runtime.collectGarbage();
-  EXPECT_EQ(ref.referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref).referent(), NoneType::object());
 }
 
 TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
 
   // Create strongly referenced heap allocated objects.
   Tuple strongrefs(&scope, runtime.newTuple(4));
@@ -57,8 +64,9 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   // objects as referents.
   Tuple weakrefs(&scope, runtime.newTuple(4));
   for (word i = 0; i < weakrefs.length(); i++) {
-    WeakRef elt(&scope, runtime.newWeakRef());
-    elt.setReferent(strongrefs.at(i));
+    Object obj(&scope, strongrefs.at(i));
+    Object none(&scope, NoneType::object());
+    WeakRef elt(&scope, runtime.newWeakref(thread, obj, none));
     weakrefs.atPut(i, *elt);
   }
 
@@ -109,7 +117,8 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
 
 TEST(ScavengerTest, BaseCallback) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   const char* src = R"(
 a = 1
 b = 2
@@ -122,23 +131,24 @@ def g(ref, c=4):
 )";
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
-  WeakRef ref1(&scope, runtime.newWeakRef());
-  WeakRef ref2(&scope, runtime.newWeakRef());
+  Object none(&scope, NoneType::object());
+  Object ref1(&scope, *none);
+  Object ref2(&scope, *none);
   {
     Tuple array1(&scope, runtime.newTuple(10));
     Function func_f(&scope, moduleAt(&runtime, main, "f"));
-    ref1.setReferent(*array1);
-    ref1.setCallback(*func_f);
+    WeakRef ref1_inner(&scope, runtime.newWeakref(thread, array1, func_f));
+    ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    ref2.setReferent(*array2);
-    ref2.setCallback(*func_g);
+    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    ref2 = *ref2_inner;
 
     runtime.collectGarbage();
 
-    EXPECT_EQ(ref1.referent(), *array1);
-    EXPECT_EQ(ref2.referent(), *array2);
+    EXPECT_EQ(ref1_inner.referent(), *array1);
+    EXPECT_EQ(ref2_inner.referent(), *array2);
     SmallInt a(&scope, moduleAt(&runtime, main, "a"));
     SmallInt b(&scope, moduleAt(&runtime, main, "b"));
     EXPECT_EQ(a.value(), 1);
@@ -146,10 +156,10 @@ def g(ref, c=4):
   }
   runtime.collectGarbage();
 
-  EXPECT_EQ(ref1.referent(), NoneType::object());
-  EXPECT_EQ(ref1.callback(), NoneType::object());
-  EXPECT_EQ(ref2.referent(), NoneType::object());
-  EXPECT_EQ(ref2.callback(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref1).referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref1).callback(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   SmallInt b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a.value(), 3);
@@ -158,7 +168,8 @@ def g(ref, c=4):
 
 TEST(ScavengerTest, MixCallback) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   const char* src = R"(
 a = 1
 b = 2
@@ -172,22 +183,20 @@ def g(ref, c=4):
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
 
-  WeakRef ref1(&scope, runtime.newWeakRef());
-  WeakRef ref2(&scope, runtime.newWeakRef());
   Tuple array1(&scope, runtime.newTuple(10));
   Function func_f(&scope, moduleAt(&runtime, main, "f"));
-  ref1.setReferent(*array1);
-  ref1.setCallback(*func_f);
+  WeakRef ref1(&scope, runtime.newWeakref(thread, array1, func_f));
+  Object ref2(&scope, NoneType::object());
   {
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    ref2.setReferent(*array2);
-    ref2.setCallback(*func_g);
+    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    ref2 = *ref2_inner;
 
     runtime.collectGarbage();
 
     EXPECT_EQ(ref1.referent(), *array1);
-    EXPECT_EQ(ref2.referent(), *array2);
+    EXPECT_EQ(ref2_inner.referent(), *array2);
     SmallInt a(&scope, moduleAt(&runtime, main, "a"));
     SmallInt b(&scope, moduleAt(&runtime, main, "b"));
     EXPECT_EQ(a.value(), 1);
@@ -197,8 +206,8 @@ def g(ref, c=4):
 
   EXPECT_EQ(ref1.referent(), *array1);
   EXPECT_EQ(ref1.callback(), *func_f);
-  EXPECT_EQ(ref2.referent(), NoneType::object());
-  EXPECT_EQ(ref2.callback(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   SmallInt b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a.value(), 1);
@@ -212,7 +221,8 @@ static RawObject doGarbageCollection(Thread* thread, Frame*, word) {
 
 TEST(ScavengerTest, CallbackInvokeGC) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   const char* src = R"(
 a = 1
 def g(ref, b=2):
@@ -221,41 +231,42 @@ def g(ref, b=2):
 )";
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
-  WeakRef ref1(&scope, runtime.newWeakRef());
-  WeakRef ref2(&scope, runtime.newWeakRef());
+  Object ref1(&scope, NoneType::object());
+  Object ref2(&scope, NoneType::object());
   {
     Tuple array1(&scope, runtime.newTuple(10));
     Function collect(&scope, runtime.newFunction());
     collect.setEntry(nativeTrampoline<doGarbageCollection>);
 
-    ref1.setReferent(*array1);
-    ref1.setCallback(*collect);
+    WeakRef ref1_inner(&scope, runtime.newWeakref(thread, array1, collect));
+    ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    ref2.setReferent(*array2);
-    ref2.setCallback(*func_g);
+    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    ref2 = *ref2_inner;
 
     runtime.collectGarbage();
 
-    EXPECT_EQ(ref1.referent(), *array1);
-    EXPECT_EQ(ref2.referent(), *array2);
+    EXPECT_EQ(ref1_inner.referent(), *array1);
+    EXPECT_EQ(ref2_inner.referent(), *array2);
     SmallInt a(&scope, moduleAt(&runtime, main, "a"));
     EXPECT_EQ(a.value(), 1);
   }
   runtime.collectGarbage();
 
-  EXPECT_EQ(ref1.referent(), NoneType::object());
-  EXPECT_EQ(ref1.callback(), NoneType::object());
-  EXPECT_EQ(ref2.referent(), NoneType::object());
-  EXPECT_EQ(ref2.callback(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref1).referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref1).callback(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(a.value(), 2);
 }
 
 TEST(ScavengerTest, IgnoreCallbackException) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   const char* src = R"(
 a = 1
 b = 2
@@ -273,23 +284,23 @@ def g(ref, c=4):
 )";
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
-  WeakRef ref1(&scope, runtime.newWeakRef());
-  WeakRef ref2(&scope, runtime.newWeakRef());
+  Object ref1(&scope, NoneType::object());
+  Object ref2(&scope, NoneType::object());
   {
     Tuple array1(&scope, runtime.newTuple(10));
     Function func_f(&scope, moduleAt(&runtime, main, "f"));
-    ref1.setReferent(*array1);
-    ref1.setCallback(*func_f);
+    WeakRef ref1_inner(&scope, runtime.newWeakref(thread, array1, func_f));
+    ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    ref2.setReferent(*array2);
-    ref2.setCallback(*func_g);
+    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    ref2 = *ref2_inner;
 
     runtime.collectGarbage();
 
-    EXPECT_EQ(ref1.referent(), *array1);
-    EXPECT_EQ(ref2.referent(), *array2);
+    EXPECT_EQ(ref1_inner.referent(), *array1);
+    EXPECT_EQ(ref2_inner.referent(), *array2);
     SmallInt a(&scope, moduleAt(&runtime, main, "a"));
     SmallInt b(&scope, moduleAt(&runtime, main, "b"));
     EXPECT_EQ(a.value(), 1);
@@ -301,10 +312,10 @@ def g(ref, c=4):
   EXPECT_EQ(moduleAt(&runtime, main, "callback_ran"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, main, "callback_returned"), Bool::falseObj());
 
-  EXPECT_EQ(ref1.referent(), NoneType::object());
-  EXPECT_EQ(ref1.callback(), NoneType::object());
-  EXPECT_EQ(ref2.referent(), NoneType::object());
-  EXPECT_EQ(ref2.callback(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref1).referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref1).callback(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   SmallInt b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a.value(), 1);
