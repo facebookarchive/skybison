@@ -3003,20 +3003,6 @@ Foo = MyMeta('Foo', (), {})
   EXPECT_TRUE(runtime.isInstanceOfType(*foo));
 }
 
-TEST(ImportlibTest, SysMetaPathIsList) {
-  const char* src = R"(
-import sys
-
-meta_path = sys.meta_path
-)";
-  Runtime runtime;
-  HandleScope scope;
-  runFromCStr(&runtime, src);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object meta_path(&scope, moduleAt(&runtime, main, "meta_path"));
-  ASSERT_TRUE(meta_path.isList());
-}
-
 TEST(SubclassingTest, SubclassBuiltinSubclass) {
   const char* src = R"(
 class Test(Exception):

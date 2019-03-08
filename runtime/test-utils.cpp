@@ -482,5 +482,26 @@ RawObject listFromRange(word start, word stop) {
   return ::testing::AssertionSuccess();
 }
 
+TemporaryDirectory::TemporaryDirectory() {
+  std::unique_ptr<char[]> tempdir(OS::temporaryDirectory("PyroTest"));
+  path = tempdir.get();
+  CHECK(!path.empty(), "must not be empty");
+  if (path.back() != '/') path += "/";
+}
+
+TemporaryDirectory::~TemporaryDirectory() {
+  std::string cleanup = "rm -rf " + path;
+  CHECK(system(cleanup.c_str()) == 0, "failed to cleanup temporary directory");
+}
+
+void writeFile(const std::string& path, const std::string& contents) {
+  CHECK(!path.empty() && path.front() == '/', "Should be an absolute path");
+  std::ofstream of(path);
+  CHECK(of.good(), "file creation failed");
+  of << contents;
+  CHECK(of.good(), "file write failed");
+  of.close();
+}
+
 }  // namespace testing
 }  // namespace python

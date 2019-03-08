@@ -372,6 +372,7 @@ add_library(
   runtime/handles-test.cpp
   runtime/heap-test.cpp
   runtime/imp-module-test.cpp
+  runtime/importlib-test.cpp
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
   runtime/io-module-test.cpp

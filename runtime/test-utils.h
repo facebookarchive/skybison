@@ -199,6 +199,8 @@ RawObject listFromRange(word start, word stop);
                                          LayoutId layout_id,
                                          const char* message);
 
+void writeFile(const std::string& path, const std::string& contents);
+
 // Simple PointerVisitor that remembers the objects visited.
 class RememberingVisitor : public PointerVisitor {
  public:
@@ -219,6 +221,15 @@ class RememberingVisitor : public PointerVisitor {
 
  private:
   std::vector<RawObject> pointers_;
+};
+
+// Creates a temporary directory and cleans it up when the object is destroyed.
+class TemporaryDirectory {
+ public:
+  TemporaryDirectory();
+  ~TemporaryDirectory();
+
+  std::string path;
 };
 
 const uword kHighbitUword = uword{1} << (kBitsPerWord - 1);
