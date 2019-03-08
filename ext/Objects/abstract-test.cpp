@@ -1382,6 +1382,108 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyObjectFastCallDictWithPositionalsAndKeywordArgsCalls) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  return f"{args!r}{kwargs!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObject* args[] = {
+      PyLong_FromLong(3),
+      PyUnicode_FromString("lll"),
+      PyLong_FromLong(2),
+  };
+  size_t n_args = Py_ARRAY_LENGTH(args);
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr kwarg_name(PyUnicode_FromString("kwarg"));
+  PyObjectPtr kwarg_value(PyLong_FromLong(7));
+  PyDict_SetItem(kwargs, kwarg_name, kwarg_value);
+  PyObjectPtr result(_PyObject_FastCallDict(func, args, n_args, kwargs));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "(3, 'lll', 2){'kwarg': 7}"));
+  for (size_t i = 0; i < n_args; i++) {
+    Py_DECREF(args[i]);
+  }
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectFastCallDictWithoutKeywordArgsCalls) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  return f"{args!r}{kwargs!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObject* args[] = {
+      PyLong_FromLong(7),
+      PyUnicode_FromString("xxx"),
+      PyLong_FromLong(16),
+  };
+  size_t n_args = Py_ARRAY_LENGTH(args);
+  PyObjectPtr result(_PyObject_FastCallDict(func, args, n_args, nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "(7, 'xxx', 16){}"));
+  for (size_t i = 0; i < n_args; i++) {
+    Py_DECREF(args[i]);
+  }
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectFastCallDictWithZeroPositionalsAndKeywordArgsCalls) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  return f"{args!r}{kwargs!r}"
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr kwarg_name(PyUnicode_FromString("kwarg"));
+  PyObjectPtr kwarg_value(PyLong_FromLong(2));
+  PyDict_SetItem(kwargs, kwarg_name, kwarg_value);
+  PyObjectPtr result(_PyObject_FastCallDict(func, nullptr, 0, kwargs));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "(){'kwarg': 2}"));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectFastCallDictWithPositionalsAndKeywordArgsPropagatesException) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  raise UserWarning()
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObject* args[] = {
+      PyLong_FromLong(8),
+  };
+  size_t n_args = Py_ARRAY_LENGTH(args);
+  PyObjectPtr kwargs(PyDict_New());
+  PyObjectPtr kwarg_name(PyUnicode_FromString("kwarg"));
+  PyObjectPtr kwarg_value(PyLong_FromLong(7));
+  PyDict_SetItem(kwargs, kwarg_name, kwarg_value);
+  PyObjectPtr result(_PyObject_FastCallDict(func, args, n_args, kwargs));
+  for (size_t i = 0; i < n_args; i++) {
+    Py_DECREF(args[i]);
+  }
+  ASSERT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectFastCallDictWithoutKeywordArgsPropagatesException) {
+  PyRun_SimpleString(R"(
+def func(*args, **kwargs):
+  raise UserWarning()
+)");
+  PyObjectPtr func(moduleGet("__main__", "func"));
+  PyObject* args[] = {
+      PyUnicode_FromString(""),
+  };
+  size_t n_args = Py_ARRAY_LENGTH(args);
+  PyObjectPtr result(_PyObject_FastCallDict(func, args, n_args, nullptr));
+  for (size_t i = 0; i < n_args; i++) {
+    Py_DECREF(args[i]);
+  }
+  ASSERT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectLengthOnNullRaisesSystemError) {
   EXPECT_EQ(PyObject_Length(nullptr), -1);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));

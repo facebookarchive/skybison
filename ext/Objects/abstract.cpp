@@ -860,11 +860,42 @@ PY_EXPORT int PyObject_DelItemString(PyObject* /* o */, const char* /* y */) {
   UNIMPLEMENTED("PyObject_DelItemString");
 }
 
-PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* /* e */,
-                                           PyObject* const* /* s */,
-                                           Py_ssize_t /* s */,
-                                           PyObject* /* s */) {
-  UNIMPLEMENTED("_PyObject_FastCallDict");
+PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
+                                           PyObject** pyargs, Py_ssize_t n_args,
+                                           PyObject* kwargs) {
+  DCHECK(callable != nullptr, "callable must not be nullptr");
+  Thread* thread = Thread::currentThread();
+  DCHECK(!thread->hasPendingException(),
+         "may accidentally clear pending exception");
+  DCHECK(n_args >= 0, "n_args must not be negative");
+
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(ApiHandle::fromPyObject(callable)->asObject());
+  DCHECK(n_args == 0 || pyargs != nullptr, "Args array must not be nullptr");
+  Object result(&scope, NoneType::object());
+  if (kwargs != nullptr) {
+    Tuple args(&scope, thread->runtime()->newTuple(n_args));
+    for (Py_ssize_t i = 0; i < n_args; i++) {
+      args.atPut(i, ApiHandle::fromPyObject(pyargs[i])->asObject());
+    }
+    frame->pushValue(*args);
+    Object kwargs_obj(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
+    DCHECK(thread->runtime()->isInstanceOfDict(*kwargs_obj),
+           "kwargs must be a dict");
+    frame->pushValue(*kwargs_obj);
+    // TODO(T30925218): Protect against native stack overflow.
+    result =
+        Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+  } else {
+    for (Py_ssize_t i = 0; i < n_args; i++) {
+      frame->pushValue(ApiHandle::fromPyObject(pyargs[i])->asObject());
+    }
+    // TODO(T30925218): Protect against native stack overflow.
+    result = Interpreter::call(thread, frame, n_args);
+  }
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* _PyObject_FastCallKeywords(PyObject* /* e */,

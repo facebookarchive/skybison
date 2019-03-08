@@ -480,6 +480,8 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject*);
 PyAPI_FUNC(int) PyObject_DelItem(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyObject_DelItemString(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyObject_Dir(PyObject*);
+PyAPI_FUNC(PyObject*)
+    _PyObject_FastCallDict(PyObject*, PyObject**, Py_ssize_t, PyObject*);
 PyAPI_FUNC(PyObject*) PyObject_Format(PyObject*, PyObject*);
 PyAPI_FUNC(void) PyObject_Free(void*);
 PyAPI_FUNC(void) PyObject_GC_Del(void*);
