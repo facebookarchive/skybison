@@ -1174,8 +1174,10 @@ def func(*args, **kwargs):
   return f"{args!r}{kwargs!r}"
 )");
   PyObjectPtr func(moduleGet("__main__", "func"));
-  PyObjectPtr args(PyTuple_Pack(3, PyUnicode_FromString("one"),
-                                PyLong_FromLong(2), PyLong_FromLong(3)));
+  PyObjectPtr tup0(PyUnicode_FromString("one"));
+  PyObjectPtr tup1(PyLong_FromLong(2));
+  PyObjectPtr tup2(PyLong_FromLong(3));
+  PyObjectPtr args(PyTuple_Pack(3, tup0.get(), tup1.get(), tup2.get()));
   PyObjectPtr result(PyObject_Call(func, args, nullptr));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "('one', 2, 3){}"));
 }
@@ -1186,10 +1188,14 @@ def func(*args, **kwargs):
   return f"{args!r}{kwargs!r}"
 )");
   PyObjectPtr func(moduleGet("__main__", "func"));
-  PyObjectPtr args(PyTuple_Pack(3, PyLong_FromLong(1), PyLong_FromLong(2),
-                                PyUnicode_FromString("three")));
+  PyObjectPtr tup0(PyLong_FromLong(1));
+  PyObjectPtr tup1(PyLong_FromLong(2));
+  PyObjectPtr tup2(PyUnicode_FromString("three"));
+  PyObjectPtr args(PyTuple_Pack(3, tup0.get(), tup1.get(), tup2.get()));
   PyObjectPtr kwargs(PyDict_New());
-  PyDict_SetItem(kwargs, PyUnicode_FromString("kwarg"), PyLong_FromLong(4));
+  PyObjectPtr kwarg_name(PyUnicode_FromString("kwarg"));
+  PyObjectPtr kwarg_val(PyLong_FromLong(4));
+  PyDict_SetItem(kwargs, kwarg_name, kwarg_val);
   PyObjectPtr result(PyObject_Call(func, args, kwargs));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "(1, 2, 'three'){'kwarg': 4}"));
 }
@@ -1297,8 +1303,7 @@ c = C()
   PyObjectPtr arg0(PyLong_FromLong(-13));
   PyObjectPtr arg1(PyUnicode_FromString("zzz"));
   PyObjectPtr result(
-      PyObject_CallMethodObjArgs(c, name, static_cast<PyObject*>(arg0),
-                                 static_cast<PyObject*>(arg1), nullptr));
+      PyObject_CallMethodObjArgs(c, name, arg0.get(), arg1.get(), nullptr));
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "23(-13, 'zzz')"));
 }
 
