@@ -403,6 +403,7 @@ class RawSmallInt : public RawObject {
 
   // Conversion.
   static RawSmallInt fromWord(word value);
+  static RawSmallInt fromWordTruncated(word value);
   static constexpr bool isValid(word value) {
     return (value >= kMinValue) && (value <= kMaxValue);
   }
@@ -2802,6 +2803,10 @@ if_unsigned_t<T, OptInt<T>> RawSmallInt::asInt() const {
 
 inline RawSmallInt RawSmallInt::fromWord(word value) {
   DCHECK(RawSmallInt::isValid(value), "invalid cast");
+  return cast(RawObject{static_cast<uword>(value) << kTagSize});
+}
+
+inline RawSmallInt RawSmallInt::fromWordTruncated(word value) {
   return cast(RawObject{static_cast<uword>(value) << kTagSize});
 }
 

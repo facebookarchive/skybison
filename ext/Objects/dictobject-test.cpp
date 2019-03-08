@@ -14,10 +14,11 @@ TEST_F(DictExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyDict_ClearFreeList(), 0);
 }
 
-TEST_F(DictExtensionApiTest, GetItemFromNonDictionaryReturnsNull) {
+TEST_F(DictExtensionApiTest, GetItemFromNonDictReturnsNull) {
   // Pass a non dictionary
   PyObject* result = PyDict_GetItem(Py_None, Py_None);
   EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(DictExtensionApiTest, GetItemNonExistingKeyReturnsNull) {
@@ -27,6 +28,7 @@ TEST_F(DictExtensionApiTest, GetItemNonExistingKeyReturnsNull) {
   // Pass a non existing key
   PyObject* result = PyDict_GetItem(dict, nonkey);
   EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(DictExtensionApiTest, GetItemReturnsBorrowedValue) {
@@ -71,6 +73,79 @@ obj = Foo()
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(DictExtensionApiTest, GetItemWithBigHashTruncatesHash) {
+  PyRun_SimpleString(R"(
+class C:
+    def __init__(self, v):
+        self.v = v
+    def __hash__(self):
+        return 1180591620717411303424
+    def __eq__(self, other):
+        return self.v == other.v
+c1 = C(4)
+c2 = C(5)
+  )");
+
+  PyObjectPtr c1(moduleGet("__main__", "c1"));
+  PyObjectPtr c2(moduleGet("__main__", "c2"));
+  PyObjectPtr v1(PyLong_FromLong(1));
+  PyObjectPtr v2(PyLong_FromLong(2));
+  PyObjectPtr dict(PyDict_New());
+  ASSERT_EQ(PyDict_SetItem(dict, c1, v1), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_EQ(PyDict_SetItem(dict, c2, v2), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(PyDict_GetItem(dict, c1));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, v1);
+}
+
+TEST_F(DictExtensionApiTest, GetItemKnownHashFromNonDictRaisesSystemError) {
+  // Pass a non dictionary
+  PyObject* result = _PyDict_GetItem_KnownHash(Py_None, Py_None, 0);
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(DictExtensionApiTest, GetItemKnownHashNonExistingKeyReturnsNull) {
+  PyObject* dict = PyDict_New();
+  PyObject* nonkey = PyLong_FromLong(10);
+
+  // Pass a non existing key
+  PyObject* result = _PyDict_GetItem_KnownHash(dict, nonkey, 0);
+  EXPECT_EQ(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, GetItemKnownHashReturnsBorrowedValue) {
+  PyObject* dict = PyDict_New();
+  PyObject* key = PyLong_FromLong(10);
+  PyObject* value = PyLong_FromLong(0);
+
+  // Insert the value into the dictionary
+  Py_hash_t hash = Py_hash_t{1} << ((sizeof(Py_hash_t) * CHAR_BIT) - 1);
+  ASSERT_EQ(_PyDict_SetItem_KnownHash(dict, key, value, hash), 0);
+
+  // Record the reference count of the value
+  long refcnt = Py_REFCNT(value);
+
+  // Get a new reference to the value from the dictionary
+  PyObject* value2 = _PyDict_GetItem_KnownHash(dict, key, hash);
+
+  // The new reference should be equal to the original reference
+  EXPECT_EQ(value2, value);
+
+  // The reference count should not be affected
+  EXPECT_EQ(Py_REFCNT(value), refcnt);
+
+  Py_DECREF(value);
+  Py_DECREF(key);
+  Py_DECREF(dict);
+}
+
 TEST_F(DictExtensionApiTest, GetItemStringReturnsValue) {
   PyObjectPtr dict(PyDict_New());
   const char* key_cstr = "key";
@@ -113,6 +188,25 @@ obj = Foo()
 
   EXPECT_EQ(PyDict_SetItem(obj, key, val), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest,
+       SetItemWithDunderHashReturningNonIntRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C:
+    def __hash__(self):
+        return "foo"
+    def __eq__(self, other):
+        return self == other
+c = C()
+)");
+  PyObjectPtr dict(PyDict_New());
+  PyObjectPtr key(moduleGet("__main__", "c"));
+  PyObjectPtr val(PyLong_FromLong(0));
+
+  ASSERT_EQ(PyDict_SetItem(dict, key, val), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {

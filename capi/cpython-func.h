@@ -906,6 +906,11 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 PyAPI_FUNC(void)
     PyUnicode_WRITE_Func(enum PyUnicode_Kind, void*, Py_ssize_t, Py_UCS4);
 
+PyAPI_FUNC(PyObject*)
+    _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key, Py_hash_t hash);
+PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
+                                          PyObject* value, Py_hash_t hash);
+
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)
 

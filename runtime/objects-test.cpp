@@ -286,6 +286,10 @@ TEST(IntTest, AsInt) {
 
 #undef EXPECT_VALID
 
+TEST(IntTest, SmallIntFromWordTruncatedWithSmallNegativeNumberReturnsSelf) {
+  EXPECT_EQ(SmallInt::fromWord(-1), SmallInt::fromWordTruncated(-1));
+}
+
 TEST(ModulesTest, TestCreate) {
   Runtime runtime;
   HandleScope scope;

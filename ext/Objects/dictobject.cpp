@@ -17,33 +17,66 @@ PY_EXPORT int PyDict_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
+PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
+                                        PyObject* value, Py_hash_t hash) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  Dict dict(&scope, *dict_obj);
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  SmallInt hash_obj(&scope, SmallInt::fromWordTruncated(hash));
+  runtime->dictAtPutWithHash(dict, key_obj, value_obj, hash_obj);
+  return 0;
+}
 
+static int setItem(Thread* thread, const Object& dictobj, const Object& key,
+                   const Object& value) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfDict(*dictobj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
-
+  HandleScope scope(thread);
   Dict dict(&scope, *dictobj);
+  Object key_hash_obj(&scope,
+                      thread->invokeMethod1(key, SymbolId::kDunderHash));
+  if (key_hash_obj.isError()) {
+    return -1;
+  }
+  if (!key_hash_obj.isInt()) {
+    thread->raiseTypeErrorWithCStr("__hash__ method should return an integer");
+    return -1;
+  }
+  Int large_key_hash(&scope, *key_hash_obj);
+  SmallInt key_hash(&scope,
+                    SmallInt::fromWordTruncated(large_key_hash.digitAt(0)));
+  runtime->dictAtPutWithHash(dict, key, value, key_hash);
+  return 0;
+}
+
+PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  runtime->dictAtPut(dict, keyobj, valueobj);
-  return 0;
+  return setItem(thread, dictobj, keyobj, valueobj);
 }
 
 PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
                                    PyObject* value) {
   Thread* thread = Thread::currentThread();
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-
-  Object keyobj(&scope, runtime->newStrFromCStr(key));
-  return PyDict_SetItem(pydict, ApiHandle::newReference(thread, *keyobj),
-                        value);
+  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Object keyobj(&scope, thread->runtime()->newStrFromCStr(key));
+  Object valueobj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  return setItem(thread, dictobj, keyobj, valueobj);
 }
 
 PY_EXPORT PyObject* PyDict_New() {
@@ -55,6 +88,23 @@ PY_EXPORT PyObject* PyDict_New() {
   return ApiHandle::newReference(thread, *value);
 }
 
+static PyObject* getItemKnownHash(Thread* thread, const Dict& dict,
+                                  const Object& key_obj,
+                                  const Object& key_hash_obj) {
+  HandleScope scope(thread);
+  if (!key_hash_obj.isInt()) {
+    thread->raiseTypeErrorWithCStr("__hash__ method should return an integer");
+    return nullptr;
+  }
+  Int key_hash_int(&scope, *key_hash_obj);
+  SmallInt key_hash(&scope,
+                    SmallInt::fromWordTruncated(key_hash_int.digitAt(0)));
+  Object value(&scope,
+               thread->runtime()->dictAtWithHash(dict, key_obj, key_hash));
+  if (value.isError()) return nullptr;
+  return ApiHandle::borrowedReference(thread, *value);
+}
+
 static PyObject* getItem(Thread* thread, const Object& dict_obj,
                          const Object& key_obj) {
   Runtime* runtime = thread->runtime();
@@ -62,9 +112,28 @@ static PyObject* getItem(Thread* thread, const Object& dict_obj,
 
   HandleScope scope(thread);
   Dict dict(&scope, *dict_obj);
-  Object value(&scope, runtime->dictAt(dict, key_obj));
-  if (value.isError()) return nullptr;
-  return ApiHandle::borrowedReference(thread, *value);
+  Object key_hash(&scope,
+                  thread->invokeMethod1(key_obj, SymbolId::kDunderHash));
+  if (key_hash.isError()) {
+    return nullptr;
+  }
+  return getItemKnownHash(thread, dict, key_obj, key_hash);
+}
+
+PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
+                                              Py_hash_t hash) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*dictobj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Dict dict(&scope, *dictobj);
+  Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
+  SmallInt hash_obj(&scope, SmallInt::fromWordTruncated(hash));
+  return getItemKnownHash(thread, dict, key_obj, hash_obj);
 }
 
 PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
