@@ -279,6 +279,21 @@ RawObject Thread::invokeMethodStatic3(LayoutId type, SymbolId method_name,
                                   arg3);
 }
 
+RawObject Thread::invokeMethodStatic4(LayoutId type, SymbolId method_name,
+                                      const Object& receiver,
+                                      const Object& arg1, const Object& arg2,
+                                      const Object& arg3) {
+  HandleScope scope(this);
+  Object type_obj(&scope, runtime()->typeAt(type));
+  if (type_obj.isError()) return *type_obj;
+  Type type_handle(&scope, *type_obj);
+  Object method(&scope,
+                runtime()->lookupSymbolInMro(this, type_handle, method_name));
+  if (method.isError()) return *method;
+  return Interpreter::callMethod4(this, currentFrame_, method, receiver, arg1,
+                                  arg2, arg3);
+}
+
 RawObject Thread::invokeFunction1(SymbolId module, SymbolId name,
                                   const Object& arg1) {
   HandleScope scope(this);

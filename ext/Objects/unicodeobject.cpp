@@ -992,10 +992,34 @@ PY_EXPORT int PyUnicode_FSDecoder(PyObject* /* g */, void* /* r */) {
   UNIMPLEMENTED("PyUnicode_FSDecoder");
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* /* r */, PyObject* /* r */,
-                                    Py_ssize_t /* t */, Py_ssize_t /* d */,
-                                    int /* n */) {
-  UNIMPLEMENTED("PyUnicode_Find");
+PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
+                                    Py_ssize_t start, Py_ssize_t end,
+                                    int direction) {
+  DCHECK(str != nullptr, "str must be non-null");
+  DCHECK(substr != nullptr, "substr must be non-null");
+  DCHECK(direction == -1 || direction == 1, "direction must be -1 or 1");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
+  Runtime* runtime = thread->runtime();
+  Object start_obj(&scope, runtime->newInt(start));
+  Object end_obj(&scope, runtime->newInt(end));
+  SymbolId selector = (direction == 1) ? SymbolId::kFind : SymbolId::kRfind;
+  Object result_obj(
+      &scope, thread->invokeMethodStatic4(LayoutId::kStr, selector, str_obj,
+                                          substr_obj, start_obj, end_obj));
+  if (result_obj.isError()) {
+    return -2;
+  }
+  DCHECK(result_obj.isInt(), "str.(r)find must return int");
+  Int result(&scope, *result_obj);
+  OptInt<Py_ssize_t> maybe_int = result.asInt<Py_ssize_t>();
+  if (maybe_int.error == CastError::None) {
+    return maybe_int.value;
+  }
+  thread->raiseOverflowErrorWithCStr("int overflow or underflow");
+  return -2;
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* /* r */, Py_UCS4 /* h */,

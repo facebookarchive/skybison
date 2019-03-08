@@ -79,6 +79,51 @@ TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
 }
 
+TEST_F(UnicodeExtensionApiTest, FindWithNonStrSelfRaisesTypeError) {
+  PyObjectPtr self(Py_None);
+  PyObjectPtr sub(PyUnicode_FromString("ll"));
+  EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, 1), -2);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FindWithNonStrSubRaisesTypeError) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  PyObjectPtr sub(Py_None);
+  EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, 1), -2);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FindForwardReturnsLeftmostStartIndex) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  PyObjectPtr sub(PyUnicode_FromString("ll"));
+  EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, 1), 2);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindReturnsNegativeOneWithNonexistentSubstr) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  PyObjectPtr sub(PyUnicode_FromString("xx"));
+  EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, 1), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FindReverseReturnsNegativeOneWithNonexistentSubstr) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  PyObjectPtr sub(PyUnicode_FromString("xx"));
+  EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, -1), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindReverseReturnsRightmostStartIndex) {
+  PyObjectPtr self(PyUnicode_FromString("helloll"));
+  PyObjectPtr sub(PyUnicode_FromString("ll"));
+  EXPECT_EQ(PyUnicode_Find(self, sub, 0, 7, -1), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(UnicodeExtensionApiTest, FromStringAndSizeCreatesSizedString) {
   const char* str = "Some string";
   PyObjectPtr pyuni(PyUnicode_FromStringAndSize(str, 11));
