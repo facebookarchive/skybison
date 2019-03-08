@@ -1790,6 +1790,208 @@ TEST(StrBuiltinsTest, StripRight) {
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str, "bcdHello Worl"));
 }
 
+TEST(StrBuiltinsTest, FindWithEmptyNeedleReturnsZero) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".find("")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
+}
+
+TEST(StrBuiltinsTest, FindWithEmptyNeedleReturnsNegativeOne) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".find("", 8)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
+}
+
+TEST(StrBuiltinsTest, FindWithEmptyNeedleAndSliceReturnsStart) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".find("", 3, 5)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
+}
+
+TEST(StrBuiltinsTest, FindWithEmptyNeedleAndEmptySliceReturnsStart) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".find("", 3, 3)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
+}
+
+TEST(StrBuiltinsTest, FindWithNegativeStartClipsToZero) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".find("h", -5, 1)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
+}
+
+TEST(StrBuiltinsTest, FindWithEndPastEndOfStringClipsToLength) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".find("h", 0, 100)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
+}
+
+TEST(StrBuiltinsTest, FindWithUnicodeReturnsCodePointIndex) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "Cr\u00e8me br\u00fbl\u00e9e"
+result = s.find("e")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
+}
+
+TEST(StrBuiltinsTest, FindWithStartAfterUnicodeCodePoint) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "\u20ac10 Cr\u00e8me br\u00fbl\u00e9e"
+result = s.find("e", 4)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 8));
+}
+
+TEST(StrBuiltinsTest, FindWithDifferentSizeCodePoints) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "Cr\u00e8me \u10348 \u29D98 br\u00fbl\u00e9e"
+result = s.find("\u29D98")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 9));
+}
+
+TEST(StrBuiltinsTest, FindWithOneCharStringFindsChar) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result1 = "hello".find("h")
+result2 = "hello".find("e")
+result3 = "hello".find("z")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result1"), 0));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result2"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result3"), -1));
+}
+
+TEST(StrBuiltinsTest, FindWithSlicePreservesIndices) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result1 = "hello".find("h", 1)
+result2 = "hello".find("e", 1)
+result3 = "hello".find("o", 0, 2)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result1"), -1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result2"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result3"), -1));
+}
+
+TEST(StrBuiltinsTest, FindWithMultiCharStringFindsSubstring) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result1 = "hello".find("he")
+result2 = "hello".find("el")
+result3 = "hello".find("ze")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result1"), 0));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result2"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result3"), -1));
+}
+
+TEST(StrBuiltinsTest, RfindWithOneCharStringFindsChar) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".rfind("l")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithUnicodeReturnsCodePointIndex) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "Cr\u00e8me br\u00fbl\u00e9e"
+result = s.rfind("e")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 11));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithStartAfterUnicodeCodePoint) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "\u20ac10 Cr\u00e8me br\u00fbl\u00e9e"
+result = s.rfind("e", 4)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 15));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithDifferentSizeCodePoints) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "Cr\u00e8me \u10348 \u29D98 br\u00fbl\u00e9e\u2070E\u29D98 "
+result = s.rfind("\u29D98")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 20));
+}
+
+TEST(StrBuiltinsTest, RfindWithMultiCharStringFindsSubstring) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "aabbaa".rfind("aa")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithNegativeStartClipsToZero) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".rfind("h", -5, 1)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithEndPastEndOfStringClipsToLength) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".rfind("h", 0, 100)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithEmptyNeedleReturnsLength) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".rfind("")
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithEmptyNeedleReturnsNegativeOne) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".rfind("", 8)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
+}
+
+TEST(StrBuiltinsTest, RfindCharWithEmptyNeedleAndSliceReturnsEnd) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".rfind("", 3, 5)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+}
+
+TEST(StrBuiltinsTest, RfindWithEmptyNeedleAndEmptySliceReturnsEnd) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "hello".rfind("", 3, 3)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
+}
+
 TEST(StringIterTest, SimpleIter) {
   Runtime runtime;
   HandleScope scope;

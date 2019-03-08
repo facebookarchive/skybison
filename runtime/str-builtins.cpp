@@ -150,9 +150,11 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderMod, dunderMod},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kFind, find},
     {SymbolId::kJoin, join},
     {SymbolId::kLower, lower},
     {SymbolId::kLStrip, lstrip},
+    {SymbolId::kRfind, rfind},
     {SymbolId::kRStrip, rstrip},
     {SymbolId::kStrip, strip},
     {SymbolId::kSentinelId, nullptr},
@@ -215,6 +217,153 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
+}
+
+static void adjustIndices(const Str& str, word* startp, word* endp) {
+  DCHECK(*startp < 0 || *endp < 0,
+         "adjustIndices should not be called unless start or end is < 0");
+  word str_len = str.codePointLength();
+  word start = *startp;
+  word end = *endp;
+  if (end < 0) {
+    end += str_len;
+    if (end < 0) {
+      end = 0;
+    }
+    *endp = end;
+  }
+  if (start < 0) {
+    start += str_len;
+    if (start < 0) {
+      start = 0;
+    }
+    *startp = start;
+  }
+}
+
+RawObject StrBuiltins::find(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  if (!runtime->isInstanceOfStr(args.get(0))) {
+    return thread->raiseTypeErrorWithCStr("'find' requires a 'str' instance");
+  }
+  if (!runtime->isInstanceOfStr(args.get(1))) {
+    return thread->raiseTypeErrorWithCStr("'find' requires a 'str' instance");
+  }
+  HandleScope scope(thread);
+  Str haystack(&scope, args.get(0));
+  Str needle(&scope, args.get(1));
+  word start =
+      args.get(2).isNoneType() ? 0 : SmallInt::cast(args.get(2)).value();
+  word end =
+      args.get(3).isNoneType() ? kMaxWord : SmallInt::cast(args.get(3)).value();
+  if (end < 0 || start < 0) {
+    adjustIndices(haystack, &start, &end);
+  }
+
+  word start_index = haystack.offsetByCodePoints(0, start);
+  if (start_index == haystack.length() && needle.length() > 0) {
+    // Haystack is too small; fast early return
+    return SmallInt::fromWord(-1);
+  }
+  word end_index = haystack.offsetByCodePoints(start_index, end - start);
+
+  if ((end_index - start_index) < needle.length() || start_index > end_index) {
+    // Haystack is too small; fast early return
+    return SmallInt::fromWord(-1);
+  }
+
+  // Loop is in byte space, not code point space
+  word result = start;
+  bool has_match = false;
+  // TODO(T41400083): Use a different search algorithm
+  for (word i = start_index; i <= end_index - needle.length(); result++) {
+    has_match = true;
+    for (word j = 0; has_match && j < needle.length(); j++) {
+      if (haystack.charAt(i + j) != needle.charAt(j)) {
+        has_match = false;
+      }
+    }
+    word next = haystack.offsetByCodePoints(i, 1);
+    if (i == next) {
+      // We've reached a fixpoint; offsetByCodePoints will not advance past the
+      // length of the string.
+      if (start_index >= i) {
+        // The start is greater than the length of the string.
+        return SmallInt::fromWord(-1);
+      }
+      // If the start is within bounds, just return the last found index.
+      break;
+    }
+    if (has_match) {
+      return SmallInt::fromWord(result);
+    }
+    i = next;
+  }
+  return SmallInt::fromWord(-1);
+}
+
+RawObject StrBuiltins::rfind(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  if (!runtime->isInstanceOfStr(args.get(0))) {
+    return thread->raiseTypeErrorWithCStr("'rfind' requires a 'str' instance");
+  }
+  if (!runtime->isInstanceOfStr(args.get(1))) {
+    return thread->raiseTypeErrorWithCStr("'rfind' requires a 'str' instance");
+  }
+  HandleScope scope(thread);
+  Str haystack(&scope, args.get(0));
+  Str needle(&scope, args.get(1));
+  word start =
+      args.get(2).isNoneType() ? 0 : SmallInt::cast(args.get(2)).value();
+  word end =
+      args.get(3).isNoneType() ? kMaxWord : SmallInt::cast(args.get(3)).value();
+  if (end < 0 || start < 0) {
+    adjustIndices(haystack, &start, &end);
+  }
+
+  word start_index = haystack.offsetByCodePoints(0, start);
+  if (start_index == haystack.length() && needle.length() > 0) {
+    // Haystack is too small; fast early return
+    return SmallInt::fromWord(-1);
+  }
+  word end_index = haystack.offsetByCodePoints(start_index, end - start);
+
+  if ((end_index - start_index) < needle.length() || start_index > end_index) {
+    // Haystack is too small; fast early return
+    return SmallInt::fromWord(-1);
+  }
+
+  // Loop is in byte space, not code point space
+  word result = start;
+  word last_index = -1;
+  bool has_match = false;
+  // TODO(T41400083): Use a different search algorithm
+  for (word i = start_index; i <= end_index - needle.length(); result++) {
+    has_match = true;
+    for (word j = 0; has_match && j < needle.length(); j++) {
+      if (haystack.charAt(i + j) != needle.charAt(j)) {
+        has_match = false;
+      }
+    }
+    if (has_match) {
+      last_index = result;
+    }
+    word next = haystack.offsetByCodePoints(i, 1);
+    if (i == next) {
+      // We've reached a fixpoint; offsetByCodePoints will not advance past the
+      // length of the string.
+      if (start_index >= i) {
+        // The start is greater than the length of the string.
+        return SmallInt::fromWord(-1);
+      }
+      // If the start is within bounds, just return the last found index.
+      break;
+    }
+    i = next;
+  }
+  return SmallInt::fromWord(last_index);
 }
 
 RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {

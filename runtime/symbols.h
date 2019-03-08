@@ -193,6 +193,7 @@ class Runtime;
   V(Fileno, "fileno")                                                          \
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
+  V(Find, "find")                                                              \
   V(FixCoFilename, "_fix_co_filename")                                         \
   V(Format, "format")                                                          \
   V(Float, "float")                                                            \
@@ -307,6 +308,7 @@ class Runtime;
   V(ReferenceError, "ReferenceError")                                          \
   V(ReleaseLock, "release_lock")                                               \
   V(Remove, "remove")                                                          \
+  V(Rfind, "rfind")                                                            \
   V(Repr, "repr")                                                              \
   V(ResourceWarning, "ResourceWarning")                                        \
   V(RPartition, "rpartition")                                                  \

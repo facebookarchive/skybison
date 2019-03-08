@@ -68,9 +68,11 @@ class StrBuiltins
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
+  static RawObject find(Thread* thread, Frame* frame, word nargs);
   static RawObject lower(Thread* thread, Frame* frame, word nargs);
   static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject join(Thread* thread, Frame* frame, word nargs);
+  static RawObject rfind(Thread* thread, Frame* frame, word nargs);
   static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject strip(Thread* thread, Frame* frame, word nargs);
 

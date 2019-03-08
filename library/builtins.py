@@ -825,6 +825,9 @@ class str(bootstrap=True):
     def __repr__(self):
         pass
 
+    def find(self, sub, start=None, end=None):
+        pass
+
     def partition(self, sep):
         if not isinstance(self, str):
             raise TypeError(
@@ -989,6 +992,9 @@ class str(bootstrap=True):
             if suffix_match(self, suf, start, end):
                 return True
         return False
+
+    def rfind(self, sub, start=None, end=None):
+        pass
 
     # TODO(T37437993): Write in C++
     def rsplit(self, sep=None, maxsplit=-1):
