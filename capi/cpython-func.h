@@ -213,6 +213,7 @@ PyAPI_FUNC(PyObject*) PyErr_ProgramText(const char*, int);
 PyAPI_FUNC(PyObject*) PyErr_ProgramTextObject(PyObject*, int);
 PyAPI_FUNC(int) PyErr_ResourceWarning(PyObject*, Py_ssize_t, const char*, ...);
 PyAPI_FUNC(void) PyErr_Restore(PyObject*, PyObject*, PyObject*);
+PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject*, PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyErr_SetExcFromWindowsErr(PyObject*, int);
 PyAPI_FUNC(PyObject*)
     PyErr_SetExcFromWindowsErrWithFilename(PyObject*, int, const char*);

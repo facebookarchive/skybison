@@ -211,6 +211,35 @@ TEST_F(ErrorsExtensionApiTest, Restore) {
   EXPECT_EQ(traceback, nullptr);
 }
 
+TEST_F(ErrorsExtensionApiTest, ChainExceptionsSetsContext) {
+  // First, set an exception.
+  PyErr_SetString(PyExc_RuntimeError, "whoops");
+
+  // Next, attempt to restore a different exception. It should be chained to the
+  // existing RuntimeError.
+  PyObject* exc = PyExc_TypeError;
+  Py_INCREF(exc);
+  PyObject* val = Py_None;
+  Py_INCREF(val);
+  PyObject* tb = Py_None;
+  Py_INCREF(tb);
+  _PyErr_ChainExceptions(exc, val, tb);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+
+  // Make sure the RuntimeError has the new TypeError as its context attribute.
+  PyErr_Fetch(&exc, &val, &tb);
+  ASSERT_EQ(PyErr_GivenExceptionMatches(exc, PyExc_RuntimeError), 1);
+  ASSERT_EQ(PyErr_GivenExceptionMatches(val, PyExc_RuntimeError), 1);
+
+  PyObjectPtr ctx(PyException_GetContext(val));
+  EXPECT_EQ(PyErr_GivenExceptionMatches(ctx, PyExc_TypeError), 1);
+
+  EXPECT_EQ(tb, nullptr);
+
+  Py_DECREF(exc);
+  Py_DECREF(val);
+}
+
 TEST_F(ErrorsExtensionApiTest, NormalizeCreatesException) {
   PyObject* exc = PyExc_RuntimeError;
   PyObject* val = PyUnicode_FromString("something went wrong!");

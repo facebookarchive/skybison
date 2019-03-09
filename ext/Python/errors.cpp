@@ -364,4 +364,27 @@ PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,
   }
 }
 
+// Like PyErr_Restore(), but if an exception is already set, set the context
+// associated with it.
+PY_EXPORT void _PyErr_ChainExceptions(PyObject* exc, PyObject* val,
+                                      PyObject* tb) {
+  if (exc == nullptr) return;
+
+  if (PyErr_Occurred()) {
+    PyObject *exc2, *val2, *tb2;
+    PyErr_Fetch(&exc2, &val2, &tb2);
+    PyErr_NormalizeException(&exc, &val, &tb);
+    if (tb != nullptr) {
+      PyException_SetTraceback(val, tb);
+      Py_DECREF(tb);
+    }
+    Py_DECREF(exc);
+    PyErr_NormalizeException(&exc2, &val2, &tb2);
+    PyException_SetContext(val2, val);
+    PyErr_Restore(exc2, val2, tb2);
+  } else {
+    PyErr_Restore(exc, val, tb);
+  }
+}
+
 }  // namespace python
