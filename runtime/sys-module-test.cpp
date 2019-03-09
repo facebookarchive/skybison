@@ -149,9 +149,10 @@ builtin_names = sys.builtin_module_names
 TEST(SysModuleTest, PathWithUnsetPythonPath) {
   unsetenv("PYTHONPATH");
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Object sys(&scope, runtime.newStrFromCStr("sys"));
-  runtime.importModule(sys);
+  runtime.importModule(thread, sys);
   Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
   ASSERT_TRUE(path_obj.isList());
   List path(&scope, *path_obj);
@@ -162,9 +163,10 @@ TEST(SysModuleTest, PathWithUnsetPythonPath) {
 TEST(SysModuleTest, PathWithEmptyPythonPath) {
   setenv("PYTHONPATH", "", 1);
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Object sys(&scope, runtime.newStrFromCStr("sys"));
-  runtime.importModule(sys);
+  runtime.importModule(thread, sys);
   Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
   ASSERT_TRUE(path_obj.isList());
   List path(&scope, *path_obj);
@@ -175,9 +177,10 @@ TEST(SysModuleTest, PathWithEmptyPythonPath) {
 TEST(SysModuleTest, PathWithPythonPath) {
   setenv("PYTHONPATH", "/foo/bar:/baz", 1);
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
   Object sys(&scope, runtime.newStrFromCStr("sys"));
-  runtime.importModule(sys);
+  runtime.importModule(thread, sys);
   Object path_obj(&scope, moduleAt(&runtime, "sys", "path"));
   ASSERT_TRUE(path_obj.isList());
   List path(&scope, *path_obj);

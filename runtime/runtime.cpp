@@ -1564,31 +1564,23 @@ RawObject Runtime::executeModule(const char* buffer, const Module& module) {
   return Thread::currentThread()->runModuleFunction(module, code);
 }
 
-extern "C" struct _inittab _PyImport_Inittab[];
-
-RawObject Runtime::importModule(const Object& name) {
-  Thread* thread = Thread::currentThread();
+RawObject Runtime::importModule(Thread* thread, const Object& name) {
   HandleScope scope(thread);
   Object cached_module(&scope, findModule(name));
   if (!cached_module.isNoneType()) {
     return *cached_module;
   }
-  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (RawStr::cast(*name).equalsCStr(_PyImport_Inittab[i].name)) {
-      PyObject* module = (*_PyImport_Inittab[i].initfunc)();
-      Module mod(&scope, ApiHandle::fromPyObject(module)->asObject());
-      addModule(mod);
-      return *mod;
-    }
-  }
 
-  // Call _bootstrap._find_and_load
-  Module importlib(&scope, findModuleById(SymbolId::kUnderFrozenImportlib));
-  Object dunder_import(&scope,
-                       moduleAtById(importlib, SymbolId::kDunderImport));
-  return thread->invokeFunction2(SymbolId::kUnderFrozenImportlib,
-                                 SymbolId::kUnderFindAndLoad, name,
-                                 dunder_import);
+  // Call builtins._find_and_load(name, __import__)
+  // The first time this is run, builtins._find_and_load loads importlib, then
+  // swaps out its _find_and_load for the real importlib version. Then it calls
+  // back into Runtime::importModule for the real version.
+  // The second time this is run, builtins._find_and_load is just a reference
+  // to the real version, so the old builtins version is not run at all.
+  Module builtins(&scope, findModuleById(SymbolId::kBuiltins));
+  Object dunder_import(&scope, moduleAtById(builtins, SymbolId::kDunderImport));
+  return thread->invokeFunction2(
+      SymbolId::kBuiltins, SymbolId::kUnderFindAndLoad, name, dunder_import);
 }
 
 // TODO(cshapiro): support fromlist and level. Ideally, we'll never implement
@@ -1782,9 +1774,6 @@ void Runtime::initializeModules() {
   for (size_t i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
     kBuiltinModules[i].create_module(thread);
   }
-  // Importlib should be initialized separately as it's not part of
-  // sys.builtin_module_names
-  createImportlibModule();
 }
 
 void Runtime::initializeApiData() {

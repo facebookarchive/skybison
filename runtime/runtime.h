@@ -230,7 +230,7 @@ class Runtime {
   void moduleAtPut(const Module& module, const Object& key,
                    const Object& value);
 
-  RawObject importModule(const Object& name);
+  RawObject importModule(Thread* thread, const Object& name);
 
   // importModuleFromBuffer is exposed for use by the tests. We may be able to
   // remove this later.

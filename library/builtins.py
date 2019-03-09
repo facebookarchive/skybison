@@ -1551,3 +1551,11 @@ def _long_of_obj(obj):
         f"int() argument must be a string, a bytes-like object or a number, not"
         f" {type(obj).__name__}"
     )
+
+
+__import__ = _UnboundValue
+
+
+@_patch
+def _find_and_load(name, dunder_import):
+    pass

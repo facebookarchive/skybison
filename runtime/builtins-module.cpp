@@ -74,6 +74,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kChr, chr},
     {SymbolId::kCompile, compile},
     {SymbolId::kDivmod, divmod},
+    {SymbolId::kUnderFindAndLoad, underFindAndLoad},
     {SymbolId::kExec, exec},
     {SymbolId::kGetattr, getattr},
     {SymbolId::kHasattr, hasattr},
@@ -646,6 +647,34 @@ void printStr(RawStr str, std::ostream* ostream) {
   for (word i = 0; i < str.length(); i++) {
     *ostream << str.charAt(i);
   }
+}
+
+RawObject BuiltinsModule::underFindAndLoad(Thread* thread, Frame* frame,
+                                           word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object name(&scope, args.get(0));
+  Object dunder_import(&scope, args.get(1));
+  CHECK(dunder_import.isUnboundValue(),
+        "this should only be called once, and with _UnboundValue");
+
+  // Load importlib now
+  runtime->createImportlibModule();
+
+  // Swap out _builtins.{_find_and_load,__import__} for
+  // importlib.{_find_and_load,__import__}
+  Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
+  Module importlib(&scope,
+                   runtime->findModuleById(SymbolId::kUnderFrozenImportlib));
+  Object importlib_fn(
+      &scope, runtime->moduleAtById(importlib, SymbolId::kUnderFindAndLoad));
+  runtime->moduleAddGlobal(builtins, SymbolId::kUnderFindAndLoad, importlib_fn);
+  dunder_import = runtime->moduleAtById(importlib, SymbolId::kDunderImport);
+  runtime->moduleAddGlobal(builtins, SymbolId::kDunderImport, dunder_import);
+
+  // Load the module with the swapped _find_and_load and __import__
+  return runtime->importModule(thread, name);
 }
 
 RawObject BuiltinsModule::underPrintStr(Thread* thread, Frame* frame_frame,

@@ -10,9 +10,27 @@ namespace python {
 
 using namespace testing;
 
+TEST(ImportlibTest, ImportFrozenModuleDoesNotLoadImportlib) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import operator
+)")
+                   .isError());
+  HandleScope scope;
+  Object foo_obj(&scope, moduleAt(&runtime, "__main__", "operator"));
+  ASSERT_TRUE(foo_obj.isModule());
+  Module foo(&scope, *foo_obj);
+  EXPECT_TRUE(isStrEqualsCStr(foo.name(), "operator"));
+  EXPECT_TRUE(
+      runtime.findModuleById(SymbolId::kUnderFrozenImportlib).isNoneType());
+  EXPECT_TRUE(runtime.findModuleById(SymbolId::kUnderFrozenImportlibExternal)
+                  .isNoneType());
+}
+
 TEST(ImportlibTest, SimpleImport) {
   TemporaryDirectory tempdir;
   writeFile(tempdir.path + "foo.py", "x = 42");
+  writeFile(tempdir.path + "bar.py", "x = 67");
 
   Runtime runtime;
   HandleScope scope;
@@ -20,10 +38,16 @@ TEST(ImportlibTest, SimpleImport) {
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime.newStrFromCStr(tempdir.path.c_str()));
   runtime.listAdd(sys_path, temp_dir_str);
+  Module builtins(&scope, runtime.findModuleById(SymbolId::kBuiltins));
+  ASSERT_TRUE(
+      runtime.moduleAtById(builtins, SymbolId::kDunderImport).isUnboundValue());
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 import foo
+import bar
 )")
                    .isError());
+  ASSERT_FALSE(
+      runtime.moduleAtById(builtins, SymbolId::kDunderImport).isUnboundValue());
   Object foo_obj(&scope, moduleAt(&runtime, "__main__", "foo"));
   ASSERT_TRUE(foo_obj.isModule());
   Module foo(&scope, *foo_obj);

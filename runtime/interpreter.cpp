@@ -1917,7 +1917,7 @@ bool Interpreter::doImportName(Context* ctx, word arg) {
   ctx->frame->popValue();  // from list
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
-  Object result(&scope, runtime->importModule(name));
+  Object result(&scope, runtime->importModule(thread, name));
   if (result.isError()) return unwind(ctx);
   ctx->frame->setTopValue(*result);
   return false;

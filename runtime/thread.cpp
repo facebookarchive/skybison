@@ -216,7 +216,6 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
 }
 
 RawObject Thread::runModuleFunction(const Module& module, const Code& code) {
-  DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
   Frame* frame = pushModuleFunctionFrame(module, code);
   return Interpreter::execute(this, frame);
 }
