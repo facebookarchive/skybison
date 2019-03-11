@@ -182,7 +182,7 @@ class Runtime {
 
   RawObject newValueCell();
 
-  RawObject newWeakref(Thread* thread, const Object& referent,
+  RawObject newWeakRef(Thread* thread, const Object& referent,
                        const Object& callback);
 
   void createImportlibModule();

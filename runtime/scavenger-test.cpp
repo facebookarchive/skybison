@@ -15,7 +15,7 @@ TEST(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   HandleScope scope(thread);
   Tuple array(&scope, runtime.newTuple(10));
   Object none(&scope, NoneType::object());
-  WeakRef ref(&scope, runtime.newWeakref(thread, array, none));
+  WeakRef ref(&scope, runtime.newWeakRef(thread, array, none));
   runtime.collectGarbage();
   EXPECT_EQ(ref.referent(), *array);
 }
@@ -26,7 +26,7 @@ TEST(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
   HandleScope scope(thread);
   Int obj(&scope, SmallInt::fromWord(1234));
   Object none(&scope, NoneType::object());
-  WeakRef ref(&scope, runtime.newWeakref(thread, obj, none));
+  WeakRef ref(&scope, runtime.newWeakRef(thread, obj, none));
   runtime.collectGarbage();
   EXPECT_EQ(ref.referent(), SmallInt::fromWord(1234));
 }
@@ -39,7 +39,7 @@ TEST(ScavengerTest, ClearWeakReference) {
   {
     Tuple array(&scope, runtime.newTuple(10));
     WeakRef ref_inner(&scope,
-                      runtime.newWeakref(Thread::currentThread(), array, none));
+                      runtime.newWeakRef(Thread::currentThread(), array, none));
     ref = *ref_inner;
     runtime.collectGarbage();
     EXPECT_EQ(ref_inner.referent(), *array);
@@ -66,7 +66,7 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   for (word i = 0; i < weakrefs.length(); i++) {
     Object obj(&scope, strongrefs.at(i));
     Object none(&scope, NoneType::object());
-    WeakRef elt(&scope, runtime.newWeakref(thread, obj, none));
+    WeakRef elt(&scope, runtime.newWeakRef(thread, obj, none));
     weakrefs.atPut(i, *elt);
   }
 
@@ -137,12 +137,12 @@ def g(ref, c=4):
   {
     Tuple array1(&scope, runtime.newTuple(10));
     Function func_f(&scope, moduleAt(&runtime, main, "f"));
-    WeakRef ref1_inner(&scope, runtime.newWeakref(thread, array1, func_f));
+    WeakRef ref1_inner(&scope, runtime.newWeakRef(thread, array1, func_f));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    WeakRef ref2_inner(&scope, runtime.newWeakRef(thread, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime.collectGarbage();
@@ -185,12 +185,12 @@ def g(ref, c=4):
 
   Tuple array1(&scope, runtime.newTuple(10));
   Function func_f(&scope, moduleAt(&runtime, main, "f"));
-  WeakRef ref1(&scope, runtime.newWeakref(thread, array1, func_f));
+  WeakRef ref1(&scope, runtime.newWeakRef(thread, array1, func_f));
   Object ref2(&scope, NoneType::object());
   {
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    WeakRef ref2_inner(&scope, runtime.newWeakRef(thread, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime.collectGarbage();
@@ -238,12 +238,12 @@ def g(ref, b=2):
     Function collect(&scope, runtime.newFunction());
     collect.setEntry(nativeTrampoline<doGarbageCollection>);
 
-    WeakRef ref1_inner(&scope, runtime.newWeakref(thread, array1, collect));
+    WeakRef ref1_inner(&scope, runtime.newWeakRef(thread, array1, collect));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    WeakRef ref2_inner(&scope, runtime.newWeakRef(thread, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime.collectGarbage();
@@ -289,12 +289,12 @@ def g(ref, c=4):
   {
     Tuple array1(&scope, runtime.newTuple(10));
     Function func_f(&scope, moduleAt(&runtime, main, "f"));
-    WeakRef ref1_inner(&scope, runtime.newWeakref(thread, array1, func_f));
+    WeakRef ref1_inner(&scope, runtime.newWeakRef(thread, array1, func_f));
     ref1 = *ref1_inner;
 
     Tuple array2(&scope, runtime.newTuple(10));
     Function func_g(&scope, moduleAt(&runtime, main, "g"));
-    WeakRef ref2_inner(&scope, runtime.newWeakref(thread, array2, func_g));
+    WeakRef ref2_inner(&scope, runtime.newWeakRef(thread, array2, func_g));
     ref2 = *ref2_inner;
 
     runtime.collectGarbage();

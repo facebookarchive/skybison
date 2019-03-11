@@ -2856,7 +2856,7 @@ RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {
 
 RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }
 
-RawObject Runtime::newWeakref(Thread* thread, const Object& referent,
+RawObject Runtime::newWeakRef(Thread* thread, const Object& referent,
                               const Object& callback) {
   HandleScope scope(thread);
   WeakRef ref(&scope, heap()->create<RawWeakRef>());

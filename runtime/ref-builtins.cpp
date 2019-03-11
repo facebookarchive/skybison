@@ -26,7 +26,7 @@ RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object referent(&scope, args.get(1));
   Object callback(&scope, args.get(2));
-  return thread->runtime()->newWeakref(thread, referent, callback);
+  return thread->runtime()->newWeakRef(thread, referent, callback);
 }
 
 }  // namespace python
