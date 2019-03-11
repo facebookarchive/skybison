@@ -559,7 +559,7 @@ exc = UnicodeDecodeError('en', b'ob', i, i, 're')
 TEST(ExceptionBuiltinsTest,
      UnicodeEncodeErrorWithImproperFirstArgumentsRaisesTypeError) {
   Runtime runtime;
-  const char* bad_arg = "exc = UnicodeEncodeError([], b'', 1, 1, '1')";
+  const char* bad_arg = "exc = UnicodeEncodeError([], '', 1, 1, '1')";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
                             LayoutId::kTypeError,
                             "argument 1 must be str, not list"));
@@ -571,13 +571,13 @@ TEST(ExceptionBuiltinsTest,
   const char* bad_arg = "exc = UnicodeEncodeError('1', [], 1, 1, '1')";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
                             LayoutId::kTypeError,
-                            "a bytes-like object is required, not 'list'"));
+                            "argument 2 must be str, not 'list'"));
 }
 
 TEST(ExceptionBuiltinsTest,
      UnicodeEncodeErrorWithImproperThirdArgumentsRaisesTypeError) {
   Runtime runtime;
-  const char* bad_arg = "exc = UnicodeEncodeError('1', b'', [], 1, '1')";
+  const char* bad_arg = "exc = UnicodeEncodeError('1', '', [], 1, '1')";
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
@@ -586,7 +586,7 @@ TEST(ExceptionBuiltinsTest,
 TEST(ExceptionBuiltinsTest,
      UnicodeEncodeErrorWithImproperFourthArgumentsRaisesTypeError) {
   Runtime runtime;
-  const char* bad_arg = "exc = UnicodeEncodeError('1', b'', 1, [], '1')";
+  const char* bad_arg = "exc = UnicodeEncodeError('1', '', 1, [], '1')";
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
@@ -595,7 +595,7 @@ TEST(ExceptionBuiltinsTest,
 TEST(ExceptionBuiltinsTest,
      UnicodeEncodeErrorWithImproperFifthArgumentsRaisesTypeError) {
   Runtime runtime;
-  const char* bad_arg = "exc = UnicodeEncodeError('1', b'', 1, 1, [])";
+  const char* bad_arg = "exc = UnicodeEncodeError('1', '', 1, 1, [])";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
                             LayoutId::kTypeError,
                             "argument 5 must be str, not list"));
@@ -604,15 +604,14 @@ TEST(ExceptionBuiltinsTest,
 TEST(ExceptionBuiltinsTest, UnicodeEncodeErrorReturnsObjectWithFieldsSet) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "exc = UnicodeEncodeError('en', b'ob', 1, 2, 're')");
+  runFromCStr(&runtime, "exc = UnicodeEncodeError('en', 'ob', 1, 2, 're')");
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeEncodeError());
 
   UnicodeEncodeError err(&scope, *data);
   EXPECT_TRUE(isStrEqualsCStr(err.encoding(), "en"));
-  Object bytes(&scope, err.object());
-  EXPECT_TRUE(isBytesEqualsCStr(bytes, "ob"));
+  EXPECT_TRUE(isStrEqualsCStr(err.object(), "ob"));
   EXPECT_TRUE(isIntEqualsWord(err.start(), 1));
   EXPECT_TRUE(isIntEqualsWord(err.end(), 2));
   EXPECT_TRUE(isStrEqualsCStr(err.reason(), "re"));
@@ -626,7 +625,7 @@ class Ind():
     def __index__(self):
         return 1
 i = Ind()
-exc = UnicodeEncodeError('en', b'ob', i, i, 're')
+exc = UnicodeEncodeError('en', 'ob', i, i, 're')
 )");
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));

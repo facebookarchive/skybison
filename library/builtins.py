@@ -473,17 +473,14 @@ class UnicodeEncodeError(UnicodeError, bootstrap=True):
         if not isinstance(encoding, str):
             raise TypeError(f"argument 1 must be str, not {type(encoding).__name__}")
         self.encoding = encoding
+        if not isinstance(obj, str):
+            raise TypeError(f"argument 2 must be str, not '{type(obj).__name__}'")
+        self.object = obj
         self.start = _index(start)
         self.end = _index(end)
         if not isinstance(reason, str):
             raise TypeError(f"argument 5 must be str, not {type(reason).__name__}")
         self.reason = reason
-        # TODO(T38246066): Replace with a check for the buffer protocol
-        if not isinstance(obj, (bytes, bytearray)):
-            raise TypeError(
-                f"a bytes-like object is required, not '{type(obj).__name__}'"
-            )
-        self.object = obj
 
 
 class UnicodeTranslateError(UnicodeError, bootstrap=True):
