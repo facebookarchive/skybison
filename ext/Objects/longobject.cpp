@@ -194,8 +194,22 @@ PY_EXPORT PyObject* PyLong_FromString(const char* /* r */, char** /* pend */,
   UNIMPLEMENTED("PyLong_FromString");
 }
 
-PY_EXPORT double PyLong_AsDouble(PyObject* /* v */) {
-  UNIMPLEMENTED("PyLong_AsDouble");
+PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    thread->raiseBadInternalCall();
+    return -1.0;
+  }
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  if (!thread->runtime()->isInstanceOfInt(*object)) {
+    thread->raiseTypeErrorWithCStr("an integer is required");
+    return -1.0;
+  }
+  Int value(&scope, *object);
+  double result;
+  Object err(&scope, convertIntToDouble(thread, value, &result));
+  return err.isError() ? -1.0 : result;
 }
 
 PY_EXPORT unsigned long long PyLong_AsUnsignedLongLongMask(PyObject* op) {

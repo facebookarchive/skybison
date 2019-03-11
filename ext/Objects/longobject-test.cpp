@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cmath>
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -37,6 +39,47 @@ TEST_F(LongExtensionApiTest, PyLongCheckOnType) {
   PyObjectPtr type(reinterpret_cast<PyObject*>(Py_TYPE(pylong)));
   EXPECT_FALSE(PyLong_Check(type));
   EXPECT_FALSE(PyLong_CheckExact(type));
+}
+
+TEST_F(LongExtensionApiTest, AsDoubleWithNullRaisesSystemError) {
+  EXPECT_EQ(PyLong_AsDouble(nullptr), -1.0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(LongExtensionApiTest, AsDoubleWithNonIntRaisesTypeError) {
+  PyObjectPtr obj(PyList_New(0));
+  EXPECT_EQ(PyLong_AsDouble(obj), -1.0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, AsDoubleWithSmallIntReturnsDouble) {
+  PyObjectPtr obj(PyLong_FromLong(10));
+  EXPECT_EQ(PyLong_AsDouble(obj), 10.0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(LongExtensionApiTest, AsDoubleWithNegativeIntReturnsDouble) {
+  PyObjectPtr obj(PyLong_FromLong(-40));
+  EXPECT_EQ(PyLong_AsDouble(obj), -40.0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(LongExtensionApiTest, AsDoubleWithLargeIntReturnsDouble) {
+  unsigned char bytes[9] = {1};
+  double expected = std::pow(2, 64);
+  PyObjectPtr obj(_PyLong_FromByteArray(bytes, sizeof(bytes), false, false));
+  EXPECT_EQ(PyLong_AsDouble(obj), expected);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(LongExtensionApiTest, AsDoubleWithOverflowRaisesOverflowError) {
+  unsigned char bytes[129] = {1};
+  PyObjectPtr obj(_PyLong_FromByteArray(bytes, sizeof(bytes), false, false));
+  EXPECT_EQ(PyLong_AsDouble(obj), -1.0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
 }
 
 TEST_F(LongExtensionApiTest, AsIntWithNullRaisesSystemError) {
