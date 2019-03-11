@@ -69,26 +69,21 @@ weak = ref(a, f)
 
 TEST(RefBuiltinsTest, DunderCallReturnsObject) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
-from _weakref import ref
-class C: pass
-c = C()
-r = ref(c)
-result = r()
-)");
-  HandleScope scope;
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_EQ(c, result);
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object obj(&scope, Str::empty());
+  Object callback(&scope, NoneType::object());
+  WeakRef ref(&scope, runtime.newWeakRef(thread, obj, callback));
+  Object result(&scope, runBuiltin(RefBuiltins::dunderCall, ref));
+  EXPECT_EQ(result, obj);
 }
 
 TEST(RefBuiltinsTest, DunderCallWithNonRefRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-from _weakref import ref
-ref.__call__(None)
-)"),
-                            LayoutId::kTypeError,
+  HandleScope scope;
+  Object obj(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(RefBuiltins::dunderCall, obj));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
                             "'__call__' requires a 'ref' object"));
 }
 

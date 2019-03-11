@@ -593,6 +593,7 @@ class Runtime {
   DEFINE_IS_INSTANCE(UnicodeEncodeError)
   DEFINE_IS_INSTANCE(UnicodeError)
   DEFINE_IS_INSTANCE(UnicodeTranslateError)
+  DEFINE_IS_INSTANCE(WeakRef)
 #undef DEFINE_IS_INSTANCE
 
   // User-defined subclasses of immediate types have no corresponding LayoutId,

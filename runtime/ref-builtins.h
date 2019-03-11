@@ -11,9 +11,9 @@ namespace python {
 class RefBuiltins
     : public Builtins<RefBuiltins, SymbolId::kRef, LayoutId::kWeakRef> {
  public:
+  static RawObject dunderCall(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
-  static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 };
 
