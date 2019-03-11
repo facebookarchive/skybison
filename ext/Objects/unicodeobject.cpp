@@ -602,8 +602,24 @@ PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* unicode) {
   return _PyUnicode_AsUTF8String(unicode, Py_FileSystemDefaultEncodeErrors);
 }
 
-PY_EXPORT PyObject* PyUnicode_New(Py_ssize_t /* e */, Py_UCS4 /* r */) {
-  UNIMPLEMENTED("PyUnicode_New");
+PY_EXPORT PyObject* PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar) {
+  Thread* thread = Thread::currentThread();
+  // Since CPython optimizes for empty string, we must do so as well to make
+  // sure we don't fail if maxchar is invalid
+  if (size == 0) {
+    return ApiHandle::newReference(thread, Str::empty());
+  }
+  if (maxchar > kMaxUnicode) {
+    thread->raiseSystemErrorWithCStr(
+        "invalid maximum character passed to PyUnicode_New");
+    return nullptr;
+  }
+  if (size < 0) {
+    thread->raiseSystemErrorWithCStr("Negative size passed to PyUnicode_New");
+    return nullptr;
+  }
+  // TODO(T41498010): Add modifiable string state
+  UNIMPLEMENTED("Cannot create mutable strings yet");
 }
 
 PY_EXPORT void PyUnicode_Append(PyObject** p_left, PyObject* right) {

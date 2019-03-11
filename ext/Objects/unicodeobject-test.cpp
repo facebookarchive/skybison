@@ -996,4 +996,23 @@ TEST_F(UnicodeExtensionApiTest, SubstringCountsCodePoints) {
   EXPECT_STREQ(PyUnicode_AsUTF8(result), "e\u0300me bru\u0302");
 }
 
+TEST_F(UnicodeExtensionApiTest, NewWithInvalidSizeReturnsError) {
+  PyObjectPtr str(PyUnicode_New(-1, 0));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, NewWithInvalidMaxCharReturnsError) {
+  PyObjectPtr str(PyUnicode_New(1, 0x11FFFF));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest, NewWithZeroSizeAndInvalidMaxCharReturnsStr) {
+  PyObjectPtr empty(PyUnicode_New(0, 0x11FFFF));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(empty));
+  EXPECT_TRUE(isUnicodeEqualsCStr(empty, ""));
+}
+
 }  // namespace python
