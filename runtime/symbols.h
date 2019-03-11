@@ -222,6 +222,7 @@ class Runtime;
   V(Ior, "ior")                                                                \
   V(Ipow, "ipow")                                                              \
   V(Irshift, "irshift")                                                        \
+  V(Irepeat, "irepeat")                                                        \
   V(Isub, "isub")                                                              \
   V(Itruediv, "itruediv")                                                      \
   V(Ixor, "ixor")                                                              \

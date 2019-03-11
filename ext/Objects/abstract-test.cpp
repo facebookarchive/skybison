@@ -2218,6 +2218,138 @@ c = C()
   EXPECT_TRUE(PyList_CheckExact(result));
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PySequenceInPlaceConcatWithNullLeftRaisesSystemError) {
+  PyObjectPtr right(PyLong_FromLong(1));
+  EXPECT_EQ(PySequence_InPlaceConcat(nullptr, right), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceInPlaceConcatWithNullRightRaisesSystemError) {
+  PyObjectPtr left(PyLong_FromLong(1));
+  EXPECT_EQ(PySequence_InPlaceConcat(left, nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceInPlaceConcatWithByteArrayLeftReturnsByteArray) {
+  PyObjectPtr left(PyByteArray_FromStringAndSize("foo", 3));
+  PyObjectPtr right(PyBytes_FromString("bar"));
+  PyObjectPtr result(PySequence_InPlaceConcat(left, right));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, left);
+  EXPECT_STREQ(PyByteArray_AsString(left), "foobar");
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceInPlaceConcatWithoutDunderGetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C: pass
+left = C()
+)");
+  PyObjectPtr left(moduleGet("__main__", "left"));
+  PyObjectPtr right(PyLong_FromLong(42));
+  EXPECT_EQ(PySequence_InPlaceConcat(left, right), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceInPlaceConcatCallsDunderIadd) {
+  PyRun_SimpleString(R"(
+class C(list):
+  def __add__(self, other):
+    return 1
+  def __iadd__(self, other):
+    return 2
+left = C()
+right = (1, 2, 3)
+)");
+  PyObjectPtr left(moduleGet("__main__", "left"));
+  PyObjectPtr right(moduleGet("__main__", "right"));
+  PyObjectPtr result(PySequence_InPlaceConcat(left, right));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 2);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceInPlaceConcatCallsDunderAdd) {
+  PyRun_SimpleString(R"(
+class C(tuple):
+  def __add__(self, other):
+    return 1
+left = C()
+right = (1, 2, 3)
+)");
+  PyObjectPtr left(moduleGet("__main__", "left"));
+  PyObjectPtr right(moduleGet("__main__", "right"));
+  PyObjectPtr result(PySequence_InPlaceConcat(left, right));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 1);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceInPlaceRepeatWithNullRaisesSystemError) {
+  EXPECT_EQ(PySequence_InPlaceRepeat(nullptr, 0), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PySequenceInPlaceRepeatWithoutDunderGetItemRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class C: pass
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PySequence_InPlaceRepeat(obj, 42), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceInPlaceRepeatWithTupleReturnsTuple) {
+  PyObjectPtr obj(Py_BuildValue("(ii)", 0, 1));
+  ASSERT_EQ(PyTuple_Size(obj), 2);
+  PyObjectPtr result(PySequence_InPlaceRepeat(obj, 3));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyTuple_Size(obj), 2);
+  ASSERT_TRUE(PyTuple_CheckExact(result));
+  EXPECT_EQ(PyTuple_Size(result), 6);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceInPlaceRepeatCallsDunderImul) {
+  PyRun_SimpleString(R"(
+class C(list):
+  def __imul__(self, other):
+    return 1
+  def __mul__(self, other):
+    return 2
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr result(PySequence_InPlaceRepeat(obj, 0));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 1);
+}
+
+TEST_F(AbstractExtensionApiTest, PySequenceInPlaceRepeatCallsDunderMul) {
+  PyRun_SimpleString(R"(
+class C(tuple):
+  def __mul__(self, other):
+    return 1
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr result(PySequence_InPlaceRepeat(obj, 0));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyLong_CheckExact(result));
+  EXPECT_EQ(PyLong_AsLong(result), 1);
+}
+
 TEST_F(AbstractExtensionApiTest, PySequenceLengthOnNull) {
   EXPECT_EQ(PySequence_Length(nullptr), -1);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));

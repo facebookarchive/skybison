@@ -520,6 +520,14 @@ def ipow(a, b):
     return a
 
 
+def irepeat(a, b):
+    "Same as a *= b, for a sequence."
+    if not hasattr(a, "__getitem__"):
+        raise TypeError(f"'{type(a).__name__}' object can't be repeated")
+    a *= b
+    return a
+
+
 def irshift(a, b):
     "Same as a >>= b."
     a >>= b

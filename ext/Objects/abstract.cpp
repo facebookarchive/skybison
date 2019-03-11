@@ -1193,14 +1193,32 @@ PY_EXPORT Py_ssize_t PySequence_Index(PyObject* seq, PyObject* obj) {
   return RawSmallInt::cast(*result).value();
 }
 
-PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* /* s */,
-                                             PyObject* /* o */) {
-  UNIMPLEMENTED("PySequence_InPlaceConcat");
+PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* left, PyObject* right) {
+  Thread* thread = Thread::currentThread();
+  if (left == nullptr || right == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
+  Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
+  Object result(&scope,
+                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIconcat,
+                                        left_obj, right_obj));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PySequence_InPlaceRepeat(PyObject* /* o */,
-                                             Py_ssize_t /* t */) {
-  UNIMPLEMENTED("PySequence_InPlaceRepeat");
+PY_EXPORT PyObject* PySequence_InPlaceRepeat(PyObject* seq, Py_ssize_t count) {
+  Thread* thread = Thread::currentThread();
+  if (seq == nullptr) {
+    return nullError(thread);
+  }
+  HandleScope scope(thread);
+  Object sequence(&scope, ApiHandle::fromPyObject(seq)->asObject());
+  Object count_obj(&scope, thread->runtime()->newInt(count));
+  Object result(&scope,
+                thread->invokeFunction2(SymbolId::kOperator, SymbolId::kIrepeat,
+                                        sequence, count_obj));
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT Py_ssize_t PySequence_Length(PyObject* pyobj) {
