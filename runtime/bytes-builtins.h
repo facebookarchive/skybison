@@ -17,6 +17,9 @@ RawObject bytesFromIterable(Thread* thread, const Object& obj);
 // Creates a new Bytes from the first size elements of items.
 RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size);
 
+// Converts the bytes into a string, mapping each byte to two hex characters.
+RawObject bytesHex(Thread* thread, const Bytes& bytes, word length);
+
 // Converts self into a string representation with single quote delimiters.
 RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);
 
@@ -39,6 +42,7 @@ class BytesBuiltins
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
+  static RawObject hex(Thread* thread, Frame* frame, word nargs);
   static RawObject join(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];

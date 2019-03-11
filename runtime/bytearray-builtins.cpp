@@ -32,6 +32,7 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kHex, hex},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -286,6 +287,19 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   }
   runtime->byteArrayExtend(thread, buffer, {quote, ')'});
   return runtime->newStrFromByteArray(buffer);
+}
+
+RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfByteArray(*obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'hex' requires a 'bytearray' object");
+  }
+  ByteArray self(&scope, *obj);
+  Bytes bytes(&scope, self.bytes());
+  return bytesHex(thread, bytes, self.numItems());
 }
 
 RawObject ByteArrayBuiltins::join(Thread* thread, Frame* frame, word nargs) {

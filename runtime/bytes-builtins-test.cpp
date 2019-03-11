@@ -1001,6 +1001,29 @@ TEST(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\x00\x1f\x80\xff')"));
 }
 
+TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"),
+                            LayoutId::kTypeError,
+                            "'hex' requires a 'bytes' object"));
+}
+
+TEST(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
+  Runtime runtime;
+  HandleScope scope;
+  Bytes self(&scope, runtime.newBytes(0, 0));
+  Object result(&scope, runBuiltin(BytesBuiltins::hex, self));
+  EXPECT_TRUE(isStrEqualsCStr(*result, ""));
+}
+
+TEST(BytesBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  Bytes self(&scope, runtime.newBytesWithAll({0x12, 0x34, 0xfe, 0x5b}));
+  Object result(&scope, runBuiltin(BytesBuiltins::hex, self));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1234fe5b"));
+}
+
 TEST(BytesBuiltinsTest, JoinWithNonBytesRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.join(1, [])"),

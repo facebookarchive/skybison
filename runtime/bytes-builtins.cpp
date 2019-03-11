@@ -110,6 +110,17 @@ RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
   return *result;
 }
 
+RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  ByteArray buffer(&scope, runtime->newByteArray());
+  runtime->byteArrayEnsureCapacity(thread, buffer, length * 2);
+  for (word i = 0; i < length; i++) {
+    writeByteAsHexDigits(thread, buffer, bytes.byteAt(i));
+  }
+  return runtime->newStrFromByteArray(buffer);
+}
+
 static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
                                         byte delimiter) {
   HandleScope scope(thread);
@@ -175,6 +186,7 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
+    {SymbolId::kHex, hex},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -431,6 +443,17 @@ RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes self(&scope, *self_obj);
   return bytesReprSmartQuotes(thread, self);
+}
+
+RawObject BytesBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytes(*obj)) {
+    return thread->raiseTypeErrorWithCStr("'hex' requires a 'bytes' object");
+  }
+  Bytes self(&scope, *obj);
+  return bytesHex(thread, self, self.length());
 }
 
 RawObject BytesBuiltins::join(Thread* thread, Frame* frame, word nargs) {

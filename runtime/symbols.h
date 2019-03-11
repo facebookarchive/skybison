@@ -211,6 +211,7 @@ class Runtime;
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
   V(Hasattr, "hasattr")                                                        \
+  V(Hex, "hex")                                                                \
   V(Iadd, "iadd")                                                              \
   V(Iand, "iand")                                                              \
   V(Iconcat, "iconcat")                                                        \

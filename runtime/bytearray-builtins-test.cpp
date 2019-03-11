@@ -480,6 +480,31 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'\x00\x1f\x80\xff'))"));
 }
 
+TEST(ByteArrayBuiltinsTest, HexWithNonByteArrayRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.hex(1)"),
+                            LayoutId::kTypeError,
+                            "'hex' requires a 'bytearray' object"));
+}
+
+TEST(ByteArrayBuiltinsTest, HexWithEmptyByteArrayReturnsEmptyString) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::hex, self));
+  EXPECT_TRUE(isStrEqualsCStr(*result, ""));
+}
+
+TEST(ByteArrayBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {0x60, 0xe, 0x18, 0x21});
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::hex, self));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "600e1821"));
+}
+
 TEST(ByteArrayBuiltinsTest, JoinWithNonByteArrayRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.join(b'', [])"),

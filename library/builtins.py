@@ -555,6 +555,9 @@ class bytearray(bootstrap=True):
     def __repr__(self):
         pass
 
+    def hex(self) -> str:
+        pass
+
     def join(self, iterable) -> bytearray:
         if not isinstance(self, bytearray):
             raise TypeError("'join' requires a 'bytearray' object")
@@ -599,6 +602,9 @@ class bytes(bootstrap=True):
         pass
 
     def __repr__(self) -> str:  # noqa: T484
+        pass
+
+    def hex(self) -> str:
         pass
 
     def join(self, iterable) -> bytes:
