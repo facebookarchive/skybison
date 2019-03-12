@@ -592,6 +592,7 @@ class RawStr : public RawObject {
 class RawSmallStr : public RawObject {
  public:
   // Conversion.
+  static RawObject fromCodePoint(int32 code_point);
   static RawObject fromCStr(const char* value);
   static RawObject fromBytes(View<byte> data);
 

@@ -131,10 +131,9 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
     return Error::object();
   }
 
-  char item = underlying.charAt(idx);
-  char buffer[] = {item, '\0'};
+  byte item = underlying.charAt(idx);
   iter.setIndex(idx + 1);
-  return RawSmallStr::fromCStr(buffer);
+  return RawSmallStr::fromCodePoint(item);
 }
 
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {

@@ -10,6 +10,44 @@ namespace python {
 
 // RawSmallStr
 
+RawObject RawSmallStr::fromCodePoint(int32 code_point) {
+  DCHECK_BOUND(code_point, kMaxUnicode);
+  uword cp = static_cast<uword>(code_point);
+  // 0xxxxxxx
+  if (cp <= kMaxASCII) {  // 01111111
+    return RawObject{cp << 8 | (1 << kTagSize) | kTag};
+  }
+  uword result = cp & 0x3F;  // 00111111
+  cp >>= 6;
+  result <<= kBitsPerByte;
+  // 110xxxxx 10xxxxxx
+  if (cp <= 0x1F) {  // 00011111
+    result |= cp;
+    result |= 0x80C0;  // 10xxxxxx 110xxxxx
+    result <<= kBitsPerByte;
+    return RawObject{result | (2 << kTagSize) | kTag};
+  }
+
+  result |= cp & 0x3F;  // 00111111
+  cp >>= 6;
+  result <<= kBitsPerByte;
+  // 1110xxxx 10xxxxxx 10xxxxxx
+  if (cp <= 0xF) {  // 00001111
+    result |= cp;
+    result |= 0x8080E0;  // 10xxxxxx 10xxxxxx 1110xxxx
+    result <<= kBitsPerByte;
+    return RawObject{result | (3 << kTagSize) | kTag};
+  }
+  result |= cp & 0x3F;  // 00111111
+  cp >>= 6;
+  result <<= kBitsPerByte;
+  // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+  result |= cp;
+  result |= 0x808080F0;  // 10xxxxxx 10xxxxxx 10xxxxxx 11110xxx
+  result <<= kBitsPerByte;
+  return RawObject{result | (4 << kTagSize) | kTag};
+}
+
 RawObject RawSmallStr::fromCStr(const char* value) {
   word len = strlen(value);
   return fromBytes(View<byte>(reinterpret_cast<const byte*>(value), len));

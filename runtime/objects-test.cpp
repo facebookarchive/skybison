@@ -697,6 +697,52 @@ TEST(SmallStrTest, CodePointLengthWithThreeCodePoints) {
   EXPECT_EQ(RawStr::cast(len4).codePointLength(), 3);
 }
 
+TEST(SmallStrTest, FromCodePointOneByte) {
+  RawObject obj = SmallStr::fromCodePoint(0x24);
+  ASSERT_TRUE(obj.isSmallStr());
+  RawStr str = Str::cast(obj);
+  ASSERT_EQ(str.length(), 1);
+  EXPECT_EQ(str.charAt(0), 0x24);
+}
+
+TEST(SmallStrTest, FromCodePointTwoByte) {
+  RawObject obj = SmallStr::fromCodePoint(0xA2);
+  ASSERT_TRUE(obj.isSmallStr());
+  RawStr str = Str::cast(obj);
+  ASSERT_EQ(str.length(), 2);
+  EXPECT_EQ(str.charAt(0), 0xC2);
+  EXPECT_EQ(str.charAt(1), 0xA2);
+}
+
+TEST(SmallStrTest, FromCodePointThreeByte) {
+  RawObject obj1 = SmallStr::fromCodePoint(0x0939);
+  ASSERT_TRUE(obj1.isSmallStr());
+  RawStr str1 = Str::cast(obj1);
+  ASSERT_EQ(str1.length(), 3);
+  EXPECT_EQ(str1.charAt(0), 0xE0);
+  EXPECT_EQ(str1.charAt(1), 0xA4);
+  EXPECT_EQ(str1.charAt(2), 0xB9);
+
+  RawObject obj2 = SmallStr::fromCodePoint(0x20AC);
+  ASSERT_TRUE(obj2.isSmallStr());
+  RawStr str2 = Str::cast(obj2);
+  ASSERT_EQ(str2.length(), 3);
+  EXPECT_EQ(str2.charAt(0), 0xE2);
+  EXPECT_EQ(str2.charAt(1), 0x82);
+  EXPECT_EQ(str2.charAt(2), 0xAC);
+}
+
+TEST(SmallStrTest, FromCodePointFourByte) {
+  RawObject obj = SmallStr::fromCodePoint(0x10348);
+  ASSERT_TRUE(obj.isSmallStr());
+  RawStr str = Str::cast(obj);
+  ASSERT_EQ(str.length(), 4);
+  EXPECT_EQ(str.charAt(0), 0xF0);
+  EXPECT_EQ(str.charAt(1), 0x90);
+  EXPECT_EQ(str.charAt(2), 0x8D);
+  EXPECT_EQ(str.charAt(3), 0x88);
+}
+
 TEST(StrTest, OffsetByCodePoints) {
   Runtime runtime;
   HandleScope scope;
