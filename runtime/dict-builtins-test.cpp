@@ -662,4 +662,36 @@ result = d.__repr__()
                               "{'hello': {...}}"));
 }
 
+TEST(DictBuiltinTest, PopWithKeyPresentReturnsValue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+d = {"hello": "world"}
+result = d.pop("hello")
+)");
+  HandleScope scope;
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
+  Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
+  EXPECT_EQ(dict.numItems(), 0);
+}
+
+TEST(DictBuiltinTest, PopWithMissingKeyAndDefaultReturnsDefault) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+d = {}
+result = d.pop("hello", "world")
+)");
+  HandleScope scope;
+  Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
+  EXPECT_EQ(dict.numItems(), 0);
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
+}
+
+TEST(DictBuiltinTest, PopWithMisingKeyRaisesKeyError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raised(runFromCStr(&runtime, "{}.pop('hello')"), LayoutId::kKeyError));
+}
+
 }  // namespace python

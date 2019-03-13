@@ -1085,6 +1085,14 @@ class dict(bootstrap=True):
     def keys(self):
         pass
 
+    def pop(self, key, default=_UnboundValue):
+        value = self.get(key, default)
+        if value is _UnboundValue:
+            raise KeyError(key)
+        if key in self:
+            del self[key]
+        return value
+
     def update(self, other):
         pass
 
