@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "bytecode.h"
+#include "bytes-builtins.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "handles.h"
@@ -89,6 +90,15 @@ std::ostream& operator<<(std::ostream& os, CastError err) {
 
 std::ostream& operator<<(std::ostream& os, RawBool value) {
   return os << (value.value() ? "True" : "False");
+}
+
+std::ostream& operator<<(std::ostream& os, RawBytes value) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Bytes self(&scope, value);
+  Str repr(&scope, bytesReprSmartQuotes(thread, self));
+  unique_c_ptr<char[]> data(repr.toCStr());
+  return os.write(data.get(), repr.length());
 }
 
 std::ostream& operator<<(std::ostream& os, RawCode value) {

@@ -301,10 +301,14 @@ RawObject listFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (thread->hasPendingException()) {
-    Type type(&scope, thread->pendingExceptionType());
-    return ::testing::AssertionFailure()
-           << "pending '" << typeName(runtime, *type) << "' exception";
+  if (result.isError()) {
+    if (thread->hasPendingException()) {
+      Type type(&scope, thread->pendingExceptionType());
+      unique_c_ptr<char> name(Str::cast(type.name()).toCStr());
+      return ::testing::AssertionFailure()
+             << "pending '" << name.get() << "' exception";
+    }
+    return ::testing::AssertionFailure() << "is an Error";
   }
   if (!runtime->isInstanceOfBytes(*result)) {
     return ::testing::AssertionFailure()
@@ -313,11 +317,8 @@ RawObject listFromRange(word start, word stop) {
   Bytes result_bytes(&scope, *result);
   Bytes expected_bytes(&scope, runtime->newBytesWithAll(expected));
   if (result_bytes.compare(*expected_bytes) != 0) {
-    Str result_repr(&scope, bytesReprSmartQuotes(thread, result_bytes));
-    Str expected_repr(&scope, bytesReprSmartQuotes(thread, expected_bytes));
     return ::testing::AssertionFailure()
-           << result_repr.toCStr() << "is not equal to "
-           << expected_repr.toCStr();
+           << result_bytes << " is not equal to " << expected_bytes;
   }
   return ::testing::AssertionSuccess();
 }

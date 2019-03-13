@@ -8,6 +8,40 @@ namespace python {
 
 using namespace testing;
 
+TEST(TestUtils, IsBytesEquals) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  View<byte> view{'f', 'o', 'o'};
+  Object bytes(&scope, runtime.newBytesWithAll(view));
+  auto const ok = isBytesEqualsBytes(bytes, view);
+  EXPECT_TRUE(ok);
+
+  auto const not_equal = isBytesEqualsCStr(bytes, "bar");
+  EXPECT_FALSE(not_equal);
+  const char* ne_msg = "b'foo' is not equal to b'bar'";
+  EXPECT_STREQ(not_equal.message(), ne_msg);
+
+  Object str(&scope, runtime.newStrWithAll(view));
+  auto const type_err = isBytesEqualsBytes(str, view);
+  EXPECT_FALSE(type_err);
+  const char* type_msg = "is a 'smallstr'";
+  EXPECT_STREQ(type_err.message(), type_msg);
+
+  Object err(&scope, Error::object());
+  auto const error = isBytesEqualsCStr(err, "");
+  EXPECT_FALSE(error);
+  const char* error_msg = "is an Error";
+  EXPECT_STREQ(error.message(), error_msg);
+
+  Object result(&scope, thread->raiseValueErrorWithCStr("bad things"));
+  auto const exc = isBytesEqualsBytes(result, view);
+  EXPECT_FALSE(exc);
+  const char* exc_msg = "pending 'ValueError' exception";
+  EXPECT_STREQ(exc.message(), exc_msg);
+}
+
 TEST(TestUtils, PyListEqual) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
