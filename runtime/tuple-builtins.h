@@ -30,6 +30,7 @@ class TupleBuiltins
     : public Builtins<TupleBuiltins, SymbolId::kTuple, LayoutId::kTuple> {
  public:
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

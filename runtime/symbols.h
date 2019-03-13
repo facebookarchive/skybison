@@ -180,6 +180,7 @@ class Runtime;
   V(Ellipsis, "ellipsis")                                                      \
   V(Encoding, "encoding")                                                      \
   V(End, "end")                                                                \
+  V(Eq, "eq")                                                                  \
   V(Exception, "Exception")                                                    \
   V(ExceptionState, "ExceptionState")                                          \
   V(Exec, "exec")                                                              \

@@ -259,9 +259,8 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
     if (*value == *item) {
       return Bool::trueObj();
     }
-
-    comp_result = Interpreter::compareOperation(thread, frame, CompareOp::EQ,
-                                                value, item);
+    comp_result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kEq,
+                                          value, item);
     if (comp_result.isError()) return *comp_result;
     found = Interpreter::isTrue(thread, frame, comp_result);
     if (found.isError()) return *found;

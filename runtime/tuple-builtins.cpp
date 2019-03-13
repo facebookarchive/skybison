@@ -72,6 +72,7 @@ const BuiltinAttribute TupleBuiltins::kAttributes[] = {
 
 const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGetItem, dunderGetItem},
     {SymbolId::kDunderIter, dunderIter},
@@ -121,6 +122,38 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
     new_tuple.atPut(llength + j, right.at(j));
   }
   return *new_tuple;
+}
+
+RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfTuple(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__contains__' requires a 'tuple' object");
+  }
+
+  Tuple self(&scope, *self_obj);
+  Object value(&scope, args.get(1));
+  Object item(&scope, NoneType::object());
+  Object comp_result(&scope, NoneType::object());
+  Object found(&scope, NoneType::object());
+  for (word i = 0, num_items = self.length(); i < num_items; ++i) {
+    item = self.at(i);
+    if (*value == *item) {
+      return Bool::trueObj();
+    }
+    comp_result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kEq,
+                                          value, item);
+    if (comp_result.isError()) return *comp_result;
+    found = Interpreter::isTrue(thread, frame, comp_result);
+    if (found.isError()) return *found;
+    if (found == Bool::trueObj()) {
+      return *found;
+    }
+  }
+  return Bool::falseObj();
 }
 
 RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {

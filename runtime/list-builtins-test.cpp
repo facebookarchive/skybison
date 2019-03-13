@@ -223,9 +223,8 @@ list = [None]
 )");
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
-  Object result(&scope, runBuiltin(ListBuiltins::dunderContains, list, value));
-  EXPECT_TRUE(result.isError());
-  // TODO(T39221304) check for kWarning when isTrue() is fixed.
+  EXPECT_TRUE(raised(runBuiltin(ListBuiltins::dunderContains, list, value),
+                     LayoutId::kUserWarning));
 }
 
 TEST(ListBuiltinsTest, DunderContainsWithNonListSelfRaisesTypeError) {

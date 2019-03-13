@@ -662,4 +662,136 @@ result = C().__repr__()
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "((...),)"));
 }
 
+TEST(TupleBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Int value0(&scope, runtime.newInt(1));
+  Bool value1(&scope, RawBool::falseObj());
+  Str value2(&scope, runtime.newStrFromCStr("hello"));
+  Tuple tuple(&scope, runtime.newTuple(3));
+  tuple.atPut(0, *value0);
+  tuple.atPut(1, *value1);
+  tuple.atPut(2, *value2);
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value0),
+            RawBool::trueObj());
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value1),
+            RawBool::trueObj());
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value2),
+            RawBool::trueObj());
+}
+
+TEST(TupleBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Int value0(&scope, runtime.newInt(7));
+  NoneType value1(&scope, RawNoneType::object());
+  Tuple tuple(&scope, runtime.newTuple(2));
+  tuple.atPut(0, *value0);
+  tuple.atPut(1, *value1);
+  Int value2(&scope, runtime.newInt(42));
+  Bool value3(&scope, RawBool::trueObj());
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value2),
+            RawBool::falseObj());
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value3),
+            RawBool::falseObj());
+}
+
+TEST(TupleBuiltinsTest, DunderContainsWithIdenticalObjectReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    return False
+value = Foo()
+t = (value,)
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+            RawBool::trueObj());
+}
+
+TEST(TupleBuiltinsTest,
+     DunderContainsWithNonIdenticalEqualKeyObjectReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    return True
+value = Foo()
+t = (None,)
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+            RawBool::trueObj());
+}
+
+TEST(TupleBuiltinsTest,
+     DunderContainsWithNonIdenticalEqualTupleObjectReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    return True
+class Bar:
+  def __eq__(self, other):
+    return False
+value0 = Foo()
+value1 = Bar()
+t = (value0,)
+)");
+  Object value1(&scope, moduleAt(&runtime, "__main__", "value1"));
+  Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
+  EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value1),
+            RawBool::falseObj());
+}
+
+TEST(TupleBuiltinsTest, DunderContainsWithRaisingEqPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __eq__(self, other):
+    raise UserWarning("")
+value = Foo()
+t = (None,)
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
+  EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+                     LayoutId::kUserWarning));
+}
+
+TEST(TupleBuiltinsTest,
+     DunderContainsWithRaisingDunderBoolPropagatesException) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Foo:
+  def __bool__(self):
+    raise UserWarning("")
+class Bar:
+  def __eq__(self, other):
+    return Foo()
+value = Bar()
+t = (None,)
+)");
+  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
+  Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
+  EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
+                     LayoutId::kUserWarning));
+}
+
+TEST(TupleBuiltinsTest, DunderContainsWithNonTupleSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Int i(&scope, SmallInt::fromWord(3));
+  EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, i, i),
+                     LayoutId::kTypeError));
+}
+
 }  // namespace python

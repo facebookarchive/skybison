@@ -634,6 +634,9 @@ class tuple(bootstrap=True):
     def __add__(self, other):
         pass
 
+    def __contains__(self, key):
+        pass
+
     def __eq__(self, other):
         pass
 
