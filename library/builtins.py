@@ -831,6 +831,12 @@ class str(bootstrap=True):
     def find(self, sub, start=None, end=None):
         pass
 
+    def index(self, sub, start=None, end=None):
+        res = self.find(sub, start, end)
+        if res < 0:
+            raise ValueError(f"substring {sub} not found")
+        return res
+
     def partition(self, sep):
         if not isinstance(self, str):
             raise TypeError(

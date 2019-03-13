@@ -1992,6 +1992,21 @@ result = "hello".rfind("", 3, 3)
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
 }
 
+TEST(StrBuiltinsTest, IndexWithPresentSubstringReturnsIndex) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "\u20ac10 Cr\u00e8me br\u00fbl\u00e9e"
+result = s.index("e", 4)
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 8));
+}
+
+TEST(StrBuiltinsTest, IndexWithMissingSubstringRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raised(runFromCStr(&runtime, "'h'.index('q')"), LayoutId::kValueError));
+}
+
 TEST(StringIterTest, SimpleIter) {
   Runtime runtime;
   HandleScope scope;
