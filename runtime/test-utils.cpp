@@ -296,6 +296,42 @@ RawObject listFromRange(word start, word stop) {
   return *result;
 }
 
+::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,
+                                                  View<byte> expected) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (result.isError()) {
+    if (thread->hasPendingException()) {
+      Type type(&scope, thread->pendingExceptionType());
+      unique_c_ptr<char> name(Str::cast(type.name()).toCStr());
+      return ::testing::AssertionFailure()
+             << "pending '" << name.get() << "' exception";
+    }
+    return ::testing::AssertionFailure() << "is an Error";
+  }
+  if (!runtime->isInstanceOfByteArray(*result)) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, *result) << "'";
+  }
+  ByteArray result_array(&scope, *result);
+  Bytes result_bytes(&scope, byteArrayAsBytes(thread, runtime, result_array));
+  Bytes expected_bytes(&scope, runtime->newBytesWithAll(expected));
+  if (result_bytes.compare(*expected_bytes) != 0) {
+    return ::testing::AssertionFailure()
+           << "bytearray(" << result_bytes << ") is not equal to bytearray("
+           << expected_bytes << ")";
+  }
+  return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult isByteArrayEqualsCStr(const Object& result,
+                                                 const char* expected) {
+  return isByteArrayEqualsBytes(
+      result, View<byte>(reinterpret_cast<const byte*>(expected),
+                         static_cast<word>(std::strlen(expected))));
+}
+
 ::testing::AssertionResult isBytesEqualsBytes(const Object& result,
                                               View<byte> expected) {
   Thread* thread = Thread::currentThread();

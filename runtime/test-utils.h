@@ -165,6 +165,12 @@ using unique_file_ptr = std::unique_ptr<char, FileDeleter>;
 
 RawObject listFromRange(word start, word stop);
 
+::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,
+                                                  View<byte> expected);
+
+::testing::AssertionResult isByteArrayEqualsCStr(const Object& result,
+                                                 const char* str);
+
 ::testing::AssertionResult isBytesEqualsBytes(const Object& result,
                                               View<byte> expected);
 

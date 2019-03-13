@@ -59,21 +59,19 @@ TEST(ByteArrayBuiltinsTest, DunderAddWithByteArrayOtherReturnsNewByteArray) {
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray other(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, other, {'1', '2', '3'});
-  ByteArray result(&scope,
-                   runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
-  EXPECT_EQ(self.numItems(), 0);
-  EXPECT_EQ(result.numItems(), 3);
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "123"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderAddWithBytesOtherReturnsNewByteArray) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  Bytes other(&scope, runtime.newBytes(2, '1'));
-  ByteArray result(&scope,
-                   runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
-  EXPECT_EQ(self.numItems(), 0);
-  EXPECT_EQ(result.numItems(), 2);
+  Bytes other(&scope, runtime.newBytes(4, '1'));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "1111"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
@@ -83,11 +81,9 @@ TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'f', 'o', 'o'});
   Bytes other(&scope, runtime.newBytes(1, 'd'));
-  ByteArray result(&scope,
-                   runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
-  EXPECT_EQ(self.numItems(), 3);
-  EXPECT_EQ(result.numItems(), 4);
-  EXPECT_EQ(result.byteAt(3), 'd');
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "foo"));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "food"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
@@ -157,10 +153,9 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceReturnsByteArray) {
   runtime.byteArrayExtend(thread, self, {'h', 'e', 'l', 'l', 'o'});
   Slice index(&scope, runtime.newSlice());
   index.setStop(SmallInt::fromWord(3));
-  ByteArray item(&scope,
-                 runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
-  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, item));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "hel"));
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "hel"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceStepReturnsByteArray) {
@@ -174,10 +169,9 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceStepReturnsByteArray) {
   index.setStart(SmallInt::fromWord(8));
   index.setStop(SmallInt::fromWord(3));
   index.setStep(SmallInt::fromWord(-2));
-  ByteArray item(&scope,
-                 runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
-  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, item));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "rwo"));
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "rwo"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderIaddWithNonByteArraySelfRaisesTypeError) {
@@ -204,22 +198,22 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithByteArrayOtherConcatenatesToSelf) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray other(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, other, {'1', '2', '3'});
-  ByteArray result(&scope,
-                   runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
-  ASSERT_EQ(self, result);
-  EXPECT_EQ(result.numItems(), 3);
+  View<byte> bytes{'1', '2', '3'};
+  runtime.byteArrayExtend(thread, other, bytes);
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
+  EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  Bytes other(&scope, runtime.newBytes(2, '1'));
-  ByteArray result(&scope,
-                   runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
-  ASSERT_EQ(self, result);
-  EXPECT_EQ(result.numItems(), 2);
+  View<byte> bytes{'1', '2', '3'};
+  Bytes other(&scope, runtime.newBytesWithAll(bytes));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
+  EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderInitNoArgsClearsArray) {
@@ -230,10 +224,10 @@ TEST(ByteArrayBuiltinsTest, DunderInitNoArgsClearsArray) {
 array = bytearray(b'123')
 result = array.__init__()
 )");
-  ByteArray array(&scope, moduleAt(&runtime, "__main__", "array"));
+  Object array(&scope, moduleAt(&runtime, "__main__", "array"));
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isNoneType());
-  EXPECT_EQ(array.numItems(), 0);
+  EXPECT_TRUE(isByteArrayEqualsCStr(array, ""));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithNonByteArraySelfRaisesTypeError) {
@@ -293,8 +287,7 @@ TEST(ByteArrayBuiltinsTest,
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
-  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, self));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {0, 0, 0}));
+  EXPECT_TRUE(isByteArrayEqualsBytes(self, {0, 0, 0}));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithLargeIntRaisesOverflowError) {
@@ -315,13 +308,13 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithBytesCopiesBytes) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  Bytes source(&scope, runtime.newBytes(6, '!'));
+  View<byte> bytes{'f', 'o', 'o', 'b', 'a', 'r'};
+  Bytes source(&scope, runtime.newBytesWithAll(bytes));
   Object unbound(&scope, runtime.unboundValue());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
-  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, self));
-  EXPECT_EQ(result.compare(*source), 0);
+  EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithByteArrayCopiesBytes) {
@@ -330,14 +323,14 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithByteArrayCopiesBytes) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray source(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, source, {'h', 'i'});
+  View<byte> bytes{'f', 'o', 'o', 'b', 'a', 'r'};
+  runtime.byteArrayExtend(thread, source, bytes);
   Object unbound(&scope, runtime.unboundValue());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
-  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, self));
-  Bytes expected(&scope, byteArrayAsBytes(thread, &runtime, source));
-  EXPECT_EQ(result.compare(*expected), 0);
+  EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
+  EXPECT_TRUE(isByteArrayEqualsBytes(source, bytes));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
@@ -356,8 +349,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
-  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, self));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {1, 2, 6}));
+  EXPECT_TRUE(isByteArrayEqualsBytes(self, {1, 2, 6}));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
@@ -377,8 +369,8 @@ TEST(ByteArrayBuiltinsTest, DunderNewReturnsEmptyByteArray) {
   Runtime runtime;
   HandleScope scope;
   Type cls(&scope, runtime.typeAt(LayoutId::kByteArray));
-  ByteArray self(&scope, runBuiltin(ByteArrayBuiltins::dunderNew, cls));
-  EXPECT_EQ(self.numItems(), 0);
+  Object self(&scope, runBuiltin(ByteArrayBuiltins::dunderNew, cls));
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
 }
 
 TEST(ByteArrayBuiltinsTest, NewByteArray) {
@@ -387,8 +379,7 @@ TEST(ByteArrayBuiltinsTest, NewByteArray) {
   HandleScope scope(thread);
   runFromCStr(&runtime, "obj = bytearray(b'Hello world!')");
   ByteArray self(&scope, moduleAt(&runtime, "__main__", "obj"));
-  Bytes result(&scope, byteArrayAsBytes(thread, &runtime, self));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "Hello world!"));
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "Hello world!"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithNonByteArrayRaisesTypeError) {
@@ -525,8 +516,8 @@ TEST(ByteArrayBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, 'a');
   Object iter(&scope, runtime.newTuple(0));
-  ByteArray result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
-  EXPECT_EQ(result.numItems(), 0);
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }
 
 TEST(ByteArrayBuiltinsTest, JoinWithEmptySeparatorReturnsByteArray) {
@@ -538,9 +529,8 @@ TEST(ByteArrayBuiltinsTest, JoinWithEmptySeparatorReturnsByteArray) {
   iter.atPut(0, runtime.newBytes(1, 'A'));
   iter.atPut(1, runtime.newBytes(2, 'B'));
   iter.atPut(2, runtime.newBytes(1, 'A'));
-  ByteArray result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
-  Bytes actual(&scope, byteArrayAsBytes(thread, &runtime, result));
-  EXPECT_TRUE(isBytesEqualsCStr(actual, "ABBA"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "ABBA"));
 }
 
 TEST(ByteArrayBuiltinsTest, JoinWithNonEmptyReturnsByteArray) {
@@ -554,9 +544,8 @@ TEST(ByteArrayBuiltinsTest, JoinWithNonEmptyReturnsByteArray) {
   runtime.listAdd(iter, value);
   runtime.listAdd(iter, value);
   runtime.listAdd(iter, value);
-  ByteArray result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
-  Bytes actual(&scope, byteArrayAsBytes(thread, &runtime, result));
-  EXPECT_TRUE(isBytesEqualsCStr(actual, "* * *"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "* * *"));
 }
 
 TEST(ByteArrayBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
@@ -576,9 +565,8 @@ result = bytearray(b' ').join(Foo())
 )");
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);
-  ByteArray result(&scope, moduleAt(&runtime, "__main__", "result"));
-  Bytes actual(&scope, byteArrayAsBytes(thread, &runtime, result));
-  EXPECT_TRUE(isBytesEqualsCStr(actual, "ab c def"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "ab c def"));
 }
 
 }  // namespace python

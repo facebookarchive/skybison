@@ -8,6 +8,42 @@ namespace python {
 
 using namespace testing;
 
+TEST(TestUtils, IsByteArrayEquals) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  View<byte> view{'f', 'o', 'o'};
+  Object bytes(&scope, runtime.newBytesWithAll(view));
+  auto const type_err = isByteArrayEqualsBytes(bytes, view);
+  EXPECT_FALSE(type_err);
+  const char* type_msg = "is a 'bytes'";
+  EXPECT_STREQ(type_err.message(), type_msg);
+
+  ByteArray array(&scope, runtime.newByteArray());
+  array.setBytes(*bytes);
+  array.setNumItems(3);
+  auto const ok = isByteArrayEqualsBytes(array, view);
+  EXPECT_TRUE(ok);
+
+  auto const not_equal = isByteArrayEqualsCStr(array, "bar");
+  EXPECT_FALSE(not_equal);
+  const char* ne_msg = "bytearray(b'foo') is not equal to bytearray(b'bar')";
+  EXPECT_STREQ(not_equal.message(), ne_msg);
+
+  Object err(&scope, Error::object());
+  auto const error = isByteArrayEqualsCStr(err, "");
+  EXPECT_FALSE(error);
+  const char* error_msg = "is an Error";
+  EXPECT_STREQ(error.message(), error_msg);
+
+  Object result(&scope, thread->raiseValueErrorWithCStr("bad things"));
+  auto const exc = isByteArrayEqualsBytes(result, view);
+  EXPECT_FALSE(exc);
+  const char* exc_msg = "pending 'ValueError' exception";
+  EXPECT_STREQ(exc.message(), exc_msg);
+}
+
 TEST(TestUtils, IsBytesEquals) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
