@@ -1467,6 +1467,34 @@ def issubclass(obj, ty):
     pass
 
 
+def iter(obj, sentinel=None):
+    if sentinel is None:
+        try:
+            dunder_iter = type(obj).__iter__
+        except AttributeError:
+            raise TypeError(f"'{type(obj).__name__}' object is not iterable")
+        return dunder_iter(obj)
+
+    class CallIter:
+        def __init__(self, callable, sentinel):
+            self.__callable = callable
+            self.__sentinel = sentinel
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            value = self.__callable()
+            if self.__sentinel == value:
+                raise StopIteration()
+            return value
+
+        def __reduce__(self):
+            return (iter, (self.__callable, self.__sentinel))
+
+    return CallIter(obj, sentinel)
+
+
 def len(seq):
     dunder_len = getattr(seq, "__len__", None)
     if dunder_len is None:

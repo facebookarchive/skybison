@@ -1014,4 +1014,66 @@ class C:
       raised(runFromCStr(&runtime, "format(C(), 'hi')"), LayoutId::kTypeError));
 }
 
+TEST(BuiltinsModuleTest, IterWithIterableCallsDunderIter) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+l = list(iter([1, 2, 3]))
+)");
+  HandleScope scope;
+  Object l(&scope, moduleAt(&runtime, "__main__", "l"));
+  EXPECT_PYLIST_EQ(l, {1, 2, 3});
+}
+
+TEST(BuiltinsModuleTest, IterWithNonIterableRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+iter(None)
+)"),
+                            LayoutId::kTypeError,
+                            "'NoneType' object is not iterable"));
+}
+
+TEST(BuiltinsModuleTest, IterWithRaisingDunderIterPropagatesException) {
+  Runtime runtime;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+class C:
+  def __iter__(self):
+    raise UserWarning()
+iter(C())
+)"),
+                     LayoutId::kUserWarning));
+}
+
+TEST(BuiltinsModuleTest, IterWithCallableReturnsIterator) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.x = 0
+  def __call__(self):
+    self.x += 1
+    return self.x
+c = C()
+callable_iter = iter(c, 3)
+reduced = callable_iter.__reduce__()
+l = list(callable_iter)
+)");
+  HandleScope scope;
+  Object l(&scope, moduleAt(&runtime, "__main__", "l"));
+  EXPECT_PYLIST_EQ(l, {1, 2});
+
+  Object iter(&scope, moduleAt(&runtime, "builtins", "iter"));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object reduced_obj(&scope, moduleAt(&runtime, "__main__", "reduced"));
+  ASSERT_TRUE(reduced_obj.isTuple());
+  Tuple reduced(&scope, *reduced_obj);
+  ASSERT_EQ(reduced.length(), 2);
+  EXPECT_EQ(reduced.at(0), iter);
+  ASSERT_TRUE(reduced.at(1).isTuple());
+  Tuple inner(&scope, reduced.at(1));
+  ASSERT_EQ(inner.length(), 2);
+  EXPECT_EQ(inner.at(0), c);
+  EXPECT_TRUE(isIntEqualsWord(inner.at(1), 3));
+}
+
 }  // namespace python
