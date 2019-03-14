@@ -198,18 +198,19 @@ word RawInt::compare(RawInt that) const {
     return this->asWord() - that.asWord();
   }
   // compare with large ints always returns -1, 0, or 1
-  if (this->isNegative() != that.isNegative()) {
-    return this->isNegative() ? -1 : 1;
+  bool is_negative = this->isNegative();
+  if (is_negative != that.isNegative()) {
+    return is_negative ? -1 : 1;
   }
 
   word left_digits = this->numDigits();
   word right_digits = that.numDigits();
 
   if (left_digits > right_digits) {
-    return 1;
+    return is_negative ? -1 : 1;
   }
   if (left_digits < right_digits) {
-    return -1;
+    return is_negative ? 1 : -1;
   }
   for (word i = left_digits - 1; i >= 0; i--) {
     uword left_digit = this->digitAt(i);

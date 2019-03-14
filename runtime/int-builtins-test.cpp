@@ -3553,4 +3553,14 @@ TEST(IntBuiltinsTest, RealReturnsInt) {
   EXPECT_TRUE(isIntEqualsWord(*result, 44));
 }
 
+TEST(IntBuiltinsTest, CompareWithBigNegativeNumber) {
+  Runtime runtime;
+  runFromCStr(&runtime, "a = -46116860184273879030000");
+  HandleScope scope;
+  Int a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Int b(&scope, SmallInt::fromWord(SmallInt::kMinValue));
+  EXPECT_LT(a.compare(*b), 0);
+  EXPECT_GT(b.compare(*a), 0);
+}
+
 }  // namespace python
