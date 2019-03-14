@@ -203,8 +203,7 @@ TEST_F(AbstractExtensionApiTest, PyMappingCheckWithSetReturnsFalse) {
 }
 
 TEST_F(AbstractExtensionApiTest, PyMappingCheckWithBooleanReturnsFalse) {
-  PyObjectPtr py_false(Py_False);
-  EXPECT_FALSE(PyMapping_Check(py_false));
+  EXPECT_FALSE(PyMapping_Check(Py_False));
 }
 
 TEST_F(AbstractExtensionApiTest, PyMappingCheckWithGetItemMethodReturnsTrue) {
@@ -1961,8 +1960,7 @@ obj = Subclass()
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithNoneReturnsFalse) {
-  PyObjectPtr py_none(Py_None);
-  EXPECT_FALSE(PySequence_Check(py_none));
+  EXPECT_FALSE(PySequence_Check(Py_None));
 }
 
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithGetItemMethodReturnsTrue) {

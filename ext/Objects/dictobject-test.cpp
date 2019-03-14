@@ -68,7 +68,7 @@ obj = Foo()
   ASSERT_EQ(PyDict_SetItem(obj, key, val), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr result(PyDict_GetItem(obj, key));
+  PyObject* result = PyDict_GetItem(obj, key);
   EXPECT_EQ(result, val);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -97,7 +97,7 @@ c2 = C(5)
   ASSERT_EQ(PyDict_SetItem(dict, c2, v2), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr result(PyDict_GetItem(dict, c1));
+  PyObject* result = PyDict_GetItem(dict, c1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(result, v1);
 }
@@ -290,7 +290,7 @@ TEST_F(DictExtensionApiTest, ItemsWithDictReturnsList) {
   ASSERT_TRUE(PyList_CheckExact(result));
   EXPECT_EQ(PyList_Size(result), 1);
 
-  PyObjectPtr kv(PyList_GetItem(result, 0));
+  PyObject* kv = PyList_GetItem(result, 0);
   ASSERT_TRUE(PyTuple_CheckExact(kv));
   ASSERT_EQ(PyTuple_Size(kv), 2);
   EXPECT_EQ(PyTuple_GetItem(kv, 0), key);
@@ -411,7 +411,7 @@ obj = Foo()
   ASSERT_EQ(PyDict_SetItem(obj, key, val), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr result(PyDict_GetItemWithError(obj, key));
+  PyObject* result = PyDict_GetItemWithError(obj, key);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(result, val);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -461,7 +461,7 @@ class C:
 c = C()
 )");
   PyObjectPtr dict(PyDict_New());
-  PyObjectPtr main(PyImport_AddModule("__main__"));
+  PyObject* main = PyImport_AddModule("__main__");
   PyObjectPtr key(PyObject_GetAttrString(main, "c"));
   EXPECT_EQ(PyDict_DelItem(dict, key), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -703,12 +703,12 @@ m = Mapping()
 
   PyObjectPtr one(PyLong_FromLong(1));
   EXPECT_TRUE(PyDict_Contains(lhs, one));
-  PyObjectPtr two(PyDict_GetItem(lhs, one));
+  PyObject* two = PyDict_GetItem(lhs, one);
   EXPECT_EQ(PyLong_AsLong(two), 2);
 
   PyObjectPtr three(PyLong_FromLong(3));
   EXPECT_TRUE(PyDict_Contains(lhs, three));
-  PyObjectPtr four(PyDict_GetItem(lhs, three));
+  PyObject* four = PyDict_GetItem(lhs, three);
   EXPECT_EQ(PyLong_AsLong(four), 4);
 }
 

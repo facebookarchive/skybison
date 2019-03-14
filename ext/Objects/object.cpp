@@ -23,8 +23,9 @@ PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
 }
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
-  obj->ob_refcnt--;
-  if (ApiHandle::fromPyObject(obj)->refcnt() == 0) _Py_Dealloc_Func(obj);
+  ApiHandle* handle = ApiHandle::fromPyObject(obj);
+  handle->decref();
+  if (handle->refcnt() == 0) _Py_Dealloc_Func(obj);
 }
 
 PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {

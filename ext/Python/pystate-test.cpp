@@ -32,9 +32,9 @@ TEST_F(PystateExtensionApiTest, AddExistingModuleDoesNotOverridePyro) {
   ASSERT_EQ(PyState_AddModule(module, &def), 0);
   PyObjectPtr module2(PyModule_New("foo"));
   ASSERT_EQ(PyState_AddModule(module2, &def), 0);
-  PyObjectPtr found_module(PyState_FindModule(&def));
-  EXPECT_EQ(module.get(), found_module.get());
-  EXPECT_NE(module2.get(), found_module.get());
+  PyObject* found_module = PyState_FindModule(&def);
+  EXPECT_EQ(module, found_module);
+  EXPECT_NE(module2, found_module);
 }
 
 TEST_F(PystateExtensionApiTest, AddModuleWithSlotsRaisesSystemError) {

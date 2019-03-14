@@ -32,6 +32,9 @@ TEST_F(ErrorsExtensionApiTest, SetObjectSetsTypeAndValue) {
   EXPECT_EQ(type, PyExc_Exception);
   EXPECT_EQ(value, Py_True);
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, ClearClearsExceptionState) {
@@ -66,13 +69,15 @@ TEST_F(ErrorsExtensionApiTest, BadArgumentRaisesTypeError) {
   PyErr_Fetch(&type, &value, &traceback);
   EXPECT_EQ(type, PyExc_TypeError);
 
-  PyObject* message =
-      PyUnicode_FromString("bad argument type for built-in operation");
+  PyObjectPtr message(
+      PyUnicode_FromString("bad argument type for built-in operation"));
   ASSERT_TRUE(PyUnicode_Check(message));
   EXPECT_EQ(_PyUnicode_EQ(value, message), 1);
-  Py_DECREF(message);
 
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, NoMemoryRaisesMemoryError) {
@@ -86,6 +91,8 @@ TEST_F(ErrorsExtensionApiTest, NoMemoryRaisesMemoryError) {
   EXPECT_EQ(type, PyExc_MemoryError);
   EXPECT_EQ(value, nullptr);
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
 }
 
 #pragma push_macro("PyErr_BadInternalCall")
@@ -101,12 +108,15 @@ TEST_F(ErrorsExtensionApiTest, BadInternalCallRaisesSystemErrorPyro) {
   PyErr_Fetch(&type, &value, &traceback);
   EXPECT_EQ(type, PyExc_SystemError);
 
-  PyObject* message = PyUnicode_FromString("bad argument to internal function");
+  PyObjectPtr message(
+      PyUnicode_FromString("bad argument to internal function"));
   ASSERT_TRUE(PyUnicode_Check(message));
   EXPECT_EQ(_PyUnicode_EQ(value, message), 1);
-  Py_DECREF(message);
 
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 #pragma pop_macro("PyErr_BadInternalCall")
 
@@ -120,13 +130,15 @@ TEST_F(ErrorsExtensionApiTest, UnderBadInternalCallRaisesSystemError) {
   PyErr_Fetch(&type, &value, &traceback);
   EXPECT_EQ(type, PyExc_SystemError);
 
-  PyObject* message =
-      PyUnicode_FromString("abc:123: bad argument to internal function");
+  PyObjectPtr message(
+      PyUnicode_FromString("abc:123: bad argument to internal function"));
   ASSERT_TRUE(PyUnicode_Check(message));
   EXPECT_EQ(_PyUnicode_EQ(value, message), 1);
-  Py_DECREF(message);
 
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, ExceptionMatches) {
@@ -147,6 +159,9 @@ TEST_F(ErrorsExtensionApiTest, Fetch) {
   EXPECT_EQ(type, PyExc_Exception);
   EXPECT_EQ(value, Py_True);
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, GivenExceptionMatches) {
@@ -209,6 +224,9 @@ TEST_F(ErrorsExtensionApiTest, Restore) {
   EXPECT_EQ(type, PyExc_Exception);
   EXPECT_EQ(value, Py_True);
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, ChainExceptionsSetsContext) {
@@ -407,6 +425,9 @@ TEST_F(ErrorsExtensionApiTest, SetStringSetsValue) {
   EXPECT_EQ(traceback, nullptr);
   EXPECT_EQ(type, PyExc_Exception);
   EXPECT_TRUE(isUnicodeEqualsCStr(value, "An exception occured"));
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, FormatWithNoArgsSetsAppropriateFields) {
@@ -418,6 +439,9 @@ TEST_F(ErrorsExtensionApiTest, FormatWithNoArgsSetsAppropriateFields) {
   EXPECT_EQ(type, PyExc_TypeError);
   EXPECT_TRUE(isUnicodeEqualsCStr(value, "hello error"));
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, FormatWithManyArgsSetsAppropriateFields) {
@@ -430,6 +454,9 @@ TEST_F(ErrorsExtensionApiTest, FormatWithManyArgsSetsAppropriateFields) {
   EXPECT_EQ(type, PyExc_MemoryError);
   EXPECT_TRUE(isUnicodeEqualsCStr(value, "hello world"));
   EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
 }
 
 TEST_F(ErrorsExtensionApiTest, FormatFromCauseWithoutExceptionFailsDeathTest) {

@@ -105,7 +105,7 @@ result = Structseq((1,2))
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyTuple_Check(result));
 
-  PyObjectPtr value(PyStructSequence_GetItem(result, 1));
+  PyObject* value = PyStructSequence_GetItem(result, 1);
   ASSERT_TRUE(PyLong_Check(value));
   EXPECT_EQ(PyLong_AsLong(value), 2);
 }
@@ -124,7 +124,7 @@ result = Structseq((1,2,3))
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyTuple_Check(result));
 
-  PyObjectPtr value(PyStructSequence_GetItem(result, 2));
+  PyObject* value = PyStructSequence_GetItem(result, 2);
   ASSERT_TRUE(PyLong_Check(value));
   EXPECT_EQ(PyLong_AsLong(value), 3);
 }
@@ -143,7 +143,7 @@ result = Structseq((1,2), {"third": 3})
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyTuple_Check(result));
 
-  PyObjectPtr value(PyStructSequence_GetItem(result, 2));
+  PyObject* value = PyStructSequence_GetItem(result, 2);
   ASSERT_TRUE(PyLong_Check(value));
   EXPECT_EQ(PyLong_AsLong(value), 3);
 }
@@ -162,7 +162,7 @@ result = Structseq((1,2), {"first": 5})
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyTuple_Check(result));
 
-  PyObjectPtr value(PyStructSequence_GetItem(result, 0));
+  PyObject* value = PyStructSequence_GetItem(result, 0);
   ASSERT_TRUE(PyLong_Check(value));
   EXPECT_EQ(PyLong_AsLong(value), 1);
 }
@@ -181,7 +181,7 @@ result = Structseq((1,2))
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyTuple_Check(result));
 
-  PyObjectPtr value(PyStructSequence_GetItem(result, 1));
+  PyObject* value = PyStructSequence_GetItem(result, 1);
   ASSERT_TRUE(PyLong_Check(value));
   EXPECT_EQ(PyLong_AsLong(value), 2);
 
@@ -189,7 +189,7 @@ result = Structseq((1,2))
   ASSERT_TRUE(PyLong_Check(value2));
   EXPECT_EQ(PyLong_AsLong(value2), 2);
 
-  EXPECT_EQ(value.get(), value2.get());
+  EXPECT_EQ(value, value2);
 }
 
 TEST_F(StructSeqExtensionApiTest, GetItemWithIndexReturnsValue) {
@@ -398,7 +398,7 @@ TEST_F(StructSeqExtensionApiTest, GetItemReturnsValue) {
   EXPECT_EQ(PyStructSequence_SET_ITEM(instance.get(), 0, value), value);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr result(PyStructSequence_GET_ITEM(instance.get(), 0));
+  PyObject* result = PyStructSequence_GET_ITEM(instance.get(), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyLong_AsLong(result), 123);
 }
@@ -414,7 +414,7 @@ TEST_F(StructSeqExtensionApiTest,
   PyObjectPtr instance(PyStructSequence_New(type.asTypeObject()));
   ASSERT_TRUE(PyTuple_Check(instance));
 
-  PyObjectPtr result(PyStructSequence_GET_ITEM(instance.get(), 0));
+  PyObject* result = PyStructSequence_GET_ITEM(instance.get(), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(result, Py_None);
 }
@@ -431,7 +431,7 @@ TEST_F(StructSeqExtensionApiTest, GetItemHiddenFieldReturnsValue) {
   PyStructSequence_SetItem(instance, 4, PyLong_FromLong(123));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 
-  PyObjectPtr result(PyStructSequence_GetItem(instance.get(), 4));
+  PyObject* result = PyStructSequence_GetItem(instance.get(), 4);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyLong_AsLong(result), 123);
 }

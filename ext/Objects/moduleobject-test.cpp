@@ -56,8 +56,8 @@ TEST_F(ModuleExtensionApiTest, NewObjectDoesNotAddModuleToModuleDict) {
   testing::PyObjectPtr module(PyModule_NewObject(name));
   ASSERT_TRUE(PyModule_CheckExact(module));
 
-  testing::PyObjectPtr mods(PyImport_GetModuleDict());
-  testing::PyObjectPtr item(PyDict_GetItem(mods, name));
+  PyObject* mods = PyImport_GetModuleDict();
+  PyObject* item = PyDict_GetItem(mods, name);
   EXPECT_EQ(item, nullptr);
 
   EXPECT_EQ(PyErr_Occurred(), nullptr);

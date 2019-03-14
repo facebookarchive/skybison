@@ -80,7 +80,7 @@ TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZeroPyro) {
 }
 
 TEST_F(UnicodeExtensionApiTest, FindWithNonStrSelfRaisesTypeError) {
-  PyObjectPtr self(Py_None);
+  PyObject* self = Py_None;
   PyObjectPtr sub(PyUnicode_FromString("ll"));
   EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, 1), -2);
   ASSERT_NE(PyErr_Occurred(), nullptr);
@@ -89,7 +89,7 @@ TEST_F(UnicodeExtensionApiTest, FindWithNonStrSelfRaisesTypeError) {
 
 TEST_F(UnicodeExtensionApiTest, FindWithNonStrSubRaisesTypeError) {
   PyObjectPtr self(PyUnicode_FromString("hello"));
-  PyObjectPtr sub(Py_None);
+  PyObject* sub = Py_None;
   EXPECT_EQ(PyUnicode_Find(self, sub, 0, 5, 1), -2);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));

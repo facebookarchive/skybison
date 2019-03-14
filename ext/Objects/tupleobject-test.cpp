@@ -64,7 +64,9 @@ class Foo(tuple): pass
 obj = Foo((1, 2));
 )");
   PyObjectPtr pytuple(moduleGet("__main__", "obj"));
-  Py_DECREF(pytuple);  // Assume the object has just been created
+  // PyTuple_SetItem() wants the tuple's reference count to be 1, so remove the
+  // reference from __main__.
+  moduleSet("__main__", "obj", Py_None);
   int result = PyTuple_SetItem(pytuple, 0, Py_None);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(result, 0);
@@ -125,8 +127,8 @@ class Foo(tuple): pass
 obj = Foo((1, 2));
 )");
   PyObjectPtr obj(moduleGet("__main__", "obj"));
-  PyObjectPtr first(PyTuple_GetItem(obj, 0));
-  PyObjectPtr second(PyTuple_GetItem(obj, 1));
+  PyObject* first = PyTuple_GetItem(obj, 0);
+  PyObject* second = PyTuple_GetItem(obj, 1);
   EXPECT_EQ(PyLong_AsLong(first), 1);
   EXPECT_EQ(PyLong_AsLong(second), 2);
 }

@@ -99,22 +99,19 @@ PY_EXPORT void PyErr_Fetch(PyObject** pexc, PyObject** pval, PyObject** ptb) {
   if (thread->pendingExceptionType().isNoneType()) {
     *pexc = nullptr;
   } else {
-    *pexc =
-        ApiHandle::borrowedReference(thread, thread->pendingExceptionType());
+    *pexc = ApiHandle::newReference(thread, thread->pendingExceptionType());
   }
   DCHECK(pval != nullptr, "pval is null");
   if (thread->pendingExceptionValue().isNoneType()) {
     *pval = nullptr;
   } else {
-    *pval =
-        ApiHandle::borrowedReference(thread, thread->pendingExceptionValue());
+    *pval = ApiHandle::newReference(thread, thread->pendingExceptionValue());
   }
   DCHECK(ptb != nullptr, "ptb is null");
   if (thread->pendingExceptionTraceback().isNoneType()) {
     *ptb = nullptr;
   } else {
-    *ptb = ApiHandle::borrowedReference(thread,
-                                        thread->pendingExceptionTraceback());
+    *ptb = ApiHandle::newReference(thread, thread->pendingExceptionTraceback());
   }
   thread->clearPendingException();
 }
