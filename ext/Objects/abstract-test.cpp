@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <cstring>
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -1510,6 +1512,20 @@ TEST_F(AbstractExtensionApiTest,
   testing::PyObjectPtr test(PyObject_CallFunctionObjArgs(non_func, nullptr));
   EXPECT_EQ(test, nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithBytesReturnsBuffer) {
+  Py_buffer buffer;
+  PyObjectPtr bytes(PyBytes_FromStringAndSize("hello\0world", 11));
+  Py_ssize_t old_refcnt = Py_REFCNT(bytes);
+  int result = PyObject_GetBuffer(bytes, &buffer, 0);
+  EXPECT_EQ(Py_REFCNT(bytes), old_refcnt + 1);
+  ASSERT_EQ(buffer.len, 11);
+  EXPECT_EQ(std::memcmp(buffer.buf, "hello\0world", 11), 0);
+  ASSERT_EQ(result, 0);
+  PyBuffer_Release(&buffer);
+  EXPECT_EQ(buffer.obj, nullptr);
+  EXPECT_EQ(Py_REFCNT(bytes), old_refcnt);
 }
 
 TEST_F(AbstractExtensionApiTest, CallFunctionObjArgsWithNoArgsReturnsValue) {

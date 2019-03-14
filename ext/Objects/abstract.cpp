@@ -141,8 +141,16 @@ PY_EXPORT int PyBuffer_IsContiguous(const Py_buffer* /* w */, char /* r */) {
   UNIMPLEMENTED("PyBuffer_IsContiguous");
 }
 
-PY_EXPORT void PyBuffer_Release(Py_buffer* /* w */) {
-  UNIMPLEMENTED("PyBuffer_Release");
+PY_EXPORT void PyBuffer_Release(Py_buffer* view) {
+  DCHECK(view != nullptr, "view must not be nullptr");
+  PyObject* pyobj = view->obj;
+  if (pyobj == nullptr) return;
+
+  // TODO(T38246066) call bf_releasebuffer type slot.
+  DCHECK(PyBytes_Check(pyobj), "buffer protocol only implemented for bytes");
+
+  view->obj = nullptr;
+  Py_DECREF(pyobj);
 }
 
 // PyIndex_Check
@@ -931,9 +939,17 @@ PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT int PyObject_GetBuffer(PyObject* /* j */, Py_buffer* /* w */,
-                                 int /* s */) {
-  UNIMPLEMENTED("PyObject_GetBuffer");
+PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
+  DCHECK(obj != nullptr, "obj must not be nullptr");
+  if (PyBytes_Check(obj)) {
+    char* buffer;
+    Py_ssize_t length;
+    if (PyBytes_AsStringAndSize(obj, &buffer, &length) < 0) return -1;
+    return PyBuffer_FillInfo(view, obj, buffer, length, 1 /* readonly */,
+                             flags);
+  }
+  // TODO(T38246066) call bf_getbuffer type slot.
+  UNIMPLEMENTED("buffer protocol bf_getbuffer()");
 }
 
 PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {
