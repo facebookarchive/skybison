@@ -616,6 +616,11 @@ class bytes(bootstrap=True):
         items = [x for x in iterable]
         return _bytes_join(self, items)
 
+    def decode(self, encoding="utf-8", errors="strict") -> str:
+        import _codecs
+
+        return _codecs.decode(self, encoding, errors)
+
 
 @_patch
 def _repr_enter(obj: object) -> bool:
@@ -1031,6 +1036,11 @@ class str(bootstrap=True):
 
     def rstrip(self, other=None):
         pass
+
+    def encode(self, encoding="utf-8", errors="strict") -> bytes:
+        import _codecs
+
+        return _codecs.encode(self, encoding, errors)
 
 
 class str_iterator(bootstrap=True):

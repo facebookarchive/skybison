@@ -151,6 +151,7 @@ target_include_directories(
 
 set(
   FROZEN_MODULE_INPUT
+  library/_codecs.py
   library/_imp.py
   library/_io.py
   library/_warnings.py
@@ -209,6 +210,8 @@ add_library(
   runtime/callback.h
   runtime/capi-handles.cpp
   runtime/capi-handles.h
+  runtime/codecs-module.cpp
+  runtime/codecs-module.h
   runtime/complex-builtins.cpp
   runtime/complex-builtins.h
   runtime/debugging.h
@@ -361,6 +364,7 @@ add_library(
   runtime/bytearray-builtins-test.cpp
   runtime/bytes-builtins-test.cpp
   runtime/capi-handles-test.cpp
+  runtime/codecs-module-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/debugging-test.cpp
   runtime/descriptor-builtins-test.cpp

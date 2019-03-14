@@ -1095,4 +1095,11 @@ result = b' '.join(Foo())
   EXPECT_TRUE(isBytesEqualsCStr(result, "ab c def"));
 }
 
+TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'hello'.decode('unknown')"),
+                            LayoutId::kNotImplementedError,
+                            "Non-fastpass codecs are unimplemented"));
+}
+
 }  // namespace python

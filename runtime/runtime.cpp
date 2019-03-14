@@ -14,6 +14,7 @@
 #include "bytecode.h"
 #include "bytes-builtins.h"
 #include "callback.h"
+#include "codecs-module.h"
 #include "complex-builtins.h"
 #include "debugging.h"
 #include "descriptor-builtins.h"
@@ -1760,6 +1761,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kSys, &SysModule::initialize},
     {SymbolId::kTime, &TimeModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
+    {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
