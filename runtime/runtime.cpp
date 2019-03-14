@@ -340,9 +340,19 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
   Object attr(&scope, lookupNameInMro(thread, type, name));
   if (!attr.isError()) {
     if (isNonDataDescriptor(thread, attr)) {
-      Object instance(&scope, NoneType::object());
+      // Unfortunately calling `__get__` for a lookup on `type(None)` will look
+      // exactly the same as calling it for a lookup on the `None` object.
+      // To solve the ambiguity we add a special case for `type(None)` here.
+      // Luckily it is impossible for the user to change the type so we can
+      // special case the desired lookup behavior here.
+      // Also see `FunctionBuiltins::dunderGet` for the related special casing
+      // of lookups on the `None` object.
+      if (type.builtinBase() == LayoutId::kNoneType) {
+        return *attr;
+      }
+      Object none(&scope, NoneType::object());
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            attr, instance, receiver);
+                                            attr, none, receiver);
     }
     return *attr;
   }

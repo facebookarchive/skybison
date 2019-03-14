@@ -1952,6 +1952,16 @@ class DataDescriptor:
   EXPECT_EQ(RawTuple::cast(result).at(2), *type);
 }
 
+TEST(TypeAttributeTest, GetNonDataDescriptorOnNoneTypeReturnsFunction) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Type none_type(&scope, runtime.typeAt(LayoutId::kNoneType));
+  Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
+  Object result(&scope, runtime.attributeAt(thread, none_type, attr_name));
+  EXPECT_TRUE(result.isFunction());
+}
+
 TEST(GetTypeAttributeTest, GetMetaclassAttribute) {
   Runtime runtime;
   const char* src = R"(
@@ -2207,6 +2217,16 @@ class Foo:
   EXPECT_EQ(runtime.typeOf(RawTuple::cast(result).at(0)), *descr_type);
   EXPECT_EQ(RawTuple::cast(result).at(1), *instance);
   EXPECT_EQ(RawTuple::cast(result).at(2), *type);
+}
+
+TEST(InstanceAttributeTest, GetNonDataDescriptorOnNoneReturnsBoundMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object none(&scope, NoneType::object());
+  Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
+  Object result(&scope, runtime.attributeAt(thread, none, attr_name));
+  EXPECT_TRUE(result.isBoundMethod());
 }
 
 TEST(InstanceAttributeTest, ManipulateMultipleAttributes) {

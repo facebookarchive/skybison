@@ -40,17 +40,19 @@ RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
         "__get__ must be called with function instance as first argument");
   }
   Object instance(&scope, args.get(1));
-  if (!instance.isNoneType()) {
-    return thread->runtime()->newBoundMethod(self, instance);
-  }
-  Object type_obj(&scope, args.get(2));
-  if (thread->runtime()->isInstanceOfType(*type_obj)) {
-    Type type(&scope, *type_obj);
-    if (RawLayout::cast(type.instanceLayout()).id() == LayoutId::kNoneType) {
-      return thread->runtime()->newBoundMethod(self, instance);
+  // When `instance is None` return the plain function because we are doing a
+  // lookup on a class.
+  if (instance.isNoneType()) {
+    // The unfortunate exception to the rule is looking up a descriptor on the
+    // `None` object itself. We make it work by always returning a bound method
+    // when `type is type(None)` and special casing the lookup of attributes of
+    // `type(None)` to skip `__get__` in `Runtime::classGetAttr()`.
+    Type type(&scope, args.get(2));
+    if (type.builtinBase() != LayoutId::kNoneType) {
+      return *self;
     }
   }
-  return *self;
+  return thread->runtime()->newBoundMethod(self, instance);
 }
 
 }  // namespace python

@@ -53,9 +53,12 @@ TEST(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
   HandleScope scope;
   Object func(&scope, runtime.newFunction());
   Object not_none(&scope, SmallInt::fromWord(1));
+  Object not_none_type(&scope, runtime.typeOf(*not_none));
   Object result(&scope, runBuiltin(FunctionBuiltins::dunderGet, func, not_none,
-                                   not_none));
-  EXPECT_TRUE(result.isBoundMethod());
+                                   not_none_type));
+  ASSERT_TRUE(result.isBoundMethod());
+  EXPECT_EQ(RawBoundMethod::cast(*result).self(), *not_none);
+  EXPECT_EQ(RawBoundMethod::cast(*result).function(), *func);
 }
 
 TEST(FunctionBuiltinsTest,
@@ -67,7 +70,9 @@ TEST(FunctionBuiltinsTest,
   Type none_type(&scope, runtime.typeOf(*none));
   Object result(&scope,
                 runBuiltin(FunctionBuiltins::dunderGet, func, none, none_type));
-  EXPECT_TRUE(result.isBoundMethod());
+  ASSERT_TRUE(result.isBoundMethod());
+  EXPECT_EQ(RawBoundMethod::cast(*result).self(), *none);
+  EXPECT_EQ(RawBoundMethod::cast(*result).function(), *func);
 }
 
 TEST(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
