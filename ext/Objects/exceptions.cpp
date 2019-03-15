@@ -283,7 +283,7 @@ PY_EXPORT PyObject* PyException_GetCause(PyObject* self) {
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
-  Object cause(&scope, exc.cause());
+  Object cause(&scope, exc.causeOrUnbound());
   if (cause.isUnboundValue()) {
     return nullptr;
   }
@@ -295,7 +295,7 @@ PY_EXPORT PyObject* PyException_GetContext(PyObject* self) {
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
-  Object context(&scope, exc.context());
+  Object context(&scope, exc.contextOrUnbound());
   if (context.isUnboundValue()) {
     return nullptr;
   }
@@ -339,7 +339,7 @@ PY_EXPORT PyObject* PyException_GetTraceback(PyObject* self) {
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
-  Object tb(&scope, exc.traceback());
+  Object tb(&scope, exc.tracebackOrUnbound());
   if (tb.isUnboundValue()) return nullptr;
 
   return ApiHandle::newReference(thread, exc.traceback());

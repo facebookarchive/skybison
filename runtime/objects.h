@@ -688,13 +688,22 @@ class RawBaseException : public RawHeapObject {
   RawObject args() const;
   void setArgs(RawObject args) const;
 
+  // traceback, cause, and context can all be UnboundValue to indicate that they
+  // are "NULL" rather than the normal unset value of None. The only code that
+  // cares about the distinction is a handful of C-API functions, so the
+  // standard getters transparently replace UnboundValue with None. The
+  // *OrUnbound getters return the value as it's stored in memory, and are used
+  // in the few C-API functions that care about the distinction.
   RawObject traceback() const;
+  RawObject tracebackOrUnbound() const;
   void setTraceback(RawObject traceback) const;
 
   RawObject cause() const;
+  RawObject causeOrUnbound() const;
   void setCause(RawObject cause) const;
 
   RawObject context() const;
+  RawObject contextOrUnbound() const;
   void setContext(RawObject context) const;
 
   static const int kArgsOffset = RawHeapObject::kSize;
@@ -3053,6 +3062,11 @@ inline void RawBaseException::setArgs(RawObject args) const {
 }
 
 inline RawObject RawBaseException::traceback() const {
+  RawObject o = tracebackOrUnbound();
+  return o.isUnboundValue() ? RawNoneType::object() : o;
+}
+
+inline RawObject RawBaseException::tracebackOrUnbound() const {
   return instanceVariableAt(kTracebackOffset);
 }
 
@@ -3061,6 +3075,11 @@ inline void RawBaseException::setTraceback(RawObject traceback) const {
 }
 
 inline RawObject RawBaseException::cause() const {
+  RawObject o = causeOrUnbound();
+  return o.isUnboundValue() ? RawNoneType::object() : o;
+}
+
+inline RawObject RawBaseException::causeOrUnbound() const {
   return instanceVariableAt(kCauseOffset);
 }
 
@@ -3069,6 +3088,11 @@ inline void RawBaseException::setCause(RawObject cause) const {
 }
 
 inline RawObject RawBaseException::context() const {
+  RawObject o = contextOrUnbound();
+  return o.isUnboundValue() ? RawNoneType::object() : o;
+}
+
+inline RawObject RawBaseException::contextOrUnbound() const {
   return instanceVariableAt(kContextOffset);
 }
 
