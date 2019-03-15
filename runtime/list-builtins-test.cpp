@@ -1480,4 +1480,65 @@ result = ls.__repr__()
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "[[...]]"));
 }
 
+TEST(ListBuiltinsTest, ReverseEmptyListDoesNothing) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = []
+result.reverse()
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isList());
+  EXPECT_EQ(RawList::cast(*result).numItems(), 0);
+}
+
+TEST(ListBuiltinsTest, ReverseOneElementListDoesNothing) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = [2]
+result.reverse()
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isList());
+  EXPECT_EQ(RawList::cast(*result).numItems(), 1);
+  EXPECT_EQ(RawList::cast(*result).at(0), SmallInt::fromWord(2));
+}
+
+TEST(ListBuiltinsTest, ReverseOddManyElementListReversesList) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = [1, 2, 3]
+result.reverse()
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {3, 2, 1});
+}
+
+TEST(ListBuiltinsTest, ReverseEvenManyElementListReversesList) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = [1, 2, 3, 4]
+result.reverse()
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {4, 3, 2, 1});
+}
+
+TEST(ListBuiltinsTest, ReverseWithListSubclassDoesNotCallSubclassMethods) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C(list):
+    def __getitem__(self, key):
+        raise Exception("hi")
+    def __setitem__(self, key, val):
+        raise Exception("hi")
+result = C([1, 2, 3, 4])
+result.reverse()
+)");
+  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+}
+
 }  // namespace python

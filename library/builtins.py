@@ -738,6 +738,19 @@ class list(bootstrap=True):
     def remove(self, value):
         pass
 
+    def reverse(self):
+        length = len(self)
+        if length < 2:
+            return
+        left = 0
+        right = length - 1
+        while left < right:
+            tmp = list.__getitem__(self, left)
+            list.__setitem__(self, left, list.__getitem__(self, right))
+            list.__setitem__(self, right, tmp)
+            left += 1
+            right -= 1
+
 
 class list_iterator(bootstrap=True):
     def __iter__(self):
