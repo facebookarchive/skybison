@@ -14,7 +14,6 @@ extern std::ostream* builtinStderr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
-void printStr(RawStr str, std::ostream* ostream);
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value);
 void copyFunctionEntries(Thread* thread, const Function& base,

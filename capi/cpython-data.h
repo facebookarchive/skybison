@@ -234,6 +234,9 @@ extern const unsigned char _Py_ctype_toupper[256];
 #define Py_GT 4
 #define Py_GE 5
 
+/* Flag bits for printing: */
+#define Py_PRINT_RAW 1 /* No string quotes etc. */
+
 extern char* PyStructSequence_UnnamedField;
 
 extern const char* Py_FileSystemDefaultEncodeErrors;

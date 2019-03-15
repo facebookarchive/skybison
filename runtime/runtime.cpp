@@ -20,6 +20,7 @@
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
+#include "file.h"
 #include "float-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -1530,10 +1531,14 @@ word Runtime::handleSysExit(Thread* thread) {
     // No __repr__ method or __repr__ raised. Either way, we can't handle it.
     result = Str::empty();
   }
+
+  // TODO(T41323917): Write to sys.stderr.
   Str result_str(&scope, *result);
-  printStr(*result_str, builtinStderr);
-  Str newline(&scope, newStrFromCStr("\n"));
-  printStr(*newline, builtinStderr);
+  Object stderr(&scope, newInt(STDERR_FILENO));
+  fileWriteObjectStr(thread, stderr, result_str);
+  thread->clearPendingException();
+  fileWriteString(thread, stderr, "\n");
+  thread->clearPendingException();
   return EXIT_FAILURE;
 }
 

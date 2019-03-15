@@ -7,6 +7,7 @@
 #include "bytes-builtins.h"
 #include "complex-builtins.h"
 #include "exception-builtins.h"
+#include "file.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -647,12 +648,6 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
   return SmallInt::fromWord(str.charAt(0));
 }
 
-void printStr(RawStr str, std::ostream* ostream) {
-  for (word i = 0; i < str.length(); i++) {
-    *ostream << str.charAt(i);
-  }
-}
-
 RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);
@@ -695,17 +690,8 @@ RawObject BuiltinsModule::underPrintStr(Thread* thread, Frame* frame_frame,
   HandleScope scope(thread);
   CHECK(args.get(0).isStr(), "Unsupported argument type for 'obj'");
   Str str(&scope, args.get(0));
-  CHECK(args.get(1).isSmallInt(), "Unsupported argument type for 'file'");
-  word fileno = RawSmallInt::cast(args.get(1)).value();
-  if (fileno == STDOUT_FILENO) {
-    printStr(*str, builtinStdout);
-  } else if (fileno == STDERR_FILENO) {
-    printStr(*str, builtinStderr);
-  } else {
-    return thread->raiseTypeErrorWithCStr(
-        "Unsupported argument type for 'file'");
-  }
-  return NoneType::object();
+  Object file(&scope, args.get(1));
+  return fileWriteObjectStr(thread, file, str);
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)

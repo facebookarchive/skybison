@@ -1,3 +1,6 @@
+#include "cpython-data.h"
+#include "cpython-func.h"
+#include "file.h"
 #include "runtime.h"
 
 namespace python {
@@ -6,13 +9,42 @@ PY_EXPORT PyObject* PyFile_GetLine(PyObject* /* f */, int /* n */) {
   UNIMPLEMENTED("PyFile_GetLine");
 }
 
-PY_EXPORT int PyFile_WriteObject(PyObject* /* v */, PyObject* /* f */,
-                                 int /* s */) {
-  UNIMPLEMENTED("PyFile_WriteObject");
+PY_EXPORT int PyFile_WriteObject(PyObject* pyobj, PyObject* pyfile, int flags) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  if (pyfile == nullptr) {
+    thread->raiseTypeErrorWithCStr("writeobject with NULL file");
+    return -1;
+  }
+
+  Object file(&scope, ApiHandle::fromPyObject(pyfile)->asObject());
+  Object obj(&scope, NoneType::object());
+  if (pyobj != nullptr) {
+    obj = ApiHandle::fromPyObject(pyobj)->asObject();
+  } else {
+    // If we pass "<NULL>" to fileWriteObjectRepr(), we'll incorrectly print
+    // "'<NULL>'".
+    flags |= Py_PRINT_RAW;
+    obj = thread->runtime()->newStrFromCStr("<NULL>");
+  }
+
+  auto func = (flags & Py_PRINT_RAW) ? fileWriteObjectStr : fileWriteObjectRepr;
+  return func(thread, file, obj).isError() ? -1 : 0;
 }
 
-PY_EXPORT int PyFile_WriteString(const char* /* s */, PyObject* /* f */) {
-  UNIMPLEMENTED("PyFile_WriteString");
+PY_EXPORT int PyFile_WriteString(const char* str, PyObject* pyfile) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+
+  if (thread->hasPendingException()) return -1;
+  if (pyfile == nullptr) {
+    thread->raiseSystemErrorWithCStr("null file for PyFile_WriteString");
+    return -1;
+  }
+
+  Object file(&scope, ApiHandle::fromPyObject(pyfile)->asObject());
+  return fileWriteString(thread, file, str).isError() ? -1 : 0;
 }
 
 PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {

@@ -74,4 +74,54 @@ c = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(FileObjectExtensionApiTest, WriteObjectWritesRepr) {
+  PyObjectPtr file(moduleGet("sys", "stdout"));
+  PyObjectPtr obj(PyUnicode_FromString("hello there"));
+  CaptureStdStreams streams;
+  ASSERT_EQ(PyFile_WriteObject(obj, file, 0), 0);
+  EXPECT_EQ(streams.out(), "'hello there'");
+}
+
+TEST_F(FileObjectExtensionApiTest, WriteObjectWithFlagWritesStr) {
+  PyObjectPtr file(moduleGet("sys", "stdout"));
+  PyObjectPtr obj(PyUnicode_FromString("hello there"));
+  PyObjectPtr obj2(PyLong_FromLong(12345));
+  CaptureStdStreams streams;
+  ASSERT_EQ(PyFile_WriteObject(obj, file, Py_PRINT_RAW), 0);
+  ASSERT_EQ(PyFile_WriteObject(obj2, file, Py_PRINT_RAW), 0);
+  EXPECT_EQ(streams.out(), "hello there12345");
+}
+
+TEST_F(FileObjectExtensionApiTest, WriteObjectWithNullObjectWritesNull) {
+  PyObjectPtr file(moduleGet("sys", "stderr"));
+  CaptureStdStreams streams;
+  ASSERT_EQ(PyFile_WriteObject(nullptr, file, 0), 0);
+  EXPECT_EQ(streams.err(), "<NULL>");
+}
+
+TEST_F(FileObjectExtensionApiTest, WriteObjectWithNullFileRaisesTypeError) {
+  ASSERT_EQ(PyFile_WriteObject(nullptr, nullptr, 0), -1);
+  EXPECT_EQ(PyErr_ExceptionMatches(PyExc_TypeError), 1);
+}
+
+TEST_F(FileObjectExtensionApiTest, WriteStringWritesString) {
+  PyObjectPtr file(moduleGet("sys", "stdout"));
+  CaptureStdStreams streams;
+  ASSERT_EQ(
+      PyFile_WriteString("The quick brown fox jumps over the lazy dog.", file),
+      0);
+  EXPECT_EQ(streams.out(), "The quick brown fox jumps over the lazy dog.");
+}
+
+TEST_F(FileObjectExtensionApiTest, WriteStringWithSetExceptionFails) {
+  PyObjectPtr file(moduleGet("sys", "stdout"));
+  PyErr_SetObject(PyExc_TypeError, Py_None);
+  CaptureStdStreams streams;
+  ASSERT_EQ(PyFile_WriteString("hello there", file), -1);
+  ASSERT_EQ(streams.err(), "");
+  ASSERT_EQ(streams.out(), "");
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyErr_ExceptionMatches(PyExc_TypeError), 1);
+}
+
 }  // namespace python
