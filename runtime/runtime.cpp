@@ -1575,28 +1575,6 @@ RawObject Runtime::executeModule(const char* buffer, const Module& module) {
   return Thread::currentThread()->runModuleFunction(module, code);
 }
 
-RawObject Runtime::importModule(Thread* thread, const Object& name) {
-  HandleScope scope(thread);
-  Object cached_module(&scope, findModule(name));
-  if (!cached_module.isNoneType()) {
-    return *cached_module;
-  }
-
-  // Call builtins._find_and_load(name, __import__)
-  // The first time this is run, builtins._find_and_load loads importlib, then
-  // swaps out its _find_and_load for the real importlib version. Then it calls
-  // back into Runtime::importModule for the real version.
-  // The second time this is run, builtins._find_and_load is just a reference
-  // to the real version, so the old builtins version is not run at all.
-  Module builtins(&scope, findModuleById(SymbolId::kBuiltins));
-  Object dunder_import(&scope, moduleAtById(builtins, SymbolId::kDunderImport));
-  return thread->invokeFunction2(
-      SymbolId::kBuiltins, SymbolId::kUnderFindAndLoad, name, dunder_import);
-}
-
-// TODO(cshapiro): support fromlist and level. Ideally, we'll never implement
-// that functionality in c++, instead using the pure-python importlib
-// implementation that ships with cpython.
 RawObject Runtime::importModuleFromBuffer(const char* buffer,
                                           const Object& name) {
   HandleScope scope;
@@ -1667,6 +1645,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&not_implemented_);
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&display_hook_);
+  visitor->visitPointer(&dunder_import_);
   visitor->visitPointer(&unbound_value_);
 
   // Visit interned strings.

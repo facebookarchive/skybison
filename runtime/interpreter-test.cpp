@@ -1667,6 +1667,18 @@ b = _private_symbol()
                             "name '_private_symbol' is not defined"));
 }
 
+TEST(InterpreterTest, ImportCallsBuiltinsDunderImport) {
+  Runtime runtime;
+  ASSERT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+import builtins
+def import_forbidden(name, globals, locals, fromlist, level):
+  raise Exception("import forbidden")
+builtins.__import__ = import_forbidden
+import builtins
+)"),
+                            LayoutId::kException, "import forbidden"));
+}
+
 TEST(InterpreterTest, GetAnextCallsAnextAndAwait) {
   Runtime runtime;
   HandleScope scope;

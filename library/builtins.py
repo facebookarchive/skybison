@@ -1611,9 +1611,6 @@ def _long_of_obj(obj):
     )
 
 
-__import__ = _UnboundValue
-
-
 @_patch
-def _find_and_load(name, dunder_import):
+def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     pass

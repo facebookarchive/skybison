@@ -30,6 +30,7 @@ class BuiltinsModule : public ModuleBase<BuiltinsModule, SymbolId::kBuiltins> {
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
   static RawObject compile(Thread* thread, Frame* frame, word nargs);
   static RawObject divmod(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject exec(Thread* thread, Frame* frame, word nargs);
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);
   static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
@@ -40,7 +41,6 @@ class BuiltinsModule : public ModuleBase<BuiltinsModule, SymbolId::kBuiltins> {
   static RawObject printKw(Thread* thread, Frame* frame, word nargs);
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFindAndLoad(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
   static RawObject underPrintStr(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);

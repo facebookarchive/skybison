@@ -230,8 +230,6 @@ class Runtime {
   void moduleAtPut(const Module& module, const Object& key,
                    const Object& value);
 
-  RawObject importModule(Thread* thread, const Object& name);
-
   // importModuleFromBuffer is exposed for use by the tests. We may be able to
   // remove this later.
   RawObject importModuleFromBuffer(const char* buffer, const Object& name);
@@ -281,6 +279,8 @@ class Runtime {
   RawObject buildClass() { return build_class_; }
 
   RawObject displayHook() { return display_hook_; }
+
+  RawObject dunderImport() { return dunder_import_; }
 
   RawObject interned() { return interned_; }
 
@@ -909,6 +909,7 @@ class Runtime {
   RawObject not_implemented_;
   RawObject build_class_;
   RawObject display_hook_;
+  RawObject dunder_import_;
   RawObject unbound_value_;
 
   // Interned strings

@@ -283,6 +283,31 @@ RawObject Interpreter::callFunction3(Thread* thread, Frame* caller,
   return call(thread, caller, 3);
 }
 
+RawObject Interpreter::callFunction4(Thread* thread, Frame* caller,
+                                     const Object& func, const Object& arg1,
+                                     const Object& arg2, const Object& arg3,
+                                     const Object& arg4) {
+  caller->pushValue(*func);
+  caller->pushValue(*arg1);
+  caller->pushValue(*arg2);
+  caller->pushValue(*arg3);
+  caller->pushValue(*arg4);
+  return call(thread, caller, 4);
+}
+
+RawObject Interpreter::callFunction5(Thread* thread, Frame* caller,
+                                     const Object& func, const Object& arg1,
+                                     const Object& arg2, const Object& arg3,
+                                     const Object& arg4, const Object& arg5) {
+  caller->pushValue(*func);
+  caller->pushValue(*arg1);
+  caller->pushValue(*arg2);
+  caller->pushValue(*arg3);
+  caller->pushValue(*arg4);
+  caller->pushValue(*arg5);
+  return call(thread, caller, 5);
+}
+
 RawObject Interpreter::callFunction(Thread* thread, Frame* caller,
                                     const Object& func, const Tuple& args) {
   caller->pushValue(*func);
@@ -1912,14 +1937,38 @@ bool Interpreter::doCompareOp(Context* ctx, word arg) {
 // opcode 108
 bool Interpreter::doImportName(Context* ctx, word arg) {
   HandleScope scope;
-  Code code(&scope, ctx->frame->code());
-  Object name(&scope, RawTuple::cast(code.names()).at(arg));
-  ctx->frame->popValue();  // from list
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
-  Object result(&scope, runtime->importModule(thread, name));
+  Frame* frame = ctx->frame;
+  Code code(&scope, frame->code());
+  Object name(&scope, RawTuple::cast(code.names()).at(arg));
+  Object fromlist(&scope, frame->popValue());
+  Object level(&scope, frame->popValue());
+  Dict globals(&scope, runtime->newDict());
+  // TODO(T41326706) Pass in a real globals dict here. For now create a small
+  // dict with just the things needed by importlib.
+  Dict frame_globals(&scope, thread->currentFrame()->globals());
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
+                      SymbolId::kDunderName}) {
+    key = runtime->symbols()->at(id);
+    value = runtime->moduleDictAt(frame_globals, key);
+    runtime->dictAtPut(globals, key, value);
+  }
+  // TODO(T41634372) Pass in a dict that is similar to what `builtins.locals`
+  // returns. Use `None` for now since the default importlib behavior is to
+  // ignore the value and this only matters if `__import__` is replaced.
+  Object locals(&scope, NoneType::object());
+
+  // Call builtins.__import__(name, globals, locals, fromlist, level).
+  ValueCell dunder_import_cell(&scope, runtime->dunderImport());
+  DCHECK(!dunder_import_cell.isUnbound(), "builtins module not initialized");
+  Object dunder_import(&scope, dunder_import_cell.value());
+  Object result(&scope, callFunction5(thread, frame, dunder_import, name,
+                                      globals, locals, fromlist, level));
   if (result.isError()) return unwind(ctx);
-  ctx->frame->setTopValue(*result);
+  frame->pushValue(*result);
   return false;
 }
 
