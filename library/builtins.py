@@ -299,7 +299,7 @@ class int(bootstrap=True):
             raise TypeError("'__radd__' requires a 'int' object")
         if not isinstance(n, int):
             return NotImplemented
-        return n.__add__(self)
+        return int.__add__(n, self)
 
     def __rand__(self, n: int) -> int:
         if not isinstance(self, int):
