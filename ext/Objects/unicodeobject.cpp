@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cwchar>
 
+#include "bytearray-builtins.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "handles.h"
@@ -1387,9 +1388,48 @@ PY_EXPORT Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject* /* unicode */,
   UNIMPLEMENTED("PyUnicode_AsUnicodeAndSize");
 }
 
-PY_EXPORT PyObject* PyUnicode_FromKindAndData(int /* d */, const void* /* r */,
-                                              Py_ssize_t /* e */) {
-  UNIMPLEMENTED("PyUnicode_FromKindAndData");
+template <typename T>
+static PyObject* decodeUnicodeToString(Thread* thread, const void* src,
+                                       word size) {
+  DCHECK(src != nullptr, "Must pass in a non-null buffer");
+  const T* cp = static_cast<const T*>(src);
+  if (size == 1) {
+    return ApiHandle::newReference(thread, SmallStr::fromCodePoint(cp[0]));
+  }
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  // TODO(T41785453): Remove the ByteArray intermediary
+  ByteArray dst(&scope, runtime->newByteArray());
+  runtime->byteArrayEnsureCapacity(thread, dst, size);
+  for (word i = 0; i < size; ++i) {
+    RawStr str = RawStr::cast(SmallStr::fromCodePoint(cp[i]));
+    for (word j = 0; j < str.length(); ++j) {
+      byteArrayAdd(thread, runtime, dst, str.charAt(j));
+    }
+  }
+  return ApiHandle::newReference(thread, runtime->newStrFromByteArray(dst));
+}
+
+PY_EXPORT PyObject* PyUnicode_FromKindAndData(int kind, const void* buffer,
+                                              Py_ssize_t size) {
+  Thread* thread = Thread::currentThread();
+  if (size < 0) {
+    thread->raiseValueErrorWithCStr("size must be positive");
+    return nullptr;
+  }
+  if (size == 0) {
+    return ApiHandle::newReference(thread, Str::empty());
+  }
+  switch (kind) {
+    case PyUnicode_1BYTE_KIND:
+      return decodeUnicodeToString<Py_UCS1>(thread, buffer, size);
+    case PyUnicode_2BYTE_KIND:
+      return decodeUnicodeToString<Py_UCS2>(thread, buffer, size);
+    case PyUnicode_4BYTE_KIND:
+      return decodeUnicodeToString<Py_UCS4>(thread, buffer, size);
+  }
+  thread->raiseSystemErrorWithCStr("invalid kind");
+  return nullptr;
 }
 
 PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,

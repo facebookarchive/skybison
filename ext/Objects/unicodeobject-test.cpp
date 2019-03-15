@@ -1015,4 +1015,60 @@ TEST_F(UnicodeExtensionApiTest, NewWithZeroSizeAndInvalidMaxCharReturnsStr) {
   EXPECT_TRUE(isUnicodeEqualsCStr(empty, ""));
 }
 
+TEST_F(UnicodeExtensionApiTest, FromKindAndDataWithNegativeOneRaiseError) {
+  char c = 'a';
+  PyObject* empty(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, &c, -1));
+  EXPECT_EQ(empty, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromKindAndDataWithInvalidKindRaiseError) {
+  char c = 'a';
+  PyObject* empty(PyUnicode_FromKindAndData(100, &c, 1));
+  EXPECT_EQ(empty, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FromKindAndDataWithOneByteKindAndASCIICodePointsReturnsStr) {
+  Py_UCS1 buffer[] = {'h', 'e', 'l', 'l', 'o'};
+  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, buffer,
+                                          Py_ARRAY_LENGTH(buffer)));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "hello"));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FromKindAndDataWithOneByteKindAndLatin1CodePointsReturnsStr) {
+  Py_UCS1 buffer[] = {'h', 0xe4, 'l', 'l', 'o'};
+  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, buffer,
+                                          Py_ARRAY_LENGTH(buffer)));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_STREQ(PyUnicode_AsUTF8(str), "h\xc3\xa4llo");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FromKindAndDataWithTwoByteKindAndBMPCodePointsReturnsStr) {
+  Py_UCS2 buffer[] = {'h', 0xe4, 'l', 0x2cc0, 'o'};
+  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buffer,
+                                          Py_ARRAY_LENGTH(buffer)));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_STREQ(PyUnicode_AsUTF8(str), "h\xc3\xa4l\xe2\xb3\x80o");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FromKindAndDataWithFourByteKindAndNonBMPCodePointsReturnsStr) {
+  Py_UCS4 buffer[] = {0x1f192, 'h', 0xe4, 'l', 0x2cc0};
+  PyObject* str(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
+                                          Py_ARRAY_LENGTH(buffer)));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_STREQ(PyUnicode_AsUTF8(str), "\xf0\x9f\x86\x92h\xc3\xa4l\xe2\xb3\x80");
+}
+
 }  // namespace python
