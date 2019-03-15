@@ -1,5 +1,9 @@
 #include "runtime.h"
 
+#include <cstdarg>
+
+#include "sys-module.h"
+
 namespace python {
 
 PY_EXPORT PyObject* PySys_GetObject(const char* /* e */) {
@@ -50,12 +54,18 @@ PY_EXPORT void PySys_SetPath(const wchar_t* /* h */) {
   UNIMPLEMENTED("PySys_SetPath");
 }
 
-PY_EXPORT void PySys_WriteStderr(const char* /* t */, ...) {
-  UNIMPLEMENTED("PySys_WriteStderr");
+PY_EXPORT void PySys_WriteStderr(const char* format, ...) {
+  va_list va;
+  va_start(va, format);
+  writeStderrV(Thread::currentThread(), format, va);
+  va_end(va);
 }
 
-PY_EXPORT void PySys_WriteStdout(const char* /* t */, ...) {
-  UNIMPLEMENTED("PySys_WriteStdout");
+PY_EXPORT void PySys_WriteStdout(const char* format, ...) {
+  va_list va;
+  va_start(va, format);
+  writeStdoutV(Thread::currentThread(), format, va);
+  va_end(va);
 }
 
 }  // namespace python

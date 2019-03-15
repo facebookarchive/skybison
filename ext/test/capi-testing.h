@@ -59,5 +59,29 @@ PyObject* importGetModule(PyObject* name);
 
 ::testing::AssertionResult isUnicodeEqualsCStr(PyObject* obj, const char* str);
 
+// Capture stdout and stderr of the current process. The contents of either one
+// may be fetched with the corresponding functions, which should be called at
+// most once each. The destructor ensures that the previous stdout/stderr are
+// restored even if they aren't fetched by the user.
+//
+// TODO(T41323917): Once we have proper streams support, this class should
+// modify sys.stdout/sys.stderr to write to in-memory buffers rather than
+// redirecting the C-level files.
+class CaptureStdStreams {
+ public:
+  CaptureStdStreams();
+  ~CaptureStdStreams();
+
+  // Return the captured stdout and restore the previous stream.
+  std::string out();
+
+  // Return the captured stderr and restore the previous stream.
+  std::string err();
+
+ private:
+  bool restored_stdout_{false};
+  bool restored_stderr_{false};
+};
+
 }  // namespace testing
 }  // namespace python

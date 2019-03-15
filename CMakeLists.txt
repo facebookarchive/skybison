@@ -424,6 +424,7 @@ target_link_libraries(
 set(
   EXTENSION_TESTS
   ext/Modules/posixmodule-test.cpp
+  ext/Modules/sysmodule-test.cpp
   ext/Objects/abstract-test.cpp
   ext/Objects/boolobject-test.cpp
   ext/Objects/bytearrayobject-test.cpp

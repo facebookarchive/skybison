@@ -1,6 +1,8 @@
 #include "sys-module.h"
 #include <unistd.h>
 
+#include <cstdio>
+
 #include "builtins-module.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -73,6 +75,50 @@ void SysModule::postInitialize(Thread* thread, Runtime* runtime,
   runtime->moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
 
   runtime->executeModule(kSysModuleData, module);
+}
+
+static void writeImpl(Thread* thread, std::ostream* stream, const char* format,
+                      va_list va) {
+  static constexpr int buf_size = 1001;
+  char buffer[buf_size];
+
+  HandleScope scope(thread);
+  Object type(&scope, thread->pendingExceptionType());
+  Object value(&scope, thread->pendingExceptionValue());
+  Object tb(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+
+  // TODO(T41323917): Use sys.stdout/sys.stderr once we have stream support.
+  int written = std::vsnprintf(buffer, buf_size, format, va);
+  *stream << buffer;
+  if (written >= buf_size) *stream << "... truncated";
+
+  thread->clearPendingException();
+  thread->setPendingExceptionType(*type);
+  thread->setPendingExceptionValue(*value);
+  thread->setPendingExceptionTraceback(*tb);
+}
+
+void writeStdout(Thread* thread, const char* format, ...) {
+  va_list va;
+  va_start(va, format);
+  writeStdoutV(thread, format, va);
+  va_end(va);
+}
+
+void writeStdoutV(Thread* thread, const char* format, va_list va) {
+  writeImpl(thread, builtinStdout, format, va);
+}
+
+void writeStderr(Thread* thread, const char* format, ...) {
+  va_list va;
+  va_start(va, format);
+  writeStderrV(thread, format, va);
+  va_end(va);
+}
+
+void writeStderrV(Thread* thread, const char* format, va_list va) {
+  writeImpl(thread, builtinStderr, format, va);
 }
 
 RawObject SysModule::displayhook(Thread* thread, Frame* frame, word nargs) {

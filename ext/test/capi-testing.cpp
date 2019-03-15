@@ -74,5 +74,45 @@ PyObject* importGetModule(PyObject* name) {
   return ::testing::AssertionSuccess();
 }
 
+CaptureStdStreams::CaptureStdStreams() {
+  ::testing::internal::CaptureStdout();
+  ::testing::internal::CaptureStderr();
+}
+
+CaptureStdStreams::~CaptureStdStreams() {
+  // Print any unread buffers to their respective streams to assist in
+  // debugging.
+  if (!restored_stdout_) std::cout << out();
+  if (!restored_stderr_) std::cerr << err();
+}
+
+std::string CaptureStdStreams::out() {
+  assert(!restored_stdout_);
+  PyObject *exc, *value, *tb;
+  PyErr_Fetch(&exc, &value, &tb);
+  PyRun_SimpleString(R"(
+import sys
+if hasattr(sys.stdout, "flush"):
+  sys.stdout.flush()
+)");
+  PyErr_Restore(exc, value, tb);
+  restored_stdout_ = true;
+  return ::testing::internal::GetCapturedStdout();
+}
+
+std::string CaptureStdStreams::err() {
+  assert(!restored_stderr_);
+  PyObject *exc, *value, *tb;
+  PyErr_Fetch(&exc, &value, &tb);
+  PyRun_SimpleString(R"(
+import sys
+if hasattr(sys.stderr, "flush"):
+  sys.stderr.flush()
+)");
+  PyErr_Restore(exc, value, tb);
+  restored_stderr_ = true;
+  return ::testing::internal::GetCapturedStderr();
+}
+
 }  // namespace testing
 }  // namespace python
