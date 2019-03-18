@@ -9,6 +9,7 @@
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "utils.h"
 
 const char* Py_FileSystemDefaultEncodeErrors = "surrogateescape";
@@ -1036,17 +1037,18 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
   Runtime* runtime = thread->runtime();
-  Object start_obj(&scope, runtime->newInt(start));
-  Object end_obj(&scope, runtime->newInt(end));
-  SymbolId selector = (direction == 1) ? SymbolId::kFind : SymbolId::kRfind;
-  Object result_obj(
-      &scope, thread->invokeMethodStatic4(LayoutId::kStr, selector, str_obj,
-                                          substr_obj, start_obj, end_obj));
-  if (result_obj.isError()) {
+  if (!runtime->isInstanceOfStr(*str_obj)) {
+    thread->raiseTypeErrorWithCStr("PyUnicode_Find requires a 'str' instance");
     return -2;
   }
-  DCHECK(result_obj.isInt(), "str.(r)find must return int");
-  Int result(&scope, *result_obj);
+  Str str_str(&scope, *str_obj);
+  if (!runtime->isInstanceOfStr(*substr_obj)) {
+    thread->raiseTypeErrorWithCStr("PyUnicode_Find requires a 'str' instance");
+    return -2;
+  }
+  Str substr_str(&scope, *substr_obj);
+  auto fn = (direction == 1) ? strFind : strRFind;
+  Int result(&scope, (*fn)(str_str, substr_str, start, end));
   OptInt<Py_ssize_t> maybe_int = result.asInt<Py_ssize_t>();
   if (maybe_int.error == CastError::None) {
     return maybe_int.value;
@@ -1055,10 +1057,31 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
   return -2;
 }
 
-PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* /* r */, Py_UCS4 /* h */,
-                                        Py_ssize_t /* t */, Py_ssize_t /* d */,
-                                        int /* n */) {
-  UNIMPLEMENTED("PyUnicode_FindChar");
+PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
+                                        Py_ssize_t start, Py_ssize_t end,
+                                        int direction) {
+  DCHECK(str != nullptr, "str must not be null");
+  DCHECK(direction == 1 || direction == -1, "direction must be -1 or 1");
+  Thread* thread = Thread::currentThread();
+  if (start < 0 || end < 0) {
+    thread->raiseIndexErrorWithCStr("string index out of range");
+    return -2;
+  }
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfStr(*str_obj),
+         "PyUnicode_FindChar requires a 'str' instance");
+  Str str_str(&scope, *str_obj);
+  Str substr(&scope, SmallStr::fromCodePoint(ch));
+  auto fn = (direction == 1) ? strFind : strRFind;
+  Int result(&scope, (*fn)(str_str, substr, start, end));
+  OptInt<Py_ssize_t> maybe_int = result.asInt<Py_ssize_t>();
+  if (maybe_int.error == CastError::None) {
+    return maybe_int.value;
+  }
+  thread->raiseOverflowErrorWithCStr("int overflow or underflow");
+  return -2;
 }
 
 PY_EXPORT PyObject* PyUnicode_Format(PyObject* /* t */, PyObject* /* s */) {

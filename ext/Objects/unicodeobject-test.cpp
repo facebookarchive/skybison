@@ -124,6 +124,87 @@ TEST_F(UnicodeExtensionApiTest, FindReverseReturnsRightmostStartIndex) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(UnicodeExtensionApiTest, FindCharWithNegativeStartRaisesIndexError) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'h';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, -1, 5, 1), -2);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharWithNegativeEndRaisesIndexError) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'h';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, -5, 1), -2);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FindCharWithExistentCharEndGreaterThanLengthClipsEnd) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'h';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 100, 1), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       FindCharWithNonExistentCharEndGreaterThanLengthClipsEnd) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'q';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 100, 1), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharFindsChar) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'h';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 5, 1), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharFindsCharInMiddleOfString) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'l';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 5, 1), 2);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharReverseFindsCharInMiddleOfString) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'l';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 5, -1), 3);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharWithNonExistentCharDoesNotFindChar) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'q';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 5, 1), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharWithCharBeforeWindowDoesNotFindChar) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'h';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 2, 5, 1), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharWithCharAfterWindowDoesNotFindChar) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  Py_UCS4 ch = 'o';
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 3, 1), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, FindCharWithUnicodeCharFindsChar) {
+  PyObjectPtr self(PyUnicode_FromString("h\u00e9llo"));
+  Py_UCS4 ch = 0xE9;
+  EXPECT_EQ(PyUnicode_FindChar(self, ch, 0, 3, 1), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(UnicodeExtensionApiTest, FromStringAndSizeCreatesSizedString) {
   const char* str = "Some string";
   PyObjectPtr pyuni(PyUnicode_FromStringAndSize(str, 11));
