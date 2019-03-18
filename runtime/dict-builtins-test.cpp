@@ -694,4 +694,34 @@ TEST(DictBuiltinTest, PopWithMisingKeyRaisesKeyError) {
       raised(runFromCStr(&runtime, "{}.pop('hello')"), LayoutId::kKeyError));
 }
 
+TEST(DictBuiltinTest, PopWithSubclassDoesNotCallDunderDelItem) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C(dict):
+    def __delitem__(self, key):
+        raise Exception(key)
+c = C({'hello': 'world'})
+result = c.pop('hello')
+)");
+  Thread* thread = Thread::currentThread();
+  ASSERT_FALSE(thread->hasPendingException());
+  HandleScope scope(thread);
+  Dict dict(&scope, moduleAt(&runtime, "__main__", "c"));
+  EXPECT_EQ(dict.numItems(), 0);
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
+}
+
+TEST(DictBuiltinTest, DictInitWithSubclassInitializesElements) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C(dict):
+    pass
+c = C({'hello': 'world'})
+)");
+  HandleScope scope;
+  Dict dict(&scope, moduleAt(&runtime, "__main__", "c"));
+  EXPECT_EQ(dict.numItems(), 1);
+}
+
 }  // namespace python

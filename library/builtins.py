@@ -1077,10 +1077,17 @@ class dict(bootstrap=True):
     def __eq__(self, other):
         pass
 
+    def __init__(self, *args, **kwargs):
+        if len(args) > 1:
+            raise TypeError("dict expected at most 1 positional argument, got 2")
+        if len(args) == 1:
+            dict.update(self, args[0])
+        dict.update(self, kwargs)
+
     def __len__(self):
         pass
 
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         pass
 
     def __getitem__(self, key):
@@ -1112,11 +1119,11 @@ class dict(bootstrap=True):
         pass
 
     def pop(self, key, default=_UnboundValue):
-        value = self.get(key, default)
+        value = dict.get(self, key, default)
         if value is _UnboundValue:
             raise KeyError(key)
         if key in self:
-            del self[key]
+            dict.__delitem__(self, key)
         return value
 
     def update(self, other):
