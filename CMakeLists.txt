@@ -442,6 +442,7 @@ set(
   ext/Objects/longobject-test.cpp
   ext/Objects/moduleobject-test.cpp
   ext/Objects/object-test.cpp
+  ext/Objects/obmalloc-test.cpp
   ext/Objects/setobject-test.cpp
   ext/Objects/sliceobject-test.cpp
   ext/Objects/structseq-test.cpp

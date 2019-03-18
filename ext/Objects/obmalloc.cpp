@@ -63,6 +63,22 @@ PY_EXPORT void* PyMem_Resize_Func(void* p, size_t size, size_t n) {
   return PyMem_Realloc(p, n * size);
 }
 
-PY_EXPORT char* _PyMem_Strdup(const char*) { UNIMPLEMENTED("_PyMem_Strdup"); }
+PY_EXPORT char* _PyMem_RawStrdup(const char* str) {
+  size_t size = std::strlen(str) + 1;
+  char* result = static_cast<char*>(PyMem_RawMalloc(size));
+  if (result != nullptr) {
+    std::memcpy(result, str, size);
+  }
+  return result;
+}
+
+PY_EXPORT char* _PyMem_Strdup(const char* str) {
+  size_t size = std::strlen(str) + 1;
+  char* result = static_cast<char*>(PyMem_Malloc(size));
+  if (result != nullptr) {
+    std::memcpy(result, str, size);
+  }
+  return result;
+}
 
 }  // namespace python
