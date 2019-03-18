@@ -12,6 +12,10 @@ class OS {
 
   static byte* allocateMemory(word size);
 
+  // Returns an absolute path to the current executable. The path may contain
+  // unresolved symlinks.
+  static char* executablePath();
+
   static bool freeMemory(byte* ptr, word size);
 
   static bool protectMemory(byte* ptr, word size, Protection);

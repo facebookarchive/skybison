@@ -42,6 +42,10 @@ void SysModule::postInitialize(Thread* thread, Runtime* runtime,
   Object platform(&scope, runtime->newStrFromCStr(OS::name()));
   runtime->moduleAddGlobal(module, SymbolId::kPlatform, platform);
 
+  unique_c_ptr<char> executable_path(OS::executablePath());
+  Object executable(&scope, runtime->newStrFromCStr(executable_path.get()));
+  runtime->moduleAddGlobal(module, SymbolId::kExecutable, executable);
+
   // Count the number of modules and create a tuple
   uword num_external_modules = 0;
   while (_PyImport_Inittab[num_external_modules].name != nullptr) {

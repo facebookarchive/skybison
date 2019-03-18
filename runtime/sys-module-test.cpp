@@ -5,12 +5,29 @@
 #include <cstdlib>
 
 #include "runtime.h"
+#include "str-builtins.h"
 #include "sys-module.h"
 #include "test-utils.h"
 
 namespace python {
 
 using namespace testing;
+
+TEST(SysModuleTest, ExecutableIsValid) {
+  Runtime runtime;
+  HandleScope scope;
+  Object executable_obj(&scope, moduleAt(&runtime, "sys", "executable"));
+  ASSERT_TRUE(executable_obj.isStr());
+  Str executable(&scope, *executable_obj);
+  ASSERT_TRUE(executable.length() > 0);
+  EXPECT_TRUE(executable.charAt(0) == '/');
+  Object test_executable_name(&scope, runtime.newStrFromCStr("python-tests"));
+  Object none(&scope, NoneType::object());
+  Object find_result(&scope, runBuiltin(StrBuiltins::find, executable,
+                                        test_executable_name, none, none));
+  ASSERT_TRUE(find_result.isInt());
+  EXPECT_FALSE(RawInt::cast(*find_result).isNegative());
+}
 
 TEST(SysModuleTest, SysArgvProgArg) {  // pystone dependency
   const char* src = R"(

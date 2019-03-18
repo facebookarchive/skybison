@@ -6,6 +6,7 @@
 # knowledge about its definition and will complain without this gross circular
 # helper here.
 _patch = _patch  # noqa: F821
+executable = executable  # noqa: F821
 
 
 def exit(code=0):

@@ -186,6 +186,7 @@ class Runtime;
   V(Exec, "exec")                                                              \
   V(ExecBuiltin, "exec_builtin")                                               \
   V(ExecDynamic, "exec_dynamic")                                               \
+  V(Executable, "executable")                                                  \
   V(Exit, "exit")                                                              \
   V(Extend, "extend")                                                          \
   V(ExtensionPtr, "___extension___")                                           \
