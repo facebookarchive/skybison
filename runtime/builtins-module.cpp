@@ -92,6 +92,8 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
+    {SymbolId::kUnderStrFind, underStrFind},
+    {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
     {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
     {SymbolId::kSentinelId, nullptr},
@@ -787,6 +789,46 @@ RawObject BuiltinsModule::underStrEscapeNonAscii(Thread* thread, Frame* frame,
         "_str_escape_non_ascii expected str instance");
   Str obj(&scope, args.get(0));
   return strEscapeNonASCII(thread, obj);
+}
+
+RawObject BuiltinsModule::underStrFind(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  DCHECK(runtime->isInstanceOfStr(args.get(0)),
+         "_str_find requires 'str' instance");
+  DCHECK(runtime->isInstanceOfStr(args.get(1)),
+         "_str_find requires 'str' instance");
+  HandleScope scope(thread);
+  Str haystack(&scope, args.get(0));
+  Str needle(&scope, args.get(1));
+  Object start_obj(&scope, args.get(2));
+  Object end_obj(&scope, args.get(3));
+  word start =
+      start_obj.isNoneType() ? 0 : RawInt::cast(*start_obj).asWordSaturated();
+  word end = end_obj.isNoneType() ? kMaxWord
+                                  : RawInt::cast(*end_obj).asWordSaturated();
+  return strFind(haystack, needle, start, end);
+}
+
+RawObject BuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  DCHECK(runtime->isInstanceOfStr(args.get(0)),
+         "_str_rfind requires 'str' instance");
+  DCHECK(runtime->isInstanceOfStr(args.get(1)),
+         "_str_rfind requires 'str' instance");
+  HandleScope scope(thread);
+  Str haystack(&scope, args.get(0));
+  Str needle(&scope, args.get(1));
+  Object start_obj(&scope, args.get(2));
+  Object end_obj(&scope, args.get(3));
+  word start =
+      start_obj.isNoneType() ? 0 : RawInt::cast(*start_obj).asWordSaturated();
+  word end = end_obj.isNoneType() ? kMaxWord
+                                  : RawInt::cast(*end_obj).asWordSaturated();
+  return strRFind(haystack, needle, start, end);
 }
 
 }  // namespace python

@@ -21,10 +21,9 @@ TEST(SysModuleTest, ExecutableIsValid) {
   Str executable(&scope, *executable_obj);
   ASSERT_TRUE(executable.length() > 0);
   EXPECT_TRUE(executable.charAt(0) == '/');
-  Object test_executable_name(&scope, runtime.newStrFromCStr("python-tests"));
-  Object none(&scope, NoneType::object());
-  Object find_result(&scope, runBuiltin(StrBuiltins::find, executable,
-                                        test_executable_name, none, none));
+  Str test_executable_name(&scope, runtime.newStrFromCStr("python-tests"));
+  Object find_result(&scope,
+                     strFind(executable, test_executable_name, 0, kMaxWord));
   ASSERT_TRUE(find_result.isInt());
   EXPECT_FALSE(RawInt::cast(*find_result).isNegative());
 }

@@ -12,6 +12,13 @@ namespace python {
 enum class StrStripDirection { Left, Right, Both };
 
 RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
+// Look for needle in haystack in the range [start, end]. Return the first
+// index found in that range, or -1 if needle was not found.
+RawObject strFind(const Str& haystack, const Str& needle, word start, word end);
+// Look for needle in haystack in the range [start, end]. Return the last
+// index found in that range, or -1 if needle was not found.
+RawObject strRFind(const Str& haystack, const Str& needle, word start,
+                   word end);
 RawObject strStripSpace(Thread* thread, const Str& src,
                         const StrStripDirection direction);
 RawObject strStrip(Thread* thread, const Str& src, const Str& str,
@@ -68,11 +75,9 @@ class StrBuiltins
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
-  static RawObject find(Thread* thread, Frame* frame, word nargs);
   static RawObject lower(Thread* thread, Frame* frame, word nargs);
   static RawObject lstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject join(Thread* thread, Frame* frame, word nargs);
-  static RawObject rfind(Thread* thread, Frame* frame, word nargs);
   static RawObject rstrip(Thread* thread, Frame* frame, word nargs);
   static RawObject strip(Thread* thread, Frame* frame, word nargs);
 

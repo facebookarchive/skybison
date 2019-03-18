@@ -791,6 +791,16 @@ class smallint(bootstrap=True):
     pass
 
 
+@_patch
+def _str_find(self, sub, start, end):
+    pass
+
+
+@_patch
+def _str_rfind(self, sub, start, end):
+    pass
+
+
 class str(bootstrap=True):
     def __new__(cls, obj="", encoding=_UnboundValue, errors=_UnboundValue):
         if not isinstance(cls, type):
@@ -850,7 +860,19 @@ class str(bootstrap=True):
         pass
 
     def find(self, sub, start=None, end=None):
-        pass
+        if not isinstance(self, str):
+            raise TypeError(
+                f"find requires a 'str' instance but got {type(self).__name__}"
+            )
+        if not isinstance(sub, str):
+            raise TypeError(
+                f"find requires a 'str' instance but got {type(sub).__name__}"
+            )
+        if start is not None:
+            start = _index(start)
+        if end is not None:
+            end = _index(end)
+        return _str_find(self, sub, start, end)
 
     def index(self, sub, start=None, end=None):
         res = self.find(sub, start, end)
@@ -1024,7 +1046,19 @@ class str(bootstrap=True):
         return False
 
     def rfind(self, sub, start=None, end=None):
-        pass
+        if not isinstance(self, str):
+            raise TypeError(
+                f"rfind requires a 'str' instance but got {type(self).__name__}"
+            )
+        if not isinstance(sub, str):
+            raise TypeError(
+                f"rfind requires a 'str' instance but got {type(sub).__name__}"
+            )
+        if start is not None:
+            start = _index(start)
+        if end is not None:
+            end = _index(end)
+        return _str_rfind(self, sub, start, end)
 
     # TODO(T37437993): Write in C++
     def rsplit(self, sep=None, maxsplit=-1):

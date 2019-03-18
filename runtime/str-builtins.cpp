@@ -149,11 +149,9 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderMod, dunderMod},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderRepr, dunderRepr},
-    {SymbolId::kFind, find},
     {SymbolId::kJoin, join},
     {SymbolId::kLower, lower},
     {SymbolId::kLStrip, lstrip},
-    {SymbolId::kRfind, rfind},
     {SymbolId::kRStrip, rstrip},
     {SymbolId::kStrip, strip},
     {SymbolId::kSentinelId, nullptr},
@@ -240,22 +238,8 @@ static void adjustIndices(const Str& str, word* startp, word* endp) {
   }
 }
 
-RawObject StrBuiltins::find(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
-  if (!runtime->isInstanceOfStr(args.get(0))) {
-    return thread->raiseTypeErrorWithCStr("'find' requires a 'str' instance");
-  }
-  if (!runtime->isInstanceOfStr(args.get(1))) {
-    return thread->raiseTypeErrorWithCStr("'find' requires a 'str' instance");
-  }
-  HandleScope scope(thread);
-  Str haystack(&scope, args.get(0));
-  Str needle(&scope, args.get(1));
-  word start =
-      args.get(2).isNoneType() ? 0 : SmallInt::cast(args.get(2)).value();
-  word end =
-      args.get(3).isNoneType() ? kMaxWord : SmallInt::cast(args.get(3)).value();
+RawObject strFind(const Str& haystack, const Str& needle, word start,
+                  word end) {
   if (end < 0 || start < 0) {
     adjustIndices(haystack, &start, &end);
   }
@@ -302,22 +286,8 @@ RawObject StrBuiltins::find(Thread* thread, Frame* frame, word nargs) {
   return SmallInt::fromWord(-1);
 }
 
-RawObject StrBuiltins::rfind(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
-  if (!runtime->isInstanceOfStr(args.get(0))) {
-    return thread->raiseTypeErrorWithCStr("'rfind' requires a 'str' instance");
-  }
-  if (!runtime->isInstanceOfStr(args.get(1))) {
-    return thread->raiseTypeErrorWithCStr("'rfind' requires a 'str' instance");
-  }
-  HandleScope scope(thread);
-  Str haystack(&scope, args.get(0));
-  Str needle(&scope, args.get(1));
-  word start =
-      args.get(2).isNoneType() ? 0 : SmallInt::cast(args.get(2)).value();
-  word end =
-      args.get(3).isNoneType() ? kMaxWord : SmallInt::cast(args.get(3)).value();
+RawObject strRFind(const Str& haystack, const Str& needle, word start,
+                   word end) {
   if (end < 0 || start < 0) {
     adjustIndices(haystack, &start, &end);
   }

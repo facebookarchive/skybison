@@ -358,6 +358,10 @@ class RawInt : public RawObject {
  public:
   // Getters and setters.
   word asWord() const;
+  // Returns the value as a word if it fits into a word.
+  // Otherwise, returns kMinWord for negative values or kMaxWord for positive
+  // values.
+  word asWordSaturated() const;
   void* asCPtr() const;
 
   // If this fits in T, get its value as a T. If not, indicate what went wrong.
@@ -2701,6 +2705,11 @@ inline word RawInt::asWord() const {
     return RawBool::cast(*this).value();
   }
   return RawLargeInt::cast(*this).asWord();
+}
+
+inline word RawInt::asWordSaturated() const {
+  if (numDigits() == 1) return asWord();
+  return isNegative() ? kMinWord : kMaxWord;
 }
 
 inline void* RawInt::asCPtr() const {

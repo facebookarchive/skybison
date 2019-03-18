@@ -386,6 +386,8 @@ class Runtime;
   V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
+  V(UnderStrFind, "_str_find")                                                 \
+  V(UnderStrRFind, "_str_rfind")                                               \
   V(UnderStructseqField, "_structseq_field")                                   \
   V(UnderStructseqFieldNames, "_structseq_field_names")                        \
   V(UnderStructseqGetAttr, "_structseq_getattr")                               \

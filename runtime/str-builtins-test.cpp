@@ -1838,6 +1838,61 @@ result = "hello".find("h", 0, 100)
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
 }
 
+TEST(StrBuiltinsTest, FindCallsDunderIndexOnStart) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return 4
+result = "bbbbbbbb".find("b", C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
+}
+
+TEST(StrBuiltinsTest, FindCallsDunderIndexOnEnd) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return 5
+result = "aaaabbbb".find("b", 0, C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
+}
+
+TEST(StrBuiltinsTest, FindClampsStartReturningBigNumber) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return 46116860184273879030
+result = "aaaabbbb".find("b", C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
+}
+
+TEST(StrBuiltinsTest, FindClampsEndReturningBigNumber) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return 46116860184273879030
+result = "aaaabbbb".find("b", 0, C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
+}
+
+TEST(StrBuiltinsTest, FindClampsEndReturningBigNegativeNumber) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return -46116860184273879030
+result = "aaaabbbb".find("b", 0, C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
+}
+
 TEST(StrBuiltinsTest, FindWithUnicodeReturnsCodePointIndex) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
@@ -1958,6 +2013,50 @@ TEST(StrBuiltinsTest, RfindCharWithEndPastEndOfStringClipsToLength) {
 result = "hello".rfind("h", 0, 100)
 )");
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
+}
+
+TEST(StrBuiltinsTest, RfindCallsDunderIndexOnEnd) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return 5
+result = "aaaabbbb".rfind("b", 0, C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
+}
+
+TEST(StrBuiltinsTest, RfindClampsStartReturningBigNumber) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return 46116860184273879030
+result = "aaaabbbb".rfind("b", C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
+}
+
+TEST(StrBuiltinsTest, RfindClampsEndReturningBigNumber) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return 46116860184273879030
+result = "aaaabbbb".rfind("b", 0, C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 7));
+}
+
+TEST(StrBuiltinsTest, RfindClampsEndReturningBigNegativeNumber) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+    def __index__(self):
+        return -46116860184273879030
+result = "aaaabbbb".rfind("b", 0, C())
+)");
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithEmptyNeedleReturnsLength) {
