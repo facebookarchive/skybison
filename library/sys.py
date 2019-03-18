@@ -13,6 +13,12 @@ def exit(code=0):
     raise SystemExit(code)
 
 
+meta_path = []
+
+
+path = ["", executable[: executable.rfind("/")] + "/../third-party/cpython/Lib"]
+
+
 path_hooks = []
 
 

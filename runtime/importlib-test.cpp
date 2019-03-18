@@ -161,6 +161,11 @@ from submodule.a import val
   EXPECT_TRUE(isStrEqualsCStr(*main_val_from_submodule, "submodule val"));
 }
 
+TEST(ImportlibTest, ImportFindsDefaultModules) {
+  Runtime runtime;
+  EXPECT_FALSE(runFromCStr(&runtime, "import stat").isError());
+}
+
 TEST(ImportlibTest, SysMetaPathIsList) {
   const char* src = R"(
 import sys
