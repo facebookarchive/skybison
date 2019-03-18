@@ -823,6 +823,13 @@ class str(bootstrap=True):
     def __add__(self, other):
         pass
 
+    def __contains__(self, other):
+        if not isinstance(self, str):
+            raise TypeError(f"expected a 'str' instance but got {type(self).__name__}")
+        if not isinstance(other, str):
+            raise TypeError(f"expected a 'str' instance but got {type(other).__name__}")
+        return str.find(self, other) != -1
+
     def __eq__(self, other):
         pass
 

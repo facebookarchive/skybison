@@ -804,8 +804,24 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
       thread, runtime->strConcat(thread, left_str, right_str));
 }
 
-PY_EXPORT int PyUnicode_Contains(PyObject* /* r */, PyObject* /* r */) {
-  UNIMPLEMENTED("PyUnicode_Contains");
+PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
+  DCHECK(str != nullptr, "str should not be null");
+  DCHECK(substr != nullptr, "substr should not be null");
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
+  Object result(&scope, thread->invokeMethodStatic2(LayoutId::kStr,
+                                                    SymbolId::kDunderContains,
+                                                    str_obj, substr_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call str.__contains__");
+    }
+    return -1;
+  }
+  DCHECK(result.isBool(), "result of __contains__ should be bool");
+  return RawBool::cast(*result).value();
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_Count(PyObject* /* r */, PyObject* /* r */,

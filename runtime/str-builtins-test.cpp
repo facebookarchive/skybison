@@ -2156,4 +2156,32 @@ TEST(StringIterTest, SetIndex) {
   ASSERT_TRUE(ch.isError());
 }
 
+TEST(StrBuiltinsTest, DunderContainsWithNonStrSelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, "str.__contains__(3, 'foo')"),
+                     LayoutId::kTypeError));
+}
+
+TEST(StrBuiltinsTest, DunderContainsWithNonStrOtherRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, "str.__contains__('foo', 3)"),
+                     LayoutId::kTypeError));
+}
+
+TEST(StrBuiltinsTest, DunderContainsWithPresentSubstrReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.__contains__('foo', 'f')");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, DunderContainsWithNotPresentSubstrReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.__contains__('foo', 'q')");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
 }  // namespace python

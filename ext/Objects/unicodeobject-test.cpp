@@ -1071,4 +1071,34 @@ TEST_F(UnicodeExtensionApiTest,
   EXPECT_STREQ(PyUnicode_AsUTF8(str), "\xf0\x9f\x86\x92h\xc3\xa4l\xe2\xb3\x80");
 }
 
+TEST_F(UnicodeExtensionApiTest, ContainsWithNonStrSelfRaisesTypeError) {
+  PyObjectPtr self(PyLong_FromLong(7));
+  PyObjectPtr other(PyUnicode_FromString("hello"));
+  EXPECT_EQ(PyUnicode_Contains(self, other), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, ContainsWithNonStrOtherRaisesTypeError) {
+  PyObjectPtr self(PyUnicode_FromString("hello"));
+  PyObjectPtr other(PyLong_FromLong(7));
+  EXPECT_EQ(PyUnicode_Contains(self, other), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, ContainsWithPresentSubstrReturnsTrue) {
+  PyObjectPtr self(PyUnicode_FromString("foo"));
+  PyObjectPtr other(PyUnicode_FromString("f"));
+  EXPECT_EQ(PyUnicode_Contains(self, other), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, ContainsWithNotPresentSubstrReturnsTrue) {
+  PyObjectPtr self(PyUnicode_FromString("foo"));
+  PyObjectPtr other(PyUnicode_FromString("q"));
+  EXPECT_EQ(PyUnicode_Contains(self, other), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python
