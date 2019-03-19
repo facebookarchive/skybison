@@ -11,3 +11,9 @@ class ref(bootstrap=True):
 
     def __init__(self, referent, callback=None):
         return None
+
+    def __hash__(self):
+        obj = self.__call__()
+        if obj is None:
+            raise TypeError("weak object has gone away")
+        return obj.__hash__()

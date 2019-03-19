@@ -87,4 +87,33 @@ TEST(RefBuiltinsTest, DunderCallWithNonRefRaisesTypeError) {
                             "'__call__' requires a 'ref' object"));
 }
 
+TEST(RefBuiltinsTest, DunderHashWithDeadRefRaisesTypeError) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import _weakref
+class C:
+  pass
+ref = _weakref.ref(C())
+)")
+                   .isError());
+  runtime.collectGarbage();
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "ref.__hash__()"),
+                            LayoutId::kTypeError, "weak object has gone away"));
+}
+
+TEST(RefBuiltinsTest, DunderHashCallsHashOfReferent) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import _weakref
+class C:
+  def __hash__(self):
+    raise Exception("foo")
+c = C()
+ref = _weakref.ref(c)
+)")
+                   .isError());
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "ref.__hash__()"),
+                            LayoutId::kException, "foo"));
+}
+
 }  // namespace python
