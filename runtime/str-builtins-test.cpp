@@ -2106,6 +2106,36 @@ TEST(StrBuiltinsTest, IndexWithMissingSubstringRaisesValueError) {
       raised(runFromCStr(&runtime, "'h'.index('q')"), LayoutId::kValueError));
 }
 
+TEST(StrBuiltinsTest, DunderHashReturnsSmallInt) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("hello world"));
+  EXPECT_TRUE(runBuiltin(StrBuiltins::dunderHash, str).isSmallInt());
+}
+
+TEST(StrBuiltinsTest, DunderHashSmallStringReturnsSmallInt) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("h"));
+  EXPECT_TRUE(runBuiltin(StrBuiltins::dunderHash, str).isSmallInt());
+}
+
+TEST(StrBuiltinsTest, DunderHashWithEquivalentStringsReturnsSameHash) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Str str1(&scope, runtime.newStrFromCStr("hello world foobar"));
+  Str str2(&scope, runtime.newStrFromCStr("hello world foobar"));
+  EXPECT_NE(*str1, *str2);
+  Object result1(&scope, runBuiltin(StrBuiltins::dunderHash, str1));
+  Object result2(&scope, runBuiltin(StrBuiltins::dunderHash, str2));
+  EXPECT_TRUE(result1.isSmallInt());
+  EXPECT_TRUE(result2.isSmallInt());
+  EXPECT_EQ(*result1, *result2);
+}
+
 TEST(StringIterTest, SimpleIter) {
   Runtime runtime;
   HandleScope scope;

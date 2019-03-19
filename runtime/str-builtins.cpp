@@ -142,6 +142,7 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGetItem, dunderGetItem},
     {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
@@ -214,6 +215,17 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return thread->runtime()->notImplemented();
+}
+
+RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*self)) {
+    return thread->raiseTypeErrorWithCStr("__hash__ requires a 'str' instance");
+  }
+  return runtime->hash(*self);
 }
 
 static void adjustIndices(const Str& str, word* startp, word* endp) {
