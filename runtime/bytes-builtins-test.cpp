@@ -767,6 +767,137 @@ TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
   EXPECT_TRUE(RawBool::cast(*lt).value());
 }
 
+TEST(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object count(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
+                            LayoutId::kTypeError,
+                            "'__mul__' requires a 'bytes' instance"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(0, 0));
+  Object count(&scope, runtime.newList());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
+                            LayoutId::kTypeError,
+                            "object cannot be interpreted as an integer"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return 2
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "aa"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return "foo"
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
+                            LayoutId::kTypeError,
+                            "__index__ returned non-int"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulPropagatesDunderIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(1, 'a'));
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    raise ArithmeticError("called __index__")
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
+                            LayoutId::kArithmeticError, "called __index__"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(0, 0));
+  Object count(&scope, runtime.newIntWithDigits({1, 1}));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
+                            LayoutId::kOverflowError,
+                            "cannot fit count into an index-sized integer"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(3, 'a'));
+  Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
+                            LayoutId::kOverflowError,
+                            "repeated bytes are too long"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithEmptyBytesReturnsEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(0, 0));
+  Object count(&scope, runtime.newInt(10));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, ""));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithNegativeReturnsEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(4, 'a'));
+  Object count(&scope, SmallInt::fromWord(-5));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, ""));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithZeroReturnsEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(4, 'a'));
+  Object count(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, ""));
+}
+
+TEST(BytesBuiltinsTest, DunderMulWithOneReturnsSameBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytesWithAll({'a', 'b'}));
+  Object count(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "ab"));
+}
+
+TEST(BytesBuiltinsTest, DunderMulReturnsRepeatedBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytesWithAll({'a', 'b'}));
+  Object count(&scope, SmallInt::fromWord(3));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "ababab"));
+}
+
 TEST(BytesBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
@@ -999,6 +1130,14 @@ TEST(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   Object self(&scope, runtime.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\x00\x1f\x80\xff')"));
+}
+
+TEST(BytesBuiltinsTest, DunderRmulCallsDunderMul) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = 3 * b'1'");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "111"));
 }
 
 TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {

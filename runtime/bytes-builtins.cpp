@@ -174,6 +174,7 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderLt, dunderLt},
+    {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
@@ -341,6 +342,40 @@ RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
   return Bool::fromBool(self.compare(*other) < 0);
+}
+
+RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__mul__' requires a 'bytes' instance");
+  }
+  Object count_obj(&scope, args.get(1));
+  count_obj = intFromIndex(thread, count_obj);
+  if (count_obj.isError()) return *count_obj;
+  Bytes self(&scope, *self_obj);
+  Int count_int(&scope, *count_obj);
+  word count = count_int.asWordSaturated();
+  if (!SmallInt::isValid(count)) {
+    return thread->raiseOverflowErrorWithCStr(
+        "cannot fit count into an index-sized integer");
+  }
+  word length = self.length();
+  if (count <= 0 || length == 0) {
+    return runtime->newBytes(0, 0);
+  }
+  if (count == 1) {
+    return *self;
+  }
+  word new_length;
+  if (__builtin_mul_overflow(length, count, &new_length) ||
+      !SmallInt::isValid(new_length)) {
+    return thread->raiseOverflowErrorWithCStr("repeated bytes are too long");
+  }
+  return runtime->bytesRepeat(thread, self, length, count);
 }
 
 RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {

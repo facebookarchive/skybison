@@ -2093,6 +2093,23 @@ RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
   return *result;
 }
 
+RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
+                               word count) {
+  DCHECK(length > 0, "length should be positive");
+  DCHECK(count > 0, "count should be positive");
+  DCHECK_BOUND(length, source.length());
+  DCHECK_BOUND(count, kMaxWord / length);
+  // TODO(T36997048): immediate small byte arrays
+  HandleScope scope(thread);
+  Bytes result(&scope, heap()->createBytes(length * count));
+  const byte* src = reinterpret_cast<byte*>(source.address());
+  byte* dst = reinterpret_cast<byte*>(result.address());
+  for (word i = 0; i < count; i++, dst += length) {
+    std::memcpy(dst, src, length);
+  }
+  return *result;
+}
+
 word Runtime::bytesReplaceFromWith(Thread* thread, const Bytes& buffer,
                                    word start, const Object& source) {
   DCHECK_INDEX(start, buffer.length());

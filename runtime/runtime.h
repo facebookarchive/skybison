@@ -323,6 +323,12 @@ class Runtime {
   RawObject bytesJoin(Thread* thread, const Object& sep, const Tuple& src,
                       word src_length);
 
+  // Creates a new Bytes with the specified containing the first `length` bytes
+  // of the `source` repeated `count` times. Specifies `length` explicitly to
+  // allow for ByteArrays with extra allocated space.
+  RawObject bytesRepeat(Thread* thread, const Bytes& source, word length,
+                        word count);
+
   // Copies a bytes-like object into buffer starting at a given index in buffer.
   // Returns the next index after the copied bytes.
   word bytesReplaceFromWith(Thread* thread, const Bytes& buffer, word start,

@@ -596,6 +596,9 @@ class bytes(bootstrap=True):
     def __lt__(self, other):
         pass
 
+    def __mul__(self, n: int) -> bytes:
+        pass
+
     def __ne__(self, other):
         pass
 
@@ -606,6 +609,11 @@ class bytes(bootstrap=True):
 
     def __repr__(self) -> str:  # noqa: T484
         pass
+
+    def __rmul__(self, n: int) -> bytes:
+        if not isinstance(self, bytes):
+            raise TypeError("'__rmul__' requires a 'bytes' instance")
+        return bytes.__mul__(self, n)
 
     def hex(self) -> str:
         pass
