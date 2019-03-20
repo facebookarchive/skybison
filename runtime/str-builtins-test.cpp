@@ -272,6 +272,163 @@ TEST(StrBuiltinsTest, DunderLenWithExtraArgumentRaisesTypeError) {
       "TypeError: 'str.__len__' takes max 1 positional arguments but 2 given"));
 }
 
+TEST(StrBuiltinsTest, DunderMulWithNonStrRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object count(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+                            LayoutId::kTypeError,
+                            "'__mul__' requires a 'str' instance"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  Object count(&scope, runtime.newList());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+                            LayoutId::kTypeError,
+                            "object cannot be interpreted as an integer"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return 2
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foofoo"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return "foo"
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+                            LayoutId::kTypeError,
+                            "__index__ returned non-int"));
+}
+
+TEST(StrBuiltinsTest, DunderMulPropagatesDunderIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    raise ArithmeticError("called __index__")
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+                            LayoutId::kArithmeticError, "called __index__"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, Str::empty());
+  Object count(&scope, runtime.newIntWithDigits({1, 1}));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+                            LayoutId::kOverflowError,
+                            "cannot fit count into an index-sized integer"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
+                            LayoutId::kOverflowError,
+                            "repeated string is too long"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithEmptyBytesReturnsEmptyStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, Str::empty());
+  Object count(&scope, runtime.newInt(10));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, ""));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithNegativeReturnsEmptyStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  Object count(&scope, SmallInt::fromWord(-5));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, ""));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithZeroReturnsEmptyStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  Object count(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, ""));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithOneReturnsSamStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  Object count(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foo"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithSmallStrReturnsRepeatedSmallStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  Object count(&scope, SmallInt::fromWord(2));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foofoo"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithSmallStrReturnsRepeatedLargeStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foo"));
+  Object count(&scope, SmallInt::fromWord(3));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foofoofoo"));
+}
+
+TEST(StrBuiltinsTest, DunderMulWithLargeStrReturnsRepeatedLargeStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newStrFromCStr("foobarbaz"));
+  Object count(&scope, SmallInt::fromWord(2));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foobarbazfoobarbaz"));
+}
+
+TEST(StrBuiltinsTest, DunderRmulCallsDunderMul) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = 3 * 'foo'");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foofoofoo"));
+}
+
 TEST(StrBuiltinsTest, IndexWithLargeIntRaisesIndexError) {
   Runtime runtime;
   HandleScope scope;

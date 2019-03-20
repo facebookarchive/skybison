@@ -3097,6 +3097,40 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   return *result;
 }
 
+RawObject Runtime::strRepeat(Thread* thread, const Str& str, word count) {
+  DCHECK(count > 0, "count should be positive");
+  byte buffer[SmallStr::kMaxLength];
+  word length = str.length();
+  DCHECK(length > 0, "length should be positive");
+  DCHECK_BOUND(count, SmallInt::kMaxValue / length);
+  word new_length = length * count;
+  if (new_length <= SmallStr::kMaxLength) {
+    // SmallStr result
+    for (word i = 0; i < new_length; i++) {
+      buffer[i] = str.charAt(i % length);
+    }
+    return SmallStr::fromBytes(View<byte>(buffer, new_length));
+  }
+  // LargeStr result
+  HandleScope scope(thread);
+  LargeStr result(&scope, heap()->createLargeStr(new_length));
+  const byte* src;
+  if (length <= SmallStr::kMaxLength) {
+    // SmallStr original
+    str.copyTo(buffer, length);
+    src = buffer;
+  } else {
+    // LargeStr original
+    LargeStr source(&scope, *str);
+    src = reinterpret_cast<byte*>(source.address());
+  }
+  byte* dst = reinterpret_cast<byte*>(result.address());
+  for (word i = 0; i < count; i++, dst += length) {
+    std::memcpy(dst, src, length);
+  }
+  return *result;
+}
+
 RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
                              word length) {
   DCHECK(start >= 0, "from should be > 0");

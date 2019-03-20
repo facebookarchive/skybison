@@ -863,6 +863,9 @@ class str(bootstrap=True):
     def __mod__(self, other):
         pass
 
+    def __mul__(self, n: int) -> str:
+        pass
+
     def __ne__(self, other):
         pass
 
@@ -874,6 +877,11 @@ class str(bootstrap=True):
 
     def __repr__(self):
         pass
+
+    def __rmul__(self, n: int) -> str:
+        if not isinstance(self, str):
+            raise TypeError("'__rmul__' requires a 'str' instance")
+        return str.__mul__(self, n)
 
     def find(self, sub, start=None, end=None):
         if not isinstance(self, str):

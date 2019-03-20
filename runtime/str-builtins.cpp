@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "int-builtins.h"
 #include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
@@ -148,6 +149,7 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderMod, dunderMod},
+    {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kJoin, join},
@@ -560,6 +562,37 @@ RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
   return runtime->notImplemented();
+}
+
+RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__mul__' requires a 'str' instance");
+  }
+  Object count_obj(&scope, args.get(1));
+  count_obj = intFromIndex(thread, count_obj);
+  if (count_obj.isError()) return *count_obj;
+  Int count_int(&scope, *count_obj);
+  word count = count_int.asWordSaturated();
+  if (!SmallInt::isValid(count)) {
+    return thread->raiseOverflowErrorWithCStr(
+        "cannot fit count into an index-sized integer");
+  }
+  Str self(&scope, *self_obj);
+  word length = self.length();
+  if (count <= 0 || length == 0) {
+    return Str::empty();
+  }
+  word new_length;
+  if (__builtin_mul_overflow(length, count, &new_length) ||
+      !SmallInt::isValid(new_length)) {
+    return thread->raiseOverflowErrorWithCStr("repeated string is too long");
+  }
+  return runtime->strRepeat(thread, self, count);
 }
 
 RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
