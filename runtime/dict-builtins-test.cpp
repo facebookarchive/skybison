@@ -724,4 +724,37 @@ c = C({'hello': 'world'})
   EXPECT_EQ(dict.numItems(), 1);
 }
 
+TEST(DictBuiltinTest, SetDefaultWithNoDefaultSetsToNone) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+d = {}
+d.setdefault("hello")
+result = d["hello"]
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), NoneType::object());
+}
+
+TEST(DictBuiltinTest, SetDefaultWithNotKeyInDictSetsDefault) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+d = {}
+d.setdefault("hello", 4)
+result = d["hello"]
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
+}
+
+TEST(DictBuiltinTest, SetDefaultWithKeyInDictReturnsValue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+d = {"hello": 5}
+d.setdefault("hello", 4)
+result = d["hello"]
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+}
+
 }  // namespace python

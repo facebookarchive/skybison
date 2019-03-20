@@ -1173,6 +1173,15 @@ class dict(bootstrap=True):
             dict.__delitem__(self, key)
         return value
 
+    def setdefault(self, key, default=None):
+        if not isinstance(self, dict):
+            raise TypeError("setdefault expected 'dict' but got {type(self).__name__}")
+        value = dict.get(self, key, _UnboundValue)
+        if value is _UnboundValue:
+            dict.__setitem__(self, key, default)
+            return default
+        return value
+
     def update(self, other):
         pass
 
