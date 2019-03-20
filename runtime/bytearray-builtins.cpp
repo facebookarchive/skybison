@@ -30,6 +30,7 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGetItem, dunderGetItem},
     {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
@@ -208,6 +209,19 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     runtime->byteArrayIadd(thread, self, bytes, bytes.length());
   }
   return NoneType::object();
+}
+
+RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__len__' requires a 'bytearray' instance");
+  }
+  ByteArray self(&scope, *self_obj);
+  return SmallInt::fromWord(self.numItems());
 }
 
 RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,

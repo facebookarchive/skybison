@@ -352,6 +352,35 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
   EXPECT_TRUE(isByteArrayEqualsBytes(self, {1, 2, 6}));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderLenWithNonByteArrayRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.__len__(b'')"),
+                            LayoutId::kTypeError,
+                            "'__len__' requires a 'bytearray' instance"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLenWithEmptyByteArrayReturnsZero) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLen, self));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLenWithNonEmptyByteArrayReturnsPositive) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {1, 2, 3, 4, 5});
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLen, self));
+  EXPECT_TRUE(isIntEqualsWord(*result, 5));
+
+  runtime.byteArrayExtend(thread, self, {6, 7});
+  result = runBuiltin(ByteArrayBuiltins::dunderLen, self);
+  EXPECT_TRUE(isIntEqualsWord(*result, 7));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.__new__(3)"),

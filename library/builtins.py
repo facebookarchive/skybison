@@ -547,6 +547,9 @@ class bytearray(bootstrap=True):
     ):
         pass
 
+    def __len__(self) -> int:
+        pass
+
     def __new__(
         cls, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
     ):
