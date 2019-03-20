@@ -27,6 +27,11 @@ bool doubleEqualsInt(Thread* thread, double left, const Int& right);
 bool compareDoubleWithInt(Thread* thread, double left, const Int& right,
                           CompareOp op);
 
+// Converts obj into an integer using __index__. Equivalent to `PyNumber_Index`.
+// Returns obj if obj is an instance of Int. Raises a TypeError if a non-Int obj
+// does not have __index__ or if __index__ returns non-int.
+RawObject intFromIndex(Thread* thread, const Object& obj);
+
 class IntBuiltins
     : public Builtins<IntBuiltins, SymbolId::kInt, LayoutId::kInt> {
  public:

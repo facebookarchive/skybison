@@ -5,6 +5,7 @@
 #include "cpython-func.h"
 #include "exception-builtins.h"
 #include "frame.h"
+#include "int-builtins.h"
 #include "list-builtins.h"
 #include "runtime.h"
 
@@ -54,35 +55,20 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   Object len(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
   if (len.isError()) {
     if (!thread->hasPendingException()) {
-      thread->raiseTypeErrorWithCStr("object has no __len__()");
+      thread->raiseTypeErrorWithCStr("object has no len()");
     }
     return -1;
   }
-
-  OptInt<Py_ssize_t> len_or_error;
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfInt(*len)) {
-    len_or_error = RawInt::cast(*len).asInt<Py_ssize_t>();
-  } else {
-    Object len_index(&scope,
-                     thread->invokeMethod1(len, SymbolId::kDunderIndex));
-    if (len_index.isError()) {
-      if (!thread->hasPendingException()) {
-        thread->raiseTypeErrorWithCStr(
-            "__len__() cannot be interpreted as an integer");
-      }
-      return -1;
-    }
-    if (!runtime->isInstanceOfInt(*len_index)) {
-      thread->raiseTypeErrorWithCStr("__index__() returned non-int");
-      return -1;
-    }
-    len_or_error = RawInt::cast(*len_index).asInt<Py_ssize_t>();
+  len = intFromIndex(thread, len);
+  if (len.isError()) {
+    return -1;
   }
+  Int index(&scope, *len);
+  OptInt<Py_ssize_t> len_or_error = index.asInt<Py_ssize_t>();
   switch (len_or_error.error) {
     case CastError::None:
       if (len_or_error.value < 0) {
-        thread->raiseValueErrorWithCStr("__len__() should be non-negative");
+        thread->raiseValueErrorWithCStr("__len__() should return >= 0");
         return -1;
       }
       return len_or_error.value;
@@ -469,26 +455,9 @@ PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
   }
 
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  ApiHandle* handle = ApiHandle::fromPyObject(item);
-  Object obj(&scope, handle->asObject());
-  if (runtime->isInstanceOfInt(*obj)) {
-    handle->incref();
-    return item;
-  }
-  Object index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
-  if (index.isError()) {
-    if (!thread->hasPendingException()) {
-      thread->raiseTypeErrorWithCStr(
-          "object cannot be interpreted as an integer");
-    }
-    return nullptr;
-  }
-  if (!runtime->isInstanceOfInt(*index)) {
-    thread->raiseTypeErrorWithCStr("__index__() returned non-int");
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *index);
+  Object obj(&scope, ApiHandle::fromPyObject(item)->asObject());
+  Object index(&scope, intFromIndex(thread, obj));
+  return index.isError() ? nullptr : ApiHandle::newReference(thread, *index);
 }
 
 PY_EXPORT PyObject* PyNumber_InPlaceAdd(PyObject* left, PyObject* right) {

@@ -1585,13 +1585,6 @@ TEST_F(AbstractExtensionApiTest, PyObjectCheckBufferWithNonBytesReturnsFalse) {
 }
 
 TEST_F(AbstractExtensionApiTest,
-       PyObjectLengthWithoutDunderLenRaisesTypeError) {
-  PyObjectPtr num(PyLong_FromLong(3));
-  ASSERT_EQ(PyObject_Length(num), -1);
-  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
-}
-
-TEST_F(AbstractExtensionApiTest,
        PyObjectFastCallDictWithPositionalsAndKeywordArgsCalls) {
   PyRun_SimpleString(R"(
 def func(*args, **kwargs):
@@ -1746,6 +1739,13 @@ c = C()
 TEST_F(AbstractExtensionApiTest, PyObjectLengthOnNullRaisesSystemError) {
   EXPECT_EQ(PyObject_Length(nullptr), -1);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthWithoutDunderLenRaisesTypeError) {
+  PyObjectPtr num(PyLong_FromLong(3));
+  ASSERT_EQ(PyObject_Length(num), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonIntLenRaisesTypeError) {

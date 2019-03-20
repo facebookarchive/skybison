@@ -2,6 +2,7 @@
 
 #include "bytearray-builtins.h"
 #include "frame.h"
+#include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
 #include "trampolines-inl.h"
@@ -74,28 +75,18 @@ RawObject bytesFromIterable(Thread* thread, const Object& obj) {
 RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
   DCHECK_BOUND(size, items.length());
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Bytes result(&scope, runtime->newBytes(size, 0));
+  Bytes result(&scope, thread->runtime()->newBytes(size, 0));
 
   for (word idx = 0; idx < size; idx++) {
     Object item(&scope, items.at(idx));
-    if (!runtime->isInstanceOfInt(*item)) {
-      Object index(&scope, thread->invokeMethod1(item, SymbolId::kDunderIndex));
-      if (index.isError()) {
-        if (!thread->hasPendingException()) {
-          return thread->raiseTypeErrorWithCStr(
-              "object cannot be interpreted as an integer");
-        }
-        return *index;
-      }
-      if (!runtime->isInstanceOfInt(*index)) {
-        return thread->raiseTypeErrorWithCStr("__index__() returned non-int");
-      }
-      item = *index;
+    item = intFromIndex(thread, item);
+    if (item.isError()) {
+      return *item;
     }
 
     // item is now an instance of Int
-    OptInt<byte> current_byte = RawInt::cast(*item).asInt<byte>();
+    Int index(&scope, *item);
+    OptInt<byte> current_byte = index.asInt<byte>();
     switch (current_byte.error) {
       case CastError::None:
         result.byteAtPut(idx, current_byte.value);

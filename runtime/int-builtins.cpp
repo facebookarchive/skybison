@@ -1081,4 +1081,24 @@ bool doubleEqualsInt(Thread* thread, double left, const Int& right) {
   return rounding == NoRounding && left == right_double;
 }
 
+RawObject intFromIndex(Thread* thread, const Object& obj) {
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfInt(*obj)) {
+    return *obj;
+  }
+  HandleScope scope(thread);
+  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      return thread->raiseTypeErrorWithCStr(
+          "object cannot be interpreted as an integer");
+    }
+    return *result;
+  }
+  if (!runtime->isInstanceOfInt(*result)) {
+    return thread->raiseTypeErrorWithCStr("__index__ returned non-int");
+  }
+  return *result;
+}
+
 }  // namespace python
