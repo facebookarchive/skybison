@@ -75,6 +75,7 @@ const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderMul, dunderMul},
@@ -257,6 +258,40 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   }
   return thread->raiseTypeErrorWithCStr(
       "tuple indices must be integers or slices");
+}
+
+RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__hash__() must be called with a tuple instance as the first "
+        "argument");
+  }
+  Tuple self(&scope, *self_obj);
+  Object elt(&scope, NoneType::object());
+  Object hash_result_obj(&scope, NoneType::object());
+  uword result = 0x345678UL;
+  uword mult = 1000003UL /* 0xf4243 */;
+  word len = self.length();
+  for (word i = len - 1; i >= 0; i--) {
+    elt = self.at(i);
+    hash_result_obj = thread->invokeMethod1(elt, SymbolId::kDunderHash);
+    if (hash_result_obj.isError()) {
+      return *hash_result_obj;
+    }
+    DCHECK(hash_result_obj.isSmallInt(), "hash result must be smallint");
+    word hash_result = SmallInt::cast(*hash_result_obj).value();
+    result = (result ^ hash_result) * mult;
+    mult += static_cast<word>(82520UL + len + len);
+  }
+  result += 97531UL;
+  if (result == kMaxUword) {
+    return SmallInt::fromWord(-2);
+  }
+  return SmallInt::fromWordTruncated(result);
 }
 
 RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {

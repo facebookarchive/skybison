@@ -794,4 +794,45 @@ TEST(TupleBuiltinsTest, DunderContainsWithNonTupleSelfRaisesTypeError) {
                      LayoutId::kTypeError));
 }
 
+TEST(TupleBuiltinsTest, DunderHashReturnsSmallInt) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = (1, 2, 3).__hash__()");
+  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isSmallInt());
+}
+
+TEST(TupleBuiltinsTest, DunderHashCallsDunderHashOnElements) {
+  Runtime runtime;
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+sideeffect = 0
+class C:
+  def __hash__(self):
+    global sideeffect
+    sideeffect += 1
+    return object.__hash__(self)
+result = (C(), C(), C()).__hash__()
+)")
+                   .isError());
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isSmallInt());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "sideeffect"), 3));
+}
+
+TEST(TupleBuiltinsTest, DunderHashWithEquivalentTuplesReturnsSameHash) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+t1 = (1, 2, 3)
+t2 = (1, 2, 3)
+result1 = t1.__hash__()
+result2 = t2.__hash__()
+)");
+  Thread* thread = Thread::currentThread();
+  ASSERT_FALSE(thread->hasPendingException());
+  HandleScope scope(thread);
+  Object result1(&scope, moduleAt(&runtime, "__main__", "result1"));
+  Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
+  EXPECT_TRUE(result1.isSmallInt());
+  EXPECT_TRUE(result2.isSmallInt());
+  EXPECT_EQ(*result1, *result2);
+}
+
 }  // namespace python

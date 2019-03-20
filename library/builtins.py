@@ -648,6 +648,9 @@ class tuple(bootstrap=True):
     def __getitem__(self, index):
         pass
 
+    def __hash__(self):
+        pass
+
     def __iter__(self):
         pass
 
