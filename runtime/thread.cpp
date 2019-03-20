@@ -608,6 +608,22 @@ void Thread::reprLeave(const Object& obj) {
   }
 }
 
+RawStr Thread::functionName() {
+  HandleScope scope(this);
+  Object function_obj(&scope, currentFrame()->function());
+  if (!function_obj.isFunction()) {
+    return RawStr::cast(runtime()->newStrFromCStr("<non-function>"));
+  }
+  Function func(&scope, *function_obj);
+  Object name(&scope, func.name());
+  if (!name.isStr()) {
+    // TODO(T36619828): strict subclass of str
+    return RawStr::cast(
+        runtime()->newStrFromCStr("<non-string function name>"));
+  }
+  return RawStr::cast(*name);
+}
+
 int Thread::recursionLimit() { return recursion_limit_; }
 
 void Thread::setRecursionLimit(int /* limit */) {

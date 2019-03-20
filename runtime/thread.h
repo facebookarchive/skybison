@@ -95,6 +95,9 @@ class Thread {
 
   Frame* currentFrame() { return currentFrame_; }
 
+  // Returns the name of the currently running function as a string.
+  RawStr functionName();
+
   // The stack pointer is computed by taking the value stack top of the current
   // frame.
   byte* stackPtr();

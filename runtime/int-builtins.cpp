@@ -155,15 +155,12 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
   return SmallInt::fromWord(res);
 }
 
-static RawObject raiseRequiresInt(Thread* thread, Frame* frame) {
+static RawObject raiseRequiresInt(Thread* thread) {
   HandleScope scope(thread);
-  Function function(&scope, frame->function());
-  Object message(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
-  Str function_name(&scope, function.name());
-  unique_c_ptr<char> function_name_cstr(function_name.toCStr());
-  message = runtime->newStrFromFormat("'%s' requires a 'int' object",
-                                      function_name_cstr.get());
+  unique_c_ptr<char> function_name_cstr(thread->functionName().toCStr());
+  Object message(&scope,
+                 thread->runtime()->newStrFromFormat(
+                     "'%s' requires a 'int' object", function_name_cstr.get()));
   return thread->raiseTypeError(*message);
 }
 
@@ -175,7 +172,7 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread, frame);
+    return raiseRequiresInt(thread);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*other_obj)) {
@@ -193,7 +190,7 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread, frame);
+    return raiseRequiresInt(thread);
   }
   Int self(&scope, *self_obj);
   return op(thread, self);
@@ -322,13 +319,13 @@ RawObject IntBuiltins::dunderLe(Thread* t, Frame* frame, word nargs) {
       });
 }
 
-static RawObject toBytesImpl(Thread* thread, Frame* frame,
-                             const Object& self_obj, const Object& length_obj,
+static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
+                             const Object& length_obj,
                              const Object& byteorder_obj, bool is_signed) {
   HandleScope scope;
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread, frame);
+    return raiseRequiresInt(thread);
   }
   Int self(&scope, *self_obj);
 
@@ -389,7 +386,7 @@ RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
   if (!args.get(3).isBool()) {
     return thread->raiseTypeErrorWithCStr("signed must be bool");
   }
-  return toBytesImpl(thread, frame, self, length, byteorder,
+  return toBytesImpl(thread, self, length, byteorder,
                      RawBool::cast(args.get(3)).value());
 }
 

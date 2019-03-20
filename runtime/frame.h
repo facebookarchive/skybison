@@ -390,8 +390,6 @@ inline RawObject Frame::local(word idx) {
   return *(locals() - idx);
 }
 
-inline RawObject Frame::function() { return *(locals() + 1); }
-
 inline void Frame::setLocal(word idx, RawObject object) {
   DCHECK_INDEX(idx, numLocals());
   *(locals() - idx) = object;
