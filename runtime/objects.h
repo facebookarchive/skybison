@@ -914,7 +914,7 @@ class RawType : public RawHeapObject {
     kMethods,
     kNew,
     kRepr,
-    kRichcokMapare,
+    kRichcompare,
     kSetattr,
     kSetattro,
     kStr,

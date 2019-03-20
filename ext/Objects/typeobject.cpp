@@ -185,7 +185,7 @@ static Type::ExtensionSlot slotToTypeSlot(int slot) {
     case Py_tp_repr:
       return Type::ExtensionSlot::kRepr;
     case Py_tp_richcompare:
-      return Type::ExtensionSlot::kRichcokMapare;
+      return Type::ExtensionSlot::kRichcompare;
     case Py_tp_setattr:
       return Type::ExtensionSlot::kSetattr;
     case Py_tp_setattro:
