@@ -376,36 +376,23 @@ PY_EXPORT PyObject* PyNumber_And(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* obj, PyObject* overflow_err) {
-  PyObject* index = PyNumber_Index(obj);
-  if (index == nullptr) return -1;
-
-  // We're done if PyLong_AsSsize_t() returns without error.
-  Py_ssize_t result = PyLong_AsSsize_t(index);
-  PyObject* err;
-  if (result != -1 || (err = PyErr_Occurred()) == nullptr) {
-    Py_DECREF(index);
-    return result;
+  Thread* thread = Thread::currentThread();
+  if (obj == nullptr) {
+    nullError(thread);
+    return -1;
   }
-
-  // We propagate the error as long as it is not an OverflowError.
-  if (!PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
-    Py_DECREF(index);
-    return result;
+  HandleScope scope(thread);
+  Object index(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  index = intFromIndex(thread, index);
+  if (index.isError()) return -1;
+  Int number(&scope, *index);
+  if (overflow_err == nullptr || number.numDigits() == 1) {
+    // Overflows should be clipped, or value is already in range.
+    return Py_ssize_t{number.asWordSaturated()};
   }
-
-  PyErr_Clear();
-  if (overflow_err == nullptr) {
-    // If no error-handling is desired, then silently fit into a word.
-    DCHECK(PyLong_Check(index), "PyNumber_Index returned non-integer");
-    result =
-        _PyLong_Sign(index) < 0 ? Py_ssize_t{kMinWord} : Py_ssize_t{kMaxWord};
-  } else {
-    // Otherwise replace the error with caller's error object.
-    PyErr_Format(overflow_err, "cannot fit index into an index-sized integer");
-  }
-
-  Py_DECREF(index);
-  return result;
+  // Value overflows, raise an exception.
+  PyErr_Format(overflow_err, "cannot fit index into an index-sized integer");
+  return -1;
 }
 
 PY_EXPORT int PyNumber_Check(PyObject* obj) {
