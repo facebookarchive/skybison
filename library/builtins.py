@@ -745,6 +745,11 @@ class tuple_iterator(bootstrap=True):
         pass
 
 
+@_patch
+def _list_sort(list):
+    pass
+
+
 class list(bootstrap=True):
     def __new__(cls, iterable=()):
         pass
@@ -810,6 +815,28 @@ class list(bootstrap=True):
             list.__setitem__(self, right, tmp)
             left += 1
             right -= 1
+
+    def sort(self, key=None, reverse=False):
+        if not isinstance(self, list):
+            raise TypeError(f"sort expected 'list' but got {type(self).__name__}")
+        if reverse:
+            list.reverse(self)
+        if key:
+            i = 0
+            length = len(self)
+            while i < length:
+                item = list.__getitem__(self, i)
+                list.__setitem__(self, i, (key(item), item))
+                i += 1
+        _list_sort(self)
+        if key:
+            i = 0
+            while i < length:
+                item = list.__getitem__(self, i)
+                list.__setitem__(self, i, item[1])
+                i += 1
+        if reverse:
+            list.reverse(self)
 
 
 class list_iterator(bootstrap=True):

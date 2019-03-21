@@ -54,6 +54,7 @@ class ListBuiltins
   static RawObject insert(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
   static RawObject remove(Thread* thread, Frame* frame, word nargs);
+  static RawObject sort(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];

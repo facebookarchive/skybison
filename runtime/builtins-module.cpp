@@ -14,6 +14,7 @@
 #include "handles.h"
 #include "int-builtins.h"
 #include "interpreter.h"
+#include "list-builtins.h"
 #include "marshal.h"
 #include "objects.h"
 #include "runtime.h"
@@ -88,6 +89,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesJoin, BytesBuiltins::join},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
+    {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderPrintStr, underPrintStr},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
@@ -683,6 +685,15 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
   return thread->invokeFunction5(SymbolId::kUnderFrozenImportlib,
                                  SymbolId::kDunderImport, name, globals, locals,
                                  fromlist, level);
+}
+RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,
+                                        word nargs) {
+  Arguments args(frame_frame, nargs);
+  HandleScope scope(thread);
+  CHECK(thread->runtime()->isInstanceOfList(args.get(0)),
+        "Unsupported argument type for 'ls'");
+  List list(&scope, args.get(0));
+  return listSort(thread, list);
 }
 
 RawObject BuiltinsModule::underPrintStr(Thread* thread, Frame* frame_frame,

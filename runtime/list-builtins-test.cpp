@@ -1421,6 +1421,22 @@ TEST(ListBuiltinsTest, SortMultiElementListSucceeds) {
   EXPECT_PYLIST_EQ(list, {1, 2, 3});
 }
 
+TEST(ListBuiltinsTest, SortMultiElementListSucceeds2) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  List list(&scope, runtime.newList());
+  Object elt3(&scope, SmallInt::fromWord(1));
+  runtime.listAdd(list, elt3);
+  Object elt2(&scope, SmallInt::fromWord(3));
+  runtime.listAdd(list, elt2);
+  Object elt1(&scope, SmallInt::fromWord(2));
+  runtime.listAdd(list, elt1);
+  ASSERT_EQ(listSort(thread, list), NoneType::object());
+  EXPECT_EQ(list.numItems(), 3);
+  EXPECT_PYLIST_EQ(list, {1, 2, 3});
+}
+
 TEST(ListBuiltinsTest, SortIsStable) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
@@ -1539,6 +1555,59 @@ result = C([1, 2, 3, 4])
 result.reverse()
 )");
   EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+}
+
+TEST(ListBuiltinsTest, SortWithNonListRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+list.sort(None)
+)"),
+                            LayoutId::kTypeError,
+                            "sort expected 'list' but got NoneType"));
+  ;
+}
+
+TEST(ListBuiltinsTest, SortWithMultiElementListSortsElements) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+ls = [3, 2, 1]
+ls.sort()
+)");
+  HandleScope scope;
+  Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
+  EXPECT_PYLIST_EQ(ls, {1, 2, 3});
+}
+
+TEST(ListBuiltinsTest, SortWithNonCallableKeyRaisesException) {
+  Runtime runtime;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+ls = [3, 2, 1]
+ls.sort(key=5)
+)"),
+                     LayoutId::kTypeError));
+  ;
+}
+
+TEST(ListBuiltinsTest, SortWithKeySortsAccordingToKey) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+ls = [2, 3, 1]
+ls.sort(key=lambda x: -x)
+)");
+  HandleScope scope;
+  Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
+  EXPECT_PYLIST_EQ(ls, {3, 2, 1});
+}
+
+TEST(ListBuiltinsTest, SortReverseReversesSortedList) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+ls = [2, 3, 1]
+ls.sort(reverse=True)
+)");
+  HandleScope scope;
+  Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
+  EXPECT_PYLIST_EQ(ls, {3, 2, 1});
 }
 
 }  // namespace python

@@ -264,6 +264,7 @@ class Runtime;
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
   V(Lshift, "lshift")                                                          \
+  V(Lt, "lt")                                                                  \
   V(Marshal, "marshal")                                                        \
   V(Matmul, "matmul")                                                          \
   V(MemoryError, "MemoryError")                                                \
@@ -377,6 +378,7 @@ class Runtime;
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
   V(UnderIo, "_io")                                                            \
+  V(UnderListSort, "_list_sort")                                               \
   V(UnderLongOfObj, "_long_of_obj")                                            \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderPatch, "_patch")                                                      \

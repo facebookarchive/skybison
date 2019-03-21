@@ -135,29 +135,31 @@ void listReverse(Thread* thread, const List& list) {
 // sort. Re-write as Timsort.
 RawObject listSort(Thread* thread, const List& list) {
   word length = list.numItems();
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Object cur(&scope, NoneType::object());
-  Object tmp(&scope, NoneType::object());
+  Object list_j(&scope, NoneType::object());
+  Object list_i(&scope, NoneType::object());
   Object compare_result(&scope, NoneType::object());
+  Frame* frame = thread->currentFrame();
   for (word i = 1; i < length; i++) {
-    tmp = list.at(i);
+    list_i = list.at(i);
     word j = i - 1;
-    cur = list.at(j);
     for (; j >= 0; j--) {
-      compare_result =
-          Interpreter::compareOperation(thread, frame, GT, cur, tmp);
+      list_j = list.at(j);
+      compare_result = thread->invokeFunction2(SymbolId::kOperator,
+                                               SymbolId::kLt, list_i, list_j);
       if (compare_result.isError()) {
         return *compare_result;
       }
-      DCHECK(compare_result.isBool(), "comparison should be boolean");
+      compare_result = Interpreter::isTrue(thread, frame, compare_result);
+      if (compare_result.isError()) {
+        return *compare_result;
+      }
       if (!RawBool::cast(*compare_result).value()) {
         break;
       }
-      cur = list.at(j);
-      list.atPut(j + 1, *cur);
+      list.atPut(j + 1, *list_j);
     }
-    list.atPut(j + 1, *tmp);
+    list.atPut(j + 1, *list_i);
   }
   return NoneType::object();
 }
