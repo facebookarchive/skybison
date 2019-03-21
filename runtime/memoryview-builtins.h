@@ -10,6 +10,7 @@ class MemoryViewBuiltins
                       LayoutId::kMemoryView> {
  public:
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
 

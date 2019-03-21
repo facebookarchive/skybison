@@ -262,4 +262,71 @@ TEST(MemoryViewBuiltins, GetItemWithOverflowingIndexRaisesIndexError) {
       raisedWithStr(*result, LayoutId::kIndexError, "index out of bounds"));
 }
 
+TEST(MemoryViewBuiltinsTest, DunderNewWithBytesReturnsMemoryView) {
+  Runtime runtime;
+  HandleScope scope;
+  Bytes bytes(&scope, runtime.newBytesWithAll({0xa9}));
+  Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
+  Object result_obj(&scope,
+                    runBuiltin(MemoryViewBuiltins::dunderNew, type, bytes));
+  ASSERT_TRUE(result_obj.isMemoryView());
+  MemoryView view(&scope, *result_obj);
+  EXPECT_EQ(view.buffer(), bytes);
+  EXPECT_TRUE(isStrEqualsCStr(view.format(), "B"));
+  EXPECT_TRUE(view.readOnly());
+}
+
+TEST(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
+  ByteArray bytearray(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, bytearray, {0xce});
+  Object result_obj(&scope,
+                    runBuiltin(MemoryViewBuiltins::dunderNew, type, bytearray));
+  ASSERT_TRUE(result_obj.isMemoryView());
+  MemoryView view(&scope, *result_obj);
+  EXPECT_EQ(view.buffer(), bytearray.bytes());
+  EXPECT_TRUE(isStrEqualsCStr(view.format(), "B"));
+  EXPECT_FALSE(view.readOnly());
+}
+
+TEST(MemoryViewBuiltinsTest, DunderNewWithMemoryViewReturnsMemoryView) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
+  MemoryView view(&scope,
+                  newMemoryView({0x96, 0xfc}, "H", ReadOnly::ReadWrite));
+  Object result_obj(&scope,
+                    runBuiltin(MemoryViewBuiltins::dunderNew, type, view));
+  ASSERT_TRUE(result_obj.isMemoryView());
+  MemoryView result(&scope, *result_obj);
+  EXPECT_NE(result, view);
+  EXPECT_EQ(view.buffer(), result.buffer());
+  EXPECT_TRUE(RawStr::cast(view.format()).equals(result.format()));
+  EXPECT_EQ(view.readOnly(), result.readOnly());
+}
+
+TEST(MemoryViewBuiltinsTest, DunderNewWithUnsupportedObjectRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(MemoryViewBuiltins::dunderNew, type, none));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
+                            "memoryview: a bytes-like object is required"));
+}
+
+TEST(MemoryViewBuiltinsTest, DunderNewWithInvalidTypeRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object not_a_type(&scope, NoneType::object());
+  Bytes bytes(&scope, runtime.newBytesWithAll({}));
+  Object result(&scope,
+                runBuiltin(MemoryViewBuiltins::dunderNew, not_a_type, bytes));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
+                            "memoryview.__new__(X): X is not 'memoryview'"));
+}
+
 }  // namespace python

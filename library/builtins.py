@@ -199,6 +199,9 @@ class memoryview(bootstrap=True):
     def __getitem__(self, index):
         pass
 
+    def __new__(cls, object):
+        pass
+
 
 class property(bootstrap=True):
     def __new__(cls, fget=None, fset=None, fdel=None, doc=None):

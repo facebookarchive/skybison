@@ -6,6 +6,7 @@ namespace python {
 
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -145,6 +146,40 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     byte_index = length - byte_index;
   }
   return unpackObject(thread, bytes, format_c, byte_index);
+}
+
+RawObject MemoryViewBuiltins::dunderNew(Thread* thread, Frame* frame,
+                                        word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  if (args.get(0) != runtime->typeAt(LayoutId::kMemoryView)) {
+    return thread->raiseTypeErrorWithCStr(
+        "memoryview.__new__(X): X is not 'memoryview'");
+  }
+
+  Object object(&scope, args.get(1));
+  if (runtime->isInstanceOfBytes(*object)) {
+    Bytes bytes(&scope, *object);
+    return runtime->newMemoryView(thread, bytes, ReadOnly::ReadOnly);
+  }
+  if (runtime->isInstanceOfByteArray(*object)) {
+    ByteArray bytearray(&scope, *object);
+    Bytes bytes(&scope, bytearray.bytes());
+    return runtime->newMemoryView(thread, bytes, ReadOnly::ReadWrite);
+  }
+  if (object.isMemoryView()) {
+    MemoryView view(&scope, *object);
+    Bytes bytes(&scope, view.buffer());
+    MemoryView result(
+        &scope, runtime->newMemoryView(thread, bytes,
+                                       view.readOnly() ? ReadOnly::ReadOnly
+                                                       : ReadOnly::ReadWrite));
+    result.setFormat(view.format());
+    return *result;
+  }
+  return thread->raiseTypeErrorWithCStr(
+      "memoryview: a bytes-like object is required");
 }
 
 }  // namespace python
