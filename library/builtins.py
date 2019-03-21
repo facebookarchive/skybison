@@ -63,7 +63,6 @@ class type(bootstrap=True):
         pass
 
     def __repr__(self):
-        # TODO(T32810595): Handle modules, qualname
         return f"<class '{self.__name__}'>"
 
 

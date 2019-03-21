@@ -275,7 +275,6 @@ RawObject BuiltinsModule::buildClass(Thread* thread, Frame* frame, word nargs) {
   // state on the stack in between the the incoming arguments from the builtin
   // caller and the on-stack state for the class body function call.
   Dict dict(&scope, runtime->newDict());
-  // TODO(T39559070): Add __qualname__ to the type dict
   thread->runClassFunction(body, dict);
 
   Type type(&scope, runtime->typeAt(LayoutId::kType));
@@ -380,7 +379,6 @@ RawObject BuiltinsModule::buildClassKw(Thread* thread, Frame* frame,
   Dict type_dict(&scope, runtime->newDict());
   Function body(&scope, args.get(0));
   Str name(&scope, args.get(1));
-  // TODO(T39559070): Add the __qualname__ to the type dict
   if (*bootstrap == Bool::falseObj()) {
     // An ordinary class initialization creates a new class dictionary.
     thread->runClassFunction(body, type_dict);
