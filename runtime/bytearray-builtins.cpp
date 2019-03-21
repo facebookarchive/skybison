@@ -1,6 +1,7 @@
 #include "bytearray-builtins.h"
 
 #include "bytes-builtins.h"
+#include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
 
@@ -29,8 +30,10 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderGetItem, dunderGetItem},
     {SymbolId::kDunderIadd, dunderIadd},
+    {SymbolId::kDunderImul, dunderImul},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
@@ -147,6 +150,45 @@ RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
   return *self;
 }
 
+RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__imul__' requires a 'bytearray' instance");
+  }
+  ByteArray self(&scope, *self_obj);
+  Object count_obj(&scope, args.get(1));
+  count_obj = intFromIndex(thread, count_obj);
+  if (count_obj.isError()) return *count_obj;
+  Int count_int(&scope, *count_obj);
+  word count = count_int.asWordSaturated();
+  if (!SmallInt::isValid(count)) {
+    return thread->raiseOverflowErrorWithCStr(
+        "cannot fit count into an index-sized integer");
+  }
+  word length = self.numItems();
+  if (count <= 0 || length == 0) {
+    self.downsize(0);
+    return *self;
+  }
+  if (count == 1) {
+    return *self;
+  }
+  word new_length;
+  if (__builtin_mul_overflow(length, count, &new_length) ||
+      !SmallInt::isValid(new_length)) {
+    return thread->raiseMemoryError();
+  }
+  Bytes source(&scope, self.bytes());
+  self.setBytes(runtime->bytesRepeat(thread, source, length, count));
+  self.setNumItems(self.capacity());
+  return *self;
+}
+
 RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
                                         word nargs) {
   Runtime* runtime = thread->runtime();
@@ -222,6 +264,42 @@ RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
   }
   ByteArray self(&scope, *self_obj);
   return SmallInt::fromWord(self.numItems());
+}
+
+RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__mul__' requires a 'bytearray' instance");
+  }
+  ByteArray self(&scope, *self_obj);
+  Object count_obj(&scope, args.get(1));
+  count_obj = intFromIndex(thread, count_obj);
+  if (count_obj.isError()) return *count_obj;
+  Int count_int(&scope, *count_obj);
+  word count = count_int.asWordSaturated();
+  if (!SmallInt::isValid(count)) {
+    return thread->raiseOverflowErrorWithCStr(
+        "cannot fit count into an index-sized integer");
+  }
+  word length = self.numItems();
+  if (count <= 0 || length == 0) {
+    return runtime->newByteArray();
+  }
+  word new_length;
+  if (__builtin_mul_overflow(length, count, &new_length) ||
+      !SmallInt::isValid(new_length)) {
+    return thread->raiseMemoryError();
+  }
+  Bytes source(&scope, self.bytes());
+  ByteArray result(&scope, runtime->newByteArray());
+  result.setBytes(runtime->bytesRepeat(thread, source, length, count));
+  result.setNumItems(result.capacity());
+  return *result;
 }
 
 RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,

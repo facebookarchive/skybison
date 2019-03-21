@@ -216,6 +216,151 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
   EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderImulWithNonByteArrayRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, SmallInt::fromWord(0));
+  Object count(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+      LayoutId::kTypeError, "'__imul__' requires a 'bytearray' instance"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object count(&scope, runtime.newList());
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+      LayoutId::kTypeError, "object cannot be interpreted as an integer"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithDunderIndexReturnsRepeatedBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  byteArrayAdd(thread, &runtime, self, 'a');
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return 2
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithBadDunderIndexRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return "foo"
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+                    LayoutId::kTypeError, "__index__ returned non-int"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulPropagatesDunderIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    raise ArithmeticError("called __index__")
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+                    LayoutId::kArithmeticError, "called __index__"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Object count(&scope, runtime.newIntWithDigits({1, 1}));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+                    LayoutId::kOverflowError,
+                    "cannot fit count into an index-sized integer"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithOverflowRaisesMemoryError) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'a', 'b', 'c'});
+  Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
+  EXPECT_TRUE(raised(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+                     LayoutId::kMemoryError));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithEmptyByteArrayReturnsEmptyByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object count(&scope, SmallInt::fromWord(5));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithNegativeReturnsEmptyByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  self.setBytes(runtime.newBytes(4, 'a'));
+  self.setNumItems(4);
+  Object count(&scope, SmallInt::fromWord(-5));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithZeroReturnsEmptyByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  self.setBytes(runtime.newBytes(4, 'a'));
+  self.setNumItems(4);
+  Object count(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulWithOneReturnsSameByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  View<byte> bytes{'a', 'b'};
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object count(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderImulReturnsRepeatedByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'a', 'b'});
+  Object count(&scope, SmallInt::fromWord(3));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "ababab"));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderInitNoArgsClearsArray) {
   Runtime runtime;
   Thread* thread = Thread::currentThread();
@@ -381,6 +526,151 @@ TEST(ByteArrayBuiltinsTest, DunderLenWithNonEmptyByteArrayReturnsPositive) {
   EXPECT_TRUE(isIntEqualsWord(*result, 7));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderMulWithNonByteArrayRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newBytes(0, 0));
+  Object count(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+      LayoutId::kTypeError, "'__mul__' requires a 'bytearray' instance"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object count(&scope, runtime.newList());
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+      LayoutId::kTypeError, "object cannot be interpreted as an integer"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  byteArrayAdd(thread, &runtime, self, 'a');
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return 2
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    return "foo"
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+                    LayoutId::kTypeError, "__index__ returned non-int"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulPropagatesDunderIndexError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  runFromCStr(&runtime, R"(
+class C:
+  def __index__(self):
+    raise ArithmeticError("called __index__")
+count = C()
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+                    LayoutId::kArithmeticError, "called __index__"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Object count(&scope, runtime.newIntWithDigits({1, 1}));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+                    LayoutId::kOverflowError,
+                    "cannot fit count into an index-sized integer"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithOverflowRaisesMemoryError) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'a', 'b', 'c'});
+  Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
+  EXPECT_TRUE(raised(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+                     LayoutId::kMemoryError));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithEmptyByteArrayReturnsEmptyByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object count(&scope, SmallInt::fromWord(5));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithNegativeReturnsEmptyByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  self.setBytes(runtime.newBytes(4, 'a'));
+  self.setNumItems(4);
+  Object count(&scope, SmallInt::fromWord(-5));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithZeroReturnsEmptyByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  self.setBytes(runtime.newBytes(4, 'a'));
+  self.setNumItems(4);
+  Object count(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulWithOneReturnsSameByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  View<byte> bytes{'a', 'b'};
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object count(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderMulReturnsRepeatedByteArray) {
+  Runtime runtime;
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {'a', 'b'});
+  Object count(&scope, SmallInt::fromWord(3));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "ababab"));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.__new__(3)"),
@@ -498,6 +788,14 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   runtime.byteArrayExtend(thread, self, {0, 0x1f, 0x80, 0xff});
   Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(bytearray(b'\x00\x1f\x80\xff'))"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderRmulCallsDunderMul) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = 3 * bytearray(b'123')");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "123123123"));
 }
 
 TEST(ByteArrayBuiltinsTest, HexWithNonByteArrayRaisesTypeError) {

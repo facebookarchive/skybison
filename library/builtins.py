@@ -555,12 +555,18 @@ class bytearray(bootstrap=True):
     def __iadd__(self, other) -> bytearray:
         pass
 
+    def __imul__(self, n: int) -> bytearray:
+        pass
+
     def __init__(
         self, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
     ):
         pass
 
     def __len__(self) -> int:
+        pass
+
+    def __mul__(self, n: int) -> bytearray:
         pass
 
     def __new__(
@@ -570,6 +576,11 @@ class bytearray(bootstrap=True):
 
     def __repr__(self):
         pass
+
+    def __rmul__(self, n: int) -> bytearray:
+        if not isinstance(self, bytearray):
+            raise TypeError("'__rmul__' requires a 'bytearray' instance")
+        return bytearray.__mul__(self, n)
 
     def hex(self) -> str:
         pass
