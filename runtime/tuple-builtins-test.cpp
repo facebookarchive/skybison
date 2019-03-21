@@ -835,4 +835,73 @@ result2 = t2.__hash__()
   EXPECT_EQ(*result1, *result2);
 }
 
+TEST(TupleBuiltinsTest, DunderLtWithNonTupleSelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "tuple.__lt__(None, tuple())"),
+      LayoutId::kTypeError, "__lt__ expected 'tuple' but got NoneType"));
+}
+
+TEST(TupleBuiltinsTest, DunderLtWithNonTupleOtherRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "tuple.__lt__(tuple(), None)"),
+      LayoutId::kTypeError, "__lt__ expected 'tuple' but got NoneType"));
+}
+
+TEST(TupleBuiltinsTest, DunderLtComparesFirstNonEqualElement) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+t1 = (1, 2, 3)
+t2 = (1, 2, 4)
+result = tuple.__lt__(t1, t2)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST(TupleBuiltinsTest, DunderLtWithTwoEqualTuplesReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+t1 = (1, 2, 3)
+t2 = (1, 2, 3)
+result = tuple.__lt__(t1, t2)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST(TupleBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+t1 = (1, 2, 3)
+t2 = (1, 2, 3, 4, 5, 6)
+result = tuple.__lt__(t1, t2)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST(TupleBuiltinsTest,
+     DunderLtWithIdenticalElementsDoesNotCallCompareMethods) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  def __eq__(self, other):
+    raise Exception("__eq__")
+  def __ne__(self, other):
+    raise Exception("__ne__")
+  def __lt__(self, other):
+    return True
+c = C()
+t1 = (c, 1)
+t2 = (c, 2)
+tuple.__lt__(t1, t2)
+)");
+  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+}
+
 }  // namespace python

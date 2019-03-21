@@ -692,6 +692,28 @@ class tuple(bootstrap=True):
     def __len__(self):
         pass
 
+    def __lt__(self, other):
+        if not isinstance(self, tuple):
+            raise TypeError(f"__lt__ expected 'tuple' but got {type(self).__name__}")
+        if not isinstance(other, tuple):
+            raise TypeError(f"__lt__ expected 'tuple' but got {type(other).__name__}")
+        len_self = tuple.__len__(self)
+        len_other = tuple.__len__(other)
+        # TODO(T42050051): Use builtin.min when it's developed
+        min_len = len_self if len_self < len_other else len_other
+        # Find the first non-equal item in the tuples
+        i = 0
+        while i < min_len:
+            self_i = tuple.__getitem__(self, i)
+            other_i = tuple.__getitem__(other, i)
+            if self_i is not other_i and self_i != other_i:
+                break
+            i += 1
+        if i >= min_len:
+            # If the items are all up equal up to min_len, compare lengths
+            return len_self < len_other
+        return self_i < other_i
+
     def __mul__(self, other):
         pass
 
