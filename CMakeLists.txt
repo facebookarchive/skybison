@@ -390,6 +390,7 @@ add_library(
   runtime/marshal-test.cpp
   runtime/memoryview-builtins-test.cpp
   runtime/module-builtins-test.cpp
+  runtime/mro-test.cpp
   runtime/object-builtins-test.cpp
   runtime/objects-test.cpp
   runtime/os-test.cpp

@@ -109,8 +109,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
     for (word i = 0; i < merge_list_indices.size(); i++) {
       auto& cur_idx = merge_list_indices[i];
       Tuple cur_mro(&scope, merge_lists.at(i));
-      if (cur_idx < cur_mro.length() &&
-          RawType::cast(cur_mro.at(cur_idx)) == *next_head_cls) {
+      if (cur_idx < cur_mro.length() && cur_mro.at(cur_idx) == *next_head_cls) {
         cur_idx++;
       }
     }
