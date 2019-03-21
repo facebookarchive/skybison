@@ -266,6 +266,7 @@ class Runtime;
   V(Marshal, "marshal")                                                        \
   V(Matmul, "matmul")                                                          \
   V(MemoryError, "MemoryError")                                                \
+  V(MemoryView, "memoryview")                                                  \
   V(MetaPath, "meta_path")                                                     \
   V(Metaclass, "metaclass")                                                    \
   V(Method, "method")                                                          \

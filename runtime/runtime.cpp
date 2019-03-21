@@ -37,6 +37,7 @@
 #include "list-builtins.h"
 #include "marshal-module.h"
 #include "marshal.h"
+#include "memoryview-builtins.h"
 #include "module-builtins.h"
 #include "object-builtins.h"
 #include "operator-module.h"
@@ -941,6 +942,16 @@ RawObject Runtime::newModule(const Object& name) {
   return *result;
 }
 
+RawObject Runtime::newMemoryView(Thread* thread, const Object& buffer,
+                                 ReadOnly read_only) {
+  HandleScope scope(thread);
+  MemoryView result(&scope, heap()->create<RawMemoryView>());
+  result.setBuffer(*buffer);
+  result.setFormat(RawSmallStr::fromCodePoint('B'));
+  result.setReadOnly(read_only == ReadOnly::ReadOnly);
+  return *result;
+}
+
 RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
@@ -1291,6 +1302,7 @@ void Runtime::initializeHeapTypes() {
   ListIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kMethod, LayoutId::kBoundMethod,
                       LayoutId::kObject);
+  MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
                       LayoutId::kObject);

@@ -49,6 +49,7 @@ class Handle;
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
+  V(MemoryView)                                                                \
   V(Module)                                                                    \
   V(NotImplemented)                                                            \
   V(Property)                                                                  \
@@ -276,6 +277,7 @@ class RawObject {
   bool isList() const;
   bool isListIterator() const;
   bool isLookupError() const;
+  bool isMemoryView() const;
   bool isModule() const;
   bool isModuleNotFoundError() const;
   bool isNotImplemented() const;
@@ -1000,6 +1002,12 @@ class RawBytes : public RawArray {
   void byteAtPut(word index, byte value) const;
   void copyTo(byte* dst, word length) const;
   word replaceFromWith(word start, RawObject src, word length) const;
+  // Read adjacent bytes as `uint16_t` integer.
+  uint16_t uint16At(word index) const;
+  // Read adjacent bytes as `uint32_t` integer.
+  uint32_t uint32At(word index) const;
+  // Read adjacent bytes as `uint64_t` integer.
+  uint64_t uint64At(word index) const;
 
   // Returns a positive value if 'this' is greater that 'other', a negative
   // value if 'this' is less that 'other', and zero if they are the same.
@@ -1597,6 +1605,30 @@ class RawInstance : public RawHeapObject {
   static word allocationSize(word num_attributes);
 
   RAW_OBJECT_COMMON(Instance);
+};
+
+// Descriptor for a block of memory.
+// Contrary to cpython, this is a reference to a `bytes` object which may be
+// moved around by the garbage collector.
+class RawMemoryView : public RawHeapObject {
+ public:
+  // Setters and getters.
+  RawObject buffer() const;
+  void setBuffer(RawObject buffer) const;
+
+  RawObject format() const;
+  void setFormat(RawObject format) const;
+
+  bool readOnly() const;
+  void setReadOnly(bool read_only) const;
+
+  // Layout.
+  static const int kBufferOffset = RawHeapObject::kSize;
+  static const int kFormatOffset = kBufferOffset + kPointerSize;
+  static const int kReadOnlyOffset = kFormatOffset + kPointerSize;
+  static const int kSize = kReadOnlyOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(MemoryView);
 };
 
 class RawModule : public RawHeapObject {
@@ -2547,6 +2579,10 @@ inline bool RawObject::isSuper() const {
   return isHeapObjectWithLayout(LayoutId::kSuper);
 }
 
+inline bool RawObject::isMemoryView() const {
+  return isHeapObjectWithLayout(LayoutId::kMemoryView);
+}
+
 inline bool RawObject::isModule() const {
   return isHeapObjectWithLayout(LayoutId::kModule);
 }
@@ -3277,6 +3313,30 @@ inline void RawBytes::copyTo(byte* dst, word length) const {
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
+inline uint16_t RawBytes::uint16At(word index) const {
+  uint16_t result;
+  DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
+  std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
+              sizeof(result));
+  return result;
+}
+
+inline uint32_t RawBytes::uint32At(word index) const {
+  uint32_t result;
+  DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
+  std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
+              sizeof(result));
+  return result;
+}
+
+inline uint64_t RawBytes::uint64At(word index) const {
+  uint64_t result;
+  DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
+  std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
+              sizeof(result));
+  return result;
+}
+
 // RawTuple
 
 inline word RawTuple::allocationSize(word length) {
@@ -3995,6 +4055,32 @@ inline void RawList::atPut(word index, RawObject value) const {
 inline RawObject RawList::at(word index) const {
   DCHECK_INDEX(index, numItems());
   return RawTuple::cast(items()).at(index);
+}
+
+// RawMemoryView
+
+inline RawObject RawMemoryView::buffer() const {
+  return RawMemoryView::instanceVariableAt(kBufferOffset);
+}
+
+inline void RawMemoryView::setBuffer(RawObject buffer) const {
+  instanceVariableAtPut(kBufferOffset, buffer);
+}
+
+inline RawObject RawMemoryView::format() const {
+  return RawMemoryView::instanceVariableAt(kFormatOffset);
+}
+
+inline void RawMemoryView::setFormat(RawObject format) const {
+  instanceVariableAtPut(kFormatOffset, format);
+}
+
+inline bool RawMemoryView::readOnly() const {
+  return RawBool::cast(instanceVariableAt(kReadOnlyOffset)).value();
+}
+
+inline void RawMemoryView::setReadOnly(bool read_only) const {
+  instanceVariableAtPut(kReadOnlyOffset, RawBool::fromBool(read_only));
 }
 
 // RawModule

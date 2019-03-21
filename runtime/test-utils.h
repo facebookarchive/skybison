@@ -136,6 +136,11 @@ RawObject newIntWithDigits(Runtime* runtime, View<uword> digits);
 // normalizeLargeInt().
 RawLargeInt newLargeIntWithDigits(View<uword> digits);
 
+// Creates memoryview objects. This is a convenience helper around
+// Runtime::newMemoryView().
+RawObject newMemoryView(View<byte> bytes, const char* format,
+                        ReadOnly read_only = ReadOnly::ReadOnly);
+
 // Helper to create set objects.
 // Equivalent to evaluating "set(range(start, stop))" in Python.
 RawObject setFromRange(word start, word stop);

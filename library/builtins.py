@@ -195,6 +195,11 @@ class generator(bootstrap=True):
         pass
 
 
+class memoryview(bootstrap=True):
+    def __getitem__(self, index):
+        pass
+
+
 class property(bootstrap=True):
     def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
         pass

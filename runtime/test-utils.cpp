@@ -245,6 +245,18 @@ RawLargeInt newLargeIntWithDigits(View<uword> digits) {
   return *result;
 }
 
+RawObject newMemoryView(View<byte> bytes, const char* format,
+                        ReadOnly read_only) {
+  Thread* thread = Thread::currentThread();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Bytes bytes_obj(&scope, runtime->newBytesWithAll(bytes));
+  MemoryView result(&scope,
+                    runtime->newMemoryView(thread, bytes_obj, read_only));
+  result.setFormat(RawStr::cast(runtime->newStrFromCStr(format)));
+  return *result;
+}
+
 RawObject setFromRange(word start, word stop) {
   Thread* thread = Thread::currentThread();
   HandleScope scope(thread);

@@ -250,6 +250,8 @@ add_library(
   runtime/marshal-module.h
   runtime/marshal.cpp
   runtime/marshal.h
+  runtime/memoryview-builtins.cpp
+  runtime/memoryview-builtins.h
   runtime/module-builtins.cpp
   runtime/module-builtins.h
   runtime/mro.cpp
@@ -386,6 +388,7 @@ add_library(
   runtime/list-builtins-test.cpp
   runtime/marshal-module-test.cpp
   runtime/marshal-test.cpp
+  runtime/memoryview-builtins-test.cpp
   runtime/module-builtins-test.cpp
   runtime/object-builtins-test.cpp
   runtime/objects-test.cpp

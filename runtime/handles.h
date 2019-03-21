@@ -155,6 +155,7 @@ class __attribute__((warn_unused)) Handle : public T {
   V(Layout)                                                                    \
   V(ListIterator)                                                              \
   V(LookupError)                                                               \
+  V(MemoryView)                                                                \
   V(Module)                                                                    \
   V(ModuleNotFoundError)                                                       \
   V(NoneType)                                                                  \

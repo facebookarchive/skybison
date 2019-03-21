@@ -44,6 +44,11 @@ struct BuiltinType {
 
 enum class SetLookupType { Lookup, Insertion };
 
+enum class ReadOnly : bool {
+  ReadWrite,
+  ReadOnly,
+};
+
 struct ModuleInitializer {
   SymbolId name;
   void (*create_module)(Thread*);
@@ -138,6 +143,10 @@ class Runtime {
   RawObject newListIterator(const Object& list);
 
   RawObject newSeqIterator(const Object& sequence);
+
+  // Create a new MemoryView object. Initializes the view format to "B".
+  RawObject newMemoryView(Thread* thread, const Object& buffer,
+                          ReadOnly read_only);
 
   RawObject newModule(const Object& name);
 
