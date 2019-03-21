@@ -146,6 +146,7 @@ class Runtime;
   V(Bytes, "bytes")                                                            \
   V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
+  V(Cast, "cast")                                                              \
   V(Cause, "cause")                                                            \
   V(ChildProcessError, "ChildProcessError")                                    \
   V(Chr, "chr")                                                                \

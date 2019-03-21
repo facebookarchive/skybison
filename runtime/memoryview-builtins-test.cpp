@@ -8,6 +8,82 @@ namespace python {
 
 using namespace testing;
 
+TEST(MemoryViewBuiltinsTest, CastReturnsMemoryView) {
+  Runtime runtime;
+  HandleScope scope;
+  MemoryView view(&scope,
+                  newMemoryView({0, 1, 2, 3}, "f", ReadOnly::ReadWrite));
+  Str new_format(&scope, runtime.newStrFromCStr("h"));
+  Object result_obj(&scope,
+                    runBuiltin(MemoryViewBuiltins::cast, view, new_format));
+  ASSERT_TRUE(result_obj.isMemoryView());
+  MemoryView result(&scope, *result_obj);
+  EXPECT_NE(result, view);
+  EXPECT_EQ(result.buffer(), view.buffer());
+  EXPECT_TRUE(isStrEqualsCStr(view.format(), "f"));
+  EXPECT_TRUE(isStrEqualsCStr(result.format(), "h"));
+  EXPECT_EQ(view.readOnly(), result.readOnly());
+}
+
+TEST(MemoryViewBuiltinsTest, CastWithAtFormatReturnsMemoryView) {
+  Runtime runtime;
+  HandleScope scope;
+  MemoryView view(&scope,
+                  newMemoryView({0, 1, 2, 3}, "h", ReadOnly::ReadWrite));
+  Str new_format(&scope, runtime.newStrFromCStr("@H"));
+  Object result_obj(&scope,
+                    runBuiltin(MemoryViewBuiltins::cast, view, new_format));
+  ASSERT_TRUE(result_obj.isMemoryView());
+  MemoryView result(&scope, *result_obj);
+  EXPECT_NE(result, view);
+  EXPECT_EQ(result.buffer(), view.buffer());
+  EXPECT_TRUE(isStrEqualsCStr(view.format(), "h"));
+  EXPECT_TRUE(isStrEqualsCStr(result.format(), "@H"));
+  EXPECT_EQ(view.readOnly(), result.readOnly());
+}
+
+TEST(MemoryViewBuiltinsTest, CastWithBadLengthForFormatRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5}, "B"));
+  Str new_format(&scope, runtime.newStrFromCStr("f"));
+  Object result(&scope, runBuiltin(MemoryViewBuiltins::cast, view, new_format));
+  EXPECT_TRUE(
+      raisedWithStr(*result, LayoutId::kValueError,
+                    "memoryview: length is not a multiple of itemsize"));
+}
+
+TEST(MemoryViewBuiltinsTest, CastWithInvalidFormatRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "B"));
+  Str new_format(&scope, runtime.newStrFromCStr(" "));
+  Object result(&scope, runBuiltin(MemoryViewBuiltins::cast, view, new_format));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
+                            "memoryview: destination must be a native single "
+                            "character format prefixed with an optional '@'"));
+}
+
+TEST(MemoryViewBuiltinsTest, CastWithNonStrFormatRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "B"));
+  Object not_str(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(MemoryViewBuiltins::cast, view, not_str));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
+                            "format argument must be a string"));
+}
+
+TEST(MemoryViewBuiltinsTest, CastWithNonMemoryViewRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object none(&scope, NoneType::object());
+  Str new_format(&scope, runtime.newStrFromCStr("I"));
+  Object result(&scope, runBuiltin(MemoryViewBuiltins::cast, none, new_format));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
+                            "'<anonymous>' requires a 'memoryview' object"));
+}
+
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatbReturnsInt) {
   Runtime runtime;
   HandleScope scope;

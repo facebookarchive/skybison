@@ -205,6 +205,9 @@ class memoryview(bootstrap=True):
     def __new__(cls, object):
         pass
 
+    def cast(self, format: str) -> memoryview:
+        pass
+
 
 class property(bootstrap=True):
     def __new__(cls, fget=None, fset=None, fdel=None, doc=None):

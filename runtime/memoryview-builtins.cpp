@@ -5,6 +5,7 @@
 namespace python {
 
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kCast, cast},
     {SymbolId::kDunderGetItem, dunderGetItem},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderNew, dunderNew},
@@ -110,6 +111,47 @@ static RawObject raiseRequiresMemoryView(Thread* thread) {
                              "'%s' requires a 'memoryview' object",
                              function_name_cstr.get()));
   return thread->raiseTypeError(*message);
+}
+
+static word pow2_remainder(word dividend, word divisor) {
+  DCHECK(divisor > 0 && Utils::isPowerOfTwo(divisor), "must be power of two");
+  word mask = divisor - 1;
+  return dividend & mask;
+}
+
+RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) return raiseRequiresMemoryView(thread);
+  MemoryView self(&scope, *self_obj);
+
+  Runtime* runtime = thread->runtime();
+  Object format_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*format_obj)) {
+    return thread->raiseTypeErrorWithCStr("format argument must be a string");
+  }
+  Str format(&scope, *format_obj);
+  char format_c = formatChar(format);
+  word item_size;
+  if (format_c < 0 || (item_size = itemSize(format_c)) < 0) {
+    return thread->raiseValueErrorWithCStr(
+        "memoryview: destination must be a native single character format "
+        "prefixed with an optional '@'");
+  }
+
+  Bytes buffer(&scope, self.buffer());
+  word length = buffer.length();
+  if (pow2_remainder(length, item_size) != 0) {
+    return thread->raiseValueErrorWithCStr(
+        "memoryview: length is not a multiple of itemsize");
+  }
+  MemoryView result(
+      &scope, runtime->newMemoryView(
+                  thread, buffer,
+                  self.readOnly() ? ReadOnly::ReadOnly : ReadOnly::ReadWrite));
+  result.setFormat(*format);
+  return *result;
 }
 
 RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,

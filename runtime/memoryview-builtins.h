@@ -9,6 +9,7 @@ class MemoryViewBuiltins
     : public Builtins<MemoryViewBuiltins, SymbolId::kMemoryView,
                       LayoutId::kMemoryView> {
  public:
+  static RawObject cast(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
