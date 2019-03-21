@@ -262,6 +262,30 @@ TEST(MemoryViewBuiltins, GetItemWithOverflowingIndexRaisesIndexError) {
       raisedWithStr(*result, LayoutId::kIndexError, "index out of bounds"));
 }
 
+TEST(MemoryViewBuiltinsTest, DunderLenWithMemoryViewFormatBReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  MemoryView view(&scope, newMemoryView({0, 1, 2}, "B"));
+  Object result(&scope, runBuiltin(MemoryViewBuiltins::dunderLen, view));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+}
+
+TEST(MemoryViewBuiltinsTest, DunderLenWithMemoryViewFormatfReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "f"));
+  Object result(&scope, runBuiltin(MemoryViewBuiltins::dunderLen, view));
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+}
+
+TEST(MemoryViewBuiltinsTest, DunderLenWithNonMemoryViewRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object none(&scope, NoneType::object());
+  EXPECT_TRUE(raised(runBuiltin(MemoryViewBuiltins::dunderLen, none),
+                     LayoutId::kTypeError));
+}
+
 TEST(MemoryViewBuiltinsTest, DunderNewWithBytesReturnsMemoryView) {
   Runtime runtime;
   HandleScope scope;

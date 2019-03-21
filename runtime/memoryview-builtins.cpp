@@ -6,6 +6,7 @@ namespace python {
 
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -146,6 +147,25 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     byte_index = length - byte_index;
   }
   return unpackObject(thread, bytes, format_c, byte_index);
+}
+
+RawObject MemoryViewBuiltins::dunderLen(Thread* thread, Frame* frame,
+                                        word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) return raiseRequiresMemoryView(thread);
+  MemoryView self(&scope, *self_obj);
+  // TODO(T38246066) support bytes subclasses
+  Bytes bytes(&scope, self.buffer());
+  word bytes_length = bytes.length();
+  // TODO(T36619828) support str subclasses
+  Str format(&scope, self.format());
+  char format_c = formatChar(format);
+  DCHECK(format_c > 0, "invalid format");
+  word item_size = itemSize(format_c);
+  DCHECK(item_size > 0, "invalid memoryview");
+  return SmallInt::fromWord(bytes_length / item_size);
 }
 
 RawObject MemoryViewBuiltins::dunderNew(Thread* thread, Frame* frame,
