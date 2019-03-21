@@ -2379,4 +2379,141 @@ TEST(StrBuiltinsTest, DunderContainsWithNotPresentSubstrReturnsTrue) {
   EXPECT_EQ(*result, Bool::falseObj());
 }
 
+TEST(StrBuiltinsTest, IsalnumWithNonStrRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.isalnum(None)"),
+                            LayoutId::kTypeError,
+                            "isalnum expected 'str' but got NoneType"));
+}
+
+TEST(StrBuiltinsTest, IsalnumWithEmptyStringReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isalnum('')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithCharacterBelowZeroReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isalnum('/')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithCharacterAboveNineReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isalnum(':')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithNumbersReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = all([str.isalnum(x) for x in '0123456789'])");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithCharacterBelowLowerAReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isalnum('`')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithCharacterAboveLowerZReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isalnum('{')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithLowercaseLettersReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(
+      &runtime,
+      "result = all([str.isalnum(x) for x in 'abcdefghijklmnopqrstuvwxyz'])");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithCharacterBelowUpperAReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isalnum('@')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithCharacterAboveUpperZReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isalnum('[')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsalnumWithUppercaseLettersReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(
+      &runtime,
+      "result = all([str.isalnum(x) for x in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsupperWithNonStrRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.isupper(None)"),
+                            LayoutId::kTypeError,
+                            "isupper expected 'str' but got NoneType"));
+}
+
+TEST(StrBuiltinsTest, IsupperWithEmptyStringReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isupper('')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsupperWithCharacterBelowUpperAReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isupper('@')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsupperWithCharacterAboveUpperZReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.isupper('[')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsupperWithUppercaseLettersReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(
+      &runtime,
+      "result = all([str.isupper(x) for x in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IslowerWithNonStrRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.islower(None)"),
+                            LayoutId::kTypeError,
+                            "islower expected 'str' but got NoneType"));
+}
+
+TEST(StrBuiltinsTest, IslowerWithEmptyStringReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.islower('')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IslowerWithCharacterBelowLowerAReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.islower('`')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IslowerWithCharacterAboveLowerZReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = str.islower('{')");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IslowerWithLowercaseLettersReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(
+      &runtime,
+      "result = all([str.islower(x) for x in 'abcdefghijklmnopqrstuvwxyz'])");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
 }  // namespace python

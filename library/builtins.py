@@ -985,6 +985,53 @@ class str(bootstrap=True):
             raise ValueError(f"substring {sub} not found")
         return res
 
+    def isalnum(self):
+        # TODO(T41626152): Support non-ASCII
+        if not isinstance(self, str):
+            raise TypeError(f"isalnum expected 'str' but got {type(self).__name__}")
+        if self is "":
+            return False
+        num = range(ord("0"), ord("9") + 1)
+        lower = range(ord("a"), ord("z") + 1)
+        upper = range(ord("A"), ord("Z") + 1)
+        for c in str.__iter__(self):
+            i = ord(c)
+            if i > 127:
+                raise NotImplementedError("unicode")
+            if i not in num and i not in lower and i not in upper:
+                return False
+        return True
+
+    def isupper(self):
+        # TODO(T41626183): Support non-ASCII
+        if not isinstance(self, str):
+            raise TypeError(f"isupper expected 'str' but got {type(self).__name__}")
+        if self is "":
+            return False
+        upper = range(ord("A"), ord("Z") + 1)
+        for c in str.__iter__(self):
+            i = ord(c)
+            if i > 127:
+                raise NotImplementedError("unicode")
+            if i not in upper:
+                return False
+        return True
+
+    def islower(self):
+        # TODO(T42050373): Support non-ASCII
+        if not isinstance(self, str):
+            raise TypeError(f"islower expected 'str' but got {type(self).__name__}")
+        if self is "":
+            return False
+        lower = range(ord("a"), ord("z") + 1)
+        for c in str.__iter__(self):
+            i = ord(c)
+            if i > 127:
+                raise NotImplementedError("unicode")
+            if i not in lower:
+                return False
+        return True
+
     def partition(self, sep):
         if not isinstance(self, str):
             raise TypeError(
