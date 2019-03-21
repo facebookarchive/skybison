@@ -73,9 +73,6 @@ class object(bootstrap=True):  # noqa: E999
     def __init__(self, *args, **kwargs):
         pass
 
-    def __str__(self):
-        return self.__repr__()
-
     def __format__(self, format_spec):
         if format_spec != "":
             raise TypeError("format_spec must be empty string")
@@ -86,6 +83,9 @@ class object(bootstrap=True):  # noqa: E999
 
     def __repr__(self):
         pass
+
+    def __str__(self):
+        return type(self).__repr__(self)
 
 
 class bool(bootstrap=True):
@@ -853,7 +853,7 @@ class str(bootstrap=True):
         if encoding != _UnboundValue or errors != _UnboundValue:
             # TODO(T40529650): Add an unimplemented function
             raise NotImplementedError("str encoding not supported yet")
-        result = obj.__str__()
+        result = type(obj).__str__(obj)
         if not isinstance(result, str):
             raise TypeError("__str__ returned non-str instance")
         return result
@@ -1515,12 +1515,12 @@ def _print_str(s, file):
 
 def print(*args, sep=" ", end="\n", file=_stdout, flush=None):
     if args:
-        _print_str(args[0].__str__(), file)
+        _print_str(str(args[0]), file)
         length = len(args)
         i = 1
         while i < length:
             _print_str(sep, file)
-            _print_str(args[i].__str__(), file)
+            _print_str(str(args[i]), file)
             i += 1
     _print_str(end, file)
     if flush:

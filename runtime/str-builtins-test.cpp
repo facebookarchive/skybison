@@ -155,6 +155,14 @@ a = str.__new__(str, "hello")
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
 }
 
+TEST(StrBuiltinsTest, DunderNewWithTypeCallsTypeDunderStr) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, "a = str.__new__(str, int)").isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "<class 'int'>"));
+}
+
 TEST(StrBuiltinsTest, DunderNewWithNoArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
