@@ -13,13 +13,13 @@ PY_EXPORT int PyDict_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyDict_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfDict(
+  return Thread::current()->runtime()->isInstanceOfDict(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
                                         PyObject* value, Py_hash_t hash) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Runtime* runtime = thread->runtime();
@@ -61,7 +61,7 @@ static int setItem(Thread* thread, const Object& dictobj, const Object& key,
 }
 
 PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object keyobj(&scope, ApiHandle::fromPyObject(key)->asObject());
@@ -71,7 +71,7 @@ PY_EXPORT int PyDict_SetItem(PyObject* pydict, PyObject* key, PyObject* value) {
 
 PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
                                    PyObject* value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object keyobj(&scope, thread->runtime()->newStrFromCStr(key));
@@ -80,7 +80,7 @@ PY_EXPORT int PyDict_SetItemString(PyObject* pydict, const char* key,
 }
 
 PY_EXPORT PyObject* PyDict_New() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -122,7 +122,7 @@ static PyObject* getItem(Thread* thread, const Object& dict_obj,
 
 PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
                                               Py_hash_t hash) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dictobj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Runtime* runtime = thread->runtime();
@@ -137,7 +137,7 @@ PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
 }
 
 PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
@@ -145,7 +145,7 @@ PY_EXPORT PyObject* PyDict_GetItem(PyObject* pydict, PyObject* key) {
 }
 
 PY_EXPORT PyObject* PyDict_GetItemString(PyObject* pydict, const char* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object key_obj(&scope, thread->runtime()->newStrFromCStr(key));
@@ -153,7 +153,7 @@ PY_EXPORT PyObject* PyDict_GetItemString(PyObject* pydict, const char* key) {
 }
 
 PY_EXPORT void PyDict_Clear(PyObject* pydict) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
@@ -168,7 +168,7 @@ PY_EXPORT void PyDict_Clear(PyObject* pydict) {
 PY_EXPORT int PyDict_ClearFreeList() { return 0; }
 
 PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
@@ -178,7 +178,7 @@ PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
 }
 
 PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pydict == nullptr) {
     thread->raiseBadInternalCall();
     return nullptr;
@@ -194,7 +194,7 @@ PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {
 }
 
 PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Runtime* runtime = thread->runtime();
@@ -233,7 +233,7 @@ PY_EXPORT int PyDict_DelItemString(PyObject* pydict, const char* key) {
 }
 
 PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Runtime* runtime = thread->runtime();
@@ -265,7 +265,7 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
 }
 
 PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Runtime* runtime = thread->runtime();
@@ -281,7 +281,7 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
 }
 
 PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Runtime* runtime = thread->runtime();
@@ -300,7 +300,7 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
 PY_EXPORT int PyDict_Merge(PyObject* left, PyObject* right,
                            int override_matching) {
   CHECK_BOUND(override_matching, 2);
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (left == nullptr || right == nullptr) {
     thread->raiseBadInternalCall();
     return -1;
@@ -327,7 +327,7 @@ PY_EXPORT int PyDict_MergeFromSeq2(PyObject* /* d */, PyObject* /* 2 */,
 
 PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
                           PyObject** pvalue) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   if (!thread->runtime()->isInstanceOfDict(*dict_obj)) {
@@ -351,7 +351,7 @@ PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
 }
 
 PY_EXPORT Py_ssize_t PyDict_Size(PyObject* p) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -370,7 +370,7 @@ PY_EXPORT int PyDict_Update(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object dict_obj(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Runtime* runtime = thread->runtime();

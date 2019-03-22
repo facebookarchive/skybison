@@ -378,7 +378,7 @@ TEST(MemoryViewBuiltinsTest, DunderNewWithBytesReturnsMemoryView) {
 
 TEST(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
   ByteArray bytearray(&scope, runtime.newByteArray());

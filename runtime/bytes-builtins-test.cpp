@@ -9,7 +9,7 @@ using namespace testing;
 
 TEST(BytesBuiltinsTest, CallDunderBytesCallsDunderBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
@@ -24,7 +24,7 @@ obj = Foo()
 
 TEST(BytesBuiltinsTest, CallDunderBytesWithNonBytesDunderBytesRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
@@ -40,7 +40,7 @@ obj = Foo()
 
 TEST(BytesBuiltinsTest, CallDunderBytesWithDunderBytesErrorRaisesValueError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
@@ -56,7 +56,7 @@ obj = Foo()
 
 TEST(BytesBuiltinsTest, CallDunderBytesWithoutDunderBytesReturnsNone) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo: pass
@@ -69,7 +69,7 @@ obj = Foo()
 
 TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object num(&scope, SmallInt::fromWord('*'));
@@ -82,7 +82,7 @@ TEST(BytesBuiltinsTest, FromIterableWithListReturnsBytes) {
 
 TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(3));
   tuple.atPut(0, SmallInt::fromWord(42));
@@ -94,7 +94,7 @@ TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
 
 TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Range range(&scope, runtime.newRange('a', 'j', 2));
   Object result(&scope, bytesFromIterable(thread, range));
@@ -103,7 +103,7 @@ TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
 
 TEST(BytesBuiltinsTest, FromIterableReturnsBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
@@ -118,7 +118,7 @@ obj = Foo()
 
 TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Int num(&scope, SmallInt::fromWord(0));
   Object result(&scope, bytesFromIterable(thread, num));
@@ -127,7 +127,7 @@ TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaisesTypeError) {
 
 TEST(BytesBuiltinsTest, FromIterableWithStrRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str str(&scope, runtime.newStrFromCStr("hello"));
   Object result(&scope, bytesFromIterable(thread, str));
@@ -136,7 +136,7 @@ TEST(BytesBuiltinsTest, FromIterableWithStrRaisesTypeError) {
 
 TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(3));
   tuple.atPut(0, SmallInt::fromWord(42));
@@ -147,7 +147,7 @@ TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
 
 TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(1));
   tuple.atPut(0, runtime.newFloat(1));
@@ -157,7 +157,7 @@ TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaisesTypeError) {
 
 TEST(BytesBuiltinsTest, FromTupleWithNegativeIntRaisesValueError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(1));
   tuple.atPut(0, SmallInt::fromWord(-1));
@@ -167,7 +167,7 @@ TEST(BytesBuiltinsTest, FromTupleWithNegativeIntRaisesValueError) {
 
 TEST(BytesBuiltinsTest, FromTupleWithNonByteRaisesValueError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple(&scope, runtime.newTuple(1));
   tuple.atPut(0, SmallInt::fromWord(256));
@@ -1178,7 +1178,7 @@ TEST(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
 
 TEST(BytesBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Bytes self(&scope, runtime.newBytes(3, 'a'));
   Object iter(&scope, runtime.newTuple(0));
@@ -1188,7 +1188,7 @@ TEST(BytesBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
 
 TEST(BytesBuiltinsTest, JoinWithEmptySeparatorReturnsBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Bytes self(&scope, runtime.newBytes(0, 0));
   Tuple iter(&scope, runtime.newTuple(3));
@@ -1201,7 +1201,7 @@ TEST(BytesBuiltinsTest, JoinWithEmptySeparatorReturnsBytes) {
 
 TEST(BytesBuiltinsTest, JoinWithNonEmptyListReturnsBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Bytes self(&scope, runtime.newBytes(1, ' '));
   List iter(&scope, runtime.newList());
@@ -1228,7 +1228,7 @@ class Foo:
     return [b'ab', b'c', b'def'].__iter__()
 result = b' '.join(Foo())
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ab c def"));

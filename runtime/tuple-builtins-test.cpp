@@ -144,7 +144,7 @@ b_len_implicit = b.__len__()
 
 // Equivalent to evaluating "tuple(range(start, stop))" in Python
 static RawObject tupleFromRange(word start, word stop) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple result(&scope, thread->runtime()->newTuple(stop - start));
   for (word i = 0, j = start; j < stop; i++, j++) {
@@ -155,7 +155,7 @@ static RawObject tupleFromRange(word start, word stop) {
 
 TEST(TupleBuiltinsTest, SlicePositiveStartIndex) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -171,7 +171,7 @@ TEST(TupleBuiltinsTest, SlicePositiveStartIndex) {
 
 TEST(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -186,7 +186,7 @@ TEST(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
 
 TEST(TupleBuiltinsTest, SlicePositiveStopIndex) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -201,7 +201,7 @@ TEST(TupleBuiltinsTest, SlicePositiveStopIndex) {
 
 TEST(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -217,7 +217,7 @@ TEST(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
 
 TEST(TupleBuiltinsTest, SlicePositiveStep) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -233,7 +233,7 @@ TEST(TupleBuiltinsTest, SlicePositiveStep) {
 
 TEST(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -249,7 +249,7 @@ TEST(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
 
 TEST(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -262,7 +262,7 @@ TEST(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
 
 TEST(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -277,7 +277,7 @@ TEST(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
 
 TEST(TupleBuiltinsTest, SliceStepOutOfBounds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -291,7 +291,7 @@ TEST(TupleBuiltinsTest, SliceStepOutOfBounds) {
 
 TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
@@ -435,7 +435,7 @@ TEST(TupleBuiltinsTest, DunderAddWithNonTupleLeftHandSideReturnsError) {
   Int zero(&scope, runtime.newInt(0));
   Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, empty_tuple, zero));
   ASSERT_TRUE(error.isError());
-  EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
+  EXPECT_EQ(Thread::current()->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
 
@@ -446,7 +446,7 @@ TEST(TupleBuiltinsTest, DunderAddWithNonTupleRightHandSideReturnsError) {
   Int zero(&scope, runtime.newInt(0));
   Object error(&scope, runBuiltin(TupleBuiltins::dunderAdd, zero, empty_tuple));
   ASSERT_TRUE(error.isError());
-  EXPECT_EQ(Thread::currentThread()->pendingExceptionType(),
+  EXPECT_EQ(Thread::current()->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
 
@@ -565,7 +565,7 @@ TEST(TupleBuiltinsTest, DunderEqWithNonTupleFirstArgRaisesTypeError) {
   Object right(&scope, runtime.newTuple(0));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   ASSERT_TRUE(a.isError());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   EXPECT_EQ(thread->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 }
@@ -797,7 +797,7 @@ TEST(TupleBuiltinsTest, DunderContainsWithNonTupleSelfRaisesTypeError) {
 TEST(TupleBuiltinsTest, DunderHashReturnsSmallInt) {
   Runtime runtime;
   runFromCStr(&runtime, "result = (1, 2, 3).__hash__()");
-  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+  EXPECT_FALSE(Thread::current()->hasPendingException());
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isSmallInt());
 }
 
@@ -825,7 +825,7 @@ t2 = (1, 2, 3)
 result1 = t1.__hash__()
 result2 = t2.__hash__()
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ASSERT_FALSE(thread->hasPendingException());
   HandleScope scope(thread);
   Object result1(&scope, moduleAt(&runtime, "__main__", "result1"));
@@ -901,7 +901,7 @@ t1 = (c, 1)
 t2 = (c, 2)
 tuple.__lt__(t1, t2)
 )");
-  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+  EXPECT_FALSE(Thread::current()->hasPendingException());
 }
 
 }  // namespace python

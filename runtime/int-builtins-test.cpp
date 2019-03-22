@@ -1313,7 +1313,7 @@ TEST(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {
   Str str(&scope, runtime.newStrFromCStr("python"));
   Object str_res(&scope, runBuiltin(IntBuiltins::dunderInt, str));
   EXPECT_TRUE(str_res.isError());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   EXPECT_EQ(thread->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
 
@@ -1518,7 +1518,7 @@ TEST(IntBuiltinsTest, CompareLargeIntLt) {
 TEST(IntBuiltinsTest, StringToIntDPos) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   Object str_d0(&scope, runtime.newStrFromCStr("0"));
   SmallInt int_d0(&scope, IntBuiltins::intFromString(thread, *str_d0, 10));
@@ -1537,7 +1537,7 @@ TEST(IntBuiltinsTest, StringToIntDPos) {
 TEST(IntBuiltinsTest, StringToIntDNeg) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   Object str1(&scope, Str::empty());
   Object res1(&scope, IntBuiltins::intFromString(thread, *str1, 10));
@@ -2524,7 +2524,7 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderRaisesTypeError) {
 
 TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "int.from_bytes(bytes=b'')"), LayoutId::kTypeError,
@@ -3224,7 +3224,7 @@ TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
 
 TEST(IntBuiltinsTest, ToBytesWithSignedTrueRaisesOverflowError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   // Now check that signed=True with the same inputs triggers an error.
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(

@@ -10,7 +10,7 @@ class Handle;
 
 class __attribute__((warn_unused)) HandleScope {
  public:
-  explicit HandleScope() : HandleScope(Thread::currentThread()) {}
+  explicit HandleScope() : HandleScope(Thread::current()) {}
 
   explicit HandleScope(Thread* thread) : list_(nullptr), thread_(thread) {
     handles()->push(this);

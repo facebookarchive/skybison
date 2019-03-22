@@ -132,8 +132,7 @@ spec = DummyModuleSpec("errno")
 TEST(ImportBuiltins, ExecBuiltinWithSingleSlotExecutesCorrectly) {
   using slot_func = int (*)(Module*);
   slot_func mod_exec = [](Module* module) {
-    module->setName(
-        Thread::currentThread()->runtime()->newStrFromCStr("testing"));
+    module->setName(Thread::current()->runtime()->newStrFromCStr("testing"));
     return 0;
   };
 

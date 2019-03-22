@@ -119,7 +119,7 @@ TEST(HandlesTest, VisitTwoHandles) {
 
 TEST(HandlesTest, VisitObjectInNestedScope) {
   Runtime runtime;
-  Handles* handles = Thread::currentThread()->handles();
+  Handles* handles = Thread::current()->handles();
 
   RawObject object{0xFEEDFACEL};
   {
@@ -163,7 +163,7 @@ TEST(HandlesTest, VisitObjectInNestedScope) {
 
 TEST(HandlesTest, NestedScopes) {
   Runtime runtime;
-  Handles* handles = Thread::currentThread()->handles();
+  Handles* handles = Thread::current()->handles();
 
   RawObject o1{0xDECAF1L};
   RawObject o2{0xDECAF2L};
@@ -251,7 +251,7 @@ class HandleBenchmark : public benchmark::Fixture {
 
 BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
   Handles handles;
-  HandleScope scope(Thread::currentThread());
+  HandleScope scope(Thread::current());
 
   RawObject o1{0xFEEDFACEL};
 
@@ -270,7 +270,7 @@ class NothingVisitor : public PointerVisitor {
 
 BENCHMARK_F(HandleBenchmark, Visit)(benchmark::State& state) {
   Handles handles;
-  HandleScope scope(Thread::currentThread());
+  HandleScope scope(Thread::current());
 
   Object h1(&scope, RawObject{0xFEEDFACEL});
   Object h2(&scope, RawObject{0xFEEDFACFL});

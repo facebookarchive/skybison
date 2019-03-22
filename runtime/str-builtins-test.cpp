@@ -1720,7 +1720,7 @@ TEST(StrBuiltinsTest, StripSpaceWithEmptyStrIsIdentity) {
   Runtime runtime;
   HandleScope scope;
   Str empty_str(&scope, Str::empty());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_empty_str(
       &scope, strStripSpace(thread, empty_str, StrStripDirection::Left));
   EXPECT_EQ(*empty_str, *lstripped_empty_str);
@@ -1739,7 +1739,7 @@ TEST(StrBuiltinsTest, StripSpaceWithUnstrippableStrIsIdentity) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("Nothing to strip here"));
   ASSERT_TRUE(str.isLargeStr());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
   EXPECT_EQ(*str, *lstripped_str);
@@ -1757,7 +1757,7 @@ TEST(StrBuiltinsTest, StripSpaceWithUnstrippableSmallStrIsIdentity) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("nostrip"));
   ASSERT_TRUE(str.isSmallStr());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
   EXPECT_EQ(*str, *lstripped_str);
@@ -1774,7 +1774,7 @@ TEST(StrBuiltinsTest, StripSpaceWithFullyStrippableStrReturnsEmptyStr) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("\n\r\t\f         \n\t\r\f"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
   EXPECT_EQ(lstripped_str.length(), 0);
@@ -1792,7 +1792,7 @@ TEST(StrBuiltinsTest, StripSpaceLeft) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" strp "));
   ASSERT_TRUE(str.isSmallStr());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Left));
   ASSERT_TRUE(lstripped_str.isSmallStr());
@@ -1817,7 +1817,7 @@ TEST(StrBuiltinsTest, StripSpaceRight) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" strp "));
   ASSERT_TRUE(str.isSmallStr());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str rstripped_str(&scope,
                     strStripSpace(thread, str, StrStripDirection::Right));
   ASSERT_TRUE(rstripped_str.isSmallStr());
@@ -1843,7 +1843,7 @@ TEST(StrBuiltinsTest, StripSpaceBoth) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" strp "));
   ASSERT_TRUE(str.isSmallStr());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str stripped_str(&scope, strStripSpace(thread, str, StrStripDirection::Both));
   ASSERT_TRUE(stripped_str.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*stripped_str, "strp"));
@@ -1870,7 +1870,7 @@ TEST(StrBuiltinsTest, StripWithEmptyStrIsIdentity) {
   HandleScope scope;
   Str empty_str(&scope, Str::empty());
   Str chars(&scope, runtime.newStrFromCStr("abc"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_empty_str(
       &scope, strStrip(thread, empty_str, chars, StrStripDirection::Left));
   EXPECT_EQ(*empty_str, *lstripped_empty_str);
@@ -1889,7 +1889,7 @@ TEST(StrBuiltinsTest, StripWithFullyStrippableStrReturnsEmptyStr) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("bbbbaaaaccccdddd"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_str(&scope,
                     strStrip(thread, str, chars, StrStripDirection::Left));
   EXPECT_EQ(lstripped_str.length(), 0);
@@ -1908,7 +1908,7 @@ TEST(StrBuiltinsTest, StripWithEmptyCharsIsIdentity) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr(" Just another string "));
   Str chars(&scope, Str::empty());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_str(&scope,
                     strStrip(thread, str, chars, StrStripDirection::Left));
   EXPECT_EQ(*str, *lstripped_str);
@@ -1927,7 +1927,7 @@ TEST(StrBuiltinsTest, StripBoth) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str stripped_str(&scope,
                    strStrip(thread, str, chars, StrStripDirection::Both));
   EXPECT_TRUE(isStrEqualsCStr(*stripped_str, "Hello Worl"));
@@ -1938,7 +1938,7 @@ TEST(StrBuiltinsTest, StripLeft) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str lstripped_str(&scope,
                     strStrip(thread, str, chars, StrStripDirection::Left));
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str, "Hello Worldcab"));
@@ -1949,7 +1949,7 @@ TEST(StrBuiltinsTest, StripRight) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Str rstripped_str(&scope,
                     strStrip(thread, str, chars, StrStripDirection::Right));
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str, "bcdHello Worl"));
@@ -2273,7 +2273,7 @@ TEST(StrBuiltinsTest, IndexWithMissingSubstringRaisesValueError) {
 
 TEST(StrBuiltinsTest, DunderHashReturnsSmallInt) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str str(&scope, runtime.newStrFromCStr("hello world"));
   EXPECT_TRUE(runBuiltin(StrBuiltins::dunderHash, str).isSmallInt());
@@ -2281,7 +2281,7 @@ TEST(StrBuiltinsTest, DunderHashReturnsSmallInt) {
 
 TEST(StrBuiltinsTest, DunderHashSmallStringReturnsSmallInt) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str str(&scope, runtime.newStrFromCStr("h"));
   EXPECT_TRUE(runBuiltin(StrBuiltins::dunderHash, str).isSmallInt());
@@ -2289,7 +2289,7 @@ TEST(StrBuiltinsTest, DunderHashSmallStringReturnsSmallInt) {
 
 TEST(StrBuiltinsTest, DunderHashWithEquivalentStringsReturnsSameHash) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str str1(&scope, runtime.newStrFromCStr("hello world foobar"));
   Str str2(&scope, runtime.newStrFromCStr("hello world foobar"));
@@ -2304,7 +2304,7 @@ TEST(StrBuiltinsTest, DunderHashWithEquivalentStringsReturnsSameHash) {
 TEST(StringIterTest, SimpleIter) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   Str str(&scope, runtime.newStrFromCStr("test"));
   EXPECT_TRUE(str.equalsCStr("test"));
@@ -2333,7 +2333,7 @@ TEST(StringIterTest, SimpleIter) {
 TEST(StringIterTest, SetIndex) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   Str str(&scope, runtime.newStrFromCStr("test"));
   EXPECT_TRUE(str.equalsCStr("test"));

@@ -255,14 +255,14 @@ a.insert()
 )"),
       LayoutId::kTypeError,
       "TypeError: 'list.insert' takes 3 positional arguments but 1 given"));
-  Thread::currentThread()->clearPendingException();
+  Thread::current()->clearPendingException();
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 list.insert(1, 2, 3)
 )"),
                             LayoutId::kTypeError,
                             "descriptor 'insert' requires a 'list' object"));
-  Thread::currentThread()->clearPendingException();
+  Thread::current()->clearPendingException();
 
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime, R"(
@@ -294,7 +294,7 @@ print(a.pop(), a.pop(0), a.pop(-2))
 
 TEST(ListBuiltinsTest, ListPopExcept) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, R"(
@@ -492,7 +492,7 @@ print(l[0], l[3], l[5])
 
 TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -508,7 +508,7 @@ TEST(ListBuiltinsTest, SlicePositiveStartIndex) {
 
 TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -523,7 +523,7 @@ TEST(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
 
 TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -538,7 +538,7 @@ TEST(ListBuiltinsTest, SlicePositiveStopIndex) {
 
 TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -554,7 +554,7 @@ TEST(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
 
 TEST(ListBuiltinsTest, SlicePositiveStep) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -570,7 +570,7 @@ TEST(ListBuiltinsTest, SlicePositiveStep) {
 
 TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -586,7 +586,7 @@ TEST(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
 
 TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -599,7 +599,7 @@ TEST(ListBuiltinsTest, SliceStartOutOfBounds) {
 
 TEST(ListBuiltinsTest, SliceStopOutOfBounds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -614,7 +614,7 @@ TEST(ListBuiltinsTest, SliceStopOutOfBounds) {
 
 TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -628,7 +628,7 @@ TEST(ListBuiltinsTest, SliceStepOutOfBounds) {
 
 TEST(ListBuiltinsTest, IdenticalSliceIsCopy) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list1(&scope, listFromRange(1, 6));
 
@@ -1186,7 +1186,7 @@ TEST(ListBuiltinsTest, InsertToList) {
   EXPECT_FALSE(isIntEqualsWord(list.at(1), 1));
   EXPECT_FALSE(isIntEqualsWord(list.at(6), 6));
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Object value2(&scope, SmallInt::fromWord(1));
   listInsert(thread, list, value2, 1);
   Object value12(&scope, SmallInt::fromWord(6));
@@ -1205,7 +1205,7 @@ TEST(ListBuiltinsTest, InsertToListBounds) {
   }
   ASSERT_EQ(list.numItems(), 10);
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Object value100(&scope, SmallInt::fromWord(100));
   listInsert(thread, list, value100, 100);
   ASSERT_EQ(list.numItems(), 11);
@@ -1271,7 +1271,7 @@ TEST(ListBuiltinsTest, ExtendList) {
   }
   EXPECT_EQ(list.numItems(), 4);
   Object list1_handle(&scope, *list1);
-  listExtend(Thread::currentThread(), list, list1_handle);
+  listExtend(Thread::current(), list, list1_handle);
   EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
 }
 
@@ -1289,7 +1289,7 @@ TEST(ListBuiltinsTest, ExtendListIterator) {
   EXPECT_EQ(list.numItems(), 4);
   Object list1_handle(&scope, *list1);
   Object list1_iterator(&scope, runtime.newListIterator(list1_handle));
-  listExtend(Thread::currentThread(), list, list1_iterator);
+  listExtend(Thread::current(), list, list1_iterator);
   EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
 }
 
@@ -1305,12 +1305,12 @@ TEST(ListBuiltinsTest, ExtendTuple) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.listAdd(list, value);
   }
-  listExtend(Thread::currentThread(), list, object_array0);
+  listExtend(Thread::current(), list, object_array0);
   EXPECT_EQ(list.numItems(), 4);
 
   Object object_array1_handle(&scope, *object_array1);
   object_array1.atPut(0, NoneType::object());
-  listExtend(Thread::currentThread(), list, object_array1_handle);
+  listExtend(Thread::current(), list, object_array1_handle);
   ASSERT_GE(list.numItems(), 5);
   ASSERT_TRUE(list.at(4).isNoneType());
 
@@ -1319,7 +1319,7 @@ TEST(ListBuiltinsTest, ExtendTuple) {
   }
 
   Object object_array2_handle(&scope, *object_array16);
-  listExtend(Thread::currentThread(), list, object_array2_handle);
+  listExtend(Thread::current(), list, object_array2_handle);
   ASSERT_GE(list.numItems(), 4 + 1 + 4);
   EXPECT_EQ(list.at(5), SmallInt::fromWord(0));
   EXPECT_EQ(list.at(6), SmallInt::fromWord(1));
@@ -1342,7 +1342,7 @@ TEST(ListBuiltinsTest, ExtendSet) {
   }
 
   Object set_obj(&scope, *set);
-  listExtend(Thread::currentThread(), list, Object(&scope, *set_obj));
+  listExtend(Thread::current(), list, Object(&scope, *set_obj));
   EXPECT_EQ(list.numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
@@ -1366,7 +1366,7 @@ TEST(ListBuiltinsTest, ExtendDict) {
   }
 
   Object dict_obj(&scope, *dict);
-  listExtend(Thread::currentThread(), list, Object(&scope, *dict_obj));
+  listExtend(Thread::current(), list, Object(&scope, *dict_obj));
   EXPECT_EQ(list.numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
@@ -1380,14 +1380,14 @@ TEST(ListBuiltinsTest, ExtendIterator) {
   HandleScope scope;
   List list(&scope, runtime.newList());
   Object iterable(&scope, runtime.newRange(1, 4, 1));
-  listExtend(Thread::currentThread(), list, iterable);
+  listExtend(Thread::current(), list, iterable);
 
   EXPECT_PYLIST_EQ(list, {1, 2, 3});
 }
 
 TEST(ListBuiltinsTest, SortEmptyListSucceeds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List empty(&scope, runtime.newList());
   ASSERT_EQ(listSort(thread, empty), NoneType::object());
@@ -1395,7 +1395,7 @@ TEST(ListBuiltinsTest, SortEmptyListSucceeds) {
 
 TEST(ListBuiltinsTest, SortSingleElementListSucceeds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt(&scope, SmallInt::fromWord(5));
@@ -1407,7 +1407,7 @@ TEST(ListBuiltinsTest, SortSingleElementListSucceeds) {
 
 TEST(ListBuiltinsTest, SortMultiElementListSucceeds) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt3(&scope, SmallInt::fromWord(3));
@@ -1423,7 +1423,7 @@ TEST(ListBuiltinsTest, SortMultiElementListSucceeds) {
 
 TEST(ListBuiltinsTest, SortMultiElementListSucceeds2) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt3(&scope, SmallInt::fromWord(1));
@@ -1439,7 +1439,7 @@ TEST(ListBuiltinsTest, SortMultiElementListSucceeds2) {
 
 TEST(ListBuiltinsTest, SortIsStable) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt4(&scope, runtime.newStrFromCStr("q"));
@@ -1554,7 +1554,7 @@ class C(list):
 result = C([1, 2, 3, 4])
 result.reverse()
 )");
-  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+  EXPECT_FALSE(Thread::current()->hasPendingException());
 }
 
 TEST(ListBuiltinsTest, SortWithNonListRaisesTypeError) {

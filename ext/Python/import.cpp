@@ -5,7 +5,7 @@
 namespace python {
 
 PY_EXPORT PyObject* PyImport_GetModuleDict(void) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::borrowedReference(thread, thread->runtime()->modules());
 }
 
@@ -26,7 +26,7 @@ PY_EXPORT PyObject* PyImport_AddModule(const char* name) {
 }
 
 PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -113,12 +113,10 @@ PY_EXPORT PyObject* PyImport_ReloadModule(PyObject* /* m */) {
   UNIMPLEMENTED("PyImport_ReloadModule");
 }
 
-PY_EXPORT void _PyImport_AcquireLock() {
-  importAcquireLock(Thread::currentThread());
-}
+PY_EXPORT void _PyImport_AcquireLock() { importAcquireLock(Thread::current()); }
 
 PY_EXPORT int _PyImport_ReleaseLock() {
-  return importReleaseLock(Thread::currentThread()) ? 1 : -1;
+  return importReleaseLock(Thread::current()) ? 1 : -1;
 }
 
 }  // namespace python

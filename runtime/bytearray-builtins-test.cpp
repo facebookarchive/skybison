@@ -9,7 +9,7 @@ using namespace testing;
 
 TEST(ByteArrayBuiltinsTest, Add) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
@@ -25,7 +25,7 @@ TEST(ByteArrayBuiltinsTest, Add) {
 
 TEST(ByteArrayBuiltinsTest, AsBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
@@ -54,7 +54,7 @@ TEST(ByteArrayBuiltinsTest, DunderAddWithNonBytesLikeRaisesTypeError) {
 
 TEST(ByteArrayBuiltinsTest, DunderAddWithByteArrayOtherReturnsNewByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray other(&scope, runtime.newByteArray());
@@ -76,7 +76,7 @@ TEST(ByteArrayBuiltinsTest, DunderAddWithBytesOtherReturnsNewByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'f', 'o', 'o'});
@@ -123,7 +123,7 @@ TEST(ByteArrayBuiltinsTest,
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'h', 'e', 'l', 'l', 'o'});
@@ -135,7 +135,7 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemIndexesFromBeginning) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'h', 'e', 'l', 'l', 'o'});
@@ -147,7 +147,7 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemIndexesFromBeginning) {
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceReturnsByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'h', 'e', 'l', 'l', 'o'});
@@ -160,7 +160,7 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceReturnsByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceStepReturnsByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(
@@ -194,7 +194,7 @@ array += None
 
 TEST(ByteArrayBuiltinsTest, DunderIaddWithByteArrayOtherConcatenatesToSelf) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray other(&scope, runtime.newByteArray());
@@ -238,7 +238,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithDunderIndexReturnsRepeatedBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, 'a');
@@ -298,7 +298,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithOverflowRaisesMemoryError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'a', 'b', 'c'});
@@ -340,7 +340,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithZeroReturnsEmptyByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithOneReturnsSameByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   View<byte> bytes{'a', 'b'};
@@ -352,7 +352,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithOneReturnsSameByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderImulReturnsRepeatedByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'a', 'b'});
@@ -363,7 +363,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulReturnsRepeatedByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderInitNoArgsClearsArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 array = bytearray(b'123')
@@ -424,7 +424,7 @@ TEST(ByteArrayBuiltinsTest,
 TEST(ByteArrayBuiltinsTest,
      DunderInitWithSmallIntReturnsByteArrayWithNullBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   Int source(&scope, runtime.newInt(3));
@@ -450,7 +450,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithNegativeIntRaisesValueError) {
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithBytesCopiesBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   View<byte> bytes{'f', 'o', 'o', 'b', 'a', 'r'};
@@ -464,7 +464,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithBytesCopiesBytes) {
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithByteArrayCopiesBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray source(&scope, runtime.newByteArray());
@@ -480,7 +480,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithByteArrayCopiesBytes) {
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   List source(&scope, runtime.newList());
@@ -514,7 +514,7 @@ TEST(ByteArrayBuiltinsTest, DunderLenWithEmptyByteArrayReturnsZero) {
 
 TEST(ByteArrayBuiltinsTest, DunderLenWithNonEmptyByteArrayReturnsPositive) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {1, 2, 3, 4, 5});
@@ -548,7 +548,7 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, 'a');
@@ -608,7 +608,7 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithOverflowRaisesMemoryError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'a', 'b', 'c'});
@@ -650,7 +650,7 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithZeroReturnsEmptyByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithOneReturnsSameByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   View<byte> bytes{'a', 'b'};
@@ -662,7 +662,7 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithOneReturnsSameByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderMulReturnsRepeatedByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'a', 'b'});
@@ -694,7 +694,7 @@ TEST(ByteArrayBuiltinsTest, DunderNewReturnsEmptyByteArray) {
 
 TEST(ByteArrayBuiltinsTest, NewByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, "obj = bytearray(b'Hello world!')");
   ByteArray self(&scope, moduleAt(&runtime, "__main__", "obj"));
@@ -730,7 +730,7 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithEmptyByteArrayReturnsEmptyRepr) {
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithSimpleByteArrayReturnsRepr) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'f', 'o', 'o'});
@@ -741,7 +741,7 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithSimpleByteArrayReturnsRepr) {
 TEST(ByteArrayBuiltinsTest,
      DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'_', '"', '_'});
@@ -752,7 +752,7 @@ TEST(ByteArrayBuiltinsTest,
 TEST(ByteArrayBuiltinsTest,
      DunderReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'_', '\'', '_'});
@@ -762,7 +762,7 @@ TEST(ByteArrayBuiltinsTest,
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'_', '"', '_', '\'', '_'});
@@ -772,7 +772,7 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {'\\', '\t', '\n', '\r'});
@@ -782,7 +782,7 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {0, 0x1f, 0x80, 0xff});
@@ -815,7 +815,7 @@ TEST(ByteArrayBuiltinsTest, HexWithEmptyByteArrayReturnsEmptyString) {
 
 TEST(ByteArrayBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, {0x60, 0xe, 0x18, 0x21});
@@ -838,7 +838,7 @@ TEST(ByteArrayBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
 
 TEST(ByteArrayBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, 'a');
@@ -849,7 +849,7 @@ TEST(ByteArrayBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
 
 TEST(ByteArrayBuiltinsTest, JoinWithEmptySeparatorReturnsByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   Tuple iter(&scope, runtime.newTuple(3));
@@ -862,7 +862,7 @@ TEST(ByteArrayBuiltinsTest, JoinWithEmptySeparatorReturnsByteArray) {
 
 TEST(ByteArrayBuiltinsTest, JoinWithNonEmptyReturnsByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, ' ');
@@ -890,7 +890,7 @@ class Foo:
     return [b'ab', b'c', b'def'].__iter__()
 result = bytearray(b' ').join(Foo())
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ab c def"));

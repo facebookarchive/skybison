@@ -12,7 +12,7 @@ namespace python {
 
 PY_EXPORT int PyModule_AddObject(PyObject* pymodule, const char* name,
                                  PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 

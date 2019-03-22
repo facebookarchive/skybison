@@ -11,7 +11,7 @@ using namespace testing;
 
 TEST(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Tuple array(&scope, runtime.newTuple(10));
   Object none(&scope, NoneType::object());
@@ -22,7 +22,7 @@ TEST(ScavengerTest, PreserveWeakReferenceHeapReferent) {
 
 TEST(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Int obj(&scope, SmallInt::fromWord(1234));
   Object none(&scope, NoneType::object());
@@ -39,7 +39,7 @@ TEST(ScavengerTest, ClearWeakReference) {
   {
     Tuple array(&scope, runtime.newTuple(10));
     WeakRef ref_inner(&scope,
-                      runtime.newWeakRef(Thread::currentThread(), array, none));
+                      runtime.newWeakRef(Thread::current(), array, none));
     ref = *ref_inner;
     runtime.collectGarbage();
     EXPECT_EQ(ref_inner.referent(), *array);
@@ -50,7 +50,7 @@ TEST(ScavengerTest, ClearWeakReference) {
 
 TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   // Create strongly referenced heap allocated objects.
@@ -117,7 +117,7 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
 
 TEST(ScavengerTest, BaseCallback) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   const char* src = R"(
 a = 1
@@ -168,7 +168,7 @@ def g(ref, c=4):
 
 TEST(ScavengerTest, MixCallback) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   const char* src = R"(
 a = 1
@@ -221,7 +221,7 @@ static RawObject doGarbageCollection(Thread* thread, Frame*, word) {
 
 TEST(ScavengerTest, CallbackInvokeGC) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   const char* src = R"(
 a = 1
@@ -265,7 +265,7 @@ def g(ref, b=2):
 
 TEST(ScavengerTest, IgnoreCallbackException) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   const char* src = R"(
 a = 1
@@ -308,7 +308,7 @@ def g(ref, c=4):
   }
 
   runtime.collectGarbage();
-  EXPECT_FALSE(Thread::currentThread()->hasPendingException());
+  EXPECT_FALSE(Thread::current()->hasPendingException());
   EXPECT_EQ(moduleAt(&runtime, main, "callback_ran"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, main, "callback_returned"), Bool::falseObj());
 

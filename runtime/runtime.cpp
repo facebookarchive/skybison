@@ -114,13 +114,13 @@ Runtime::Runtime() : Runtime(64 * kMiB) {}
 Runtime::~Runtime() {
   // TODO(T30392425): This is an ugly and fragile workaround for having multiple
   // runtimes created and destroyed by a single thread.
-  if (Thread::currentThread() == nullptr) {
+  if (Thread::current() == nullptr) {
     CHECK(threads_ != nullptr, "the runtime does not have any threads");
     Thread::setCurrentThread(threads_);
   }
   freeApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {
-    if (thread == Thread::currentThread()) {
+    if (thread == Thread::current()) {
       Thread::setCurrentThread(nullptr);
     } else {
       UNIMPLEMENTED("threading");
@@ -851,7 +851,7 @@ RawObject Runtime::newQualname(const Type& type, SymbolId name) {
   parts.atPut(0, type.name());
   parts.atPut(1, symbols()->at(name));
   Str sep(&scope, newStrFromCStr("."));
-  return strJoin(Thread::currentThread(), sep, parts, 2);
+  return strJoin(Thread::current(), sep, parts, 2);
 }
 
 void Runtime::typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
@@ -1505,7 +1505,7 @@ void Runtime::collectGarbage() {
 }
 
 void Runtime::processCallbacks() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   while (callbacks_ != NoneType::object()) {
@@ -1565,7 +1565,7 @@ RawObject Runtime::run(const char* buffer) {
   Module main_module(&scope, *main);
   Object result(&scope, executeModule(buffer, main_module));
   if (result.isError()) {
-    Thread* thread = Thread::currentThread();
+    Thread* thread = Thread::current();
     DCHECK(thread->hasPendingException(), "error/exception mismatch");
     Type exc_type(&scope, thread->pendingExceptionType());
     if (exc_type.builtinBase() == LayoutId::kSystemExit) {
@@ -1589,7 +1589,7 @@ RawObject Runtime::executeModule(const char* buffer, const Module& module) {
   Code code(&scope, reader.readObject());
   DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
 
-  return Thread::currentThread()->runModuleFunction(module, code);
+  return Thread::current()->runModuleFunction(module, code);
 }
 
 RawObject Runtime::importModuleFromBuffer(const char* buffer,
@@ -1778,7 +1778,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
 
 void Runtime::initializeModules() {
   modules_ = newDict();
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   for (size_t i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
     kBuiltinModules[i].create_module(thread);
   }
@@ -1944,7 +1944,7 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
 }
 
 void Runtime::createImportlibModule() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   // CPython's freezing tool creates the following mapping:

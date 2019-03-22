@@ -42,7 +42,7 @@ TEST(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
   Object none(&scope, NoneType::object());
   ASSERT_TRUE(
       runBuiltin(FunctionBuiltins::dunderGet, none, none, none).isError());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   EXPECT_EQ(thread->pendingExceptionType(),
             runtime.typeAt(LayoutId::kTypeError));
   EXPECT_TRUE(thread->pendingExceptionValue().isStr());

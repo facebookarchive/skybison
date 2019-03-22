@@ -10,7 +10,7 @@ using namespace testing;
 
 TEST(TestUtils, IsByteArrayEquals) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   View<byte> view{'f', 'o', 'o'};
@@ -46,7 +46,7 @@ TEST(TestUtils, IsByteArrayEquals) {
 
 TEST(TestUtils, IsBytesEquals) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   View<byte> view{'f', 'o', 'o'};
@@ -80,7 +80,7 @@ TEST(TestUtils, IsBytesEquals) {
 
 TEST(TestUtils, PyListEqual) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(

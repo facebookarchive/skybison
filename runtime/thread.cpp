@@ -64,7 +64,7 @@ void Thread::visitStackRoots(PointerVisitor* visitor) {
   }
 }
 
-Thread* Thread::currentThread() { return Thread::current_thread_; }
+Thread* Thread::current() { return Thread::current_thread_; }
 
 void Thread::setCurrentThread(Thread* thread) {
   Thread::current_thread_ = thread;

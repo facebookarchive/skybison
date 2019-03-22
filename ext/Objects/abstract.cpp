@@ -19,7 +19,7 @@ static PyObject* nullError(Thread* thread) {
 }
 
 static PyObject* doUnaryOp(SymbolId op, PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     return nullError(thread);
   }
@@ -32,7 +32,7 @@ static PyObject* doUnaryOp(SymbolId op, PyObject* obj) {
 }
 
 static PyObject* doBinaryOp(SymbolId op, PyObject* left, PyObject* right) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   DCHECK(left != nullptr && right != nullptr, "null argument to binary op %s",
          thread->runtime()->symbols()->literalAt(op));
   HandleScope scope(thread);
@@ -44,7 +44,7 @@ static PyObject* doBinaryOp(SymbolId op, PyObject* left, PyObject* right) {
 }
 
 static Py_ssize_t objectLength(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pyobj == nullptr) {
     nullError(thread);
     return -1;
@@ -81,13 +81,12 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
 PY_EXPORT int PyBuffer_FillInfo(Py_buffer* view, PyObject* exporter, void* buf,
                                 Py_ssize_t len, int readonly, int flags) {
   if (view == nullptr) {
-    Thread::currentThread()->raiseBufferErrorWithCStr(
+    Thread::current()->raiseBufferErrorWithCStr(
         "PyBuffer_FillInfo: view==NULL argument is obsolete");
     return -1;
   }
   if ((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE && readonly == 1) {
-    Thread::currentThread()->raiseBufferErrorWithCStr(
-        "Object is not writable.");
+    Thread::current()->raiseBufferErrorWithCStr("Object is not writable.");
     return -1;
   }
 
@@ -137,7 +136,7 @@ PY_EXPORT void PyBuffer_Release(Py_buffer* view) {
 
 PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
   DCHECK(obj != nullptr, "Got null argument");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
   return !Interpreter::lookupMethod(thread, thread->currentFrame(), num,
@@ -148,7 +147,7 @@ PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
 // PyIter_Next
 
 PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object iter_obj(&scope, ApiHandle::fromPyObject(iter)->asObject());
   Object next(&scope, thread->invokeMethod1(iter_obj, SymbolId::kDunderNext));
@@ -169,7 +168,7 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
 // Mapping Protocol
 
 PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
   return thread->runtime()->isMapping(thread, obj);
@@ -189,7 +188,7 @@ static PyObject* getItem(Thread* thread, const Object& obj, const Object& key) {
 }
 
 PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* obj, const char* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr || key == nullptr) {
     return nullError(thread);
   }
@@ -294,7 +293,7 @@ static PyObject* callMappingMethod(Thread* thread, const Object& map,
 // TODO(T40432322): Copy over wholesale from CPython 3.6
 PY_EXPORT PyObject* PyMapping_Items(PyObject* mapping) {
   DCHECK(mapping != nullptr, "mapping was null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
   if (map.isDict()) {
@@ -308,7 +307,7 @@ PY_EXPORT PyObject* PyMapping_Items(PyObject* mapping) {
 // TODO(T40432322): Copy over wholesale from CPython 3.6
 PY_EXPORT PyObject* PyMapping_Keys(PyObject* mapping) {
   DCHECK(mapping != nullptr, "mapping was null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
   if (map.isDict()) {
@@ -325,7 +324,7 @@ PY_EXPORT Py_ssize_t PyMapping_Length(PyObject* pyobj) {
 PY_EXPORT int PyMapping_SetItemString(PyObject* obj, const char* key,
                                       PyObject* value) {
   if (key == nullptr) {
-    nullError(Thread::currentThread());
+    nullError(Thread::current());
     return -1;
   }
   PyObject* key_obj = PyUnicode_FromString(key);
@@ -344,7 +343,7 @@ PY_EXPORT Py_ssize_t PyMapping_Size(PyObject* pyobj) {
 // TODO(T40432322): Copy over wholesale from CPython 3.6
 PY_EXPORT PyObject* PyMapping_Values(PyObject* mapping) {
   DCHECK(mapping != nullptr, "mapping was null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
   if (map.isDict()) {
@@ -370,7 +369,7 @@ PY_EXPORT PyObject* PyNumber_And(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* obj, PyObject* overflow_err) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     nullError(thread);
     return -1;
@@ -394,7 +393,7 @@ PY_EXPORT int PyNumber_Check(PyObject* obj) {
     return false;
   }
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
@@ -414,7 +413,7 @@ PY_EXPORT PyObject* PyNumber_Divmod(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT PyObject* PyNumber_Float(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     return nullError(thread);
   }
@@ -430,7 +429,7 @@ PY_EXPORT PyObject* PyNumber_FloorDivide(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT PyObject* PyNumber_Index(PyObject* item) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (item == nullptr) {
     return nullError(thread);
   }
@@ -505,7 +504,7 @@ PY_EXPORT PyObject* PyNumber_Invert(PyObject* pyobj) {
 }
 
 PY_EXPORT PyObject* PyNumber_Long(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     return nullError(thread);
   }
@@ -597,7 +596,7 @@ PY_EXPORT int PyObject_AsWriteBuffer(PyObject* /* j */, void** /* buffer */,
 
 PY_EXPORT PyObject* PyObject_Call(PyObject* callable, PyObject* args,
                                   PyObject* kwargs) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (callable == nullptr) {
     return nullError(thread);
   }
@@ -656,7 +655,7 @@ static PyObject* callWithVarArgs(Thread* thread, const Object& callable,
 
 PY_EXPORT PyObject* PyObject_CallFunction(PyObject* callable,
                                           const char* format, ...) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (callable == nullptr) {
     return nullError(thread);
   }
@@ -691,7 +690,7 @@ static PyObject* callWithObjArgs(Thread* thread, const Object& callable,
 }
 
 PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (callable == nullptr) {
     return nullError(thread);
   }
@@ -706,7 +705,7 @@ PY_EXPORT PyObject* PyObject_CallFunctionObjArgs(PyObject* callable, ...) {
 
 PY_EXPORT PyObject* _PyObject_CallFunction_SizeT(PyObject* callable,
                                                  const char* format, ...) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (callable == nullptr) {
     return nullError(thread);
   }
@@ -723,7 +722,7 @@ PY_EXPORT PyObject* _PyObject_CallFunction_SizeT(PyObject* callable,
 
 PY_EXPORT PyObject* PyObject_CallMethod(PyObject* pyobj, const char* name,
                                         const char* format, ...) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pyobj == nullptr) {
     return nullError(thread);
   }
@@ -743,7 +742,7 @@ PY_EXPORT PyObject* PyObject_CallMethod(PyObject* pyobj, const char* name,
 
 PY_EXPORT PyObject* PyObject_CallMethodObjArgs(PyObject* pyobj,
                                                PyObject* py_method_name, ...) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pyobj == nullptr || py_method_name == nullptr) {
     return nullError(thread);
   }
@@ -764,7 +763,7 @@ PY_EXPORT PyObject* PyObject_CallMethodObjArgs(PyObject* pyobj,
 PY_EXPORT PyObject* _PyObject_CallMethod_SizeT(PyObject* pyobj,
                                                const char* name,
                                                const char* format, ...) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pyobj == nullptr) {
     return nullError(thread);
   }
@@ -783,7 +782,7 @@ PY_EXPORT PyObject* _PyObject_CallMethod_SizeT(PyObject* pyobj,
 }
 
 PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (callable == nullptr) {
     return nullError(thread);
   }
@@ -830,7 +829,7 @@ PY_EXPORT PyObject* _PyObject_FastCallDict(PyObject* callable,
                                            PyObject** pyargs, Py_ssize_t n_args,
                                            PyObject* kwargs) {
   DCHECK(callable != nullptr, "callable must not be nullptr");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   DCHECK(!thread->hasPendingException(),
          "may accidentally clear pending exception");
   DCHECK(n_args >= 0, "n_args must not be negative");
@@ -873,7 +872,7 @@ PY_EXPORT PyObject* _PyObject_FastCallKeywords(PyObject* /* e */,
 
 PY_EXPORT PyObject* PyObject_Format(PyObject* obj, PyObject* format_spec) {
   DCHECK(obj != nullptr, "obj should not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object format_spec_obj(&scope,
@@ -903,7 +902,7 @@ PY_EXPORT int PyObject_GetBuffer(PyObject* obj, Py_buffer* view, int flags) {
 }
 
 PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr || key == nullptr) {
     return nullError(thread);
   }
@@ -914,7 +913,7 @@ PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {
 }
 
 PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object result(&scope, getIter(thread, obj));
@@ -942,7 +941,7 @@ PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* /* o */,
 }
 
 PY_EXPORT int PyObject_SetItem(PyObject* obj, PyObject* key, PyObject* value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr || key == nullptr || value == nullptr) {
     nullError(thread);
     return -1;
@@ -967,7 +966,7 @@ PY_EXPORT Py_ssize_t PyObject_Size(PyObject* pyobj) {
 }
 
 PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pyobj == nullptr) {
     return nullError(thread);
   }
@@ -983,14 +982,14 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
 // Sequence Protocol
 
 PY_EXPORT int PySequence_Check(PyObject* py_obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
   return thread->runtime()->isSequence(thread, obj);
 }
 
 PY_EXPORT PyObject* PySequence_Concat(PyObject* left, PyObject* right) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (left == nullptr || right == nullptr) {
     return nullError(thread);
   }
@@ -1002,7 +1001,7 @@ PY_EXPORT PyObject* PySequence_Concat(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT int PySequence_Contains(PyObject* seq, PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr || obj == nullptr) {
     nullError(thread);
     return -1;
@@ -1020,7 +1019,7 @@ PY_EXPORT int PySequence_Contains(PyObject* seq, PyObject* obj) {
 }
 
 PY_EXPORT Py_ssize_t PySequence_Count(PyObject* seq, PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr || obj == nullptr) {
     nullError(thread);
     return -1;
@@ -1038,7 +1037,7 @@ PY_EXPORT Py_ssize_t PySequence_Count(PyObject* seq, PyObject* obj) {
 }
 
 PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     return -1;
   }
@@ -1064,7 +1063,7 @@ static RawObject makeSlice(Thread* thread, Py_ssize_t low, Py_ssize_t high) {
 
 PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
                                   Py_ssize_t high) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     nullError(thread);
     return -1;
@@ -1084,7 +1083,7 @@ PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
 }
 
 PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     return nullError(thread);
   }
@@ -1099,7 +1098,7 @@ PY_EXPORT PyObject* PySequence_Fast(PyObject* seq, const char* msg) {
 }
 
 PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     return nullError(thread);
   }
@@ -1119,7 +1118,7 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
 
 PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
                                         Py_ssize_t high) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     return nullError(thread);
   }
@@ -1142,7 +1141,7 @@ PY_EXPORT int PySequence_In(PyObject* pyseq, PyObject* pyobj) {
 }
 
 PY_EXPORT Py_ssize_t PySequence_Index(PyObject* seq, PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr || obj == nullptr) {
     nullError(thread);
     return -1;
@@ -1160,7 +1159,7 @@ PY_EXPORT Py_ssize_t PySequence_Index(PyObject* seq, PyObject* obj) {
 }
 
 PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* left, PyObject* right) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (left == nullptr || right == nullptr) {
     return nullError(thread);
   }
@@ -1174,7 +1173,7 @@ PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT PyObject* PySequence_InPlaceRepeat(PyObject* seq, Py_ssize_t count) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     return nullError(thread);
   }
@@ -1192,7 +1191,7 @@ PY_EXPORT Py_ssize_t PySequence_Length(PyObject* pyobj) {
 }
 
 PY_EXPORT PyObject* PySequence_List(PyObject* seq) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     return nullError(thread);
   }
@@ -1212,7 +1211,7 @@ PY_EXPORT PyObject* PySequence_List(PyObject* seq) {
 }
 
 PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pyseq == nullptr) {
     return nullError(thread);
   }
@@ -1227,7 +1226,7 @@ PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {
 }
 
 PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     nullError(thread);
     return -1;
@@ -1255,7 +1254,7 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
 
 PY_EXPORT int PySequence_SetSlice(PyObject* seq, Py_ssize_t low,
                                   Py_ssize_t high, PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     nullError(thread);
     return -1;
@@ -1286,7 +1285,7 @@ PY_EXPORT Py_ssize_t PySequence_Size(PyObject* pyobj) {
 }
 
 PY_EXPORT PyObject* PySequence_Tuple(PyObject* seq) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (seq == nullptr) {
     return nullError(thread);
   }

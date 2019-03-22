@@ -69,7 +69,7 @@ weak = ref(a, f)
 
 TEST(RefBuiltinsTest, DunderCallReturnsObject) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, Str::empty());
   Object callback(&scope, NoneType::object());

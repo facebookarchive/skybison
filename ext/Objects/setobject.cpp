@@ -5,7 +5,7 @@
 namespace python {
 
 PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   if (iterable == nullptr) {
@@ -22,7 +22,7 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
 }
 
 PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -45,7 +45,7 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
 }
 
 PY_EXPORT int PySet_Clear(PyObject* anyset) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object set_obj(&scope, ApiHandle::fromPyObject(anyset)->asObject());
@@ -62,7 +62,7 @@ PY_EXPORT int PySet_Clear(PyObject* anyset) {
 PY_EXPORT int PySet_ClearFreeList() { return 0; }
 
 PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -80,7 +80,7 @@ PY_EXPORT int PySet_Contains(PyObject* anyset, PyObject* key) {
 }
 
 PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
@@ -95,7 +95,7 @@ PY_EXPORT int PySet_Discard(PyObject* pyset, PyObject* pykey) {
 }
 
 PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -116,7 +116,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
 }
 
 PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
@@ -133,7 +133,7 @@ PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {
 }
 
 PY_EXPORT Py_ssize_t PySet_Size(PyObject* anyset) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 

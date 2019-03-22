@@ -10,8 +10,7 @@
 namespace python {
 
 PY_EXPORT PyObject* PyNone_Ptr() {
-  return ApiHandle::borrowedReference(Thread::currentThread(),
-                                      NoneType::object());
+  return ApiHandle::borrowedReference(Thread::current(), NoneType::object());
 }
 
 PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
@@ -37,7 +36,7 @@ PY_EXPORT int PyCallable_Check(PyObject* /* x */) {
 }
 
 PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (pyobj == nullptr) {
     return ApiHandle::newReference(thread, runtime->symbols()->Null());
@@ -53,7 +52,7 @@ PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
 }
 
 PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   if (pyobj == nullptr) {
     View<byte> view(reinterpret_cast<const byte*>("<NULL>"), 6);
@@ -85,7 +84,7 @@ PY_EXPORT PyObject* PyObject_Dir(PyObject* /* j */) {
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!object.isHeapObject()) return nullptr;
@@ -96,7 +95,7 @@ PY_EXPORT PyObject* PyObject_GenericGetAttr(PyObject* obj, PyObject* name) {
 
 PY_EXPORT int PyObject_GenericSetAttr(PyObject* obj, PyObject* name,
                                       PyObject* value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!object.isHeapObject()) return -1;
@@ -120,7 +119,7 @@ PY_EXPORT PyObject* PyObject_GetAttr(PyObject* v, PyObject* name) {
 PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* pyobj, const char* name) {
   DCHECK(pyobj != nullptr, "pyobj must not be nullptr");
   DCHECK(name != nullptr, "name must not be nullptr");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object result(&scope,
@@ -130,7 +129,7 @@ PY_EXPORT PyObject* PyObject_GetAttrString(PyObject* pyobj, const char* name) {
 }
 
 PY_EXPORT int PyObject_HasAttr(PyObject* pyobj, PyObject* pyname) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object name(&scope, ApiHandle::fromPyObject(pyname)->asObject());
@@ -153,7 +152,7 @@ PY_EXPORT int PyObject_HasAttrString(PyObject* pyobj, const char* name) {
 
 PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
   DCHECK(obj != nullptr, "obj should not be nullptr");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderHash));
@@ -169,7 +168,7 @@ PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
 }
 
 PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   thread->raiseTypeErrorWithCStr("unhashable type");
   return -1;
 }
@@ -191,7 +190,7 @@ PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* obj, PyTypeObject* type,
 
 PY_EXPORT int PyObject_IsTrue(PyObject* obj) {
   DCHECK(obj != nullptr, "nullptr passed into PyObject_IsTrue");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Frame* frame = thread->currentFrame();
@@ -216,7 +215,7 @@ PY_EXPORT int PyObject_Print(PyObject* /* p */, FILE* /* p */, int /* s */) {
 
 // TODO(T38571506): Handle recursive objects safely.
 PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     return ApiHandle::newReference(thread,
                                    thread->runtime()->symbols()->Null());
@@ -236,7 +235,7 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
 
 PY_EXPORT PyObject* PyObject_RichCompare(PyObject* v, PyObject* w, int op) {
   DCHECK(CompareOp::LT <= op && op <= CompareOp::GE, "Bad op");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (v == nullptr || w == nullptr) {
     if (!thread->hasPendingException()) {
       thread->raiseBadInternalCall();
@@ -304,7 +303,7 @@ PY_EXPORT int PyObject_SetAttrString(PyObject* v, const char* name,
 
 // TODO(T38571506): Handle recursive objects safely.
 PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     return ApiHandle::newReference(thread,
                                    thread->runtime()->symbols()->Null());
@@ -333,7 +332,7 @@ PY_EXPORT void Py_IncRef(PyObject* obj) {
 }
 
 PY_EXPORT int Py_ReprEnter(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope, thread->reprEnter(object));
@@ -344,7 +343,7 @@ PY_EXPORT int Py_ReprEnter(PyObject* obj) {
 }
 
 PY_EXPORT void Py_ReprLeave(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   thread->reprLeave(object);

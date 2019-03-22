@@ -37,7 +37,7 @@ class TracebackPrinter : public FrameVisitor {
       return;
     }
 
-    Thread* thread = Thread::currentThread();
+    Thread* thread = Thread::current();
     HandleScope scope(thread);
     Code code(&scope, frame->code());
 
@@ -86,7 +86,7 @@ void Utils::printTraceback() { printTraceback(stderr); }
 
 void Utils::printTraceback(FILE* fp) {
   TracebackPrinter printer;
-  Thread::currentThread()->visitFrames(&printer);
+  Thread::current()->visitFrames(&printer);
   printer.print(fp);
 }
 

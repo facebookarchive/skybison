@@ -50,7 +50,7 @@ class Thread {
   explicit Thread(word size);
   ~Thread();
 
-  static Thread* currentThread();
+  static Thread* current();
   static void setCurrentThread(Thread* thread);
 
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);

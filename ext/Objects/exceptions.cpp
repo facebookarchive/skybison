@@ -3,7 +3,7 @@
 namespace python {
 
 static PyObject* typeObjectHandle(LayoutId id) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   return ApiHandle::borrowedReference(thread, runtime->typeAt(id));
 }
@@ -265,7 +265,7 @@ PY_EXPORT PyObject* PyExc_ResourceWarning_Ptr() {
 }
 
 PY_EXPORT void PyException_SetCause(PyObject* self, PyObject* cause) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
@@ -279,7 +279,7 @@ PY_EXPORT void PyException_SetCause(PyObject* self, PyObject* cause) {
 }
 
 PY_EXPORT PyObject* PyException_GetCause(PyObject* self) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
@@ -291,7 +291,7 @@ PY_EXPORT PyObject* PyException_GetCause(PyObject* self) {
 }
 
 PY_EXPORT PyObject* PyException_GetContext(PyObject* self) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
@@ -303,7 +303,7 @@ PY_EXPORT PyObject* PyException_GetContext(PyObject* self) {
 }
 
 PY_EXPORT void PyException_SetContext(PyObject* self, PyObject* context) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
@@ -317,7 +317,7 @@ PY_EXPORT void PyException_SetContext(PyObject* self, PyObject* context) {
 }
 
 PY_EXPORT int PyException_SetTraceback(PyObject* self, PyObject* tb) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   if (tb == nullptr) {
@@ -335,7 +335,7 @@ PY_EXPORT int PyException_SetTraceback(PyObject* self, PyObject* tb) {
 }
 
 PY_EXPORT PyObject* PyException_GetTraceback(PyObject* self) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());

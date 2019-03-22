@@ -18,14 +18,14 @@ static PyObject* getObject(Thread* thread, const Object& obj) {
 }
 
 PY_EXPORT PyObject* PyWeakref_GET_OBJECT_Func(PyObject* ref) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(ref)->asObject());
   return getObject(thread, obj);
 }
 
 PY_EXPORT PyObject* PyWeakref_GetObject(PyObject* ref) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (ref == nullptr) {
     thread->raiseSystemErrorWithCStr(
         "PyWeakref_GetObject expected non-null ref");
@@ -45,7 +45,7 @@ PY_EXPORT PyObject* PyWeakref_NewProxy(PyObject* /* b */, PyObject* /* k */) {
 }
 
 PY_EXPORT PyObject* PyWeakref_NewRef(PyObject* obj, PyObject* callback) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object referent(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object callback_obj(&scope, NoneType::object());

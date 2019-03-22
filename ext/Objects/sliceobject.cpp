@@ -10,7 +10,7 @@ PY_EXPORT int PySlice_Check_Func(PyObject* pyobj) {
 
 PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,
                                 PyObject* step) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Slice slice(&scope, thread->runtime()->newSlice());
   if (start != nullptr) {
@@ -60,7 +60,7 @@ PY_EXPORT int PySlice_Unpack(PyObject* pyobj, Py_ssize_t* start_ptr,
                              Py_ssize_t* stop_ptr, Py_ssize_t* step_ptr) {
   DCHECK(SmallInt::kMinValue + 1 <= -SmallInt::kMaxValue,
          "smallint::min + 1 must be <= smallint::max");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   if (!obj.isSlice()) {

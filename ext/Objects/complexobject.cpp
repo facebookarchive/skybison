@@ -8,12 +8,12 @@ PY_EXPORT int PyComplex_CheckExact_Func(PyObject* p) {
 }
 
 PY_EXPORT int PyComplex_Check_Func(PyObject* p) {
-  return Thread::currentThread()->runtime()->isInstanceOfComplex(
+  return Thread::current()->runtime()->isInstanceOfComplex(
       ApiHandle::fromPyObject(p)->asObject());
 }
 
 PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pycomplex)->asObject());
@@ -52,13 +52,13 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
 }
 
 PY_EXPORT PyObject* PyComplex_FromCComplex(Py_complex cmp) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(
       thread, thread->runtime()->newComplex(cmp.real, cmp.imag));
 }
 
 PY_EXPORT double PyComplex_ImagAsDouble(PyObject* pycomplex) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pycomplex)->asObject());
@@ -69,7 +69,7 @@ PY_EXPORT double PyComplex_ImagAsDouble(PyObject* pycomplex) {
 }
 
 PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pycomplex)->asObject());
@@ -84,7 +84,7 @@ PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
 }
 
 PY_EXPORT PyObject* PyComplex_FromDoubles(double real, double imag) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(thread,
                                  thread->runtime()->newComplex(real, imag));
 }

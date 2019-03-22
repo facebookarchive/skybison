@@ -93,7 +93,7 @@ std::ostream& operator<<(std::ostream& os, RawBool value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawBytes value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Bytes self(&scope, value);
   Str repr(&scope, bytesReprSmartQuotes(thread, self));
@@ -106,7 +106,7 @@ std::ostream& operator<<(std::ostream& os, RawCode value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawDict value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, value);
@@ -191,7 +191,7 @@ std::ostream& operator<<(std::ostream& os, RawNoneType) { return os << "None"; }
 
 static std::ostream& printObjectGeneric(std::ostream& os,
                                         RawObject object_raw) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, object_raw);
   Object type_obj(&scope, thread->runtime()->typeOf(*object));
@@ -319,7 +319,7 @@ std::ostream& operator<<(std::ostream& os, Frame* frame) {
     frames.push_back(f);
   }
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   for (word i = frames.size() - 1; i >= 0; i--) {
     dumpSingleFrame(thread, os, frames[i]);
   }

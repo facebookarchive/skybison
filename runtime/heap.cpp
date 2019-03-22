@@ -31,7 +31,7 @@ RawObject Heap::allocate(word size, word offset) {
     }
     if (attempt == 0) {
       // Allocation failed, garbage collect and retry the allocation.
-      Thread::currentThread()->runtime()->collectGarbage();
+      Thread::current()->runtime()->collectGarbage();
     }
   }
   return Error::object();
@@ -101,7 +101,7 @@ RawObject Heap::createType(LayoutId metaclass_id) {
   result.setHeader(Header::from(RawType::kSize / kPointerSize, 0, metaclass_id,
                                 ObjectFormat::kObjectInstance));
   result.initialize(RawType::kSize, NoneType::object());
-  DCHECK(Thread::currentThread()->runtime()->isInstanceOfType(result),
+  DCHECK(Thread::current()->runtime()->isInstanceOfType(result),
          "Invalid Type");
   return result;
 }

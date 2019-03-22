@@ -9,7 +9,7 @@
 namespace python {
 
 PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object flt(&scope, runtime->newFloat(fval));
@@ -17,7 +17,7 @@ PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
 }
 
 PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (op == nullptr) {
     thread->raiseBadArgument();
     return -1;
@@ -36,7 +36,7 @@ PY_EXPORT int PyFloat_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyFloat_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfFloat(
+  return Thread::current()->runtime()->isInstanceOfFloat(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 

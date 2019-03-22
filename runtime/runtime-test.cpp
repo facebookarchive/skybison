@@ -91,7 +91,7 @@ INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
 
 TEST(RuntimeByteArrayTest, EnsureCapacity) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
@@ -116,7 +116,7 @@ TEST(RuntimeByteArrayTest, EnsureCapacity) {
 
 TEST(RuntimeByteArrayTest, Extend) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
@@ -132,7 +132,7 @@ TEST(RuntimeByteArrayTest, Extend) {
 
 TEST(RuntimeBytesTest, Concat) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   View<byte> foo(reinterpret_cast<const byte*>("foo"), 3);
@@ -145,7 +145,7 @@ TEST(RuntimeBytesTest, Concat) {
 
 TEST(RuntimeBytesTest, Subseq) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   View<byte> hello(reinterpret_cast<const byte*>("Hello world!"), 12);
@@ -453,7 +453,7 @@ TEST(RuntimeListTest, AppendToList) {
 
 TEST(RuntimeTest, NewByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
@@ -561,7 +561,7 @@ TEST(RuntimeTest, NewStr) {
 
 TEST(RuntimeTest, NewStrFromByteArrayCopiesByteArray) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   ByteArray array(&scope, runtime.newByteArray());
@@ -1091,7 +1091,7 @@ TEST(RuntimeStrTest, StrConcat) {
   Str str3(&scope, runtime.newStrFromCStr("0123456789abcdef"));
   Str str4(&scope, runtime.newStrFromCStr("fedbca9876543210"));
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Object concat12(&scope, runtime.strConcat(thread, str1, str2));
   Object concat34(&scope, runtime.strConcat(thread, str3, str4));
 
@@ -1147,8 +1147,7 @@ TEST_P(LookupNameInMroTest, Lookup) {
 
   auto param = GetParam();
   Object key(&scope, runtime.newStrFromCStr(param.name));
-  RawObject result =
-      runtime.lookupNameInMro(Thread::currentThread(), type, key);
+  RawObject result = runtime.lookupNameInMro(Thread::current(), type, key);
   EXPECT_EQ(result, param.expected);
 }
 
@@ -1241,8 +1240,7 @@ c = MyTypeWithAttributes(1)
   EXPECT_TRUE(isStrEqualsCStr(cls.name(), "MyTypeWithAttributes"));
 
   Object name(&scope, runtime.newStrFromCStr("x"));
-  Object value(&scope,
-               runtime.attributeAt(Thread::currentThread(), instance, name));
+  Object value(&scope, runtime.attributeAt(Thread::current(), instance, name));
   EXPECT_FALSE(value.isError());
   EXPECT_EQ(*value, SmallInt::fromWord(1));
 }
@@ -1278,7 +1276,7 @@ def func():
   ASSERT_EQ(code.firstlineno(), 2);
 
   // a = 1
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 0), 3);
   EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 2), 3);
 
@@ -1448,15 +1446,15 @@ TEST(RuntimeSetTest, UpdateSet) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set, value);
   }
-  runtime.setUpdate(Thread::currentThread(), set, set1_handle);
+  runtime.setUpdate(Thread::current(), set, set1_handle);
   ASSERT_EQ(set.numItems(), 8);
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     runtime.setAdd(set1, value);
   }
-  runtime.setUpdate(Thread::currentThread(), set, set1_handle);
+  runtime.setUpdate(Thread::current(), set, set1_handle);
   ASSERT_EQ(set.numItems(), 12);
-  runtime.setUpdate(Thread::currentThread(), set, set1_handle);
+  runtime.setUpdate(Thread::current(), set, set1_handle);
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1475,9 +1473,9 @@ TEST(RuntimeSetTest, UpdateList) {
   }
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
-  runtime.setUpdate(Thread::currentThread(), set, list_handle);
+  runtime.setUpdate(Thread::current(), set, list_handle);
   ASSERT_EQ(set.numItems(), 12);
-  runtime.setUpdate(Thread::currentThread(), set, list_handle);
+  runtime.setUpdate(Thread::current(), set, list_handle);
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1497,7 +1495,7 @@ TEST(RuntimeSetTest, UpdateListIterator) {
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
   Object list_iterator(&scope, runtime.newListIterator(list_handle));
-  runtime.setUpdate(Thread::currentThread(), set, list_iterator);
+  runtime.setUpdate(Thread::current(), set, list_iterator);
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1515,7 +1513,7 @@ TEST(RuntimeSetTest, UpdateTuple) {
   }
   ASSERT_EQ(set.numItems(), 8);
   Object object_array_handle(&scope, *object_array);
-  runtime.setUpdate(Thread::currentThread(), set, object_array_handle);
+  runtime.setUpdate(Thread::current(), set, object_array_handle);
   ASSERT_EQ(set.numItems(), 12);
 }
 
@@ -1524,7 +1522,7 @@ TEST(RuntimeSetTest, UpdateIterator) {
   HandleScope scope;
   Set set(&scope, runtime.newSet());
   Object iterable(&scope, runtime.newRange(1, 4, 1));
-  runtime.setUpdate(Thread::currentThread(), set, iterable);
+  runtime.setUpdate(Thread::current(), set, iterable);
 
   ASSERT_EQ(set.numItems(), 3);
 }
@@ -1535,13 +1533,13 @@ TEST(RuntimeSetTest, UpdateWithNonIterable) {
   Set set(&scope, runtime.newSet());
   Object non_iterable(&scope, NoneType::object());
   Object result(&scope,
-                runtime.setUpdate(Thread::currentThread(), set, non_iterable));
+                runtime.setUpdate(Thread::current(), set, non_iterable));
   ASSERT_TRUE(result.isError());
 }
 
 TEST(RuntimeSetTest, EmptySetItersectionReturnsEmptySet) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Set set1(&scope, runtime.newSet());
@@ -1554,7 +1552,7 @@ TEST(RuntimeSetTest, EmptySetItersectionReturnsEmptySet) {
 
 TEST(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Set set1(&scope, runtime.newSet());
@@ -1577,7 +1575,7 @@ TEST(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
 
 TEST(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Set set1(&scope, runtime.newSet());
@@ -1620,7 +1618,7 @@ TEST(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
 
 TEST(RuntimeSetTest, IntersectIterator) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Object iterable(&scope, runtime.newRange(1, 4, 1));
@@ -1641,7 +1639,7 @@ TEST(RuntimeSetTest, IntersectIterator) {
 
 TEST(RuntimeSetTest, IntersectWithNonIterable) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Object non_iterable(&scope, NoneType::object());
@@ -1655,7 +1653,7 @@ TEST(RuntimeSetTest, IntersectWithNonIterable) {
 static RawObject createType(Runtime* runtime) {
   HandleScope scope;
   Type type(&scope, runtime->newType());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Layout layout(&scope, runtime->layoutCreateEmpty(thread));
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
@@ -1694,7 +1692,7 @@ TEST(TypeGetAttrTest, MetaClassFunction) {
   setInMetaclass(&runtime, type, attr, value);
 
   // Fetch it from the class and ensure the bound method was created
-  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
+  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
   ASSERT_TRUE(result.isBoundMethod());
   BoundMethod bm(&scope, result);
   EXPECT_TRUE(Object::equals(bm.function(), *value));
@@ -1713,7 +1711,7 @@ TEST(TypeGetAttrTest, MetaclassAttr) {
   setInMetaclass(&runtime, type, attr, value);
 
   // Fetch it from the class
-  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
+  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
   EXPECT_TRUE(Object::equals(result, *value));
 }
 
@@ -1735,7 +1733,7 @@ TEST(TypeGetAttrTest, ShadowingAttr) {
   setInTypeDict(&runtime, type, attr, type_value);
 
   // Fetch it from the class
-  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
+  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
   EXPECT_TRUE(Object::equals(result, *type_value));
 }
 
@@ -1766,7 +1764,7 @@ TEST_P(IntrinsicTypeSetAttrTest, SetAttr) {
   Object type(&scope, runtime.typeAt(GetParam().layout_id));
   Object attr(&scope, runtime.newStrFromCStr("test"));
   Object value(&scope, SmallInt::fromWord(100));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   RawObject result = runtime.attributeAtPut(thread, type, attr, value);
 
@@ -1791,7 +1789,7 @@ TEST(TypeAttributeTest, SetAttrOnType) {
   Object value(&scope, SmallInt::fromWord(100));
 
   RawObject result =
-      runtime.attributeAtPut(Thread::currentThread(), type, attr, value);
+      runtime.attributeAtPut(Thread::current(), type, attr, value);
   ASSERT_FALSE(result.isError());
 
   Dict type_dict(&scope, RawType::cast(*type).dict());
@@ -1888,7 +1886,7 @@ class DataDescriptor:
   Object descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, type, attr, descr);
 
-  ASSERT_DEATH(runtime.attributeAt(Thread::currentThread(), type, attr),
+  ASSERT_DEATH(runtime.attributeAt(Thread::current(), type, attr),
                "custom descriptors are unsupported");
 }
 
@@ -1915,7 +1913,7 @@ class DataDescriptor:
   Object descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, type, attr, descr);
 
-  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
+  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
   ASSERT_EQ(RawTuple::cast(result).length(), 3);
   EXPECT_EQ(runtime.typeOf(RawTuple::cast(result).at(0)), *descr_type);
   EXPECT_EQ(RawTuple::cast(result).at(1), *type);
@@ -1945,7 +1943,7 @@ class DataDescriptor:
   Object descr(&scope, runtime.newInstance(layout));
   setInTypeDict(&runtime, type, attr, descr);
 
-  RawObject result = runtime.attributeAt(Thread::currentThread(), type, attr);
+  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
   ASSERT_EQ(RawTuple::cast(result).length(), 3);
   EXPECT_EQ(runtime.typeOf(RawTuple::cast(result).at(0)), *descr_type);
   EXPECT_EQ(RawTuple::cast(result).at(1), NoneType::object());
@@ -1954,7 +1952,7 @@ class DataDescriptor:
 
 TEST(TypeAttributeTest, GetNonDataDescriptorOnNoneTypeReturnsFunction) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type none_type(&scope, runtime.typeAt(LayoutId::kNoneType));
   Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
@@ -1976,8 +1974,7 @@ class Foo(metaclass=MyMeta):
   Module main(&scope, findModule(&runtime, "__main__"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
   Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Object result(&scope,
-                runtime.attributeAt(Thread::currentThread(), foo, attr));
+  Object result(&scope, runtime.attributeAt(Thread::current(), foo, attr));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foo"));
 }
 
@@ -2177,8 +2174,7 @@ class Foo:
   // Fetch it from the instance
   Layout instance_layout(&scope, RawType::cast(*type).instanceLayout());
   Object instance(&scope, runtime.newInstance(instance_layout));
-  Tuple result(&scope,
-               runtime.attributeAt(Thread::currentThread(), instance, attr));
+  Tuple result(&scope, runtime.attributeAt(Thread::current(), instance, attr));
   ASSERT_EQ(result.length(), 3);
   EXPECT_EQ(runtime.typeOf(result.at(0)), *descr_type);
   EXPECT_EQ(result.at(1), *instance);
@@ -2211,8 +2207,7 @@ class Foo:
   Layout instance_layout(&scope, RawType::cast(*type).instanceLayout());
   Object instance(&scope, runtime.newInstance(instance_layout));
 
-  RawObject result =
-      runtime.attributeAt(Thread::currentThread(), instance, attr);
+  RawObject result = runtime.attributeAt(Thread::current(), instance, attr);
   ASSERT_EQ(RawTuple::cast(result).length(), 3);
   EXPECT_EQ(runtime.typeOf(RawTuple::cast(result).at(0)), *descr_type);
   EXPECT_EQ(RawTuple::cast(result).at(1), *instance);
@@ -2221,7 +2216,7 @@ class Foo:
 
 TEST(InstanceAttributeTest, GetNonDataDescriptorOnNoneReturnsBoundMethod) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object none(&scope, NoneType::object());
   Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
@@ -2315,8 +2310,7 @@ TEST(InstanceAttributeTest, NoInstanceDictReturnsClassAttribute) {
   HandleScope scope;
   Object immediate(&scope, SmallInt::fromWord(-1));
   Object name(&scope, runtime.symbols()->DunderNeg());
-  RawObject attr =
-      runtime.attributeAt(Thread::currentThread(), immediate, name);
+  RawObject attr = runtime.attributeAt(Thread::current(), immediate, name);
   ASSERT_TRUE(attr.isBoundMethod());
 }
 
@@ -2579,7 +2573,7 @@ def test(module):
 
   Object attr(&scope, runtime.newStrFromCStr("foo"));
   Object module(&scope, *main);
-  EXPECT_EQ(runtime.attributeAt(Thread::currentThread(), module, attr),
+  EXPECT_EQ(runtime.attributeAt(Thread::current(), module, attr),
             Error::object());
 }
 
@@ -2631,8 +2625,7 @@ TEST(RuntimeIntTest, BinaryAndWithSmallInts) {
   HandleScope scope;
   Int left(&scope, SmallInt::fromWord(0xEA));   // 0b11101010
   Int right(&scope, SmallInt::fromWord(0xDC));  // 0b11011100
-  Object result(&scope,
-                runtime.intBinaryAnd(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryAnd(Thread::current(), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xC8));  // 0b11001000
 }
 
@@ -2643,13 +2636,12 @@ TEST(RuntimeIntTest, BinaryAndWithLargeInts) {
   Int left(&scope, newIntWithDigits(&runtime, {0x0F, 0x30, 0x1}));
   // {0b00000011, 0b11110000, 0b00000010, 0b00000111}
   Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xF0, 0x2, 0x7}));
-  Object result(&scope,
-                runtime.intBinaryAnd(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryAnd(Thread::current(), left, right));
   // {0b00000111, 0b01110000}
   EXPECT_TRUE(isIntEqualsDigits(*result, {0x03, 0x30}));
 
-  Object result_commuted(
-      &scope, runtime.intBinaryAnd(Thread::currentThread(), right, left));
+  Object result_commuted(&scope,
+                         runtime.intBinaryAnd(Thread::current(), right, left));
   EXPECT_TRUE(isIntEqualsDigits(*result_commuted, {0x03, 0x30}));
 }
 
@@ -2660,8 +2652,7 @@ TEST(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
   Int right(&scope, newIntWithDigits(&runtime,
                                      {static_cast<uword>(-1), 0xF0, 0x2, 0x7}));
-  Object result(&scope,
-                runtime.intBinaryAnd(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryAnd(Thread::current(), left, right));
   EXPECT_TRUE(
       isIntEqualsDigits(*result, {static_cast<uword>(-42), 0xF0, 0x2, 0x7}));
 }
@@ -2671,8 +2662,7 @@ TEST(RuntimeIntTest, BinaryOrWithSmallInts) {
   HandleScope scope;
   Int left(&scope, SmallInt::fromWord(0xAA));   // 0b10101010
   Int right(&scope, SmallInt::fromWord(0x9C));  // 0b10011100
-  Object result(&scope,
-                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryOr(Thread::current(), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xBE));  // 0b10111110
 }
 
@@ -2683,13 +2673,12 @@ TEST(RuntimeIntTest, BinaryOrWithLargeInts) {
   Int left(&scope, newIntWithDigits(&runtime, {0x0C, 0x30, 0x1}));
   // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
   Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xD0, 0x2, 0x7}));
-  Object result(&scope,
-                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryOr(Thread::current(), left, right));
   // {0b00001111, 0b11110000, 0b00000011, 0b00000111}
   EXPECT_TRUE(isIntEqualsDigits(*result, {0x0F, 0xF0, 0x3, 0x7}));
 
-  Object result_commuted(
-      &scope, runtime.intBinaryOr(Thread::currentThread(), right, left));
+  Object result_commuted(&scope,
+                         runtime.intBinaryOr(Thread::current(), right, left));
   EXPECT_TRUE(isIntEqualsDigits(*result_commuted, {0x0F, 0xF0, 0x3, 0x7}));
 }
 
@@ -2700,8 +2689,7 @@ TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
   Int right(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-4), 0xF0,
                                                 0x2, static_cast<uword>(-1)}));
-  Object result(&scope,
-                runtime.intBinaryOr(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryOr(Thread::current(), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, -2));
 }
 
@@ -2710,8 +2698,7 @@ TEST(RuntimeIntTest, BinaryXorWithSmallInts) {
   HandleScope scope;
   Int left(&scope, SmallInt::fromWord(0xAA));   // 0b10101010
   Int right(&scope, SmallInt::fromWord(0x9C));  // 0b10011100
-  Object result(&scope,
-                runtime.intBinaryXor(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryXor(Thread::current(), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x36));  // 0b00110110
 }
 
@@ -2722,13 +2709,12 @@ TEST(RuntimeIntTest, BinaryXorWithLargeInts) {
   Int left(&scope, newIntWithDigits(&runtime, {0x0C, 0x30, 0x1}));
   // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
   Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xD0, 0x2, 0x7}));
-  Object result(&scope,
-                runtime.intBinaryXor(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryXor(Thread::current(), left, right));
   // {0b00001111, 0b11100000, 0b00000011, 0b00000111}
   EXPECT_TRUE(isIntEqualsDigits(*result, {0x0F, 0xE0, 0x3, 0x7}));
 
-  Object result_commuted(
-      &scope, runtime.intBinaryXor(Thread::currentThread(), right, left));
+  Object result_commuted(&scope,
+                         runtime.intBinaryXor(Thread::current(), right, left));
   EXPECT_TRUE(isIntEqualsDigits(*result_commuted, {0x0F, 0xE0, 0x3, 0x7}));
 }
 
@@ -2739,8 +2725,7 @@ TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
   Int right(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-1), 0xf0,
                                                 0x2, static_cast<uword>(-1)}));
-  Object result(&scope,
-                runtime.intBinaryXor(Thread::currentThread(), left, right));
+  Object result(&scope, runtime.intBinaryXor(Thread::current(), left, right));
   EXPECT_TRUE(isIntEqualsDigits(
       *result, {0x29, ~static_cast<uword>(0xF0), ~static_cast<uword>(0x2), 0}));
 }
@@ -2828,7 +2813,7 @@ class Foo:
   Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime.newInstance(layout));
   Object attr(&scope, runtime.newStrFromCStr("unknown"));
-  EXPECT_EQ(runtime.instanceDel(Thread::currentThread(), instance, attr),
+  EXPECT_EQ(runtime.instanceDel(Thread::current(), instance, attr),
             Error::object());
 }
 
@@ -2856,7 +2841,7 @@ def new_foo():
   Layout layout(&scope, runtime.layoutAt(instance.header().layoutId()));
   Object attr(&scope, runtime.internStrFromCStr("bar"));
   AttributeInfo info;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
   ASSERT_TRUE(info.isInObject());
 
@@ -2892,7 +2877,7 @@ def new_foo():
   Layout layout(&scope, runtime.layoutAt(instance.header().layoutId()));
   Object attr(&scope, runtime.internStrFromCStr("bar"));
   AttributeInfo info;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
   ASSERT_TRUE(info.isOverflow());
 
@@ -3170,7 +3155,7 @@ TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
   ASSERT_TRUE(function.dict().isNoneType());
 
   Object key(&scope, runtime.newStrFromCStr("bar"));
-  runtime.attributeAt(Thread::currentThread(), function, key);
+  runtime.attributeAt(Thread::current(), function, key);
   EXPECT_TRUE(function.dict().isDict());
 }
 
@@ -3181,7 +3166,7 @@ TEST(RuntimeTest, LazyInitializationOfFunctionDict) {
   ASSERT_TRUE(function.dict().isNoneType());
 
   Object key(&scope, runtime.newStrFromCStr("__dict__"));
-  runtime.attributeAt(Thread::currentThread(), function, key);
+  runtime.attributeAt(Thread::current(), function, key);
   EXPECT_TRUE(function.dict().isDict());
 }
 
@@ -3193,10 +3178,10 @@ TEST(RuntimeTest, SetFunctionDict) {
 
   Object dict_name(&scope, runtime.newStrFromCStr("__dict__"));
   Object dict(&scope, runtime.newDict());
-  runtime.attributeAtPut(Thread::currentThread(), function, dict_name, dict);
+  runtime.attributeAtPut(Thread::current(), function, dict_name, dict);
 
-  Object result(&scope, runtime.attributeAt(Thread::currentThread(), function,
-                                            dict_name));
+  Object result(&scope,
+                runtime.attributeAt(Thread::current(), function, dict_name));
   EXPECT_TRUE(result.isDict());
   EXPECT_EQ(*dict, *result);
 }
@@ -3282,7 +3267,7 @@ TEST(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
   Set set(&scope, runtime.newSet());
   Str attr(&scope, runtime.newStrFromCStr("attr"));
   Str value(&scope, runtime.newStrFromCStr("value"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Object result(&scope, runtime.instanceAtPut(thread, set, attr, value));
   EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
 }
@@ -3309,30 +3294,30 @@ a = C()
   Str attr(&scope, runtime.newStrFromCStr("attr"));
   Str value(&scope, runtime.newStrFromCStr("value"));
   Object result(&scope,
-                runtime.instanceAtPut(Thread::currentThread(), a, attr, value));
+                runtime.instanceAtPut(Thread::current(), a, attr, value));
   ASSERT_FALSE(result.isError());
-  EXPECT_EQ(runtime.instanceAt(Thread::currentThread(), a, attr), *value);
+  EXPECT_EQ(runtime.instanceAt(Thread::current(), a, attr), *value);
 }
 
 TEST(RuntimeTest, IsMappingReturnsFalseOnSet) {
   Runtime runtime;
   HandleScope scope;
   Set set(&scope, runtime.newSet());
-  EXPECT_FALSE(runtime.isMapping(Thread::currentThread(), set));
+  EXPECT_FALSE(runtime.isMapping(Thread::current(), set));
 }
 
 TEST(RuntimeTest, IsMappingReturnsTrueOnDict) {
   Runtime runtime;
   HandleScope scope;
   Dict dict(&scope, runtime.newDict());
-  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), dict));
+  EXPECT_TRUE(runtime.isMapping(Thread::current(), dict));
 }
 
 TEST(RuntimeTest, IsMappingReturnsTrueOnList) {
   Runtime runtime;
   HandleScope scope;
   List list(&scope, runtime.newList());
-  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), list));
+  EXPECT_TRUE(runtime.isMapping(Thread::current(), list));
 }
 
 TEST(RuntimeTest, IsMappingReturnsTrueOnCustomClassWithMethod) {
@@ -3345,7 +3330,7 @@ o = C()
 )");
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
-  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), obj));
+  EXPECT_TRUE(runtime.isMapping(Thread::current(), obj));
 }
 
 TEST(RuntimeTest, IsMappingWithClassAttrNotCallableReturnsTrue) {
@@ -3357,7 +3342,7 @@ o = C()
 )");
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
-  EXPECT_TRUE(runtime.isMapping(Thread::currentThread(), obj));
+  EXPECT_TRUE(runtime.isMapping(Thread::current(), obj));
 }
 
 TEST(RuntimeTest, IsMappingReturnsFalseOnCustomClassWithoutMethod) {
@@ -3369,7 +3354,7 @@ o = C()
 )");
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
-  EXPECT_FALSE(runtime.isMapping(Thread::currentThread(), obj));
+  EXPECT_FALSE(runtime.isMapping(Thread::current(), obj));
 }
 
 TEST(RuntimeTest, IsMappingWithInstanceAttrReturnsFalse) {
@@ -3382,7 +3367,7 @@ o.__getitem__ = 4
 )");
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
-  EXPECT_FALSE(runtime.isMapping(Thread::currentThread(), obj));
+  EXPECT_FALSE(runtime.isMapping(Thread::current(), obj));
 }
 
 TEST(RuntimeTest, NewBuiltinFunctionAddsQualname) {

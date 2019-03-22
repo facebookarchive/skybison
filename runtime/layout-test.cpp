@@ -21,7 +21,7 @@ TEST(AttributeInfoTest, WithFlags) {
 TEST(LayoutTest, FindAttribute) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Should fail to find an attribute that isn't present
@@ -47,7 +47,7 @@ TEST(LayoutTest, FindAttribute) {
 TEST(LayoutTest, AddNewAttributes) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Should fail to find an attribute that isn't present
@@ -83,7 +83,7 @@ TEST(LayoutTest, AddNewAttributes) {
 TEST(LayoutTest, AddDuplicateAttributes) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
 
   // Add an attribute
@@ -109,7 +109,7 @@ TEST(LayoutTest, AddDuplicateAttributes) {
 TEST(LayoutTest, DeleteNonExistentAttribute) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
   RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr);
@@ -119,7 +119,7 @@ TEST(LayoutTest, DeleteNonExistentAttribute) {
 TEST(LayoutTest, DeleteInObjectAttribute) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   // Create a new layout with a single in-object attribute
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
@@ -159,7 +159,7 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
 TEST(LayoutTest, DeleteOverflowAttribute) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   // Create a new layout with several overflow attributes
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
@@ -235,7 +235,7 @@ static RawObject createLayoutAttribute(Runtime* runtime, const Object& name,
 
 TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   // Create a new layout with one overflow attribute and one in-object
@@ -267,7 +267,7 @@ TEST(LayoutTest, VerifyChildLayout) {
   Layout parent(&scope, runtime.newLayout());
   Object attr(&scope, runtime.newStrFromCStr("foo"));
   Layout child(&scope,
-               runtime.layoutAddAttribute(Thread::currentThread(), parent, attr,
+               runtime.layoutAddAttribute(Thread::current(), parent, attr,
                                           AttributeInfo::Flag::kNone));
 
   EXPECT_NE(child.id(), parent.id());

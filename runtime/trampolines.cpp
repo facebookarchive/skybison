@@ -244,7 +244,7 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
       // If we were unable to find a slot to swap into, TypeError
       if (!arg_at(arg_pos).isError()) {
         // TODO(T40470525): Print out qualname and formal name in error message
-        return Thread::currentThread()->raiseTypeErrorWithCStr(
+        return Thread::current()->raiseTypeErrorWithCStr(
             "TypeError: invalid keyword argument supplied");
       }
     }
@@ -267,7 +267,7 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
     } else if (!function.kwDefaults().isNoneType()) {
       // How about a kwonly default?
       Dict kw_defaults(&scope, function.kwDefaults());
-      Thread* thread = Thread::currentThread();
+      Thread* thread = Thread::current();
       Object name(&scope, formal_names.at(arg_pos + start));
       RawObject val = thread->runtime()->dictAt(kw_defaults, name);
       if (!val.isError()) {
@@ -275,7 +275,7 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
         continue;  // Got it, move on to the next
       }
     }
-    return Thread::currentThread()->raiseTypeErrorWithCStr(
+    return Thread::current()->raiseTypeErrorWithCStr(
         "TypeError: missing argument");
   }
   return NoneType::object();

@@ -13,7 +13,7 @@ namespace python {
 
 PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
                                              Py_ssize_t pos) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object structseq_obj(&scope, ApiHandle::fromPyObject(structseq)->asObject());
   Object pos_obj(&scope, thread->runtime()->newInt(pos));
@@ -30,7 +30,7 @@ PY_EXPORT PyObject* PyStructSequence_GetItem(PyObject* structseq,
 PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
                                         PyObject* value) {
   // This function can't be implemented in Python since it's an immutable type
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
@@ -72,7 +72,7 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
 }
 
 PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(
@@ -90,7 +90,7 @@ PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
 }
 
 PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 

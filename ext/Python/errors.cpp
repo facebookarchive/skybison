@@ -16,7 +16,7 @@ PY_EXPORT void PyErr_SetString(PyObject* exc, const char* msg) {
 }
 
 PY_EXPORT PyObject* PyErr_Occurred() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (!thread->hasPendingException()) {
     return nullptr;
   }
@@ -31,18 +31,16 @@ PY_EXPORT PyObject* PyErr_Format(PyObject* exception, const char* format, ...) {
   return nullptr;
 }
 
-PY_EXPORT void PyErr_Clear() {
-  Thread::currentThread()->clearPendingException();
-}
+PY_EXPORT void PyErr_Clear() { Thread::current()->clearPendingException(); }
 
 PY_EXPORT int PyErr_BadArgument() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   thread->raiseBadArgument();
   return 0;
 }
 
 PY_EXPORT PyObject* PyErr_NoMemory() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   thread->raiseMemoryError();
   return nullptr;
 }
@@ -84,7 +82,7 @@ PY_EXPORT PyObject* _PyErr_FormatFromCause(PyObject* exception,
 #pragma push_macro("PyErr_BadInternalCall")
 #undef PyErr_BadInternalCall
 PY_EXPORT void PyErr_BadInternalCall() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   thread->raiseBadInternalCall();
 }
 #pragma pop_macro("PyErr_BadInternalCall")
@@ -94,7 +92,7 @@ PY_EXPORT int PyErr_ExceptionMatches(PyObject* exc) {
 }
 
 PY_EXPORT void PyErr_Fetch(PyObject** pexc, PyObject** pval, PyObject** ptb) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   DCHECK(pexc != nullptr, "pexc is null");
   if (thread->pendingExceptionType().isNoneType()) {
     *pexc = nullptr;
@@ -136,7 +134,7 @@ PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* given, PyObject* exc) {
   if (given == nullptr || exc == nullptr) {
     return 0;
   }
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object given_obj(&scope, ApiHandle::fromPyObject(given)->asObject());
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
@@ -157,7 +155,7 @@ PY_EXPORT PyObject* PyErr_NewExceptionWithDoc(const char* /* e */,
 
 PY_EXPORT void PyErr_NormalizeException(PyObject** exc, PyObject** val,
                                         PyObject** tb) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   Object exc_obj(&scope, *exc ? ApiHandle::fromPyObject(*exc)->asObject()
@@ -315,7 +313,7 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* /* j */) {
 }
 
 PY_EXPORT void _PyErr_BadInternalCall(const char* filename, int lineno) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object message(&scope, thread->runtime()->newStrFromFormat(
                              "%s:%d: bad argument to internal function",
@@ -329,7 +327,7 @@ PY_EXPORT PyObject* PyErr_ProgramTextObject(PyObject* /* e */, int /* o */) {
 
 PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,
                              PyObject* traceback) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (type == nullptr) {
     thread->setPendingExceptionType(NoneType::object());
   } else {

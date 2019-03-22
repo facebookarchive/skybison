@@ -52,7 +52,7 @@ PY_EXPORT void _PyUnicodeWriter_Dealloc(_PyUnicodeWriter* writer) {
 }
 
 PY_EXPORT PyObject* _PyUnicodeWriter_Finish(_PyUnicodeWriter* writer) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str str(&scope, thread->runtime()->newStrFromUTF32(View<int32>(
                       static_cast<int32*>(writer->data), writer->pos)));
@@ -70,7 +70,7 @@ PY_EXPORT int _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter* writer,
                                                Py_UCS4 /* maxchar */) {
   writer->maxchar = kMaxUnicode;
   if (length > kMaxWord - writer->pos) {
-    Thread::currentThread()->raiseMemoryError();
+    Thread::current()->raiseMemoryError();
     return -1;
   }
   Py_ssize_t newlen = writer->pos + length;
@@ -143,7 +143,7 @@ PY_EXPORT int _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter* writer,
 
 PY_EXPORT int _PyUnicodeWriter_WriteStr(_PyUnicodeWriter* writer,
                                         PyObject* str) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
   Py_ssize_t len = src.length();
@@ -162,7 +162,7 @@ PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
   Py_ssize_t len = end - start;
   if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) < 0) return -1;
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
   for (Py_ssize_t i = start; i < end; ++i, writer->pos++) {
@@ -512,7 +512,7 @@ PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
 }
 
 PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str lhs(&scope, ApiHandle::fromPyObject(aa)->asObject());
   Str rhs(&scope, ApiHandle::fromPyObject(bb)->asObject());
@@ -532,12 +532,12 @@ PY_EXPORT int PyUnicode_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyUnicode_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfStr(
+  return Thread::current()->runtime()->isInstanceOfStr(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -546,7 +546,7 @@ PY_EXPORT PyObject* PyUnicode_FromString(const char* c_string) {
 }
 
 PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   if (pyunicode == nullptr) {
@@ -581,7 +581,7 @@ PY_EXPORT char* PyUnicode_AsUTF8(PyObject* unicode) {
 
 PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
                                                 Py_ssize_t size) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   if (size < 0) {
     thread->raiseSystemErrorWithCStr(
@@ -605,7 +605,7 @@ PY_EXPORT PyObject* PyUnicode_EncodeFSDefault(PyObject* unicode) {
 }
 
 PY_EXPORT PyObject* PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   // Since CPython optimizes for empty string, we must do so as well to make
   // sure we don't fail if maxchar is invalid
   if (size == 0) {
@@ -743,7 +743,7 @@ PY_EXPORT PyObject* PyUnicode_BuildEncodingMap(PyObject* /* g */) {
 PY_EXPORT int PyUnicode_ClearFreeList() { return 0; }
 
 PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (left == nullptr || right == nullptr) {
     thread->raiseBadInternalCall();
     return -1;
@@ -772,7 +772,7 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
 }
 
 PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str str_obj(&scope, ApiHandle::fromPyObject(uni)->asObject());
   // TODO(atalaba): Allow for proper comparison against Latin-1 strings. For
@@ -782,7 +782,7 @@ PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str) {
 }
 
 PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
@@ -808,7 +808,7 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
 PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
   DCHECK(str != nullptr, "str should not be null");
   DCHECK(substr != nullptr, "substr should not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
@@ -838,7 +838,7 @@ PY_EXPORT PyObject* PyUnicode_Decode(const char* /* s */, Py_ssize_t /* e */,
 PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
                                           const char* /* errors */) {
   // TODO(T38200137): Make use of the errors handler
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(
       thread, thread->runtime()->newStrWithAll(
                   View<byte>(reinterpret_cast<const byte*>(c_str), size)));
@@ -860,14 +860,14 @@ PY_EXPORT PyObject* PyUnicode_DecodeCodePageStateful(int /* e */,
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeFSDefault(const char* c_str) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(thread,
                                  thread->runtime()->newStrFromCStr(c_str));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeFSDefaultAndSize(const char* c_str,
                                                      Py_ssize_t size) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   View<byte> str(reinterpret_cast<const byte*>(c_str), size);
   return ApiHandle::newReference(thread, thread->runtime()->newStrWithAll(str));
 }
@@ -952,7 +952,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF7Stateful(const char* /* s */,
 PY_EXPORT PyObject* PyUnicode_DecodeUTF8(const char* c_str, Py_ssize_t size,
                                          const char* /* errors */) {
   // TODO(T38200137): Make use of the error_handler argument
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(
       thread, thread->runtime()->newStrWithAll(
                   View<byte>(reinterpret_cast<const byte*>(c_str), size)));
@@ -964,7 +964,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
                                                  Py_ssize_t* /* consumed */) {
   // TODO(T38200137): Make use of the errors argument
   // TODO(T38320199): Make use of the consumed argument
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(
       thread, thread->runtime()->newStrWithAll(
                   View<byte>(reinterpret_cast<const byte*>(c_str), size)));
@@ -1032,7 +1032,7 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
   DCHECK(str != nullptr, "str must be non-null");
   DCHECK(substr != nullptr, "substr must be non-null");
   DCHECK(direction == -1 || direction == 1, "direction must be -1 or 1");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
@@ -1062,7 +1062,7 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
                                         int direction) {
   DCHECK(str != nullptr, "str must not be null");
   DCHECK(direction == 1 || direction == -1, "direction must be -1 or 1");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (start < 0 || end < 0) {
     thread->raiseIndexErrorWithCStr("string index out of range");
     return -2;
@@ -1160,7 +1160,7 @@ PY_EXPORT PyObject* PyUnicode_FromOrdinal(int /* l */) {
 
 PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
                                            Py_ssize_t size) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (buffer == nullptr && size != 0) {
     thread->raiseBadInternalCall();
     return nullptr;
@@ -1191,7 +1191,7 @@ PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   if (!thread->runtime()->isInstanceOfStr(*obj)) {
@@ -1233,7 +1233,7 @@ PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
   if (*pobj == nullptr) {
     return;
   }
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(*pobj)->asObject());
   if (!obj.isLargeStr()) {
@@ -1253,7 +1253,7 @@ PY_EXPORT int PyUnicode_IsIdentifier(PyObject* /* f */) {
 PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
   DCHECK(sep != nullptr, "sep should not be null");
   DCHECK(seq != nullptr, "seq should not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
@@ -1271,7 +1271,7 @@ PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
 PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
   DCHECK(str != nullptr, "str should not be null");
   DCHECK(sep != nullptr, "sep should not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
@@ -1290,7 +1290,7 @@ PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
 PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
   DCHECK(str != nullptr, "str should not be null");
   DCHECK(sep != nullptr, "sep should not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
@@ -1310,7 +1310,7 @@ PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
                                      Py_ssize_t maxsplit) {
   DCHECK(str != nullptr, "str must not be null");
   DCHECK(sep != nullptr, "sep must not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
@@ -1349,7 +1349,7 @@ PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
                                     Py_ssize_t maxsplit) {
   DCHECK(str != nullptr, "str must not be null");
   DCHECK(sep != nullptr, "sep must not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   Object sep_obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
@@ -1373,7 +1373,7 @@ PY_EXPORT PyObject* PyUnicode_Splitlines(PyObject* /* g */, int /* s */) {
 PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
                                         Py_ssize_t end) {
   DCHECK(pyobj != nullptr, "null argument to PyUnicode_Substring");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (start < 0 || end < 0) {
     thread->raiseIndexErrorWithCStr("string index out of range");
     return nullptr;
@@ -1451,7 +1451,7 @@ static PyObject* decodeUnicodeToString(Thread* thread, const void* src,
 
 PY_EXPORT PyObject* PyUnicode_FromKindAndData(int kind, const void* buffer,
                                               Py_ssize_t size) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (size < 0) {
     thread->raiseValueErrorWithCStr("size must be positive");
     return nullptr;
@@ -1484,7 +1484,7 @@ PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,
   }
   CHECK(sizeof(*code_units) * kBitsPerByte == 32,
         "size of Py_UNICODE should be either 16 or 32 bits");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   for (Py_ssize_t i = 0; i < size; ++i) {
     if (code_units[i] > kMaxUnicode) {
       thread->raiseValueErrorWithCStr("character is not in range");

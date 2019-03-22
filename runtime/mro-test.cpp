@@ -8,7 +8,7 @@ using namespace testing;
 
 TEST(MroTest, ComputeMroReturnsList) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class A: pass
@@ -27,7 +27,7 @@ class A: pass
 
 TEST(MroTest, ComputeMroWithTypeSubclassReturnsList) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Meta(type):

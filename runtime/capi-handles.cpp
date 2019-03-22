@@ -179,7 +179,7 @@ RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
 }
 
 RawObject ApiHandle::asInstance(RawObject obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -216,7 +216,7 @@ void* ApiHandle::cache() {
   // Only managed objects can have a cached value
   if (!isManaged()) return nullptr;
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -230,7 +230,7 @@ void* ApiHandle::cache() {
 }
 
 void ApiHandle::setCache(void* value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -242,7 +242,7 @@ void ApiHandle::setCache(void* value) {
 }
 
 void ApiHandle::dispose() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 

@@ -13,7 +13,7 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
     return nullptr;
   }
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -30,12 +30,12 @@ PY_EXPORT int PyList_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyList_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfList(
+  return Thread::current()->runtime()->isInstanceOfList(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   if (pylist == nullptr) {
@@ -56,7 +56,7 @@ PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
 }
 
 PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
@@ -74,7 +74,7 @@ PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
 }
 
 PY_EXPORT int PyList_Reverse(PyObject* pylist) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pylist == nullptr) {
     thread->raiseBadInternalCall();
     return -1;
@@ -92,7 +92,7 @@ PY_EXPORT int PyList_Reverse(PyObject* pylist) {
 }
 
 PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
@@ -110,7 +110,7 @@ PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {
 }
 
 PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -136,7 +136,7 @@ PY_EXPORT int PyList_ClearFreeList() { return 0; }
 
 PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
                                     Py_ssize_t high) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
@@ -164,7 +164,7 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
 
 PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,
                             PyObject* item) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   if (item == nullptr) {
@@ -192,7 +192,7 @@ PY_EXPORT int PyList_SetSlice(PyObject* /* a */, Py_ssize_t /* w */,
 }
 
 PY_EXPORT Py_ssize_t PyList_Size(PyObject* p) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -207,7 +207,7 @@ PY_EXPORT Py_ssize_t PyList_Size(PyObject* p) {
 }
 
 PY_EXPORT int PyList_Sort(PyObject* pylist) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pylist == nullptr) {
     thread->raiseBadInternalCall();
     return -1;

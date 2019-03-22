@@ -256,7 +256,7 @@ TEST(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {
 
 TEST(DictBuiltinsTest, UpdateWithNonDictRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object none(&scope, NoneType::object());
@@ -266,7 +266,7 @@ TEST(DictBuiltinsTest, UpdateWithNonDictRaisesTypeError) {
 
 TEST(DictBuiltinsTest, UpdateWithNonMappingTypeRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Int i(&scope, runtime.newInt(1));
@@ -281,7 +281,7 @@ d1 = {"a": 1, "b": 2}
 d2 = {"c": 3, "d": 4}
 d3 = {"a": 123}
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict d1(&scope, moduleAt(&runtime, "__main__", "d1"));
   Dict d2(&scope, moduleAt(&runtime, "__main__", "d2"));
@@ -526,12 +526,12 @@ TEST(DictBuiltinsTest, ItemIteratorNextOnOneElementDictReturnsElement) {
   Object value(&scope, runtime.newStrFromCStr("world"));
   runtime.dictAtPut(dict, key, value);
   DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
-  Object next(&scope, dictItemIteratorNext(Thread::currentThread(), iter));
+  Object next(&scope, dictItemIteratorNext(Thread::current(), iter));
   ASSERT_TRUE(next.isTuple());
   EXPECT_EQ(Tuple::cast(*next).at(0), key);
   EXPECT_EQ(Tuple::cast(*next).at(1), value);
 
-  next = dictItemIteratorNext(Thread::currentThread(), iter);
+  next = dictItemIteratorNext(Thread::current(), iter);
   ASSERT_TRUE(next.isError());
 }
 
@@ -543,10 +543,10 @@ TEST(DictBuiltinsTest, KeyIteratorNextOnOneElementDictReturnsElement) {
   Object value(&scope, runtime.newStrFromCStr("world"));
   runtime.dictAtPut(dict, key, value);
   DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
-  Object next(&scope, dictKeyIteratorNext(Thread::currentThread(), iter));
+  Object next(&scope, dictKeyIteratorNext(Thread::current(), iter));
   EXPECT_EQ(next, key);
 
-  next = dictKeyIteratorNext(Thread::currentThread(), iter);
+  next = dictKeyIteratorNext(Thread::current(), iter);
   ASSERT_TRUE(next.isError());
 }
 
@@ -558,10 +558,10 @@ TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
   Object value(&scope, runtime.newStrFromCStr("world"));
   runtime.dictAtPut(dict, key, value);
   DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
-  Object next(&scope, dictValueIteratorNext(Thread::currentThread(), iter));
+  Object next(&scope, dictValueIteratorNext(Thread::current(), iter));
   EXPECT_EQ(next, value);
 
-  next = dictValueIteratorNext(Thread::currentThread(), iter);
+  next = dictValueIteratorNext(Thread::current(), iter);
   ASSERT_TRUE(next.isError());
 }
 
@@ -703,7 +703,7 @@ class C(dict):
 c = C({'hello': 'world'})
 result = c.pop('hello')
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ASSERT_FALSE(thread->hasPendingException());
   HandleScope scope(thread);
   Dict dict(&scope, moduleAt(&runtime, "__main__", "c"));

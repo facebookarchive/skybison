@@ -86,7 +86,7 @@ class C:
 c = C()
 )");
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Object x(&scope, runtime.newStrFromCStr("x"));
   RawObject attr = runtime.attributeAt(thread, c, x);
   EXPECT_TRUE(isIntEqualsWord(attr, 42));

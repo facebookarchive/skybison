@@ -32,7 +32,7 @@ static RawObject makeTestCode(Thread* thread) {
 
 TEST(DebuggingTests, DumpExtendedCode) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object code(&scope, makeTestCode(thread));
 
@@ -53,7 +53,7 @@ varnames: ("variable0",)
 
 TEST(DebuggingTests, DumpExtendedFunction) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Function func(&scope, runtime.newFunction());
   func.setAnnotations(runtime.newDict());
@@ -296,7 +296,7 @@ def func(arg0, arg1):
 )");
   Function func(&scope, moduleAt(&runtime, "__main__", "func"));
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* root = thread->currentFrame();
   root->setVirtualPC(8);
   root->pushValue(NoneType::object());

@@ -8,7 +8,7 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   if (flags != nullptr) {
     UNIMPLEMENTED("Can't specify compiler flags");
   }
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   runtime->run(Runtime::compileFromCStr(str).get());
   if (!thread->hasPendingException()) return 0;

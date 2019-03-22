@@ -5,7 +5,7 @@ namespace python {
 
 PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
   DCHECK(pyobj != nullptr, "null argument to PyByteArray_AsString");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
   Object obj(&scope, handle->asObject());
@@ -27,14 +27,14 @@ PY_EXPORT int PyByteArray_CheckExact_Func(PyObject* pyobj) {
 }
 
 PY_EXPORT int PyByteArray_Check_Func(PyObject* pyobj) {
-  return Thread::currentThread()->runtime()->isInstanceOfByteArray(
+  return Thread::current()->runtime()->isInstanceOfByteArray(
       ApiHandle::fromPyObject(pyobj)->asObject());
 }
 
 PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
   DCHECK(a != nullptr, "null argument to PyByteArray_Concat");
   DCHECK(b != nullptr, "null argument to PyByteArray_Concat");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object left(&scope, ApiHandle::fromPyObject(a)->asObject());
   Object right(&scope, ApiHandle::fromPyObject(b)->asObject());
@@ -59,7 +59,7 @@ PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
 
 PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
                                                   Py_ssize_t size) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (size < 0) {
     thread->raiseSystemErrorWithCStr(
         "Negative size passed to PyByteArray_FromStringAndSize");
@@ -82,7 +82,7 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
 }
 
 PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     return ApiHandle::newReference(thread, thread->runtime()->newByteArray());
   }
@@ -96,7 +96,7 @@ PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {
 PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
   DCHECK(pyobj != nullptr, "null argument to PyByteArray_Resize");
   DCHECK(newsize >= 0, "negative size");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Runtime* runtime = thread->runtime();
@@ -117,7 +117,7 @@ PY_EXPORT int PyByteArray_Resize(PyObject* pyobj, Py_ssize_t newsize) {
 
 PY_EXPORT Py_ssize_t PyByteArray_Size(PyObject* pyobj) {
   DCHECK(pyobj != nullptr, "null argument to PyByteArray_Size");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   DCHECK(thread->runtime()->isInstanceOfByteArray(*obj),

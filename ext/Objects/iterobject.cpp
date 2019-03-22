@@ -3,7 +3,7 @@
 namespace python {
 
 PY_EXPORT PyObject* PySeqIter_New(PyObject* seq) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Runtime* runtime = thread->runtime();

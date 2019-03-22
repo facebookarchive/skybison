@@ -106,8 +106,8 @@ TEST(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
   HandleScope scope;
   Object name(&scope, runtime.newStrFromCStr("hello"));
   Object module(&scope, runtime.newModule(name));
-  Object result(&scope, Thread::currentThread()->invokeMethod1(
-                            module, SymbolId::kDunderRepr));
+  Object result(
+      &scope, Thread::current()->invokeMethod1(module, SymbolId::kDunderRepr));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'hello'>"));
 }
 

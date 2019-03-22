@@ -39,14 +39,14 @@ PY_EXPORT int PyLong_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfInt(
+  return Thread::current()->runtime()->isInstanceOfInt(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
 // Converting from signed ints.
 
 PY_EXPORT PyObject* PyLong_FromLong(long ival) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(thread, thread->runtime()->newInt(ival));
 }
 
@@ -65,7 +65,7 @@ PY_EXPORT PyObject* PyLong_FromSsize_t(Py_ssize_t ival) {
 PY_EXPORT PyObject* PyLong_FromUnsignedLong(unsigned long ival) {
   static_assert(sizeof(ival) <= sizeof(uword),
                 "Unsupported unsigned long type");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   return ApiHandle::newReference(thread,
                                  thread->runtime()->newIntFromUnsigned(ival));
 }
@@ -91,7 +91,7 @@ PY_EXPORT PyObject* PyLong_FromSize_t(size_t ival) {
 // the value doesn't fit in T.
 template <typename T>
 static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   if (pylong == nullptr) {
@@ -126,7 +126,7 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
 
 template <typename T>
 static T asIntWithoutOverflowCheck(PyObject* pylong) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   if (pylong == nullptr) {
@@ -195,7 +195,7 @@ PY_EXPORT PyObject* PyLong_FromString(const char* /* r */, char** /* pend */,
 }
 
 PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (obj == nullptr) {
     thread->raiseBadInternalCall();
     return -1.0;
@@ -233,7 +233,7 @@ PY_EXPORT PyObject* PyLong_GetInfo() { UNIMPLEMENTED("PyLong_GetInfo"); }
 PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
                                   size_t n, int little_endian, int is_signed) {
   DCHECK(longobj != nullptr, "null argument to _PyLong_AsByteArray");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   PyObject* pyobj = reinterpret_cast<PyObject*>(longobj);
@@ -263,7 +263,7 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
 PY_EXPORT PyObject* _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
                                           int little_endian, int is_signed) {
   if (n == 0) return PyLong_FromLong(0);
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   // This copies the bytes an extra time, but it is more important for the
@@ -277,7 +277,7 @@ PY_EXPORT PyObject* _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 }
 
 PY_EXPORT int _PyLong_Sign(PyObject* vv) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(vv)->asObject());
   Runtime* runtime = thread->runtime();

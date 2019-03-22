@@ -141,7 +141,7 @@ TEST(SuperTest, NoArgumentRaisesRuntimeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "super()"),
                             LayoutId::kRuntimeError, "super(): no arguments"));
-  Thread::currentThread()->clearPendingException();
+  Thread::current()->clearPendingException();
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def f(a):

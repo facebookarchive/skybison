@@ -10,7 +10,7 @@ PY_EXPORT PyObject* PyFile_GetLine(PyObject* /* f */, int /* n */) {
 }
 
 PY_EXPORT int PyFile_WriteObject(PyObject* pyobj, PyObject* pyfile, int flags) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   if (pyfile == nullptr) {
@@ -34,7 +34,7 @@ PY_EXPORT int PyFile_WriteObject(PyObject* pyobj, PyObject* pyfile, int flags) {
 }
 
 PY_EXPORT int PyFile_WriteString(const char* str, PyObject* pyfile) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   if (thread->hasPendingException()) return -1;
@@ -49,7 +49,7 @@ PY_EXPORT int PyFile_WriteString(const char* str, PyObject* pyfile) {
 
 PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
   DCHECK(obj != nullptr, "obj must not be null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!object.isInt()) {

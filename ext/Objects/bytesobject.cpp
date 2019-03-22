@@ -14,12 +14,12 @@ PY_EXPORT int PyBytes_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyBytes_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfBytes(
+  return Thread::current()->runtime()->isInstanceOfBytes(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT char* PyBytes_AsString(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
   Object obj(&scope, handle->asObject());
@@ -67,7 +67,7 @@ PY_EXPORT void PyBytes_Concat(PyObject** pyobj, PyObject* newpart) {
     return;
   }
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   ApiHandle* obj_handle = ApiHandle::fromPyObject(*pyobj);
   Object obj(&scope, obj_handle->asObject());
@@ -235,7 +235,7 @@ static const char* writeArg(Thread* thread, Runtime* runtime,
 }
 
 PY_EXPORT PyObject* PyBytes_FromFormatV(const char* format, va_list vargs) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   ByteArray writer(&scope, runtime->newByteArray());
@@ -257,7 +257,7 @@ PY_EXPORT PyObject* PyBytes_FromFormatV(const char* format, va_list vargs) {
 }
 
 PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pyobj == nullptr) {
     thread->raiseBadInternalCall();
     return nullptr;
@@ -278,7 +278,7 @@ PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
 
 PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
                                               Py_ssize_t size) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   if (size < 0) {
     thread->raiseSystemErrorWithCStr(
@@ -313,7 +313,7 @@ PY_EXPORT PyObject* PyBytes_FromString(const char* str) {
 }
 
 PY_EXPORT PyObject* PyBytes_Repr(PyObject* pyobj, int smartquotes) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   if (!thread->runtime()->isInstanceOfBytes(*obj)) {
@@ -328,7 +328,7 @@ PY_EXPORT PyObject* PyBytes_Repr(PyObject* pyobj, int smartquotes) {
 }
 
 PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -347,7 +347,7 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
 
 PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {
   DCHECK(sep != nullptr && iter != nullptr, "null argument to _PyBytes_Join");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(sep)->asObject());
   Runtime* runtime = thread->runtime();
@@ -362,7 +362,7 @@ PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {
 PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
   DCHECK(pyobj != nullptr, "_PyBytes_Resize given null argument");
   DCHECK(*pyobj != nullptr, "_PyBytes_Resize given pointer to null");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ApiHandle* handle = ApiHandle::fromPyObject(*pyobj);
   HandleScope scope(thread);
   Object obj(&scope, handle->asObject());

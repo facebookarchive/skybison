@@ -15,7 +15,7 @@ PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyModule_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfModule(
+  return Thread::current()->runtime()->isInstanceOfModule(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
@@ -27,7 +27,7 @@ static PyObject* moduleDefInit(Thread* thread, struct PyModuleDef* def) {
 }
 
 PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (moduleDefInit(thread, def) == nullptr) {
     return nullptr;
   }
@@ -99,7 +99,7 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
 }
 
 PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   if (!module_obj.isModule()) {
@@ -115,7 +115,7 @@ PY_EXPORT PyModuleDef* PyModule_GetDef(PyObject* pymodule) {
 }
 
 PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   Module module(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
@@ -123,7 +123,7 @@ PY_EXPORT PyObject* PyModule_GetDict(PyObject* pymodule) {
 }
 
 PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -144,7 +144,7 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
 }
 
 PY_EXPORT void* PyModule_GetState(PyObject* mod) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   ApiHandle* handle = ApiHandle::fromPyObject(mod);
@@ -158,7 +158,7 @@ PY_EXPORT void* PyModule_GetState(PyObject* mod) {
 }
 
 PY_EXPORT PyObject* PyModuleDef_Init(struct PyModuleDef* def) {
-  return moduleDefInit(Thread::currentThread(), def);
+  return moduleDefInit(Thread::current(), def);
 }
 
 PY_EXPORT int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
@@ -166,7 +166,7 @@ PY_EXPORT int PyModule_AddFunctions(PyObject* /* m */, PyMethodDef* /* s */) {
 }
 
 PY_EXPORT int PyModule_ExecDef(PyObject* pymodule, PyModuleDef* def) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
   if (!thread->runtime()->isInstanceOfModule(*module_obj)) {
@@ -186,7 +186,7 @@ PY_EXPORT const char* PyModule_GetFilename(PyObject* /* m */) {
 }
 
 PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -215,7 +215,7 @@ PY_EXPORT const char* PyModule_GetName(PyObject* pymodule) {
 
 PY_EXPORT PyObject* PyModule_New(const char* c_name) {
   DCHECK(c_name != nullptr, "PyModule_New takes a valid string");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -224,7 +224,7 @@ PY_EXPORT PyObject* PyModule_New(const char* c_name) {
 }
 
 PY_EXPORT PyObject* PyModule_NewObject(PyObject* name) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
   Object module_obj(&scope, thread->runtime()->newModule(name_obj));
@@ -232,7 +232,7 @@ PY_EXPORT PyObject* PyModule_NewObject(PyObject* name) {
 }
 
 PY_EXPORT int PyModule_SetDocString(PyObject* m, const char* doc) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object module_obj(&scope, ApiHandle::fromPyObject(m)->asObject());

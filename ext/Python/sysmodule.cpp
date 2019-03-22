@@ -57,14 +57,14 @@ PY_EXPORT void PySys_SetPath(const wchar_t* /* h */) {
 PY_EXPORT void PySys_WriteStderr(const char* format, ...) {
   va_list va;
   va_start(va, format);
-  writeStderrV(Thread::currentThread(), format, va);
+  writeStderrV(Thread::current(), format, va);
   va_end(va);
 }
 
 PY_EXPORT void PySys_WriteStdout(const char* format, ...) {
   va_list va;
   va_start(va, format);
-  writeStdoutV(Thread::currentThread(), format, va);
+  writeStdoutV(Thread::current(), format, va);
   va_end(va);
 }
 

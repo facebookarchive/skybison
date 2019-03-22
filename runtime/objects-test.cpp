@@ -12,7 +12,7 @@ using namespace testing;
 
 TEST(ByteArrayTest, DownsizeMaintainsCapacity) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope;
   ByteArray array(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, array, {0, 1, 2, 3, 4, 5, 6, 7, 8});
@@ -892,7 +892,7 @@ TEST(WeakRefTest, EnqueueAndDequeue) {
   Runtime runtime;
   HandleScope scope;
   RawObject list = NoneType::object();
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   for (int i = 0; i < 3; i++) {
     Object obj(&scope, SmallInt::fromWord(i));
     Object none(&scope, NoneType::object());
@@ -913,7 +913,7 @@ TEST(WeakRefTest, EnqueueAndDequeue) {
 
 TEST(WeakRefTest, SpliceQueue) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   RawObject list1 = NoneType::object();
   RawObject list2 = NoneType::object();

@@ -37,7 +37,7 @@ int main(int argc, const char** argv) {
   python::HandleScope scope;
   python::Object result(&scope, runtime.run(buffer.get()));
   if (result.isError()) {
-    python::Thread::currentThread()->printPendingException();
+    python::Thread::current()->printPendingException();
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

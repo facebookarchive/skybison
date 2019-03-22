@@ -590,7 +590,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalArgument) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -636,7 +636,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   ASSERT_TRUE(result.isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 2);
@@ -694,7 +694,7 @@ TEST(TrampolinesTest,
   code.setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   ASSERT_TRUE(result.isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 3);
@@ -843,8 +843,7 @@ result = foo(**{})
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -865,14 +864,13 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -895,9 +893,9 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   ASSERT_TRUE(result.isError());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
   EXPECT_EQ(exception_type.builtinBase(), LayoutId::kTypeError);
@@ -924,9 +922,9 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   ASSERT_TRUE(result.isError());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
   EXPECT_EQ(exception_type.builtinBase(), LayoutId::kSystemError);
@@ -934,8 +932,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -963,13 +960,12 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(raised(Thread::currentThread()->run(code), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(Thread::current()->run(code), LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -995,14 +991,13 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1029,13 +1024,12 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(raised(Thread::currentThread()->run(code), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(Thread::current()->run(code), LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1061,14 +1055,13 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1089,7 +1082,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1116,7 +1109,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1145,7 +1138,7 @@ TEST(TrampolinesTest,
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1172,7 +1165,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kSystemError));
 }
 
@@ -1203,14 +1196,13 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndZeroKwArgsReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1239,7 +1231,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1270,7 +1262,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1303,14 +1295,13 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1342,14 +1333,13 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1370,7 +1360,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
@@ -1378,7 +1368,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
+    return ApiHandle::newReference(Thread::current(), arg_tuple.at(0));
   };
 
   Runtime runtime;
@@ -1401,7 +1391,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1426,9 +1416,9 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   ASSERT_TRUE(result.isError());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   ASSERT_TRUE(thread->hasPendingException());
   Type exception_type(&scope, thread->pendingExceptionType());
   EXPECT_EQ(exception_type.builtinBase(), LayoutId::kSystemError);
@@ -1438,7 +1428,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
+    return ApiHandle::newReference(Thread::current(), arg_tuple.at(0));
   };
 
   Runtime runtime;
@@ -1465,14 +1455,13 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1501,7 +1490,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1509,7 +1498,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
+    return ApiHandle::newReference(Thread::current(), arg_tuple.at(0));
   };
 
   Runtime runtime;
@@ -1536,7 +1525,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1544,7 +1533,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   binaryfunc func = [](PyObject*, PyObject* args) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
+    return ApiHandle::newReference(Thread::current(), arg_tuple.at(0));
   };
 
   Runtime runtime;
@@ -1573,15 +1562,14 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
 TEST(TrampolinesTest,
      ExtensionModuleVarArgReceivesVarArgsAndKwRaisesTypeError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1613,14 +1601,13 @@ TEST(TrampolinesTest,
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject*, PyObject*) -> PyObject* {
-    return ApiHandle::newReference(Thread::currentThread(),
-                                   SmallInt::fromWord(123));
+    return ApiHandle::newReference(Thread::current(), SmallInt::fromWord(123));
   };
 
   Runtime runtime;
@@ -1641,7 +1628,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
@@ -1649,7 +1636,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
+    return ApiHandle::newReference(Thread::current(), arg_tuple.at(0));
   };
 
   Runtime runtime;
@@ -1672,7 +1659,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1699,19 +1686,19 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kSystemError,
                             "NULL return without exception set"));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject*, PyObject* kwargs) -> PyObject* {
-    Thread* thread = Thread::currentThread();
+    Thread* thread = Thread::current();
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
     Str foo_str(&scope, runtime->newStrFromCStr("foo"));
     Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(),
+    return ApiHandle::newReference(Thread::current(),
                                    runtime->dictAt(keyword_dict, foo_str));
   };
 
@@ -1741,7 +1728,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1749,7 +1736,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
     HandleScope scope;
     Tuple args_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), args_tuple.at(1));
+    return ApiHandle::newReference(Thread::current(), args_tuple.at(1));
   };
 
   Runtime runtime;
@@ -1780,18 +1767,18 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   code.setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 456));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject*, PyObject* kwargs) -> PyObject* {
-    Thread* thread = Thread::currentThread();
+    Thread* thread = Thread::current();
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
     Str foo_str(&scope, runtime->newStrFromCStr("bar"));
     Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(),
+    return ApiHandle::newReference(Thread::current(),
                                    runtime->dictAt(keyword_dict, foo_str));
   };
 
@@ -1822,7 +1809,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 5678));
 }
 
@@ -1830,7 +1817,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject* args, PyObject*) -> PyObject* {
     HandleScope scope;
     Tuple arg_tuple(&scope, ApiHandle::fromPyObject(args)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(), arg_tuple.at(0));
+    return ApiHandle::newReference(Thread::current(), arg_tuple.at(0));
   };
 
   Runtime runtime;
@@ -1857,18 +1844,18 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 10));
 }
 
 TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   ternaryfunc func = [](PyObject*, PyObject*, PyObject* kwargs) -> PyObject* {
-    Thread* thread = Thread::currentThread();
+    Thread* thread = Thread::current();
     HandleScope scope(thread);
     Runtime* runtime = thread->runtime();
     Str foo_str(&scope, runtime->newStrFromCStr("foo"));
     Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(Thread::currentThread(),
+    return ApiHandle::newReference(Thread::current(),
                                    runtime->dictAt(keyword_dict, foo_str));
   };
 
@@ -1901,7 +1888,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 

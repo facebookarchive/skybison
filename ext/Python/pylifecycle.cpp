@@ -24,7 +24,7 @@ namespace python {
 PY_EXPORT void Py_Initialize() { new Runtime; }
 
 PY_EXPORT int Py_FinalizeEx() {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   delete runtime;
   return 0;

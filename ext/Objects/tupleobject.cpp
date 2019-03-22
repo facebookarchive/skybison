@@ -9,7 +9,7 @@
 namespace python {
 
 PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -22,12 +22,12 @@ PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyTuple_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfTuple(
+  return Thread::current()->runtime()->isInstanceOfTuple(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
 PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
@@ -48,7 +48,7 @@ PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
 
 PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
                               PyObject* pyitem) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
@@ -75,7 +75,7 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 }
 
 PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
@@ -98,7 +98,7 @@ PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
 }
 
 PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -118,7 +118,7 @@ PY_EXPORT int PyTuple_ClearFreeList() { return 0; }
 
 PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
                                      Py_ssize_t high) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (pytuple == nullptr) {
     thread->raiseBadInternalCall();
     return nullptr;

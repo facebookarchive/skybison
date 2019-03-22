@@ -18,7 +18,7 @@ PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyType_Check_Func(PyObject* obj) {
-  return Thread::currentThread()->runtime()->isInstanceOfType(
+  return Thread::current()->runtime()->isInstanceOfType(
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
@@ -218,7 +218,7 @@ static Type::ExtensionSlot slotToTypeSlot(int slot) {
 }
 
 PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   if (slot < 0) {
     thread->raiseBadInternalCall();
     return nullptr;
@@ -263,7 +263,7 @@ PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* spec) {
 
 PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                                              PyObject* /* bases */) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -393,7 +393,7 @@ PY_EXPORT PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
 
 PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
   if (a == b) return 1;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type a_obj(
       &scope,

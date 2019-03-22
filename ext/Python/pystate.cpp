@@ -31,7 +31,7 @@ PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
   CHECK(def != nullptr, "PyState_AddModule: Module Definition is NULL");
   DCHECK(def->m_name != nullptr, "def.m_name must not be null");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Str module_name(&scope, runtime->internStrFromCStr(def->m_name));
@@ -64,7 +64,7 @@ PY_EXPORT PyObject* PyState_FindModule(struct PyModuleDef* module) {
   if (index == 0) {
     return nullptr;
   }
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Str module_name(&scope, runtime->internStrFromCStr(module->m_name));

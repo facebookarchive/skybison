@@ -111,13 +111,13 @@ TEST(BuiltinsModuleTest, BuiltinIsinstance) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "print(isinstance(1, 1, 1))"), LayoutId::kTypeError,
       "TypeError: 'isinstance' takes max 2 positional arguments but 3 given"));
-  Thread::currentThread()->clearPendingException();
+  Thread::current()->clearPendingException();
 
   // 2nd argument must be a type
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "print(isinstance(1, 1))"), LayoutId::kTypeError,
       "isinstance() arg 2 must be a type or tuple of types"));
-  Thread::currentThread()->clearPendingException();
+  Thread::current()->clearPendingException();
 
   const char* src = R"(
 class A: pass
@@ -184,7 +184,7 @@ def test(a, b):
 
 TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   Tuple types(&scope, runtime.newTuple(3));
@@ -855,7 +855,7 @@ def chr(self):
   pass
 )");
   Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
-  copyFunctionEntries(Thread::currentThread(), func, python_func);
+  copyFunctionEntries(Thread::current(), func, python_func);
   Code base_code(&scope, func.code());
   Code patch_code(&scope, python_func.code());
   EXPECT_EQ(patch_code.code(), base_code.code());
@@ -876,7 +876,7 @@ def chr(self):
   return 42
 )");
   Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
-  ASSERT_DEATH(copyFunctionEntries(Thread::currentThread(), func, python_func),
+  ASSERT_DEATH(copyFunctionEntries(Thread::current(), func, python_func),
                "Redefinition of native code method 'chr' in managed code");
 }
 

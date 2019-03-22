@@ -19,7 +19,7 @@ TEST(InterpreterTest, IsTrueBool) {
   Runtime runtime;
   HandleScope scope;
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -35,7 +35,7 @@ TEST(InterpreterTest, IsTrueInt) {
   Runtime runtime;
   HandleScope scope;
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -50,7 +50,7 @@ TEST(InterpreterTest, IsTrueInt) {
 TEST(InterpreterTest, IsTrueWithDunderBoolRaisingPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   runFromCStr(&runtime, R"(
 class Foo:
@@ -66,7 +66,7 @@ value = Foo()
 TEST(InterpreterTest, IsTrueWithDunderLenRaisingPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   runFromCStr(&runtime, R"(
 class Foo:
@@ -83,7 +83,7 @@ TEST(InterpreterTest, IsTrueDunderLen) {
   Runtime runtime;
   HandleScope scope;
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -100,7 +100,7 @@ TEST(InterpreterTest, IsTrueDunderLen) {
 
 TEST(InterpreterTest, UnaryOperationWithIntReturnsInt) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object value(&scope, runtime.newInt(23));
   Object result(
@@ -110,7 +110,7 @@ TEST(InterpreterTest, UnaryOperationWithIntReturnsInt) {
 
 TEST(InterpreterTest, UnaryOperationWithBadTypeRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object value(&scope, NoneType::object());
   Object result(&scope, Interpreter::unaryOperation(thread, value,
@@ -122,7 +122,7 @@ TEST(InterpreterTest, UnaryOperationWithBadTypeRaisesTypeError) {
 
 TEST(InterpreterTest, UnaryOperationWithCustomDunderInvertReturnsString) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
@@ -138,7 +138,7 @@ c = C()
 
 TEST(InterpreterTest, UnaryOperationWithCustomRaisingDunderNegPropagates) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
@@ -177,7 +177,7 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -212,7 +212,7 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -249,7 +249,7 @@ left = C()
 right = D()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -284,7 +284,7 @@ left = C()
 right = D()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -316,7 +316,7 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -348,7 +348,7 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -381,7 +381,7 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -417,7 +417,7 @@ c10 = C(10)
 c20 = C(20)
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -448,7 +448,7 @@ c10 = C(10)
 c20 = C(20)
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -512,7 +512,7 @@ b = B()
 c = C()
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
 
@@ -564,7 +564,7 @@ b = 1
 c = 3
 )");
 
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -586,7 +586,7 @@ TEST(InterpreterTest, SequenceIterSearchWithNoDunderIterRaisesTypeError) {
 class C: pass
 container = C()
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
@@ -604,7 +604,7 @@ class C:
   __iter__ = None
 container = C()
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
@@ -623,7 +623,7 @@ class C:
     return D()
 container = C()
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
@@ -644,7 +644,7 @@ class C:
     return D()
 container = C()
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
@@ -656,7 +656,7 @@ container = C()
 
 TEST(InterpreterTest, SequenceIterSearchWithListReturnsTrue) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   List container(&scope, listFromRange(1, 3));
@@ -669,7 +669,7 @@ TEST(InterpreterTest, SequenceIterSearchWithListReturnsTrue) {
 
 TEST(InterpreterTest, SequenceIterSearchWithListReturnsFalse) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object container(&scope, listFromRange(1, 3));
   Object val(&scope, SmallInt::fromWord(5));
@@ -688,7 +688,7 @@ class C:
     raise ZeroDivisionError("boom")
 container = C()
 )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, SmallInt::fromWord(5));
@@ -735,7 +735,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   //
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   Code code(&scope, runtime.newEmptyCode());
 
@@ -789,7 +789,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   //
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   Code code(&scope, runtime.newEmptyCode());
 
@@ -845,7 +845,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   //
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
 
   Code code(&scope, runtime.newEmptyCode());
 
@@ -911,7 +911,7 @@ class C:
 
 c = C()
   )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -994,7 +994,7 @@ class C3:
 c = C3()
 result = c(42)
   )");
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -1087,7 +1087,7 @@ sys.displayhook = my_displayhook
                            LOAD_CONST, 1, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   ASSERT_TRUE(result.isNoneType());
 
   Module sys(&scope, findModule(&runtime, "sys"));
@@ -1121,7 +1121,7 @@ a = AsyncIterable()
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
@@ -1135,7 +1135,7 @@ TEST(InterpreterTest, GetAiterOnNonIterable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1177,7 +1177,7 @@ manager = M()
 
   Dict globals(&scope, main.dict());
   Dict builtins(&scope, runtime.newDict());
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->pushFrame(code);
   frame->setGlobals(*globals);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
@@ -1208,7 +1208,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
       POP_BLOCK,  0, RETURN_VALUE, 0,
   };
   code.setCode(runtime.newBytesWithAll(bc));
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   EXPECT_EQ(result, SmallInt::fromWord(42));
 }
 
@@ -1709,7 +1709,7 @@ a = AsyncIterator()
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_EQ(*a, *result);
   Object anext(&scope, moduleAt(&runtime, main, "anext_called"));
   EXPECT_EQ(*a, *anext);
@@ -1727,7 +1727,7 @@ TEST(InterpreterTest, GetAnextOnNonIterable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1751,7 +1751,7 @@ a = AsyncIterator()
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1776,7 +1776,7 @@ a = Awaitable()
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
@@ -1790,7 +1790,7 @@ TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2254,7 +2254,7 @@ foo = Foo()
   code.setCode(runtime.newBytesWithAll(bc));
 
   // Confirm that the returned value is the iterator of Foo
-  Object result(&scope, Thread::currentThread()->run(code));
+  Object result(&scope, Thread::current()->run(code));
   Type result_type(&scope, runtime.typeOf(*result));
   EXPECT_TRUE(isStrEqualsCStr(result_type.name(), "FooIterator"));
 }
@@ -2338,7 +2338,7 @@ def bar(): pass
 TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   Str not_a_func(&scope, Str::empty());
   frame->pushValue(*not_a_func);
@@ -2564,7 +2564,7 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   code.setStacksize(1);
 
   // Execute the code and make sure to get the unwinded Error
-  RawObject result = Thread::currentThread()->run(code);
+  RawObject result = Thread::current()->run(code);
   ASSERT_TRUE(result.isError());
 }
 
@@ -2602,7 +2602,7 @@ result = f(*gen())
 
 TEST(InterpreterTest, FormatValueCallsDunderStr) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   runFromCStr(&runtime, R"(
 class C:
   def __str__(self):
@@ -2616,7 +2616,7 @@ result = f"{C()!s}"
 
 TEST(InterpreterTest, FormatValueFallsBackToDunderRepr) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
@@ -2630,7 +2630,7 @@ result = f"{C()!s}"
 
 TEST(InterpreterTest, FormatValueCallsDunderRepr) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
@@ -2644,7 +2644,7 @@ result = f"{C()!r}"
 
 TEST(InterpreterTest, FormatValueAsciiCallsDunderRepr) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):

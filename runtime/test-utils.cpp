@@ -58,7 +58,7 @@ template <typename T1, typename T2>
 ::testing::AssertionResult AssertPyListEqual(
     const char* actual_expr, const char* /* expected_expr */,
     const Object& actual, const std::vector<Value>& expected) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
 
   if (!actual.isList()) {
@@ -166,7 +166,7 @@ std::string callFunctionToString(const Function& func, const Tuple& args) {
   std::stringstream stream;
   std::ostream* old_stream = builtinStdout;
   builtinStdout = &stream;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   thread->pushNativeFrame(bit_cast<void*>(&callFunctionToString), 0);
   callFunction(func, args);
   thread->popFrame();
@@ -175,7 +175,7 @@ std::string callFunctionToString(const Function& func, const Tuple& args) {
 }
 
 RawObject callFunction(const Function& func, const Tuple& args) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Code code(&scope, func.code());
   Frame* frame =
@@ -235,7 +235,7 @@ RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
 }
 
 RawLargeInt newLargeIntWithDigits(View<uword> digits) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   LargeInt result(&scope,
                   thread->runtime()->heap()->createLargeInt(digits.length()));
@@ -247,7 +247,7 @@ RawLargeInt newLargeIntWithDigits(View<uword> digits) {
 
 RawObject newMemoryView(View<byte> bytes, const char* format,
                         ReadOnly read_only) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Bytes bytes_obj(&scope, runtime->newBytesWithAll(bytes));
@@ -258,7 +258,7 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
 }
 
 RawObject setFromRange(word start, word stop) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set result(&scope, thread->runtime()->newSet());
   Object value(&scope, NoneType::object());
@@ -271,7 +271,7 @@ RawObject setFromRange(word start, word stop) {
 
 RawObject runBuiltinImpl(NativeMethodType method,
                          View<std::reference_wrapper<const Object>> args) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   // Push an empty function so we have one at the expected place in the stack.
   Function function(&scope, thread->runtime()->newFunction());
@@ -297,7 +297,7 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
 
 // Equivalent to evaluating "list(range(start, stop))" in Python
 RawObject listFromRange(word start, word stop) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   List result(&scope, thread->runtime()->newList());
   Object value(&scope, NoneType::object());
@@ -310,7 +310,7 @@ RawObject listFromRange(word start, word stop) {
 
 ::testing::AssertionResult isByteArrayEqualsBytes(const Object& result,
                                                   View<byte> expected) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (result.isError()) {
@@ -346,7 +346,7 @@ RawObject listFromRange(word start, word stop) {
 
 ::testing::AssertionResult isBytesEqualsBytes(const Object& result,
                                               View<byte> expected) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (result.isError()) {
@@ -379,7 +379,7 @@ RawObject listFromRange(word start, word stop) {
 }
 
 ::testing::AssertionResult isStrEquals(const Object& str1, const Object& str2) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*str1)) {
@@ -400,7 +400,7 @@ RawObject listFromRange(word start, word stop) {
 }
 
 ::testing::AssertionResult isStrEqualsCStr(RawObject obj, const char* c_str) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, obj);
   Runtime* runtime = thread->runtime();
@@ -417,7 +417,7 @@ RawObject listFromRange(word start, word stop) {
 }
 
 ::testing::AssertionResult isIntEqualsWord(RawObject obj, word value) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (obj.isError()) {
@@ -443,7 +443,7 @@ RawObject listFromRange(word start, word stop) {
 
 ::testing::AssertionResult isIntEqualsDigits(RawObject obj,
                                              View<uword> digits) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (obj.isError()) {
@@ -475,7 +475,7 @@ RawObject listFromRange(word start, word stop) {
 ::testing::AssertionResult raisedWithStr(RawObject return_value,
                                          LayoutId layout_id,
                                          const char* expected) {
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object return_value_obj(&scope, return_value);

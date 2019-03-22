@@ -76,13 +76,13 @@ PY_EXPORT int Py_AddPendingCall(int (*/* func */)(void*), void* /* g */) {
 }
 
 PY_EXPORT int Py_GetRecursionLimit() {
-  return Thread::currentThread()->recursionLimit();
+  return Thread::current()->recursionLimit();
 }
 
 PY_EXPORT int Py_MakePendingCalls() { UNIMPLEMENTED("Py_MakePendingCalls"); }
 
 PY_EXPORT void Py_SetRecursionLimit(int limit) {
-  Thread::currentThread()->setRecursionLimit(limit);
+  Thread::current()->setRecursionLimit(limit);
 }
 
 PY_EXPORT int _Py_CheckRecursiveCall(const char* /* where */) {

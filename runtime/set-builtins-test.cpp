@@ -993,8 +993,7 @@ TEST(SetBuiltinsTest, FrozenSetDunderNewFromFrozenSetIsIdempotent) {
   Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
   List nonempty_list(&scope, listFromRange(1, 5));
   FrozenSet frozenset(&scope, runtime.newFrozenSet());
-  frozenset =
-      runtime.setUpdate(Thread::currentThread(), frozenset, nonempty_list);
+  frozenset = runtime.setUpdate(Thread::current(), frozenset, nonempty_list);
   Object result(&scope,
                 runBuiltin(FrozenSetBuiltins::dunderNew, type, frozenset));
   EXPECT_EQ(*result, *frozenset);
@@ -1045,7 +1044,7 @@ TEST(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableRaisesTypeError) {
 
 TEST(SetBuiltinsTest, SetCopy) {
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Object set_copy(&scope, setCopy(thread, set));
@@ -1074,7 +1073,7 @@ TEST(SetBuiltinsTest, SetCopy) {
 TEST(SetBuiltinsTest, SetEqualsWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s == s) is True
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   ASSERT_TRUE(setEquals(thread, set, set));
@@ -1083,7 +1082,7 @@ TEST(SetBuiltinsTest, SetEqualsWithSameSetReturnsTrue) {
 TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetsReturnsTrue) {
   // (set() <= set()) is True
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Set set1(&scope, runtime.newSet());
@@ -1093,7 +1092,7 @@ TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetsReturnsTrue) {
 TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetAndNonEmptySetReturnsTrue) {
   // (set() <= {0, 1, 2}) is True
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Set set1(&scope, setFromRange(0, 3));
@@ -1103,7 +1102,7 @@ TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetAndNonEmptySetReturnsTrue) {
 TEST(SetBuiltinsTest, SetIsSubsetWithEqualsetReturnsTrue) {
   // ({0, 1, 2} <= {0, 1, 2}) is True
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
@@ -1113,7 +1112,7 @@ TEST(SetBuiltinsTest, SetIsSubsetWithEqualsetReturnsTrue) {
 TEST(SetBuiltinsTest, SetIsSubsetWithSubsetReturnsTrue) {
   // ({1, 2, 3} <= {1, 2, 3, 4}) is True
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 4));
   Set set1(&scope, setFromRange(1, 5));
@@ -1123,7 +1122,7 @@ TEST(SetBuiltinsTest, SetIsSubsetWithSubsetReturnsTrue) {
 TEST(SetBuiltinsTest, SetIsSubsetWithSupersetReturnsFalse) {
   // ({1, 2, 3, 4} <= {1, 2, 3}) is False
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 5));
   Set set1(&scope, setFromRange(1, 4));
@@ -1133,7 +1132,7 @@ TEST(SetBuiltinsTest, SetIsSubsetWithSupersetReturnsFalse) {
 TEST(SetBuiltinsTest, SetIsSubsetWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s <= s) is True
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 4));
   ASSERT_TRUE(setIsSubset(thread, set, set));
@@ -1142,7 +1141,7 @@ TEST(SetBuiltinsTest, SetIsSubsetWithSameSetReturnsTrue) {
 TEST(SetBuiltinsTest, SetIsProperSubsetWithSupersetReturnsTrue) {
   // ({0, 1, 2, 3} < {0, 1, 2, 3, 4}) is True
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 4));
   Set set1(&scope, setFromRange(0, 5));
@@ -1152,7 +1151,7 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithSupersetReturnsTrue) {
 TEST(SetBuiltinsTest, SetIsProperSubsetWithUnequalSetsReturnsFalse) {
   // ({1, 2, 3} < {0, 1, 2}) is False
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 4));
   Set set1(&scope, setFromRange(0, 3));
@@ -1162,7 +1161,7 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithUnequalSetsReturnsFalse) {
 TEST(SetBuiltinsTest, SetIsProperSubsetWithSameSetReturnsFalse) {
   // s = {0, 1, 2}; (s < s) is False
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   ASSERT_FALSE(setIsProperSubset(thread, set, set));
@@ -1171,7 +1170,7 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithSameSetReturnsFalse) {
 TEST(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
   // ({1, 2, 3, 4} < {1, 2, 3}) is False
   Runtime runtime;
-  Thread* thread = Thread::currentThread();
+  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 5));
   Set set1(&scope, setFromRange(1, 4));

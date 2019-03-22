@@ -13,8 +13,8 @@ TEST(SliceBuiltinsTest, UnpackWithAllNoneSetsDefaults) {
   HandleScope scope;
   Slice slice(&scope, runtime.newSlice());
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(start, 0);
   EXPECT_EQ(stop, SmallInt::kMaxValue);
@@ -27,8 +27,8 @@ TEST(SliceBuiltinsTest, UnpackWithNegativeStepSetsReverseDefaults) {
   Slice slice(&scope, runtime.newSlice());
   slice.setStep(SmallInt::fromWord(-1));
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(start, SmallInt::kMaxValue);
   EXPECT_EQ(stop, SmallInt::kMinValue);
@@ -41,8 +41,8 @@ TEST(SliceBuiltinsTest, UnpackWithNonIndexStartRaisesTypeError) {
   Slice slice(&scope, runtime.newSlice());
   slice.setStart(runtime.newSet());
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -52,8 +52,8 @@ TEST(SliceBuiltinsTest, UnpackWithNonIndexStopRaisesTypeError) {
   Slice slice(&scope, runtime.newSlice());
   slice.setStop(runtime.newSet());
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -63,8 +63,8 @@ TEST(SliceBuiltinsTest, UnpackWithNonIndexStepRaisesTypeError) {
   Slice slice(&scope, runtime.newSlice());
   slice.setStep(runtime.newSet());
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -79,8 +79,8 @@ foo = Foo()
   Slice slice(&scope, runtime.newSlice());
   slice.setStep(moduleAt(&runtime, "__main__", "foo"));
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -102,8 +102,8 @@ foo = Foo()
   slice.setStop(*foo);
   slice.setStep(*foo);
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(start, 2);
   EXPECT_EQ(stop, 3);
@@ -116,8 +116,8 @@ TEST(SliceBuiltinsTest, UnpackWithZeroStepRaisesValueError) {
   Slice slice(&scope, runtime.newSlice());
   slice.setStep(SmallInt::fromWord(0));
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   EXPECT_TRUE(raised(*result, LayoutId::kValueError));
 }
 
@@ -130,8 +130,8 @@ TEST(SliceBuiltinsTest, UnpackWithOverflowSilentlyReducesValues) {
   slice.setStop(*large);
   slice.setStep(*large);
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(start, SmallInt::kMaxValue);
   EXPECT_EQ(stop, SmallInt::kMaxValue);
@@ -147,8 +147,8 @@ TEST(SliceBuiltinsTest, UnpackWithUnderflowSilentlyBoostsValues) {
   slice.setStop(*large);
   slice.setStep(*large);
   word start, stop, step;
-  Object result(&scope, sliceUnpack(Thread::currentThread(), slice, &start,
-                                    &stop, &step));
+  Object result(&scope,
+                sliceUnpack(Thread::current(), slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(start, SmallInt::kMinValue);
   EXPECT_EQ(stop, SmallInt::kMinValue);
@@ -161,8 +161,8 @@ TEST(SliceBuiltinsTest, SliceHasStartAttribute) {
   Layout layout(&scope, runtime.layoutAt(LayoutId::kSlice));
   Str name(&scope, runtime.newStrFromCStr("start"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime.layoutFindAttribute(Thread::currentThread(), layout, name,
-                                          &info));
+  ASSERT_TRUE(
+      runtime.layoutFindAttribute(Thread::current(), layout, name, &info));
   EXPECT_TRUE(info.isInObject());
   EXPECT_TRUE(info.isFixedOffset());
 }
@@ -173,8 +173,8 @@ TEST(SliceBuiltinsTest, SliceHasStopAttribute) {
   Layout layout(&scope, runtime.layoutAt(LayoutId::kSlice));
   Str name(&scope, runtime.newStrFromCStr("stop"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime.layoutFindAttribute(Thread::currentThread(), layout, name,
-                                          &info));
+  ASSERT_TRUE(
+      runtime.layoutFindAttribute(Thread::current(), layout, name, &info));
   EXPECT_TRUE(info.isInObject());
   EXPECT_TRUE(info.isFixedOffset());
 }
@@ -185,8 +185,8 @@ TEST(SliceBuiltinsTest, SliceHasStepAttribute) {
   Layout layout(&scope, runtime.layoutAt(LayoutId::kSlice));
   Str name(&scope, runtime.newStrFromCStr("step"));
   AttributeInfo info;
-  ASSERT_TRUE(runtime.layoutFindAttribute(Thread::currentThread(), layout, name,
-                                          &info));
+  ASSERT_TRUE(
+      runtime.layoutFindAttribute(Thread::current(), layout, name, &info));
   EXPECT_TRUE(info.isInObject());
   EXPECT_TRUE(info.isFixedOffset());
 }

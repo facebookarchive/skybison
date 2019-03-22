@@ -277,7 +277,7 @@ RawObject Marshal::Reader::readTypeString() {
 RawObject Marshal::Reader::readTypeAscii() {
   word length = readLong();
   if (length < 0) {
-    return Thread::currentThread()->raiseValueErrorWithCStr(
+    return Thread::current()->raiseValueErrorWithCStr(
         "bad marshal data (string size out of range)");
   }
   return readStr(length);
@@ -286,7 +286,7 @@ RawObject Marshal::Reader::readTypeAscii() {
 RawObject Marshal::Reader::readTypeAsciiInterned() {
   word length = readLong();
   if (length < 0) {
-    return Thread::currentThread()->raiseValueErrorWithCStr(
+    return Thread::current()->raiseValueErrorWithCStr(
         "bad marshal data (string size out of range)");
   }
   return readAndInternStr(length);
@@ -422,7 +422,7 @@ RawObject Marshal::Reader::readLongObject() {
     return zero;
   }
   if (n < kMinInt32 || n > kMaxInt32) {
-    return Thread::currentThread()->raiseValueErrorWithCStr(
+    return Thread::current()->raiseValueErrorWithCStr(
         "bad marshal data (string size out of range)");
   }
   word bits_consumed = 0;
@@ -435,7 +435,7 @@ RawObject Marshal::Reader::readLongObject() {
   while (bits_consumed < n_bits) {
     int16 digit = readShort();
     if (digit < 0) {
-      return Thread::currentThread()->raiseValueErrorWithCStr(
+      return Thread::current()->raiseValueErrorWithCStr(
           "bad marshal data (negative long digit)");
     }
     auto unsigned_digit = static_cast<uword>(digit);
