@@ -642,7 +642,7 @@ TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
   ASSERT_FALSE(Dict::Bucket::nextItem(*data, &i));
 }
 
-TEST(DictBuiltinTest, RecursiveDictPrintsNicely) {
+TEST(DictBuiltinsTest, RecursiveDictPrintsNicely) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class C:
@@ -662,7 +662,7 @@ result = d.__repr__()
                               "{'hello': {...}}"));
 }
 
-TEST(DictBuiltinTest, PopWithKeyPresentReturnsValue) {
+TEST(DictBuiltinsTest, PopWithKeyPresentReturnsValue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 d = {"hello": "world"}
@@ -675,7 +675,7 @@ result = d.pop("hello")
   EXPECT_EQ(dict.numItems(), 0);
 }
 
-TEST(DictBuiltinTest, PopWithMissingKeyAndDefaultReturnsDefault) {
+TEST(DictBuiltinsTest, PopWithMissingKeyAndDefaultReturnsDefault) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 d = {}
@@ -688,13 +688,13 @@ result = d.pop("hello", "world")
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
 }
 
-TEST(DictBuiltinTest, PopWithMisingKeyRaisesKeyError) {
+TEST(DictBuiltinsTest, PopWithMisingKeyRaisesKeyError) {
   Runtime runtime;
   EXPECT_TRUE(
       raised(runFromCStr(&runtime, "{}.pop('hello')"), LayoutId::kKeyError));
 }
 
-TEST(DictBuiltinTest, PopWithSubclassDoesNotCallDunderDelItem) {
+TEST(DictBuiltinsTest, PopWithSubclassDoesNotCallDunderDelItem) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class C(dict):
@@ -712,7 +712,7 @@ result = c.pop('hello')
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
 }
 
-TEST(DictBuiltinTest, DictInitWithSubclassInitializesElements) {
+TEST(DictBuiltinsTest, DictInitWithSubclassInitializesElements) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class C(dict):
@@ -724,7 +724,7 @@ c = C({'hello': 'world'})
   EXPECT_EQ(dict.numItems(), 1);
 }
 
-TEST(DictBuiltinTest, SetDefaultWithNoDefaultSetsToNone) {
+TEST(DictBuiltinsTest, SetDefaultWithNoDefaultSetsToNone) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {}
@@ -735,7 +735,7 @@ result = d["hello"]
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), NoneType::object());
 }
 
-TEST(DictBuiltinTest, SetDefaultWithNotKeyInDictSetsDefault) {
+TEST(DictBuiltinsTest, SetDefaultWithNotKeyInDictSetsDefault) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {}
@@ -746,7 +746,7 @@ result = d["hello"]
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
 }
 
-TEST(DictBuiltinTest, SetDefaultWithKeyInDictReturnsValue) {
+TEST(DictBuiltinsTest, SetDefaultWithKeyInDictReturnsValue) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {"hello": 5}

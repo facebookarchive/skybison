@@ -74,7 +74,7 @@ TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
                             "self must be a type instance"));
 }
 
-TEST(TypeBuiltinTest, BuiltinTypeCallInvokeDunderInitAsCallable) {
+TEST(TypeBuiltinsTest, BuiltinTypeCallInvokeDunderInitAsCallable) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -92,14 +92,14 @@ c = C()
   EXPECT_TRUE(isIntEqualsWord(attr, 42));
 }
 
-TEST(TypeBuiltinTest, DunderReprForBuiltinReturnsStr) {
+TEST(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
   runFromCStr(&runtime, "result = type.__repr__(object)");
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
                               "<class 'object'>"));
 }
 
-TEST(TypeBuiltinTest, DunderReprForUserDefinedTypeReturnsStr) {
+TEST(TypeBuiltinsTest, DunderReprForUserDefinedTypeReturnsStr) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -112,7 +112,7 @@ result = type.__repr__(Foo)
                               "<class 'Foo'>"));
 }
 
-TEST(TypeBuiltinTest, DunderNewWithOneArgReturnsTypeOfArg) {
+TEST(TypeBuiltinsTest, DunderNewWithOneArgReturnsTypeOfArg) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -126,7 +126,7 @@ b = type.__new__(type, "hello");
   EXPECT_EQ(RawLayout::cast(b.instanceLayout()).id(), LayoutId::kSmallStr);
 }
 
-TEST(TypeBuiltinTest, DunderNewWithOneMetaclassArgReturnsType) {
+TEST(TypeBuiltinsTest, DunderNewWithOneMetaclassArgReturnsType) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -171,7 +171,7 @@ TEST(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   ASSERT_TRUE(result.isDict());
 }
 
-TEST(TypeBuiltinTest, DunderCallReceivesExArgs) {
+TEST(TypeBuiltinsTest, DunderCallReceivesExArgs) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class C:
@@ -188,7 +188,7 @@ result = C(*(1,2,3)).num_args()
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
 }
 
-TEST(TypeBuiltinTest, ClassMethodDunderCallReceivesExArgs) {
+TEST(TypeBuiltinsTest, ClassMethodDunderCallReceivesExArgs) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -203,7 +203,7 @@ result = Foo.foo(*(1,2,3))
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
 }
 
-TEST(TypeBuiltinTest, TypeNewReceivesExArgs) {
+TEST(TypeBuiltinsTest, TypeNewReceivesExArgs) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 ty = type.__new__(type, *("foo", (object,), {'a': 1}))
@@ -214,7 +214,7 @@ name = ty.__name__
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
 }
 
-TEST(TypeBuiltinTest, TypeCallWithInitReturningNonNoneRaisesTypeError) {
+TEST(TypeBuiltinsTest, TypeCallWithInitReturningNonNoneRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 class C:

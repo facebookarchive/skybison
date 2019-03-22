@@ -8,7 +8,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(SetTest, SetPopException) {
+TEST(SetBuiltinsTest, SetPopException) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 s = {1}
@@ -43,7 +43,7 @@ s = set()
   EXPECT_EQ(RawSet::cast(*s).numItems(), 0);
 }
 
-TEST(SetBuiltinTest, SetAdd) {
+TEST(SetBuiltinsTest, SetAdd) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -1195,7 +1195,7 @@ TEST(SetBuiltinsTest, ReprReturnsElements) {
   EXPECT_EQ(elts[2], 3);
 }
 
-TEST(SetBuiltinTest, RecursiveSetPrintsNicely) {
+TEST(SetBuiltinsTest, RecursiveSetPrintsNicely) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class C:
