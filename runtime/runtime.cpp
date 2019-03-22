@@ -3731,6 +3731,12 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
 
 RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
                                 const Object& name) {
+  DCHECK(name.isStr(), "Name is not a string");
+  if (RawStr::cast(*name).equals(symbols()->DunderClass())) {
+    // TODO(T27735822): Make __class__ a descriptor
+    return typeOf(*receiver);
+  }
+
   HandleScope scope(thread);
   Super super(&scope, *receiver);
   Type start_type(&scope, super.objectType());

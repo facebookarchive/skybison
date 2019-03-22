@@ -2285,9 +2285,10 @@ print(list().__class__ is list)
 print(Foo().__class__ is Foo)
 print(Bar().__class__ is Bar)
 print(Hello().__class__ is Hello)
+print(super(Bar, Bar()).__class__ is super)
 )";
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\n");
+  EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\nTrue\n");
 }
 
 TEST(InstanceAttributeTest, DunderNew) {
