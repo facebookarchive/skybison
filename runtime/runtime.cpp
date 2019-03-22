@@ -1945,19 +1945,6 @@ SymbolId Runtime::swappedBinaryOperationSelector(Interpreter::BinaryOp op) {
   return kSwappedBinaryOperationSelector[static_cast<int>(op)];
 }
 
-bool Runtime::shouldReverseBinaryOperation(
-    Thread* thread, const Object& left, const Object& left_reversed_method,
-    const Object& right, const Object& right_reversed_method) {
-  HandleScope scope(thread);
-  Type left_type(&scope, typeOf(*left));
-  Type right_type(&scope, typeOf(*right));
-  bool is_derived_type =
-      (*left_type != *right_type) && isSubclass(right_type, left_type);
-  bool is_method_different = !right_reversed_method.isError() &&
-                             *left_reversed_method != *right_reversed_method;
-  return is_derived_type && is_method_different;
-}
-
 SymbolId Runtime::inplaceOperationSelector(Interpreter::BinaryOp op) {
   DCHECK(op != Interpreter::BinaryOp::DIVMOD,
          "DIVMOD is not a valid inplace op");

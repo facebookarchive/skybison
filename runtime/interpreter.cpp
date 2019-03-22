@@ -401,37 +401,67 @@ bool Interpreter::doUnaryOperation(SymbolId selector, Context* ctx) {
   return false;
 }
 
+static RawObject binaryOperationSwapped(Thread* thread, Frame* frame,
+                                        Interpreter::BinaryOp op,
+                                        const Object& self,
+                                        const Object& other) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
+  Object other_reversed_method(
+      &scope,
+      Interpreter::lookupMethod(thread, frame, other, swapped_selector));
+  if (other_reversed_method.isError()) {
+    if (thread->hasPendingException()) return *other_reversed_method;
+    return runtime->notImplemented();
+  }
+
+  // Python doesn't bother calling the reverse method when the slot on self and
+  // other points to the same method. We compare the reverse methods to get
+  // close to this behavior.
+  Object self_reversed_method(
+      &scope, Interpreter::lookupMethod(thread, frame, self, swapped_selector));
+  if (self_reversed_method.isError() && thread->hasPendingException()) {
+    return *self_reversed_method;
+  }
+  if (self_reversed_method == other_reversed_method) {
+    return runtime->notImplemented();
+  }
+
+  Object result(&scope, Interpreter::callMethod2(
+                            thread, frame, other_reversed_method, other, self));
+  return *result;
+}
+
 RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
                                        BinaryOp op, const Object& self,
                                        const Object& other) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-
   SymbolId selector = runtime->binaryOperationSelector(op);
   Object self_method(&scope, lookupMethod(thread, caller, self, selector));
+  Type self_type(&scope, runtime->typeOf(*self));
+  Type other_type(&scope, runtime->typeOf(*other));
+  bool try_reversed = self_type != other_type;
 
-  SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
-  Object self_reversed_method(
-      &scope, lookupMethod(thread, caller, self, swapped_selector));
-  Object other_reversed_method(
-      &scope, lookupMethod(thread, caller, other, swapped_selector));
-
-  bool try_other = true;
-  if (!self_method.isError()) {
-    if (runtime->shouldReverseBinaryOperation(
-            thread, self, self_reversed_method, other, other_reversed_method)) {
-      Object result(&scope, callMethod2(thread, caller, other_reversed_method,
-                                        other, self));
+  if (self_method.isError()) {
+    if (thread->hasPendingException()) return *self_method;
+  } else {
+    if (try_reversed && runtime->isSubclass(other_type, self_type)) {
+      Object result(&scope,
+                    binaryOperationSwapped(thread, caller, op, self, other));
       if (!result.isNotImplemented()) return *result;
-      try_other = false;
+      try_reversed = false;
     }
+
     Object result(&scope,
                   callMethod2(thread, caller, self_method, self, other));
     if (!result.isNotImplemented()) return *result;
   }
-  if (try_other && !other_reversed_method.isError()) {
-    Object result(&scope, callMethod2(thread, caller, other_reversed_method,
-                                      other, self));
+  if (try_reversed) {
+    Object result(&scope,
+                  binaryOperationSwapped(thread, caller, op, self, other));
     if (!result.isNotImplemented()) return *result;
   }
 

@@ -303,6 +303,51 @@ right = D()
   EXPECT_EQ(RawTuple::cast(result).at(3), *left);
 }
 
+TEST(InterpreterTest, BinaryOperationLookupPropagatesException) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class RaisingDescriptor:
+  def __get__(self, obj, type):
+    raise UserWarning()
+class A:
+  __mul__ = RaisingDescriptor()
+a = A()
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Frame* frame = thread->currentFrame();
+  Object result(&scope, Interpreter::binaryOperation(
+                            thread, frame, Interpreter::BinaryOp::MUL, a, a));
+  EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
+}
+
+TEST(InterpreterTest, BinaryOperationLookupReverseMethodPropagatesException) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class RaisingDescriptor:
+  def __get__(self, obj, type):
+    raise UserWarning()
+class A:
+  def __mul__(self, other):
+    return 42
+class B(A):
+  __rmul__ = RaisingDescriptor()
+a = A()
+b = B()
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Frame* frame = thread->currentFrame();
+  Object result(&scope, Interpreter::binaryOperation(
+                            thread, frame, Interpreter::BinaryOp::MUL, a, b));
+  EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
+}
+
 TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
   Runtime runtime;
   HandleScope scope;
