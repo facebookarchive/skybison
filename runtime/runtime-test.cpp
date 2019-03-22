@@ -577,13 +577,29 @@ TEST(RuntimeTest, NewStrFromByteArrayCopiesByteArray) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
 }
 
-TEST(RuntimeTest, NewStrFromFormatWithCStrArg) {
+TEST(RuntimeTest, NewStrFromFormatFormatsWord) {
+  Runtime runtime;
+  word x = 5;
+  HandleScope scope;
+  Object result(&scope, runtime.newStrFromFormat("hello %w world", x));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello 5 world"));
+}
+
+TEST(RuntimeTest, NewStrFromFormatWithStrArg) {
   Runtime runtime;
   HandleScope scope;
 
-  const char input[] = "hello";
-  Object str(&scope, runtime.newStrFromFormat("%s", input));
-  EXPECT_TRUE(isStrEqualsCStr(*str, input));
+  Object str(&scope, runtime.newStrFromCStr("hello"));
+  Object result(&scope, runtime.newStrFromFormat("%S", &str));
+  EXPECT_EQ(*result, str);
+}
+
+TEST(StrBuiltinsTest, NewStrFromFormatFormatsTypeName) {
+  Runtime runtime;
+  HandleScope scope;
+  Object obj(&scope, runtime.newDict());
+  Object str(&scope, runtime.newStrFromFormat("hello %T", &obj));
+  EXPECT_TRUE(isStrEqualsCStr(*str, "hello dict"));
 }
 
 TEST(RuntimeTest, NewStrWithAll) {

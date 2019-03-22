@@ -1,6 +1,7 @@
 #include "runtime.h"
 
 #include <unistd.h>
+#include <cinttypes>
 #include <climits>
 #include <cstdarg>
 #include <cstdio>
@@ -1072,19 +1073,119 @@ RawObject Runtime::newStrFromCStr(const char* c_str) {
   return newStrWithAll(View<byte>(data, length));
 }
 
+RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
+                             const Str& fmt, va_list args) {
+  word dst_idx = 0;
+  word len = 0;
+  HandleScope scope(thread);
+  DCHECK((dst == nullptr) == (size == 0), "dst must be null when size is 0");
+  for (word fmt_idx = 0; fmt_idx < fmt.length(); fmt_idx++, len++) {
+    if (fmt.charAt(fmt_idx) != '%') {
+      if (dst != nullptr) {
+        dst[dst_idx++] = fmt.charAt(fmt_idx);
+      }
+      continue;
+    }
+    if (++fmt_idx >= fmt.length()) {
+      return thread->raiseValueErrorWithCStr("Incomplete format");
+    }
+    switch (fmt.charAt(fmt_idx)) {
+      case 'd': {
+        int value = va_arg(args, int);
+        if (dst == nullptr) {
+          len--;
+          len += snprintf(nullptr, 0, "%d", value);
+        } else {
+          dst_idx +=
+              std::snprintf(&dst[dst_idx], size - dst_idx + 1, "%d", value);
+        }
+      } break;
+      case 'g': {
+        double value = va_arg(args, double);
+        if (dst == nullptr) {
+          len--;
+          len += std::snprintf(nullptr, 0, "%g", value);
+        } else {
+          dst_idx +=
+              std::snprintf(&dst[dst_idx], size - dst_idx + 1, "%g", value);
+        }
+      } break;
+      case 's': {
+        const char* value = va_arg(args, char*);
+        if (dst == nullptr) {
+          len--;
+          len += strlen(value);
+        } else {
+          word length = strlen(value);
+          std::memcpy(reinterpret_cast<byte*>(&dst[dst_idx]), value, length);
+          dst_idx += length;
+        }
+      } break;
+      case 'w': {
+        word value = va_arg(args, word);
+        if (dst == nullptr) {
+          len--;
+          len += std::snprintf(nullptr, 0, "%" PRIdPTR, value);
+        } else {
+          dst_idx += std::snprintf(&dst[dst_idx], size - dst_idx + 1,
+                                   "%" PRIdPTR, value);
+        }
+      } break;
+      case 'S': {
+        Str value(&scope, **va_arg(args, Object*));
+        if (dst == nullptr) {
+          len--;
+          len += value.length();
+        } else {
+          value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value.length());
+          dst_idx += value.length();
+        }
+      } break;
+      case 'T': {
+        Object obj(&scope, **va_arg(args, Object*));
+        Type type(&scope, typeOf(*obj));
+        Str value(&scope, type.name());
+        if (dst == nullptr) {
+          len--;
+          len += value.length();
+        } else {
+          value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value.length());
+          dst_idx += value.length();
+        }
+      } break;
+      case '%':
+        break;
+      default:
+        UNIMPLEMENTED("Unsupported format specifier");
+    }
+  }
+  if (dst != nullptr) {
+    dst[size] = '\0';
+  }
+  if (!SmallInt::isValid(len)) {
+    return thread->raiseOverflowErrorWithCStr(
+        "Output of format string is too long");
+  }
+  return SmallInt::fromWord(len);
+}
+
 RawObject Runtime::newStrFromFormat(const char* fmt, ...) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str fmt_str(&scope, newStrFromCStr(fmt));
   va_list args;
   va_start(args, fmt);
-  int length = std::vsnprintf(nullptr, 0, fmt, args);
-  DCHECK(length >= 0, "RawError occurred doing snprintf");
+  RawObject out_len = strFormat(thread, nullptr, 0, fmt_str, args);
   va_end(args);
+  if (out_len.isError()) return out_len;
+  word len = RawSmallInt::cast(out_len).value();
+  unique_c_ptr<char> dst(static_cast<char*>(std::malloc(len + 1)));
+  CHECK(dst != nullptr, "Buffer allocation failure");
   va_start(args, fmt);
-  char* buf = new char[length + 1];
-  std::vsprintf(buf, fmt, args);
+  strFormat(thread, dst.get(), len, fmt_str, args);
   va_end(args);
-  RawObject result = newStrFromCStr(buf);
-  delete[] buf;
-  return result;
+  Object result(&scope, newStrFromCStr(dst.get()));
+  return *result;
 }
 
 RawObject Runtime::newStrFromUTF32(View<int32> code_units) {
@@ -2195,12 +2296,9 @@ RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
     } else if (runtime->isInstanceOfByteArray(*obj)) {
       result_length += ByteArray::cast(*obj).numItems();
     } else {
-      Type type(&scope, runtime->typeOf(*obj));
-      Str name(&scope, type.name());
-      unique_c_ptr<char> type_name(name.toCStr());
       return thread->raiseTypeError(runtime->newStrFromFormat(
-          "sequence item %zd: expected a bytes-like object, %.80s found", index,
-          type_name.get()));
+          "sequence item %w: expected a bytes-like object, %T found", index,
+          &obj));
     }
   }
 
@@ -3200,7 +3298,7 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
     Object elt(&scope, items.at(i));
     if (!elt.isStr() && !isInstanceOfStr(*elt)) {
       return thread->raiseTypeError(
-          newStrFromFormat("sequence item %ld: expected str instance", i));
+          newStrFromFormat("sequence item %w: expected str instance", i));
     }
     Str str(&scope, items.at(i));
     result_len += str.length();

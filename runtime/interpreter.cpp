@@ -377,12 +377,9 @@ static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Str type_name(&scope, Type::cast(runtime->typeOf(*object)).name());
-  // TODO(T41091163) Having a format character for Str objects would be nice.
-  unique_c_ptr<char> type_name_cstr(type_name.toCStr());
-  const char* op_name = runtime->symbols()->literalAt(selector);
-  return thread->raiseTypeError(
-      runtime->newStrFromFormat("bad operand type for unary '%s': '%.200s'",
-                                op_name, type_name_cstr.get()));
+  Str op_name(&scope, runtime->symbols()->at(selector));
+  return thread->raiseTypeError(runtime->newStrFromFormat(
+      "bad operand type for unary '%S': '%S'", &op_name, &type_name));
 }
 
 RawObject Interpreter::unaryOperation(Thread* thread, const Object& self,
@@ -440,7 +437,7 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
 
   Str op_name(&scope,
               runtime->symbols()->at(runtime->binaryOperationSelector(op)));
-  return thread->raiseUnsupportedBinaryOperation(*self, *other, *op_name);
+  return thread->raiseUnsupportedBinaryOperation(self, other, op_name);
 }
 
 bool Interpreter::doBinaryOperation(BinaryOp op, Context* ctx) {
@@ -531,7 +528,7 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
   }
 
   Str op_name(&scope, runtime->symbols()->at(runtime->comparisonSelector(op)));
-  return thread->raiseUnsupportedBinaryOperation(*left, *right, *op_name);
+  return thread->raiseUnsupportedBinaryOperation(left, right, op_name);
 }
 
 RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
@@ -1753,10 +1750,9 @@ void Interpreter::doLoadConst(Context* ctx, word arg) {
 }
 
 static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
-  return thread->raise(LayoutId::kNameError,
-                       thread->runtime()->newStrFromFormat(
-                           "name '%s' is not defined",
-                           unique_c_ptr<char[]>(name.toCStr()).get()));
+  return thread->raise(
+      LayoutId::kNameError,
+      thread->runtime()->newStrFromFormat("name '%S' is not defined", &name));
 }
 
 // opcode 101
@@ -2100,9 +2096,9 @@ bool Interpreter::doLoadFast(Context* ctx, word arg) {
     Str name(
         &scope,
         RawTuple::cast(RawCode::cast(ctx->frame->code()).varnames()).at(arg));
-    Str msg(&scope, thread->runtime()->newStrFromFormat(
-                        "local variable '%.200s' referenced before assignment",
-                        unique_c_ptr<char[]>(name.toCStr()).get()));
+    Str msg(&scope,
+            thread->runtime()->newStrFromFormat(
+                "local variable '%S' referenced before assignment", &name));
     thread->raise(LayoutId::kUnboundLocalError, *msg);
     return unwind(ctx);
   }
@@ -2269,19 +2265,18 @@ static RawObject raiseUnboundCellFreeVar(Thread* thread, const Code& code,
   const char* fmt;
   if (idx < code.numCellvars()) {
     names_obj = code.cellvars();
-    fmt = "local variable '%.200s' referenced before assignment";
+    fmt = "local variable '%S' referenced before assignment";
   } else {
     idx -= code.numCellvars();
     names_obj = code.freevars();
     fmt =
-        "free variable '%.200s' referenced before assignment in enclosing "
+        "free variable '%S' referenced before assignment in enclosing "
         "scope";
   }
   Tuple names(&scope, *names_obj);
   Str name(&scope, names.at(idx));
   return thread->raise(LayoutId::kUnboundLocalError,
-                       thread->runtime()->newStrFromFormat(
-                           fmt, unique_c_ptr<char[]>(name.toCStr()).get()));
+                       thread->runtime()->newStrFromFormat(fmt, &name));
 }
 
 // opcode 136

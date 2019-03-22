@@ -437,7 +437,7 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 2) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "__getitem__() takes exactly one argument (%ld given)", nargs - 1));
+        "__getitem__() takes exactly one argument (%w given)", nargs - 1));
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -603,8 +603,8 @@ static RawObject setItemSlice(Thread* thread, const List& list,
     word iter_length = SmallInt::cast(*iter_length_val).value();
     if (slice_length != iter_length) {
       return thread->raiseValueError(thread->runtime()->newStrFromFormat(
-          "attempt to assign sequence of size %ld to extended slice of size "
-          "%ld",
+          "attempt to assign sequence of size %w to extended slice of size "
+          "%w",
           iter_length, slice_length));
     }
 

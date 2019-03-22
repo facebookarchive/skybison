@@ -142,7 +142,7 @@ TEST(FloatBuiltinsTest, AddWithNonFloatOtherRaisesTypeError) {
 )";
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
-                            "'__add__' is not supported"));
+                            "float.__add__(NoneType) is not supported"));
 }
 
 TEST(FloatBuiltinsTest, DunderBoolWithZeroReturnsFalse) {
@@ -505,7 +505,7 @@ TEST(FloatBuiltinsTest, SubWithNonFloatOtherRaisesTypeError) {
 )";
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
-                            "'__sub__' is not supported"));
+                            "float.__sub__(NoneType) is not supported"));
 }
 
 TEST(FloatBuiltinsTest, DunderEqWithFloatsReturnsBool) {

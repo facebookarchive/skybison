@@ -170,9 +170,15 @@ class Runtime {
 
   RawObject newStrFromByteArray(const ByteArray& array);
   RawObject newStrFromCStr(const char* c_str);
+
+  RawObject strFormat(Thread* thread, char* dst, word size, const Str& fmt,
+                      va_list args);
   // Creates a new string constructed from a format and a list of arguments,
   // similar to sprintf.
-  RawObject newStrFromFormat(const char* fmt, ...) FORMAT_ATTRIBUTE(2, 3);
+  // %w formats a word
+  // %S formats a Str object
+  // %T gets the type name of an object and formats that
+  RawObject newStrFromFormat(const char* fmt, ...);
   RawObject newStrFromUTF32(View<int32> code_units);
   RawObject newStrWithAll(View<byte> code_units);
 

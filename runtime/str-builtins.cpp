@@ -862,7 +862,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   }
   if (nargs > 2) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "str.strip() takes at most 1 argument (%ld given)", nargs - 1));
+        "str.strip() takes at most 1 argument (%w given)", nargs - 1));
   }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

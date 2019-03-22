@@ -93,10 +93,9 @@ static RawObject processDefaultArguments(Thread* thread,
     if (default_args.length() < (code.argcount() - new_argc)) {
       // TODO(T39316354): Fix this up to remove the toCStr grossness.
       Str fn_name_str(&scope, function.qualname());
-      unique_c_ptr<char> fn_name(fn_name_str.toCStr());
       return thread->raiseTypeError(runtime->newStrFromFormat(
-          "TypeError: '%s' takes min %ld positional arguments but %ld given",
-          fn_name.get(), code.argcount() - default_args.length(), argc));
+          "TypeError: '%S' takes min %w positional arguments but %w given",
+          &fn_name_str, code.argcount() - default_args.length(), argc));
     }
     const word positional_only = code.argcount() - default_args.length();
     for (; new_argc < code.argcount(); new_argc++) {
@@ -118,10 +117,9 @@ static RawObject processDefaultArguments(Thread* thread,
     } else {
       // TODO(T39316354): Fix this up to remove the toCStr grossness.
       Str fn_name_str(&scope, function.qualname());
-      unique_c_ptr<char> fn_name(fn_name_str.toCStr());
       return thread->raiseTypeError(runtime->newStrFromFormat(
-          "TypeError: '%s' takes max %ld positional arguments but %ld given",
-          fn_name.get(), code.argcount(), argc));
+          "TypeError: '%S' takes max %w positional arguments but %w given",
+          &fn_name_str, code.argcount(), argc));
     }
   }
 
@@ -168,10 +166,9 @@ static RawObject processDefaultArguments(Thread* thread,
   if (new_argc != code.totalArgs()) {
     // TODO(T39316354): Fix this up to remove the toCStr grossness.
     Str fn_name_str(&scope, function.qualname());
-    unique_c_ptr<char> fn_name(fn_name_str.toCStr());
     return thread->raiseTypeError(runtime->newStrFromFormat(
-        "TypeError: '%s' takes %ld positional arguments but %ld given",
-        fn_name.get(), code.argcount(),
+        "TypeError: '%S' takes %w positional arguments but %w given",
+        &fn_name_str, code.argcount(),
         new_argc - code.hasVarargs() - code.hasVarkeyargs()));
   }
   return NoneType::object();  // value not significant, it's just not an error

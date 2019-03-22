@@ -76,7 +76,7 @@ PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
   int fd = optint.value;
   if (fd < 0) {
     thread->raiseValueError(thread->runtime()->newStrFromFormat(
-        "file descriptor cannot be a negative integer (%i)", fd));
+        "file descriptor cannot be a negative integer (%d)", fd));
     return -1;
   }
   return fd;

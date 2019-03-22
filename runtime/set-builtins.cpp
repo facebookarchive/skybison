@@ -549,7 +549,7 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   }
   if (nargs > 2) {
     return thread->raiseTypeError(runtime->newStrFromFormat(
-        "set expected at most 1 argument, got %ld", nargs - 1));
+        "set expected at most 1 argument, got %w", nargs - 1));
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);

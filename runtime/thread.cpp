@@ -382,14 +382,11 @@ RawObject Thread::raiseTypeErrorWithCStr(const char* message) {
 
 // Convenience method for throwing a binary-operation-specific TypeError
 // exception with an error message.
-RawObject Thread::raiseUnsupportedBinaryOperation(RawObject /* left */,
-                                                  RawObject /* right */,
-                                                  RawStr op_name) {
-  unique_c_ptr<char> op_name_str(op_name.toCStr());
-  // TODO(T39041197): Pull out the types of left, right, and format them into
-  // the message
-  return raiseTypeError(
-      runtime()->newStrFromFormat("'%s' is not supported", op_name_str.get()));
+RawObject Thread::raiseUnsupportedBinaryOperation(
+    const Handle<RawObject>& left, const Handle<RawObject>& right,
+    const Handle<RawStr>& op_name) {
+  return raiseTypeError(runtime()->newStrFromFormat(
+      "%T.%S(%T) is not supported", &left, &op_name, &right));
 }
 
 // Convenience method for throwing a ValueError exception with an error message.

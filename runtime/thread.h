@@ -236,8 +236,9 @@ class Thread {
 
   // Raises a TypeError exception and returns an Error object that must be
   // returned up the stack by the caller.
-  RawObject raiseUnsupportedBinaryOperation(RawObject left, RawObject right,
-                                            RawStr op_name);
+  RawObject raiseUnsupportedBinaryOperation(const Handle<RawObject>& left,
+                                            const Handle<RawObject>& right,
+                                            const Handle<RawStr>& op_name);
 
   // Raises a ValueError exception and returns an Error object that must be
   // returned up the stack by the caller.

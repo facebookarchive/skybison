@@ -758,16 +758,8 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
     Str left_str(&scope, *left_obj);
     return left_str.compare(*right_obj);
   }
-
-  Str ltype(&scope, Type::cast(runtime->typeOf(*left_obj)).name());
-  Str rtype(&scope, Type::cast(runtime->typeOf(*right_obj)).name());
-  // TODO(T32655200): Once we have a real string formatter, use that instead of
-  // converting the names to C strings here.
-  unique_c_ptr<char> ltype_name(ltype.toCStr());
-  unique_c_ptr<char> rtype_name(rtype.toCStr());
-
-  thread->raiseTypeError(runtime->newStrFromFormat(
-      "Can't compare %.100s and %.100s", ltype_name.get(), rtype_name.get()));
+  thread->raiseTypeError(runtime->newStrFromFormat("Can't compare %T and %T",
+                                                   &left_obj, &right_obj));
   return -1;
 }
 

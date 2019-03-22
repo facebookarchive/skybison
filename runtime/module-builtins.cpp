@@ -45,26 +45,23 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
         slot_func thunk = reinterpret_cast<slot_func>(cur_slot->value);
         if ((*thunk)(handle) != 0) {
           if (!thread->hasPendingException()) {
-            unique_c_ptr<char> name(name_str.toCStr());
             thread->raiseSystemError(thread->runtime()->newStrFromFormat(
-                "execution of module %s failed without setting an exception",
-                name.get()));
+                "execution of module %S failed without setting an exception",
+                &name_str));
           }
           return -1;
         }
         if (thread->hasPendingException()) {
-          unique_c_ptr<char> name(name_str.toCStr());
           thread->raiseSystemError(thread->runtime()->newStrFromFormat(
-              "execution of module %s failed without setting an exception",
-              name.get()));
+              "execution of module %S failed without setting an exception",
+              &name_str));
           return -1;
         }
         break;
       }
       default: {
-        unique_c_ptr<char> name(name_str.toCStr());
         thread->raiseSystemError(thread->runtime()->newStrFromFormat(
-            "module %s initialized with unknown slot %i", name.get(),
+            "module %S initialized with unknown slot %d", &name_str,
             cur_slot->slot));
         return -1;
       }

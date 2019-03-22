@@ -33,22 +33,24 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
   static_assert(
       target == LayoutId::kGenerator || target == LayoutId::kCoroutine,
       "unsupported LayoutId");
-  const char* type_name =
-      target == LayoutId::kGenerator ? "generator" : "coroutine";
 
   Arguments args(frame, nargs);
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Str type_name(&scope, target == LayoutId::kGenerator
+                            ? runtime->symbols()->Generator()
+                            : runtime->symbols()->Coroutine());
   Object self(&scope, args.get(0));
   if (self.layoutId() != target) {
     return thread->raiseAttributeError(thread->runtime()->newStrFromFormat(
-        "send() must be called with a %s instance as the first argument",
-        type_name));
+        "send() must be called with a %S instance as the first argument",
+        &type_name));
   }
   GeneratorBase gen(&scope, *self);
   if (RawHeapFrame::cast(gen.heapFrame()).frame()->virtualPC() == 0 &&
       !args.get(1).isNoneType()) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "can't send non-None value to a just-started %s", type_name));
+        "can't send non-None value to a just-started %S", &type_name));
   }
   Object value(&scope, args.get(1));
   return sendImpl(thread, gen, value);

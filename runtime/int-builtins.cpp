@@ -155,12 +155,13 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
   return SmallInt::fromWord(res);
 }
 
-static RawObject raiseRequiresInt(Thread* thread) {
+static RawObject raiseRequiresInt(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
-  unique_c_ptr<char> function_name_cstr(thread->functionName().toCStr());
-  Object message(&scope,
-                 thread->runtime()->newStrFromFormat(
-                     "'%s' requires a 'int' object", function_name_cstr.get()));
+  Function function(&scope, thread->currentFrame()->function());
+  Str function_name(&scope, function.name());
+  Str message(&scope, thread->runtime()->newStrFromFormat(
+                          "'%S' requires a 'int' object but received %T",
+                          &function_name, &obj));
   return thread->raiseTypeError(*message);
 }
 
@@ -172,7 +173,7 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread);
+    return raiseRequiresInt(thread, self_obj);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*other_obj)) {
@@ -188,9 +189,8 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread);
+  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
+    return raiseRequiresInt(thread, self_obj);
   }
   Int self(&scope, *self_obj);
   return op(thread, self);
@@ -325,7 +325,7 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   HandleScope scope;
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread);
+    return raiseRequiresInt(thread, self_obj);
   }
   Int self(&scope, *self_obj);
 
@@ -553,7 +553,7 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   KwArguments args(frame, nargs);
   if (args.numArgs() > 2) {
     return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
-        "from_bytes() takes at most 2 positional arguments (%ld given)",
+        "from_bytes() takes at most 2 positional arguments (%w given)",
         args.numArgs()));
   }
 

@@ -10,6 +10,11 @@ _Unbound = _Unbound  # noqa: F821
 _stdout = _stdout  # noqa: F821
 
 
+@_patch
+def _address(c):
+    pass
+
+
 class function(bootstrap=True):
     def __repr__(self):
         # TODO(T32655200): Replace 0x with #x when formatting language is
@@ -82,7 +87,9 @@ class object(bootstrap=True):  # noqa: E999
         pass
 
     def __repr__(self):
-        pass
+        # TODO(T32655200): Replace with #x when formatting language is
+        # implemented
+        return f"<{type(self).__name__} object at {_address(self)}>"
 
     def __str__(self):
         return type(self).__repr__(self)
@@ -1577,11 +1584,6 @@ def any(iterable):
         if element:
             return True
     return False
-
-
-@_patch
-def _address(c):
-    pass
 
 
 @_patch
