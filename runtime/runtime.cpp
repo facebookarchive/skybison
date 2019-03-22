@@ -63,6 +63,8 @@
 
 namespace python {
 
+extern "C" struct _inittab _PyImport_Inittab[];
+
 static const SymbolId kBinaryOperationSelector[] = {
     SymbolId::kDunderAdd,     SymbolId::kDunderSub,
     SymbolId::kDunderMul,     SymbolId::kDunderMatmul,
@@ -1763,8 +1765,6 @@ void Runtime::moduleAtPut(const Module& module, const Object& key,
 // TODO(emacs): Move these names into the modules themselves, so there is only
 // once source of truth.
 const ModuleInitializer Runtime::kBuiltinModules[] = {
-    {SymbolId::kBuiltins, &BuiltinsModule::initialize},
-    {SymbolId::kSys, &SysModule::initialize},
     {SymbolId::kTime, &TimeModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
@@ -1779,7 +1779,9 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
 void Runtime::initializeModules() {
   modules_ = newDict();
   Thread* thread = Thread::current();
-  for (size_t i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
+  createBuiltinsModule(thread);
+  createSysModule(thread);
+  for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
     kBuiltinModules[i].create_module(thread);
   }
 }
@@ -1943,8 +1945,58 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
   }
 }
 
-void Runtime::createImportlibModule() {
-  Thread* thread = Thread::current();
+void Runtime::createBuiltinsModule(Thread* thread) {
+  HandleScope scope(thread);
+  Str name_str(&scope, symbols()->Builtins());
+  Module module(&scope, newModule(name_str));
+  for (word i = 0;
+       BuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
+    moduleAddBuiltinFunction(module, BuiltinsModule::kBuiltinMethods[i].name,
+                             BuiltinsModule::kBuiltinMethods[i].address);
+  }
+  for (word i = 0;
+       BuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId; i++) {
+    moduleAddBuiltinType(module, BuiltinsModule::kBuiltinTypes[i].name,
+                         BuiltinsModule::kBuiltinTypes[i].type);
+  }
+
+  build_class_ =
+      moduleAddNativeFunction(module, SymbolId::kDunderBuildClass,
+                              nativeTrampoline<BuiltinsModule::buildClass>,
+                              nativeTrampolineKw<BuiltinsModule::buildClassKw>,
+                              unimplementedTrampoline);
+
+  // _patch is not patched because that would cause a circularity problem.
+  moduleAddNativeFunction(module, SymbolId::kUnderPatch,
+                          nativeTrampoline<BuiltinsModule::underPatch>,
+                          unimplementedTrampoline, unimplementedTrampoline);
+
+  Object not_implemented(&scope, notImplemented());
+  moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
+
+  Object unbound_value(&scope, unboundValue());
+  moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
+
+  // TODO(T41323917): Add proper file streams to sys
+  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
+  moduleAddGlobal(module, SymbolId::kUnderStdout, stdout_val);
+
+  // Add and execute builtins module.
+  addModule(module);
+  CHECK(!executeModule(BuiltinsModule::kFrozenData, module).isError(),
+        "Failed to initialize builtins module");
+
+  // TODO(T39575976): Create a consistent way to remove from global dict
+  // Explicitly remove module as this is not exposed in CPython
+  Dict module_dict(&scope, module.dict());
+  Object module_name(&scope, symbols()->Module());
+  dictRemove(module_dict, module_name);
+
+  Object dunder_import_name(&scope, symbols()->at(SymbolId::kDunderImport));
+  dunder_import_ = dictAt(module_dict, dunder_import_name);
+}
+
+void Runtime::createImportlibModule(Thread* thread) {
   HandleScope scope(thread);
 
   // CPython's freezing tool creates the following mapping:
@@ -1978,6 +2030,68 @@ void Runtime::createImportlibModule() {
                                SymbolId::kUnderInstall, sys_module, imp_module)
              .isError(),
         "Failed to run _bootstrap._install");
+}
+
+void Runtime::createSysModule(Thread* thread) {
+  HandleScope scope(thread);
+  Str name_str(&scope, symbols()->Sys());
+  Module module(&scope, newModule(name_str));
+
+  Object modules(&scope, modules_);
+  moduleAddGlobal(module, SymbolId::kModules, modules);
+
+  display_hook_ = moduleAddBuiltinFunction(module, SymbolId::kDisplayhook,
+                                           SysModule::displayhook);
+
+  // Fill in sys...
+  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
+  moduleAddGlobal(module, SymbolId::kStdout, stdout_val);
+
+  Object stderr_val(&scope, SmallInt::fromWord(STDERR_FILENO));
+  moduleAddGlobal(module, SymbolId::kStderr, stderr_val);
+
+  Object platform(&scope, newStrFromCStr(OS::name()));
+  moduleAddGlobal(module, SymbolId::kPlatform, platform);
+
+  unique_c_ptr<char> executable_path(OS::executablePath());
+  Object executable(&scope, newStrFromCStr(executable_path.get()));
+  moduleAddGlobal(module, SymbolId::kExecutable, executable);
+
+  // Count the number of modules and create a tuple
+  uword num_external_modules = 0;
+  while (_PyImport_Inittab[num_external_modules].name != nullptr) {
+    num_external_modules++;
+  }
+  uword num_builtin_modules = 2;
+  for (; Runtime::kBuiltinModules[num_builtin_modules].name !=
+         SymbolId::kSentinelId;
+       num_builtin_modules++) {
+  }
+
+  uword num_modules = num_builtin_modules + num_external_modules;
+  Tuple builtins_tuple(&scope, newTuple(num_modules));
+
+  // Add all the available builtin modules
+  builtins_tuple.atPut(0, symbols()->Builtins());
+  builtins_tuple.atPut(1, symbols()->Sys());
+  for (uword i = 2; i < num_builtin_modules; i++) {
+    Object module_name(&scope, symbols()->at(Runtime::kBuiltinModules[i].name));
+    builtins_tuple.atPut(i, *module_name);
+  }
+
+  // Add all the available extension builtin modules
+  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+    Object module_name(&scope, newStrFromCStr(_PyImport_Inittab[i].name));
+    builtins_tuple.atPut(num_builtin_modules + i, *module_name);
+  }
+
+  // Create builtin_module_names tuple
+  Object builtins(&scope, *builtins_tuple);
+  moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
+  // Add and execute sys module.
+  addModule(module);
+  CHECK(!executeModule(SysModule::kFrozenData, module).isError(),
+        "Failed to initialize sys module");
 }
 
 RawObject Runtime::createMainModule() {

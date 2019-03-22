@@ -9,11 +9,5 @@
 #include "thread.h"
 
 namespace python {
-
-void OperatorModule::postInitialize(Thread*, Runtime* runtime,
-                                    const Module& module) {
-  CHECK(!runtime->executeModule(kOperatorModuleData, module).isError(),
-        "Failed to initialize operator module");
-}
-
+const char* const OperatorModule::kFrozenData = kOperatorModuleData;
 }  // namespace python

@@ -25,11 +25,10 @@ void writeStderrV(Thread* thread, const char* format, va_list va);
 
 RawObject initialSysPath(Thread* thread);
 
-class SysModule : public ModuleBase<SysModule, SymbolId::kSys> {
+class SysModule {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
   static RawObject displayhook(Thread* thread, Frame* frame, word nargs);
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

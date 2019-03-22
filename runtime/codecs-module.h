@@ -10,10 +10,8 @@ namespace python {
 class UnderCodecsModule
     : public ModuleBase<UnderCodecsModule, SymbolId::kUnderCodecs> {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
-
   static const BuiltinMethod kBuiltinMethods[];
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

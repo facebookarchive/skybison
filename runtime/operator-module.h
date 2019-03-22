@@ -9,8 +9,7 @@ namespace python {
 
 class OperatorModule : public ModuleBase<OperatorModule, SymbolId::kOperator> {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

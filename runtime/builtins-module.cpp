@@ -209,46 +209,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-void BuiltinsModule::postInitialize(Thread* thread, Runtime* runtime,
-                                    const Module& module) {
-  runtime->build_class_ = runtime->moduleAddNativeFunction(
-      module, SymbolId::kDunderBuildClass,
-      nativeTrampoline<BuiltinsModule::buildClass>,
-      nativeTrampolineKw<BuiltinsModule::buildClassKw>,
-      unimplementedTrampoline);
-
-  // _patch is not patched because that would cause a circularity problem.
-  runtime->moduleAddNativeFunction(module, SymbolId::kUnderPatch,
-                                   nativeTrampoline<BuiltinsModule::underPatch>,
-                                   unimplementedTrampoline,
-                                   unimplementedTrampoline);
-
-  HandleScope scope(thread);
-  Object not_implemented(&scope, runtime->notImplemented());
-  runtime->moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
-
-  Object unbound_value(&scope, runtime->unboundValue());
-  runtime->moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
-
-  // For use in builtins :(
-  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
-  runtime->moduleAddGlobal(module, SymbolId::kUnderStdout, stdout_val);
-
-  if (runtime->executeModule(kBuiltinsModuleData, module).isError()) {
-    thread->printPendingException();
-    std::exit(EXIT_FAILURE);
-  }
-
-  // TODO(T39575976): Create a consistent way to remove from global dict
-  // Explicitly remove module as this is not exposed in CPython
-  Dict module_dict(&scope, module.dict());
-  Object module_name(&scope, runtime->symbols()->Module());
-  runtime->dictRemove(module_dict, module_name);
-
-  Object dunder_import_name(&scope,
-                            runtime->symbols()->at(SymbolId::kDunderImport));
-  runtime->dunder_import_ = runtime->dictAt(module_dict, dunder_import_name);
-}
+const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 
 RawObject BuiltinsModule::buildClass(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
@@ -674,7 +635,7 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
       &scope, runtime->findModuleById(SymbolId::kUnderFrozenImportlib));
   // We may need to load and create `_frozen_importlib` if it doesn't exist.
   if (importlib_obj.isNoneType()) {
-    runtime->createImportlibModule();
+    runtime->createImportlibModule(thread);
     importlib_obj = runtime->findModuleById(SymbolId::kUnderFrozenImportlib);
   }
   Module importlib(&scope, *importlib_obj);

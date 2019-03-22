@@ -15,11 +15,7 @@ const BuiltinMethod MarshalModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-void MarshalModule::postInitialize(Thread*, Runtime* runtime,
-                                   const Module& module) {
-  CHECK(!runtime->executeModule(kMarshalModuleData, module).isError(),
-        "Failed to initialize marshal module");
-}
+const char* const MarshalModule::kFrozenData = kMarshalModuleData;
 
 RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

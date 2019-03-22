@@ -38,11 +38,7 @@ const BuiltinMethod UnderWarningsModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-void UnderWarningsModule::postInitialize(Thread*, Runtime* runtime,
-                                         const Module& module) {
-  CHECK(!runtime->executeModule(kUnderWarningsModuleData, module).isError(),
-        "Failed to initialize _warnings module");
-}
+const char* const UnderWarningsModule::kFrozenData = kUnderWarningsModuleData;
 
 RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();

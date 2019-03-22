@@ -12,10 +12,6 @@ const BuiltinType UnderWeakrefModule::kBuiltinTypes[] = {
     {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
-void UnderWeakrefModule::postInitialize(Thread*, Runtime* runtime,
-                                        const Module& module) {
-  CHECK(!runtime->executeModule(kUnderWeakrefModuleData, module).isError(),
-        "Failed to initialize _weakref module");
-}
+const char* const UnderWeakrefModule::kFrozenData = kUnderWeakrefModuleData;
 
 }  // namespace python

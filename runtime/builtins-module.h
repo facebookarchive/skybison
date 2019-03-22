@@ -19,10 +19,8 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
 void copyFunctionEntries(Thread* thread, const Function& base,
                          const Function& patch);
 
-class BuiltinsModule : public ModuleBase<BuiltinsModule, SymbolId::kBuiltins> {
+class BuiltinsModule {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
   static RawObject buildClass(Thread* thread, Frame* frame, word nargs);
   static RawObject buildClassKw(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
@@ -52,6 +50,7 @@ class BuiltinsModule : public ModuleBase<BuiltinsModule, SymbolId::kBuiltins> {
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

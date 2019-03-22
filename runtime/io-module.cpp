@@ -16,11 +16,7 @@ const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-void UnderIoModule::postInitialize(Thread*, Runtime* runtime,
-                                   const Module& module) {
-  CHECK(!runtime->executeModule(kUnderIoModuleData, module).isError(),
-        "Failed to initialize _io module");
-}
+const char* const UnderIoModule::kFrozenData = kUnderIoModuleData;
 
 RawObject UnderIoModule::underReadFile(Thread* thread, Frame* frame,
                                        word nargs) {

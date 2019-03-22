@@ -12,8 +12,6 @@ bool importReleaseLock(Thread* thread);
 
 class UnderImpModule : public ModuleBase<UnderImpModule, SymbolId::kUnderImp> {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
   static RawObject acquireLock(Thread* thread, Frame* frame, word nargs);
   static RawObject createBuiltin(Thread* thread, Frame* frame, word nargs);
   static RawObject execBuiltin(Thread* thread, Frame* frame, word nargs);
@@ -27,6 +25,7 @@ class UnderImpModule : public ModuleBase<UnderImpModule, SymbolId::kUnderImp> {
   static RawObject releaseLock(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

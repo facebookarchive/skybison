@@ -14,6 +14,7 @@ class TimeModule : public ModuleBase<TimeModule, SymbolId::kTime> {
   static RawObject time(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

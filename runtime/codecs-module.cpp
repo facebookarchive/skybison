@@ -9,10 +9,6 @@ const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-void UnderCodecsModule::postInitialize(Thread*, Runtime* runtime,
-                                       const Module& module) {
-  CHECK(!runtime->executeModule(kUnderCodecsModuleData, module).isError(),
-        "Failed to initialize _codecs module");
-}
+const char* const UnderCodecsModule::kFrozenData = kUnderCodecsModuleData;
 
 }  // namespace python

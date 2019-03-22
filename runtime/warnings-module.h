@@ -11,11 +11,10 @@ class Thread;
 class UnderWarningsModule
     : public ModuleBase<UnderWarningsModule, SymbolId::kUnderWarnings> {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
   static RawObject warn(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

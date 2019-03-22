@@ -10,10 +10,8 @@ namespace python {
 class UnderWeakrefModule
     : public ModuleBase<UnderWeakrefModule, SymbolId::kUnderWeakRef> {
  public:
-  static void postInitialize(Thread* thread, Runtime* runtime,
-                             const Module& module);
-
   static const BuiltinType kBuiltinTypes[];
+  static const char* const kFrozenData;
 };
 
 }  // namespace python

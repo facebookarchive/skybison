@@ -15,11 +15,7 @@ const BuiltinMethod TimeModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-void TimeModule::postInitialize(Thread*, Runtime* runtime,
-                                const Module& module) {
-  CHECK(!runtime->executeModule(kTimeModuleData, module).isError(),
-        "Failed to initialize time module");
-}
+const char* const TimeModule::kFrozenData = kTimeModuleData;
 
 RawObject TimeModule::time(Thread* thread, Frame*, word) {
   return thread->runtime()->newFloat(OS::currentTime());

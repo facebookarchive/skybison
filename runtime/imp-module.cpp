@@ -54,11 +54,7 @@ const BuiltinMethod UnderImpModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-void UnderImpModule::postInitialize(Thread*, Runtime* runtime,
-                                    const Module& module) {
-  CHECK(!runtime->executeModule(kUnderImpModuleData, module).isError(),
-        "Failed to initialize _imp module");
-}
+const char* const UnderImpModule::kFrozenData = kUnderImpModuleData;
 
 RawObject UnderImpModule::acquireLock(Thread* thread, Frame*, word) {
   importAcquireLock(thread);

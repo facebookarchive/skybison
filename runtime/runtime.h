@@ -198,7 +198,9 @@ class Runtime {
   RawObject newWeakRef(Thread* thread, const Object& referent,
                        const Object& callback);
 
-  void createImportlibModule();
+  void createBuiltinsModule(Thread* thread);
+  void createImportlibModule(Thread* thread);
+  void createSysModule(Thread* thread);
 
   RawObject internStr(const Object& str);
   RawObject internStrFromCStr(const char* c_str);
@@ -963,10 +965,6 @@ class Runtime {
   // ModuleBase uses moduleAddBuiltinType
   template <typename T, SymbolId id>
   friend class ModuleBase;
-  // BuiltinsModule sets build_class_ directly
-  friend class BuiltinsModule;
-  // SysModule sets display_hook_ directly and uses modules_
-  friend class SysModule;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };
@@ -1006,10 +1004,9 @@ class Builtins : public BuiltinsBase {
 
 class ModuleBaseBase {
  public:
-  static void postInitialize(Thread*, Runtime*, const Module&) {}
-
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
+  static const char kFrozenData[];
 };
 
 template <typename T, SymbolId name>
@@ -1029,7 +1026,8 @@ class ModuleBase : public ModuleBaseBase {
                                     T::kBuiltinTypes[i].type);
     }
     runtime->addModule(module);
-    T::postInitialize(thread, runtime, module);
+    CHECK(!runtime->executeModule(T::kFrozenData, module).isError(),
+          "Failed to initialize %s module", name_str.toCStr());
   }
 };
 
