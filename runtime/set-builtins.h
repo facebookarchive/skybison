@@ -53,6 +53,7 @@ class SetBuiltins
     : public SetBaseBuiltins,
       public Builtins<SetBuiltins, SymbolId::kSet, LayoutId::kSet> {
  public:
+  static RawObject copy(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIand(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
@@ -71,6 +72,7 @@ class FrozenSetBuiltins
       public Builtins<FrozenSetBuiltins, SymbolId::kFrozenSet,
                       LayoutId::kFrozenSet> {
  public:
+  static RawObject copy(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];

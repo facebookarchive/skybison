@@ -1214,4 +1214,108 @@ result = s.__repr__()
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "{set(...)}"));
 }
 
+TEST(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object not_a_set(&scope, NoneType::object());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(SetBuiltins::copy, not_a_set),
+                            LayoutId::kTypeError,
+                            "copy requires a 'set' object"));
+}
+
+TEST(SetBuiltinsTest, CopyReturnsNewObject) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  Object result(&scope, runBuiltin(SetBuiltins::copy, set));
+  EXPECT_NE(*set, *result);
+  EXPECT_TRUE(result.isSet());
+}
+
+TEST(SetBuiltinsTest, CopyFrozenSetRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  FrozenSet set(&scope, runtime.newFrozenSet());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(SetBuiltins::copy, set),
+                            LayoutId::kTypeError,
+                            "copy requires a 'set' object"));
+}
+
+TEST(SetBuiltinsTest, CopyReturnsShallowCopy) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  Object obj(&scope, runtime.newTuple(5));
+  EXPECT_FALSE(runtime.setAdd(set, obj).isError());
+  Set set2(&scope, runBuiltin(SetBuiltins::copy, set));
+  Tuple data(&scope, set2.data());
+  bool has_object = false;
+  for (word i = SetBase::Bucket::kFirst;
+       SetBase::Bucket::nextItem(*data, &i);) {
+    if (SetBase::Bucket::key(*data, i) == *obj) {
+      has_object = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(has_object);
+}
+
+TEST(FrozenSetBuiltinsTest, CopyWithNonFrozenSetRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object not_a_set(&scope, NoneType::object());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FrozenSetBuiltins::copy, not_a_set),
+                            LayoutId::kTypeError,
+                            "copy requires a 'frozenset' object"));
+}
+
+TEST(FrozenSetBuiltinsTest, CopySetRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(FrozenSetBuiltins::copy, set),
+                            LayoutId::kTypeError,
+                            "copy requires a 'frozenset' object"));
+}
+
+TEST(FrozenSetBuiltinsTest, CopyFrozenSetReturnsSameObject) {
+  Runtime runtime;
+  HandleScope scope;
+  FrozenSet set(&scope, runtime.newFrozenSet());
+  Object result(&scope, runBuiltin(FrozenSetBuiltins::copy, set));
+  EXPECT_EQ(*set, *result);
+  EXPECT_TRUE(result.isFrozenSet());
+}
+
+TEST(FrozenSetBuiltinsTest, CopyFrozenSetSubsetReturnsNewObject) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C(frozenset):
+  pass
+sub = C()
+result = frozenset.copy(g)
+)");
+  EXPECT_NE(moduleAt(&runtime, "__main__", "sub"),
+            moduleAt(&runtime, "__main__", "result"));
+}
+
+TEST(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
+  Runtime runtime;
+  HandleScope scope;
+  FrozenSet set(&scope, runtime.newFrozenSet());
+  Object obj(&scope, runtime.newTuple(5));
+  EXPECT_FALSE(runtime.setAdd(set, obj).isError());
+  FrozenSet set2(&scope, runBuiltin(FrozenSetBuiltins::copy, set));
+  Tuple data(&scope, set2.data());
+  bool has_object = false;
+  for (word i = SetBase::Bucket::kFirst;
+       SetBase::Bucket::nextItem(*data, &i);) {
+    if (SetBase::Bucket::key(*data, i) == *obj) {
+      has_object = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(has_object);
+}
+
 }  // namespace python

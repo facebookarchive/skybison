@@ -287,6 +287,7 @@ const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kCopy, copy},
     {SymbolId::kDunderAnd, dunderAnd},
     {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
@@ -302,6 +303,20 @@ const BuiltinMethod FrozenSetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kIsDisjoint, isDisjoint},
     {SymbolId::kSentinelId, nullptr},
 };
+
+RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
+    return thread->raiseTypeErrorWithCStr("copy requires a 'frozenset' object");
+  }
+  FrozenSet set(&scope, *self);
+  if (set.isFrozenSet()) {
+    return *set;
+  }
+  return setCopy(thread, set);
+}
 
 RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
@@ -357,6 +372,7 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
 
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kAdd, add},
+    {SymbolId::kCopy, copy},
     {SymbolId::kDunderAnd, dunderAnd},
     {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
@@ -489,6 +505,17 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   }
 
   return NoneType::object();
+}
+
+RawObject SetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfSet(*self)) {
+    return thread->raiseTypeErrorWithCStr("copy requires a 'set' object");
+  }
+  Set set(&scope, *self);
+  return setCopy(thread, set);
 }
 
 RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {

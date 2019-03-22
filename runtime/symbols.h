@@ -161,6 +161,7 @@ class Runtime;
   V(ConnectionRefusedError, "ConnectionRefusedError")                          \
   V(ConnectionResetError, "ConnectionResetError")                              \
   V(Contains, "contains")                                                      \
+  V(Copy, "copy")                                                              \
   V(CountOf, "countOf")                                                        \
   V(Coroutine, "coroutine")                                                    \
   V(CreateBuiltin, "create_builtin")                                           \

@@ -1414,6 +1414,9 @@ class frozenset(bootstrap=True):
     def __lt__(self, other):
         pass
 
+    def copy(self):
+        pass
+
     def intersection(self, other):
         pass
 
@@ -1472,6 +1475,9 @@ class set(bootstrap=True):
         pass
 
     def add(self, value):
+        pass
+
+    def copy(self):
         pass
 
     def intersection(self, other):
