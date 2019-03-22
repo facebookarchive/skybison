@@ -633,6 +633,11 @@ class bytes(bootstrap=True):
             raise TypeError("'__rmul__' requires a 'bytes' instance")
         return bytes.__mul__(self, n)
 
+    def decode(self, encoding="utf-8", errors="strict") -> str:
+        import _codecs
+
+        return _codecs.decode(self, encoding, errors)
+
     def hex(self) -> str:
         pass
 
@@ -644,11 +649,6 @@ class bytes(bootstrap=True):
             return result
         items = [x for x in iterable]
         return _bytes_join(self, items)
-
-    def decode(self, encoding="utf-8", errors="strict") -> str:
-        import _codecs
-
-        return _codecs.decode(self, encoding, errors)
 
 
 @_patch

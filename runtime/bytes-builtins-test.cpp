@@ -1140,6 +1140,13 @@ TEST(BytesBuiltinsTest, DunderRmulCallsDunderMul) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "111"));
 }
 
+TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'hello'.decode('unknown')"),
+                            LayoutId::kNotImplementedError,
+                            "Non-fastpass codecs are unimplemented"));
+}
+
 TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"),
@@ -1232,13 +1239,6 @@ result = b' '.join(Foo())
   HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ab c def"));
-}
-
-TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'hello'.decode('unknown')"),
-                            LayoutId::kNotImplementedError,
-                            "Non-fastpass codecs are unimplemented"));
 }
 
 }  // namespace python
