@@ -64,22 +64,16 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
     return -1;
   }
   Int index(&scope, *len);
-  OptInt<Py_ssize_t> len_or_error = index.asInt<Py_ssize_t>();
-  switch (len_or_error.error) {
-    case CastError::None:
-      if (len_or_error.value < 0) {
-        thread->raiseValueErrorWithCStr("__len__() should return >= 0");
-        return -1;
-      }
-      return len_or_error.value;
-    case CastError::Overflow:
-    case CastError::Underflow:
-      thread->raiseOverflowErrorWithCStr(
-          "cannot fit 'int' into an index-sized integer");
-      return -1;
+  if (index.numDigits() > 1) {
+    thread->raiseOverflowErrorWithCStr(
+        "cannot fit 'int' into an index-sized integer");
+    return -1;
   }
-
-  UNREACHABLE("RawInt::asInt() gave an invalid CastError");
+  if (index.isNegative()) {
+    thread->raiseValueErrorWithCStr("__len__() should return >= 0");
+    return -1;
+  }
+  return index.asWord();
 }
 
 // Buffer Protocol
@@ -388,7 +382,7 @@ PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* obj, PyObject* overflow_err) {
   Int number(&scope, *index);
   if (overflow_err == nullptr || number.numDigits() == 1) {
     // Overflows should be clipped, or value is already in range.
-    return Py_ssize_t{number.asWordSaturated()};
+    return number.asWordSaturated();
   }
   // Value overflows, raise an exception.
   PyErr_Format(overflow_err, "cannot fit index into an index-sized integer");

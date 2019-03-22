@@ -14,6 +14,9 @@ typedef unsigned long long uint64;
 typedef intptr_t word;
 typedef uintptr_t uword;
 
+static_assert(sizeof(word) == sizeof(size_t),
+              "word must be the same size as size_t");
+
 const int kWordSize = sizeof(word);
 const int kPointerSize = sizeof(void*);
 const int kDoubleSize = sizeof(double);
