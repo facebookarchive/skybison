@@ -355,7 +355,9 @@ class OptInt {
   CastError error;
 };
 
-// Generic wrapper around RawSmallInt/RawLargeInt/RawBool.
+// Generic superclasses for Python types with multiple native types
+
+// Common `int` wrapper around RawSmallInt/RawLargeInt/RawBool
 class RawInt : public RawObject {
  public:
   // Getters and setters.
@@ -391,6 +393,39 @@ class RawInt : public RawObject {
 
   // Copies digits bytewise to `dst`. Returns number of bytes copied.
   word copyTo(byte* dst, word max_length) const;
+};
+
+// Common `str` wrapper around RawSmallStr/RawLargeStr
+class RawStr : public RawObject {
+ public:
+  // Singletons.
+  static RawStr empty();
+
+  // Getters and setters.
+  byte charAt(word index) const;
+  word length() const;
+  void copyTo(byte* dst, word length) const;
+
+  // Equality checks.
+  word compare(RawObject string) const;
+  word compareCStr(const char* c_str) const;
+  bool equals(RawObject that) const;
+  bool equalsCStr(const char* c_str) const;
+
+  // Codepoints
+  int32 codePointAt(word index, word* length) const;
+  word codePointLength() const;
+
+  // Counts forward through the code points of the string, starting at the
+  // specified code unit index. Returns the code unit index at the offset,
+  // or length() if the offset reaches the end of the string.
+  word offsetByCodePoints(word index, word count) const;
+
+  // Conversion to an unescaped C string.  The underlying memory is allocated
+  // with malloc and must be freed by the caller.
+  char* toCStr() const;
+
+  RAW_OBJECT_COMMON(Str);
 };
 
 // Immediate objects
@@ -560,39 +595,6 @@ class RawError : public RawObject {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   RAW_OBJECT_COMMON(Error);
-};
-
-// Super class of common string functionality
-class RawStr : public RawObject {
- public:
-  // Singletons.
-  static RawStr empty();
-
-  // Getters and setters.
-  byte charAt(word index) const;
-  word length() const;
-  void copyTo(byte* dst, word length) const;
-
-  // Equality checks.
-  word compare(RawObject string) const;
-  word compareCStr(const char* c_str) const;
-  bool equals(RawObject that) const;
-  bool equalsCStr(const char* c_str) const;
-
-  // Codepoints
-  int32 codePointAt(word index, word* length) const;
-  word codePointLength() const;
-
-  // Counts forward through the code points of the string, starting at the
-  // specified code unit index. Returns the code unit index at the offset,
-  // or length() if the offset reaches the end of the string.
-  word offsetByCodePoints(word index, word count) const;
-
-  // Conversion to an unescaped C string.  The underlying memory is allocated
-  // with malloc and must be freed by the caller.
-  char* toCStr() const;
-
-  RAW_OBJECT_COMMON(Str);
 };
 
 class RawSmallStr : public RawObject {
