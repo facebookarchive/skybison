@@ -606,10 +606,11 @@ RawObject BuiltinsModule::issubclass(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("issubclass arg 1 must be a type");
+  Object type_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfType(*type_obj)) {
+    return thread->raiseTypeErrorWithCStr("issubclass() arg 1 must be a class");
   }
-  Type type(&scope, args.get(0));
+  Type type(&scope, *type_obj);
   Object classinfo(&scope, args.get(1));
   if (runtime->isInstanceOfType(*classinfo)) {
     Type possible_superclass(&scope, *classinfo);

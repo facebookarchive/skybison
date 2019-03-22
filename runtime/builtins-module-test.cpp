@@ -234,7 +234,7 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
                      LayoutId::kTypeError));
 }
 
-TEST(BuiltinsModuleTest, BuiltinIssubclassWithSubclassReturnsTrue) {
+TEST(BuiltinsModuleTest, IssubclassWithSubclassReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -260,7 +260,7 @@ c = issubclass(Baz, type)
   EXPECT_TRUE(c.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinIssubclassWithNonSubclassReturnsFalse) {
+TEST(BuiltinsModuleTest, IssubclassWithNonSubclassReturnsFalse) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -283,7 +283,7 @@ c = issubclass(dict, list)
   EXPECT_FALSE(c.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinIssubclassWithOneSuperclassReturnsTrue) {
+TEST(BuiltinsModuleTest, IssubclassWithOneSuperclassReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -303,7 +303,7 @@ b = issubclass(Bar, (Foo))
   EXPECT_TRUE(b.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinIssubclassWithNoSuperclassReturnsFalse) {
+TEST(BuiltinsModuleTest, IssubclassWithNoSuperclassReturnsFalse) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -315,6 +315,30 @@ a = issubclass(Foo, (str, int))
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_FALSE(a.value());
+}
+
+TEST(BuiltinsModuleTest, IssubclassWithMetaclassReturnsBool) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Meta(type):
+  pass
+class C(metaclass=Meta):
+  pass
+)")
+                   .isError());
+  HandleScope scope;
+  Object c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object result(&scope, runBuiltin(BuiltinsModule::issubclass, c, c));
+  EXPECT_EQ(result, Bool::trueObj());
+}
+
+TEST(BuiltinsModuleTest, IssubclassWithNonTypeRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(BuiltinsModule::issubclass, none));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
+                            "issubclass() arg 1 must be a class"));
 }
 
 TEST(BuiltinsModuleTest, BuiltinLen) {
