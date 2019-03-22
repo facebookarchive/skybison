@@ -2451,10 +2451,8 @@ inline bool RawObject::isHeapObject() const {
 }
 
 inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return RawHeapObject::cast(*this).header().layoutId() == layout_id;
+  return isHeapObject() &&
+         RawHeapObject::cast(*this).header().layoutId() == layout_id;
 }
 
 inline bool RawObject::isLayout() const {
@@ -2514,11 +2512,8 @@ inline bool RawObject::isFunction() const {
 }
 
 inline bool RawObject::isInstance() const {
-  if (!isHeapObject()) {
-    return false;
-  }
-  return RawHeapObject::cast(*this).header().layoutId() >
-         LayoutId::kLastBuiltinId;
+  return isHeapObject() && (RawHeapObject::cast(*this).header().layoutId() >
+                            LayoutId::kLastBuiltinId);
 }
 
 inline bool RawObject::isKeyError() const {
