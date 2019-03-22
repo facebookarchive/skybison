@@ -355,7 +355,7 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 
 RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(1).isUnboundValue() && !args.get(1).isSmallInt()) {
+  if (!args.get(1).isUnbound() && !args.get(1).isSmallInt()) {
     return thread->raiseTypeErrorWithCStr(
         "index object cannot be interpreted as an integer");
   }
@@ -372,7 +372,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseIndexErrorWithCStr("pop from empty list");
   }
   word index = length - 1;
-  if (!args.get(1).isUnboundValue()) {
+  if (!args.get(1).isUnbound()) {
     index = RawSmallInt::cast(args.get(1)).value();
     if (index < 0) index += length;
   }

@@ -228,7 +228,7 @@ void BuiltinsModule::postInitialize(Thread* thread, Runtime* runtime,
   runtime->moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
 
   Object unbound_value(&scope, runtime->unboundValue());
-  runtime->moduleAddGlobal(module, SymbolId::kUnderUnboundValue, unbound_value);
+  runtime->moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
 
   // For use in builtins :(
   Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
@@ -715,7 +715,7 @@ RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
   Object default_obj(&scope, args.get(2));
   Object result(&scope, getAttribute(thread, self, name));
   Runtime* runtime = thread->runtime();
-  if (result.isError() && !default_obj.isUnboundValue()) {
+  if (result.isError() && !default_obj.isUnbound()) {
     Type given(&scope, thread->pendingExceptionType());
     Type exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
     if (givenExceptionMatches(thread, given, exc)) {

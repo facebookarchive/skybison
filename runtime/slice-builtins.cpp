@@ -120,7 +120,7 @@ RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
   Slice slice(&scope, thread->runtime()->newSlice());
   Object arg2(&scope, args.get(2));
-  if (arg2.isUnboundValue()) {
+  if (arg2.isUnbound()) {
     slice.setStop(args.get(1));
     return *slice;
   }

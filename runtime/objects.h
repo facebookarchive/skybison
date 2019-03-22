@@ -66,8 +66,8 @@ class Handle;
   V(Traceback)                                                                 \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
-  V(UnboundValue)                                                              \
   V(Type)                                                                      \
+  V(Unbound)                                                                   \
   V(ValueCell)                                                                 \
   V(WeakRef)
 
@@ -299,7 +299,7 @@ class RawObject {
   bool isTraceback() const;
   bool isTuple() const;
   bool isTupleIterator() const;
-  bool isUnboundValue() const;
+  bool isUnbound() const;
   bool isUnicodeDecodeError() const;
   bool isUnicodeEncodeError() const;
   bool isUnicodeError() const;
@@ -694,11 +694,11 @@ class RawBaseException : public RawHeapObject {
   RawObject args() const;
   void setArgs(RawObject args) const;
 
-  // traceback, cause, and context can all be UnboundValue to indicate that they
+  // The traceback, cause, and context can all be Unbound to indicate that they
   // are "NULL" rather than the normal unset value of None. The only code that
   // cares about the distinction is a handful of C-API functions, so the
-  // standard getters transparently replace UnboundValue with None. The
-  // *OrUnbound getters return the value as it's stored in memory, and are used
+  // standard getters transparently replace Unbound with None. The *OrUnbound
+  // getters return the value as it's stored in memory, and are used
   // in the few C-API functions that care about the distinction.
   RawObject traceback() const;
   RawObject tracebackOrUnbound() const;
@@ -1355,7 +1355,7 @@ class RawTupleIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(TupleIterator);
 };
 
-class RawUnboundValue : public RawHeapObject {
+class RawUnbound : public RawHeapObject {
  public:
   // Layout.
   // kPaddingOffset is not used, but the GC expects the object to be
@@ -1363,7 +1363,7 @@ class RawUnboundValue : public RawHeapObject {
   static const int kPaddingOffset = RawHeapObject::kSize;
   static const int kSize = kPaddingOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(UnboundValue);
+  RAW_OBJECT_COMMON(Unbound);
 };
 
 class RawCode : public RawHeapObject {
@@ -2677,8 +2677,8 @@ inline bool RawObject::isTupleIterator() const {
   return isHeapObjectWithLayout(LayoutId::kTupleIterator);
 }
 
-inline bool RawObject::isUnboundValue() const {
-  return isHeapObjectWithLayout(LayoutId::kUnboundValue);
+inline bool RawObject::isUnbound() const {
+  return isHeapObjectWithLayout(LayoutId::kUnbound);
 }
 
 inline bool RawObject::isUnicodeDecodeError() const {
@@ -3108,7 +3108,7 @@ inline void RawBaseException::setArgs(RawObject args) const {
 
 inline RawObject RawBaseException::traceback() const {
   RawObject o = tracebackOrUnbound();
-  return o.isUnboundValue() ? RawNoneType::object() : o;
+  return o.isUnbound() ? RawNoneType::object() : o;
 }
 
 inline RawObject RawBaseException::tracebackOrUnbound() const {
@@ -3121,7 +3121,7 @@ inline void RawBaseException::setTraceback(RawObject traceback) const {
 
 inline RawObject RawBaseException::cause() const {
   RawObject o = causeOrUnbound();
-  return o.isUnboundValue() ? RawNoneType::object() : o;
+  return o.isUnbound() ? RawNoneType::object() : o;
 }
 
 inline RawObject RawBaseException::causeOrUnbound() const {
@@ -3134,7 +3134,7 @@ inline void RawBaseException::setCause(RawObject cause) const {
 
 inline RawObject RawBaseException::context() const {
   RawObject o = contextOrUnbound();
-  return o.isUnboundValue() ? RawNoneType::object() : o;
+  return o.isUnbound() ? RawNoneType::object() : o;
 }
 
 inline RawObject RawBaseException::contextOrUnbound() const {

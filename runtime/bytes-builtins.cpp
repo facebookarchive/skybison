@@ -411,22 +411,22 @@ RawObject BytesBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Object source(&scope, args.get(1));
   Object encoding(&scope, args.get(2));
   Object errors(&scope, args.get(3));
-  if (source.isUnboundValue()) {
-    if (!encoding.isUnboundValue() || !errors.isUnboundValue()) {
+  if (source.isUnbound()) {
+    if (!encoding.isUnbound() || !errors.isUnbound()) {
       return thread->raiseTypeErrorWithCStr(
           "encoding or errors without sequence argument");
     }
     return runtime->newBytesWithAll({});
   }
   // if we have an encoding, interpret source as a string
-  if (!encoding.isUnboundValue()) {
+  if (!encoding.isUnbound()) {
     if (!runtime->isInstanceOfStr(*source)) {
       return thread->raiseTypeErrorWithCStr(
           "encoding without a string argument");
     }
     UNIMPLEMENTED("string encoding");
   }
-  if (!errors.isUnboundValue()) {
+  if (!errors.isUnbound()) {
     return thread->raiseTypeErrorWithCStr(
         runtime->isInstanceOfStr(*source)
             ? "string argument without an encoding"

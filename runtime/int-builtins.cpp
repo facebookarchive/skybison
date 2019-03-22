@@ -98,7 +98,7 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // No base argument, use 10 as the base.
-  if (args.get(2).isUnboundValue()) {
+  if (args.get(2).isUnbound()) {
     return intFromString(thread, *arg, 10);
   }
 

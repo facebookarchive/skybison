@@ -6,7 +6,7 @@
 # knowledge about its definition and will complain without this gross circular
 # helper here.
 _patch = _patch  # noqa: F821
-_UnboundValue = _UnboundValue  # noqa: F821
+_Unbound = _Unbound  # noqa: F821
 _stdout = _stdout  # noqa: F821
 
 
@@ -55,11 +55,11 @@ class type(bootstrap=True):
             raise TypeError(f"{self.__name__}.__init__ returned non None")
         return obj
 
-    def __new__(cls, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
+    def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound):
         pass
 
     # Not a patch; just empty
-    def __init__(self, name_or_object, bases=_UnboundValue, dict=_UnboundValue):
+    def __init__(self, name_or_object, bases=_Unbound, dict=_Unbound):
         pass
 
     def __repr__(self):
@@ -151,7 +151,7 @@ class float(bootstrap=True):
     def __new__(cls, arg=0.0) -> float:
         pass
 
-    def __pow__(self, y, z=_UnboundValue) -> float:
+    def __pow__(self, y, z=_Unbound) -> float:
         pass
 
     def __radd__(self, n: float) -> float:
@@ -232,7 +232,7 @@ class property(bootstrap=True):
 
 
 class int(bootstrap=True):
-    def __new__(cls, n=0, base=_UnboundValue):
+    def __new__(cls, n=0, base=_Unbound):
         pass
 
     def __abs__(self) -> int:
@@ -558,9 +558,7 @@ class bytearray(bootstrap=True):
     def __imul__(self, n: int) -> bytearray:
         pass
 
-    def __init__(
-        self, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
-    ):
+    def __init__(self, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         pass
 
     def __len__(self) -> int:
@@ -569,9 +567,7 @@ class bytearray(bootstrap=True):
     def __mul__(self, n: int) -> bytearray:
         pass
 
-    def __new__(
-        cls, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
-    ):
+    def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         pass
 
     def __repr__(self):
@@ -626,9 +622,7 @@ class bytes(bootstrap=True):
     def __ne__(self, other):
         pass
 
-    def __new__(
-        cls, source=_UnboundValue, encoding=_UnboundValue, errors=_UnboundValue
-    ):
+    def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         pass
 
     def __repr__(self) -> str:  # noqa: T484
@@ -668,7 +662,7 @@ def _repr_leave(obj: object) -> None:
 
 
 class tuple(bootstrap=True):
-    def __new__(cls, iterable=_UnboundValue):
+    def __new__(cls, iterable=_Unbound):
         pass
 
     def __add__(self, other):
@@ -797,7 +791,7 @@ class list(bootstrap=True):
     def insert(self, index, value):
         pass
 
-    def pop(self, index=_UnboundValue):
+    def pop(self, index=_Unbound):
         pass
 
     def remove(self, value):
@@ -851,7 +845,7 @@ class list_iterator(bootstrap=True):
 
 
 class range(bootstrap=True):
-    def __new__(cls, start_or_stop, stop=_UnboundValue, step=_UnboundValue):
+    def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
         pass
 
     def __iter__(self):
@@ -870,7 +864,7 @@ class range_iterator(bootstrap=True):
 
 
 class slice(bootstrap=True):
-    def __new__(cls, start_or_stop, stop=_UnboundValue, step=None):
+    def __new__(cls, start_or_stop, stop=_Unbound, step=None):
         pass
 
 
@@ -889,7 +883,7 @@ def _str_rfind(self, sub, start, end):
 
 
 class str(bootstrap=True):
-    def __new__(cls, obj="", encoding=_UnboundValue, errors=_UnboundValue):
+    def __new__(cls, obj="", encoding=_Unbound, errors=_Unbound):
         if not isinstance(cls, type):
             raise TypeError("cls is not a type object")
         if not issubclass(cls, str):
@@ -899,7 +893,7 @@ class str(bootstrap=True):
             raise NotImplementedError("__new__ with subtype of str")
         if type(obj) is str and obj == "":
             return obj
-        if encoding != _UnboundValue or errors != _UnboundValue:
+        if encoding != _Unbound or errors != _Unbound:
             # TODO(T40529650): Add an unimplemented function
             raise NotImplementedError("str encoding not supported yet")
         result = type(obj).__str__(obj)
@@ -1255,7 +1249,7 @@ class str_iterator(bootstrap=True):
 
 class dict(bootstrap=True):
     def __contains__(self, key) -> bool:
-        return self.get(key, _UnboundValue) is not _UnboundValue  # noqa: T484
+        return self.get(key, _Unbound) is not _Unbound  # noqa: T484
 
     def __delitem__(self, key):
         pass
@@ -1277,8 +1271,8 @@ class dict(bootstrap=True):
         pass
 
     def __getitem__(self, key):
-        result = self.get(key, _UnboundValue)
-        if result is _UnboundValue:
+        result = self.get(key, _Unbound)
+        if result is _Unbound:
             raise KeyError(key)
         return result
 
@@ -1304,9 +1298,9 @@ class dict(bootstrap=True):
     def keys(self):
         pass
 
-    def pop(self, key, default=_UnboundValue):
+    def pop(self, key, default=_Unbound):
         value = dict.get(self, key, default)
-        if value is _UnboundValue:
+        if value is _Unbound:
             raise KeyError(key)
         if key in self:
             dict.__delitem__(self, key)
@@ -1315,8 +1309,8 @@ class dict(bootstrap=True):
     def setdefault(self, key, default=None):
         if not isinstance(self, dict):
             raise TypeError("setdefault expected 'dict' but got {type(self).__name__}")
-        value = dict.get(self, key, _UnboundValue)
-        if value is _UnboundValue:
+        value = dict.get(self, key, _Unbound)
+        if value is _Unbound:
             dict.__setitem__(self, key, default)
             return default
         return value
@@ -1387,7 +1381,7 @@ class module(bootstrap=True):
 
 
 class frozenset(bootstrap=True):
-    def __new__(cls, iterable=_UnboundValue):
+    def __new__(cls, iterable=_Unbound):
         pass
 
     def __and__(self, other):
@@ -1524,10 +1518,10 @@ class staticmethod(bootstrap=True):
 
 
 class super(bootstrap=True):
-    def __new__(cls, type=_UnboundValue, type_or_obj=_UnboundValue):
+    def __new__(cls, type=_Unbound, type_or_obj=_Unbound):
         pass
 
-    def __init__(self, type=_UnboundValue, type_or_obj=_UnboundValue):
+    def __init__(self, type=_Unbound, type_or_obj=_Unbound):
         pass
 
 
@@ -1665,7 +1659,7 @@ def exec(source, globals=None, locals=None):
 
 
 @_patch
-def getattr(obj, key, default=_UnboundValue):
+def getattr(obj, key, default=_Unbound):
     pass
 
 

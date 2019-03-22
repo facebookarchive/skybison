@@ -381,7 +381,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   // If no iterable is given as an argument, return an empty zero tuple.
-  if (args.get(1).isUnboundValue()) {
+  if (args.get(1).isUnbound()) {
     Tuple tuple(&scope, runtime->newTuple(0));
     return newTupleOrUserSubclass(thread, tuple, type);
   }

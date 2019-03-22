@@ -90,7 +90,7 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // If the first argument is exactly type, and there are no other arguments,
   // then this call acts like a "typeof" operator, and returns the type of the
   // argument.
-  if (args.get(2).isUnboundValue() && args.get(3).isUnboundValue() &&
+  if (args.get(2).isUnbound() && args.get(3).isUnbound() &&
       metaclass_id == LayoutId::kType) {
     Object arg(&scope, args.get(1));
     // TODO(dulinr): In the future, types that should be visible only to the

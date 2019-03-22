@@ -24,7 +24,7 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("not a subtype of range");
   }
   for (word i = 1; i < nargs; i++) {
-    if (!args.get(i).isSmallInt() && !args.get(i).isUnboundValue()) {
+    if (!args.get(i).isSmallInt() && !args.get(i).isUnbound()) {
       return thread->raiseTypeErrorWithCStr(
           "Arguments to range() must be integers");
     }
@@ -33,9 +33,9 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   word start = 0;
   word stop = 0;
   word step = 1;
-  if (args.get(2).isUnboundValue() && args.get(3).isUnboundValue()) {
+  if (args.get(2).isUnbound() && args.get(3).isUnbound()) {
     stop = RawSmallInt::cast(args.get(1)).value();
-  } else if (args.get(3).isUnboundValue()) {
+  } else if (args.get(3).isUnbound()) {
     start = RawSmallInt::cast(args.get(1)).value();
     stop = RawSmallInt::cast(args.get(2)).value();
   } else {

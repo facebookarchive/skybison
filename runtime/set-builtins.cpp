@@ -314,7 +314,7 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
   if (type.builtinBase() != LayoutId::kFrozenSet) {
     return thread->raiseTypeErrorWithCStr("not a subtype of frozenset");
   }
-  if (args.get(1).isUnboundValue()) {
+  if (args.get(1).isUnbound()) {
     // Iterable not provided
     if (type.isBuiltin() && type.builtinBase() == LayoutId::kFrozenSet) {
       // Called with exact frozenset type, should return singleton

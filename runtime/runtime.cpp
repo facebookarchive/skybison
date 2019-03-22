@@ -1308,7 +1308,7 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   TupleBuiltins::initialize(this);
   TupleIteratorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kUnderUnboundValue, LayoutId::kUnboundValue,
+  addEmptyBuiltinType(SymbolId::kUnderUnbound, LayoutId::kUnbound,
                       LayoutId::kObject);
   PropertyBuiltins::initialize(this);
   RangeBuiltins::initialize(this);
@@ -1621,7 +1621,7 @@ void Runtime::initializePrimitiveInstances() {
   ellipsis_ = heap()->createEllipsis();
   not_implemented_ = heap()->create<RawNotImplemented>();
   callbacks_ = NoneType::object();
-  unbound_value_ = heap()->create<RawUnboundValue>();
+  unbound_value_ = heap()->create<RawUnbound>();
 }
 
 void Runtime::initializeInterned() { interned_ = newSet(); }

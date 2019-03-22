@@ -485,7 +485,7 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
         "__pow__() must be called with float instance as first argument");
   }
   // TODO(T40438612): Implement the modulo operation given the 3rd argument.
-  if (!args.get(2).isUnboundValue()) {
+  if (!args.get(2).isUnbound()) {
     return thread->raiseTypeErrorWithCStr(
         "pow() 3rd argument not allowed unless all arguments are integers");
   }

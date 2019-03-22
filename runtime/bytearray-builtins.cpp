@@ -207,21 +207,21 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
   Object source(&scope, args.get(1));
   Object encoding(&scope, args.get(2));
   Object errors(&scope, args.get(3));
-  if (source.isUnboundValue()) {
-    if (encoding.isUnboundValue() && errors.isUnboundValue()) {
+  if (source.isUnbound()) {
+    if (encoding.isUnbound() && errors.isUnbound()) {
       return NoneType::object();
     }
     return thread->raiseTypeErrorWithCStr(
         "encoding or errors without sequence argument");
   }
   if (runtime->isInstanceOfStr(*source)) {
-    if (encoding.isUnboundValue()) {
+    if (encoding.isUnbound()) {
       return thread->raiseTypeErrorWithCStr(
           "string argument without an encoding");
     }
     UNIMPLEMENTED("string encoding");  // return NoneType::value();
   }
-  if (!encoding.isUnboundValue() || !errors.isUnboundValue()) {
+  if (!encoding.isUnbound() || !errors.isUnbound()) {
     return thread->raiseTypeErrorWithCStr(
         "encoding or errors without a string argument");
   }
