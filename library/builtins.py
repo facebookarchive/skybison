@@ -85,6 +85,11 @@ class object(bootstrap=True):  # noqa: E999
     def __init__(self, *args, **kwargs):
         pass
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+        return NotImplemented
+
     def __format__(self, format_spec):
         if format_spec != "":
             raise TypeError("format_spec must be empty string")

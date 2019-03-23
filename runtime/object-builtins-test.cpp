@@ -34,6 +34,28 @@ a = object.__repr__(Foo())
   free(c_str);
 }
 
+TEST(ObjectBuiltinsTest, DunderEqWithIdenticalObjectsReturnsTrue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = object.__eq__(None, None)
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST(ObjectBuiltinsTest, DunderEqWithNonIdentialObjectsReturnsNotImplemented) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = object.__eq__(object(), object())
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result.isNotImplemented());
+}
+
 TEST(ObjectBuiltinsTest, DunderStrReturnsDunderRepr) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
