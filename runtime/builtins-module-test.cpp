@@ -1100,4 +1100,91 @@ l = list(callable_iter)
   EXPECT_TRUE(isIntEqualsWord(inner.at(1), 3));
 }
 
+TEST(BuiltinsModuleTest, NextWithoutIteratorRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class C:
+  pass
+next(C())
+)"),
+                            LayoutId::kTypeError,
+                            "'C' object is not iterable"));
+}
+
+TEST(BuiltinsModuleTest, NextWithIteratorFetchesNextItem) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __iter__(self):
+    self.a = 1
+    return self
+
+  def __next__(self):
+    x = self.a
+    self.a += 1
+    return x
+
+itr = iter(C())
+c = next(itr)
+d = next(itr)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "c"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "d"), 2));
+}
+
+TEST(BuiltinsModuleTest, NextWithIteratorAndDefaultFetchesNextItem) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __iter__(self):
+    self.a = 1
+    return self
+
+  def __next__(self):
+    x = self.a
+    self.a += 1
+    return x
+
+itr = iter(C())
+c = next(itr, 0)
+d = next(itr, 0)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "c"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "d"), 2));
+}
+
+TEST(BuiltinsModuleTest, NextWithIteratorRaisesStopIteration) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class C:
+  def __iter__(self):
+    return self
+
+  def __next__(self):
+    raise StopIteration('stopit')
+
+itr = iter(C())
+next(itr)
+)"),
+                            LayoutId::kStopIteration, "stopit"));
+}
+
+TEST(BuiltinsModuleTest, NextWithIteratorAndDefaultReturnsDefault) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __iter__(self):
+    return self
+
+  def __next__(self):
+    raise StopIteration('stopit')
+itr = iter(C())
+c = next(itr, None)
+)")
+                   .isError());
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "c").isNoneType());
+}
+
 }  // namespace python

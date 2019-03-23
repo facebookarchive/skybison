@@ -1719,6 +1719,22 @@ def iter(obj, sentinel=None):
     return CallIter(obj, sentinel)
 
 
+def next(iterator, default=_Unbound):
+    try:
+        dunder_next = _Unbound
+        dunder_next = type(iterator).__next__
+        return dunder_next(iterator)
+    except StopIteration:
+        if default is _Unbound:
+            raise
+        return default
+    except AttributeError:
+        if dunder_next is _Unbound:
+            raise TypeError(f"'{type(iterator).__name__}' object is not iterable")
+        else:
+            raise
+
+
 def len(seq):
     dunder_len = getattr(seq, "__len__", None)
     if dunder_len is None:
