@@ -67,14 +67,14 @@ C(9)
   EXPECT_TRUE(isIntEqualsWord(*global, 9));
 }
 
-TEST(TypeBuiltinsTest, BuiltinTypeCallDetectNonClsArgRaiseException) {
+TEST(TypeBuiltinsTest, DunderCallWithNonTypeRaisesTypeError) {
   Runtime runtime;
   ASSERT_TRUE(raisedWithStr(runFromCStr(&runtime, "type.__call__(5)"),
                             LayoutId::kTypeError,
                             "self must be a type instance"));
 }
 
-TEST(TypeBuiltinsTest, BuiltinTypeCallInvokeDunderInitAsCallable) {
+TEST(TypeBuiltinsTest, DunderCallCallsDunderInit) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, R"(
@@ -90,6 +90,22 @@ c = C()
   Object x(&scope, runtime.newStrFromCStr("x"));
   RawObject attr = runtime.attributeAt(thread, c, x);
   EXPECT_TRUE(isIntEqualsWord(attr, 42));
+}
+
+TEST(TypeBuiltinsTest,
+     DunderCallWithNonTypeDudnerNewResultReturnsWithoutCallingDunderInit) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C:
+  def __new__(self, *args):
+    return 17
+  def __init__(self, *args):
+    raise Exception("should not happen")
+result = type.__call__(C, "C", (), {})
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 17));
 }
 
 TEST(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {

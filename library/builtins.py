@@ -48,13 +48,20 @@ def isinstance(obj, ty):
     pass
 
 
+@_patch
+def issubclass(obj, ty):
+    pass
+
+
 class type(bootstrap=True):
     def __call__(self, *args, **kwargs):
         if not isinstance(self, type):
             raise TypeError("self must be a type instance")
         obj = self.__new__(self, *args, **kwargs)
         # Special case for getting the type of an object with type(obj).
-        if self == type and len(args) == 1 and len(kwargs) == 0:
+        if self is type and len(args) == 1 and len(kwargs) == 0:
+            return obj
+        if not issubclass(obj.__class__, self):
             return obj
         if self.__init__(obj, *args, **kwargs) is not None:
             raise TypeError(f"{self.__name__}.__init__ returned non None")
@@ -1676,11 +1683,6 @@ def getattr(obj, key, default=_Unbound):
 
 @_patch
 def hasattr(obj, name):
-    pass
-
-
-@_patch
-def issubclass(obj, ty):
     pass
 
 
