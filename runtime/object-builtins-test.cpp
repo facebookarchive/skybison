@@ -56,6 +56,84 @@ result = object.__eq__(object(), object())
   EXPECT_TRUE(result.isNotImplemented());
 }
 
+TEST(ObjectBuiltinsTest,
+     DunderNeWithSelfNotImplementingDunderEqReturnsNotImplemented) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = object.__ne__(object(), None)
+)")
+                   .isError());
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
+}
+
+TEST(
+    ObjectBuiltinsTest,
+    DunderNeWithSelfImplementingDunderEqReturningNotImplementedReturnsNotImplemented) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo():
+  def __eq__(self, b): return NotImplemented
+
+result = object.__ne__(Foo(), None)
+)")
+                   .isError());
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
+}
+
+TEST(ObjectBuiltinsTest,
+     DunderNeWithSelfImplementingDunderEqReturningZeroReturnsTrue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo():
+  def __eq__(self, b): return 0
+
+result = object.__ne__(Foo(), None)
+)")
+                   .isError());
+  // 0 is converted to False, and flipped again for __ne__ from __eq__.
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(ObjectBuiltinsTest,
+     DunderNeWithSelfImplementingDunderEqReturningOneReturnsFalse) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo():
+  def __eq__(self, b): return 1
+
+result = object.__ne__(Foo(), None)
+)")
+                   .isError());
+  // 1 is converted to True, and flipped again for __ne__ from __eq__.
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(ObjectBuiltinsTest,
+     DunderNeWithSelfImplementingDunderEqReturningFalseReturnsTrue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo():
+  def __eq__(self, b): return False
+
+result = object.__ne__(Foo(), None)
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(ObjectBuiltinsTest,
+     DunderNeWithSelfImplementingDunderEqReturningTrueReturnsFalse) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo():
+  def __eq__(self, b): return True
+
+result = object.__ne__(Foo(), None)
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
 TEST(ObjectBuiltinsTest, DunderStrReturnsDunderRepr) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

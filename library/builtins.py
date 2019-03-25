@@ -98,6 +98,16 @@ class object(bootstrap=True):  # noqa: E999
     def __hash__(self):
         pass
 
+    def __ne__(self, other):
+        try:
+            dunder_eq = type(self).__eq__
+        except AttributeError:
+            return NotImplemented
+        res = dunder_eq(self, other)
+        if res is NotImplemented:
+            return NotImplemented
+        return not res
+
     def __repr__(self):
         # TODO(T32655200): Replace with #x when formatting language is
         # implemented
