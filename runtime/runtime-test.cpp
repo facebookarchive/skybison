@@ -48,13 +48,13 @@ static const char* layoutIdName(LayoutId id) {
   switch (id) {
     case LayoutId::kError:
       // Special-case the one type that isn't really a class so we don't have to
-      // have it in INTRINSIC_CLASS_NAMES.
+      // have it in CLASS_NAMES.
       return "RawError";
 
 #define CASE(name)                                                             \
   case LayoutId::k##name:                                                      \
     return #name;
-      INTRINSIC_CLASS_NAMES(CASE)
+      CLASS_NAMES(CASE)
 #undef CASE
     case LayoutId::kSentinelId:
       return "<SentinelId>";
@@ -82,7 +82,7 @@ TEST_P(BuiltinTypeIdsTest, HasTypeObject) {
 
 static const LayoutId kBuiltinHeapTypeIds[] = {
 #define ENUM(x) LayoutId::k##x,
-    INTRINSIC_HEAP_CLASS_NAMES(ENUM)
+    HEAP_CLASS_NAMES(ENUM)
 #undef ENUM
 };
 
@@ -1761,7 +1761,7 @@ struct IntrinsicTypeSetAttrTestData {
 IntrinsicTypeSetAttrTestData kIntrinsicTypeSetAttrTests[] = {
 // clang-format off
 #define DEFINE_TEST(class_name) {LayoutId::k##class_name, #class_name},
-  INTRINSIC_CLASS_NAMES(DEFINE_TEST)
+  CLASS_NAMES(DEFINE_TEST)
 #undef DEFINE_TEST
     // clang-format on
 };

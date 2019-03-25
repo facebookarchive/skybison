@@ -13,14 +13,14 @@ template <typename T>
 class Handle;
 
 // Python types that store their value directly in a RawObject.
-#define INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                     \
+#define IMMEDIATE_CLASS_NAMES(V)                                               \
   V(SmallInt)                                                                  \
   V(SmallStr)                                                                  \
   V(Bool)                                                                      \
   V(NoneType)
 
 // Python types that hold a pointer to heap-allocated data in a RawObject.
-#define INTRINSIC_HEAP_CLASS_NAMES(V)                                          \
+#define HEAP_CLASS_NAMES(V)                                                    \
   V(Object)                                                                    \
   V(BoundMethod)                                                               \
   V(Bytes)                                                                     \
@@ -72,7 +72,7 @@ class Handle;
   V(WeakRef)
 
 // Heap-allocated Python types in the BaseException hierarchy.
-#define INTRINSIC_EXCEPTION_CLASS_NAMES(V)                                     \
+#define EXCEPTION_CLASS_NAMES(V)                                               \
   V(ArithmeticError)                                                           \
   V(AssertionError)                                                            \
   V(AttributeError)                                                            \
@@ -138,10 +138,10 @@ class Handle;
   V(Warning)                                                                   \
   V(ZeroDivisionError)
 
-#define INTRINSIC_CLASS_NAMES(V)                                               \
-  INTRINSIC_IMMEDIATE_CLASS_NAMES(V)                                           \
-  INTRINSIC_HEAP_CLASS_NAMES(V)                                                \
-  INTRINSIC_EXCEPTION_CLASS_NAMES(V)
+#define CLASS_NAMES(V)                                                         \
+  IMMEDIATE_CLASS_NAMES(V)                                                     \
+  HEAP_CLASS_NAMES(V)                                                          \
+  EXCEPTION_CLASS_NAMES(V)
 
 // This enumerates layout ids of intrinsic classes. Notably, the layout of an
 // instance of an intrinsic class does not change.
@@ -172,16 +172,16 @@ enum class LayoutId : word {
 // clang-format off
   // Heap objects
 #define LAYOUT_ID(name) k##name,
-  INTRINSIC_HEAP_CLASS_NAMES(LAYOUT_ID)
-  INTRINSIC_EXCEPTION_CLASS_NAMES(LAYOUT_ID)
+  HEAP_CLASS_NAMES(LAYOUT_ID)
+  EXCEPTION_CLASS_NAMES(LAYOUT_ID)
 #undef LAYOUT_ID
 
   // Mark the first and last Exception LayoutIds, to allow range comparisons.
 #define GET_FIRST(name) k##name + 0 *
-  kFirstException = INTRINSIC_EXCEPTION_CLASS_NAMES(GET_FIRST) 0,
+  kFirstException = EXCEPTION_CLASS_NAMES(GET_FIRST) 0,
 #undef GET_FIRST
 #define GET_LAST(name) 0 + k##name *
-  kLastException = INTRINSIC_EXCEPTION_CLASS_NAMES(GET_LAST) 1,
+  kLastException = EXCEPTION_CLASS_NAMES(GET_LAST) 1,
 #undef GET_LAST
   // clang-format on
 
@@ -198,7 +198,7 @@ struct ObjectLayoutId;
   struct ObjectLayoutId<class Raw##ty> {                                       \
     static constexpr LayoutId value = LayoutId::k##ty;                         \
   };
-INTRINSIC_CLASS_NAMES(CASE)
+CLASS_NAMES(CASE)
 #undef CASE
 
 // Add functionality common to all RawObject subclasses, split into two parts
