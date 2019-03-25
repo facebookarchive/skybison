@@ -30,12 +30,9 @@ TEST(MroTest, ComputeMroWithTypeSubclassReturnsList) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
-class Meta(type):
-  pass
-class A(metaclass=Meta):
-  pass
-class B(A):
-  pass
+class Meta(type): pass
+class A(metaclass=Meta): pass
+class B(A): pass
 )")
                    .isError());
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
@@ -50,6 +47,33 @@ class B(A):
   // TODO(matthiasb): I think this should be "A", but is currently computed
   // as Meta so we should eventually EXPECT_EQ(result.at(1), a_obj) here.
   EXPECT_EQ(result.at(2), runtime.typeAt(LayoutId::kObject));
+}
+
+TEST(MroTest, ComputeMroWithMultipleTypeSubclassesReturnsList) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Meta(type): pass
+class A(metaclass=Meta): pass
+class B(metaclass=Meta): pass
+class C(A, B): pass
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  Object b_obj(&scope, moduleAt(&runtime, "__main__", "B"));
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  Type c(&scope, *c_obj);
+  Tuple parents(&scope, runtime.newTuple(2));
+  parents.atPut(0, *a_obj);
+  parents.atPut(1, *b_obj);
+  Object result_obj(&scope, computeMro(thread, c, parents));
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), c);
+  EXPECT_EQ(result.at(1), a_obj);
+  EXPECT_EQ(result.at(2), b_obj);
+  EXPECT_EQ(result.at(3), runtime.typeAt(LayoutId::kObject));
 }
 
 }  // namespace python

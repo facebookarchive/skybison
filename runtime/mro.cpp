@@ -29,7 +29,7 @@ static bool tailContains(const Tuple& mro, const Object& cls, word head_idx) {
     return false;
   }
   for (word i = head_idx + 1; i < len; i++) {
-    if (RawType::cast(mro.at(i)) == *cls) {
+    if (mro.at(i) == *cls) {
       return true;
     }
   }
