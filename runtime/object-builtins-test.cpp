@@ -45,7 +45,7 @@ result = object.__eq__(None, None)
   EXPECT_EQ(*result, Bool::trueObj());
 }
 
-TEST(ObjectBuiltinsTest, DunderEqWithNonIdentialObjectsReturnsNotImplemented) {
+TEST(ObjectBuiltinsTest, DunderEqWithNonIdenticalObjectsReturnsNotImplemented) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = object.__eq__(object(), object())
