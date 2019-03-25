@@ -99,11 +99,7 @@ class object(bootstrap=True):  # noqa: E999
         pass
 
     def __ne__(self, other):
-        try:
-            dunder_eq = type(self).__eq__
-        except AttributeError:
-            return NotImplemented
-        res = dunder_eq(self, other)
+        res = type(self).__eq__(self, other)
         if res is NotImplemented:
             return NotImplemented
         return not res

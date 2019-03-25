@@ -56,16 +56,6 @@ result = object.__eq__(object(), object())
   EXPECT_TRUE(result.isNotImplemented());
 }
 
-TEST(ObjectBuiltinsTest,
-     DunderNeWithSelfNotImplementingDunderEqReturnsNotImplemented) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
-result = object.__ne__(object(), None)
-)")
-                   .isError());
-  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
-}
-
 TEST(
     ObjectBuiltinsTest,
     DunderNeWithSelfImplementingDunderEqReturningNotImplementedReturnsNotImplemented) {
