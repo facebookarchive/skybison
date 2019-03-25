@@ -214,8 +214,8 @@ add_library(
   runtime/codecs-module.h
   runtime/complex-builtins.cpp
   runtime/complex-builtins.h
-  runtime/debugging.h
   runtime/debugging.cpp
+  runtime/debugging.h
   runtime/descriptor-builtins.cpp
   runtime/descriptor-builtins.h
   runtime/dict-builtins.cpp
@@ -239,10 +239,10 @@ add_library(
   runtime/imp-module.h
   runtime/int-builtins.cpp
   runtime/int-builtins.h
-  runtime/io-module.cpp
-  runtime/io-module.h
   runtime/interpreter.cpp
   runtime/interpreter.h
+  runtime/io-module.cpp
+  runtime/io-module.h
   runtime/layout.h
   runtime/list-builtins.cpp
   runtime/list-builtins.h
@@ -259,8 +259,8 @@ add_library(
   runtime/object-builtins.cpp
   runtime/objects.cpp
   runtime/objects.h
-  runtime/operator-module.h
   runtime/operator-module.cpp
+  runtime/operator-module.h
   runtime/os.cpp
   runtime/os.h
   runtime/range-builtins.cpp
