@@ -1741,8 +1741,7 @@ def next(iterator, default=_Unbound):
     except AttributeError:
         if dunder_next is _Unbound:
             raise TypeError(f"'{type(iterator).__name__}' object is not iterable")
-        else:
-            raise
+        raise
 
 
 def len(seq):
