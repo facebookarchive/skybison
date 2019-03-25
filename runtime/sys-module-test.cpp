@@ -173,4 +173,11 @@ result = sys.flags.verbose
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
+TEST(SysModuleTest, MaxsizeIsMaxWord) {
+  Runtime runtime;
+  HandleScope scope;
+  Object maxsize(&scope, moduleAt(&runtime, "sys", "maxsize"));
+  EXPECT_TRUE(isIntEqualsWord(*maxsize, kMaxWord));
+}
+
 }  // namespace python

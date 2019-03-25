@@ -2145,6 +2145,12 @@ void Runtime::createSysModule(Thread* thread) {
   Object executable(&scope, newStrFromCStr(executable_path.get()));
   moduleAddGlobal(module, SymbolId::kExecutable, executable);
 
+  // maxsize is defined as the largest supported length of containers which
+  // would be `SmallInt::kMaxValue`. However in practice it is used to
+  // determine the size of a machine word which is kMaxWord.
+  Object maxsize(&scope, newInt(kMaxWord));
+  moduleAddGlobal(module, SymbolId::kMaxsize, maxsize);
+
   // Count the number of modules and create a tuple
   uword num_external_modules = 0;
   while (_PyImport_Inittab[num_external_modules].name != nullptr) {

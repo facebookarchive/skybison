@@ -268,6 +268,7 @@ class Runtime;
   V(Lt, "lt")                                                                  \
   V(Marshal, "marshal")                                                        \
   V(Matmul, "matmul")                                                          \
+  V(Maxsize, "maxsize")                                                        \
   V(MemoryError, "MemoryError")                                                \
   V(MemoryView, "memoryview")                                                  \
   V(MetaPath, "meta_path")                                                     \
