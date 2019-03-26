@@ -17,6 +17,8 @@ class Handle;
   V(SmallInt)                                                                  \
   V(SmallStr)                                                                  \
   V(Bool)                                                                      \
+  V(NotImplementedType)                                                        \
+  V(Unbound)                                                                   \
   V(NoneType)
 
 // Python types that hold a pointer to heap-allocated data in a RawObject.
@@ -51,7 +53,6 @@ class Handle;
   V(ListIterator)                                                              \
   V(MemoryView)                                                                \
   V(Module)                                                                    \
-  V(NotImplementedType)                                                        \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -67,7 +68,6 @@ class Handle;
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
-  V(Unbound)                                                                   \
   V(ValueCell)                                                                 \
   V(WeakRef)
 
@@ -164,9 +164,11 @@ enum class LayoutId : word {
   kSmallInt = 0,
   kBool = 7,
   kSmallStr = 13,
+  kNotImplementedType = 15,
   // There is no RawType associated with the RawError object type, this is here
   // as a placeholder.
   kError = 21,
+  kUnbound = 23,
   kNoneType = 31,
 
 // clang-format off
@@ -237,8 +239,10 @@ class RawObject {
   bool isError() const;
   bool isHeader() const;
   bool isNoneType() const;
+  bool isNotImplementedType() const;
   bool isSmallInt() const;
   bool isSmallStr() const;
+  bool isUnbound() const;
 
   // Heap objects
   bool isBaseException() const;
@@ -281,7 +285,6 @@ class RawObject {
   bool isModule() const;
   bool isModuleNotFoundError() const;
   bool isNotImplementedError() const;
-  bool isNotImplementedType() const;
   bool isProperty() const;
   bool isRange() const;
   bool isRangeIterator() const;
@@ -299,7 +302,6 @@ class RawObject {
   bool isTraceback() const;
   bool isTuple() const;
   bool isTupleIterator() const;
-  bool isUnbound() const;
   bool isUnicodeDecodeError() const;
   bool isUnicodeEncodeError() const;
   bool isUnicodeError() const;
@@ -620,6 +622,32 @@ class RawBool : public RawObject {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   RAW_OBJECT_COMMON(Bool);
+};
+
+class RawNotImplementedType : public RawObject {
+ public:
+  // Singletons.
+  static RawNotImplementedType object();
+
+  // Tags.
+  static const int kTag = 15;  // 0b01111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(NotImplementedType);
+};
+
+class RawUnbound : public RawObject {
+ public:
+  // Singletons.
+  static RawUnbound object();
+
+  // Tags.
+  static const int kTag = 23;  // 0b10111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(Unbound);
 };
 
 class RawNoneType : public RawObject {
@@ -1357,17 +1385,6 @@ class RawTupleIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(TupleIterator);
 };
 
-class RawUnbound : public RawHeapObject {
- public:
-  // Layout.
-  // kPaddingOffset is not used, but the GC expects the object to be
-  // at least one word.
-  static const int kPaddingOffset = RawHeapObject::kSize;
-  static const int kSize = kPaddingOffset + kPointerSize;
-
-  RAW_OBJECT_COMMON(Unbound);
-};
-
 class RawCode : public RawHeapObject {
  public:
   // Matching CPython
@@ -1654,17 +1671,6 @@ class RawModule : public RawHeapObject {
   static const int kSize = kDefOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Module);
-};
-
-class RawNotImplementedType : public RawHeapObject {
- public:
-  // Layout.
-  // kPaddingOffset is not used, but the GC expects the object to be
-  // at least one word.
-  static const int kPaddingOffset = RawHeapObject::kSize;
-  static const int kSize = kPaddingOffset + kPointerSize;
-
-  RAW_OBJECT_COMMON(NotImplementedType);
 };
 
 /**
@@ -2444,6 +2450,15 @@ inline bool RawObject::isNoneType() const {
   return (raw() & RawNoneType::kTagMask) == RawNoneType::kTag;
 }
 
+inline bool RawObject::isNotImplementedType() const {
+  return (raw() & RawNotImplementedType::kTagMask) ==
+         RawNotImplementedType::kTag;
+}
+
+inline bool RawObject::isUnbound() const {
+  return (raw() & RawUnbound::kTagMask) == RawUnbound::kTag;
+}
+
 inline bool RawObject::isError() const {
   return (raw() & RawError::kTagMask) == RawError::kTag;
 }
@@ -2616,10 +2631,6 @@ inline bool RawObject::isInt() const {
   return isSmallInt() || isLargeInt() || isBool();
 }
 
-inline bool RawObject::isNotImplementedType() const {
-  return isHeapObjectWithLayout(LayoutId::kNotImplementedType);
-}
-
 inline bool RawObject::isNotImplementedError() const {
   return isHeapObjectWithLayout(LayoutId::kNotImplementedError);
 }
@@ -2672,10 +2683,6 @@ inline bool RawObject::isTraceback() const {
 
 inline bool RawObject::isTupleIterator() const {
   return isHeapObjectWithLayout(LayoutId::kTupleIterator);
-}
-
-inline bool RawObject::isUnbound() const {
-  return isHeapObjectWithLayout(LayoutId::kUnbound);
 }
 
 inline bool RawObject::isUnicodeDecodeError() const {
@@ -2960,6 +2967,18 @@ inline RawBool RawBool::fromBool(bool value) {
 
 inline bool RawBool::value() const {
   return (raw() >> kTagSize) ? true : false;
+}
+
+// RawNotImplementedType
+
+inline RawNotImplementedType RawNotImplementedType::object() {
+  return RawObject{kTag}.rawCast<RawNotImplementedType>();
+}
+
+// RawUnbound
+
+inline RawUnbound RawUnbound::object() {
+  return RawObject{kTag}.rawCast<RawUnbound>();
 }
 
 // RawNoneType

@@ -176,6 +176,7 @@ class __attribute__((warn_unused)) Handle : public T {
   V(Super)                                                                     \
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
+  V(Unbound)                                                                   \
   V(UnicodeDecodeError)                                                        \
   V(UnicodeEncodeError)                                                        \
   V(UnicodeError)                                                              \

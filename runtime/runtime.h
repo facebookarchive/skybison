@@ -303,7 +303,7 @@ class Runtime {
 
   RawObject modules() { return modules_; }
 
-  RawObject notImplemented() { return not_implemented_; }
+  RawObject notImplemented() { return NotImplementedType::object(); }
 
   RawObject apiHandles() { return api_handles_; }
 
@@ -311,7 +311,7 @@ class Runtime {
 
   Symbols* symbols() { return symbols_; }
 
-  RawObject unboundValue() { return unbound_value_; }
+  RawObject unboundValue() { return Unbound::object(); }
 
   // Provides a growth strategy for mutable sequences. Grows by a factor of 1.5,
   // scaling up to the requested capacity if the initial factor is insufficient.
@@ -929,11 +929,9 @@ class Runtime {
   RawObject empty_frozen_set_;
   RawObject empty_tuple_;
   RawObject ellipsis_;
-  RawObject not_implemented_;
   RawObject build_class_;
   RawObject display_hook_;
   RawObject dunder_import_;
-  RawObject unbound_value_;
 
   // Interned strings
   RawObject interned_;

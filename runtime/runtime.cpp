@@ -1722,9 +1722,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_frozen_set_ = newFrozenSet();
   empty_bytes_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
-  not_implemented_ = heap()->create<RawNotImplementedType>();
   callbacks_ = NoneType::object();
-  unbound_value_ = heap()->create<RawUnbound>();
 }
 
 void Runtime::initializeInterned() { interned_ = newSet(); }
@@ -1762,11 +1760,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&ellipsis_);
-  visitor->visitPointer(&not_implemented_);
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&display_hook_);
   visitor->visitPointer(&dunder_import_);
-  visitor->visitPointer(&unbound_value_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
