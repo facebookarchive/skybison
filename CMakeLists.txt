@@ -117,7 +117,6 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/ceval.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/codecs.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/errors.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Python/fileutils.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/getargs.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/getcompiler.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/getcopyright.cpp
