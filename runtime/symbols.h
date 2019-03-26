@@ -405,6 +405,7 @@ class Runtime;
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
+  V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRFind, "_str_rfind")                                               \
   V(UnderStructseqField, "_structseq_field")                                   \
   V(UnderStructseqFieldNames, "_structseq_field_names")                        \

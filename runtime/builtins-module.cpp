@@ -95,6 +95,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderReprLeave, underReprLeave},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
+    {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
     {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
@@ -746,6 +747,22 @@ RawObject BuiltinsModule::underStrFind(Thread* thread, Frame* frame,
   word end = end_obj.isNoneType() ? kMaxWord
                                   : RawInt::cast(*end_obj).asWordSaturated();
   return strFind(haystack, needle, start, end);
+}
+
+RawObject BuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
+                                          word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  if (!args.get(0).isStr()) UNIMPLEMENTED("str subclass");
+  if (!args.get(1).isStr()) UNIMPLEMENTED("str subclass");
+  if (!args.get(2).isStr()) UNIMPLEMENTED("str subclass");
+  Str self(&scope, args.get(0));
+  Str oldstr(&scope, args.get(1));
+  Str newstr(&scope, args.get(2));
+  Int count(&scope, args.get(3));
+  return runtime->strReplace(thread, self, oldstr, newstr,
+                             count.asWordSaturated());
 }
 
 RawObject BuiltinsModule::underStrRFind(Thread* thread, Frame* frame,

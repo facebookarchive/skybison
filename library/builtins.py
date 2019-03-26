@@ -912,6 +912,11 @@ def _str_rfind(self, sub, start, end):
     pass
 
 
+@_patch
+def _str_replace(self, old, newstr, count):
+    pass
+
+
 class str(bootstrap=True):
     def __new__(cls, obj="", encoding=_Unbound, errors=_Unbound):
         if not isinstance(cls, type):
@@ -1220,6 +1225,26 @@ class str(bootstrap=True):
             if suffix_match(self, suf, start, end):
                 return True
         return False
+
+    def replace(self, old, new, count=None):
+        if not isinstance(self, str):
+            raise TypeError(
+                f"replace requires a 'str' instance but got {type(self).__name__}"
+            )
+        if not isinstance(old, str):
+            raise TypeError(
+                f"replace requires a 'str' instance but got {type(old).__name__}"
+            )
+        if not isinstance(new, str):
+            raise TypeError(
+                f"replace requires a 'str' instance but got {type(new).__name__}"
+            )
+        if count:
+            count = _index(count)
+        else:
+            count = -1
+        result = _str_replace(self, old, new, count)
+        return str(result) if self is result else result
 
     def rfind(self, sub, start=None, end=None):
         if not isinstance(self, str):

@@ -4883,6 +4883,125 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
   return *result;
 }
 
+// TODO(djang, emacs): Use this for strFind/strRFind.
+static inline bool isPrefix(const Str& str, const Str& prefix, word start) {
+  word str_len = str.length();
+  word prefix_len = prefix.length();
+  if (str_len - start + 1 < prefix_len) {
+    return false;
+  }
+  for (word i = 0; i < prefix_len; i++) {
+    if (str.charAt(start + i) != prefix.charAt(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Return the number of occurences of sub in str up to count.
+static word countSubStr(const Str& str, const Str& sub, word count) {
+  word str_len = str.length();
+  word sub_len = sub.length();
+  word num_match = 0;
+  for (word i = 0; i < str_len && num_match < count;) {
+    if (isPrefix(str, sub, i)) {
+      i += sub_len;
+      num_match++;
+      continue;
+    }
+    i++;
+  }
+  return num_match;
+}
+
+// Str replacement when the result can fit in SmallStr.
+static RawObject strReplaceSmallStr(const Str& src, const Str& oldstr,
+                                    const Str& newstr, word count,
+                                    word result_len) {
+  DCHECK_BOUND(result_len, SmallStr::kMaxLength);
+  word src_len = src.length();
+  word old_len = oldstr.length();
+  word new_len = newstr.length();
+  byte buffer[SmallStr::kMaxLength];
+  byte* dst = buffer;
+  for (word i = 0, match_count = 0; i < src_len;) {
+    if (match_count == count || !isPrefix(src, oldstr, i)) {
+      *dst++ = src.charAt(i++);
+      continue;
+    }
+    newstr.copyTo(dst, new_len);
+    dst += new_len;
+    i += old_len;
+    match_count++;
+  }
+  return SmallStr::fromBytes(View<byte>(buffer, result_len));
+}
+
+RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
+                              const Str& newstr, word count) {
+  word src_len = src.length();
+  if (count < 0) {
+    count = SmallInt::kMaxValue;  // PY_SSIZE_T_MAX.
+  } else if (count == 0 || src_len == 0) {
+    return *src;
+  }
+
+  if (oldstr.equals(*newstr)) {
+    return *src;
+  }
+
+  // Update the count to the number of occurences of oldstr in src, capped by
+  // the given count.
+  count = countSubStr(src, oldstr, count);
+  if (count == 0) {
+    return *src;
+  }
+
+  word old_len = oldstr.length();
+  word new_len = newstr.length();
+  word result_len = src_len + (new_len - old_len) * count;
+  if (result_len <= SmallStr::kMaxLength) {
+    return strReplaceSmallStr(src, oldstr, newstr, count, result_len);
+  }
+
+  HandleScope scope(thread);
+  LargeStr result(&scope, heap()->createLargeStr(result_len));
+  word diff = new_len - old_len;
+  word offset = 0;
+  word match_count = 0;
+  word i;
+  for (i = 0; i < src_len && match_count < count;) {
+    // TODO(djang): Use indexOf() instead of isPrefix to simplify the code.
+    if (isPrefix(src, oldstr, i)) {
+      byte* dst = reinterpret_cast<byte*>(LargeStr::cast(*result).address());
+      newstr.copyTo(dst + i + offset, new_len);
+      match_count++;
+      offset += diff;
+      i += old_len;
+      continue;
+    }
+    byte* dst = reinterpret_cast<byte*>(result.address());
+    dst[i + offset] = src.charAt(i);
+    i++;
+  }
+
+  // Copy the rest of the string.
+  if (i < src_len) {
+    if (src.isLargeStr()) {
+      byte* src_byte = reinterpret_cast<byte*>(LargeStr::cast(*src).address());
+      byte* dst = reinterpret_cast<byte*>(result.address());
+      std::memcpy(dst + i + offset, src_byte + i, src_len - i);
+    } else {
+      for (; i < src_len; i++) {
+        byte* dst = reinterpret_cast<byte*>(result.address());
+        dst[i + offset] = src.charAt(i);
+      }
+    }
+  }
+
+  return *result;
+}
+
 word Runtime::nextModuleIndex() { return ++max_module_index_; }
 
 const BuiltinAttribute BuiltinsBase::kAttributes[] = {

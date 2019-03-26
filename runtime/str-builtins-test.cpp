@@ -1642,6 +1642,65 @@ TEST(StrBuiltinsTest, RStripWithCharsStripsCharsToRight) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "bcaHello World"));
 }
 
+TEST(StrBuiltinsTest, ReplaceWithDefaultCountReplacesAll) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "a1a1a1a".replace("a", "b")
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result.isStr());
+  EXPECT_TRUE(isStrEqualsCStr(*result, "b1b1b1b"));
+}
+
+TEST(StrBuiltinsTest, ReplaceWithCountReplacesCountedOccurrences) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "a1a1a1a".replace("a", "b", 2)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result.isStr());
+  EXPECT_TRUE(isStrEqualsCStr(*result, "b1b1a1a"));
+}
+
+TEST(StrBuiltinsTest, ReplaceWithCountOfIndexTypeReplacesCountedOccurrences) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "a1a1a1a".replace("a", "b", True)
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result.isStr());
+  EXPECT_TRUE(isStrEqualsCStr(*result, "b1a1a1a"));
+}
+
+TEST(StrBuiltinsTest, ReplaceWithNonMatchingReturnsSameObject) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+s = "a"
+result = s is s.replace("z", "b")
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, ReplaceWithMissingArgRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "'aa'.replace('a')"), LayoutId::kTypeError,
+      "TypeError: 'str.replace' takes min 3 positional arguments but 2 given"));
+}
+
+TEST(StrBuiltinsTest, ReplaceWithNonIntCountRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "'aa'.replace('a', 'a', 'a')"),
+                    LayoutId::kTypeError,
+                    "'smallstr' object cannot be interpreted as an integer"));
+}
+
 TEST(StrBuiltinsTest, DunderIterReturnsStrIter) {
   Runtime runtime;
   HandleScope scope;

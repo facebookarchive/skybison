@@ -3398,4 +3398,114 @@ TEST(RuntimeTest, NewBuiltinFunctionAddsQualname) {
   EXPECT_EQ(fn.qualname(), *name);
 }
 
+TEST(RuntimeStrTest, StrReplaceWithSmallStrResult) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("1212"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1*1*"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithSmallStrAndNegativeReplacesAll) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("122"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1**"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithLargeStrAndNegativeReplacesAll) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("111111121111111111211"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1111111*1111111111*11"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithLargeStrAndCountReplacesSome) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("11112111111111111211"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, 1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1111*111111111111211"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithSameLengthReplacesSubstr) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("12"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1*"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithLongerNewReturnsLonger) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("12"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("**"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1**"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithShorterNewReturnsShorter) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("12"));
+  Str old(&scope, runtime.newStrFromCStr("12"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "*"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithPrefixReplacesBeginning) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("12"));
+  Str old(&scope, runtime.newStrFromCStr("1"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "*2"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithInfixReplacesMiddle) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("121"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "1*1"));
+}
+
+TEST(RuntimeStrTest, StrReplaceWithPostfixReplacesEnd) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("112"));
+  Str old(&scope, runtime.newStrFromCStr("2"));
+  Str newstr(&scope, runtime.newStrFromCStr("*"));
+  Object result(&scope, runtime.strReplace(thread, str, old, newstr, -1));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "11*"));
+}
+
 }  // namespace python

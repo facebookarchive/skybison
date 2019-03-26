@@ -749,6 +749,11 @@ class Runtime {
   // zero-extension and convert to a SmallInt when possible.
   RawObject normalizeLargeInt(const LargeInt& large_int);
 
+  // Replace the occurences of oldstr get replaced for newstr in src up
+  // to maxcount. If no replacement happens, returns src itself, unmodified.
+  RawObject strReplace(Thread* thread, const Str& src, const Str& oldstr,
+                       const Str& newstr, word count);
+
   // Generate a unique number for successively initialized native modules. We
   // don't index modules the same way as CPython, but we keep this to get a
   // unique module index and thereby maintain some CPython invariants for
