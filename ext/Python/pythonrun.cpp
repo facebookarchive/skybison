@@ -1,4 +1,6 @@
 #include "cpython-func.h"
+
+#include "exception-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -17,9 +19,20 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   return -1;
 }
 
-PY_EXPORT void PyErr_Display(PyObject* /* n */, PyObject* /* e */,
-                             PyObject* /* b */) {
-  UNIMPLEMENTED("PyErr_Display");
+PY_EXPORT void PyErr_Display(PyObject* /* exc */, PyObject* value,
+                             PyObject* tb) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  DCHECK(value != nullptr, "value must be given");
+  Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
+  Object tb_obj(&scope, tb ? ApiHandle::fromPyObject(tb)->asObject()
+                           : NoneType::object());
+  if (displayException(thread, value_obj, tb_obj).isError()) {
+    // Don't propagate any exceptions that happened during printing. This isn't
+    // great, but it's necessary to match CPython.
+    thread->clearPendingException();
+  }
 }
 
 PY_EXPORT void PyErr_Print() { UNIMPLEMENTED("PyErr_Print"); }

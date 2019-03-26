@@ -3211,6 +3211,13 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
   return result;
 }
 
+RawObject Runtime::attributeAtId(Thread* thread, const Object& receiver,
+                                 SymbolId id) {
+  HandleScope scope(thread);
+  Object name_str(&scope, symbols()->at(id));
+  return attributeAt(thread, receiver, name_str);
+}
+
 RawObject Runtime::attributeAtWithCStr(Thread* thread, const Object& receiver,
                                        const char* name) {
   HandleScope scope(thread);

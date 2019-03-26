@@ -486,6 +486,7 @@ class Runtime {
   // Implements `receiver.name`
   RawObject attributeAt(Thread* thread, const Object& receiver,
                         const Object& name);
+  RawObject attributeAtId(Thread* thread, const Object& receiver, SymbolId id);
   RawObject attributeAtWithCStr(Thread* thread, const Object& receiver,
                                 const char* name);
 

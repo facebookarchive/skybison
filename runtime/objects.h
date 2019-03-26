@@ -742,11 +742,15 @@ class RawBaseException : public RawHeapObject {
   RawObject contextOrUnbound() const;
   void setContext(RawObject context) const;
 
+  RawObject suppressContext() const;
+  void setSuppressContext(RawObject suppress) const;
+
   static const int kArgsOffset = RawHeapObject::kSize;
   static const int kTracebackOffset = kArgsOffset + kPointerSize;
   static const int kCauseOffset = kTracebackOffset + kPointerSize;
   static const int kContextOffset = kCauseOffset + kPointerSize;
-  static const int kSize = kContextOffset + kPointerSize;
+  static const int kSuppressContextOffset = kContextOffset + kPointerSize;
+  static const int kSize = kSuppressContextOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(BaseException);
 };
@@ -3159,6 +3163,13 @@ inline void RawBaseException::setContext(RawObject context) const {
   return instanceVariableAtPut(kContextOffset, context);
 }
 
+inline RawObject RawBaseException::suppressContext() const {
+  return instanceVariableAt(kSuppressContextOffset);
+}
+
+inline void RawBaseException::setSuppressContext(RawObject suppress) const {
+  instanceVariableAtPut(kSuppressContextOffset, suppress);
+}
 // RawStopIteration
 
 inline RawObject RawStopIteration::value() const {

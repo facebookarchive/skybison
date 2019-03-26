@@ -23,6 +23,7 @@ class Runtime;
   V(DunderBuiltins, "__builtins__")                                            \
   V(DunderBytes, "__bytes__")                                                  \
   V(DunderCall, "__call__")                                                    \
+  V(DunderCause, "__cause__")                                                  \
   V(DunderCeil, "__ceil__")                                                    \
   V(DunderClass, "__class__")                                                  \
   V(DunderClassCell, "__classcell__")                                          \
@@ -115,6 +116,7 @@ class Runtime;
   V(DunderSpec, "__spec__")                                                    \
   V(DunderStr, "__str__")                                                      \
   V(DunderSub, "__sub__")                                                      \
+  V(DunderSuppressContext, "__suppress_context__")                             \
   V(DunderTruediv, "__truediv__")                                              \
   V(DunderTrunc, "__trunc__")                                                  \
   V(DunderValues, "__values__")                                                \
@@ -194,6 +196,7 @@ class Runtime;
   V(ExtensionPtr, "___extension___")                                           \
   V(ExtensionSuffixes, "extension_suffixes")                                   \
   V(File, "file")                                                              \
+  V(Filename, "filename")                                                      \
   V(Fileno, "fileno")                                                          \
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
@@ -259,6 +262,7 @@ class Runtime;
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
   V(Layout, "layout")                                                          \
+  V(Lineno, "lineno")                                                          \
   V(List, "list")                                                              \
   V(ListIterator, "list_iterator")                                             \
   V(Little, "little")                                                          \
@@ -296,6 +300,7 @@ class Runtime;
   V(Null, "<NULL>")                                                            \
   V(OSError, "OSError")                                                        \
   V(ObjectTypename, "object")                                                  \
+  V(Offset, "offset")                                                          \
   V(Operator, "operator")                                                      \
   V(Ord, "ord")                                                                \
   V(OrUnder, "or_")                                                            \
@@ -308,6 +313,7 @@ class Runtime;
   V(Pop, "pop")                                                                \
   V(Pos, "pos")                                                                \
   V(Pow, "pow")                                                                \
+  V(PrintFileAndLine, "print_file_and_line")                                   \
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
   V(Range, "range")                                                            \
@@ -358,6 +364,7 @@ class Runtime;
   V(SystemError, "SystemError")                                                \
   V(SystemExit, "SystemExit")                                                  \
   V(TabError, "TabError")                                                      \
+  V(Text, "text")                                                              \
   V(Time, "time")                                                              \
   V(TimeoutError, "TimeoutError")                                              \
   V(ToBytes, "to_bytes")                                                       \

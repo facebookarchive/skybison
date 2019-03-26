@@ -25,6 +25,12 @@ RawObject createException(Thread* thread, const Type& type,
 void normalizeException(Thread* thread, Object* exc, Object* value,
                         Object* traceback);
 
+// Internal equivalent to PyErr_Display(): Print information about the given
+// exception and traceback to sys.stderr, including any chained exceptions.
+// Returns None on success or Error on failure.
+RawObject displayException(Thread* thread, const Object& value,
+                           const Object& traceback);
+
 class BaseExceptionBuiltins
     : public Builtins<BaseExceptionBuiltins, SymbolId::kBaseException,
                       LayoutId::kBaseException> {
