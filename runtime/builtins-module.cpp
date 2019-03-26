@@ -98,6 +98,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
     {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
+    {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -765,6 +766,12 @@ RawObject BuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
   word end = end_obj.isNoneType() ? kMaxWord
                                   : RawInt::cast(*end_obj).asWordSaturated();
   return strRFind(haystack, needle, start, end);
+}
+
+RawObject BuiltinsModule::underUnimplemented(Thread*, Frame*, word) {
+  fputs("Unimplemented function called at:\n", stderr);
+  python::Utils::printTraceback();
+  std::abort();
 }
 
 }  // namespace python

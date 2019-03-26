@@ -403,6 +403,7 @@ class Runtime;
   V(UnderStructseqSetAttr, "_structseq_setattr")                               \
   V(UnderThread, "_thread")                                                    \
   V(UnderUnbound, "_Unbound")                                                  \
+  V(UnderUnimplemented, "_unimplemented")                                      \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
   V(Anonymous, "<anonymous>")                                                  \

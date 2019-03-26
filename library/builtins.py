@@ -1842,6 +1842,12 @@ def _structseq_repr(self):
     return f"{type(self).__name__}({tuple_values})"
 
 
+@_patch
+def _unimplemented():
+    """Prints a message and a stacktrace, and stops the program execution."""
+    pass
+
+
 def _long_of_obj(obj):
     # TODO(T41279675): Unify this into one user-visible int type
     if type(obj) is smallint or type(obj) is largeint:  # noqa: F821

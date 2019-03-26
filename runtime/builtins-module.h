@@ -46,7 +46,7 @@ class BuiltinsModule {
                                           word nargs);
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
-
+  static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
   static const char* const kFrozenData;

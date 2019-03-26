@@ -973,6 +973,12 @@ def chr(self):
                "Redefinition of native code method 'chr' in managed code");
 }
 
+TEST(BuiltinsModuleDeathTest, UnderUnimplementedAbortsProgram) {
+  Runtime runtime;
+  ASSERT_DEATH(runFromCStr(&runtime, "_unimplemented()"),
+               "Unimplemented function called at:");
+}
+
 TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
