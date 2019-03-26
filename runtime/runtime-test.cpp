@@ -33,15 +33,6 @@ TEST(RuntimeTest, AllocateAndCollectGarbage) {
   ASSERT_TRUE(runtime.heap()->verify());
 }
 
-TEST(RuntimeTest, BuiltinsModuleExists) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Dict modules(&scope, runtime.modules());
-  Object name(&scope, runtime.newStrFromCStr("builtins"));
-  ASSERT_TRUE(runtime.dictAt(modules, name).isModule());
-}
-
 // Return the raw name of a builtin LayoutId, or "<invalid>" for user-defined or
 // invalid LayoutIds.
 static const char* layoutIdName(LayoutId id) {
@@ -3385,6 +3376,16 @@ o.__getitem__ = 4
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
   EXPECT_FALSE(runtime.isMapping(Thread::current(), obj));
+}
+
+TEST(RuntimeTest, ModuleBuiltinsExists) {
+  Runtime runtime;
+  ASSERT_FALSE(moduleAt(&runtime, "builtins", "__name__").isError());
+}
+
+TEST(RuntimeTest, ModuleItertoolsExists) {
+  Runtime runtime;
+  ASSERT_FALSE(moduleAt(&runtime, "itertools", "__name__").isError());
 }
 
 TEST(RuntimeTest, NewBuiltinFunctionAddsQualname) {

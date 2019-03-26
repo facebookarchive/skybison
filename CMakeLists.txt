@@ -158,6 +158,7 @@ set(
   library/builtins.py
   library/importlib/_bootstrap.py
   library/importlib/_bootstrap_external.py
+  library/itertools.py
   library/marshal.py
   library/operator.py
   library/sys.py
@@ -242,6 +243,8 @@ add_library(
   runtime/interpreter.h
   runtime/io-module.cpp
   runtime/io-module.h
+  runtime/itertools-module.cpp
+  runtime/itertools-module.h
   runtime/layout.h
   runtime/list-builtins.cpp
   runtime/list-builtins.h

@@ -34,6 +34,7 @@
 #include "int-builtins.h"
 #include "interpreter.h"
 #include "io-module.h"
+#include "itertools-module.h"
 #include "layout.h"
 #include "list-builtins.h"
 #include "marshal-module.h"
@@ -1869,6 +1870,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kMarshal, &MarshalModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
+    {SymbolId::kItertools, &ItertoolsModule::initialize},
     {SymbolId::kOperator, &OperatorModule::initialize},
     {SymbolId::kSentinelId, nullptr},
 };

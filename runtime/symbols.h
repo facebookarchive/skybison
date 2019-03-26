@@ -249,6 +249,7 @@ class Runtime;
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \
+  V(Itertools, "itertools")                                                    \
   V(Join, "join")                                                              \
   V(KeyError, "KeyError")                                                      \
   V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
