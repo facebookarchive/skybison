@@ -506,6 +506,84 @@ a = ascii(Foo())
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
 }
 
+TEST(BuiltinsModuleTest, DunderBuildClassWithNonFunctionRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object body(&scope, NoneType::object());
+  Object name(&scope, runtime.newStrFromCStr("a"));
+  Object metaclass(&scope, Unbound::object());
+  Object bootstrap(&scope, Bool::falseObj());
+  Object bases(&scope, runtime.newTuple(0));
+  Object kwargs(&scope, runtime.newDict());
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,
+                 bootstrap, bases, kwargs),
+      LayoutId::kTypeError, "__build_class__: func must be a function"));
+}
+
+TEST(BuiltinsModuleTest, DunderBuildClassWithNonStringRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, "def f(): pass").isError());
+  Object body(&scope, moduleAt(&runtime, "__main__", "f"));
+  Object name(&scope, NoneType::object());
+  Object metaclass(&scope, Unbound::object());
+  Object bootstrap(&scope, Bool::falseObj());
+  Object bases(&scope, runtime.newTuple(0));
+  Object kwargs(&scope, runtime.newDict());
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,
+                 bootstrap, bases, kwargs),
+      LayoutId::kTypeError, "__build_class__: name is not a string"));
+}
+
+TEST(BuiltinsModuleTest, DunderBuildClassCallsMetaclass) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Meta(type):
+  def __new__(mcls, name, bases, namespace, *args, **kwargs):
+    return (mcls, name, bases, namespace, args, kwargs)
+class C(int, float, metaclass=Meta, hello="world"):
+  x = 42
+)")
+                   .isError());
+  Object meta(&scope, moduleAt(&runtime, "__main__", "Meta"));
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  ASSERT_TRUE(c_obj.isTuple());
+  Tuple c(&scope, *c_obj);
+  ASSERT_EQ(c.length(), 6);
+  EXPECT_EQ(c.at(0), meta);
+  EXPECT_TRUE(isStrEqualsCStr(c.at(1), "C"));
+
+  ASSERT_TRUE(c.at(2).isTuple());
+  Tuple c_bases(&scope, c.at(2));
+  ASSERT_EQ(c_bases.length(), 2);
+  EXPECT_EQ(c_bases.at(0), runtime.typeAt(LayoutId::kInt));
+  EXPECT_EQ(c_bases.at(1), runtime.typeAt(LayoutId::kFloat));
+
+  ASSERT_TRUE(c.at(3).isDict());
+  Dict c_namespace(&scope, c.at(3));
+  Object x(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(runtime.dictIncludes(c_namespace, x));
+  ASSERT_TRUE(c.at(4).isTuple());
+  EXPECT_EQ(RawTuple::cast(c.at(4)).length(), 0);
+  Object hello(&scope, runtime.newStrFromCStr("hello"));
+  ASSERT_TRUE(c.at(5).isDict());
+  Dict c_kwargs(&scope, c.at(5));
+  EXPECT_EQ(c_kwargs.numItems(), 1);
+  EXPECT_TRUE(isStrEqualsCStr(runtime.dictAt(c_kwargs, hello), "world"));
+}
+
+TEST(BuiltinsModuleTest, DunderBuildClassWithRaisingBodyPropagatesException) {
+  Runtime runtime;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+class C:
+  raise UserWarning()
+)"),
+                     LayoutId::kUserWarning));
+}
+
 TEST(BuiltinsModuleTest, GetAttrFromClassReturnsValue) {
   const char* src = R"(
 class Foo:

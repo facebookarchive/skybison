@@ -211,46 +211,6 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
 
 const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 
-RawObject BuiltinsModule::buildClass(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  if (nargs < 2) {
-    std::abort();  // TODO(cshapiro): throw a TypeError exception.
-  }
-  Arguments args(frame, nargs);
-  if (!args.get(0).isFunction()) {
-    std::abort();  // TODO(cshapiro): throw a TypeError exception.
-  }
-  if (!args.get(1).isStr()) {
-    std::abort();  // TODO(cshapiro): throw a TypeError exception.
-  }
-
-  Function body(&scope, args.get(0));
-  Object name(&scope, args.get(1));
-  Tuple bases(&scope, runtime->newTuple(nargs - 2));
-  for (word i = 0, j = 2; j < nargs; i++, j++) {
-    bases.atPut(i, args.get(j));
-  }
-
-  // TODO(cshapiro): might need to do some kind of callback here and we want
-  // backtraces to work correctly.  The key to doing that would be to put some
-  // state on the stack in between the the incoming arguments from the builtin
-  // caller and the on-stack state for the class body function call.
-  Dict dict(&scope, runtime->newDict());
-  thread->runClassFunction(body, dict);
-
-  Type type(&scope, runtime->typeAt(LayoutId::kType));
-  Function dunder_call(
-      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
-  frame->pushValue(*dunder_call);
-  frame->pushValue(*type);
-  frame->pushValue(*name);
-  frame->pushValue(*bases);
-  frame->pushValue(*dict);
-  return Interpreter::call(thread, frame, 4);
-}
-
 static bool isPass(const Code& code) {
   HandleScope scope;
   Bytes bytes(&scope, code.code());
@@ -280,7 +240,7 @@ void copyFunctionEntries(Thread* thread, const Function& base,
   patch.setEntryEx(base.entryEx());
 }
 
-void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
+static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Tuple patch_data(&scope, patch.data());
@@ -307,45 +267,29 @@ void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
   }
 }
 
-RawObject BuiltinsModule::buildClassKw(Thread* thread, Frame* frame,
-                                       word nargs) {
+RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
+                                           word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  KwArguments args(frame, nargs);
-  if (args.numArgs() < 2) {
-    return thread->raiseTypeErrorWithCStr("not enough args for build class.");
-  }
-  if (!args.get(0).isFunction()) {
-    return thread->raiseTypeErrorWithCStr("class body is not function.");
-  }
 
-  if (!args.get(1).isStr()) {
-    return thread->raiseTypeErrorWithCStr("class name is not string.");
+  Arguments args(frame, nargs);
+  Object body_obj(&scope, args.get(0));
+  if (!body_obj.isFunction()) {
+    return thread->raiseTypeErrorWithCStr(
+        "__build_class__: func must be a function");
   }
-
-  Object bootstrap(&scope, args.getKw(runtime->symbols()->Bootstrap()));
-  if (bootstrap.isError()) {
-    bootstrap = Bool::falseObj();
+  Function body(&scope, *body_obj);
+  Object name(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseTypeErrorWithCStr(
+        "__build_class__: name is not a string");
   }
+  Object metaclass(&scope, args.get(2));
+  Object bootstrap(&scope, args.get(3));
+  Tuple bases(&scope, args.get(4));
+  Dict kwargs(&scope, args.get(5));
 
-  Object metaclass(&scope, args.getKw(runtime->symbols()->Metaclass()));
-  if (metaclass.isError()) {
-    metaclass = runtime->typeAt(LayoutId::kType);
-  }
-
-  Tuple bases(&scope,
-              runtime->newTuple(args.numArgs() - args.numKeywords() - 1));
-  for (word i = 0, j = 2; j < args.numArgs(); i++, j++) {
-    bases.atPut(i, args.get(j));
-  }
-
-  Dict type_dict(&scope, runtime->newDict());
-  Function body(&scope, args.get(0));
-  Str name(&scope, args.get(1));
-  if (*bootstrap == Bool::falseObj()) {
-    // An ordinary class initialization creates a new class dictionary.
-    thread->runClassFunction(body, type_dict);
-  } else {
+  if (bootstrap == Bool::trueObj()) {
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Dict globals(&scope, frame->previousFrame()->globals());
@@ -353,9 +297,9 @@ RawObject BuiltinsModule::buildClassKw(Thread* thread, Frame* frame,
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",
-          name.toCStr());
+          RawStr::cast(*name).toCStr());
     Type type(&scope, *type_obj);
-    type_dict = type.dict();
+    Dict type_dict(&scope, type.dict());
 
     Dict patch_type(&scope, runtime->newDict());
     thread->runClassFunction(body, patch_type);
@@ -364,15 +308,35 @@ RawObject BuiltinsModule::buildClassKw(Thread* thread, Frame* frame,
     return *type;
   }
 
-  Type type(&scope, *metaclass);
-  Function dunder_call(
-      &scope, runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderCall));
-  frame->pushValue(*dunder_call);
-  frame->pushValue(*type);
-  frame->pushValue(*name);
-  frame->pushValue(*bases);
-  frame->pushValue(*type_dict);
-  return Interpreter::call(thread, frame, 4);
+  if (metaclass.isUnbound()) {
+    if (bases.length() == 0) {
+      metaclass = runtime->typeAt(LayoutId::kType);
+    } else {
+      metaclass = runtime->typeOf(bases.at(0));
+    }
+  }
+
+  // TODO(T42099053): Perform the equivalent of _PyType_CalculateMetaclass()
+  // on metaclass.
+
+  // TODO(T31926659): Call metaclass.__prepare__ if it exists.
+  Dict type_dict(&scope, runtime->newDict());
+
+  // TODO(cshapiro): might need to do some kind of callback here and we want
+  // backtraces to work correctly.  The key to doing that would be to put some
+  // state on the stack in between the the incoming arguments from the builtin
+  // caller and the on-stack state for the class body function call.
+  Object body_result(&scope, thread->runClassFunction(body, type_dict));
+  if (body_result.isError()) return *body_result;
+
+  frame->pushValue(*metaclass);
+  Tuple pargs(&scope, runtime->newTuple(3));
+  pargs.atPut(0, *name);
+  pargs.atPut(1, *bases);
+  pargs.atPut(2, *type_dict);
+  frame->pushValue(*pargs);
+  frame->pushValue(*kwargs);
+  return Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
 }
 
 RawObject BuiltinsModule::callable(Thread* thread, Frame* frame, word nargs) {

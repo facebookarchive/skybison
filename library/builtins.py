@@ -15,6 +15,11 @@ def _address(c):
     pass
 
 
+@_patch
+def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **kwargs):
+    pass
+
+
 class function(bootstrap=True):
     def __repr__(self):
         # TODO(T32655200): Replace 0x with #x when formatting language is

@@ -21,12 +21,11 @@ void copyFunctionEntries(Thread* thread, const Function& base,
 
 class BuiltinsModule {
  public:
-  static RawObject buildClass(Thread* thread, Frame* frame, word nargs);
-  static RawObject buildClassKw(Thread* thread, Frame* frame, word nargs);
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
   static RawObject compile(Thread* thread, Frame* frame, word nargs);
   static RawObject divmod(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderBuildClass(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject exec(Thread* thread, Frame* frame, word nargs);
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);

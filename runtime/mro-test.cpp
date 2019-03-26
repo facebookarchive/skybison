@@ -44,8 +44,7 @@ class B(A): pass
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
   EXPECT_EQ(result.at(0), b);
-  // TODO(matthiasb): I think this should be "A", but is currently computed
-  // as Meta so we should eventually EXPECT_EQ(result.at(1), a_obj) here.
+  EXPECT_EQ(result.at(1), a_obj);
   EXPECT_EQ(result.at(2), runtime.typeAt(LayoutId::kObject));
 }
 

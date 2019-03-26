@@ -2044,11 +2044,8 @@ void Runtime::createBuiltinsModule(Thread* thread) {
                          BuiltinsModule::kBuiltinTypes[i].type);
   }
 
-  build_class_ =
-      moduleAddNativeFunction(module, SymbolId::kDunderBuildClass,
-                              nativeTrampoline<BuiltinsModule::buildClass>,
-                              nativeTrampolineKw<BuiltinsModule::buildClassKw>,
-                              unimplementedTrampoline);
+  build_class_ = moduleAddBuiltinFunction(module, SymbolId::kDunderBuildClass,
+                                          BuiltinsModule::dunderBuildClass);
 
   // _patch is not patched because that would cause a circularity problem.
   moduleAddNativeFunction(module, SymbolId::kUnderPatch,
