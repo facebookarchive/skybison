@@ -1407,8 +1407,8 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kNotImplementedType, LayoutId::kNotImplemented,
-                      LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kNotImplementedType,
+                      LayoutId::kNotImplementedType, LayoutId::kObject);
   TupleBuiltins::initialize(this);
   TupleIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kUnderUnbound, LayoutId::kUnbound,
@@ -1722,7 +1722,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_frozen_set_ = newFrozenSet();
   empty_bytes_ = heap()->createBytes(0);
   ellipsis_ = heap()->createEllipsis();
-  not_implemented_ = heap()->create<RawNotImplemented>();
+  not_implemented_ = heap()->create<RawNotImplementedType>();
   callbacks_ = NoneType::object();
   unbound_value_ = heap()->create<RawUnbound>();
 }

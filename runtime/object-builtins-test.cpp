@@ -53,7 +53,7 @@ result = object.__eq__(object(), object())
                    .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(
@@ -67,7 +67,7 @@ class Foo():
 result = object.__ne__(Foo(), None)
 )")
                    .isError());
-  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplementedType());
 }
 
 TEST(ObjectBuiltinsTest,

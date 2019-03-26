@@ -51,7 +51,7 @@ class Handle;
   V(ListIterator)                                                              \
   V(MemoryView)                                                                \
   V(Module)                                                                    \
-  V(NotImplemented)                                                            \
+  V(NotImplementedType)                                                        \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -280,8 +280,8 @@ class RawObject {
   bool isMemoryView() const;
   bool isModule() const;
   bool isModuleNotFoundError() const;
-  bool isNotImplemented() const;
   bool isNotImplementedError() const;
+  bool isNotImplementedType() const;
   bool isProperty() const;
   bool isRange() const;
   bool isRangeIterator() const;
@@ -1656,7 +1656,7 @@ class RawModule : public RawHeapObject {
   RAW_OBJECT_COMMON(Module);
 };
 
-class RawNotImplemented : public RawHeapObject {
+class RawNotImplementedType : public RawHeapObject {
  public:
   // Layout.
   // kPaddingOffset is not used, but the GC expects the object to be
@@ -1664,7 +1664,7 @@ class RawNotImplemented : public RawHeapObject {
   static const int kPaddingOffset = RawHeapObject::kSize;
   static const int kSize = kPaddingOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(NotImplemented);
+  RAW_OBJECT_COMMON(NotImplementedType);
 };
 
 /**
@@ -2616,8 +2616,8 @@ inline bool RawObject::isInt() const {
   return isSmallInt() || isLargeInt() || isBool();
 }
 
-inline bool RawObject::isNotImplemented() const {
-  return isHeapObjectWithLayout(LayoutId::kNotImplemented);
+inline bool RawObject::isNotImplementedType() const {
+  return isHeapObjectWithLayout(LayoutId::kNotImplementedType);
 }
 
 inline bool RawObject::isNotImplementedError() const {

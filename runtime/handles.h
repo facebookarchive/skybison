@@ -159,8 +159,8 @@ class __attribute__((warn_unused)) Handle : public T {
   V(Module)                                                                    \
   V(ModuleNotFoundError)                                                       \
   V(NoneType)                                                                  \
-  V(NotImplemented)                                                            \
   V(NotImplementedError)                                                       \
+  V(NotImplementedType)                                                        \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \

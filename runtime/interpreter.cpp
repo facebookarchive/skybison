@@ -451,18 +451,18 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
     if (try_reversed && runtime->isSubclass(other_type, self_type)) {
       Object result(&scope,
                     binaryOperationSwapped(thread, caller, op, self, other));
-      if (!result.isNotImplemented()) return *result;
+      if (!result.isNotImplementedType()) return *result;
       try_reversed = false;
     }
 
     Object result(&scope,
                   callMethod2(thread, caller, self_method, self, other));
-    if (!result.isNotImplemented()) return *result;
+    if (!result.isNotImplementedType()) return *result;
   }
   if (try_reversed) {
     Object result(&scope,
                   binaryOperationSwapped(thread, caller, op, self, other));
-    if (!result.isNotImplemented()) return *result;
+    if (!result.isNotImplementedType()) return *result;
   }
 
   Str op_name(&scope,

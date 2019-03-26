@@ -545,7 +545,7 @@ TEST(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
   Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
@@ -764,7 +764,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   Object left(&scope, runtime.newInt(0));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderModWithSmallIntReturnsInt) {
@@ -801,7 +801,7 @@ TEST(IntBuiltinsTest, DunderModWithNontIntReturnsNotImplemented) {
   Object left(&scope, runtime.newInt(1));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderMod, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderMulWithSmallIntsReturnsSmallInt) {
@@ -932,7 +932,7 @@ TEST(IntBuiltinsTest, DunderMulWithNonIntRightReturnsNotImplemented) {
   Int left(&scope, runtime.newInt(1));
   Str str(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, str));
-  ASSERT_TRUE(result.isNotImplemented());
+  ASSERT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderOrWithSmallIntsReturnsSmallInt) {
@@ -959,7 +959,7 @@ TEST(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
   Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
@@ -1358,7 +1358,7 @@ TEST(IntBuiltinsTest, DunderFloordivWithNontIntReturnsNotImplemented) {
   Object left(&scope, runtime.newInt(1));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloordiv, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(LargeIntBuiltinsTest, TruthyLargeInt) {
@@ -2090,7 +2090,7 @@ TEST(IntBuiltinsTest, DunderDivmodWithNontIntReturnsNotImplemented) {
   Object left(&scope, runtime.newInt(1));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderEqOnBool) {
@@ -2872,7 +2872,7 @@ TEST(IntBuiltinsTest, DunderRshiftWithNonIntReturnsNotImplemented) {
   Object left(&scope, runtime.newInt(0));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
@@ -2968,7 +2968,7 @@ TEST(IntBuiltinsTest, DunderSubWithNonIntRightReturnsNotImplemented) {
   Int left(&scope, runtime.newInt(1));
   Str str(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, str));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderXorWithSmallIntsReturnsSmallInt) {
@@ -2995,7 +2995,7 @@ TEST(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {
   Int left(&scope, newIntWithDigits(&runtime, {1, 2}));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {

@@ -48,7 +48,7 @@ TEST(FloatBuiltinsTest, DunderMulWithNonFloatOtherReturnsNotImplemented) {
   Float left(&scope, runtime.newFloat(1.0));
   Object right(&scope, NoneType::object());
   Object result(&scope, runBuiltin(FloatBuiltins::dunderMul, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderNeWithInequalFloatsReturnsTrue) {
@@ -66,7 +66,7 @@ TEST(FloatBuiltinsTest, DunderNeWithEqualFloatIntReturnsFalse) {
 TEST(FloatBuiltinsTest, DunderNeWithStringReturnsNotImplemented) {
   Runtime runtime;
   runFromCStr(&runtime, "result = float.__ne__(5.5, '')");
-  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplemented());
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderAbsZeroReturnsZero) {
@@ -196,7 +196,7 @@ TEST(FloatBuiltinsTest, DunderTrueDivWithNonFloatOtherReturnsNotImplemented) {
   Float left(&scope, runtime.newFloat(1.0));
   Object right(&scope, NoneType::object());
   Object result(&scope, runBuiltin(FloatBuiltins::dunderTrueDiv, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderTrueDivWithZeroFloatRaisesZeroDivisionError) {
@@ -261,7 +261,7 @@ TEST(FloatBuiltinsTest, DunderRtrueDivWithNonFloatOtherReturnsNotImplemented) {
   Float left(&scope, runtime.newFloat(1.0));
   Object right(&scope, NoneType::object());
   Object result(&scope, runBuiltin(FloatBuiltins::dunderRtrueDiv, left, right));
-  EXPECT_TRUE(result.isNotImplemented());
+  EXPECT_TRUE(result.isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderRtrueDivWithZeroFloatRaisesZeroDivisionError) {
@@ -689,7 +689,7 @@ TEST(FloatBuiltinsTest, DunderGeWithNonFloatReturnsNotImplemented) {
   Object left(&scope, runtime.newFloat(0.0));
   Object right(&scope, Str::empty());
   EXPECT_TRUE(
-      runBuiltin(FloatBuiltins::dunderGe, left, right).isNotImplemented());
+      runBuiltin(FloatBuiltins::dunderGe, left, right).isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderGeWithSmallIntReturnsBool) {
@@ -806,7 +806,7 @@ TEST(FloatBuiltinsTest, DunderGtWithNonFloatReturnsNotImplemented) {
   Object left(&scope, runtime.newFloat(0.0));
   Object right(&scope, Str::empty());
   EXPECT_TRUE(
-      runBuiltin(FloatBuiltins::dunderGt, left, right).isNotImplemented());
+      runBuiltin(FloatBuiltins::dunderGt, left, right).isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderGtWithSmallIntReturnsBool) {
@@ -848,7 +848,7 @@ TEST(FloatBuiltinsTest, DunderLeWithNonFloatReturnsNotImplemented) {
   Object left(&scope, runtime.newFloat(0.0));
   Object right(&scope, Str::empty());
   EXPECT_TRUE(
-      runBuiltin(FloatBuiltins::dunderLe, left, right).isNotImplemented());
+      runBuiltin(FloatBuiltins::dunderLe, left, right).isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderLeWithSmallIntReturnsBool) {
@@ -902,7 +902,7 @@ TEST(FloatBuiltinsTest, DunderLtWithNonFloatReturnsNotImplemented) {
   Object left(&scope, runtime.newFloat(0.0));
   Object right(&scope, Str::empty());
   EXPECT_TRUE(
-      runBuiltin(FloatBuiltins::dunderLt, left, right).isNotImplemented());
+      runBuiltin(FloatBuiltins::dunderLt, left, right).isNotImplementedType());
 }
 
 TEST(FloatBuiltinsTest, DunderLtWithSmallIntReturnsBool) {

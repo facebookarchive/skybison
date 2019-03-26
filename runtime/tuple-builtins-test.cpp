@@ -555,7 +555,7 @@ TEST(TupleBuiltinsTest, DunderEqWithNonTupleSecondArgReturnsNotImplemented) {
   Object left(&scope, runtime.newTuple(0));
   Object right(&scope, runtime.newInt(1));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
-  EXPECT_TRUE(a.isNotImplemented());
+  EXPECT_TRUE(a.isNotImplementedType());
 }
 
 TEST(TupleBuiltinsTest, DunderEqWithNonTupleFirstArgRaisesTypeError) {

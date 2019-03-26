@@ -101,7 +101,7 @@ TEST(SetBuiltinsTest, DunderAndWithNonSet) {
   Object empty_set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, empty_set, none));
-  ASSERT_TRUE(result.isNotImplemented());
+  ASSERT_TRUE(result.isNotImplementedType());
 }
 
 TEST(SetBuiltinsTest, DunderIand) {
@@ -146,7 +146,7 @@ TEST(SetBuiltinsTest, DunderIandWithNonSet) {
   Object empty_set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderIand, empty_set, none));
-  ASSERT_TRUE(result.isNotImplemented());
+  ASSERT_TRUE(result.isNotImplementedType());
 }
 
 TEST(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {

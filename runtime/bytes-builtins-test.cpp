@@ -249,7 +249,7 @@ TEST(BytesBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
-  EXPECT_TRUE(eq.isNotImplemented());
+  EXPECT_TRUE(eq.isNotImplementedType());
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
@@ -313,7 +313,7 @@ TEST(BytesBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
-  ASSERT_TRUE(ge.isNotImplemented());
+  ASSERT_TRUE(ge.isNotImplementedType());
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithEqualBytesReturnsTrue) {
@@ -507,7 +507,7 @@ TEST(BytesBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
-  ASSERT_TRUE(gt.isNotImplemented());
+  ASSERT_TRUE(gt.isNotImplementedType());
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithEqualBytesReturnsFalse) {
@@ -591,7 +591,7 @@ TEST(BytesBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
-  ASSERT_TRUE(le.isNotImplemented());
+  ASSERT_TRUE(le.isNotImplementedType());
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithEqualBytesReturnsTrue) {
@@ -714,7 +714,7 @@ TEST(BytesBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
-  ASSERT_TRUE(lt.isNotImplemented());
+  ASSERT_TRUE(lt.isNotImplementedType());
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithEqualBytesReturnsFalse) {
@@ -929,7 +929,7 @@ TEST(BytesBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
   Object self(&scope, runtime.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
-  EXPECT_TRUE(ne.isNotImplemented());
+  EXPECT_TRUE(ne.isNotImplementedType());
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
