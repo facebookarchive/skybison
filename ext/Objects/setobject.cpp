@@ -15,7 +15,6 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   FrozenSet set(&scope, runtime->newFrozenSet());
   Object result(&scope, runtime->setUpdate(thread, set, obj));
   if (result.isError()) {
-    thread->raiseTypeErrorWithCStr("PyFrozenSet_New requires an iterable");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *set);
@@ -108,7 +107,6 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
 
   Object result(&scope, runtime->setUpdate(thread, set, obj));
   if (result.isError()) {
-    thread->raiseTypeErrorWithCStr("PySet_New requires an iterable");
     return nullptr;
   }
 

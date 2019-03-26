@@ -1309,19 +1309,9 @@ TEST(IntBuiltinsTest, DunderFloatOverflowRaisesOverflowError) {
 TEST(IntBuiltinsTest, DunderFloatWithNonIntReturnsError) {
   Runtime runtime;
   HandleScope scope;
-
-  Str str(&scope, runtime.newStrFromCStr("python"));
-  Object str_res(&scope, runBuiltin(IntBuiltins::dunderInt, str));
-  EXPECT_TRUE(str_res.isError());
-  Thread* thread = Thread::current();
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
-
-  Float flt(&scope, runtime.newFloat(1.0));
-  Object flt_res(&scope, runBuiltin(IntBuiltins::dunderInt, flt));
-  EXPECT_TRUE(flt_res.isError());
-  EXPECT_EQ(thread->pendingExceptionType(),
-            runtime.typeAt(LayoutId::kTypeError));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(IntBuiltins::dunderInt, none));
+  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
 TEST(IntBuiltinsTest, DunderFloordivWithSmallIntReturnsInt) {
@@ -1534,18 +1524,22 @@ TEST(IntBuiltinsTest, StringToIntDPos) {
   EXPECT_EQ(int_d987n.value(), -987);
 }
 
-TEST(IntBuiltinsTest, StringToIntDNeg) {
+TEST(IntBuiltinsTest, StringToIntWithEmptyStringRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
   Thread* thread = Thread::current();
+  Object str(&scope, Str::empty());
+  Object result(&scope, IntBuiltins::intFromString(thread, *str, 10));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError, "invalid literal"));
+}
 
-  Object str1(&scope, Str::empty());
-  Object res1(&scope, IntBuiltins::intFromString(thread, *str1, 10));
-  EXPECT_TRUE(res1.isError());
-
-  Object str2(&scope, runtime.newStrFromCStr("12ab"));
-  Object res2(&scope, IntBuiltins::intFromString(thread, *str2, 10));
-  EXPECT_TRUE(res2.isError());
+TEST(IntBuiltinsTest, StringToIntWithWithInvalidStringRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Thread* thread = Thread::current();
+  Object str(&scope, runtime.newStrFromCStr("12ab"));
+  Object result(&scope, IntBuiltins::intFromString(thread, *str, 10));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError, "invalid literal"));
 }
 
 TEST(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
@@ -3415,7 +3409,7 @@ bar = Bar()
   }
 }
 
-TEST(SmallIntBuiltinsTest, DunderTrueDivZeroDivision) {
+TEST(SmallIntBuiltinsTest, DunderTrueDivZeroDivisionRaisesZeroDivisonError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
@@ -3424,14 +3418,20 @@ a / b
 )"),
                             LayoutId::kZeroDivisionError,
                             "float division by zero"));
+}
 
+TEST(SmallIntBuiltinsTest, DunderTrueDivWithBoolFalseRaisesZeroDivisionError) {
+  Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = False
 a / b
 )"),
                             LayoutId::kZeroDivisionError, "division by zero"));
+}
 
+TEST(SmallIntBuiltinsTest, DunderTrueDivWithIntZeroRaisesZeroDivisionError) {
+  Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 a = 10
 b = 0

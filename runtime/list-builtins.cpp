@@ -570,9 +570,7 @@ static RawObject setItemSlice(Thread* thread, const List& list,
   }
   if (step == 1) {
     Object extend_result(&scope, listExtend(thread, result_list, src));
-    if (extend_result.isError()) {
-      return thread->raiseTypeErrorWithCStr("can only assign an iterable");
-    }
+    if (extend_result.isError()) return *extend_result;
     result_list = *extend_result;
   } else {
     Object iter_method(

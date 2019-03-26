@@ -12,8 +12,8 @@
 #define CHECK(expr, ...)                                                       \
   do {                                                                         \
     if (!(expr)) {                                                             \
-      fprintf(stderr, "%s:%d assertion '%s' failed: ", __FILE__, __LINE__,     \
-              #expr);                                                          \
+      fprintf(stderr, "%s:%d %s: assertion '%s' failed: ", __FILE__, __LINE__, \
+              __func__, #expr);                                                \
       fprintf(stderr, __VA_ARGS__);                                            \
       fputc('\n', stderr);                                                     \
       python::Utils::printTraceback();                                         \
@@ -24,9 +24,10 @@
 #define CHECK_INDEX(index, high)                                               \
   do {                                                                         \
     if (!((index >= 0) && (index < high))) {                                   \
-      fprintf(                                                                 \
-          stderr, "%s:%d index out of range, %ld not in 0..%ld : ", __FILE__,  \
-          __LINE__, static_cast<word>(index), static_cast<word>(high) - 1);    \
+      fprintf(stderr,                                                          \
+              "%s:%d %s: index out of range, %ld not in 0..%ld : ", __FILE__,  \
+              __LINE__, __func__, static_cast<word>(index),                    \
+              static_cast<word>(high) - 1);                                    \
       fputc('\n', stderr);                                                     \
       python::Utils::printTraceback();                                         \
       std::abort();                                                            \
@@ -37,8 +38,9 @@
   do {                                                                         \
     if (!((val >= 0) && (val <= high))) {                                      \
       fprintf(stderr,                                                          \
-              "%s:%d bounds violation, %ld not in 0..%ld : ", __FILE__,        \
-              __LINE__, static_cast<word>(val), static_cast<word>(high));      \
+              "%s:%d %s: bounds violation, %ld not in 0..%ld : ", __FILE__,    \
+              __LINE__, __func__, static_cast<word>(val),                      \
+              static_cast<word>(high));                                        \
       fputc('\n', stderr);                                                     \
       python::Utils::printTraceback();                                         \
       std::abort();                                                            \
@@ -60,7 +62,8 @@
 
 #define UNIMPLEMENTED(...)                                                     \
   do {                                                                         \
-    fprintf(stderr, "%s:%d unimplemented: ", __FILE__, __LINE__);              \
+    fprintf(stderr, "%s:%d %s: unimplemented: ", __FILE__, __LINE__,           \
+            __func__);                                                         \
     fprintf(stderr, __VA_ARGS__);                                              \
     fputc('\n', stderr);                                                       \
     python::Utils::printTraceback();                                           \
@@ -69,7 +72,7 @@
 
 #define UNREACHABLE(...)                                                       \
   do {                                                                         \
-    fprintf(stderr, "%s:%d unreachable: ", __FILE__, __LINE__);                \
+    fprintf(stderr, "%s:%d %s: unreachable: ", __FILE__, __LINE__, __func__);  \
     fprintf(stderr, __VA_ARGS__);                                              \
     fputc('\n', stderr);                                                       \
     python::Utils::printTraceback();                                           \

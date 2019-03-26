@@ -52,6 +52,7 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
           return -1;
         }
         if (thread->hasPendingException()) {
+          thread->clearPendingException();
           thread->raiseSystemError(thread->runtime()->newStrFromFormat(
               "execution of module %S failed without setting an exception",
               &name_str));

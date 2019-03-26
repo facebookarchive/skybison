@@ -70,6 +70,8 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
   Object key(&scope, runtime->symbols()->Name());
   Object name_obj(&scope, getAttribute(thread, spec, key));
   if (name_obj.isError()) {
+    DCHECK(thread->hasPendingException(), "expected exception");
+    thread->clearPendingException();
     return thread->raiseTypeErrorWithCStr("spec has no attribute 'name'");
   }
   if (!runtime->isInstanceOfStr(*name_obj)) {

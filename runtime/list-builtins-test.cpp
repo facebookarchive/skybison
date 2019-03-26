@@ -876,8 +876,7 @@ TEST(ListBuiltinsTest, SetItemSliceScalarErr) {
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = 5
 )"),
-                            LayoutId::kTypeError,
-                            "can only assign an iterable"));
+                            LayoutId::kTypeError, "object is not iterable"));
 }
 
 TEST(ListBuiltinsTest, SetItemSliceStepTuple) {

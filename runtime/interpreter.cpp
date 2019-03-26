@@ -86,6 +86,7 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
 }
 
 RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
+  DCHECK(!thread->hasPendingException(), "unhandled exception lingering");
   RawObject* sp = frame->valueStackTop() + nargs + 1;
   RawObject callable = frame->peek(nargs);
   if (!callable.isFunction()) {

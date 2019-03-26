@@ -341,6 +341,7 @@ RawObject Thread::invokeFunction5(SymbolId module, SymbolId name,
 }
 
 RawObject Thread::raise(LayoutId type, RawObject value) {
+  DCHECK(!hasPendingException(), "unhandled exception lingering");
   setPendingExceptionType(runtime()->typeAt(type));
   setPendingExceptionValue(value);
   setPendingExceptionTraceback(NoneType::object());

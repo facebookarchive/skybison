@@ -95,9 +95,6 @@ TEST(BuiltinsModuleTest, BuiltinChr) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(chr(65))");
   EXPECT_EQ(result, "A\n");
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "print(chr(1,2))"), LayoutId::kTypeError,
-      "TypeError: 'chr' takes max 1 positional arguments but 2 given"));
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(chr('A'))"),
                             LayoutId::kTypeError,
                             "Unsupported type in builtin 'chr'"));
@@ -345,9 +342,6 @@ TEST(BuiltinsModuleTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "print(len(1,2))"), LayoutId::kTypeError,
-      "TypeError: 'len' takes max 1 positional arguments but 2 given"));
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(len(1))"),
                             LayoutId::kTypeError, "object has no len()"));
 }
@@ -411,9 +405,6 @@ TEST(BuiltinsModuleTest, BuiltinOrd) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
   EXPECT_EQ(result, "65\n");
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "print(ord(1,2))"), LayoutId::kTypeError,
-      "TypeError: 'ord' takes max 1 positional arguments but 2 given"));
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(ord(1))"),
                             LayoutId::kTypeError,
                             "Unsupported type in builtin 'ord'"));
