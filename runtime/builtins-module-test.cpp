@@ -1256,4 +1256,64 @@ c = next(itr, None)
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "c").isNoneType());
 }
 
+TEST(BuiltinsModuleTest, SortedReturnsSortedList) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+unsorted = [5, 7, 8, 6]
+result = sorted(unsorted)
+)")
+                   .isError());
+
+  HandleScope scope;
+  Object unsorted_obj(&scope, moduleAt(&runtime, "__main__", "unsorted"));
+  ASSERT_TRUE(unsorted_obj.isList());
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isList());
+  EXPECT_NE(*unsorted_obj, *result_obj);
+
+  List unsorted(&scope, *unsorted_obj);
+  ASSERT_EQ(unsorted.numItems(), 4);
+  EXPECT_EQ(unsorted.at(0), SmallInt::fromWord(5));
+  EXPECT_EQ(unsorted.at(1), SmallInt::fromWord(7));
+  EXPECT_EQ(unsorted.at(2), SmallInt::fromWord(8));
+  EXPECT_EQ(unsorted.at(3), SmallInt::fromWord(6));
+
+  List result(&scope, *result_obj);
+  ASSERT_EQ(result.numItems(), 4);
+  EXPECT_EQ(result.at(0), SmallInt::fromWord(5));
+  EXPECT_EQ(result.at(1), SmallInt::fromWord(6));
+  EXPECT_EQ(result.at(2), SmallInt::fromWord(7));
+  EXPECT_EQ(result.at(3), SmallInt::fromWord(8));
+}
+
+TEST(BuiltinsModuleTest, SortedWithReverseReturnsReverseSortedList) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+unsorted = [1, 2, 3, 4]
+result = sorted(unsorted, reverse=True)
+)")
+                   .isError());
+
+  HandleScope scope;
+  Object unsorted_obj(&scope, moduleAt(&runtime, "__main__", "unsorted"));
+  ASSERT_TRUE(unsorted_obj.isList());
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isList());
+  EXPECT_NE(*unsorted_obj, *result_obj);
+
+  List unsorted(&scope, *unsorted_obj);
+  ASSERT_EQ(unsorted.numItems(), 4);
+  EXPECT_EQ(unsorted.at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(unsorted.at(1), SmallInt::fromWord(2));
+  EXPECT_EQ(unsorted.at(2), SmallInt::fromWord(3));
+  EXPECT_EQ(unsorted.at(3), SmallInt::fromWord(4));
+
+  List result(&scope, *result_obj);
+  ASSERT_EQ(result.numItems(), 4);
+  EXPECT_EQ(result.at(0), SmallInt::fromWord(4));
+  EXPECT_EQ(result.at(1), SmallInt::fromWord(3));
+  EXPECT_EQ(result.at(2), SmallInt::fromWord(2));
+  EXPECT_EQ(result.at(3), SmallInt::fromWord(1));
+}
+
 }  // namespace python

@@ -1745,6 +1745,12 @@ def next(iterator, default=_Unbound):
         raise
 
 
+def sorted(iterable, *, key=None, reverse=False):
+    result = list(iterable)
+    result.sort(key=key, reverse=reverse)
+    return result
+
+
 def len(seq):
     dunder_len = getattr(seq, "__len__", None)
     if dunder_len is None:
