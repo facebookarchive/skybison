@@ -25,3 +25,41 @@ def encode(data, encoding: str = "utf-8", errors: str = "strict") -> bytes:
 _codec_decode_table = {}  # noqa: T484
 
 _codec_encode_table = {}  # noqa: T484
+
+
+def strict_errors(error):
+    if not isinstance(error, Exception):
+        raise TypeError("codecs must pass exception instance")
+    raise error
+
+
+def ignore_errors(error):
+    if not isinstance(error, UnicodeError):
+        raise TypeError(
+            f"don't know how to handle {type(error).__name__} in error callback"
+        )
+    return ("", error.end)
+
+
+def lookup_error(error: str):
+    if not isinstance(error, str):
+        raise TypeError(
+            f"lookup_error() argument must be str, not {type(error).__name__}"
+        )
+    try:
+        return _codec_error_registry[error]
+    except KeyError:
+        raise LookupError(f"unknown error handler name '{error}'")
+
+
+def register_error(name: str, error_func):
+    if not isinstance(name, str):
+        raise TypeError(
+            f"register_error() argument 1 must be str, not {type(name).__name__}"
+        )
+    if not callable(error_func):
+        raise TypeError("handler must be callable")
+    _codec_error_registry[name] = error_func
+
+
+_codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
