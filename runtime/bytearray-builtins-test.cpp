@@ -428,7 +428,7 @@ TEST(ByteArrayBuiltinsTest,
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   Int source(&scope, runtime.newInt(3));
-  Object unbound(&scope, runtime.unboundValue());
+  Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
@@ -455,7 +455,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithBytesCopiesBytes) {
   ByteArray self(&scope, runtime.newByteArray());
   View<byte> bytes{'f', 'o', 'o', 'b', 'a', 'r'};
   Bytes source(&scope, runtime.newBytesWithAll(bytes));
-  Object unbound(&scope, runtime.unboundValue());
+  Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
@@ -470,7 +470,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithByteArrayCopiesBytes) {
   ByteArray source(&scope, runtime.newByteArray());
   View<byte> bytes{'f', 'o', 'o', 'b', 'a', 'r'};
   runtime.byteArrayExtend(thread, source, bytes);
-  Object unbound(&scope, runtime.unboundValue());
+  Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
@@ -490,7 +490,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
   runtime.listAdd(source, one);
   runtime.listAdd(source, two);
   runtime.listAdd(source, six);
-  Object unbound(&scope, runtime.unboundValue());
+  Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());

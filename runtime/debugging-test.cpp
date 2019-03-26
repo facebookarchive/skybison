@@ -191,7 +191,7 @@ TEST(DebuggingTests, FormatNone) {
 TEST(DebuggingTests, FormatObjectWithBuiltinClass) {
   Runtime runtime;
   std::stringstream ss;
-  ss << runtime.notImplemented();
+  ss << NotImplementedType::object();
   EXPECT_EQ(ss.str(), R"(<"NotImplementedType" object>)");
 }
 
@@ -212,7 +212,7 @@ foo = Foo()
 TEST(DebuggingTests, FormatObjectWithUnknownType) {
   Runtime runtime;
   HandleScope scope;
-  Object obj(&scope, runtime.notImplemented());
+  Object obj(&scope, NotImplementedType::object());
   // Phabricate a nameless type...
   RawType::cast(runtime.typeOf(*obj)).setName(NoneType::object());
 

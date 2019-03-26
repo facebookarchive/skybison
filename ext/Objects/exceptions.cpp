@@ -270,7 +270,7 @@ PY_EXPORT void PyException_SetCause(PyObject* self, PyObject* cause) {
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
   if (cause == nullptr) {
-    exc.setCause(thread->runtime()->unboundValue());
+    exc.setCause(Unbound::object());
     return;
   }
   ApiHandle* new_cause = ApiHandle::fromPyObject(cause);
@@ -308,7 +308,7 @@ PY_EXPORT void PyException_SetContext(PyObject* self, PyObject* context) {
 
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
   if (context == nullptr) {
-    exc.setContext(thread->runtime()->unboundValue());
+    exc.setContext(Unbound::object());
     return;
   }
   ApiHandle* new_context = ApiHandle::fromPyObject(context);

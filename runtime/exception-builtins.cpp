@@ -127,16 +127,15 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfBaseException(args.get(0))) {
+  if (!thread->runtime()->isInstanceOfBaseException(args.get(0))) {
     return thread->raiseTypeErrorWithCStr(
         "'__init__' requires a 'BaseException' object");
   }
   BaseException self(&scope, args.get(0));
   self.setArgs(args.get(1));
-  self.setCause(runtime->unboundValue());
-  self.setContext(runtime->unboundValue());
-  self.setTraceback(runtime->unboundValue());
+  self.setCause(Unbound::object());
+  self.setContext(Unbound::object());
+  self.setTraceback(Unbound::object());
   return NoneType::object();
 }
 

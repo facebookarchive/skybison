@@ -307,7 +307,7 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     }
     return Bool::trueObj();
   }
-  return thread->runtime()->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject DictBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {

@@ -167,7 +167,7 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'tuple' object");
   }
   if (!runtime->isInstanceOfTuple(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
 
   if (!self_obj.isTuple()) {

@@ -244,7 +244,7 @@ TEST(DictBuiltinsTest, DunderEqWithNonDict) {
   Dict dict(&scope, runtime.newDict());
   Object not_a_dict(&scope, SmallInt::fromWord(5));
   EXPECT_EQ(runBuiltin(DictBuiltins::dunderEq, dict, not_a_dict),
-            runtime.notImplemented());
+            NotImplementedType::object());
 }
 
 TEST(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {

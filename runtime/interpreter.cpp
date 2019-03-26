@@ -406,15 +406,14 @@ static RawObject binaryOperationSwapped(Thread* thread, Frame* frame,
                                         const Object& self,
                                         const Object& other) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-
-  SymbolId swapped_selector = runtime->swappedBinaryOperationSelector(op);
+  SymbolId swapped_selector =
+      thread->runtime()->swappedBinaryOperationSelector(op);
   Object other_reversed_method(
       &scope,
       Interpreter::lookupMethod(thread, frame, other, swapped_selector));
   if (other_reversed_method.isError()) {
     if (thread->hasPendingException()) return *other_reversed_method;
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
 
   // Python doesn't bother calling the reverse method when the slot on self and
@@ -426,7 +425,7 @@ static RawObject binaryOperationSwapped(Thread* thread, Frame* frame,
     return *self_reversed_method;
   }
   if (self_reversed_method == other_reversed_method) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
 
   Object result(&scope, Interpreter::callMethod2(
@@ -486,12 +485,11 @@ RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
                                         BinaryOp op, const Object& self,
                                         const Object& other) {
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  SymbolId selector = runtime->inplaceOperationSelector(op);
+  SymbolId selector = thread->runtime()->inplaceOperationSelector(op);
   Object method(&scope, lookupMethod(thread, caller, self, selector));
   if (!method.isError()) {
     RawObject result = callMethod2(thread, caller, method, self, other);
-    if (result != runtime->notImplemented()) {
+    if (result != NotImplementedType::object()) {
       return result;
     }
   }
@@ -526,7 +524,7 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
     Object method(&scope, lookupMethod(thread, caller, right, selector));
     if (!method.isError()) {
       RawObject result = callMethod2(thread, caller, method, right, left);
-      if (result != runtime->notImplemented()) {
+      if (result != NotImplementedType::object()) {
         return result;
       }
     }
@@ -535,7 +533,7 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
     Object method(&scope, lookupMethod(thread, caller, left, selector));
     if (!method.isError()) {
       RawObject result = callMethod2(thread, caller, method, left, right);
-      if (result != runtime->notImplemented()) {
+      if (result != NotImplementedType::object()) {
         return result;
       }
     }
@@ -545,7 +543,7 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
     Object method(&scope, lookupMethod(thread, caller, right, selector));
     if (!method.isError()) {
       RawObject result = callMethod2(thread, caller, method, right, left);
-      if (result != runtime->notImplemented()) {
+      if (result != NotImplementedType::object()) {
         return result;
       }
     }

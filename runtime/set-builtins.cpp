@@ -124,11 +124,12 @@ RawObject SetBaseBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfSetBase(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSetBase(*self)) {
     return thread->raiseTypeErrorWithCStr("__and__() requires a 'set' object");
   }
-  if (!thread->runtime()->isInstanceOfSetBase(*other)) {
-    return thread->runtime()->notImplemented();
+  if (!runtime->isInstanceOfSetBase(*other)) {
+    return NotImplementedType::object();
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
@@ -183,7 +184,7 @@ RawObject SetBaseBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
         "__eq__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
@@ -201,7 +202,7 @@ RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
         "__ne__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
@@ -219,7 +220,7 @@ RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
         "__le__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
@@ -237,7 +238,7 @@ RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
         "__lt__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
@@ -255,7 +256,7 @@ RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
         "__ge__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
@@ -273,7 +274,7 @@ RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
         "__gt__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   SetBase set(&scope, *self);
   SetBase other_set(&scope, *other);
@@ -523,11 +524,12 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
-  if (!thread->runtime()->isInstanceOfSet(*self)) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSet(*self)) {
     return thread->raiseTypeErrorWithCStr("__iand__() requires a 'set' object");
   }
-  if (!thread->runtime()->isInstanceOfSet(*other)) {
-    return thread->runtime()->notImplemented();
+  if (!runtime->isInstanceOfSet(*other)) {
+    return NotImplementedType::object();
   }
   Set set(&scope, *self);
   Object intersection(&scope,

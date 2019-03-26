@@ -303,15 +303,11 @@ class Runtime {
 
   RawObject modules() { return modules_; }
 
-  RawObject notImplemented() { return NotImplementedType::object(); }
-
   RawObject apiHandles() { return api_handles_; }
 
   RawObject apiCaches() { return api_caches_; }
 
   Symbols* symbols() { return symbols_; }
-
-  RawObject unboundValue() { return Unbound::object(); }
 
   // Provides a growth strategy for mutable sequences. Grows by a factor of 1.5,
   // scaling up to the requested capacity if the initial factor is insufficient.

@@ -177,7 +177,7 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   Int self(&scope, *self_obj);
   Int other(&scope, *other_obj);
@@ -417,7 +417,7 @@ RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
     }
     return runtime->newFloat(left / static_cast<double>(right));
   }
-  return runtime->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject IntBuiltins::dunderLt(Thread* t, Frame* frame, word nargs) {

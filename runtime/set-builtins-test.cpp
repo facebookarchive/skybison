@@ -787,7 +787,7 @@ TEST(SetBuiltinsTest, DunderEqWithNonSetSecondArgReturnsNotImplemented) {
   Set set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, none));
-  ASSERT_EQ(*result, runtime.notImplemented());
+  ASSERT_EQ(*result, NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderNeWithNonSetSecondArgReturnsNotImplemented) {
@@ -796,7 +796,7 @@ TEST(SetBuiltinsTest, DunderNeWithNonSetSecondArgReturnsNotImplemented) {
   Set set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, none));
-  ASSERT_EQ(*result, runtime.notImplemented());
+  ASSERT_EQ(*result, NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderGeWithNonSetSecondArgReturnsNotImplemented) {
@@ -805,7 +805,7 @@ TEST(SetBuiltinsTest, DunderGeWithNonSetSecondArgReturnsNotImplemented) {
   Set set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, none));
-  ASSERT_EQ(*result, runtime.notImplemented());
+  ASSERT_EQ(*result, NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderGtWithNonSetSecondArgReturnsNotImplemented) {
@@ -814,7 +814,7 @@ TEST(SetBuiltinsTest, DunderGtWithNonSetSecondArgReturnsNotImplemented) {
   Set set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderGt, set, none));
-  ASSERT_EQ(*result, runtime.notImplemented());
+  ASSERT_EQ(*result, NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderLeWithNonSetSecondArgReturnsNotImplemented) {
@@ -823,7 +823,7 @@ TEST(SetBuiltinsTest, DunderLeWithNonSetSecondArgReturnsNotImplemented) {
   Set set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, none));
-  ASSERT_EQ(*result, runtime.notImplemented());
+  ASSERT_EQ(*result, NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
@@ -832,7 +832,7 @@ TEST(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
   Set set(&scope, runtime.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderLt, set, none));
-  ASSERT_EQ(*result, runtime.notImplemented());
+  ASSERT_EQ(*result, NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderEqWithNonSetFirstArgRaisesTypeError) {

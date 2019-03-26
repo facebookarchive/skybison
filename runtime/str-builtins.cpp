@@ -192,7 +192,7 @@ RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(RawStr::cast(*self).compare(*other) == 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
-  return thread->runtime()->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
@@ -204,7 +204,7 @@ RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(RawStr::cast(*self).compare(*other) >= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
-  return thread->runtime()->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
@@ -216,7 +216,7 @@ RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(RawStr::cast(*self).compare(*other) > 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
-  return thread->runtime()->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
@@ -385,7 +385,7 @@ RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(RawStr::cast(*self).compare(*other) <= 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
-  return thread->runtime()->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
@@ -434,7 +434,7 @@ RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(RawStr::cast(*self).compare(*other) < 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
-  return thread->runtime()->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
@@ -561,7 +561,7 @@ RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
     return strFormat(thread, format, format_args);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
-  return runtime->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
@@ -604,7 +604,7 @@ RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
     return Bool::fromBool(RawStr::cast(*self).compare(*other) != 0);
   }
   // TODO(cshapiro): handle user-defined subtypes of string.
-  return thread->runtime()->notImplemented();
+  return NotImplementedType::object();
 }
 
 RawObject StrBuiltins::slice(Thread* thread, const Str& str,

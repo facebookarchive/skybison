@@ -599,7 +599,7 @@ void Thread::reprLeave(const Object& obj) {
   List list(&scope, api_repr_list_);
   for (word i = list.numItems() - 1; i >= 0; i--) {
     if (list.at(i).raw() == obj.raw()) {
-      list.atPut(i, runtime_->unboundValue());
+      list.atPut(i, Unbound::object());
       break;
     }
   }

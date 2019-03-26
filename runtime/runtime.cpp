@@ -2055,10 +2055,10 @@ void Runtime::createBuiltinsModule(Thread* thread) {
                           nativeTrampoline<BuiltinsModule::underPatch>,
                           unimplementedTrampoline, unimplementedTrampoline);
 
-  Object not_implemented(&scope, notImplemented());
+  Object not_implemented(&scope, NotImplementedType::object());
   moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
 
-  Object unbound_value(&scope, unboundValue());
+  Object unbound_value(&scope, Unbound::object());
   moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
 
   // TODO(T41323917): Add proper file streams to sys

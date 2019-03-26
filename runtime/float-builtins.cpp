@@ -53,15 +53,13 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
     *result = RawFloat::cast(*object).value();
     return NoneType::object();
   }
-
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfInt(*object)) {
+  if (thread->runtime()->isInstanceOfInt(*object)) {
     HandleScope scope(thread);
     Int value(&scope, *object);
     return convertIntToDouble(thread, value, result);
   }
 
-  return runtime->notImplemented();
+  return NotImplementedType::object();
 }
 
 const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
@@ -201,7 +199,7 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     Int right_int(&scope, *right);
     result = doubleEqualsInt(thread, left, right_int);
   } else {
-    return thread->runtime()->notImplemented();
+    return NotImplementedType::object();
   }
   return Bool::fromBool(result);
 }
@@ -239,7 +237,7 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
     Int right_int(&scope, *right);
     result = compareDoubleWithInt(thread, left, right_int, GE);
   } else {
-    return thread->runtime()->notImplemented();
+    return NotImplementedType::object();
   }
   return Bool::fromBool(result);
 }
@@ -262,7 +260,7 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
     Int right_int(&scope, *right);
     result = compareDoubleWithInt(thread, left, right_int, GT);
   } else {
-    return thread->runtime()->notImplemented();
+    return NotImplementedType::object();
   }
   return Bool::fromBool(result);
 }
@@ -285,7 +283,7 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
     Int right_int(&scope, *right);
     result = compareDoubleWithInt(thread, left, right_int, LE);
   } else {
-    return thread->runtime()->notImplemented();
+    return NotImplementedType::object();
   }
   return Bool::fromBool(result);
 }
@@ -308,7 +306,7 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
     Int right_int(&scope, *right);
     result = compareDoubleWithInt(thread, left, right_int, LT);
   } else {
-    return thread->runtime()->notImplemented();
+    return NotImplementedType::object();
   }
   return Bool::fromBool(result);
 }

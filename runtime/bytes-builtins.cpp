@@ -211,7 +211,7 @@ RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
@@ -228,7 +228,7 @@ RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
@@ -289,7 +289,7 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
@@ -306,7 +306,7 @@ RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
@@ -337,7 +337,7 @@ RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
@@ -388,7 +388,7 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return runtime->notImplemented();
+    return NotImplementedType::object();
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
