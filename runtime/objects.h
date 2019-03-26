@@ -245,11 +245,13 @@ class RawObject {
   bool isUnbound() const;
 
   // Heap objects
+  bool isHeapObject() const;
+  bool isHeapObjectWithLayout(LayoutId layout_id) const;
+  bool isInstance() const;
   bool isBaseException() const;
   bool isBoundMethod() const;
   bool isByteArray() const;
   bool isBytes() const;
-  bool isType() const;
   bool isClassMethod() const;
   bool isCode() const;
   bool isComplex() const;
@@ -265,15 +267,12 @@ class RawObject {
   bool isException() const;
   bool isExceptionState() const;
   bool isFloat() const;
-  bool isHeapFrame() const;
   bool isFrozenSet() const;
   bool isFunction() const;
   bool isGenerator() const;
-  bool isHeapObject() const;
-  bool isHeapObjectWithLayout(LayoutId layout_id) const;
+  bool isHeapFrame() const;
   bool isImportError() const;
   bool isIndexError() const;
-  bool isInstance() const;
   bool isKeyError() const;
   bool isLargeInt() const;
   bool isLargeStr() const;
@@ -288,7 +287,6 @@ class RawObject {
   bool isProperty() const;
   bool isRange() const;
   bool isRangeIterator() const;
-  bool isGeneratorBase() const;
   bool isRuntimeError() const;
   bool isSeqIterator() const;
   bool isSet() const;
@@ -302,6 +300,7 @@ class RawObject {
   bool isTraceback() const;
   bool isTuple() const;
   bool isTupleIterator() const;
+  bool isType() const;
   bool isUnicodeDecodeError() const;
   bool isUnicodeEncodeError() const;
   bool isUnicodeError() const;
@@ -310,6 +309,7 @@ class RawObject {
   bool isWeakRef() const;
 
   // superclass objects
+  bool isGeneratorBase() const;
   bool isInt() const;
   bool isSetBase() const;
   bool isStr() const;
@@ -2422,28 +2422,16 @@ inline LayoutId RawObject::layoutId() const {
   return static_cast<LayoutId>(raw() & kImmediateTypeTableIndexMask);
 }
 
-inline bool RawObject::isType() const {
-  return isHeapObjectWithLayout(LayoutId::kType);
+inline bool RawObject::isBool() const {
+  return (raw() & RawBool::kTagMask) == RawBool::kTag;
 }
 
-inline bool RawObject::isClassMethod() const {
-  return isHeapObjectWithLayout(LayoutId::kClassMethod);
-}
-
-inline bool RawObject::isSmallInt() const {
-  return (raw() & RawSmallInt::kTagMask) == RawSmallInt::kTag;
-}
-
-inline bool RawObject::isSmallStr() const {
-  return (raw() & RawSmallStr::kTagMask) == RawSmallStr::kTag;
+inline bool RawObject::isError() const {
+  return (raw() & RawError::kTagMask) == RawError::kTag;
 }
 
 inline bool RawObject::isHeader() const {
   return (raw() & RawHeader::kTagMask) == RawHeader::kTag;
-}
-
-inline bool RawObject::isBool() const {
-  return (raw() & RawBool::kTagMask) == RawBool::kTag;
 }
 
 inline bool RawObject::isNoneType() const {
@@ -2455,12 +2443,16 @@ inline bool RawObject::isNotImplementedType() const {
          RawNotImplementedType::kTag;
 }
 
-inline bool RawObject::isUnbound() const {
-  return (raw() & RawUnbound::kTagMask) == RawUnbound::kTag;
+inline bool RawObject::isSmallInt() const {
+  return (raw() & RawSmallInt::kTagMask) == RawSmallInt::kTag;
 }
 
-inline bool RawObject::isError() const {
-  return (raw() & RawError::kTagMask) == RawError::kTag;
+inline bool RawObject::isSmallStr() const {
+  return (raw() & RawSmallStr::kTagMask) == RawSmallStr::kTag;
+}
+
+inline bool RawObject::isUnbound() const {
+  return (raw() & RawUnbound::kTagMask) == RawUnbound::kTag;
 }
 
 inline bool RawObject::isHeapObject() const {
@@ -2472,20 +2464,13 @@ inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
          RawHeapObject::cast(*this).header().layoutId() == layout_id;
 }
 
-inline bool RawObject::isLayout() const {
-  return isHeapObjectWithLayout(LayoutId::kLayout);
+inline bool RawObject::isInstance() const {
+  return isHeapObject() && (RawHeapObject::cast(*this).header().layoutId() >
+                            LayoutId::kLastBuiltinId);
 }
 
 inline bool RawObject::isBaseException() const {
   return isHeapObjectWithLayout(LayoutId::kBaseException);
-}
-
-inline bool RawObject::isException() const {
-  return isHeapObjectWithLayout(LayoutId::kException);
-}
-
-inline bool RawObject::isExceptionState() const {
-  return isHeapObjectWithLayout(LayoutId::kExceptionState);
 }
 
 inline bool RawObject::isBoundMethod() const {
@@ -2500,8 +2485,8 @@ inline bool RawObject::isBytes() const {
   return isHeapObjectWithLayout(LayoutId::kBytes);
 }
 
-inline bool RawObject::isTuple() const {
-  return isHeapObjectWithLayout(LayoutId::kTuple);
+inline bool RawObject::isClassMethod() const {
+  return isHeapObjectWithLayout(LayoutId::kClassMethod);
 }
 
 inline bool RawObject::isCode() const {
@@ -2514,27 +2499,6 @@ inline bool RawObject::isComplex() const {
 
 inline bool RawObject::isCoroutine() const {
   return isHeapObjectWithLayout(LayoutId::kCoroutine);
-}
-
-inline bool RawObject::isLargeStr() const {
-  return isHeapObjectWithLayout(LayoutId::kLargeStr);
-}
-
-inline bool RawObject::isFrozenSet() const {
-  return isHeapObjectWithLayout(LayoutId::kFrozenSet);
-}
-
-inline bool RawObject::isFunction() const {
-  return isHeapObjectWithLayout(LayoutId::kFunction);
-}
-
-inline bool RawObject::isInstance() const {
-  return isHeapObject() && (RawHeapObject::cast(*this).header().layoutId() >
-                            LayoutId::kLastBuiltinId);
-}
-
-inline bool RawObject::isKeyError() const {
-  return isHeapObjectWithLayout(LayoutId::kKeyError);
 }
 
 inline bool RawObject::isDict() const {
@@ -2565,38 +2529,60 @@ inline bool RawObject::isDictValues() const {
   return isHeapObjectWithLayout(LayoutId::kDictValues);
 }
 
+inline bool RawObject::isEllipsis() const {
+  return isHeapObjectWithLayout(LayoutId::kEllipsis);
+}
+
+inline bool RawObject::isException() const {
+  return isHeapObjectWithLayout(LayoutId::kException);
+}
+
+inline bool RawObject::isExceptionState() const {
+  return isHeapObjectWithLayout(LayoutId::kExceptionState);
+}
+
 inline bool RawObject::isFloat() const {
   return isHeapObjectWithLayout(LayoutId::kFloat);
+}
+
+inline bool RawObject::isFrozenSet() const {
+  return isHeapObjectWithLayout(LayoutId::kFrozenSet);
+}
+
+inline bool RawObject::isFunction() const {
+  return isHeapObjectWithLayout(LayoutId::kFunction);
+}
+
+inline bool RawObject::isGenerator() const {
+  return isHeapObjectWithLayout(LayoutId::kGenerator);
 }
 
 inline bool RawObject::isHeapFrame() const {
   return isHeapObjectWithLayout(LayoutId::kHeapFrame);
 }
 
-inline bool RawObject::isSeqIterator() const {
-  return isHeapObjectWithLayout(LayoutId::kSeqIterator);
+inline bool RawObject::isImportError() const {
+  return isHeapObjectWithLayout(LayoutId::kImportError);
 }
 
-inline bool RawObject::isSetBase() const { return isSet() || isFrozenSet(); }
-
-inline bool RawObject::isSet() const {
-  return isHeapObjectWithLayout(LayoutId::kSet);
+inline bool RawObject::isIndexError() const {
+  return isHeapObjectWithLayout(LayoutId::kIndexError);
 }
 
-inline bool RawObject::isSetIterator() const {
-  return isHeapObjectWithLayout(LayoutId::kSetIterator);
+inline bool RawObject::isKeyError() const {
+  return isHeapObjectWithLayout(LayoutId::kKeyError);
 }
 
-inline bool RawObject::isSuper() const {
-  return isHeapObjectWithLayout(LayoutId::kSuper);
+inline bool RawObject::isLargeInt() const {
+  return isHeapObjectWithLayout(LayoutId::kLargeInt);
 }
 
-inline bool RawObject::isMemoryView() const {
-  return isHeapObjectWithLayout(LayoutId::kMemoryView);
+inline bool RawObject::isLargeStr() const {
+  return isHeapObjectWithLayout(LayoutId::kLargeStr);
 }
 
-inline bool RawObject::isModule() const {
-  return isHeapObjectWithLayout(LayoutId::kModule);
+inline bool RawObject::isLayout() const {
+  return isHeapObjectWithLayout(LayoutId::kLayout);
 }
 
 inline bool RawObject::isList() const {
@@ -2611,24 +2597,16 @@ inline bool RawObject::isLookupError() const {
   return isHeapObjectWithLayout(LayoutId::kLookupError);
 }
 
-inline bool RawObject::isValueCell() const {
-  return isHeapObjectWithLayout(LayoutId::kValueCell);
+inline bool RawObject::isMemoryView() const {
+  return isHeapObjectWithLayout(LayoutId::kMemoryView);
 }
 
-inline bool RawObject::isEllipsis() const {
-  return isHeapObjectWithLayout(LayoutId::kEllipsis);
+inline bool RawObject::isModule() const {
+  return isHeapObjectWithLayout(LayoutId::kModule);
 }
 
-inline bool RawObject::isGenerator() const {
-  return isHeapObjectWithLayout(LayoutId::kGenerator);
-}
-
-inline bool RawObject::isLargeInt() const {
-  return isHeapObjectWithLayout(LayoutId::kLargeInt);
-}
-
-inline bool RawObject::isInt() const {
-  return isSmallInt() || isLargeInt() || isBool();
+inline bool RawObject::isModuleNotFoundError() const {
+  return isHeapObjectWithLayout(LayoutId::kModuleNotFoundError);
 }
 
 inline bool RawObject::isNotImplementedError() const {
@@ -2647,12 +2625,20 @@ inline bool RawObject::isRangeIterator() const {
   return isHeapObjectWithLayout(LayoutId::kRangeIterator);
 }
 
-inline bool RawObject::isGeneratorBase() const {
-  return isGenerator() || isCoroutine();
-}
-
 inline bool RawObject::isRuntimeError() const {
   return isHeapObjectWithLayout(LayoutId::kRuntimeError);
+}
+
+inline bool RawObject::isSeqIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kSeqIterator);
+}
+
+inline bool RawObject::isSet() const {
+  return isHeapObjectWithLayout(LayoutId::kSet);
+}
+
+inline bool RawObject::isSetIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kSetIterator);
 }
 
 inline bool RawObject::isSlice() const {
@@ -2667,10 +2653,12 @@ inline bool RawObject::isStopIteration() const {
   return isHeapObjectWithLayout(LayoutId::kStopIteration);
 }
 
-inline bool RawObject::isStr() const { return isSmallStr() || isLargeStr(); }
-
 inline bool RawObject::isStrIterator() const {
   return isHeapObjectWithLayout(LayoutId::kStrIterator);
+}
+
+inline bool RawObject::isSuper() const {
+  return isHeapObjectWithLayout(LayoutId::kSuper);
 }
 
 inline bool RawObject::isSystemExit() const {
@@ -2681,8 +2669,16 @@ inline bool RawObject::isTraceback() const {
   return isHeapObjectWithLayout(LayoutId::kTraceback);
 }
 
+inline bool RawObject::isTuple() const {
+  return isHeapObjectWithLayout(LayoutId::kTuple);
+}
+
 inline bool RawObject::isTupleIterator() const {
   return isHeapObjectWithLayout(LayoutId::kTupleIterator);
+}
+
+inline bool RawObject::isType() const {
+  return isHeapObjectWithLayout(LayoutId::kType);
 }
 
 inline bool RawObject::isUnicodeDecodeError() const {
@@ -2701,21 +2697,25 @@ inline bool RawObject::isUnicodeTranslateError() const {
   return isHeapObjectWithLayout(LayoutId::kUnicodeTranslateError);
 }
 
-inline bool RawObject::isImportError() const {
-  return isHeapObjectWithLayout(LayoutId::kImportError);
-}
-
-inline bool RawObject::isIndexError() const {
-  return isHeapObjectWithLayout(LayoutId::kIndexError);
+inline bool RawObject::isValueCell() const {
+  return isHeapObjectWithLayout(LayoutId::kValueCell);
 }
 
 inline bool RawObject::isWeakRef() const {
   return isHeapObjectWithLayout(LayoutId::kWeakRef);
 }
 
-inline bool RawObject::isModuleNotFoundError() const {
-  return isHeapObjectWithLayout(LayoutId::kModuleNotFoundError);
+inline bool RawObject::isGeneratorBase() const {
+  return isGenerator() || isCoroutine();
 }
+
+inline bool RawObject::isInt() const {
+  return isSmallInt() || isLargeInt() || isBool();
+}
+
+inline bool RawObject::isSetBase() const { return isSet() || isFrozenSet(); }
+
+inline bool RawObject::isStr() const { return isSmallStr() || isLargeStr(); }
 
 inline bool RawObject::equals(RawObject lhs, RawObject rhs) {
   return (lhs == rhs) ||
