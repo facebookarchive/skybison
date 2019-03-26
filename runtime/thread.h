@@ -56,6 +56,7 @@ class Thread {
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   Frame* linkFrame(Frame* frame);
   Frame* pushFrame(const Handle<RawCode>& code);
+  Frame* pushCallFrame(const Handle<RawFunction>& function);
   Frame* pushNativeFrame(void* fn, word nargs);
   Frame* pushExecFrame(const Handle<RawCode>& code,
                        const Handle<RawDict>& globals,

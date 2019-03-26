@@ -801,6 +801,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   Function callee(&scope, runtime.newFunction());
   callee.setCode(*code);
   callee.setEntry(interpreterTrampoline);
+  callee.setGlobals(runtime.newDict());
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -855,6 +856,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   Function callee(&scope, runtime.newFunction());
   callee.setCode(*code);
   callee.setEntryEx(interpreterTrampolineEx);
+  callee.setGlobals(runtime.newDict());
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -915,6 +917,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   Function callee(&scope, runtime.newFunction());
   callee.setCode(*code);
   callee.setEntryKw(interpreterTrampolineKw);
+  callee.setGlobals(runtime.newDict());
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));

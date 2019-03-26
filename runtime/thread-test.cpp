@@ -395,6 +395,7 @@ TEST(ThreadTest, CallFunction) {
   Function callee(&scope, runtime.newFunction());
   callee.setCode(*callee_code);
   callee.setEntry(interpreterTrampoline);
+  callee.setGlobals(runtime.newDict());
 
   // Build a code object to call the function defined above
   Code caller_code(&scope, runtime.newEmptyCode());
@@ -2979,6 +2980,91 @@ TEST(ThreadTest, LoadTypeDerefFromLocal) {
   frame->setImplicitGlobals(*implicit_global);
   RawObject result = Interpreter::execute(thread, frame);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
+}
+
+TEST(TrampolinesTest, PushCallFrameWithSameGlobalsPropagatesBuiltins) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Code code(&scope, runtime.newEmptyCode());
+  code.setCode(runtime.newBytes(0, 0));
+  code.setNames(runtime.newTuple(0));
+
+  Function function(&scope, runtime.newFunction());
+  function.setCode(*code);
+  Dict globals(&scope, runtime.newDict());
+  function.setGlobals(*globals);
+  Frame* frame = thread->currentFrame();
+  frame->setGlobals(*globals);
+  Dict builtins(&scope, runtime.newDict());
+  frame->setBuiltins(*builtins);
+
+  Frame* new_frame = thread->pushCallFrame(function);
+  EXPECT_NE(new_frame, frame);
+  EXPECT_EQ(new_frame->globals(), globals);
+  EXPECT_EQ(new_frame->builtins(), builtins);
+}
+
+TEST(TrampolinesTest, PushCallFrameWithGlobalsWithoutBuiltinsSetsMinimalDict) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Code code(&scope, runtime.newEmptyCode());
+  code.setCode(runtime.newBytes(0, 0));
+  code.setNames(runtime.newTuple(0));
+
+  Function function(&scope, runtime.newFunction());
+  function.setCode(*code);
+  Dict globals(&scope, runtime.newDict());
+  function.setGlobals(*globals);
+
+  Object prev_globals(&scope, thread->currentFrame()->globals());
+  Object prev_builtins(&scope, thread->currentFrame()->builtins());
+  Frame* frame = thread->pushCallFrame(function);
+  EXPECT_NE(frame->globals(), prev_globals);
+  EXPECT_NE(frame->builtins(), prev_builtins);
+  EXPECT_EQ(frame->globals(), globals);
+  EXPECT_TRUE(frame->builtins().isDict());
+  Dict builtins_dict(&scope, frame->builtins());
+  EXPECT_EQ(builtins_dict.numItems(), 1);
+  Object none_name(&scope, runtime.symbols()->None());
+  EXPECT_EQ(runtime.moduleDictAt(builtins_dict, none_name), NoneType::object());
+}
+
+TEST(ThreadTest, PushExecFrameSetsMissingDunderBuiltin) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Code code(&scope, runtime.newEmptyCode());
+  code.setCode(runtime.newBytes(0, 0));
+  code.setNames(runtime.newTuple(0));
+  Frame* frame = thread->pushFrame(code);
+  frame->setBuiltins(NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  thread->pushExecFrame(code, globals, globals);
+
+  Object builtins(&scope, runtime.findModuleById(SymbolId::kBuiltins));
+  Str dunder_builtins_name(&scope, runtime.symbols()->DunderBuiltins());
+  EXPECT_EQ(runtime.typeDictAt(globals, dunder_builtins_name), builtins);
+  Object builtins_dict(&scope, RawModule::cast(*builtins).dict());
+  EXPECT_EQ(thread->currentFrame()->builtins(), builtins_dict);
+}
+
+TEST(ThreadTest, CallFunctionInDifferentModule) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def a():
+  def inner_a():
+    return object
+  return inner_a
+result0 = a()()
+)")
+                   .isError());
+  // Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object result0(&scope, moduleAt(&runtime, "__main__", "result0"));
+  Object object(&scope, moduleAt(&runtime, "builtins", "object"));
+  EXPECT_EQ(result0, object);
 }
 
 }  // namespace python

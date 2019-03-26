@@ -129,16 +129,49 @@ Frame* Thread::pushFrame(const Code& code) {
   return frame;
 }
 
+Frame* Thread::pushCallFrame(const Function& function) {
+  HandleScope scope(this);
+  Code code(&scope, function.code());
+
+  Frame* previous_frame = currentFrame();
+  Frame* result = pushFrame(code);
+  result->setGlobals(function.globals());
+  // If we stay in the same global namespace, use the same builtins.
+  if (result->globals() == previous_frame->globals()) {
+    result->setBuiltins(previous_frame->builtins());
+  } else {
+    // Otherwise get the `__builtins__` module from the global namespace.
+    // TODO(T36407403): Set builtins appropriately.
+    Dict globals(&scope, result->globals());
+    Object dunder_builtins_name(&scope, runtime()->symbols()->DunderBuiltins());
+    Object dunder_builtins(
+        &scope, runtime()->moduleDictAt(globals, dunder_builtins_name));
+    Object dunder_builtins_dict(&scope, NoneType::object());
+    if (dunder_builtins.isModule()) {
+      dunder_builtins_dict = RawModule::cast(*dunder_builtins).dict();
+    } else {
+      // Create a minimal builtins dictionary with just `{'None': None}`.
+      dunder_builtins_dict = runtime()->newDict();
+      Object none_name(&scope, runtime()->symbols()->None());
+      Object none(&scope, NoneType::object());
+      Dict dict(&scope, *dunder_builtins_dict);
+      runtime()->moduleDictAtPut(dict, none_name, none);
+    }
+    result->setBuiltins(*dunder_builtins_dict);
+  }
+  result->setVirtualPC(0);
+  return result;
+}
+
 Frame* Thread::pushExecFrame(const Code& code, const Dict& globals,
                              const Object& locals) {
   HandleScope scope(this);
   Str dunder_builtins_name(&scope, runtime()->symbols()->DunderBuiltins());
   Object builtins_obj(&scope,
                       runtime()->typeDictAt(globals, dunder_builtins_name));
-  // TODO(T36914735): __builtins__ should always be in globals.
   if (builtins_obj.isError()) {  // couldn't find __builtins__ in globals
-    Str builtins_name(&scope, runtime()->symbols()->Builtins());
-    builtins_obj = runtime()->findModule(builtins_name);
+    builtins_obj = runtime()->findModuleById(SymbolId::kBuiltins);
+    runtime()->typeDictAtPut(globals, dunder_builtins_name, builtins_obj);
   }
   Module builtins(&scope, *builtins_obj);
   Dict builtins_dict(&scope, builtins.dict());
@@ -160,9 +193,13 @@ Frame* Thread::pushModuleFunctionFrame(const Module& module, const Code& code) {
 Frame* Thread::pushClassFunctionFrame(const Function& function,
                                       const Dict& dict) {
   HandleScope scope(this);
-  Code code(&scope, RawFunction::cast(*function).code());
-  Dict globals(&scope, RawFunction::cast(*function).globals());
-  Frame* result = pushExecFrame(code, globals, dict);
+  Frame* result = pushCallFrame(function);
+  Code code(&scope, function.code());
+  Dict globals(&scope, result->globals());
+  Dict builtins(&scope, result->builtins());
+  result->setFastGlobals(
+      runtime()->computeFastGlobals(code, globals, builtins));
+  result->setImplicitGlobals(*dict);
 
   word num_locals = code.nlocals();
   word num_cellvars = code.numCellvars();
