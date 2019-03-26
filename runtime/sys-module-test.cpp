@@ -180,4 +180,12 @@ TEST(SysModuleTest, MaxsizeIsMaxWord) {
   EXPECT_TRUE(isIntEqualsWord(*maxsize, kMaxWord));
 }
 
+TEST(SysModuleTest, ByteorderIsCorrectString) {
+  Runtime runtime;
+  HandleScope scope;
+  Object byteorder(&scope, moduleAt(&runtime, "sys", "byteorder"));
+  EXPECT_TRUE(isStrEqualsCStr(
+      *byteorder, endian::native == endian::little ? "little" : "big"));
+}
+
 }  // namespace python

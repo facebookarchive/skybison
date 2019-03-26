@@ -2141,6 +2141,11 @@ void Runtime::createSysModule(Thread* thread) {
   Object platform(&scope, newStrFromCStr(OS::name()));
   moduleAddGlobal(module, SymbolId::kPlatform, platform);
 
+  Object byteorder(
+      &scope,
+      newStrFromCStr(endian::native == endian::little ? "little" : "big"));
+  moduleAddGlobal(module, SymbolId::kByteorder, byteorder);
+
   unique_c_ptr<char> executable_path(OS::executablePath());
   Object executable(&scope, newStrFromCStr(executable_path.get()));
   moduleAddGlobal(module, SymbolId::kExecutable, executable);
