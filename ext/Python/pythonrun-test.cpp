@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include "gmock/gmock-matchers.h"
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -13,6 +15,14 @@ using PythonrunExtensionApiTest = ExtensionApi;
 TEST_F(PythonrunExtensionApiTest, RunSimpleStringReturnsZero) {
   EXPECT_EQ(PyRun_SimpleString("a = 42"), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(PythonrunExtensionApiTest, RunSimpleStringPrintsUncaughtException) {
+  CaptureStdStreams streams;
+  ASSERT_EQ(PyRun_SimpleString("raise RuntimeError('boom')"), -1);
+  // TODO(T39919701): Check the whole string once we have tracebacks.
+  ASSERT_THAT(streams.err(), ::testing::EndsWith("RuntimeError: boom\n"));
+  EXPECT_EQ(streams.out(), "");
 }
 
 TEST_F(PythonrunExtensionApiTest, PyErrDisplayPrintsException) {
@@ -173,6 +183,133 @@ se.text = "this is fake source code\nthat is multiple lines long"
 SyntaxError: bad syntax
 )");
   EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintExPrintsExceptionDoesntSetVars) {
+  PyErr_SetString(PyExc_RuntimeError, "abcd");
+
+  CaptureStdStreams streams;
+  PyErr_PrintEx(0);
+  ASSERT_EQ(streams.err(), "RuntimeError: abcd\n");
+  EXPECT_EQ(streams.out(), "");
+
+  ASSERT_EQ(moduleGet("sys", "last_type"), nullptr);
+  PyErr_Clear();
+  ASSERT_EQ(moduleGet("sys", "last_value"), nullptr);
+  PyErr_Clear();
+  ASSERT_EQ(moduleGet("sys", "last_traceback"), nullptr);
+  PyErr_Clear();
+}
+
+static void checkSysVars() {
+  PyObjectPtr type(moduleGet("sys", "last_type"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(type, nullptr);
+  EXPECT_EQ(type, PyExc_RuntimeError);
+
+  PyObjectPtr value(moduleGet("sys", "last_value"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(PyErr_GivenExceptionMatches(value, PyExc_RuntimeError), 1);
+
+  PyObjectPtr tb(moduleGet("sys", "last_traceback"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(tb, nullptr);
+  // TODO(T39919701): Check for a real traceback once we have tracebacks.
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintExWithArgSetsSysVars) {
+  PyErr_SetString(PyExc_RuntimeError, "critical error");
+
+  CaptureStdStreams streams;
+  PyErr_PrintEx(1);
+  ASSERT_EQ(streams.err(), "RuntimeError: critical error\n");
+  EXPECT_EQ(streams.out(), "");
+
+  EXPECT_NO_FATAL_FAILURE(checkSysVars());
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintSetsSysVars) {
+  PyErr_SetString(PyExc_RuntimeError, "I don't hate you");
+
+  CaptureStdStreams streams;
+  PyErr_Print();
+  ASSERT_EQ(streams.err(), "RuntimeError: I don't hate you\n");
+  EXPECT_EQ(streams.out(), "");
+
+  EXPECT_NO_FATAL_FAILURE(checkSysVars());
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintExCallsCustomExcepthook) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+import sys
+def my_hook(type, value, tb):
+  print("What exception?", file=sys.stderr)
+  print("Everything is fine. Nothing is ruined.")
+sys.excepthook = my_hook
+)"),
+            0);
+  PyErr_SetString(PyExc_RuntimeError, "boop");
+
+  CaptureStdStreams streams;
+  PyErr_PrintEx(0);
+  ASSERT_EQ(streams.err(), "What exception?\n");
+  EXPECT_EQ(streams.out(), "Everything is fine. Nothing is ruined.\n");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintExWithRaisingExcepthook) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+import sys
+def my_hook(type, value, tb):
+  raise RuntimeError("I'd rather not")
+sys.excepthook = my_hook
+)"),
+            0);
+  PyErr_SetString(PyExc_TypeError, "bad type");
+
+  CaptureStdStreams streams;
+  PyErr_PrintEx(0);
+  // TODO(T39919701): Check the whole string once we have tracebacks.
+  std::string err = streams.err();
+  ASSERT_THAT(err, ::testing::StartsWith("Error in sys.excepthook:\n"));
+  ASSERT_THAT(err,
+              ::testing::EndsWith("RuntimeError: I'd rather not\n\nOriginal "
+                                  "exception was:\nTypeError: bad type\n"));
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintExWithNoExceptHookPrintsException) {
+  ASSERT_EQ(PyRun_SimpleString("import sys; del sys.excepthook"), 0);
+  PyErr_SetString(PyExc_RuntimeError, "something broke");
+
+  CaptureStdStreams streams;
+  PyErr_PrintEx(0);
+  ASSERT_EQ(streams.err(),
+            "sys.excepthook is missing\nRuntimeError: something broke\n");
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintWithSystemExitExits) {
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyErr_SetObject(PyExc_SystemExit, zero);
+  EXPECT_EXIT(PyErr_Print(), ::testing::ExitedWithCode(0), "^$");
+
+  PyErr_Clear();
+  PyObjectPtr three(PyLong_FromLong(3));
+  PyErr_SetObject(PyExc_SystemExit, three);
+  EXPECT_EXIT(PyErr_Print(), ::testing::ExitedWithCode(3), "^$");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyErrPrintWithSystemExitFromExcepthookExits) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+import sys
+def my_hook(type, value, tb):
+  raise SystemExit(123)
+sys.excepthook = my_hook
+)"),
+            0);
+  PyErr_SetObject(PyExc_RuntimeError, Py_None);
+  EXPECT_EXIT(PyErr_Print(), ::testing::ExitedWithCode(123), "^$");
 }
 
 }  // namespace python

@@ -486,6 +486,7 @@ target_link_libraries(
   extension-tests
   PRIVATE
   benchmark
+  gmock
   gtest
   cpython
   modules)
@@ -550,6 +551,7 @@ target_link_libraries(
   cpython-extension-tests
   PRIVATE
   benchmark
+  gmock
   gtest
   libpython)
 

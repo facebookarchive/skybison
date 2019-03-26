@@ -14,8 +14,7 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   Runtime* runtime = thread->runtime();
   runtime->run(Runtime::compileFromCStr(str).get());
   if (!thread->hasPendingException()) return 0;
-  // TODO(T39917518): Print exception
-  thread->clearPendingException();
+  printPendingExceptionWithSysLastVars(thread);
   return -1;
 }
 
@@ -35,9 +34,16 @@ PY_EXPORT void PyErr_Display(PyObject* /* exc */, PyObject* value,
   }
 }
 
-PY_EXPORT void PyErr_Print() { UNIMPLEMENTED("PyErr_Print"); }
+PY_EXPORT void PyErr_Print() { PyErr_PrintEx(1); }
 
-PY_EXPORT void PyErr_PrintEx(int /* s */) { UNIMPLEMENTED("PyErr_PrintEx"); }
+PY_EXPORT void PyErr_PrintEx(int set_sys_last_vars) {
+  Thread* thread = Thread::current();
+  if (set_sys_last_vars) {
+    printPendingExceptionWithSysLastVars(thread);
+  } else {
+    printPendingException(thread);
+  }
+}
 
 PY_EXPORT int PyOS_CheckStack() { UNIMPLEMENTED("PyOS_CheckStack"); }
 

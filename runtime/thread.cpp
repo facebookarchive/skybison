@@ -498,39 +498,6 @@ void Thread::ignorePendingException() {
   Utils::printTraceback(stderr);
 }
 
-void Thread::printPendingException() {
-  DCHECK(hasPendingException(), "No pending exception");
-  HandleScope scope(this);
-  Type exc_type(&scope, pendingExceptionType());
-  Object exc_obj(&scope, pendingExceptionValue());
-  clearPendingException();
-  Str type_name(&scope, exc_type.name());
-  std::cerr << unique_c_ptr<char[]>(type_name.toCStr()).get() << ": ";
-
-  if (runtime()->isInstanceOfStr(*exc_obj)) {
-    Str str(&scope, *exc_obj);
-    std::cerr << unique_c_ptr<char[]>(str.toCStr()).get() << "\n";
-    return;
-  }
-
-  if (runtime()->isInstanceOfBaseException(*exc_obj)) {
-    Object dunder_str(&scope,
-                      Interpreter::lookupMethod(this, currentFrame(), exc_obj,
-                                                SymbolId::kDunderStr));
-    Object result(&scope, Interpreter::callMethod1(this, currentFrame(),
-                                                   dunder_str, exc_obj));
-    if (result.isError() || !runtime()->isInstanceOfStr(*result)) {
-      std::cerr << "<exception str() failed>\n";
-    } else {
-      Str result_str(&scope, *result);
-      std::cerr << unique_c_ptr<char[]>(result_str.toCStr()).get() << "\n";
-    }
-    return;
-  }
-
-  UNIMPLEMENTED("unknown exception state");
-}
-
 void Thread::clearPendingException() {
   setPendingExceptionType(NoneType::object());
   setPendingExceptionValue(NoneType::object());

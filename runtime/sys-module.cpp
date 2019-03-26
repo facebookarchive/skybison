@@ -4,6 +4,7 @@
 #include <cstdio>
 
 #include "builtins-module.h"
+#include "exception-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -69,6 +70,16 @@ RawObject SysModule::displayhook(Thread* thread, Frame* frame, word nargs) {
     return NoneType::object();
   }
   UNIMPLEMENTED("sys.displayhook()");
+}
+
+RawObject SysModule::excepthook(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  // type argument is ignored
+  Object value(&scope, args.get(1));
+  Object tb(&scope, args.get(2));
+  displayException(thread, value, tb);
+  return NoneType::object();
 }
 
 }  // namespace python

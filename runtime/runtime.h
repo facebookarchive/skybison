@@ -903,11 +903,6 @@ class Runtime {
   // parent and contains no outgoing edges.
   RawObject layoutCreateChild(Thread* thread, const Layout& parent);
 
-  // Transform the pendingExceptionValue into a reasonable exit code
-  //
-  // Handles SystemExit thrown both from native and from managed code.
-  word handleSysExit(Thread* thread);
-
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(const Type& type, SymbolId name);
 

@@ -1621,43 +1621,6 @@ void Runtime::processCallbacks() {
   }
 }
 
-word Runtime::handleSysExit(Thread* thread) {
-  HandleScope scope(thread);
-  Object arg(&scope, thread->pendingExceptionValue());
-  if (isInstanceOfSystemExit(*arg)) {
-    // The exception could be raised by either native or managed code. If
-    // native, there will be no SystemExit object. If managed, there will
-    // be one to unpack.
-    SystemExit exc(&scope, *arg);
-    arg = exc.code();
-  }
-  if (arg.isNoneType()) {
-    return EXIT_SUCCESS;
-  }
-  if (arg.isSmallInt()) {
-    return RawSmallInt::cast(*arg).value();
-  }
-  // The calls below can't have an exception pending
-  thread->clearPendingException();
-
-  Object result(&scope, thread->invokeMethod1(arg, SymbolId::kDunderRepr));
-  if (!isInstanceOfStr(*result)) {
-    // The calls below can't have an exception pending
-    thread->clearPendingException();
-    // No __repr__ method or __repr__ raised. Either way, we can't handle it.
-    result = Str::empty();
-  }
-
-  // TODO(T41323917): Write to sys.stderr.
-  Str result_str(&scope, *result);
-  Object stderr(&scope, newInt(STDERR_FILENO));
-  fileWriteObjectStr(thread, stderr, result_str);
-  thread->clearPendingException();
-  fileWriteString(thread, stderr, "\n");
-  thread->clearPendingException();
-  return EXIT_FAILURE;
-}
-
 RawObject Runtime::run(const char* buffer) {
   HandleScope scope;
 
@@ -1668,17 +1631,8 @@ RawObject Runtime::run(const char* buffer) {
   }
   Module main_module(&scope, *main);
   Object result(&scope, executeModule(buffer, main_module));
-  if (result.isError()) {
-    Thread* thread = Thread::current();
-    DCHECK(thread->hasPendingException(), "error/exception mismatch");
-    Type exc_type(&scope, thread->pendingExceptionType());
-    if (exc_type.builtinBase() == LayoutId::kSystemExit) {
-      // Exit the runtime.
-      word exit_code = handleSysExit(thread);
-      freeApiHandles();
-      std::exit(exit_code);
-    }
-  }
+  DCHECK(!result.isError() || Thread::current()->hasPendingException(),
+         "error/exception mismatch");
   return *result;
 }
 
@@ -2125,6 +2079,8 @@ void Runtime::createSysModule(Thread* thread) {
 
   display_hook_ = moduleAddBuiltinFunction(module, SymbolId::kDisplayhook,
                                            SysModule::displayhook);
+  moduleAddBuiltinFunction(module, SymbolId::kExcepthook,
+                           SysModule::excepthook);
 
   // Fill in sys...
   Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));

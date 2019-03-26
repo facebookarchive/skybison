@@ -13,6 +13,7 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "debugging.h"
+#include "exception-builtins.h"
 #include "frame.h"
 #include "handles.h"
 #include "os.h"
@@ -292,7 +293,17 @@ RawObject runBuiltin(NativeMethodType method) {
 }
 
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {
-  return runtime->run(Runtime::compileFromCStr(c_str).get());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object result(&scope, runtime->run(Runtime::compileFromCStr(c_str).get()));
+
+  // Barebones emulation of the top-level SystemExit handling, to allow for
+  // testing of handleSystemExit().
+  if (result.isError() && thread->hasPendingException()) {
+    Type type(&scope, thread->pendingExceptionType());
+    if (type.builtinBase() == LayoutId::kSystemExit) handleSystemExit(thread);
+  }
+  return *result;
 }
 
 // Equivalent to evaluating "list(range(start, stop))" in Python

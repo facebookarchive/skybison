@@ -1,8 +1,10 @@
 #include <cstdlib>
 #include <memory>
 
+#include "runtime/exception-builtins.h"
 #include "runtime/os.h"
 #include "runtime/runtime.h"
+#include "runtime/thread.h"
 #include "runtime/view.h"
 
 int main(int argc, const char** argv) {
@@ -32,12 +34,11 @@ int main(int argc, const char** argv) {
         python::Runtime::compile(python::View<char>(buffer.get(), file_len));
   }
 
-  // TODO(T39499894): Move this code into PyErr_PrintEx(), rewrite this whole
-  // function to use the C-API.
+  // TODO(T39499894): Rewrite this whole function to use the C-API.
   python::HandleScope scope;
   python::Object result(&scope, runtime.run(buffer.get()));
   if (result.isError()) {
-    python::Thread::current()->printPendingException();
+    python::printPendingException(python::Thread::current());
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

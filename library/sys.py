@@ -51,3 +51,8 @@ dont_write_bytecode = False
 @_patch
 def displayhook(value):
     pass
+
+
+@_patch
+def excepthook(exc, value, tb):
+    pass

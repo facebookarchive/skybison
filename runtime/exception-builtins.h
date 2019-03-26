@@ -25,11 +25,26 @@ RawObject createException(Thread* thread, const Type& type,
 void normalizeException(Thread* thread, Object* exc, Object* value,
                         Object* traceback);
 
+// Internal equivalents to PyErr_PrintEx(): Print information about the current
+// pending exception to sys.stderr, including any chained exceptions, and clear
+// the exception. For printPendingExceptionWithSysLastVars(), also set
+// sys.last{type,value,traceback} to the type, value, and traceback of the
+// exception, respectively.
+//
+// Any exceptions raised during the printing process are swallowed.
+void printPendingException(Thread* thread);
+void printPendingExceptionWithSysLastVars(Thread* thread);
+
 // Internal equivalent to PyErr_Display(): Print information about the given
 // exception and traceback to sys.stderr, including any chained exceptions.
 // Returns None on success or Error on failure.
 RawObject displayException(Thread* thread, const Object& value,
                            const Object& traceback);
+
+// Handle an uncaught SystemExit exception. Print information about the
+// exception and call std::exit() with a status code extracted from the
+// exception.
+void handleSystemExit(Thread* thread);
 
 class BaseExceptionBuiltins
     : public Builtins<BaseExceptionBuiltins, SymbolId::kBaseException,

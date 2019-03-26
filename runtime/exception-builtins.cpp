@@ -116,6 +116,74 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
   }
 }
 
+static void printPendingExceptionImpl(Thread* thread, bool set_sys_last_vars) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object type(&scope, thread->pendingExceptionType());
+  Object system_exit(&scope, runtime->typeAt(LayoutId::kSystemExit));
+  if (givenExceptionMatches(thread, type, system_exit)) {
+    handleSystemExit(thread);
+  }
+
+  Object value(&scope, thread->pendingExceptionValue());
+  Object tb(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+  if (type.isNoneType()) return;
+
+  normalizeException(thread, &type, &value, &tb);
+  BaseException exc(&scope, *value);
+  exc.setTraceback(*tb);
+
+  if (set_sys_last_vars) {
+    Module sys(&scope, runtime->findModuleById(SymbolId::kSys));
+    Str key(&scope, runtime->symbols()->LastType());
+    runtime->moduleAtPut(sys, key, type);
+    key = runtime->symbols()->LastValue();
+    runtime->moduleAtPut(sys, key, value);
+    key = runtime->symbols()->LastTraceback();
+    runtime->moduleAtPut(sys, key, tb);
+  }
+
+  Object hook(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,
+                                                  SymbolId::kExcepthook));
+  if (hook.isError()) {
+    writeStderr(thread, "sys.excepthook is missing\n");
+    if (displayException(thread, value, tb).isError()) {
+      thread->clearPendingException();
+    }
+    return;
+  }
+
+  Object result(&scope,
+                Interpreter::callFunction3(thread, thread->currentFrame(), hook,
+                                           type, value, tb));
+  if (!result.isError()) return;
+  Object type2(&scope, thread->pendingExceptionType());
+  if (givenExceptionMatches(thread, type2, system_exit)) {
+    handleSystemExit(thread);
+  }
+  Object value2(&scope, thread->pendingExceptionValue());
+  Object tb2(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+  normalizeException(thread, &type2, &value2, &tb2);
+  writeStderr(thread, "Error in sys.excepthook:\n");
+  if (displayException(thread, value2, tb2).isError()) {
+    thread->clearPendingException();
+  }
+  writeStderr(thread, "\nOriginal exception was:\n");
+  if (displayException(thread, value, tb).isError()) {
+    thread->clearPendingException();
+  }
+}
+
+void printPendingException(Thread* thread) {
+  printPendingExceptionImpl(thread, false);
+}
+
+void printPendingExceptionWithSysLastVars(Thread* thread) {
+  printPendingExceptionImpl(thread, true);
+}
+
 // If value has all the attributes of a well-formed SyntaxError, return true and
 // populate all of the given parameters. In that case, filename will be a str
 // and text will be None or a str. Otherwise, return false and the contents of
@@ -362,6 +430,46 @@ RawObject displayException(Thread* thread, const Object& value,
   Object stderr(&scope, runtime->newInt(STDERR_FILENO));
   Set seen(&scope, runtime->newSet());
   return printExceptionChain(thread, stderr, value, seen);
+}
+
+void handleSystemExit(Thread* thread) {
+  auto do_exit = [thread](int exit_code) {
+    thread->runtime()->freeApiHandles();
+    std::exit(exit_code);
+  };
+
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object arg(&scope, thread->pendingExceptionValue());
+  if (runtime->isInstanceOfSystemExit(*arg)) {
+    // The exception could be raised by either native or managed code. If
+    // native, there will be no SystemExit object. If managed, there will
+    // be one to unpack.
+    SystemExit exc(&scope, *arg);
+    arg = exc.code();
+  }
+  if (arg.isNoneType()) do_exit(EXIT_SUCCESS);
+  if (arg.isSmallInt()) do_exit(RawSmallInt::cast(*arg).value());
+
+  // The calls below can't have an exception pending
+  thread->clearPendingException();
+
+  Object result(&scope, thread->invokeMethod1(arg, SymbolId::kDunderRepr));
+  if (!runtime->isInstanceOfStr(*result)) {
+    // The calls below can't have an exception pending
+    thread->clearPendingException();
+    // No __repr__ method or __repr__ raised. Either way, we can't handle it.
+    result = runtime->newStrFromCStr("");
+  }
+
+  // TODO(T41323917): Write to sys.stderr.
+  Str result_str(&scope, *result);
+  Object stderr(&scope, runtime->newInt(STDERR_FILENO));
+  fileWriteObjectStr(thread, stderr, result_str);
+  thread->clearPendingException();
+  fileWriteString(thread, stderr, "\n");
+  thread->clearPendingException();
+  do_exit(EXIT_FAILURE);
 }
 
 const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {

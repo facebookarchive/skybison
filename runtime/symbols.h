@@ -185,6 +185,7 @@ class Runtime;
   V(Encoding, "encoding")                                                      \
   V(End, "end")                                                                \
   V(Eq, "eq")                                                                  \
+  V(Excepthook, "excepthook")                                                  \
   V(Exception, "Exception")                                                    \
   V(ExceptionState, "ExceptionState")                                          \
   V(Exec, "exec")                                                              \
@@ -261,6 +262,9 @@ class Runtime;
   V(LStrip, "lstrip")                                                          \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
+  V(LastType, "last_type")                                                     \
+  V(LastValue, "last_value")                                                   \
+  V(LastTraceback, "last_traceback")                                           \
   V(Layout, "layout")                                                          \
   V(Lineno, "lineno")                                                          \
   V(List, "list")                                                              \

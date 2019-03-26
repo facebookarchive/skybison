@@ -28,6 +28,8 @@ RawObject initialSysPath(Thread* thread);
 class SysModule {
  public:
   static RawObject displayhook(Thread* thread, Frame* frame, word nargs);
+  static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
+
   static const char* const kFrozenData;
 };
 

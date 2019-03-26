@@ -290,10 +290,6 @@ class Thread {
   // If there's a pending exception, prints it and ignores it.
   void ignorePendingException();
 
-  // Assuming there is a pending exception, print its type and __str__() to
-  // stderr.
-  void printPendingException();
-
   // Gets the type, value, or traceback of the pending exception. No pending
   // exception is indicated with a type of None.
   RawObject pendingExceptionType() { return pending_exc_type_; }
