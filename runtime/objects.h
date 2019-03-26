@@ -163,11 +163,11 @@ enum class LayoutId : word {
   // implies that all other immediate class ids must be odd.
   kSmallInt = 0,
   kBool = 7,
-  kNoneType = 15,
+  kSmallStr = 13,
   // There is no RawType associated with the RawError object type, this is here
   // as a placeholder.
-  kError = 23,
-  kSmallStr = 31,
+  kError = 21,
+  kNoneType = 31,
 
 // clang-format off
   // Heap objects
@@ -547,56 +547,6 @@ class RawHeader : public RawObject {
   RAW_OBJECT_COMMON(Header);
 };
 
-class RawBool : public RawObject {
- public:
-  // Getters and setters.
-  bool value() const;
-
-  // Singletons
-  static RawBool trueObj();
-  static RawBool falseObj();
-
-  // Conversion.
-  static RawBool fromBool(bool value);
-  static RawBool negate(RawObject value);
-
-  // Tags.
-  static const int kTag = 7;  // 0b00111
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
-  RAW_OBJECT_COMMON(Bool);
-};
-
-class RawNoneType : public RawObject {
- public:
-  // Singletons.
-  static RawNoneType object();
-
-  // Tags.
-  static const int kTag = 15;  // 0b01111
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
-  RAW_OBJECT_COMMON(NoneType);
-};
-
-// RawError is a special object type, internal to the runtime. It is used to
-// signal that an error has occurred inside the runtime or native code, e.g. an
-// exception has been thrown.
-class RawError : public RawObject {
- public:
-  // Singletons.
-  static RawError object();
-
-  // Tagging.
-  static const int kTag = 23;  // 0b10111
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
-  RAW_OBJECT_COMMON(Error);
-};
-
 class RawSmallStr : public RawObject {
  public:
   // Conversion.
@@ -605,7 +555,7 @@ class RawSmallStr : public RawObject {
   static RawObject fromBytes(View<byte> data);
 
   // Tagging.
-  static const int kTag = 31;  // 0b11111
+  static const int kTag = 13;  // 0b01101
   static const int kTagSize = 5;
   static const uword kTagMask = (1 << kTagSize) - 1;
 
@@ -633,6 +583,56 @@ class RawSmallStr : public RawObject {
   friend class RawObject;
   friend class RawStr;
   friend class Runtime;
+};
+
+// RawError is a special object type, internal to the runtime. It is used to
+// signal that an error has occurred inside the runtime or native code, e.g. an
+// exception has been thrown.
+class RawError : public RawObject {
+ public:
+  // Singletons.
+  static RawError object();
+
+  // Tagging.
+  static const int kTag = 21;  // 0b10101
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(Error);
+};
+
+class RawBool : public RawObject {
+ public:
+  // Getters and setters.
+  bool value() const;
+
+  // Singletons
+  static RawBool trueObj();
+  static RawBool falseObj();
+
+  // Conversion.
+  static RawBool fromBool(bool value);
+  static RawBool negate(RawObject value);
+
+  // Tags.
+  static const int kTag = 7;  // 0b00111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(Bool);
+};
+
+class RawNoneType : public RawObject {
+ public:
+  // Singletons.
+  static RawNoneType object();
+
+  // Tags.
+  static const int kTag = 31;  // 0b11111
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  RAW_OBJECT_COMMON(NoneType);
 };
 
 // Heap objects
@@ -664,7 +664,7 @@ class RawHeapObject : public RawObject {
 
   // Tags.
   static const int kTag = 1;
-  static const int kTagSize = 2;
+  static const int kTagSize = 3;
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   static const uword kIsForwarded = static_cast<uword>(-3);
@@ -2869,24 +2869,6 @@ inline RawSmallInt RawSmallInt::fromFunctionPointer(T pointer) {
   return cast(RawObject{reinterpret_cast<uword>(pointer)});
 }
 
-// RawSmallStr
-
-inline word RawSmallStr::length() const {
-  return (raw() >> kTagSize) & kMaxLength;
-}
-
-inline byte RawSmallStr::charAt(word index) const {
-  DCHECK_INDEX(index, length());
-  return raw() >> (kBitsPerByte * (index + 1));
-}
-
-inline void RawSmallStr::copyTo(byte* dst, word length) const {
-  DCHECK_BOUND(length, this->length());
-  for (word i = 0; i < length; ++i) {
-    *dst++ = charAt(i);
-  }
-}
-
 // RawHeader
 
 inline word RawHeader::count() const {
@@ -2929,7 +2911,7 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
   DCHECK(
       (count >= 0) && ((count <= kCountMax) || (count == kCountOverflowFlag)),
       "bounds violation, %ld not in 0..%d", count, kCountMax);
-  uword result = RawHeader::kTag;
+  uword result = kTag;
   result |= ((count > kCountMax) ? kCountOverflowFlag : count) << kCountOffset;
   result |= hash << kHashCodeOffset;
   result |= static_cast<uword>(id) << kLayoutIdOffset;
@@ -2937,10 +2919,22 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
   return cast(RawObject{result});
 }
 
-// None
+// RawSmallStr
 
-inline RawNoneType RawNoneType::object() {
-  return RawObject{kTag}.rawCast<RawNoneType>();
+inline word RawSmallStr::length() const {
+  return (raw() >> kTagSize) & kMaxLength;
+}
+
+inline byte RawSmallStr::charAt(word index) const {
+  DCHECK_INDEX(index, length());
+  return raw() >> (kBitsPerByte * (index + 1));
+}
+
+inline void RawSmallStr::copyTo(byte* dst, word length) const {
+  DCHECK_BOUND(length, this->length());
+  for (word i = 0; i < length; ++i) {
+    *dst++ = charAt(i);
+  }
 }
 
 // RawError
@@ -2968,11 +2962,15 @@ inline bool RawBool::value() const {
   return (raw() >> kTagSize) ? true : false;
 }
 
+// RawNoneType
+
+inline RawNoneType RawNoneType::object() {
+  return RawObject{kMaxUword}.rawCast<RawNoneType>();
+}
+
 // RawHeapObject
 
-inline uword RawHeapObject::address() const {
-  return raw() - RawHeapObject::kTag;
-}
+inline uword RawHeapObject::address() const { return raw() - kTag; }
 
 inline uword RawHeapObject::baseAddress() const {
   uword result = address() - RawHeader::kSize;
