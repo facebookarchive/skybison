@@ -75,6 +75,87 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8StringReturnsBytes) {
   EXPECT_STREQ(PyBytes_AsString(bytes), "foo");
 }
 
+TEST_F(UnicodeExtensionApiTest, AsUCS4WithNonStringReturnsNull) {
+  // Pass a non string object.
+  Py_UCS4* ucs4_string = PyUnicode_AsUCS4(Py_None, nullptr, 0, 0);
+  EXPECT_EQ(nullptr, ucs4_string);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUCS4WithNullBufferReturnsNull) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  Py_UCS4* ucs4_string = PyUnicode_AsUCS4(unicode, nullptr, 0, 0);
+  EXPECT_EQ(nullptr, ucs4_string);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsUCS4WithShortBufferWithoutCopyNullReturnsNotNullTerminated) {
+  PyObjectPtr unicode(PyUnicode_FromString("abc"));
+  Py_UCS4 target[4];
+  target[0] = 1;
+  Py_UCS4* ucs4_string =
+      PyUnicode_AsUCS4(unicode, target, 2, 0 /* copy_null */);
+  EXPECT_EQ(nullptr, ucs4_string);
+  EXPECT_EQ(1, target[0]);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsUCS4WithShortBufferWithCopyNullReturnsNullTerminated) {
+  PyObjectPtr unicode(PyUnicode_FromString("abc"));
+  Py_UCS4 target[4];
+  target[0] = 1;
+  Py_UCS4* ucs4_string =
+      PyUnicode_AsUCS4(unicode, target, 2, 1 /* copy_null */);
+  EXPECT_EQ(nullptr, ucs4_string);
+  EXPECT_EQ(0, target[0]);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUCS4WithoutCopyNullReturnsNotNullTerminated) {
+  Py_UCS4 buffer[] = {0x1f192, 'h', 0xe4, 'l', 0x2cc0};
+  PyObject* unicode(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
+                                              Py_ARRAY_LENGTH(buffer)));
+  Py_UCS4 target[6];
+  target[5] = 1;
+  Py_UCS4* ucs4_string =
+      PyUnicode_AsUCS4(unicode, target, 5, 0 /* copy_null */);
+  EXPECT_EQ(target, ucs4_string);
+  EXPECT_EQ(0x1f192, ucs4_string[0]);
+  EXPECT_EQ('h', ucs4_string[1]);
+  EXPECT_EQ(0xe4, ucs4_string[2]);
+  EXPECT_EQ('l', ucs4_string[3]);
+  EXPECT_EQ(0x2cc0, ucs4_string[4]);
+  EXPECT_EQ(1, ucs4_string[5]);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUCS4WithCopyNullReturnsNullTerminated) {
+  Py_UCS4 buffer[] = {0x1f192, 'h', 0xe4, 'l', 0x2cc0};
+  PyObject* unicode(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer,
+                                              Py_ARRAY_LENGTH(buffer)));
+  Py_UCS4 target[6];
+  target[5] = 1;
+  Py_UCS4* ucs4_string =
+      PyUnicode_AsUCS4(unicode, target, 6, 1 /* copy_null */);
+  EXPECT_EQ(target, ucs4_string);
+  EXPECT_EQ(0x1f192, ucs4_string[0]);
+  EXPECT_EQ('h', ucs4_string[1]);
+  EXPECT_EQ(0xe4, ucs4_string[2]);
+  EXPECT_EQ('l', ucs4_string[3]);
+  EXPECT_EQ(0x2cc0, ucs4_string[4]);
+  EXPECT_EQ(0, ucs4_string[5]);
+}
+
+// Delegating testing to AsUCS4.
+TEST_F(UnicodeExtensionApiTest,
+       AsUCS4WithNonAsciiReturnsCodePointsNullTerminated) {
+  PyObjectPtr unicode(PyUnicode_FromString("ab\u00e4p"));
+  Py_UCS4* ucs4_string = PyUnicode_AsUCS4Copy(unicode);
+  EXPECT_EQ('a', ucs4_string[0]);
+  EXPECT_EQ('b', ucs4_string[1]);
+  EXPECT_EQ(0xe4, ucs4_string[2]);
+  EXPECT_EQ('p', ucs4_string[3]);
+  EXPECT_EQ(0, ucs4_string[4]);
+  PyMem_Free(ucs4_string);
+}
+
 TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
 }

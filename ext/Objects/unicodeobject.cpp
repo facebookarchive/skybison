@@ -701,13 +701,52 @@ PY_EXPORT PyObject* PyUnicode_AsRawUnicodeEscapeString(PyObject* /* e */) {
   UNIMPLEMENTED("PyUnicode_AsRawUnicodeEscapeString");
 }
 
-PY_EXPORT Py_UCS4* PyUnicode_AsUCS4(PyObject* /* g */, Py_UCS4* /* t */,
-                                    Py_ssize_t /* e */, int /* l */) {
-  UNIMPLEMENTED("PyUnicode_AsUCS4");
+PY_EXPORT Py_UCS4* PyUnicode_AsUCS4(PyObject* u, Py_UCS4* buffer,
+                                    Py_ssize_t buflen, int copy_null) {
+  if (buffer == nullptr || buflen < 0) {
+    PyErr_BadInternalCall();
+    return nullptr;
+  }
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(u)->asObject());
+  if (!thread->runtime()->isInstanceOfStr(*obj)) {
+    thread->raiseBadArgument();
+  }
+  if (!obj.isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Str str(&scope, *obj);
+
+  word num_codepoints = str.codePointLength();
+  word target_buflen = copy_null ? num_codepoints + 1 : num_codepoints;
+  if (buflen < target_buflen) {
+    PyErr_Format(PyExc_SystemError, "string is longer than the buffer");
+    if (copy_null != 0 && 0 < buflen) {
+      buffer[0] = 0;
+    }
+    return nullptr;
+  }
+
+  for (word i = 0, offset = 0; i < num_codepoints; i++) {
+    word num_bytes;
+    buffer[i] = str.codePointAt(offset, &num_bytes);
+    offset += num_bytes;
+  }
+  if (copy_null != 0) buffer[num_codepoints] = 0;
+
+  return buffer;
 }
 
-PY_EXPORT Py_UCS4* PyUnicode_AsUCS4Copy(PyObject* /* g */) {
-  UNIMPLEMENTED("PyUnicode_AsUCS4Copy");
+PY_EXPORT Py_UCS4* PyUnicode_AsUCS4Copy(PyObject* str) {
+  Py_ssize_t len = PyUnicode_GET_LENGTH(str) + 1;
+  Py_UCS4* result = static_cast<Py_UCS4*>(PyMem_Malloc(len * sizeof(Py_UCS4)));
+  if (result == nullptr) {
+    PyErr_NoMemory();
+    return nullptr;
+  }
+  return PyUnicode_AsUCS4(str, result, len, 1);
 }
 
 PY_EXPORT PyObject* PyUnicode_AsUTF16String(PyObject* /* e */) {
