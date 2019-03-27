@@ -322,6 +322,52 @@ TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
   Py_DECREF(pyunicode);
 }
 
+TEST_F(UnicodeExtensionApiTest, ReplaceWithStrOfNonStringTypeReturnsNull) {
+  PyObjectPtr non_str(PyBool_FromLong(1));
+  PyObjectPtr substr(PyUnicode_FromString("some string"));
+  PyObjectPtr replstr(PyUnicode_FromString("some string"));
+  EXPECT_EQ(PyUnicode_Replace(non_str, substr, replstr, -1), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, ReplaceWithSubstrOfNonStringTypeReturnsNull) {
+  PyObjectPtr non_str(PyBool_FromLong(1));
+  PyObjectPtr str(PyUnicode_FromString("some string"));
+  PyObjectPtr replstr(PyUnicode_FromString("some string"));
+  EXPECT_EQ(PyUnicode_Replace(str, non_str, replstr, -1), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, ReplaceWithReplstrOfNonStringTypeReturnsNull) {
+  PyObjectPtr non_str(PyBool_FromLong(1));
+  PyObjectPtr str(PyUnicode_FromString("some string"));
+  PyObjectPtr substr(PyUnicode_FromString("some string"));
+  EXPECT_EQ(PyUnicode_Replace(str, substr, non_str, -1), nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       ReplaceWithNegativeMaxcountReturnsResultReplacingAllSubstr) {
+  PyObjectPtr str(PyUnicode_FromString("22122122122122122"));
+  PyObjectPtr substr(PyUnicode_FromString("22"));
+  PyObjectPtr replstr(PyUnicode_FromString("*"));
+  PyObjectPtr expected(PyUnicode_FromString("*1*1*1*1*1*"));
+  PyObjectPtr actual(PyUnicode_Replace(str, substr, replstr, -1));
+  EXPECT_EQ(_PyUnicode_EQ(actual, expected), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       ReplaceWithLimitedMaxcountReturnsResultReplacingUpToMaxcount) {
+  PyObjectPtr str(PyUnicode_FromString("22122122122122122"));
+  PyObjectPtr substr(PyUnicode_FromString("22"));
+  PyObjectPtr replstr(PyUnicode_FromString("*"));
+  PyObjectPtr expected(PyUnicode_FromString("*1*1*122122122"));
+  PyObjectPtr actual(PyUnicode_Replace(str, substr, replstr, 3));
+  EXPECT_EQ(_PyUnicode_EQ(actual, expected), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(UnicodeExtensionApiTest, Compare) {
   PyObject* s1 = PyUnicode_FromString("some string");
   PyObject* s2 = PyUnicode_FromString("some longer string");

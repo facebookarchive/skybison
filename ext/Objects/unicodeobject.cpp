@@ -1362,9 +1362,43 @@ PY_EXPORT Py_UCS4 PyUnicode_ReadChar(PyObject* /* e */, Py_ssize_t /* x */) {
   UNIMPLEMENTED("PyUnicode_ReadChar");
 }
 
-PY_EXPORT PyObject* PyUnicode_Replace(PyObject* /* r */, PyObject* /* r */,
-                                      PyObject* /* r */, Py_ssize_t /* t */) {
-  UNIMPLEMENTED("PyUnicode_Replace");
+PY_EXPORT PyObject* PyUnicode_Replace(PyObject* str, PyObject* substr,
+                                      PyObject* replstr, Py_ssize_t maxcount) {
+  DCHECK(str != nullptr, "str must not be null");
+  DCHECK(substr != nullptr, "substr must not be null");
+  DCHECK(replstr != nullptr, "replstr must not be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  if (!runtime->isInstanceOfStr(*str_obj)) {
+    thread->raiseTypeErrorWithCStr("str must be str");
+    return nullptr;
+  }
+  if (!str_obj.isStr()) UNIMPLEMENTED("str subclass");
+
+  Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
+  if (!runtime->isInstanceOfStr(*substr_obj)) {
+    thread->raiseTypeErrorWithCStr("substr must be str");
+    return nullptr;
+  }
+  if (!substr_obj.isStr()) UNIMPLEMENTED("str subclass");
+
+  Object replstr_obj(&scope, ApiHandle::fromPyObject(replstr)->asObject());
+  if (!runtime->isInstanceOfStr(*replstr_obj)) {
+    thread->raiseTypeErrorWithCStr("replstr must be str");
+    return nullptr;
+  }
+  if (!replstr_obj.isStr()) UNIMPLEMENTED("str subclass");
+
+  Str str_str(&scope, *str_obj);
+  Str substr_str(&scope, *substr_obj);
+  Str replstr_str(&scope, *replstr_obj);
+  // TODO(T42259916): Make sure the return value is of 'str' type once str
+  // subclass is supported.
+  Object result(&scope, runtime->strReplace(thread, str_str, substr_str,
+                                            replstr_str, maxcount));
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyUnicode_Resize(PyObject** /* p_unicode */, Py_ssize_t /* h */) {
