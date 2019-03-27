@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include "gmock/gmock-matchers.h"
+
 #include <iostream>
 
 #include "debugging.h"
@@ -315,16 +317,16 @@ def func(arg0, arg1):
 
   std::stringstream ss;
   ss << thread->currentFrame();
-  EXPECT_EQ(ss.str(), R"(- pc: 8
+  EXPECT_THAT(ss.str(), ::testing::MatchesRegex(R"(- pc: 8
 - pc: 42
   function: None
   0: "foo bar"
-- pc: 4
+- pc: 4 (.+)
   function: <function "func">
   0 "arg0": -9
   1 "arg1": 17
   2 "hello": "world"
-)");
+)"));
 }
 
 TEST(DebuggingTests, FormatFrameNullptr) {

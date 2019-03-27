@@ -425,6 +425,7 @@ target_link_libraries(
   runtime-tests
   PRIVATE
   benchmark
+  gmock
   gtest
   runtime
   modules)

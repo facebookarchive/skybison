@@ -286,15 +286,29 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   HandleScope scope(thread);
 
   Tuple var_names(&scope, thread->runtime()->newTuple(0));
-  Object code(&scope, frame->code());
-  if (code.isCode()) {
-    Object names_raw(&scope, RawCode::cast(*code).varnames());
+  Object code_obj(&scope, frame->code());
+  if (code_obj.isCode()) {
+    Object names_raw(&scope, RawCode::cast(*code_obj).varnames());
     if (names_raw.isTuple()) {
       var_names = *names_raw;
     }
   }
 
-  os << "- pc: " << frame->virtualPC() << '\n';
+  os << "- pc: " << frame->virtualPC();
+
+  // Print filename and line number, if possible.
+  if (code_obj.isCode()) {
+    Code code(&scope, *code_obj);
+    os << " (" << code.filename();
+    if (code.lnotab().isBytes()) {
+      os << ":"
+         << thread->runtime()->codeOffsetToLineNum(thread, code,
+                                                   frame->virtualPC());
+    }
+    os << ")";
+  }
+  os << '\n';
+
   if (frame->previousFrame() != nullptr) {
     os << "  function: " << frame->function() << '\n';
   }
