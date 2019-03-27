@@ -342,8 +342,8 @@ static RawObject printSingleException(Thread* thread, const Object& file,
       value = *message;
       Str filename_str(&scope, *filename);
       unique_c_ptr<char[]> filename_c_str(filename_str.toCStr());
-      Str line(&scope, runtime->newStrFromFormat("  File \"%s\", line %w\n",
-                                                 filename_c_str.get(), lineno));
+      Str line(&scope, runtime->newStrFromFmt("  File \"%s\", line %w\n",
+                                              filename_c_str.get(), lineno));
       MAY_RAISE(fileWriteObjectStr(thread, file, line));
       if (!text.isNoneType()) {
         MAY_RAISE(printErrorText(thread, file, offset, text));

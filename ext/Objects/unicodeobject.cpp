@@ -797,8 +797,8 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
     Str left_str(&scope, *left_obj);
     return left_str.compare(*right_obj);
   }
-  thread->raiseTypeError(runtime->newStrFromFormat("Can't compare %T and %T",
-                                                   &left_obj, &right_obj));
+  thread->raiseTypeError(
+      runtime->newStrFromFmt("Can't compare %T and %T", &left_obj, &right_obj));
   return -1;
 }
 

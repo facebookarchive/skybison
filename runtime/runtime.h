@@ -178,7 +178,9 @@ class Runtime {
   // %w formats a word
   // %S formats a Str object
   // %T gets the type name of an object and formats that
-  RawObject newStrFromFormat(const char* fmt, ...);
+  // %Y formats a SymbolId
+  RawObject newStrFromFmt(const char* fmt, ...);
+  RawObject newStrFromFmtV(Thread* thread, const char* fmt, va_list args);
   RawObject newStrFromUTF32(View<int32> code_units);
   RawObject newStrWithAll(View<byte> code_units);
 

@@ -42,14 +42,14 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
                             : runtime->symbols()->Coroutine());
   Object self(&scope, args.get(0));
   if (self.layoutId() != target) {
-    return thread->raiseAttributeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
         "send() must be called with a %S instance as the first argument",
         &type_name));
   }
   GeneratorBase gen(&scope, *self);
   if (RawHeapFrame::cast(gen.heapFrame()).frame()->virtualPC() == 0 &&
       !args.get(1).isNoneType()) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFmt(
         "can't send non-None value to a just-started %S", &type_name));
   }
   Object value(&scope, args.get(1));

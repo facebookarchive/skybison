@@ -3076,4 +3076,12 @@ result0 = a()()
   EXPECT_EQ(result0, object);
 }
 
+TEST(ThreadTest, RaiseWithFmtFormatsString) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  EXPECT_TRUE(raisedWithStr(
+      thread->raiseWithFmt(LayoutId::kTypeError, "hello %Y", SymbolId::kDict),
+      LayoutId::kTypeError, "hello dict"));
+}
+
 }  // namespace python

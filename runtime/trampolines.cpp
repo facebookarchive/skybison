@@ -74,9 +74,8 @@ static RawObject processDefaultArguments(Thread* thread,
     // Add default positional args
     Tuple default_args(&scope, function.defaults());
     if (default_args.length() < (code.argcount() - new_argc)) {
-      // TODO(T39316354): Fix this up to remove the toCStr grossness.
       Str fn_name_str(&scope, function.qualname());
-      return thread->raiseTypeError(runtime->newStrFromFormat(
+      return thread->raiseTypeError(runtime->newStrFromFmt(
           "TypeError: '%S' takes min %w positional arguments but %w given",
           &fn_name_str, code.argcount() - default_args.length(), argc));
     }
@@ -98,9 +97,8 @@ static RawObject processDefaultArguments(Thread* thread,
       }
       tmp_varargs = *varargs;
     } else {
-      // TODO(T39316354): Fix this up to remove the toCStr grossness.
       Str fn_name_str(&scope, function.qualname());
-      return thread->raiseTypeError(runtime->newStrFromFormat(
+      return thread->raiseTypeError(runtime->newStrFromFmt(
           "TypeError: '%S' takes max %w positional arguments but %w given",
           &fn_name_str, code.argcount(), argc));
     }
@@ -147,9 +145,8 @@ static RawObject processDefaultArguments(Thread* thread,
   // At this point, we should have the correct number of arguments.  Throw if
   // not.
   if (new_argc != code.totalArgs()) {
-    // TODO(T39316354): Fix this up to remove the toCStr grossness.
     Str fn_name_str(&scope, function.qualname());
-    return thread->raiseTypeError(runtime->newStrFromFormat(
+    return thread->raiseTypeError(runtime->newStrFromFmt(
         "TypeError: '%S' takes %w positional arguments but %w given",
         &fn_name_str, code.argcount(),
         new_argc - code.hasVarargs() - code.hasVarkeyargs()));

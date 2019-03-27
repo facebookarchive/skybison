@@ -550,7 +550,7 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
         "__init__() of 'set' object needs an argument");
   }
   if (nargs > 2) {
-    return thread->raiseTypeError(runtime->newStrFromFormat(
+    return thread->raiseTypeError(runtime->newStrFromFmt(
         "set expected at most 1 argument, got %w", nargs - 1));
   }
   HandleScope scope(thread);

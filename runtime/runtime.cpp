@@ -1154,6 +1154,18 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
           dst_idx += value.length();
         }
       } break;
+      case 'Y': {
+        SymbolId value = va_arg(args, SymbolId);
+        Str value_str(&scope, symbols()->at(value));
+        if (dst == nullptr) {
+          len--;
+          len += value_str.length();
+        } else {
+          value_str.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]),
+                           value_str.length());
+          dst_idx += value_str.length();
+        }
+      } break;
       case '%':
         break;
       default:
@@ -1170,22 +1182,29 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
   return SmallInt::fromWord(len);
 }
 
-RawObject Runtime::newStrFromFormat(const char* fmt, ...) {
-  Thread* thread = Thread::current();
+RawObject Runtime::newStrFromFmtV(Thread* thread, const char* fmt,
+                                  va_list args) {
+  va_list args_copy;
+  va_copy(args_copy, args);
   HandleScope scope(thread);
   Str fmt_str(&scope, newStrFromCStr(fmt));
-  va_list args;
-  va_start(args, fmt);
   RawObject out_len = strFormat(thread, nullptr, 0, fmt_str, args);
-  va_end(args);
   if (out_len.isError()) return out_len;
   word len = RawSmallInt::cast(out_len).value();
   unique_c_ptr<char> dst(static_cast<char*>(std::malloc(len + 1)));
   CHECK(dst != nullptr, "Buffer allocation failure");
+  strFormat(thread, dst.get(), len, fmt_str, args_copy);
+  va_end(args_copy);
+  return newStrFromCStr(dst.get());
+}
+
+RawObject Runtime::newStrFromFmt(const char* fmt, ...) {
+  va_list args;
   va_start(args, fmt);
-  strFormat(thread, dst.get(), len, fmt_str, args);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object result(&scope, newStrFromFmtV(Thread::current(), fmt, args));
   va_end(args);
-  Object result(&scope, newStrFromCStr(dst.get()));
   return *result;
 }
 
@@ -2247,7 +2266,7 @@ RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
     } else if (runtime->isInstanceOfByteArray(*obj)) {
       result_length += ByteArray::cast(*obj).numItems();
     } else {
-      return thread->raiseTypeError(runtime->newStrFromFormat(
+      return thread->raiseTypeError(runtime->newStrFromFmt(
           "sequence item %w: expected a bytes-like object, %T found", index,
           &obj));
     }
@@ -3256,7 +3275,7 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
     Object elt(&scope, items.at(i));
     if (!elt.isStr() && !isInstanceOfStr(*elt)) {
       return thread->raiseTypeError(
-          newStrFromFormat("sequence item %w: expected str instance", i));
+          newStrFromFmt("sequence item %w: expected str instance", i));
     }
     Str str(&scope, items.at(i));
     result_len += str.length();

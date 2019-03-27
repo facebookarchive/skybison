@@ -106,10 +106,11 @@ static RawObject unpackObject(Thread* thread, const Bytes& bytes, char format,
 
 static RawObject raiseRequiresMemoryView(Thread* thread) {
   HandleScope scope(thread);
-  unique_c_ptr<char> function_name_cstr(thread->functionName().toCStr());
-  Object message(&scope, thread->runtime()->newStrFromFormat(
-                             "'%s' requires a 'memoryview' object",
-                             function_name_cstr.get()));
+  Function function(&scope, thread->currentFrame()->function());
+  Str function_name(&scope, function.name());
+  Str message(&scope,
+              thread->runtime()->newStrFromFmt(
+                  "'%S' requires a 'memoryview' object", &function_name));
   return thread->raiseTypeError(*message);
 }
 

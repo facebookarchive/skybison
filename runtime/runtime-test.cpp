@@ -568,28 +568,35 @@ TEST(RuntimeTest, NewStrFromByteArrayCopiesByteArray) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
 }
 
-TEST(RuntimeTest, NewStrFromFormatFormatsWord) {
+TEST(RuntimeTest, NewStrFromFmtFormatsWord) {
   Runtime runtime;
   word x = 5;
   HandleScope scope;
-  Object result(&scope, runtime.newStrFromFormat("hello %w world", x));
+  Object result(&scope, runtime.newStrFromFmt("hello %w world", x));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello 5 world"));
 }
 
-TEST(RuntimeTest, NewStrFromFormatWithStrArg) {
+TEST(RuntimeTest, NewStrFromFmtWithStrArg) {
   Runtime runtime;
   HandleScope scope;
 
   Object str(&scope, runtime.newStrFromCStr("hello"));
-  Object result(&scope, runtime.newStrFromFormat("%S", &str));
+  Object result(&scope, runtime.newStrFromFmt("%S", &str));
   EXPECT_EQ(*result, str);
 }
 
-TEST(StrBuiltinsTest, NewStrFromFormatFormatsTypeName) {
+TEST(StrBuiltinsTest, NewStrFromFmtFormatsTypeName) {
   Runtime runtime;
   HandleScope scope;
   Object obj(&scope, runtime.newDict());
-  Object str(&scope, runtime.newStrFromFormat("hello %T", &obj));
+  Object str(&scope, runtime.newStrFromFmt("hello %T", &obj));
+  EXPECT_TRUE(isStrEqualsCStr(*str, "hello dict"));
+}
+
+TEST(StrBuiltinsTest, NewStrFromFmtFormatsSymbolid) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromFmt("hello %Y", SymbolId::kDict));
   EXPECT_TRUE(isStrEqualsCStr(*str, "hello dict"));
 }
 

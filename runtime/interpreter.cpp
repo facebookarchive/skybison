@@ -379,7 +379,7 @@ static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
   Runtime* runtime = thread->runtime();
   Str type_name(&scope, Type::cast(runtime->typeOf(*object)).name());
   Str op_name(&scope, runtime->symbols()->at(selector));
-  return thread->raiseTypeError(runtime->newStrFromFormat(
+  return thread->raiseTypeError(runtime->newStrFromFmt(
       "bad operand type for unary '%S': '%S'", &op_name, &type_name));
 }
 
@@ -1781,7 +1781,7 @@ void Interpreter::doLoadConst(Context* ctx, word arg) {
 static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
   return thread->raise(
       LayoutId::kNameError,
-      thread->runtime()->newStrFromFormat("name '%S' is not defined", &name));
+      thread->runtime()->newStrFromFmt("name '%S' is not defined", &name));
 }
 
 // opcode 101
@@ -2126,7 +2126,7 @@ bool Interpreter::doLoadFast(Context* ctx, word arg) {
         &scope,
         RawTuple::cast(RawCode::cast(ctx->frame->code()).varnames()).at(arg));
     Str msg(&scope,
-            thread->runtime()->newStrFromFormat(
+            thread->runtime()->newStrFromFmt(
                 "local variable '%S' referenced before assignment", &name));
     thread->raise(LayoutId::kUnboundLocalError, *msg);
     return unwind(ctx);
@@ -2305,7 +2305,7 @@ static RawObject raiseUnboundCellFreeVar(Thread* thread, const Code& code,
   Tuple names(&scope, *names_obj);
   Str name(&scope, names.at(idx));
   return thread->raise(LayoutId::kUnboundLocalError,
-                       thread->runtime()->newStrFromFormat(fmt, &name));
+                       thread->runtime()->newStrFromFmt(fmt, &name));
 }
 
 // opcode 136

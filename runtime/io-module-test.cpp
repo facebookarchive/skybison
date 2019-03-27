@@ -18,12 +18,12 @@ TEST(IoModuleTest, ReadFileBytesAsString) {
 
   Runtime runtime;
   HandleScope scope;
-  Str pyfile(&scope, runtime.newStrFromFormat(R"(
+  Str pyfile(&scope, runtime.newStrFromFmt(R"(
 import _io
 file_bytes = _io._readfile("%s")
 filestr = _io._readbytes(file_bytes)
 )",
-                                              filename.get()));
+                                           filename.get()));
   unique_c_ptr<char> c_pyfile(pyfile.toCStr());
   testing::runFromCStr(&runtime, c_pyfile.get());
 

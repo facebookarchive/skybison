@@ -159,7 +159,7 @@ static RawObject raiseRequiresInt(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Function function(&scope, thread->currentFrame()->function());
   Str function_name(&scope, function.name());
-  Str message(&scope, thread->runtime()->newStrFromFormat(
+  Str message(&scope, thread->runtime()->newStrFromFmt(
                           "'%S' requires a 'int' object but received %T",
                           &function_name, &obj));
   return thread->raiseTypeError(*message);
@@ -552,7 +552,7 @@ RawObject IntBuiltins::fromBytes(Thread* thread, Frame* frame, word nargs) {
 RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   KwArguments args(frame, nargs);
   if (args.numArgs() > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFmt(
         "from_bytes() takes at most 2 positional arguments (%w given)",
         args.numArgs()));
   }

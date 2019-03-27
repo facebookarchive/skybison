@@ -90,9 +90,6 @@ class Thread {
 
   Frame* currentFrame() { return currentFrame_; }
 
-  // Returns the name of the currently running function as a string.
-  RawStr functionName();
-
   // The stack pointer is computed by taking the value stack top of the current
   // frame.
   byte* stackPtr();
@@ -179,6 +176,7 @@ class Thread {
   // Raises an exception with the given type and returns an Error that must be
   // returned up the stack by the caller.
   RawObject raise(LayoutId type, RawObject value);
+  RawObject raiseWithFmt(LayoutId type, const char* fmt, ...);
   RawObject raiseWithCStr(LayoutId type, const char* message);
 
   // Raises an AttributeError exception and returns an Error that must be

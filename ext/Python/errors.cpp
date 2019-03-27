@@ -315,7 +315,7 @@ PY_EXPORT void PyErr_WriteUnraisable(PyObject* /* j */) {
 PY_EXPORT void _PyErr_BadInternalCall(const char* filename, int lineno) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object message(&scope, thread->runtime()->newStrFromFormat(
+  Object message(&scope, thread->runtime()->newStrFromFmt(
                              "%s:%d: bad argument to internal function",
                              filename, lineno));
   thread->raiseSystemError(*message);

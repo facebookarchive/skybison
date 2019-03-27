@@ -1,5 +1,6 @@
 #include "thread.h"
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 
@@ -380,6 +381,15 @@ RawObject Thread::raiseWithCStr(LayoutId type, const char* message) {
   return raise(type, runtime()->newStrFromCStr(message));
 }
 
+RawObject Thread::raiseWithFmt(LayoutId type, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  HandleScope scope(this);
+  Object message(&scope, runtime()->newStrFromFmtV(this, fmt, args));
+  va_end(args);
+  return raise(type, *message);
+}
+
 // Convenience method for throwing a RuntimeError exception with an error
 // message.
 RawObject Thread::raiseRuntimeError(RawObject value) {
@@ -414,8 +424,8 @@ RawObject Thread::raiseTypeErrorWithCStr(const char* message) {
 RawObject Thread::raiseUnsupportedBinaryOperation(
     const Handle<RawObject>& left, const Handle<RawObject>& right,
     const Handle<RawStr>& op_name) {
-  return raiseTypeError(runtime()->newStrFromFormat(
-      "%T.%S(%T) is not supported", &left, &op_name, &right));
+  return raiseTypeError(runtime()->newStrFromFmt("%T.%S(%T) is not supported",
+                                                 &left, &op_name, &right));
 }
 
 // Convenience method for throwing a ValueError exception with an error message.
@@ -599,22 +609,6 @@ void Thread::reprLeave(const Object& obj) {
       break;
     }
   }
-}
-
-RawStr Thread::functionName() {
-  HandleScope scope(this);
-  Object function_obj(&scope, currentFrame()->function());
-  if (!function_obj.isFunction()) {
-    return RawStr::cast(runtime()->newStrFromCStr("<non-function>"));
-  }
-  Function func(&scope, *function_obj);
-  Object name(&scope, func.name());
-  if (!name.isStr()) {
-    // TODO(T36619828): strict subclass of str
-    return RawStr::cast(
-        runtime()->newStrFromCStr("<non-string function name>"));
-  }
-  return RawStr::cast(*name);
 }
 
 int Thread::recursionLimit() { return recursion_limit_; }

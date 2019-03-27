@@ -277,12 +277,11 @@ static PyObject* callMappingMethod(Thread* thread, const Object& map,
   if (result.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseAttributeError(
-          runtime->newStrFromFormat("could not call %s", method_name));
+          runtime->newStrFromFmt("could not call %s", method_name));
     }
     return nullptr;
   }
-  Str msg(&scope,
-          runtime->newStrFromFormat("%s are not iterable", method_name));
+  Str msg(&scope, runtime->newStrFromFmt("%s are not iterable", method_name));
   result = sequenceFast(thread, result, msg);
   if (result.isError()) {
     return nullptr;

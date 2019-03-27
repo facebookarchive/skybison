@@ -861,7 +861,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("str.strip() needs an argument");
   }
   if (nargs > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFormat(
+    return thread->raiseTypeError(thread->runtime()->newStrFromFmt(
         "str.strip() takes at most 1 argument (%w given)", nargs - 1));
   }
   Runtime* runtime = thread->runtime();
