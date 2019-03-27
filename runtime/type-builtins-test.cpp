@@ -242,4 +242,20 @@ C()
                             "C.__init__ returned non None"));
 }
 
+TEST(TypeBuiltinTest, MroReturnsList) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class C:
+  pass
+result = C.mro()
+)");
+  HandleScope scope;
+  Object ctype(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isList());
+  List result(&scope, *result_obj);
+  EXPECT_EQ(result.at(0), *ctype);
+  EXPECT_EQ(result.at(1), runtime.typeAt(LayoutId::kObject));
+}
+
 }  // namespace python

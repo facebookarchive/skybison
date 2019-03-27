@@ -82,6 +82,10 @@ class type(bootstrap=True):
     def __repr__(self):
         return f"<class '{self.__name__}'>"
 
+    def mro(self):
+        # TODO(T42302401): Call Runtime computeMro when we support metaclasses.
+        return list(self.__mro__)
+
 
 class object(bootstrap=True):  # noqa: E999
     def __new__(cls, *args, **kwargs):
