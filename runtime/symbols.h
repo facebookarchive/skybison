@@ -188,6 +188,7 @@ class Runtime;
   V(Excepthook, "excepthook")                                                  \
   V(Exception, "Exception")                                                    \
   V(ExceptionState, "ExceptionState")                                          \
+  V(ExcInfo, "exc_info")                                                       \
   V(Exec, "exec")                                                              \
   V(ExecBuiltin, "exec_builtin")                                               \
   V(ExecDynamic, "exec_dynamic")                                               \

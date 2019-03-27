@@ -2082,6 +2082,7 @@ void Runtime::createSysModule(Thread* thread) {
                                            SysModule::displayhook);
   moduleAddBuiltinFunction(module, SymbolId::kExcepthook,
                            SysModule::excepthook);
+  moduleAddBuiltinFunction(module, SymbolId::kExcInfo, SysModule::excInfo);
 
   // Fill in sys...
   Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));

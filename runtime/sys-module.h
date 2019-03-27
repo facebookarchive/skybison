@@ -29,6 +29,7 @@ class SysModule {
  public:
   static RawObject displayhook(Thread* thread, Frame* frame, word nargs);
   static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
+  static RawObject excInfo(Thread* thread, Frame* frame, word nargs);
 
   static const char* const kFrozenData;
 };

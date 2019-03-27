@@ -13,6 +13,117 @@ namespace python {
 
 using namespace testing;
 
+TEST(SysModuleTest,
+     ExcInfoWhileExceptionNotBeingHandledReturnsTupleOfThreeNone) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import sys
+result = sys.exc_info()
+)")
+                   .isError());
+  HandleScope scope;
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_EQ(result.at(0), NoneType::object());
+  EXPECT_EQ(result.at(1), NoneType::object());
+  EXPECT_EQ(result.at(2), NoneType::object());
+}
+
+TEST(
+    SysModuleTest,
+    ExcInfoWhileExceptionNotBeingHandledAfterExceptionIsRaisedReturnsTupleOfThreeNone) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import sys
+try:
+  raise IndexError(3)
+except:
+  pass
+result = sys.exc_info()
+)")
+                   .isError());
+  HandleScope scope;
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_EQ(result.at(0), NoneType::object());
+  EXPECT_EQ(result.at(1), NoneType::object());
+  EXPECT_EQ(result.at(2), NoneType::object());
+}
+
+TEST(SysModuleTest,
+     ExcInfoWhileExceptionBeingHandledReturnsTupleOfTypeValueTraceback) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import sys
+try:
+  raise IndexError(4)
+except:
+  result = sys.exc_info()
+)")
+                   .isError());
+  HandleScope scope;
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+
+  Type expected_type(&scope, runtime.typeAt(LayoutId::kIndexError));
+  EXPECT_EQ(result.at(0), expected_type);
+
+  ASSERT_TRUE(result.at(1).isIndexError());
+  IndexError actual_value(&scope, result.at(1));
+  ASSERT_TRUE(actual_value.args().isTuple());
+  Tuple value_args(&scope, actual_value.args());
+  ASSERT_EQ(value_args.length(), 1);
+  EXPECT_EQ(value_args.at(0), SmallInt::fromWord(4));
+
+  // TODO(T42241510): Traceback is unimplemented yet. Once it's implemented,
+  // add a EXPECT_EQ(result.at(2), traceback).
+  EXPECT_EQ(result.at(2), NoneType::object());
+}
+
+TEST(SysModuleTest, ExcInfoReturnsInfoOfExceptionCurrentlyBeingHandled) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import sys
+try:
+  raise IndexError(4)
+except:
+  try:
+    raise IndexError(5)
+  except:
+    result = sys.exc_info()
+)")
+                   .isError());
+  HandleScope scope;
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+
+  Type expected_type(&scope, runtime.typeAt(LayoutId::kIndexError));
+  EXPECT_EQ(result.at(0), expected_type);
+
+  ASSERT_TRUE(result.at(1).isIndexError());
+  IndexError actual_value(&scope, result.at(1));
+  ASSERT_TRUE(actual_value.args().isTuple());
+  Tuple value_args(&scope, actual_value.args());
+  ASSERT_EQ(value_args.length(), 1);
+  EXPECT_EQ(value_args.at(0), SmallInt::fromWord(5));
+
+  // TODO(T42241510): Traceback is unimplemented yet. Once it's implemented,
+  // add a EXPECT_EQ(result.at(2), traceback).
+  EXPECT_EQ(result.at(2), NoneType::object());
+}
+
 TEST(SysModuleTest, ExecutableIsValid) {
   Runtime runtime;
   HandleScope scope;

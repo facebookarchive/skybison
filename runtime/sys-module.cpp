@@ -82,4 +82,20 @@ RawObject SysModule::excepthook(Thread* thread, Frame* frame, word nargs) {
   return NoneType::object();
 }
 
+RawObject SysModule::excInfo(Thread* thread, Frame* /* frame */,
+                             word /* nargs */) {
+  HandleScope scope(thread);
+  Tuple result(&scope, thread->runtime()->newTuple(3));
+  if (thread->hasCaughtException()) {
+    result.atPut(0, thread->caughtExceptionType());
+    result.atPut(1, thread->caughtExceptionValue());
+    result.atPut(2, thread->caughtExceptionTraceback());
+  } else {
+    result.atPut(0, RawNoneType::object());
+    result.atPut(1, RawNoneType::object());
+    result.atPut(2, RawNoneType::object());
+  }
+  return *result;
+}
+
 }  // namespace python

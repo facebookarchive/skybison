@@ -56,3 +56,8 @@ def displayhook(value):
 @_patch
 def excepthook(exc, value, tb):
     pass
+
+
+@_patch
+def exc_info():
+    pass
