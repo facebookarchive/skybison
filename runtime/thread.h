@@ -55,7 +55,8 @@ class Thread {
 
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   Frame* linkFrame(Frame* frame);
-  Frame* pushFrame(const Handle<RawCode>& code);
+  Frame* pushFrame(const Handle<RawCode>& code, const Handle<RawDict>& globals,
+                   const Handle<RawDict>& builtins);
   Frame* pushCallFrame(const Handle<RawFunction>& function);
   Frame* pushNativeFrame(void* fn, word nargs);
   Frame* pushExecFrame(const Handle<RawCode>& code,
@@ -70,7 +71,7 @@ class Thread {
   void popFrame();
 
   // Runs a code object on the current thread.  Assumes that the initial frame
-  // is at the top of the stack.
+  // is at the top of the stack. Only used for testing.
   RawObject run(const Handle<RawCode>& code);
 
   // Runs a code object on the current thread.

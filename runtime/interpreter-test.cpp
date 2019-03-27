@@ -809,7 +809,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   callee.setDefaults(*defaults);
 
   // Create a caller frame
-  Frame* frame = thread->pushFrame(code);
+  Frame* frame = thread->pushCallFrame(callee);
 
   // Save starting value stack top
   RawObject* value_stack_start = frame->valueStackTop();
@@ -864,7 +864,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   callee.setDefaults(*defaults);
 
   // Create a caller frame
-  Frame* frame = thread->pushFrame(code);
+  Frame* frame = thread->pushCallFrame(callee);
 
   // Save starting value stack top
   RawObject* value_stack_start = frame->valueStackTop();
@@ -925,7 +925,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   callee.setDefaults(*defaults);
 
   // Create a caller frame
-  Frame* frame = thread->pushFrame(code);
+  Frame* frame = thread->pushCallFrame(callee);
 
   // Save starting value stack top
   RawObject* value_stack_start = frame->valueStackTop();
@@ -1226,8 +1226,7 @@ manager = M()
   Dict globals(&scope, main.dict());
   Dict builtins(&scope, runtime.newDict());
   Thread* thread = Thread::current();
-  Frame* frame = thread->pushFrame(code);
-  frame->setGlobals(*globals);
+  Frame* frame = thread->pushFrame(code, globals, builtins);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
   Object result(&scope, Interpreter::execute(thread, frame));
