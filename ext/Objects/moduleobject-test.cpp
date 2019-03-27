@@ -20,7 +20,7 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
   };
 
   // PyInit_spam
-  const int val = 5;
+  const long val = 5;
   {
     PyObject* m = PyModule_Create(&def);
     PyObject* de = PyDict_New();
@@ -37,7 +37,7 @@ TEST_F(ModuleExtensionApiTest, SpamModule) {
   PyRun_SimpleString("x = spam.CONST");
 
   PyObject* x = testing::moduleGet("__main__", "x");
-  int result = PyLong_AsLong(x);
+  long result = PyLong_AsLong(x);
   ASSERT_EQ(result, val);
 }
 
@@ -627,7 +627,7 @@ x = foo.noargs()
 )");
 
   PyObjectPtr x(moduleGet("__main__", "x"));
-  int result = PyLong_AsLong(x);
+  long result = PyLong_AsLong(x);
   ASSERT_EQ(result, 10);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -669,7 +669,7 @@ x = foo.varargs(10)
 )");
 
   PyObjectPtr x(moduleGet("__main__", "x"));
-  int result = PyLong_AsLong(x);
+  long result = PyLong_AsLong(x);
   ASSERT_EQ(result, 10);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
@@ -700,7 +700,7 @@ x = foo.kwArgs(value=40)
 )");
 
   PyObjectPtr x(moduleGet("__main__", "x"));
-  int result = PyLong_AsLong(x);
+  long result = PyLong_AsLong(x);
   ASSERT_EQ(result, 40);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
