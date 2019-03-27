@@ -183,12 +183,6 @@ Frame* Thread::pushExecFrame(const Code& code, const Dict& globals,
   return result;
 }
 
-Frame* Thread::pushModuleFunctionFrame(const Module& module, const Code& code) {
-  HandleScope scope(this);
-  Dict globals(&scope, module.dict());
-  return pushExecFrame(code, globals, globals);
-}
-
 Frame* Thread::pushClassFunctionFrame(const Function& function,
                                       const Dict& dict) {
   HandleScope scope(this);
@@ -251,11 +245,6 @@ RawObject Thread::run(const Code& code) {
 RawObject Thread::exec(const Code& code, const Dict& globals,
                        const Object& locals) {
   Frame* frame = pushExecFrame(code, globals, locals);
-  return Interpreter::execute(this, frame);
-}
-
-RawObject Thread::runModuleFunction(const Module& module, const Code& code) {
-  Frame* frame = pushModuleFunctionFrame(module, code);
   return Interpreter::execute(this, frame);
 }
 

@@ -1647,7 +1647,8 @@ RawObject Runtime::executeModule(const char* buffer, const Module& module) {
   Code code(&scope, reader.readObject());
   DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
 
-  return Thread::current()->runModuleFunction(module, code);
+  Dict globals(&scope, module.dict());
+  return Thread::current()->exec(code, globals, globals);
 }
 
 RawObject Runtime::importModuleFromBuffer(const char* buffer,
