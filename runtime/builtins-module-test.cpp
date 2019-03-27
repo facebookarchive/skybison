@@ -1322,4 +1322,78 @@ result = sorted(unsorted, reverse=True)
   EXPECT_EQ(result.at(3), SmallInt::fromWord(1));
 }
 
+TEST(BuiltinsModuleTest, MaxWithEmptyIterableRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "max([])"),
+                            LayoutId::kValueError,
+                            "max() arg is an empty sequence"));
+}
+
+TEST(BuiltinsModuleTest, MaxWithMultipleArgsReturnsMaximum) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, "result = max(1, 3, 5, 2, -1)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+}
+
+TEST(BuiltinsModuleTest, MaxWithNoArgsRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "max()"), LayoutId::kTypeError,
+      "TypeError: 'max' takes min 1 positional arguments but 0 given"));
+}
+
+TEST(BuiltinsModuleTest, MaxWithIterableReturnsMaximum) {
+  Runtime runtime;
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = max((1, 3, 5, 2, -1))").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+}
+
+TEST(BuiltinsModuleTest, MaxWithEmptyIterableAndDefaultReturnsDefault) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, "result = max([], default=42)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 42));
+}
+
+TEST(BuiltinsModuleTest, MaxWithKeyOrdersByKeyFunction) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = max((1, 2, 3), key=lambda x: -x)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 1));
+}
+
+TEST(BuiltinsModuleTest, MaxWithEmptyIterableAndKeyAndDefaultReturnsDefault) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = max((), key=lambda x: x, default='empty')
+)")
+                   .isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "empty"));
+}
+
+TEST(BuiltinsModuleTest, MaxWithMultipleArgsAndDefaultRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "max(1, 2, default=0)"), LayoutId::kTypeError,
+      "Cannot specify a default for max() with multiple positional arguments"));
+}
+
+TEST(BuiltinsModuleTest, MaxReturnsFirstOccuranceOfEqualValues) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  pass
+
+first = A()
+second = A()
+
+result = max(first, second, key=lambda x: 1) is first
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
 }  // namespace python
