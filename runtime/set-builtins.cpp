@@ -310,7 +310,7 @@ RawObject FrozenSetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfFrozenSet(*self)) {
-    return thread->raiseTypeErrorWithCStr("copy requires a 'frozenset' object");
+    return thread->raiseRequiresType(self, SymbolId::kFrozenSet);
   }
   FrozenSet set(&scope, *self);
   if (set.isFrozenSet()) {
@@ -514,7 +514,7 @@ RawObject SetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
-    return thread->raiseTypeErrorWithCStr("copy requires a 'set' object");
+    return thread->raiseRequiresType(self, SymbolId::kSet);
   }
   Set set(&scope, *self);
   return setCopy(thread, set);
@@ -527,7 +527,7 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseTypeErrorWithCStr("__iand__() requires a 'set' object");
+    return thread->raiseRequiresType(self, SymbolId::kSet);
   }
   if (!runtime->isInstanceOfSet(*other)) {
     return NotImplementedType::object();
@@ -546,19 +546,11 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
 
 RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr(
-        "__init__() of 'set' object needs an argument");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeError(runtime->newStrFromFmt(
-        "set expected at most 1 argument, got %w", nargs - 1));
-  }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfSet(*self)) {
-    return thread->raiseTypeErrorWithCStr("__init__() requires a 'set' object");
+    return thread->raiseRequiresType(self, SymbolId::kSet);
   }
   if (nargs == 2) {
     Set set(&scope, *self);
@@ -576,7 +568,7 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
-    return thread->raiseTypeErrorWithCStr("pop() requires a 'set' object");
+    return thread->raiseRequiresType(self, SymbolId::kSet);
   }
   Set set(&scope, args.get(0));
   return setPop(thread, set);
@@ -637,9 +629,7 @@ RawObject SetIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isSetIterator()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__iter__() must be called with a set iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kSetIterator);
   }
   return *self;
 }
@@ -650,9 +640,7 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isSetIterator()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__next__() must be called with a set iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kSetIterator);
   }
   SetIterator self(&scope, *self_obj);
   Object value(&scope, setIteratorNext(thread, self));
@@ -668,9 +656,7 @@ RawObject SetIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isSetIterator()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() must be called with a set iterator instance as "
-        "the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kSetIterator);
   }
   SetIterator set_iterator(&scope, *self);
   Set set(&scope, set_iterator.iterable());

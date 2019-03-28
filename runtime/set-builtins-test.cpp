@@ -891,11 +891,12 @@ set.__lt__(None, set())
 
 TEST(SetBuiltinsTest, DunderInitWithNonSetFirstArgRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 set.__init__([])
 )"),
-                            LayoutId::kTypeError,
-                            "__init__() requires a 'set' object"));
+                    LayoutId::kTypeError,
+                    "'__init__' requires a 'set' object but got 'list'"));
 }
 
 TEST(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {
@@ -1218,9 +1219,9 @@ TEST(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object not_a_set(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(SetBuiltins::copy, not_a_set),
-                            LayoutId::kTypeError,
-                            "copy requires a 'set' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SetBuiltins::copy, not_a_set), LayoutId::kTypeError,
+      "'<anonymous>' requires a 'set' object but got 'NoneType'"));
 }
 
 TEST(SetBuiltinsTest, CopyReturnsNewObject) {
@@ -1236,9 +1237,9 @@ TEST(SetBuiltinsTest, CopyFrozenSetRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   FrozenSet set(&scope, runtime.newFrozenSet());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(SetBuiltins::copy, set),
-                            LayoutId::kTypeError,
-                            "copy requires a 'set' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SetBuiltins::copy, set), LayoutId::kTypeError,
+      "'<anonymous>' requires a 'set' object but got 'frozenset'"));
 }
 
 TEST(SetBuiltinsTest, CopyReturnsShallowCopy) {
@@ -1264,18 +1265,18 @@ TEST(FrozenSetBuiltinsTest, CopyWithNonFrozenSetRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object not_a_set(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(FrozenSetBuiltins::copy, not_a_set),
-                            LayoutId::kTypeError,
-                            "copy requires a 'frozenset' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FrozenSetBuiltins::copy, not_a_set), LayoutId::kTypeError,
+      "'<anonymous>' requires a 'frozenset' object but got 'NoneType'"));
 }
 
 TEST(FrozenSetBuiltinsTest, CopySetRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Set set(&scope, runtime.newSet());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(FrozenSetBuiltins::copy, set),
-                            LayoutId::kTypeError,
-                            "copy requires a 'frozenset' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FrozenSetBuiltins::copy, set), LayoutId::kTypeError,
+      "'<anonymous>' requires a 'frozenset' object but got 'set'"));
 }
 
 TEST(FrozenSetBuiltinsTest, CopyFrozenSetReturnsSameObject) {
