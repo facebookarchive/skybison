@@ -660,7 +660,37 @@ class bytes(bootstrap=True):
         pass
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
-        pass
+        if not isinstance(cls, type):
+            raise TypeError(
+                f"bytes.__new__(X): X is not a type object ({type(cls).__name__})"
+            )
+        if not issubclass(cls, bytes):
+            raise TypeError(
+                f"bytes.__new__({cls.__name__}): "
+                f"{cls.__name__} is not a subtype of bytes"
+            )
+        if source is _Unbound:
+            if encoding is _Unbound and errors is _Unbound:
+                return _bytes_new(cls, 0)
+            raise TypeError("encoding or errors without sequence argument")
+        if encoding is not _Unbound:
+            if not isinstance(source, str):
+                raise TypeError("encoding without a string argument")
+            raise NotImplementedError("string encoding")
+        if errors is not _Unbound:
+            if isinstance(source, str):
+                raise TypeError("string argument without an encoding")
+            raise TypeError("errors without a string argument")
+        if hasattr(source, "__bytes__"):
+            result = source.__bytes__()
+            if not isinstance(result, bytes):
+                raise TypeError(
+                    f"__bytes__ returned non-bytes (type {type(result).__name__})"
+                )
+            return result
+        if isinstance(source, str):
+            raise TypeError("string argument without an encoding")
+        return _bytes_new(cls, source)
 
     def __repr__(self) -> str:  # noqa: T484
         pass
@@ -1651,6 +1681,11 @@ def _bytearray_join(self: bytearray, iterable) -> bytearray:
 
 @_patch
 def _bytes_join(self: bytes, iterable) -> bytes:
+    pass
+
+
+@_patch
+def _bytes_new(cls, source) -> bytes:
     pass
 
 

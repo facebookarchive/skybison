@@ -1013,7 +1013,7 @@ class Foo:
 bytes(Foo())
 )"),
                             LayoutId::kTypeError,
-                            "__bytes__ returned non-bytes"));
+                            "__bytes__ returned non-bytes (type smallint)"));
 }
 
 TEST(BytesBuiltinsTest, DunderNewPropagatesDunderBytesError) {
@@ -1042,15 +1042,23 @@ TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsNullFilledBytes) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, "result = bytes(10)");
-  Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsBytes(result, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+}
+
+TEST(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = bytes(b'123')");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isBytesEqualsBytes(result, {'1', '2', '3'}));
 }
 
 TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
   Runtime runtime;
   HandleScope scope;
   runFromCStr(&runtime, "result = bytes([6, 28])");
-  Bytes result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsBytes(result, {6, 28}));
 }
 

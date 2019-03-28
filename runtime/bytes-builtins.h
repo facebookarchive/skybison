@@ -27,6 +27,8 @@ RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);
 // Scans self to select an appropriate delimiter (single or double quotes).
 RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
 
+RawObject underBytesNew(Thread* thread, Frame* frame, word nargs);
+
 class BytesBuiltins
     : public Builtins<BytesBuiltins, SymbolId::kBytes, LayoutId::kBytes> {
  public:
@@ -40,7 +42,6 @@ class BytesBuiltins
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
   static RawObject hex(Thread* thread, Frame* frame, word nargs);

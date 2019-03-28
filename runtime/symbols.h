@@ -385,6 +385,7 @@ class Runtime;
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderBytesJoin, "_bytes_join")                                             \
+  V(UnderBytesNew, "_bytes_new")                                               \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \

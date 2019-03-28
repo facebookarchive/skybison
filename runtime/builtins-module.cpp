@@ -87,6 +87,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderByteArrayJoin, ByteArrayBuiltins::join},
     {SymbolId::kUnderBytesJoin, BytesBuiltins::join},
+    {SymbolId::kUnderBytesNew, underBytesNew},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
     {SymbolId::kUnderListSort, underListSort},

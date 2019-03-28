@@ -176,7 +176,6 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
     {SymbolId::kSentinelId, nullptr},
@@ -390,64 +389,28 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(self.compare(*other) != 0);
 }
 
-RawObject BytesBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
+RawObject underBytesNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object type_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseRequiresType(type_obj, SymbolId::kType);
-  }
-  Type type(&scope, *type_obj);
-  if (type.builtinBase() != LayoutId::kBytes) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of bytes");
-  }
-  // TODO(T36619847): subclass of bytes
+  // TODO(wmeehan): implement bytes subclasses
+  // Type type(&scope, args.get(0));
   Object source(&scope, args.get(1));
-  Object encoding(&scope, args.get(2));
-  Object errors(&scope, args.get(3));
-  if (source.isUnbound()) {
-    if (!encoding.isUnbound() || !errors.isUnbound()) {
-      return thread->raiseTypeErrorWithCStr(
-          "encoding or errors without sequence argument");
-    }
-    return runtime->newBytesWithAll({});
-  }
-  // if we have an encoding, interpret source as a string
-  if (!encoding.isUnbound()) {
-    if (!runtime->isInstanceOfStr(*source)) {
-      return thread->raiseTypeErrorWithCStr(
-          "encoding without a string argument");
-    }
-    UNIMPLEMENTED("string encoding");
-  }
-  if (!errors.isUnbound()) {
-    return thread->raiseTypeErrorWithCStr(
-        runtime->isInstanceOfStr(*source)
-            ? "string argument without an encoding"
-            : "errors without a string argument");
-  }
-  // call `source.__bytes__`
-  Object bytes_like(&scope, callDunderBytes(thread, source));
-  if (!bytes_like.isNoneType()) {  // bytes or error
-    return *bytes_like;
-  }
-  // by now, we have exhausted the valid ways to convert a string to bytes
-  if (runtime->isInstanceOfStr(*source)) {
-    return thread->raiseTypeErrorWithCStr(
-        "string argument without an encoding");
-  }
+  Runtime* runtime = thread->runtime();
   // if source is an integer, interpret it as the length of a zero-filled bytes
   if (runtime->isInstanceOfInt(*source)) {
-    if (!source.isSmallInt()) {
+    Int src(&scope, *source);
+    word size = src.asWordSaturated();
+    if (!SmallInt::isValid(size)) {
       return thread->raiseOverflowErrorWithCStr(
           "cannot fit into an index-sized integer");
     }
-    word size = RawSmallInt::cast(*source).value();
     if (size < 0) {
       return thread->raiseValueErrorWithCStr("negative count");
     }
     return runtime->newBytes(size, 0);
+  }
+  if (source.isBytes()) {
+    return *source;
   }
   // last option: source is an iterator that produces bytes
   return bytesFromIterable(thread, source);
