@@ -521,7 +521,7 @@ RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
 
   // No data descriptor found, store on the instance
   HeapObject instance(&scope, *receiver);
-  return thread->runtime()->instanceAtPut(thread, instance, name, value);
+  return instanceAtPut(thread, instance, name, value);
 }
 
 RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
@@ -693,12 +693,11 @@ bool Runtime::isMapping(Thread* thread, const Object& obj) {
 }
 
 bool Runtime::isSequence(Thread* thread, const Object& obj) {
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfDict(*obj)) {
+  if (isInstanceOfDict(*obj)) {
     return false;
   }
   HandleScope scope(thread);
-  Type type(&scope, runtime->typeOf(*obj));
+  Type type(&scope, typeOf(*obj));
   return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetItem).isError();
 }
 
@@ -2248,42 +2247,39 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
 RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
                              const Tuple& src, word src_length) {
   DCHECK_BOUND(src_length, src.length());
-  Runtime* runtime = thread->runtime();
-  if (src_length == 0) return runtime->newBytes(0, 0);
+  if (src_length == 0) return newBytes(0, 0);
   HandleScope scope(thread);
 
   // first pass to accumulate length and check types
   word result_length;
-  if (runtime->isInstanceOfBytes(*sep)) {
+  if (isInstanceOfBytes(*sep)) {
     result_length = Bytes::cast(*sep).length() * (src_length - 1);
-  } else if (runtime->isInstanceOfByteArray(*sep)) {
+  } else if (isInstanceOfByteArray(*sep)) {
     result_length = ByteArray::cast(*sep).numItems() * (src_length - 1);
   } else {
     UNREACHABLE("separator is not bytes-like");
   }
   for (word index = 0; index < src_length; index++) {
     Object obj(&scope, src.at(index));
-    if (runtime->isInstanceOfBytes(*obj)) {
+    if (isInstanceOfBytes(*obj)) {
       result_length += Bytes::cast(*obj).length();
-    } else if (runtime->isInstanceOfByteArray(*obj)) {
+    } else if (isInstanceOfByteArray(*obj)) {
       result_length += ByteArray::cast(*obj).numItems();
     } else {
-      return thread->raiseTypeError(runtime->newStrFromFmt(
+      return thread->raiseTypeError(newStrFromFmt(
           "sequence item %w: expected a bytes-like object, %T found", index,
           &obj));
     }
   }
 
   // second pass to accumulate concatenation
-  Bytes result(&scope, runtime->newBytes(result_length, 0));
+  Bytes result(&scope, newBytes(result_length, 0));
   Object item(&scope, src.at(0));
-  word result_index = runtime->bytesReplaceFromWith(thread, result, 0, item);
+  word result_index = bytesReplaceFromWith(thread, result, 0, item);
   for (word src_index = 1; src_index < src_length; src_index++) {
-    result_index =
-        runtime->bytesReplaceFromWith(thread, result, result_index, sep);
+    result_index = bytesReplaceFromWith(thread, result, result_index, sep);
     item = src.at(src_index);
-    result_index =
-        runtime->bytesReplaceFromWith(thread, result, result_index, item);
+    result_index = bytesReplaceFromWith(thread, result, result_index, item);
   }
   DCHECK(result_index == result_length, "unexpected length");
   return *result;
@@ -2828,7 +2824,7 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
   Object key(&scope, NoneType::object());
   Object key_hash(&scope, NoneType::object());
   // Special case for sets
-  if (thread->runtime()->isInstanceOfSetBase(*iterable)) {
+  if (isInstanceOfSetBase(*iterable)) {
     SetBase self(&scope, *set);
     SetBase other(&scope, *iterable);
     if (set.numItems() == 0 || other.numItems() == 0) {
@@ -2937,7 +2933,7 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
     return *dst;
   }
   // Special case for built-in set types
-  if (thread->runtime()->isInstanceOfSetBase(*iterable)) {
+  if (isInstanceOfSetBase(*iterable)) {
     SetBase src(&scope, *iterable);
     Tuple data(&scope, src.data());
     if (src.numItems() > 0) {
