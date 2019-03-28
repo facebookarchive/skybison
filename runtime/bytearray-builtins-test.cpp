@@ -201,7 +201,8 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithByteArrayOtherConcatenatesToSelf) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray other(&scope, runtime.newByteArray());
-  View<byte> bytes{'1', '2', '3'};
+  byte raw_bytes[3] = {'1', '2', '3'};
+  View<byte> bytes(raw_bytes, sizeof(raw_bytes));
   runtime.byteArrayExtend(thread, other, bytes);
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
@@ -212,7 +213,8 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  View<byte> bytes{'1', '2', '3'};
+  byte raw_bytes[3] = {'1', '2', '3'};
+  View<byte> bytes(raw_bytes, sizeof(raw_bytes));
   Bytes other(&scope, runtime.newBytesWithAll(bytes));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
@@ -343,7 +345,8 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithOneReturnsSameByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  View<byte> bytes{'a', 'b'};
+  byte raw_bytes[2] = {'a', 'b'};
+  View<byte> bytes(raw_bytes, sizeof(raw_bytes));
   runtime.byteArrayExtend(thread, self, bytes);
   Object count(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
@@ -453,7 +456,8 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithBytesCopiesBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  View<byte> bytes{'f', 'o', 'o', 'b', 'a', 'r'};
+  byte raw_bytes[6] = {'f', 'o', 'o', 'b', 'a', 'r'};
+  View<byte> bytes(raw_bytes, sizeof(raw_bytes));
   Bytes source(&scope, runtime.newBytesWithAll(bytes));
   Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
@@ -468,7 +472,8 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithByteArrayCopiesBytes) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray source(&scope, runtime.newByteArray());
-  View<byte> bytes{'f', 'o', 'o', 'b', 'a', 'r'};
+  byte raw_bytes[6] = {'f', 'o', 'o', 'b', 'a', 'r'};
+  View<byte> bytes(raw_bytes, sizeof(raw_bytes));
   runtime.byteArrayExtend(thread, source, bytes);
   Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
@@ -650,7 +655,8 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithOneReturnsSameByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  View<byte> bytes{'a', 'b'};
+  byte raw_bytes[2] = {'a', 'b'};
+  View<byte> bytes(raw_bytes, sizeof(raw_bytes));
   runtime.byteArrayExtend(thread, self, bytes);
   Object count(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
