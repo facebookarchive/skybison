@@ -348,6 +348,17 @@ b = B()
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
+TEST(InterpreterTest, ImportFromWithMissingAttributeRaisesImportError) {
+  Runtime runtime;
+  HandleScope scope;
+  Str name(&scope, runtime.newStrFromCStr("foo"));
+  Module module(&scope, runtime.newModule(name));
+  runtime.addModule(module);
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "from foo import bar"),
+                            LayoutId::kImportError,
+                            "cannot import name 'bar' from 'foo'"));
+}
+
 TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
   Runtime runtime;
   HandleScope scope;

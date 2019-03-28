@@ -2626,16 +2626,6 @@ f(100)
   EXPECT_EQ(output, "100\n");
 }
 
-TEST(ThreadTest, ImportFromNeg) {
-  const char* src = R"(
-from time import foobarbaz
-)";
-
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kImportError,
-                            "cannot import name"));
-}
-
 TEST(ThreadTest, StrFormatEmpty) {
   const char* src = R"(
 print("" % ("hi"))

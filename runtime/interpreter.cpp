@@ -2009,7 +2009,10 @@ bool Interpreter::doImportFrom(Context* ctx, word arg) {
   CHECK(module.isModule(), "Unexpected type to import from");
   RawObject value = runtime->moduleAt(module, name);
   if (value.isError()) {
-    thread->raiseWithCStr(LayoutId::kImportError, "cannot import name");
+    Str module_name(&scope, module.name());
+    thread->raiseWithFmt(LayoutId::kImportError,
+                         "cannot import name '%S' from '%S'", &name,
+                         &module_name);
     return unwind(ctx);
   }
   ctx->frame->pushValue(value);
