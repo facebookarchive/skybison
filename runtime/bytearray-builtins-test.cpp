@@ -40,9 +40,10 @@ TEST(ByteArrayBuiltinsTest, AsBytes) {
 
 TEST(ByteArrayBuiltinsTest, DunderAddWithNonByteArraySelfRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytearray.__add__(b'', b'')"),
-      LayoutId::kTypeError, "'__add__' requires a 'bytearray' object"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytearray.__add__(b'', b'')"),
+                    LayoutId::kTypeError,
+                    "'__add__' requires a 'bytearray' object but got 'bytes'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderAddWithNonBytesLikeRaisesTypeError) {
@@ -90,7 +91,8 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytearray.__getitem__(1, 2)"),
-      LayoutId::kTypeError, "'__getitem__' requires a 'bytearray' object"));
+      LayoutId::kTypeError,
+      "'__getitem__' requires a 'bytearray' object but got 'smallint'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
@@ -178,7 +180,8 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithNonByteArraySelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytearray.__iadd__(b'', b'')"),
-      LayoutId::kTypeError, "'__iadd__' requires a 'bytearray' object"));
+      LayoutId::kTypeError,
+      "'__iadd__' requires a 'bytearray' object but got 'bytes'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderIaddWithNonBytesLikeRaisesTypeError) {
@@ -218,12 +221,9 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithNonByteArrayRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, SmallInt::fromWord(0));
-  Object count(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
-      LayoutId::kTypeError, "'__imul__' requires a 'bytearray' instance"));
+      runFromCStr(&runtime, "bytearray.__imul__(b'', 1)"), LayoutId::kTypeError,
+      "'__imul__' requires a 'bytearray' object but got 'bytes'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
@@ -377,9 +377,9 @@ result = array.__init__()
 
 TEST(ByteArrayBuiltinsTest, DunderInitWithNonByteArraySelfRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.__init__(3)"),
-                            LayoutId::kTypeError,
-                            "'__init__' requires a 'bytearray' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.__init__(3)"), LayoutId::kTypeError,
+      "'__init__' requires a 'bytearray' object but got 'smallint'"));
 }
 
 TEST(ByteArrayBuiltinsTest,
@@ -499,9 +499,9 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
 
 TEST(ByteArrayBuiltinsTest, DunderLenWithNonByteArrayRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.__len__(b'')"),
-                            LayoutId::kTypeError,
-                            "'__len__' requires a 'bytearray' instance"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.__len__(b'')"), LayoutId::kTypeError,
+      "'__len__' requires a 'bytearray' object but got 'bytes'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderLenWithEmptyByteArrayReturnsZero) {
@@ -528,12 +528,9 @@ TEST(ByteArrayBuiltinsTest, DunderLenWithNonEmptyByteArrayReturnsPositive) {
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithNonByteArrayRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(0, 0));
-  Object count(&scope, SmallInt::fromWord(1));
   EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
-      LayoutId::kTypeError, "'__mul__' requires a 'bytearray' instance"));
+      runFromCStr(&runtime, "bytearray.__mul__(b'', 1)"), LayoutId::kTypeError,
+      "'__mul__' requires a 'bytearray' object but got 'bytes'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -703,11 +700,9 @@ TEST(ByteArrayBuiltinsTest, NewByteArray) {
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithNonByteArrayRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(0, 0));
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
-  EXPECT_TRUE(raisedWithStr(*repr, LayoutId::kTypeError,
-                            "'__repr__' requires a 'bytearray' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.__repr__(b'')"), LayoutId::kTypeError,
+      "'__repr__' requires a 'bytearray' object but got 'bytes'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithOverlongByteArrayRaisesTypeError) {
@@ -800,9 +795,9 @@ TEST(ByteArrayBuiltinsTest, DunderRmulCallsDunderMul) {
 
 TEST(ByteArrayBuiltinsTest, HexWithNonByteArrayRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray.hex(1)"),
-                            LayoutId::kTypeError,
-                            "'hex' requires a 'bytearray' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.hex(b'')"), LayoutId::kTypeError,
+      "'hex' requires a 'bytearray' object but got 'bytes'"));
 }
 
 TEST(ByteArrayBuiltinsTest, HexWithEmptyByteArrayReturnsEmptyString) {

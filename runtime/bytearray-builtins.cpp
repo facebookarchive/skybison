@@ -47,8 +47,7 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__add__' requires a 'bytearray' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   Object other_obj(&scope, args.get(1));
   word other_len;
@@ -82,8 +81,7 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__getitem__' requires a 'bytearray' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
   Object index(&scope, args.get(1));
@@ -129,8 +127,7 @@ RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__iadd__' requires a 'bytearray' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
   Object other_obj(&scope, args.get(1));
@@ -157,8 +154,7 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__imul__' requires a 'bytearray' instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
   Object count_obj(&scope, args.get(1));
@@ -196,8 +192,7 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'bytearray' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
   // always clear the existing contents of the array
@@ -259,8 +254,7 @@ RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__len__' requires a 'bytearray' instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
   return SmallInt::fromWord(self.numItems());
@@ -273,8 +267,7 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__mul__' requires a 'bytearray' instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
   Object count_obj(&scope, args.get(1));
@@ -328,8 +321,7 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfByteArray(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__repr__' requires a 'bytearray' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
 
   ByteArray self(&scope, *self_obj);
@@ -386,8 +378,7 @@ RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfByteArray(*obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'hex' requires a 'bytearray' object");
+    return thread->raiseRequiresType(obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *obj);
   Bytes bytes(&scope, self.bytes());
