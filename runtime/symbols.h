@@ -113,6 +113,7 @@ class Runtime;
   V(DunderRxor, "__rxor__")                                                    \
   V(DunderSet, "__set__")                                                      \
   V(DunderSetItem, "__setitem__")                                              \
+  V(DunderSizeof, "__sizeof__")                                                \
   V(DunderSpec, "__spec__")                                                    \
   V(DunderStr, "__str__")                                                      \
   V(DunderSub, "__sub__")                                                      \

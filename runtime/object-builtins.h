@@ -13,6 +13,7 @@ class ObjectBuiltins {
   static RawObject dunderInit(Thread*, Frame*, word);
   static RawObject dunderNew(Thread*, Frame*, word);
   static RawObject dunderNewKw(Thread*, Frame*, word);
+  static RawObject dunderSizeof(Thread*, Frame*, word);
 
  private:
   static const BuiltinMethod kBuiltinMethods[];

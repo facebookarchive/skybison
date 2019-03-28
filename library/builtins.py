@@ -118,6 +118,9 @@ class object(bootstrap=True):  # noqa: E999
         # implemented
         return f"<{type(self).__name__} object at {_address(self)}>"
 
+    def __sizeof__(self):
+        pass
+
     def __str__(self):
         return type(self).__repr__(self)
 

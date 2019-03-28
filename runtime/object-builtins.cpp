@@ -16,6 +16,7 @@ const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderSizeof, dunderSizeof},
     // no sentinel needed because the iteration below is manual
 };
 // clang-format on
@@ -93,6 +94,18 @@ RawObject ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame,
   // to __new__.
   KwArguments args(frame, nargs);
   return dunderNew(thread, frame, nargs - args.numKeywords() - 1);
+}
+
+RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object obj(&scope, args.get(0));
+  if (obj.isHeapObject()) {
+    HeapObject heap_obj(&scope, *obj);
+    return SmallInt::fromWord(heap_obj.size());
+  }
+  return SmallInt::fromWord(kPointerSize);
 }
 
 const BuiltinMethod NoneBuiltins::kBuiltinMethods[] = {

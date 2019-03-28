@@ -56,6 +56,22 @@ result = object.__eq__(object(), object())
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
+TEST(ObjectBuiltinsTest, DunderSizeofWithNonHeapObjectReturnsSizeofRawObject) {
+  Runtime runtime;
+  HandleScope scope;
+  Object small_int(&scope, SmallInt::fromWord(6));
+  Object result(&scope, runBuiltin(ObjectBuiltins::dunderSizeof, small_int));
+  EXPECT_TRUE(isIntEqualsWord(*result, kPointerSize));
+}
+
+TEST(ObjectBuiltinsTest, DunderSizeofWithLargeStrReturnsSizeofHeapObject) {
+  Runtime runtime;
+  HandleScope scope;
+  HeapObject large_str(&scope, runtime.heap()->createLargeStr(40));
+  Object result(&scope, runBuiltin(ObjectBuiltins::dunderSizeof, large_str));
+  EXPECT_TRUE(isIntEqualsWord(*result, large_str.size()));
+}
+
 TEST(
     ObjectBuiltinsTest,
     DunderNeWithSelfImplementingDunderEqReturningNotImplementedReturnsNotImplemented) {
