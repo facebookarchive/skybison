@@ -223,8 +223,7 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__add__() must be called with list instance as first argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kList);
   }
   Object other_obj(&scope, args.get(1));
   if (!other_obj.isList()) {
@@ -247,8 +246,7 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor '__contains__' requires a 'list' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kList);
   }
 
   List self(&scope, *self_obj);
@@ -278,8 +276,7 @@ RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "append() only support list or its subclasses");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
   Object value(&scope, args.get(1));
@@ -292,8 +289,7 @@ RawObject ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "extend() only support list or its subclasses");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
   Object value(&scope, args.get(1));
@@ -309,8 +305,7 @@ RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__len__() only support list or its subclasses");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
   return SmallInt::fromWord(list.numItems());
@@ -326,8 +321,7 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor 'insert' requires a 'list' object");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
   word index = RawSmallInt::cast(args.get(1)).value();
@@ -342,8 +336,7 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__mul__() must be called with list instance as first argument");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
   if (other.isSmallInt()) {
     word ntimes = RawSmallInt::cast(other).value();
@@ -363,8 +356,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor 'pop' requires a 'list' object");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
   word length = list.numItems();
@@ -387,10 +379,10 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  Object value(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfList(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'remove' requires a 'list' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kList);
   }
+  Object value(&scope, args.get(1));
   List self(&scope, *self_obj);
   Object item(&scope, NoneType::object());
   Object comp_result(&scope, NoneType::object());
@@ -435,18 +427,11 @@ RawObject listSlice(Thread* thread, const List& list, const Slice& slice) {
 
 RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFmt(
-        "__getitem__() takes exactly one argument (%w given)", nargs - 1));
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__getitem__() must be called with a list instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
 
   List list(&scope, *self);
@@ -475,8 +460,7 @@ RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__iter__() must be called with a list instance as the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
   return thread->runtime()->newListIterator(self);
 }
@@ -647,9 +631,7 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
 
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__setitem__() must be called with a list instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
 
   List list(&scope, *self);
@@ -684,9 +666,7 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
 
   if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__delitem__() must be called with a list instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kList);
   }
 
   List list(&scope, *self);

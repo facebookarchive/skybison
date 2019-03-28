@@ -481,6 +481,15 @@ RawObject Thread::raiseOverflowErrorWithCStr(const char* message) {
   return raiseOverflowError(runtime()->newStrFromCStr(message));
 }
 
+RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {
+  HandleScope scope(this);
+  Function function(&scope, currentFrame()->function());
+  Str function_name(&scope, function.name());
+  return raiseWithFmt(LayoutId::kTypeError,
+                      "'%S' requires a '%Y' object but got '%T'",
+                      &function_name, expected_type, &obj);
+}
+
 RawObject Thread::raiseIndexError(RawObject value) {
   return raise(LayoutId::kIndexError, value);
 }

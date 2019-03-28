@@ -76,7 +76,7 @@ TEST(ListBuiltinsTest, AddWithNonListSelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "list.__add__(None, [])"), LayoutId::kTypeError,
-      "__add__() must be called with list instance as first argument"));
+      "'__add__' requires a 'list' object but got 'NoneType'"));
 }
 
 TEST(ListBuiltinsTest, AddListToTupleRaisesTypeError) {
@@ -257,11 +257,12 @@ a.insert()
       "TypeError: 'list.insert' takes 3 positional arguments but 1 given"));
   Thread::current()->clearPendingException();
 
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-list.insert(1, 2, 3)
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
+list.insert(None, 1, None)
 )"),
-                            LayoutId::kTypeError,
-                            "descriptor 'insert' requires a 'list' object"));
+                    LayoutId::kTypeError,
+                    "'insert' requires a 'list' object but got 'NoneType'"));
   Thread::current()->clearPendingException();
 
   EXPECT_TRUE(
@@ -305,9 +306,9 @@ a.pop(1, 2, 3, 4)
       "TypeError: 'list.pop' takes max 2 positional arguments but 5 given"));
   thread->clearPendingException();
 
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "list.pop(1)"),
-                            LayoutId::kTypeError,
-                            "descriptor 'pop' requires a 'list' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "list.pop(None)"), LayoutId::kTypeError,
+      "'pop' requires a 'list' object but got 'NoneType'"));
   thread->clearPendingException();
 
   EXPECT_TRUE(

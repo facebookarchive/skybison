@@ -212,6 +212,12 @@ class Thread {
   RawObject raiseOverflowError(RawObject value);
   RawObject raiseOverflowErrorWithCStr(const char* message);
 
+  // Raises a TypeError exception of the form '<method> requires a <type(obj)>
+  // object but got <expected_type>' and returns an Error object that must be
+  // returned up the stack by the caller.
+  RawObject raiseRequiresType(const Handle<RawObject>& obj,
+                              SymbolId expected_type);
+
   // Raises a RuntimeError exception and returns an Error object that must be
   // returned up the stack by the caller.
   RawObject raiseRuntimeError(RawObject value);
