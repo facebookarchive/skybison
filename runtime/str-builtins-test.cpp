@@ -268,9 +268,9 @@ TEST(StrBuiltinsTest, DunderLenWithNonAsciiReturnsCodePointLength) {
 
 TEST(StrBuiltinsTest, DunderLenWithIntRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "l = str.__len__(3)"),
-                            LayoutId::kTypeError,
-                            "descriptor '__len__' requires a 'str' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "l = str.__len__(None)"), LayoutId::kTypeError,
+      "'__len__' requires a 'str' object but got 'NoneType'"));
 }
 
 TEST(StrBuiltinsTest, DunderLenWithExtraArgumentRaisesTypeError) {
@@ -282,12 +282,9 @@ TEST(StrBuiltinsTest, DunderLenWithExtraArgumentRaisesTypeError) {
 
 TEST(StrBuiltinsTest, DunderMulWithNonStrRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, SmallInt::fromWord(0));
-  Object count(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
-                            LayoutId::kTypeError,
-                            "'__mul__' requires a 'str' instance"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "str.__mul__(None, 1)"), LayoutId::kTypeError,
+      "'__mul__' requires a 'str' object but got 'NoneType'"));
 }
 
 TEST(StrBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -1016,11 +1013,12 @@ a = ",".join(["hello", 1])
 
 TEST(StrBuiltinsTest, JoinWithNonStringSeparatorRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = str.join(1, ["hello", 1])
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
+a = str.join(None, ["hello", 1])
 )"),
-                            LayoutId::kTypeError,
-                            "'join' requires a 'str' object"));
+                    LayoutId::kTypeError,
+                    "'join' requires a 'str' object but got 'NoneType'"));
 }
 
 TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
@@ -1509,29 +1507,32 @@ l = "1,2,3,4".rsplit(",", 5)
 
 TEST(StrBuiltinsTest, StrStripWithNonStrRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 str.strip(None)
 )"),
-                            LayoutId::kTypeError,
-                            "str.strip() requires a str object"));
+                    LayoutId::kTypeError,
+                    "'strip' requires a 'str' object but got 'NoneType'"));
 }
 
 TEST(StrBuiltinsTest, StrLStripWithNonStrRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 str.lstrip(None)
 )"),
-                            LayoutId::kTypeError,
-                            "str.lstrip() requires a str object"));
+                    LayoutId::kTypeError,
+                    "'lstrip' requires a 'str' object but got 'NoneType'"));
 }
 
 TEST(StrBuiltinsTest, StrRStripWithNonStrRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
 str.rstrip(None)
 )"),
-                            LayoutId::kTypeError,
-                            "str.rstrip() requires a str object"));
+                    LayoutId::kTypeError,
+                    "'rstrip' requires a 'str' object but got 'NoneType'"));
 }
 
 TEST(StrBuiltinsTest, StrStripWithInvalidCharsRaisesTypeError) {

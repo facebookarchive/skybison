@@ -167,10 +167,10 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseTypeErrorWithCStr("str.__add__ requires a str object");
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
   if (!runtime->isInstanceOfStr(*other)) {
-    return thread->raiseTypeErrorWithCStr("can only concatenate str to str");
+    return thread->raiseRequiresType(other, SymbolId::kStr);
   }
   if (!self.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
@@ -225,7 +225,7 @@ RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseTypeErrorWithCStr("__hash__ requires a 'str' instance");
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
   return runtime->hash(*self);
 }
@@ -352,11 +352,12 @@ RawObject strRFind(const Str& haystack, const Str& needle, word start,
 RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
-  if (!runtime->isInstanceOfStr(args.get(0))) {
-    return thread->raiseTypeErrorWithCStr("'join' requires a 'str' object");
-  }
   HandleScope scope(thread);
-  Str sep(&scope, args.get(0));
+  Object sep_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*sep_obj)) {
+    return thread->raiseRequiresType(sep_obj, SymbolId::kStr);
+  }
+  Str sep(&scope, *sep_obj);
   Object iterable(&scope, args.get(1));
   // Tuples of strings
   if (iterable.isTuple()) {
@@ -393,8 +394,7 @@ RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "descriptor '__len__' requires a 'str' object");
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
   Str str(&scope, *self);
   return SmallInt::fromWord(str.codePointLength());
@@ -403,11 +403,15 @@ RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object obj(&scope, args.get(0));
-  if (!obj.isStr()) {
-    return thread->raiseTypeErrorWithCStr("str.lower(self): self is not a str");
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  Str self(&scope, *obj);
+  if (!self_obj.isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Str self(&scope, *self_obj);
   byte* buf = new byte[self.length()];
   for (word i = 0; i < self.length(); i++) {
     byte c = self.charAt(i);
@@ -419,8 +423,7 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
       buf[i] = c;
     }
   }
-  Str result(&scope,
-             thread->runtime()->newStrWithAll(View<byte>{buf, self.length()}));
+  Str result(&scope, runtime->newStrWithAll(View<byte>{buf, self.length()}));
   delete[] buf;
   return *result;
 }
@@ -570,8 +573,7 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__mul__' requires a 'str' instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
   Object count_obj(&scope, args.get(1));
   count_obj = intFromIndex(thread, count_obj);
@@ -628,8 +630,7 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__getitem__' requires a 'str' instance");
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
 
   // TODO(T36619828): strict subclass of str
@@ -661,20 +662,17 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
-  if (!self.isStr()) {
-    if (thread->runtime()->isInstanceOfStr(*self)) {
-      UNIMPLEMENTED("str.__iter__(<subtype of str>)");
-    }
-    return thread->raiseTypeErrorWithCStr(
-        "__iter__() must be called with a str instance as the first argument");
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
-  return thread->runtime()->newStrIterator(self);
+  if (!self.isStr()) {
+    UNIMPLEMENTED("str.__iter__(<subtype of str>)");
+  }
+  return runtime->newStrIterator(self);
 }
 
 // Convert a byte to its hex digits, and write them out to buf.
@@ -692,15 +690,14 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(*obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "str.__repr__(self): self is not a str");
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!obj.isStr()) {
+  if (!self_obj.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  Str self(&scope, *obj);
+  Str self(&scope, *self_obj);
   const word self_len = self.length();
   word output_size = 0;
   word squote = 0;
@@ -808,7 +805,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseTypeErrorWithCStr("str.lstrip() requires a str object");
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
   if (!self.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
@@ -835,7 +832,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseTypeErrorWithCStr("str.rstrip() requires a str object");
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
   if (!self.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
@@ -857,19 +854,12 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
-  if (nargs == 0) {
-    return thread->raiseTypeErrorWithCStr("str.strip() needs an argument");
-  }
-  if (nargs > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFmt(
-        "str.strip() takes at most 1 argument (%w given)", nargs - 1));
-  }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseTypeErrorWithCStr("str.strip() requires a str object");
+    return thread->raiseRequiresType(self, SymbolId::kStr);
   }
   if (!self.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
