@@ -188,13 +188,11 @@ RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__add__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "can only concatenate bytes to bytes");
+    return thread->raiseRequiresType(other_obj, SymbolId::kBytes);
   }
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
@@ -207,7 +205,7 @@ RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -224,7 +222,7 @@ RawObject BytesBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__ge__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -242,8 +240,7 @@ RawObject BytesBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__getitem__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Bytes self(&scope, *self_obj);
   Object index(&scope, args.get(1));
@@ -285,7 +282,7 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__gt__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -302,7 +299,7 @@ RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__le__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -319,8 +316,7 @@ RawObject BytesBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__len__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
 
   Bytes self(&scope, *self_obj);
@@ -333,7 +329,7 @@ RawObject BytesBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__lt__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -350,8 +346,7 @@ RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__mul__' requires a 'bytes' instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object count_obj(&scope, args.get(1));
   count_obj = intFromIndex(thread, count_obj);
@@ -384,7 +379,7 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__ne__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfBytes(*other_obj)) {
@@ -401,7 +396,7 @@ RawObject BytesBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object type_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseRequiresType(type_obj, SymbolId::kType);
   }
   Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kBytes) {
@@ -464,8 +459,7 @@ RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfBytes(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__repr__' requires a 'bytes' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
   Bytes self(&scope, *self_obj);
   return bytesReprSmartQuotes(thread, self);
@@ -476,7 +470,7 @@ RawObject BytesBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfBytes(*obj)) {
-    return thread->raiseTypeErrorWithCStr("'hex' requires a 'bytes' object");
+    return thread->raiseRequiresType(obj, SymbolId::kBytes);
   }
   Bytes self(&scope, *obj);
   return bytesHex(thread, self, self.length());

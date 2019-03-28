@@ -769,12 +769,9 @@ TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
 
 TEST(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, SmallInt::fromWord(0));
-  Object count(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
-                            LayoutId::kTypeError,
-                            "'__mul__' requires a 'bytes' instance"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__mul__(0, 1)"), LayoutId::kTypeError,
+      "'__mul__' requires a 'bytes' object but got 'smallint'"));
 }
 
 TEST(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -1059,11 +1056,10 @@ TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
 
 TEST(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newByteArray());
-  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
-  EXPECT_TRUE(raisedWithStr(*repr, LayoutId::kTypeError,
-                            "'__repr__' requires a 'bytes' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__repr__(bytearray())"),
+      LayoutId::kTypeError,
+      "'__repr__' requires a 'bytes' object but got 'bytearray'"));
 }
 
 TEST(BytesBuiltinsTest, DunderReprWithEmptyBytesReturnsEmptyRepr) {
@@ -1149,9 +1145,9 @@ TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
 
 TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"),
-                            LayoutId::kTypeError,
-                            "'hex' requires a 'bytes' object"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"), LayoutId::kTypeError,
+                    "'hex' requires a 'bytes' object but got 'smallint'"));
 }
 
 TEST(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
