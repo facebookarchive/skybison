@@ -654,7 +654,8 @@ getattr(Foo, 'foo')
 )";
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
-                            LayoutId::kAttributeError, "missing attribute"));
+                            LayoutId::kAttributeError,
+                            "type object 'Foo' has no attribute 'foo'"));
 }
 
 TEST(BuiltinsModuleTest, HasAttrFromClassMissingAttrReturnsFalse) {

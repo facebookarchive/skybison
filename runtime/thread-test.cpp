@@ -1771,7 +1771,8 @@ hello.foo()
   runtime.importModuleFromBuffer(module_buf.get(), name);
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, main_src),
-                            LayoutId::kAttributeError, "missing attribute"));
+                            LayoutId::kAttributeError,
+                            "module 'hello' has no attribute 'foo'"));
 }
 
 TEST(ThreadTest, ModuleSetAttrTest) {

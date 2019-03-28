@@ -382,9 +382,9 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
     return *meta_attr;
   }
 
-  // TODO(T25140871): Refactor this into something like:
-  //     thread->throwMissingAttributeError(name)
-  return thread->raiseAttributeErrorWithCStr("missing attribute");
+  Str type_name(&scope, type.name());
+  return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+      "type object '%S' has no attribute '%S'", &type_name, &name));
 }
 
 RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
@@ -449,9 +449,9 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, attempt to delete from the type dict
   Dict type_dict(&scope, type.dict());
   if (dictRemove(type_dict, name).isError()) {
-    // TODO(T25140871): Refactor this into something like:
-    //     thread->throwMissingAttributeError(name)
-    return thread->raiseAttributeErrorWithCStr("missing attribute");
+    Str type_name(&scope, type.name());
+    return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+        "type object '%S' has no attribute '%S'", &type_name, &name));
   }
 
   return NoneType::object();
@@ -500,9 +500,15 @@ RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
     return *type_attr;
   }
 
-  // TODO(T25140871): Refactor this into something like:
-  //     thread->throwMissingAttributeError(name)
-  return thread->raiseAttributeErrorWithCStr("missing attribute");
+  if (receiver.isModule()) {
+    Module module(&scope, *receiver);
+    Str module_name(&scope, module.name());
+    return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+        "module '%S' has no attribute '%S'", &module_name, &name));
+  }
+  Str type_name(&scope, type.name());
+  return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+      "'%S' object has no attribute '%S'", &type_name, &name));
 }
 
 RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
@@ -547,9 +553,9 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   HeapObject instance(&scope, *receiver);
   Object result(&scope, instanceDel(thread, instance, name));
   if (result.isError()) {
-    // TODO(T25140871): Refactor this into something like:
-    //     thread->throwMissingAttributeError(name)
-    return thread->raiseAttributeErrorWithCStr("missing attribute");
+    Str type_name(&scope, type.name());
+    return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+        "'%S' object has no attribute '%S'", &type_name, &name));
   }
 
   return *result;
@@ -640,9 +646,9 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   Module module(&scope, *receiver);
   Dict module_dict(&scope, module.dict());
   if (dictRemove(module_dict, name).isError()) {
-    // TODO(T25140871): Refactor this into something like:
-    //     thread->throwMissingAttributeError(name)
-    return thread->raiseAttributeErrorWithCStr("missing attribute");
+    Str module_name(&scope, module.name());
+    return thread->raiseAttributeError(newStrFromFmt(
+        "module '%S' has no attribute '%S'", &module_name, &name));
   }
 
   return NoneType::object();

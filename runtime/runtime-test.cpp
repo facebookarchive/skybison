@@ -1859,7 +1859,18 @@ class A: pass
 print(A.foo)
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
-                            LayoutId::kAttributeError, "missing attribute"));
+                            LayoutId::kAttributeError,
+                            "type object 'A' has no attribute 'foo'"));
+}
+
+TEST(ModuleAttributeTest, GetMissingAttribute) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+import builtins
+builtins.foo
+)"),
+                            LayoutId::kAttributeError,
+                            "module 'builtins' has no attribute 'foo'"));
 }
 
 TEST(TypeAttributeTest, GetFunction) {
@@ -2286,7 +2297,8 @@ foo = Foo()
 print(foo.bar)
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
-                            LayoutId::kAttributeError, "missing attribute"));
+                            LayoutId::kAttributeError,
+                            "'Foo' object has no attribute 'bar'"));
 }
 
 TEST(InstanceAttributeTest, DunderClass) {
@@ -2394,7 +2406,8 @@ foo = Foo()
 del foo.bar
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
-                            LayoutId::kAttributeError, "missing attribute"));
+                            LayoutId::kAttributeError,
+                            "'Foo' object has no attribute 'bar'"));
 }
 
 TEST(InstanceAttributeDeletionTest, DeleteAttributeWithDunderDelattr) {
@@ -2520,7 +2533,8 @@ class Foo:
 del Foo.bar
 )";
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
-                            LayoutId::kAttributeError, "missing attribute"));
+                            LayoutId::kAttributeError,
+                            "type object 'Foo' has no attribute 'bar'"));
 }
 
 TEST(ClassAttributeDeletionTest, DeleteAttributeWithDunderDelattrOnMetaclass) {
@@ -3160,7 +3174,8 @@ TEST(FunctionAttrTest, GetInvalidAttribute) {
 def foo(): pass
 value = foo.x
 )"),
-                            LayoutId::kAttributeError, "missing attribute"));
+                            LayoutId::kAttributeError,
+                            "'function' object has no attribute 'x'"));
 }
 
 TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
