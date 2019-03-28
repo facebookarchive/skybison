@@ -50,6 +50,7 @@ class Runtime;
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
   V(DunderGetItem, "__getitem__")                                              \
+  V(DunderGlobals, "__globals__")                                              \
   V(DunderGt, "__gt__")                                                        \
   V(DunderHash, "__hash__")                                                    \
   V(DunderIadd, "__iadd__")                                                    \

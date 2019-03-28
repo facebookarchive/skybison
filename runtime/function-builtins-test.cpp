@@ -121,5 +121,31 @@ result = f.__call__(3)
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
+TEST(FunctionBuiltinsTest, DunderGlobalsIsDict) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+def f(a):
+  return a
+result = f.__globals__
+)");
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result.isDict());
+}
+
+TEST(FunctionBuiltinsTest, FunctionGlobalsIsEqualToModuleDict) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+import sys
+function_globals = sys.exit.__globals__
+module_dict = sys.__dict__
+)");
+  HandleScope scope;
+  Object function_globals(&scope,
+                          moduleAt(&runtime, "__main__", "function_globals"));
+  Object module_dict(&scope, moduleAt(&runtime, "__main__", "module_dict"));
+  EXPECT_EQ(*function_globals, *module_dict);
+}
+
 }  // namespace testing
 }  // namespace python
