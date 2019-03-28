@@ -1566,6 +1566,17 @@ class set(bootstrap=True):
     def __lt__(self, other):
         pass
 
+    def __or__(self, other):
+        if not isinstance(self, set) and not isinstance(self, frozenset):
+            return NotImplemented
+        if not isinstance(other, set) and not isinstance(other, frozenset):
+            return NotImplemented
+        result = set.copy(self)
+        if self is other:
+            return result
+        set.update(result, other)
+        return result
+
     def add(self, value):
         pass
 

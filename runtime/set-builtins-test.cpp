@@ -1387,4 +1387,34 @@ result.update([5, 6])
   EXPECT_EQ(result.numItems(), 4);
 }
 
+TEST(SetBuiltinsTest, DunderOrWithNonSetBaseSelfReturnsNotImplemented) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = set.__or__(None, set())");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+            NotImplementedType::object());
+}
+
+TEST(SetBuiltinsTest, DunderOrWithNonSetBaseOtherReturnsNotImplemented) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = set.__or__(set(), None)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+            NotImplementedType::object());
+}
+
+TEST(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = set.__or__({1, 2}, {2, 3})");
+  HandleScope scope;
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result_obj.isSet());
+  Set result(&scope, *result_obj);
+  EXPECT_EQ(result.numItems(), 3);
+  Object one(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(runtime.setIncludes(result, one));
+  Object two(&scope, SmallInt::fromWord(2));
+  EXPECT_TRUE(runtime.setIncludes(result, two));
+  Object three(&scope, SmallInt::fromWord(3));
+  EXPECT_TRUE(runtime.setIncludes(result, three));
+}
+
 }  // namespace python
