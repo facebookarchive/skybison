@@ -268,6 +268,28 @@ class property(bootstrap=True):
         pass
 
 
+class classmethod(bootstrap=True):
+    def __new__(cls, fn):
+        pass
+
+    def __init__(self, fn):
+        pass
+
+    def __get__(self, instance, owner):
+        pass
+
+
+class staticmethod(bootstrap=True):
+    def __new__(cls, fn):
+        pass
+
+    def __init__(self, fn):
+        pass
+
+    def __get__(self, instance, owner):
+        pass
+
+
 class int(bootstrap=True):
     def __new__(cls, n=0, base=_Unbound):
         pass
@@ -586,8 +608,23 @@ class bytearray(bootstrap=True):
     def __add__(self, other) -> bytearray:
         pass
 
+    def __contains__(self, key):
+        _unimplemented()
+
+    def __delitem__(self, key):
+        _unimplemented()
+
+    def __eq__(self, value):
+        _unimplemented()
+
+    def __ge__(self, value):
+        _unimplemented()
+
     def __getitem__(self, key):  # -> Union[int, bytearray]
         pass
+
+    def __gt__(self, value):
+        _unimplemented()
 
     def __iadd__(self, other) -> bytearray:
         pass
@@ -598,11 +635,26 @@ class bytearray(bootstrap=True):
     def __init__(self, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         pass
 
+    def __iter__(self):
+        _unimplemented()
+
+    def __le__(self):
+        _unimplemented()
+
     def __len__(self) -> int:
         pass
 
+    def __lt__(self):
+        _unimplemented()
+
+    def __mod__(self, value):
+        _unimplemented()
+
     def __mul__(self, n: int) -> bytearray:
         pass
+
+    def __ne__(self, value):
+        _unimplemented()
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         pass
@@ -610,13 +662,83 @@ class bytearray(bootstrap=True):
     def __repr__(self):
         pass
 
+    def __rmod__(self, value):
+        _unimplemented()
+
     def __rmul__(self, n: int) -> bytearray:
         if not isinstance(self, bytearray):
             raise TypeError("'__rmul__' requires a 'bytearray' instance")
         return bytearray.__mul__(self, n)
 
+    def __setitem__(self, key, value):
+        _unimplemented()
+
+    def append(self, item):
+        _unimplemented()
+
+    def capitalize(self):
+        _unimplemented()
+
+    def center(self):
+        _unimplemented()
+
+    def clear(self):
+        _unimplemented()
+
+    def copy(self):
+        _unimplemented()
+
+    def count(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def decode(self, encoding="utf-8", errors="strict"):
+        _unimplemented()
+
+    def endswith(self, suffix, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def expandtabs(self, tabsize=8):
+        _unimplemented()
+
+    def extend(self, iterable_of_ints):
+        _unimplemented()
+
+    def find(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    @classmethod
+    def fromhex(cls, string):
+        _unimplemented()
+
     def hex(self) -> str:
         pass
+
+    def index(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def insert(self, index, item):
+        _unimplemented()
+
+    def isalnum(self):
+        _unimplemented()
+
+    def isalpha(self):
+        _unimplemented()
+
+    def isdigit(self):
+        _unimplemented()
+
+    def islower(self):
+        _unimplemented()
+
+    def isspace(self):
+        _unimplemented()
+
+    def istitle(self):
+        _unimplemented()
+
+    def isupper(self):
+        _unimplemented()
 
     def join(self, iterable) -> bytearray:
         if not isinstance(self, bytearray):
@@ -627,10 +749,82 @@ class bytearray(bootstrap=True):
         items = [x for x in iterable]
         return _bytearray_join(self, items)
 
+    def ljust(self, width, fillchar=_Unbound):
+        _unimplemented()
+
+    def lower(self):
+        _unimplemented()
+
+    def lstrip(self, bytes=None):
+        _unimplemented()
+
+    def partition(self, sep):
+        _unimplemented()
+
+    def pop(self, index=-1):
+        _unimplemented()
+
+    def remove(self, value):
+        _unimplemented()
+
+    def replace(self, old, new, count=-1):
+        _unimplemented()
+
+    def reverse(self):
+        _unimplemented()
+
+    def rfind(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def rindex(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def rjust(self, width, fillchar=_Unbound):
+        _unimplemented()
+
+    def rpartition(self, sep):
+        _unimplemented()
+
+    def rsplit(self, sep=None, maxsplit=-1):
+        _unimplemented()
+
+    def rstrip(self, bytes=None):
+        _unimplemented()
+
+    def split(self, sep=None, maxsplit=-1):
+        _unimplemented()
+
+    def splitlines(self, keepends=False):
+        _unimplemented()
+
+    def startswith(self, prefix, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def strip(self, bytes=None):
+        _unimplemented()
+
+    def swapcase(self):
+        _unimplemented()
+
+    def title(self):
+        _unimplemented()
+
+    def translate(self, table, delete=b""):
+        _unimplemented()
+
+    def upper(self):
+        _unimplemented()
+
+    def zfill(self):
+        _unimplemented()
+
 
 class bytes(bootstrap=True):
     def __add__(self, other: bytes) -> bytes:
         pass
+
+    def __contains__(self, key):
+        _unimplemented()
 
     def __eq__(self, other):
         pass
@@ -644,6 +838,9 @@ class bytes(bootstrap=True):
     def __gt__(self, other):
         pass
 
+    def __iter__(self):
+        _unimplemented()
+
     def __le__(self, other):
         pass
 
@@ -652,6 +849,9 @@ class bytes(bootstrap=True):
 
     def __lt__(self, other):
         pass
+
+    def __mod__(self, n):
+        _unimplemented()
 
     def __mul__(self, n: int) -> bytes:
         pass
@@ -695,18 +895,67 @@ class bytes(bootstrap=True):
     def __repr__(self) -> str:  # noqa: T484
         pass
 
+    def __rmod__(self, n):
+        _unimplemented()
+
     def __rmul__(self, n: int) -> bytes:
         if not isinstance(self, bytes):
             raise TypeError("'__rmul__' requires a 'bytes' instance")
         return bytes.__mul__(self, n)
+
+    def capitalize(self):
+        _unimplemented()
+
+    def center(self):
+        _unimplemented()
+
+    def count(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
 
     def decode(self, encoding="utf-8", errors="strict") -> str:
         import _codecs
 
         return _codecs.decode(self, encoding, errors)
 
+    def endswith(self, suffix, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def expandtabs(self, tabsize=8):
+        _unimplemented()
+
+    def find(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    @classmethod
+    def fromhex(cls, string):
+        _unimplemented()
+
     def hex(self) -> str:
         pass
+
+    def index(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def isalnum(self):
+        _unimplemented()
+
+    def isalpha(self):
+        _unimplemented()
+
+    def isdigit(self):
+        _unimplemented()
+
+    def islower(self):
+        _unimplemented()
+
+    def isspace(self):
+        _unimplemented()
+
+    def istitle(self):
+        _unimplemented()
+
+    def isupper(self):
+        _unimplemented()
 
     def join(self, iterable) -> bytes:
         if not isinstance(self, bytes):
@@ -716,6 +965,70 @@ class bytes(bootstrap=True):
             return result
         items = [x for x in iterable]
         return _bytes_join(self, items)
+
+    def ljust(self, width, fillchar=_Unbound):
+        _unimplemented()
+
+    def lower(self):
+        _unimplemented()
+
+    def lstrip(self, bytes=None):
+        _unimplemented()
+
+    @staticmethod
+    def maketrans(frm, to):
+        _unimplemented()
+
+    def partition(self, sep):
+        _unimplemented()
+
+    def replace(self, old, new, count=-1):
+        _unimplemented()
+
+    def rfind(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def rindex(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def rjust(self, width, fillchar=_Unbound):
+        _unimplemented()
+
+    def rpartition(self, sep):
+        _unimplemented()
+
+    def rsplit(self, sep=None, maxsplit=-1):
+        _unimplemented()
+
+    def rstrip(self, bytes=None):
+        _unimplemented()
+
+    def split(self, sep=None, maxsplit=-1):
+        _unimplemented()
+
+    def splitlines(self, keepends=False):
+        _unimplemented()
+
+    def startswith(self, prefix, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def strip(self, bytes=None):
+        _unimplemented()
+
+    def swapcase(self):
+        _unimplemented()
+
+    def title(self):
+        _unimplemented()
+
+    def translate(self, table, delete=b""):
+        _unimplemented()
+
+    def upper(self):
+        _unimplemented()
+
+    def zfill(self):
+        _unimplemented()
 
 
 @_patch
@@ -955,24 +1268,6 @@ def _str_replace(self, old, newstr, count):
 
 
 class str(bootstrap=True):
-    def __new__(cls, obj="", encoding=_Unbound, errors=_Unbound):
-        if not isinstance(cls, type):
-            raise TypeError("cls is not a type object")
-        if not issubclass(cls, str):
-            raise TypeError("cls is not a subtype of str")
-        if cls != str:
-            # TODO(T40529650): Add an unimplemented function
-            raise NotImplementedError("__new__ with subtype of str")
-        if type(obj) is str and obj == "":
-            return obj
-        if encoding != _Unbound or errors != _Unbound:
-            # TODO(T40529650): Add an unimplemented function
-            raise NotImplementedError("str encoding not supported yet")
-        result = type(obj).__str__(obj)
-        if not isinstance(result, str):
-            raise TypeError("__str__ returned non-str instance")
-        return result
-
     def __add__(self, other):
         pass
 
@@ -1004,6 +1299,9 @@ class str(bootstrap=True):
     def __le__(self, other):
         pass
 
+    def __len__(self) -> int:
+        pass
+
     def __lt__(self, other):
         pass
 
@@ -1016,19 +1314,103 @@ class str(bootstrap=True):
     def __ne__(self, other):
         pass
 
-    def __str__(self):
-        return self
-
-    def __len__(self) -> int:
-        pass
+    def __new__(cls, obj="", encoding=_Unbound, errors=_Unbound):
+        if not isinstance(cls, type):
+            raise TypeError("cls is not a type object")
+        if not issubclass(cls, str):
+            raise TypeError("cls is not a subtype of str")
+        if cls != str:
+            # TODO(T40529650): Add an unimplemented function
+            raise NotImplementedError("__new__ with subtype of str")
+        if type(obj) is str and obj == "":
+            return obj
+        if encoding != _Unbound or errors != _Unbound:
+            # TODO(T40529650): Add an unimplemented function
+            raise NotImplementedError("str encoding not supported yet")
+        result = type(obj).__str__(obj)
+        if not isinstance(result, str):
+            raise TypeError("__str__ returned non-str instance")
+        return result
 
     def __repr__(self):
         pass
+
+    def __rmod__(self, n):
+        _unimplemented()
 
     def __rmul__(self, n: int) -> str:
         if not isinstance(self, str):
             raise TypeError("'__rmul__' requires a 'str' instance")
         return str.__mul__(self, n)
+
+    def __str__(self):
+        return self
+
+    def capitalize(self):
+        _unimplemented()
+
+    def casefold(self):
+        _unimplemented()
+
+    def center(self, width, fillchar=" "):
+        _unimplemented()
+
+    def count(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def encode(self, encoding="utf-8", errors="strict") -> bytes:
+        import _codecs
+
+        return _codecs.encode(self, encoding, errors)
+
+    def endswith(self, suffix, start=0, end=None):  # noqa: C901
+        def real_bounds_from_slice_bounds(start, end, length):
+            if start < 0:
+                start = length + start
+            if start < 0:
+                start = 0
+            if start > length:
+                start = length
+
+            if end is None or end > length:
+                end = length
+            if end < 0:
+                end = length + end
+            if end < 0:
+                end = 0
+            return start, end
+
+        def suffix_match(cmp, sfx, start, end):
+            if not isinstance(sfx, str):
+                raise TypeError("endswith suffix must be a str")
+            sfx_len = len(sfx)
+            # If the suffix is longer than the string its comparing against, it
+            # can't be a match.
+            if end - start < sfx_len:
+                return False
+            start = end - sfx_len
+
+            # Iterate through cmp from [end - sfx_len, end), checking against
+            # the characters in the suffix.
+            i = 0
+            while i < sfx_len:
+                if cmp[start + i] != sfx[i]:
+                    return False
+                i += 1
+            return True
+
+        str_len = len(self)
+        start, end = real_bounds_from_slice_bounds(start, end, str_len)
+        if not isinstance(suffix, tuple):
+            return suffix_match(self, suffix, start, end)
+
+        for suf in suffix:
+            if suffix_match(self, suf, start, end):
+                return True
+        return False
+
+    def expandtabs(self, tabsize=8):
+        _unimplemented()
 
     def find(self, sub, start=None, end=None):
         if not isinstance(self, str):
@@ -1045,6 +1427,12 @@ class str(bootstrap=True):
             end = _index(end)
         return _str_find(self, sub, start, end)
 
+    def format(self, *args, **kwargs):
+        _unimplemented()
+
+    def format_map(self, mapping):
+        _unimplemented()
+
     def index(self, sub, start=None, end=None):
         res = self.find(sub, start, end)
         if res < 0:
@@ -1055,7 +1443,7 @@ class str(bootstrap=True):
         # TODO(T41626152): Support non-ASCII
         if not isinstance(self, str):
             raise TypeError(f"isalnum expected 'str' but got {type(self).__name__}")
-        if self is "":
+        if self is "":  # noqa: P202
             return False
         num = range(ord("0"), ord("9") + 1)
         lower = range(ord("a"), ord("z") + 1)
@@ -1068,11 +1456,50 @@ class str(bootstrap=True):
                 return False
         return True
 
+    def isalpha(self):
+        _unimplemented()
+
+    def isdecimal(self):
+        _unimplemented()
+
+    def isdigit(self):
+        _unimplemented()
+
+    def isidentifier(self):
+        _unimplemented()
+
+    def islower(self):
+        # TODO(T42050373): Support non-ASCII
+        if not isinstance(self, str):
+            raise TypeError(f"islower expected 'str' but got {type(self).__name__}")
+        if self is "":  # noqa: P202
+            return False
+        lower = range(ord("a"), ord("z") + 1)
+        for c in str.__iter__(self):
+            i = ord(c)
+            if i > 127:
+                raise NotImplementedError("unicode")
+            if i not in lower:
+                return False
+        return True
+
+    def isnumeric(self):
+        _unimplemented()
+
+    def isprintable(self):
+        _unimplemented()
+
+    def isspace(self):
+        _unimplemented()
+
+    def istitle(self):
+        _unimplemented()
+
     def isupper(self):
         # TODO(T41626183): Support non-ASCII
         if not isinstance(self, str):
             raise TypeError(f"isupper expected 'str' but got {type(self).__name__}")
-        if self is "":
+        if self is "":  # noqa: P202
             return False
         upper = range(ord("A"), ord("Z") + 1)
         for c in str.__iter__(self):
@@ -1083,20 +1510,21 @@ class str(bootstrap=True):
                 return False
         return True
 
-    def islower(self):
-        # TODO(T42050373): Support non-ASCII
-        if not isinstance(self, str):
-            raise TypeError(f"islower expected 'str' but got {type(self).__name__}")
-        if self is "":
-            return False
-        lower = range(ord("a"), ord("z") + 1)
-        for c in str.__iter__(self):
-            i = ord(c)
-            if i > 127:
-                raise NotImplementedError("unicode")
-            if i not in lower:
-                return False
-        return True
+    def join(self, items) -> str:
+        pass
+
+    def ljust(self, width, fillchar):
+        _unimplemented()
+
+    def lower(self):
+        pass
+
+    def lstrip(self, other=None):
+        pass
+
+    @staticmethod
+    def maketrans(x, y=None, z=None):
+        _unimplemented()
 
     def partition(self, sep):
         if not isinstance(self, str):
@@ -1122,6 +1550,59 @@ class str(bootstrap=True):
                     return (self[:i], sep, self[i + j :])
             i += 1
         return (self, "", "")
+
+    def replace(self, old, new, count=None):
+        if not isinstance(self, str):
+            raise TypeError(
+                f"replace requires a 'str' instance but got {type(self).__name__}"
+            )
+        if not isinstance(old, str):
+            raise TypeError(
+                f"replace requires a 'str' instance but got {type(old).__name__}"
+            )
+        if not isinstance(new, str):
+            raise TypeError(
+                f"replace requires a 'str' instance but got {type(new).__name__}"
+            )
+        if count:
+            count = _index(count)
+        else:
+            count = -1
+        result = _str_replace(self, old, new, count)
+        return str(result) if self is result else result
+
+    def rfind(self, sub, start=None, end=None):
+        if not isinstance(self, str):
+            raise TypeError(
+                f"rfind requires a 'str' instance but got {type(self).__name__}"
+            )
+        if not isinstance(sub, str):
+            raise TypeError(
+                f"rfind requires a 'str' instance but got {type(sub).__name__}"
+            )
+        if start is not None:
+            start = _index(start)
+        if end is not None:
+            end = _index(end)
+        return _str_rfind(self, sub, start, end)
+
+    def rindex(self, sub, start=_Unbound, end=_Unbound):
+        _unimplemented()
+
+    def rjust(self, width, fillchar=_Unbound):
+        _unimplemented()
+
+    def rpartition(self, sep):
+        # TODO(T37438017): Write in C++
+        before, itself, after = self[::-1].partition(sep[::-1])[::-1]
+        return before[::-1], itself[::-1], after[::-1]
+
+    def rsplit(self, sep=None, maxsplit=-1):
+        # TODO(T37437993): Write in C++
+        return [s[::-1] for s in self[::-1].split(sep[::-1], maxsplit)[::-1]]
+
+    def rstrip(self, other=None):
+        pass
 
     def split(self, sep=None, maxsplit=-1):
         if maxsplit == 0:
@@ -1171,6 +1652,9 @@ class str(bootstrap=True):
         parts.append(self[last_match:])
         return parts
 
+    def splitlines(self, keepends=_Unbound):
+        _unimplemented()
+
     def startswith(self, prefix, start=0, end=None):
         def real_bounds_from_slice_bounds(start, end, length):
             if start < 0:
@@ -1217,115 +1701,23 @@ class str(bootstrap=True):
                 return True
         return False
 
-    def endswith(self, suffix, start=0, end=None):
-        def real_bounds_from_slice_bounds(start, end, length):
-            if start < 0:
-                start = length + start
-            if start < 0:
-                start = 0
-            if start > length:
-                start = length
-
-            if end is None or end > length:
-                end = length
-            if end < 0:
-                end = length + end
-            if end < 0:
-                end = 0
-            return start, end
-
-        def suffix_match(cmp, sfx, start, end):
-            if not isinstance(sfx, str):
-                raise TypeError("endswith suffix must be a str")
-            sfx_len = len(sfx)
-            # If the suffix is longer than the string its comparing against, it
-            # can't be a match.
-            if end - start < sfx_len:
-                return False
-            start = end - sfx_len
-
-            # Iterate through cmp from [end - sfx_len, end), checking against
-            # the characters in the suffix.
-            i = 0
-            while i < sfx_len:
-                if cmp[start + i] != sfx[i]:
-                    return False
-                i += 1
-            return True
-
-        str_len = len(self)
-        start, end = real_bounds_from_slice_bounds(start, end, str_len)
-        if not isinstance(suffix, tuple):
-            return suffix_match(self, suffix, start, end)
-
-        for suf in suffix:
-            if suffix_match(self, suf, start, end):
-                return True
-        return False
-
-    def replace(self, old, new, count=None):
-        if not isinstance(self, str):
-            raise TypeError(
-                f"replace requires a 'str' instance but got {type(self).__name__}"
-            )
-        if not isinstance(old, str):
-            raise TypeError(
-                f"replace requires a 'str' instance but got {type(old).__name__}"
-            )
-        if not isinstance(new, str):
-            raise TypeError(
-                f"replace requires a 'str' instance but got {type(new).__name__}"
-            )
-        if count:
-            count = _index(count)
-        else:
-            count = -1
-        result = _str_replace(self, old, new, count)
-        return str(result) if self is result else result
-
-    def rfind(self, sub, start=None, end=None):
-        if not isinstance(self, str):
-            raise TypeError(
-                f"rfind requires a 'str' instance but got {type(self).__name__}"
-            )
-        if not isinstance(sub, str):
-            raise TypeError(
-                f"rfind requires a 'str' instance but got {type(sub).__name__}"
-            )
-        if start is not None:
-            start = _index(start)
-        if end is not None:
-            end = _index(end)
-        return _str_rfind(self, sub, start, end)
-
-    # TODO(T37437993): Write in C++
-    def rsplit(self, sep=None, maxsplit=-1):
-        return [s[::-1] for s in self[::-1].split(sep[::-1], maxsplit)[::-1]]
-
-    # TODO(T37438017): Write in C++
-    def rpartition(self, sep):
-        before, itself, after = self[::-1].partition(sep[::-1])[::-1]
-        return before[::-1], itself[::-1], after[::-1]
-
-    def join(self, items) -> str:
-        pass
-
-    def lower(self):
-        pass
-
-    def lstrip(self, other=None):
-        pass
-
     def strip(self, other=None):
         pass
 
-    def rstrip(self, other=None):
-        pass
+    def swapcase(self):
+        _unimplemented()
 
-    def encode(self, encoding="utf-8", errors="strict") -> bytes:
-        import _codecs
+    def title(self):
+        _unimplemented()
 
-        return _codecs.encode(self, encoding, errors)
+    def translate(self, table):
+        _unimplemented()
+
+    def upper(self):
+        _unimplemented()
+
+    def zfill(self, width):
+        _unimplemented()
 
 
 class str_iterator(bootstrap=True):
@@ -1604,28 +1996,6 @@ class set_iterator(bootstrap=True):
         pass
 
     def __length_hint__(self):
-        pass
-
-
-class classmethod(bootstrap=True):
-    def __new__(cls, fn):
-        pass
-
-    def __init__(self, fn):
-        pass
-
-    def __get__(self, instance, owner):
-        pass
-
-
-class staticmethod(bootstrap=True):
-    def __new__(cls, fn):
-        pass
-
-    def __init__(self, fn):
-        pass
-
-    def __get__(self, instance, owner):
         pass
 
 
@@ -2002,3 +2372,124 @@ def _long_of_obj(obj):
 @_patch
 def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     pass
+
+
+# For compatibility with previous versions of Python
+EnvironmentError = OSError
+
+
+# For compatibility with previous versions of Python
+IOError = OSError
+
+
+def abs(x):
+    _unimplemented()
+
+
+def bin(x):
+    _unimplemented()
+
+
+def delattr(obj, name):
+    _unimplemented()
+
+
+def dir(*args):
+    _unimplemented()
+
+
+class enumerate:
+    def __init__(self, iterable, start=_Unbound):
+        _unimplemented()
+
+
+def eval(source, globals=None, locals=None):
+    _unimplemented()
+
+
+def exit():
+    _unimplemented()
+
+
+class filter:
+    def __init__(self, function, iterable):
+        _unimplemented()
+
+
+def globals():
+    _unimplemented()
+
+
+def hash(obj):
+    _unimplemented()
+
+
+def help(obj=_Unbound):
+    _unimplemented()
+
+
+def hex(number):
+    _unimplemented()
+
+
+def id(obj):
+    _unimplemented()
+
+
+def input(prompt=None):
+    _unimplemented()
+
+
+def locals():
+    _unimplemented()
+
+
+def min(*args):
+    _unimplemented()
+
+
+def oct(number):
+    _unimplemented()
+
+
+def open(
+    file,
+    mode="r",
+    buffering=-1,
+    encoding=None,
+    errors=None,
+    newline=None,
+    closefd=True,
+    opener=None,
+):
+    _unimplemented()
+
+
+def pow(x, y, z=None):
+    _unimplemented()
+
+
+def quit():
+    _unimplemented()
+
+
+class reversed:
+    def __init__(self, sequence):
+        _unimplemented()
+
+
+def round(number, ndigits=_Unbound):
+    _unimplemented()
+
+
+def sum(iterable, start=0):
+    _unimplemented()
+
+
+def vars(*args):
+    _unimplemented()
+
+
+class zip:
+    def __init__(self, *iterables):
+        _unimplemented()

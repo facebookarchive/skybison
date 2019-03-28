@@ -1163,8 +1163,7 @@ TEST_F(AbstractExtensionApiTest, PyNumberPowerWithFloatReturnsFloat) {
 
 TEST_F(AbstractExtensionApiTest, PyNumberRemainderWithNonIntRaisesTypeError) {
   PyObjectPtr x(PyLong_FromLong(10));
-  PyObjectPtr y(PyUnicode_FromString("foo"));
-  ASSERT_EQ(PyNumber_Remainder(x, y), nullptr);
+  ASSERT_EQ(PyNumber_Remainder(x, Py_None), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
