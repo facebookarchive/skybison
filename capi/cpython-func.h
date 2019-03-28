@@ -877,6 +877,7 @@ PyAPI_FUNC(int) PyList_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyList_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyLong_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyLong_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyMemoryView_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyModule_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyModule_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyObject_CheckBuffer_Func(PyObject*);
@@ -936,6 +937,7 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
 #define PyList_CheckExact(op) (PyList_CheckExact_Func((PyObject*)(op)))
 #define PyLong_Check(op) (PyLong_Check_Func((PyObject*)(op)))
 #define PyLong_CheckExact(op) (PyLong_CheckExact_Func((PyObject*)(op)))
+#define PyMemoryView_Check(op) (PyMemoryView_Check_Func((PyObject*)(op)))
 #define PyModule_Check(op) (PyModule_Check_Func((PyObject*)(op)))
 #define PyModule_CheckExact(op) (PyModule_CheckExact_Func((PyObject*)(op)))
 #define PyObject_CheckBuffer(op) (PyObject_CheckBuffer_Func((PyObject*)(op)))
