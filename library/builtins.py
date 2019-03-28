@@ -1548,6 +1548,9 @@ class set(bootstrap=True):
     def pop(self):
         pass
 
+    def update(self, *args):
+        pass
+
 
 class set_iterator(bootstrap=True):
     def __iter__(self):

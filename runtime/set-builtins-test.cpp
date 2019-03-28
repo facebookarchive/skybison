@@ -1318,4 +1318,72 @@ TEST(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   EXPECT_TRUE(has_object);
 }
 
+TEST(SetBuiltinsTest, UpdateWithNoArgsDoesNothing) {
+  Runtime runtime;
+  HandleScope scope;
+  Set set(&scope, runtime.newSet());
+  Tuple starargs(&scope, runtime.newTuple(0));
+  Object result(&scope, runBuiltin(SetBuiltins::update, set, starargs));
+  EXPECT_TRUE(result.isNoneType());
+  EXPECT_EQ(set.numItems(), 0);
+}
+
+TEST(SetBuiltinsTest, UpdateWithNonSetRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
+set.update(None)
+)"),
+                    LayoutId::kTypeError,
+                    "'update' requires a 'set' object but got 'NoneType'"));
+}
+
+TEST(SetBuiltinsTest, UpdateWithNonIterableRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+result = set()
+result.update({5}, {6}, None)
+)"),
+                            LayoutId::kTypeError, "object is not iterable"));
+  HandleScope scope;
+  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.numItems(), 2);
+}
+
+TEST(SetBuiltinsTest, UpdateWithSetAddsElements) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = set()
+result.update({5})
+)")
+                   .isError());
+  HandleScope scope;
+  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.numItems(), 1);
+}
+
+TEST(SetBuiltinsTest, UpdateWithMultipleSetsAddsAllElements) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = set()
+result.update({5}, {6})
+)")
+                   .isError());
+  HandleScope scope;
+  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.numItems(), 2);
+}
+
+TEST(SetBuiltinsTest, UpdateWithIterableAddsElements) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = set([1, 2])
+result.update([5, 6])
+)")
+                   .isError());
+  HandleScope scope;
+  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.numItems(), 4);
+}
+
 }  // namespace python

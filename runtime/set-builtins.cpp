@@ -391,6 +391,7 @@ const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kIntersection, intersection},
     {SymbolId::kIsDisjoint, isDisjoint},
     {SymbolId::kPop, pop},
+    {SymbolId::kUpdate, update},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -579,6 +580,31 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, args.get(0));
   return setPop(thread, set);
+}
+
+RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfSet(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kSet);
+  }
+  Set self(&scope, *self_obj);
+  Object starargs_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfTuple(*starargs_obj)) {
+    return thread->raiseRequiresType(starargs_obj, SymbolId::kTuple);
+  }
+  Tuple starargs(&scope, *starargs_obj);
+  Object result(&scope, NoneType::object());
+  for (word i = 0; i < starargs.length(); i++) {
+    Object other(&scope, starargs.at(i));
+    result = runtime->setUpdate(thread, self, other);
+    if (result.isError()) {
+      return *result;
+    }
+  }
+  return NoneType::object();
 }
 
 RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
