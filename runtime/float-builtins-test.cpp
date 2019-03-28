@@ -131,9 +131,9 @@ TEST(FloatBuiltinsTest, AddWithNonFloatSelfRaisesTypeError) {
 float.__add__(None, 1.0)
 )";
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, src), LayoutId::kTypeError,
-      "__add__() must be called with float instance as first argument"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                    "'__add__' requires a 'float' object but got 'NoneType'"));
 }
 
 TEST(FloatBuiltinsTest, AddWithNonFloatOtherRaisesTypeError) {
@@ -424,9 +424,9 @@ TEST(FloatBuiltinsTest, SubWithNonFloatSelfRaisesTypeError) {
 float.__sub__(None, 1.0)
 )";
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, src), LayoutId::kTypeError,
-      "__sub__() must be called with float instance as first argument"));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                    "'__sub__' requires a 'float' object but got 'NoneType'"));
 }
 
 TEST(FloatBuiltinsTest, PowFloatAndFloat) {

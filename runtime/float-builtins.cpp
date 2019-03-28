@@ -161,8 +161,7 @@ RawObject FloatBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__abs__() must be called with float instance as first argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   Float self(&scope, *self_obj);
   return runtime->newFloat(std::fabs(self.value()));
@@ -174,8 +173,7 @@ RawObject FloatBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__bool__() must be called with float instance as first argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   Float self(&scope, *self_obj);
   return Bool::fromBool(self.value() != 0.0);
@@ -187,7 +185,7 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseTypeErrorWithCStr("'__eq__' requires a 'float' object");
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
   double left = RawFloat::cast(*self).value();
 
@@ -216,7 +214,7 @@ RawObject FloatBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
     UserFloatBase user_float(&scope, *self);
     return user_float.floatValue();
   }
-  return thread->raiseTypeErrorWithCStr("'float' object expected");
+  return thread->raiseRequiresType(self, SymbolId::kFloat);
 }
 
 RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
@@ -225,7 +223,7 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseTypeErrorWithCStr("'__ge__' requires a 'float' object");
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
   double left = RawFloat::cast(*self).value();
 
@@ -271,7 +269,7 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseTypeErrorWithCStr("'__le__' requires a 'float' object");
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
   double left = RawFloat::cast(*self).value();
 
@@ -294,7 +292,7 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseTypeErrorWithCStr("'__lt__' requires a 'float' object");
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
   double left = RawFloat::cast(*self).value();
 
@@ -314,11 +312,10 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
 RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isFloat()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__mul__() must be called with float instance as first argument");
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   Float self(&scope, *self_obj);
   double left = self.value();
@@ -329,7 +326,7 @@ RawObject FloatBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   // May have returned NotImplemented or raised an exception.
   if (!maybe_error.isNoneType()) return *maybe_error;
 
-  return thread->runtime()->newFloat(left * right);
+  return runtime->newFloat(left * right);
 }
 
 RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
@@ -338,8 +335,7 @@ RawObject FloatBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__neg__() must be called with float instance as first argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   Float self(&scope, *self_obj);
   return runtime->newFloat(-self.value());
@@ -372,21 +368,24 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
 RawObject FloatBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  if (!self.isFloat()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__add__() must be called with float instance as first argument");
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = RawFloat::cast(self).value();
+  if (!self.isFloat()) {
+    UNIMPLEMENTED("float subclass");
+  }
+  double left = RawFloat::cast(*self).value();
 
   double right;
-  HandleScope scope(thread);
   Object other(&scope, args.get(1));
   Object maybe_error(&scope, convertToDouble(thread, other, &right));
   // May have returned NotImplemented or raised an exception.
   if (!maybe_error.isNoneType()) return *maybe_error;
 
-  return thread->runtime()->newFloat(left + right);
+  return runtime->newFloat(left + right);
 }
 
 RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
@@ -397,8 +396,7 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__truediv__() must be called with float instance as first argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   Float self(&scope, *self_obj);
   double left = self.value();
@@ -417,17 +415,21 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
 
 RawObject FloatBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  RawObject self_obj = args.get(0);
-  if (!self_obj.isFloat()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__repr__() must be called with float instance as first argument");
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
-  double value = RawFloat::cast(self_obj).value();
+  if (!self_obj.isFloat()) {
+    UNIMPLEMENTED("float subclass");
+  }
+  double value = RawFloat::cast(*self_obj).value();
   int required_size = std::snprintf(nullptr, 0, "%g", value) + 1;  // NUL
   std::unique_ptr<char[]> buffer(new char[required_size]);
   int size = std::snprintf(buffer.get(), required_size, "%g", value);
   CHECK(size < int{required_size}, "buffer too small");
-  return thread->runtime()->newStrFromCStr(buffer.get());
+  return runtime->newStrFromCStr(buffer.get());
 }
 
 RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
@@ -438,8 +440,7 @@ RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__rtruediv__() must be called with float instance as first argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kFloat);
   }
   Float self(&scope, *self_obj);
   double right = self.value();
@@ -458,45 +459,51 @@ RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
 
 RawObject FloatBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  if (!self.isFloat()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__sub__() must be called with float instance as first argument");
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
   }
-  double left = RawFloat::cast(self).value();
+  if (!self.isFloat()) {
+    UNIMPLEMENTED("float subclass");
+  }
+  double left = RawFloat::cast(*self).value();
 
   double right;
-  HandleScope scope(thread);
   Object other(&scope, args.get(1));
   Object maybe_error(&scope, convertToDouble(thread, other, &right));
   // May have returned NotImplemented or raised an exception.
   if (!maybe_error.isNoneType()) return *maybe_error;
 
-  return thread->runtime()->newFloat(left - right);
+  return runtime->newFloat(left - right);
 }
 
 RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  RawObject self = args.get(0);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kFloat);
+  }
   if (!self.isFloat()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__pow__() must be called with float instance as first argument");
+    UNIMPLEMENTED("float subclass");
   }
   // TODO(T40438612): Implement the modulo operation given the 3rd argument.
   if (!args.get(2).isUnbound()) {
     return thread->raiseTypeErrorWithCStr(
         "pow() 3rd argument not allowed unless all arguments are integers");
   }
-  double left = RawFloat::cast(self).value();
+  double left = RawFloat::cast(*self).value();
 
   double right;
-  HandleScope scope(thread);
   Object other(&scope, args.get(1));
   Object maybe_error(&scope, convertToDouble(thread, other, &right));
   // May have returned NotImplemented or raised an exception.
   if (!maybe_error.isNoneType()) return *maybe_error;
 
-  return thread->runtime()->newFloat(std::pow(left, right));
+  return runtime->newFloat(std::pow(left, right));
 }
 
 }  // namespace python
