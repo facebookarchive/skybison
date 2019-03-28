@@ -390,6 +390,7 @@ class Runtime;
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
+  V(UnderFunctools, "_functools")                                              \
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
   V(UnderIo, "_io")                                                            \

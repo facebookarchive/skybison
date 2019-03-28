@@ -151,6 +151,7 @@ target_include_directories(
 set(
   FROZEN_MODULE_INPUT
   library/_codecs.py
+  library/_functools.py
   library/_imp.py
   library/_io.py
   library/_warnings.py
@@ -229,6 +230,8 @@ add_library(
   runtime/frame.cpp
   runtime/frame.h
   runtime/function-builtins.cpp
+  runtime/functools-module.cpp
+  runtime/functools-module.h
   runtime/generator-builtins.cpp
   runtime/globals.h
   runtime/handles.cpp
