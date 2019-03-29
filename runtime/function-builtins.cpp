@@ -37,8 +37,7 @@ RawObject FunctionBuiltins::dunderGet(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!self.isFunction()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__get__ must be called with function instance as first argument");
+    return thread->raiseRequiresType(self, SymbolId::kFunction);
   }
   Object instance(&scope, args.get(1));
   // When `instance is None` return the plain function because we are doing a
