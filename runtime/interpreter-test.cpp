@@ -2641,12 +2641,11 @@ result = f(*args)
   EXPECT_PYLIST_EQ(result, {"b", "a"});
 }
 
-TEST(InterpreterDeathTest, ExplodeWithIterableRaisesNotImplementedError) {
+TEST(InterpreterDeathTest, ExplodeWithIterableDies) {
   Runtime runtime;
   // TODO(bsimmers): Change this to inspect result once sequenceAsTuple() is
   // fixed.
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
 def f():
   pass
 def gen():
@@ -2654,8 +2653,7 @@ def gen():
   yield 2
 result = f(*gen())
 )"),
-                    LayoutId::kNotImplementedError,
-                    "Iterables not yet supported in sequenceAsTuple()"));
+               "unimplemented: arbitrary iterables in sequenceAsTuple");
 }
 
 TEST(InterpreterTest, FormatValueCallsDunderStr) {

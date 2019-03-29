@@ -48,9 +48,7 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
   }
 
   // TODO(T40263865): Support arbitrary iterables.
-  return thread->raiseWithCStr(
-      LayoutId::kNotImplementedError,
-      "Iterables not yet supported in sequenceAsTuple()");
+  UNIMPLEMENTED("arbitrary iterables in sequenceAsTuple");
 }
 
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {

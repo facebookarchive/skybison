@@ -14,13 +14,11 @@ static RawObject fileWriteObjectImpl(Thread* thread, const Object& file,
                                      const Object& obj, bool use_str) {
   // TODO(T41323917): Support actual streams.
   if (!file.isSmallInt()) {
-    return thread->raiseWithCStr(LayoutId::kNotImplementedError,
-                                 "Unsupported file stream type");
+    UNIMPLEMENTED("real file streams");
   }
   int fileno = RawSmallInt::cast(*file).value();
   if (fileno != STDOUT_FILENO && fileno != STDERR_FILENO) {
-    return thread->raiseWithCStr(LayoutId::kNotImplementedError,
-                                 "Unsupported fileno");
+    UNIMPLEMENTED("non stdout/stderr fileno");
   }
 
   HandleScope scope(thread);
