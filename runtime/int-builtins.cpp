@@ -155,16 +155,6 @@ RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
   return SmallInt::fromWord(res);
 }
 
-static RawObject raiseRequiresInt(Thread* thread, const Object& obj) {
-  HandleScope scope(thread);
-  Function function(&scope, thread->currentFrame()->function());
-  Str function_name(&scope, function.name());
-  Str message(&scope, thread->runtime()->newStrFromFmt(
-                          "'%S' requires a 'int' object but received %T",
-                          &function_name, &obj));
-  return thread->raiseTypeError(*message);
-}
-
 static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
                              RawObject (*op)(Thread* thread, const Int& left,
                                              const Int& right)) {
@@ -173,7 +163,7 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread, self_obj);
+    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
   Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*other_obj)) {
@@ -190,7 +180,7 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread, self_obj);
+    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
   Int self(&scope, *self_obj);
   return op(thread, self);
@@ -325,7 +315,7 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   HandleScope scope;
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return raiseRequiresInt(thread, self_obj);
+    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
   Int self(&scope, *self_obj);
 
