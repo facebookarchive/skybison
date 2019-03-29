@@ -82,9 +82,7 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isGenerator()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__next__() must be called with a generator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kGenerator);
   }
   Generator gen(&scope, *self);
   Object value(&scope, NoneType::object());
