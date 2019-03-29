@@ -1397,4 +1397,92 @@ result = max(first, second, key=lambda x: 1) is first
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
+TEST(BuiltinsModuleTest, MinWithEmptyIterableRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "min([])"),
+                            LayoutId::kValueError,
+                            "min() arg is an empty sequence"));
+}
+
+TEST(BuiltinsModuleTest, MinWithMultipleArgsReturnsMinimum) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, "result = min(4, 3, 1, 2, 5)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 1));
+}
+
+TEST(BuiltinsModuleTest, MinWithNoArgsRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "min()"), LayoutId::kTypeError,
+      "TypeError: 'min' takes min 1 positional arguments but 0 given"));
+}
+
+TEST(BuiltinsModuleTest, MinWithIterableReturnsMinimum) {
+  Runtime runtime;
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = min((4, 3, 1, 2, 5))").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 1));
+}
+
+TEST(BuiltinsModuleTest, MinWithEmptyIterableAndDefaultReturnsDefault) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, "result = min([], default=42)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 42));
+}
+
+TEST(BuiltinsModuleTest, MinWithKeyOrdersByKeyFunction) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = min((1, 2, 3), key=lambda x: -x)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
+}
+
+TEST(BuiltinsModuleTest, MinWithEmptyIterableAndKeyAndDefaultReturnsDefault) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = min((), key=lambda x: x, default='empty')
+)")
+                   .isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "empty"));
+}
+
+TEST(BuiltinsModuleTest, MinWithMultipleArgsAndDefaultRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "min(1, 2, default=0)"), LayoutId::kTypeError,
+      "Cannot specify a default for min() with multiple positional arguments"));
+}
+
+TEST(BuiltinsModuleTest, MinReturnsFirstOccuranceOfEqualValues) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  pass
+
+first = A()
+second = A()
+result = min(first, second, key=lambda x: 1) is first
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(BuiltinsModuleTest, MinWithoutKeyReturnsFirstOccuranceOfEqualValues) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A():
+  def __lt__(self, _):
+    return False
+
+first = A()
+second = A()
+result = min(first, second) is first
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
 }  // namespace python

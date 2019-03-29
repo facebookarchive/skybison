@@ -2255,6 +2255,52 @@ def max(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C9
     return result
 
 
+# NOTE: Sync this with max() since min() is copied from max().
+def min(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C901
+    if arg2 is not _Unbound:
+        if default is not _Unbound:
+            raise TypeError(
+                "Cannot specify a default for min() with multiple positional arguments"
+            )
+        # compare positional arguments and varargs
+        if key is _Unbound:
+            # using argument values
+            result = arg2 if arg2 < arg1 else arg1
+            if args:
+                for item in args:
+                    result = item if item < result else result
+        else:
+            # using ordering function values
+            key1 = key(arg1)
+            key2 = key(arg2)
+            key_max = key2 if key2 < key1 else key1
+            result = arg1 if key_max is key1 else arg2
+            if args:
+                for item in args:
+                    key_item = key(item)
+                    if key_item < key_max:
+                        key_max, result = key_item, item
+    else:
+        # compare iterable items
+        result = default
+        if key is _Unbound:
+            # using iterable item values
+            for item in arg1:
+                if result is _Unbound or item < result:
+                    result = item
+        else:
+            # using ordering function values
+            key_max = _Unbound
+            for item in arg1:
+                key_item = key(item)
+                if key_max is _Unbound or key_item < key_max:
+                    key_max = key_item
+                    result = item
+        if result is _Unbound:
+            raise ValueError("min() arg is an empty sequence")
+    return result
+
+
 def next(iterator, default=_Unbound):
     try:
         dunder_next = _Unbound
@@ -2470,10 +2516,6 @@ def input(prompt=None):
 
 
 def locals():
-    _unimplemented()
-
-
-def min(*args):
     _unimplemented()
 
 
