@@ -2751,8 +2751,7 @@ TEST(IntBuiltinsTest, DunderRpowWithSmallIntsReturnsSmallInt) {
   HandleScope scope;
   runFromCStr(&runtime, "result = int.__rpow__(8, 2)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  // int.__pow__ is not implemented yet.
-  EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+  EXPECT_TRUE(isIntEqualsWord(*result, 256));
 }
 
 TEST(IntBuiltinsTest, DunderRrshiftWithSmallIntsReturnsSmallInt) {
@@ -3561,6 +3560,76 @@ TEST(IntBuiltinsTest, CompareWithBigNegativeNumber) {
   Int b(&scope, SmallInt::fromWord(SmallInt::kMinValue));
   EXPECT_LT(a.compare(*b), 0);
   EXPECT_GT(b.compare(*a), 0);
+}
+
+TEST(IntBuiltinsTest, DunderPowWithZeroReturnsOne) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__pow__(4, 0)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST(IntBuiltinsTest, DunderPowWithOneReturnsSelf) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__pow__(4, 1)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 4));
+}
+
+TEST(IntBuiltinsTest, DunderPowWithTwoSquaresNumber) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__pow__(4, 2)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 16));
+}
+
+TEST(IntBuiltinsTest, DunderPowWithModEqualsOneReturnsZero) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__pow__(4, 2, 1)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+}
+
+TEST(IntBuiltinsTest, DunderPowWithNegativePowerAndModRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "result = int.__pow__(4, -2, 1)"),
+      LayoutId::kValueError,
+      "pow() 2nd argument cannot be negative when 3rd argument specified"));
+}
+
+TEST(IntBuiltinsTest, DunderPowWithMod) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = int.__pow__(4, 8, 10)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 6));
+}
+
+TEST(IntBuiltinsTest, DunderPowWithNegativeBaseCallsFloatDunderPow) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = (int.__pow__(2, -1) - 0.5).__abs__() < 0.00001
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(IntBuiltinsTest, DunderPowWithNonIntSelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "result = int.__pow__(None, 1, 1)"),
+                    LayoutId::kTypeError,
+                    "'__pow__' requires an 'int' object but got 'NoneType'"));
+}
+
+TEST(IntBuiltinsTest, DunderPowWithNonIntPowerReturnsNotImplemented) {
+  Runtime runtime;
+  runFromCStr(&runtime, "result = int.__pow__(1, None)");
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplementedType());
 }
 
 }  // namespace python

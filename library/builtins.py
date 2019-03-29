@@ -366,6 +366,35 @@ class int(bootstrap=True):
     def __pos__(self) -> int:
         pass
 
+    # TODO(T42359066): Re-write this in C++ if we need a speed boost.
+    def __pow__(self, power, mod=None) -> int:
+        if not isinstance(self, int):
+            raise TypeError(
+                f"'__pow__' requires an 'int' object but got '{type(self).__name__}'"
+            )
+        if not isinstance(power, int):
+            return NotImplemented
+        if mod is not None and not isinstance(mod, int):
+            return NotImplemented
+        if power < 0:
+            if mod is not None:
+                raise ValueError(
+                    "pow() 2nd argument cannot be negative when 3rd argument specified"
+                )
+            else:
+                return float.__pow__(float(self), power)
+        if 0 == power:
+            return 1
+        if 1 == mod:
+            return 0
+        result = self
+        while int.__gt__(power, 1):
+            result = int.__mul__(result, self)
+            power = int.__sub__(power, 1)
+        if mod is not None:
+            result = int.__mod__(result, mod)
+        return result
+
     def __radd__(self, n: int) -> int:
         if not isinstance(self, int):
             raise TypeError("'__radd__' requires a 'int' object")
