@@ -133,8 +133,10 @@ class Runtime;
   V(Argv, "argv")                                                              \
   V(ArithmeticError, "ArithmeticError")                                        \
   V(Ascii, "ascii")                                                            \
+  V(AsciiDecode, "ascii_decode")                                               \
   V(AssertionError, "AssertionError")                                          \
   V(AttributeError, "AttributeError")                                          \
+  V(Backslashreplace, "backslashreplace")                                      \
   V(BaseException, "BaseException")                                            \
   V(Big, "big")                                                                \
   V(BitLength, "bit_length")                                                   \
@@ -227,6 +229,7 @@ class Runtime;
   V(Iand, "iand")                                                              \
   V(Iconcat, "iconcat")                                                        \
   V(Ifloordiv, "ifloordiv")                                                    \
+  V(Ignore, "ignore")                                                          \
   V(Ilshift, "ilshift")                                                        \
   V(Imatmul, "imatmul")                                                        \
   V(Imod, "imod")                                                              \
@@ -333,6 +336,7 @@ class Runtime;
   V(Remove, "remove")                                                          \
   V(Rfind, "rfind")                                                            \
   V(Repr, "repr")                                                              \
+  V(Replace, "replace")                                                        \
   V(ResourceWarning, "ResourceWarning")                                        \
   V(RPartition, "rpartition")                                                  \
   V(Rshift, "rshift")                                                          \
@@ -362,9 +366,12 @@ class Runtime;
   V(StopIteration, "StopIteration")                                            \
   V(Str, "str")                                                                \
   V(StrIterator, "str_iterator")                                               \
+  V(Strict, "strict")                                                          \
   V(Strip, "strip")                                                            \
   V(Sub, "sub")                                                                \
   V(Super, "super")                                                            \
+  V(Surrogateescape, "surrogateescape")                                        \
+  V(Surrogatepass, "surrogatepass")                                            \
   V(SyntaxError, "SyntaxError")                                                \
   V(SyntaxWarning, "SyntaxWarning")                                            \
   V(Sys, "sys")                                                                \
@@ -383,8 +390,11 @@ class Runtime;
   V(TypeError, "TypeError")                                                    \
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderAddress, "_address")                                                  \
+  V(UnderAsciiDecode, "_ascii_decode")                                         \
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
+  V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
+  V(UnderByteArrayToString, "_bytearray_to_string")                            \
   V(UnderBytesJoin, "_bytes_join")                                             \
   V(UnderBytesNew, "_bytes_new")                                               \
   V(UnderCodecs, "_codecs")                                                    \
@@ -439,6 +449,7 @@ class Runtime;
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
   V(Warning, "Warning")                                                        \
+  V(Xmlcharrefreplace, "xmlcharrefreplace")                                    \
   V(Xor, "xor")                                                                \
   V(ZeroDivisionError, "ZeroDivisionError")
 

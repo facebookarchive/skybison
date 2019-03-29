@@ -1144,6 +1144,14 @@ TEST(BytesBuiltinsTest, DunderRmulCallsDunderMul) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "111"));
 }
 
+TEST(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = b'hello'.decode('ascii')");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
+}
+
 TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'hello'.decode('unknown')"),

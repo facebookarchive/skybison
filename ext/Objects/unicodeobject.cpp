@@ -4,6 +4,7 @@
 #include <cwchar>
 
 #include "bytearray-builtins.h"
+#include "codecs-module.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "handles.h"
@@ -34,6 +35,20 @@ struct _PyUnicodeWriter {  // NOLINT
   unsigned char overallocate;
   unsigned char readonly;
 };  // NOLINT
+
+static RawObject symbolFromError(Runtime* runtime, const char* error) {
+  Symbols* symbols = runtime->symbols();
+  if (error == nullptr || std::strcmp(error, "strict") == 0) {
+    return symbols->Strict();
+  }
+  if (std::strcmp(error, "ignore") == 0) {
+    return symbols->Ignore();
+  }
+  if (std::strcmp(error, "replace") == 0) {
+    return symbols->Replace();
+  }
+  return runtime->internStrFromCStr(error);
+}
 
 PY_EXPORT void PyUnicode_WRITE_Func(enum PyUnicode_Kind kind, void* data,
                                     Py_ssize_t index, Py_UCS4 value) {
@@ -867,12 +882,24 @@ PY_EXPORT PyObject* PyUnicode_Decode(const char* /* s */, Py_ssize_t /* e */,
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
-                                          const char* /* errors */) {
-  // TODO(T38200137): Make use of the errors handler
+                                          const char* errors) {
   Thread* thread = Thread::current();
-  return ApiHandle::newReference(
-      thread, thread->runtime()->newStrWithAll(
-                  View<byte>(reinterpret_cast<const byte*>(c_str), size)));
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Bytes bytes(&scope, runtime->newBytesWithAll(View<byte>(
+                          reinterpret_cast<const byte*>(c_str), size)));
+  Str errors_obj(&scope, symbolFromError(runtime, errors));
+  Object result_obj(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
+                                                    SymbolId::kAsciiDecode,
+                                                    bytes, errors_obj));
+  if (result_obj.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseSystemErrorWithCStr("could not call _codecs.ascii_decode");
+    }
+    return nullptr;
+  }
+  Tuple result(&scope, *result_obj);
+  return ApiHandle::newReference(thread, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeCharmap(const char* /* s */,

@@ -22,7 +22,36 @@ def encode(data, encoding: str = "utf-8", errors: str = "strict") -> bytes:
         raise NotImplementedError("Non-fastpass codecs are unimplemented")
 
 
-_codec_decode_table = {}  # noqa: T484
+@_patch
+def _ascii_decode(data: str, errors: str, index: int, out: bytearray):
+    pass
+
+
+def ascii_decode(data: bytes, errors: str = "strict"):
+    if not isinstance(data, bytes):
+        raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
+    if not isinstance(errors, str):
+        raise TypeError(
+            "ascii_decode() argument 2 must be str or None, not "
+            f"'{type(errors).__name__}'"
+        )
+    result = bytearray()
+    i = 0
+    encoded = ""
+    while i < len(data):
+        encoded, i = _ascii_decode(data, errors, i, result)
+        if isinstance(encoded, int):
+            data, pos = _call_decode_errorhandler(
+                errors, data, result, "ordinal not in range(128)", "ascii", encoded, i
+            )
+            i += pos
+    if isinstance(encoded, str):
+        return encoded, i
+    # The error handler was the last to write to the result
+    return _bytearray_to_string(result), i
+
+
+_codec_decode_table = {"ascii": ascii_decode, "us_ascii": ascii_decode}
 
 _codec_encode_table = {}  # noqa: T484
 
@@ -38,7 +67,7 @@ def ignore_errors(error):
         raise TypeError(
             f"don't know how to handle {type(error).__name__} in error callback"
         )
-    return ("", error.end)
+    return ("", 0)
 
 
 def lookup_error(error: str):
@@ -62,4 +91,78 @@ def register_error(name: str, error_func):
     _codec_error_registry[name] = error_func
 
 
+def _call_decode_errorhandler(
+    errors: str,
+    input: bytes,
+    output: bytearray,
+    reason: str,
+    encoding: str,
+    start: int,
+    end: int,
+):
+    """
+    Generic decoding errorhandling function
+    Creates a UnicodeDecodeError, looks up an error handler, and calls the
+    error handler with the UnicodeDecodeError.
+    Makes sure the error handler returns a (str, int) tuple and returns it and
+    writes the str to the output bytearray passed in.
+    Since the error handler can change the object that's being decoded by
+    replacing the object of the UnicodeDecodeError, this function returns the
+    Error's object field, along with the integer returned from the function
+    call that's been normalized to fit within the length of the object.
+
+    errors: The name of the error handling function to call
+    input: The input to be decoded
+    output: The string builder that the error handling result should be appended to
+    reason: The reason the errorhandler was called
+    encoding: The encoding being used
+    start: The index of the first non-erroneus byte
+    end: The index of the first non-erroneous byte
+    """
+    exception = UnicodeDecodeError(encoding, input, start, end, reason)
+    result = lookup_error(errors)(exception)
+    if (
+        not isinstance(result, tuple)
+        or len(result) != 2
+        or not isinstance(result[0], str)
+        or not hasattr(result[1], "__index__")
+    ):
+        raise TypeError("decoding error handler must return (str, int) tuple")
+    replacement = result[0]
+    pos = _index(result[1])
+    input = exception.object
+    if not isinstance(input, bytes):
+        raise TypeError("exception attribute object must be bytes")
+    if pos < 0:
+        pos += len(input)
+    if not 0 <= pos <= len(input):
+        raise IndexError(f"position {pos} from error handler out of bounds")
+    _bytearray_string_append(output, replacement)
+
+    return (input, pos)
+
+
+def _index(num):
+    if not isinstance(num, int):
+        try:
+            # TODO(T41077650): Truncate the result of __index__ to Py_ssize_t
+            return num.__index__()
+        except AttributeError:
+            raise TypeError(
+                f"'{type(num).__name__}' object cannot be interpreted as" " an integer"
+            )
+    return num
+
+
 _codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
+
+
+@_patch
+def _bytearray_string_append(dst: bytearray, data: str):
+    pass
+
+
+# TODO(T42244617): Replace with a _strarray type
+@_patch
+def _bytearray_to_string(src: bytearray) -> str:
+    pass
