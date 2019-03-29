@@ -2219,7 +2219,7 @@ def max(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C9
         # compare positional arguments and varargs
         if key is _Unbound:
             # using argument values
-            result = arg1 if arg1 > arg2 else arg2
+            result = arg2 if arg2 > arg1 else arg1
             if args:
                 for item in args:
                     result = item if item > result else result
@@ -2227,7 +2227,7 @@ def max(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C9
             # using ordering function values
             key1 = key(arg1)
             key2 = key(arg2)
-            key_max = key1 if key1 > key2 else key1
+            key_max = key2 if key2 > key1 else key1
             result = arg1 if key_max is key1 else arg2
             if args:
                 for item in args:

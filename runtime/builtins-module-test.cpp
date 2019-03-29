@@ -1382,7 +1382,7 @@ TEST(BuiltinsModuleTest, MaxWithMultipleArgsAndDefaultRaisesTypeError) {
       "Cannot specify a default for max() with multiple positional arguments"));
 }
 
-TEST(BuiltinsModuleTest, MaxReturnsFirstOccuranceOfEqualValues) {
+TEST(BuiltinsModuleTest, MaxWithKeyReturnsFirstOccuranceOfEqualValues) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class A:
@@ -1390,8 +1390,22 @@ class A:
 
 first = A()
 second = A()
-
 result = max(first, second, key=lambda x: 1) is first
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(BuiltinsModuleTest, MaxWithoutKeyReturnsFirstOccuranceOfEqualValues) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A():
+  def __gt__(self, _):
+    return False
+
+first = A()
+second = A()
+result = max(first, second) is first
 )")
                    .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
