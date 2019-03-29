@@ -404,8 +404,9 @@ RawObject listFromRange(word start, word stop) {
   Str s1(&scope, *str1);
   if (!s1.equals(*str2)) {
     Str s2(&scope, *str2);
+    unique_c_ptr<char> s2_ptr(s2.toCStr());
     return ::testing::AssertionFailure()
-           << "is not equal to '" << s2.toCStr() << "'";
+           << "is not equal to '" << s2_ptr.get() << "'";
   }
   return ::testing::AssertionSuccess();
 }
@@ -421,8 +422,9 @@ RawObject listFromRange(word start, word stop) {
   }
   Str str(&scope, *str_obj);
   if (!str.equalsCStr(c_str)) {
+    unique_c_ptr<char> str_ptr(str.toCStr());
     return ::testing::AssertionFailure()
-           << "'" << str.toCStr() << "' is not equal to '" << c_str << "'";
+           << "'" << str_ptr.get() << "' is not equal to '" << c_str << "'";
   }
   return ::testing::AssertionSuccess();
 }
