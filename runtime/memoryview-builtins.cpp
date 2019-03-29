@@ -104,16 +104,6 @@ static RawObject unpackObject(Thread* thread, const Bytes& bytes, char format,
   }
 }
 
-static RawObject raiseRequiresMemoryView(Thread* thread) {
-  HandleScope scope(thread);
-  Function function(&scope, thread->currentFrame()->function());
-  Str function_name(&scope, function.name());
-  Str message(&scope,
-              thread->runtime()->newStrFromFmt(
-                  "'%S' requires a 'memoryview' object", &function_name));
-  return thread->raiseTypeError(*message);
-}
-
 static word pow2_remainder(word dividend, word divisor) {
   DCHECK(divisor > 0 && Utils::isPowerOfTwo(divisor), "must be power of two");
   word mask = divisor - 1;
@@ -124,7 +114,9 @@ RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isMemoryView()) return raiseRequiresMemoryView(thread);
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+  }
   MemoryView self(&scope, *self_obj);
 
   Runtime* runtime = thread->runtime();
@@ -160,7 +152,9 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isMemoryView()) return raiseRequiresMemoryView(thread);
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+  }
   MemoryView self(&scope, *self_obj);
 
   Object index_obj(&scope, args.get(1));
@@ -197,7 +191,9 @@ RawObject MemoryViewBuiltins::dunderLen(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isMemoryView()) return raiseRequiresMemoryView(thread);
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kMemoryView);
+  }
   MemoryView self(&scope, *self_obj);
   // TODO(T38246066) support bytes subclasses
   Bytes bytes(&scope, self.buffer());
