@@ -18,8 +18,7 @@ RawObject complexGetImag(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "_complex_imag requires a complex instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
   }
   Complex self(&scope, *self_obj);
   return runtime->newFloat(self.imag());
@@ -31,8 +30,7 @@ RawObject complexGetReal(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "_complex_real requires a complex instance");
+    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
   }
   Complex self(&scope, *self_obj);
   return runtime->newFloat(self.real());
