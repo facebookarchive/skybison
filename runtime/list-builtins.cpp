@@ -478,9 +478,7 @@ RawObject ListIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isListIterator()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__iter__() must be called with a list iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kListIterator);
   }
   return *self;
 }
@@ -491,9 +489,7 @@ RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isListIterator()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__next__() must be called with a list iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self_obj, SymbolId::kListIterator);
   }
   ListIterator self(&scope, *self_obj);
   Object value(&scope, listIteratorNext(thread, self));
@@ -509,9 +505,7 @@ RawObject ListIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isListIterator()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() must be called with a list iterator instance as the "
-        "first argument");
+    return thread->raiseRequiresType(self, SymbolId::kListIterator);
   }
   ListIterator list_iterator(&scope, *self);
   List list(&scope, list_iterator.iterable());
