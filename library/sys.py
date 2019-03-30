@@ -29,6 +29,7 @@ path_importer_cache = {}
 class FlagsStructSeq:
     def __init__(self):
         self.verbose = 0
+        self.bytes_warning = 0
 
 
 flags = FlagsStructSeq()
@@ -61,3 +62,6 @@ def excepthook(exc, value, tb):
 @_patch
 def exc_info():
     pass
+
+
+warnoptions = []
