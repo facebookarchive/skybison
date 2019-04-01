@@ -1357,7 +1357,7 @@ class slice(bootstrap=True):
             elif stop > upper:
                 stop = upper
 
-        return (start, stop, step)
+        return start, stop, step
 
 
 class smallint(bootstrap=True):
