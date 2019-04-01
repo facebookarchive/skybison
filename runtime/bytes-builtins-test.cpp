@@ -89,7 +89,8 @@ TEST(BytesBuiltinsTest, FromIterableWithTupleReturnsBytes) {
   tuple.atPut(1, SmallInt::fromWord(123));
   tuple.atPut(2, SmallInt::fromWord(0));
   Object result(&scope, bytesFromIterable(thread, tuple));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {42, 123, 0}));
+  const byte bytes[3] = {42, 123, 0};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithIterableReturnsBytes) {
@@ -113,7 +114,8 @@ obj = Foo()
 )");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
   Object result(&scope, bytesFromIterable(thread, obj));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {97, 98, 99}));
+  const byte bytes[3] = {97, 98, 99};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
 TEST(BytesBuiltinsTest, FromIterableWithNonIterableRaisesTypeError) {
@@ -142,7 +144,8 @@ TEST(BytesBuiltinsTest, FromTupleWithSizeReturnsBytesMatchingSize) {
   tuple.atPut(0, SmallInt::fromWord(42));
   tuple.atPut(1, SmallInt::fromWord(123));
   Object result(&scope, bytesFromTuple(thread, tuple, 2));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {42, 123}));
+  const byte bytes[2] = {42, 123};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
 TEST(BytesBuiltinsTest, FromTupleWithNonIndexRaisesTypeError) {
@@ -424,8 +427,8 @@ TEST(BytesBuiltinsTest,
 TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
   Runtime runtime;
   HandleScope scope;
-  byte hello[] = "hello";
-  Object self(&scope, runtime.newBytesWithAll(View<byte>(hello, 5)));
+  const byte hello[5] = {'h', 'e', 'l', 'l', 'o'};
+  Object self(&scope, runtime.newBytesWithAll(hello));
   Object index(&scope, runtime.newInt(-5));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
   EXPECT_EQ(*item, RawSmallInt::fromWord('h'));
@@ -434,8 +437,8 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
 TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
   Runtime runtime;
   HandleScope scope;
-  byte hello[] = "hello";
-  Object self(&scope, runtime.newBytesWithAll(View<byte>(hello, 5)));
+  const byte hello[5] = {'h', 'e', 'l', 'l', 'o'};
+  Object self(&scope, runtime.newBytesWithAll(hello));
   Object index(&scope, RawSmallInt::fromWord(0));
   Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
   EXPECT_EQ(*item, RawSmallInt::fromWord('h'));
@@ -444,8 +447,8 @@ TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  byte hello[] = "hello world";
-  Bytes self(&scope, runtime.newBytesWithAll(View<byte>(hello, 11)));
+  const byte hello[] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+  Bytes self(&scope, runtime.newBytesWithAll(hello));
   Slice index(&scope, runtime.newSlice());
   index.setStart(SmallInt::fromWord(0));
   index.setStop(SmallInt::fromWord(3));
@@ -457,8 +460,8 @@ TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  byte hello[] = "hello world";
-  Bytes self(&scope, runtime.newBytesWithAll(View<byte>(hello, 11)));
+  const byte hello[] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+  Bytes self(&scope, runtime.newBytesWithAll(hello));
   Slice index(&scope, runtime.newSlice());
   index.setStart(SmallInt::fromWord(1));
   index.setStop(SmallInt::fromWord(6));
@@ -670,7 +673,7 @@ TEST(BytesBuiltinsTest, DunderLenWithNonBytesSelfRaisesTypeError) {
 TEST(BytesBuiltinsTest, DunderLenWithEmptyBytesReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  Object self(&scope, runtime.newBytesWithAll({nullptr, 0}));
+  Object self(&scope, runtime.newBytesWithAll(View<byte>(nullptr, 0)));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
   EXPECT_EQ(len, SmallInt::fromWord(0));
 }
@@ -834,7 +837,8 @@ TEST(BytesBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newBytes(0, 0));
-  Object count(&scope, runtime.newIntWithDigits({1, 1}));
+  const uword digits[2] = {1, 1};
+  Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kOverflowError,
                             "cannot fit count into an index-sized integer"));
@@ -880,7 +884,8 @@ TEST(BytesBuiltinsTest, DunderMulWithZeroReturnsEmptyBytes) {
 TEST(BytesBuiltinsTest, DunderMulWithOneReturnsSameBytes) {
   Runtime runtime;
   HandleScope scope;
-  Object self(&scope, runtime.newBytesWithAll({'a', 'b'}));
+  const byte bytes_array[2] = {'a', 'b'};
+  Object self(&scope, runtime.newBytesWithAll(bytes_array));
   Object count(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ab"));
@@ -889,7 +894,8 @@ TEST(BytesBuiltinsTest, DunderMulWithOneReturnsSameBytes) {
 TEST(BytesBuiltinsTest, DunderMulReturnsRepeatedBytes) {
   Runtime runtime;
   HandleScope scope;
-  Object self(&scope, runtime.newBytesWithAll({'a', 'b'}));
+  const byte bytes_array[2] = {'a', 'b'};
+  Object self(&scope, runtime.newBytesWithAll(bytes_array));
   Object count(&scope, SmallInt::fromWord(3));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ababab"));
@@ -978,7 +984,7 @@ TEST(BytesBuiltinsTest, DunderNewWithoutArgsReturnsEmptyBytes) {
   HandleScope scope;
   runFromCStr(&runtime, "obj = bytes()");
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
-  EXPECT_TRUE(isBytesEqualsBytes(obj, {}));
+  EXPECT_TRUE(isBytesEqualsBytes(obj, View<byte>(nullptr, 0)));
 }
 
 TEST(BytesBuiltinsTest,
@@ -1043,7 +1049,8 @@ TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsNullFilledBytes) {
   HandleScope scope;
   runFromCStr(&runtime, "result = bytes(10)");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+  const byte bytes[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
 TEST(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
@@ -1051,7 +1058,8 @@ TEST(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
   HandleScope scope;
   runFromCStr(&runtime, "result = bytes(b'123')");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {'1', '2', '3'}));
+  const byte bytes[3] = {'1', '2', '3'};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
 TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
@@ -1059,7 +1067,8 @@ TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
   HandleScope scope;
   runFromCStr(&runtime, "result = bytes([6, 28])");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {6, 28}));
+  const byte bytes[2] = {6, 28};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
 TEST(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
@@ -1089,8 +1098,7 @@ TEST(BytesBuiltinsTest, DunderReprWithSimpleBytesReturnsRepr) {
 TEST(BytesBuiltinsTest, DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
   Runtime runtime;
   HandleScope scope;
-  byte bytes[3] = {'_', '"', '_'};
-  View<byte> view(bytes, sizeof(bytes));
+  const byte view[3] = {'_', '"', '_'};
   Object self(&scope, runtime.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'_"_')"));
@@ -1099,8 +1107,7 @@ TEST(BytesBuiltinsTest, DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
 TEST(BytesBuiltinsTest, DunderReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
   Runtime runtime;
   HandleScope scope;
-  byte bytes[3] = {'_', '\'', '_'};
-  View<byte> view(bytes, sizeof(bytes));
+  const byte view[3] = {'_', '\'', '_'};
   Object self(&scope, runtime.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b"_'_")"));
@@ -1109,8 +1116,7 @@ TEST(BytesBuiltinsTest, DunderReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
 TEST(BytesBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
   Runtime runtime;
   HandleScope scope;
-  byte bytes[5] = {'_', '"', '_', '\'', '_'};
-  View<byte> view(bytes, sizeof(bytes));
+  const byte view[5] = {'_', '"', '_', '\'', '_'};
   Object self(&scope, runtime.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'_"_\'_')"));
@@ -1119,8 +1125,7 @@ TEST(BytesBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
 TEST(BytesBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
   Runtime runtime;
   HandleScope scope;
-  byte bytes[4] = {'\\', '\t', '\n', '\r'};
-  View<byte> view(bytes, sizeof(bytes));
+  const byte view[4] = {'\\', '\t', '\n', '\r'};
   Object self(&scope, runtime.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\\\t\n\r')"));
@@ -1129,8 +1134,7 @@ TEST(BytesBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
 TEST(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
   Runtime runtime;
   HandleScope scope;
-  byte bytes[4] = {0, 0x1f, 0x80, 0xff};
-  View<byte> view(bytes, sizeof(bytes));
+  const byte view[4] = {0, 0x1f, 0x80, 0xff};
   Object self(&scope, runtime.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\x00\x1f\x80\xff')"));
@@ -1176,7 +1180,8 @@ TEST(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
 TEST(BytesBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
   Runtime runtime;
   HandleScope scope;
-  Bytes self(&scope, runtime.newBytesWithAll({0x12, 0x34, 0xfe, 0x5b}));
+  const byte bytes_array[4] = {0x12, 0x34, 0xfe, 0x5b};
+  Bytes self(&scope, runtime.newBytesWithAll(bytes_array));
   Object result(&scope, runBuiltin(BytesBuiltins::hex, self));
   EXPECT_TRUE(isStrEqualsCStr(*result, "1234fe5b"));
 }

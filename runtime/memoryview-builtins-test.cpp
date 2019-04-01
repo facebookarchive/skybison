@@ -11,8 +11,8 @@ using namespace testing;
 TEST(MemoryViewBuiltinsTest, CastReturnsMemoryView) {
   Runtime runtime;
   HandleScope scope;
-  MemoryView view(&scope,
-                  newMemoryView({0, 1, 2, 3}, "f", ReadOnly::ReadWrite));
+  const byte bytes[] = {0, 1, 2, 3};
+  MemoryView view(&scope, newMemoryView(bytes, "f", ReadOnly::ReadWrite));
   Str new_format(&scope, runtime.newStrFromCStr("h"));
   Object result_obj(&scope,
                     runBuiltin(MemoryViewBuiltins::cast, view, new_format));
@@ -28,8 +28,8 @@ TEST(MemoryViewBuiltinsTest, CastReturnsMemoryView) {
 TEST(MemoryViewBuiltinsTest, CastWithAtFormatReturnsMemoryView) {
   Runtime runtime;
   HandleScope scope;
-  MemoryView view(&scope,
-                  newMemoryView({0, 1, 2, 3}, "h", ReadOnly::ReadWrite));
+  const byte bytes[] = {0, 1, 2, 3};
+  MemoryView view(&scope, newMemoryView(bytes, "h", ReadOnly::ReadWrite));
   Str new_format(&scope, runtime.newStrFromCStr("@H"));
   Object result_obj(&scope,
                     runBuiltin(MemoryViewBuiltins::cast, view, new_format));
@@ -45,7 +45,8 @@ TEST(MemoryViewBuiltinsTest, CastWithAtFormatReturnsMemoryView) {
 TEST(MemoryViewBuiltinsTest, CastWithBadLengthForFormatRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
-  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5}, "B"));
+  const byte bytes[] = {0, 1, 2, 3, 4, 5};
+  MemoryView view(&scope, newMemoryView(bytes, "B"));
   Str new_format(&scope, runtime.newStrFromCStr("f"));
   Object result(&scope, runBuiltin(MemoryViewBuiltins::cast, view, new_format));
   EXPECT_TRUE(
@@ -56,7 +57,8 @@ TEST(MemoryViewBuiltinsTest, CastWithBadLengthForFormatRaisesValueError) {
 TEST(MemoryViewBuiltinsTest, CastWithInvalidFormatRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
-  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "B"));
+  const byte bytes[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  MemoryView view(&scope, newMemoryView(bytes, "B"));
   Str new_format(&scope, runtime.newStrFromCStr(" "));
   Object result(&scope, runBuiltin(MemoryViewBuiltins::cast, view, new_format));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
@@ -67,7 +69,8 @@ TEST(MemoryViewBuiltinsTest, CastWithInvalidFormatRaisesValueError) {
 TEST(MemoryViewBuiltinsTest, CastWithNonStrFormatRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "B"));
+  const byte bytes[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  MemoryView view(&scope, newMemoryView(bytes, "B"));
   Object not_str(&scope, NoneType::object());
   Object result(&scope, runBuiltin(MemoryViewBuiltins::cast, view, not_str));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
@@ -88,7 +91,8 @@ TEST(MemoryViewBuiltinsTest, CastWithNonMemoryViewRaisesTypeError) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatbReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0xab, 0xc5}, "b"));
+  const byte bytes[] = {0xab, 0xc5};
+  Object view(&scope, newMemoryView(bytes, "b"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -98,7 +102,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatbReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatBReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0xee, 0xd8}, "B"));
+  const byte bytes[] = {0xee, 0xd8};
+  Object view(&scope, newMemoryView(bytes, "B"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -108,17 +113,20 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatBReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatcReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0x03, 0x62}, "c"));
+  const byte bytes[] = {0x03, 0x62};
+  Object view(&scope, newMemoryView(bytes, "c"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
-  EXPECT_TRUE(isBytesEqualsBytes(result, {0x62}));
+  const byte expected_bytes[1] = {0x62};
+  EXPECT_TRUE(isBytesEqualsBytes(result, expected_bytes));
 }
 
 TEST(MemoryViewBuiltinsTest, GetItemWithFormathReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0xcd, 0x2c, 0x5c, 0xfc}, "h"));
+  const byte bytes[] = {0xcd, 0x2c, 0x5c, 0xfc};
+  Object view(&scope, newMemoryView(bytes, "h"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -128,7 +136,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormathReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatHReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0xb2, 0x11, 0x94, 0xc0}, "H"));
+  const byte bytes[] = {0xb2, 0x11, 0x94, 0xc0};
+  Object view(&scope, newMemoryView(bytes, "H"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -138,9 +147,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatHReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatiReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(
-      &scope,
-      newMemoryView({0x30, 0x8A, 0x43, 0xF2, 0xE1, 0xD6, 0x56, 0xE4}, "i"));
+  const byte bytes[] = {0x30, 0x8A, 0x43, 0xF2, 0xE1, 0xD6, 0x56, 0xE4};
+  Object view(&scope, newMemoryView(bytes, "i"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -150,9 +158,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatiReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatAtiReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(
-      &scope,
-      newMemoryView({0x30, 0x8A, 0x43, 0xF2, 0xE1, 0xD6, 0x56, 0xE4}, "@i"));
+  const byte bytes[] = {0x30, 0x8A, 0x43, 0xF2, 0xE1, 0xD6, 0x56, 0xE4};
+  Object view(&scope, newMemoryView(bytes, "@i"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -162,8 +169,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatAtiReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatIReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView(
-                          {0x2, 0xBE, 0xA8, 0x3D, 0x74, 0x18, 0xEB, 0x8}, "I"));
+  const byte bytes[] = {0x2, 0xBE, 0xA8, 0x3D, 0x74, 0x18, 0xEB, 0x8};
+  Object view(&scope, newMemoryView(bytes, "I"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -173,10 +180,9 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatIReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatlReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope,
-              newMemoryView({0xD8, 0x76, 0x97, 0xD1, 0x8B, 0xA1, 0xD2, 0x62,
-                             0xD9, 0xD2, 0x50, 0x47, 0xC0, 0xA8, 0xB7, 0x81},
-                            "l"));
+  const byte bytes[] = {0xD8, 0x76, 0x97, 0xD1, 0x8B, 0xA1, 0xD2, 0x62,
+                        0xD9, 0xD2, 0x50, 0x47, 0xC0, 0xA8, 0xB7, 0x81};
+  Object view(&scope, newMemoryView(bytes, "l"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -186,10 +192,9 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatlReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatLReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope,
-              newMemoryView({0x24, 0x37, 0x8B, 0x51, 0xCB, 0xB2, 0x16, 0xFB,
-                             0xA6, 0xA9, 0x49, 0xB3, 0x59, 0x6A, 0x48, 0x62},
-                            "L"));
+  const byte bytes[] = {0x24, 0x37, 0x8B, 0x51, 0xCB, 0xB2, 0x16, 0xFB,
+                        0xA6, 0xA9, 0x49, 0xB3, 0x59, 0x6A, 0x48, 0x62};
+  Object view(&scope, newMemoryView(bytes, "L"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -199,10 +204,9 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatLReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatqReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope,
-              newMemoryView({0x7, 0xE2, 0x42, 0x9E, 0x8F, 0xBF, 0xDB, 0x1B,
-                             0x8C, 0x1C, 0x34, 0x40, 0x86, 0x41, 0x2B, 0x23},
-                            "q"));
+  const byte bytes[] = {0x7,  0xE2, 0x42, 0x9E, 0x8F, 0xBF, 0xDB, 0x1B,
+                        0x8C, 0x1C, 0x34, 0x40, 0x86, 0x41, 0x2B, 0x23};
+  Object view(&scope, newMemoryView(bytes, "q"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -212,23 +216,22 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatqReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatQReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope,
-              newMemoryView({0xD9, 0xC6, 0xD2, 0x40, 0xBD, 0x19, 0xA9, 0xC8,
-                             0x8A, 0x1, 0x8B, 0xAF, 0x15, 0x36, 0xC7, 0xBD},
-                            "Q"));
+  const byte bytes[] = {0xD9, 0xC6, 0xD2, 0x40, 0xBD, 0x19, 0xA9, 0xC8,
+                        0x8A, 0x1,  0x8B, 0xAF, 0x15, 0x36, 0xC7, 0xBD};
+  Object view(&scope, newMemoryView(bytes, "Q"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
-  EXPECT_TRUE(isIntEqualsDigits(*result, {0xbdc73615af8b018aul, 0}));
+  const uword expected_digits[] = {0xbdc73615af8b018aul, 0};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatnReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope,
-              newMemoryView({0xF2, 0x6F, 0xFA, 0x8B, 0x93, 0xC0, 0xED, 0x9D,
-                             0x6D, 0x7C, 0xE3, 0xDC, 0x26, 0xEF, 0xB8, 0xEB},
-                            "n"));
+  const byte bytes[] = {0xF2, 0x6F, 0xFA, 0x8B, 0x93, 0xC0, 0xED, 0x9D,
+                        0x6D, 0x7C, 0xE3, 0xDC, 0x26, 0xEF, 0xB8, 0xEB};
+  Object view(&scope, newMemoryView(bytes, "n"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -238,22 +241,21 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatnReturnsInt) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatNReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope,
-              newMemoryView({0x6B, 0x8F, 0x6, 0xA2, 0xE0, 0x13, 0x88, 0x47,
-                             0x7E, 0xB6, 0x40, 0x7E, 0x6B, 0x2, 0x9, 0xC0},
-                            "N"));
+  const byte bytes[] = {0x6B, 0x8F, 0x6,  0xA2, 0xE0, 0x13, 0x88, 0x47,
+                        0x7E, 0xB6, 0x40, 0x7E, 0x6B, 0x2,  0x9,  0xC0};
+  Object view(&scope, newMemoryView(bytes, "N"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
-  EXPECT_TRUE(isIntEqualsDigits(*result, {0xc009026b7e40b67eul, 0}));
+  const uword expected_digits[] = {0xc009026b7e40b67eul, 0};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatfReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
-  Object view(
-      &scope,
-      newMemoryView({0x67, 0x32, 0x23, 0x31, 0xB9, 0x70, 0xBC, 0x83}, "f"));
+  const byte bytes[] = {0x67, 0x32, 0x23, 0x31, 0xB9, 0x70, 0xBC, 0x83};
+  Object view(&scope, newMemoryView(bytes, "f"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -265,10 +267,9 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatfReturnsFloat) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatdReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope,
-              newMemoryView({0xEA, 0x43, 0xAD, 0x6F, 0x9D, 0x31, 0xE, 0x96,
-                             0x28, 0x80, 0x1A, 0xD, 0x87, 0xC, 0xAC, 0x4B},
-                            "d"));
+  const byte bytes[] = {0xEA, 0x43, 0xAD, 0x6F, 0x9D, 0x31, 0xE,  0x96,
+                        0x28, 0x80, 0x1A, 0xD,  0x87, 0xC,  0xAC, 0x4B};
+  Object view(&scope, newMemoryView(bytes, "d"));
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -280,7 +281,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatdReturnsFloat) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatQuestionmarkReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0x92, 0xE1, 0x57, 0xEA, 0x81, 0xA8}, "?"));
+  const byte bytes[] = {0x92, 0xE1, 0x57, 0xEA, 0x81, 0xA8};
+  Object view(&scope, newMemoryView(bytes, "?"));
   Int index(&scope, runtime.newInt(3));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -290,7 +292,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatQuestionmarkReturnsTrue) {
 TEST(MemoryViewBuiltinsTest, GetItemWithFormatQuestionmarkReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0x92, 0xE1, 0, 0xEA, 0x81, 0xA8}, "?"));
+  const byte bytes[] = {0x92, 0xE1, 0, 0xEA, 0x81, 0xA8};
+  Object view(&scope, newMemoryView(bytes, "?"));
   Int index(&scope, runtime.newInt(2));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -300,7 +303,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatQuestionmarkReturnsFalse) {
 TEST(MemoryViewBuiltins, GetItemWithNegativeIndexReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "h"));
+  const byte bytes[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  Object view(&scope, newMemoryView(bytes, "h"));
   Int index(&scope, runtime.newInt(-2));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -320,7 +324,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithNonMemoryViewRaisesTypeError) {
 TEST(MemoryViewBuiltinsTest, GetItemWithTooBigIndexRaisesIndexError) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "I"));
+  const byte bytes[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  Object view(&scope, newMemoryView(bytes, "I"));
   Int index(&scope, runtime.newInt(2));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -331,7 +336,8 @@ TEST(MemoryViewBuiltinsTest, GetItemWithTooBigIndexRaisesIndexError) {
 TEST(MemoryViewBuiltins, GetItemWithOverflowingIndexRaisesIndexError) {
   Runtime runtime;
   HandleScope scope;
-  Object view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "I"));
+  const byte bytes[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  Object view(&scope, newMemoryView(bytes, "I"));
   Int index(&scope, runtime.newInt(kMaxWord / 2));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
@@ -342,7 +348,8 @@ TEST(MemoryViewBuiltins, GetItemWithOverflowingIndexRaisesIndexError) {
 TEST(MemoryViewBuiltinsTest, DunderLenWithMemoryViewFormatBReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  MemoryView view(&scope, newMemoryView({0, 1, 2}, "B"));
+  const byte bytes[] = {0, 1, 2};
+  MemoryView view(&scope, newMemoryView(bytes, "B"));
   Object result(&scope, runBuiltin(MemoryViewBuiltins::dunderLen, view));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
@@ -350,7 +357,8 @@ TEST(MemoryViewBuiltinsTest, DunderLenWithMemoryViewFormatBReturnsInt) {
 TEST(MemoryViewBuiltinsTest, DunderLenWithMemoryViewFormatfReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  MemoryView view(&scope, newMemoryView({0, 1, 2, 3, 4, 5, 6, 7}, "f"));
+  const byte bytes[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  MemoryView view(&scope, newMemoryView(bytes, "f"));
   Object result(&scope, runBuiltin(MemoryViewBuiltins::dunderLen, view));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
@@ -366,7 +374,8 @@ TEST(MemoryViewBuiltinsTest, DunderLenWithNonMemoryViewRaisesTypeError) {
 TEST(MemoryViewBuiltinsTest, DunderNewWithBytesReturnsMemoryView) {
   Runtime runtime;
   HandleScope scope;
-  Bytes bytes(&scope, runtime.newBytesWithAll({0xa9}));
+  const byte bytes_array[1] = {0xa9};
+  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
   Object result_obj(&scope,
                     runBuiltin(MemoryViewBuiltins::dunderNew, type, bytes));
@@ -383,7 +392,8 @@ TEST(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
   HandleScope scope(thread);
   Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
   ByteArray bytearray(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, bytearray, {0xce});
+  const byte byte_array[1] = {0xce};
+  runtime.byteArrayExtend(thread, bytearray, byte_array);
   Object result_obj(&scope,
                     runBuiltin(MemoryViewBuiltins::dunderNew, type, bytearray));
   ASSERT_TRUE(result_obj.isMemoryView());
@@ -397,8 +407,8 @@ TEST(MemoryViewBuiltinsTest, DunderNewWithMemoryViewReturnsMemoryView) {
   Runtime runtime;
   HandleScope scope;
   Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
-  MemoryView view(&scope,
-                  newMemoryView({0x96, 0xfc}, "H", ReadOnly::ReadWrite));
+  const byte bytes[] = {0x96, 0xfc};
+  MemoryView view(&scope, newMemoryView(bytes, "H", ReadOnly::ReadWrite));
   Object result_obj(&scope,
                     runBuiltin(MemoryViewBuiltins::dunderNew, type, view));
   ASSERT_TRUE(result_obj.isMemoryView());
@@ -423,7 +433,7 @@ TEST(MemoryViewBuiltinsTest, DunderNewWithInvalidTypeRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object not_a_type(&scope, NoneType::object());
-  Bytes bytes(&scope, runtime.newBytesWithAll({}));
+  Bytes bytes(&scope, runtime.newBytesWithAll(View<byte>(nullptr, 0)));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderNew, not_a_type, bytes));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,

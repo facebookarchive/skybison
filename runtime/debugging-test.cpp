@@ -14,7 +14,8 @@ using namespace testing;
 static RawObject makeTestCode(Thread* thread) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
-  Bytes bytes(&scope, runtime->newBytesWithAll({100, 0, 83, 0}));
+  const byte bytes_array[4] = {100, 0, 83, 0};
+  Bytes bytes(&scope, runtime->newBytesWithAll(bytes_array));
   Tuple consts(&scope, runtime->newTuple(1));
   consts.atPut(0, runtime->newStrFromCStr("const0"));
   Tuple names(&scope, runtime->newTuple(1));
@@ -146,7 +147,8 @@ TEST(DebuggingTests, FormatFunction) {
 TEST(DebuggingTests, FormatLargeInt) {
   Runtime runtime;
   std::stringstream ss;
-  ss << runtime.newIntWithDigits({0x12345, kMaxUword});
+  const uword digits[2] = {0x12345, kMaxUword};
+  ss << runtime.newIntWithDigits(digits);
   EXPECT_EQ(ss.str(), "largeint([0x0000000000012345, 0xffffffffffffffff])");
 }
 

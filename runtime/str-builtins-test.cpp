@@ -347,7 +347,8 @@ TEST(StrBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, Str::empty());
-  Object count(&scope, runtime.newIntWithDigits({1, 1}));
+  const uword digits[2] = {1, 1};
+  Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
                             LayoutId::kOverflowError,
                             "cannot fit count into an index-sized integer"));

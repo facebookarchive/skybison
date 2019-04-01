@@ -13,8 +13,7 @@ TEST(TestUtils, IsByteArrayEquals) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  byte raw_bytes[3] = {'f', 'o', 'o'};
-  View<byte> view(raw_bytes, sizeof(raw_bytes));
+  const byte view[3] = {'f', 'o', 'o'};
   Object bytes(&scope, runtime.newBytesWithAll(view));
   auto const type_err = isByteArrayEqualsBytes(bytes, view);
   EXPECT_FALSE(type_err);
@@ -50,8 +49,7 @@ TEST(TestUtils, IsBytesEquals) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  byte raw_bytes[3] = {'f', 'o', 'o'};
-  View<byte> view(raw_bytes, sizeof(raw_bytes));
+  const byte view[3] = {'f', 'o', 'o'};
   Object bytes(&scope, runtime.newBytesWithAll(view));
   auto const ok = isBytesEqualsBytes(bytes, view);
   EXPECT_TRUE(ok);

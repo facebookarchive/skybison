@@ -572,8 +572,8 @@ TEST(MarshalReaderTest,
                          "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                          "\x00\x00\x00\x80\x00");
   Object result(&scope, reader.readObject());
-  EXPECT_TRUE(isIntEqualsDigits(
-      *result, {kMaxUword, static_cast<uword>(kMaxWord), kMaxUword}));
+  const uword digits[] = {kMaxUword, static_cast<uword>(kMaxWord), kMaxUword};
+  EXPECT_TRUE(isIntEqualsDigits(*result, digits));
 }
 
 TEST(MarshalReaderTest,

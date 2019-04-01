@@ -16,8 +16,8 @@ RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
 
 void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value) {
   const byte* hex_digits = reinterpret_cast<const byte*>("0123456789abcdef");
-  thread->runtime()->byteArrayExtend(
-      thread, array, {hex_digits[value >> 4], hex_digits[value & 0xf]});
+  const byte bytes[2] = {hex_digits[value >> 4], hex_digits[value & 0xf]};
+  thread->runtime()->byteArrayExtend(thread, array, bytes);
 }
 
 const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
@@ -349,27 +349,34 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   // Each byte will be mapped to one or more ASCII characters.
   ByteArray buffer(&scope, runtime->newByteArray());
   runtime->byteArrayEnsureCapacity(thread, buffer, length + affix_length);
-  runtime->byteArrayExtend(
-      thread, buffer,
-      {'b', 'y', 't', 'e', 'a', 'r', 'r', 'a', 'y', '(', 'b', quote});
+  const byte bytearray_str[] = {'b', 'y', 't', 'e', 'a', 'r',
+                                'r', 'a', 'y', '(', 'b', quote};
+  runtime->byteArrayExtend(thread, buffer, bytearray_str);
   for (word i = 0; i < length; i++) {
     byte current = self.byteAt(i);
     if (current == quote || current == '\\') {
-      runtime->byteArrayExtend(thread, buffer, {'\\', current});
+      const byte bytes[2] = {'\\', current};
+      runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\t') {
-      runtime->byteArrayExtend(thread, buffer, {'\\', 't'});
+      const byte bytes[2] = {'\\', 't'};
+      runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\n') {
-      runtime->byteArrayExtend(thread, buffer, {'\\', 'n'});
+      const byte bytes[2] = {'\\', 'n'};
+      runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\r') {
-      runtime->byteArrayExtend(thread, buffer, {'\\', 'r'});
+      const byte bytes[2] = {'\\', 'r'};
+      runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current < ' ' || current >= 0x7f) {
-      runtime->byteArrayExtend(thread, buffer, {'\\', 'x'});
+      const byte bytes[2] = {'\\', 'x'};
+      runtime->byteArrayExtend(thread, buffer, bytes);
       writeByteAsHexDigits(thread, buffer, current);
     } else {
       byteArrayAdd(thread, runtime, buffer, current);
     }
   }
-  runtime->byteArrayExtend(thread, buffer, {quote, ')'});
+
+  const byte quote_with_paren[2] = {quote, ')'};
+  runtime->byteArrayExtend(thread, buffer, quote_with_paren);
   return runtime->newStrFromByteArray(buffer);
 }
 

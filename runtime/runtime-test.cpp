@@ -559,11 +559,13 @@ TEST(RuntimeTest, NewStrFromByteArrayCopiesByteArray) {
   Object result(&scope, runtime.newStrFromByteArray(array));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 
-  runtime.byteArrayExtend(thread, array, {'h', 'e', 'l', 'l', 'o'});
+  const byte byte_array[5] = {'h', 'e', 'l', 'l', 'o'};
+  runtime.byteArrayExtend(thread, array, byte_array);
   result = runtime.newStrFromByteArray(array);
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 
-  runtime.byteArrayExtend(thread, array, {' ', 'w', 'o', 'r', 'l', 'd'});
+  const byte byte_array2[6] = {' ', 'w', 'o', 'r', 'l', 'd'};
+  runtime.byteArrayExtend(thread, array, byte_array2);
   result = runtime.newStrFromByteArray(array);
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
 }
@@ -2662,16 +2664,19 @@ TEST(RuntimeIntTest, BinaryAndWithLargeInts) {
   Runtime runtime;
   HandleScope scope;
   // {0b00001111, 0b00110000, 0b00000001}
-  Int left(&scope, newIntWithDigits(&runtime, {0x0F, 0x30, 0x1}));
+  const uword digits_left[3] = {0x0F, 0x30, 0x1};
+  Int left(&scope, newIntWithDigits(&runtime, digits_left));
   // {0b00000011, 0b11110000, 0b00000010, 0b00000111}
-  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xF0, 0x2, 0x7}));
+  const uword digits_right[4] = {0x03, 0xF0, 0x2, 0x7};
+  Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runtime.intBinaryAnd(Thread::current(), left, right));
   // {0b00000111, 0b01110000}
-  EXPECT_TRUE(isIntEqualsDigits(*result, {0x03, 0x30}));
+  const uword expected_digits[] = {0x03, 0x30};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 
   Object result_commuted(&scope,
                          runtime.intBinaryAnd(Thread::current(), right, left));
-  EXPECT_TRUE(isIntEqualsDigits(*result_commuted, {0x03, 0x30}));
+  EXPECT_TRUE(isIntEqualsDigits(*result_commuted, expected_digits));
 }
 
 TEST(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
@@ -2679,11 +2684,11 @@ TEST(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
   HandleScope scope;
 
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
-  Int right(&scope, newIntWithDigits(&runtime,
-                                     {static_cast<uword>(-1), 0xF0, 0x2, 0x7}));
+  const uword digits[4] = {static_cast<uword>(-1), 0xF0, 0x2, 0x7};
+  Int right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runtime.intBinaryAnd(Thread::current(), left, right));
-  EXPECT_TRUE(
-      isIntEqualsDigits(*result, {static_cast<uword>(-42), 0xF0, 0x2, 0x7}));
+  const uword expected_digits[] = {static_cast<uword>(-42), 0xF0, 0x2, 0x7};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
 TEST(RuntimeIntTest, BinaryOrWithSmallInts) {
@@ -2699,16 +2704,19 @@ TEST(RuntimeIntTest, BinaryOrWithLargeInts) {
   Runtime runtime;
   HandleScope scope;
   // {0b00001100, 0b00110000, 0b00000001}
-  Int left(&scope, newIntWithDigits(&runtime, {0x0C, 0x30, 0x1}));
+  const uword digits_left[3] = {0x0C, 0x30, 0x1};
+  Int left(&scope, newIntWithDigits(&runtime, digits_left));
   // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
-  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xD0, 0x2, 0x7}));
+  const uword digits_right[4] = {0x03, 0xD0, 0x2, 0x7};
+  Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runtime.intBinaryOr(Thread::current(), left, right));
   // {0b00001111, 0b11110000, 0b00000011, 0b00000111}
-  EXPECT_TRUE(isIntEqualsDigits(*result, {0x0F, 0xF0, 0x3, 0x7}));
+  const uword expected_digits[] = {0x0F, 0xF0, 0x3, 0x7};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 
   Object result_commuted(&scope,
                          runtime.intBinaryOr(Thread::current(), right, left));
-  EXPECT_TRUE(isIntEqualsDigits(*result_commuted, {0x0F, 0xF0, 0x3, 0x7}));
+  EXPECT_TRUE(isIntEqualsDigits(*result_commuted, expected_digits));
 }
 
 TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
@@ -2716,8 +2724,9 @@ TEST(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
   HandleScope scope;
 
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
-  Int right(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-4), 0xF0,
-                                                0x2, static_cast<uword>(-1)}));
+  const uword digits[4] = {static_cast<uword>(-4), 0xF0, 0x2,
+                           static_cast<uword>(-1)};
+  Int right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runtime.intBinaryOr(Thread::current(), left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, -2));
 }
@@ -2735,16 +2744,19 @@ TEST(RuntimeIntTest, BinaryXorWithLargeInts) {
   Runtime runtime;
   HandleScope scope;
   // {0b00001100, 0b00110000, 0b00000001}
-  Int left(&scope, newIntWithDigits(&runtime, {0x0C, 0x30, 0x1}));
+  const uword digits_left[3] = {0x0C, 0x30, 0x1};
+  Int left(&scope, newIntWithDigits(&runtime, digits_left));
   // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
-  Int right(&scope, newIntWithDigits(&runtime, {0x03, 0xD0, 0x2, 0x7}));
+  const uword digits_right[4] = {0x03, 0xD0, 0x2, 0x7};
+  Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runtime.intBinaryXor(Thread::current(), left, right));
   // {0b00001111, 0b11100000, 0b00000011, 0b00000111}
-  EXPECT_TRUE(isIntEqualsDigits(*result, {0x0F, 0xE0, 0x3, 0x7}));
+  const uword expected_digits[] = {0x0F, 0xE0, 0x3, 0x7};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 
   Object result_commuted(&scope,
                          runtime.intBinaryXor(Thread::current(), right, left));
-  EXPECT_TRUE(isIntEqualsDigits(*result_commuted, {0x0F, 0xE0, 0x3, 0x7}));
+  EXPECT_TRUE(isIntEqualsDigits(*result_commuted, expected_digits));
 }
 
 TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
@@ -2752,46 +2764,51 @@ TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
   HandleScope scope;
 
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
-  Int right(&scope, newIntWithDigits(&runtime, {static_cast<uword>(-1), 0xf0,
-                                                0x2, static_cast<uword>(-1)}));
+  const uword digits[4] = {static_cast<uword>(-1), 0xf0, 0x2,
+                           static_cast<uword>(-1)};
+  Int right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runtime.intBinaryXor(Thread::current(), left, right));
-  EXPECT_TRUE(isIntEqualsDigits(
-      *result, {0x29, ~static_cast<uword>(0xF0), ~static_cast<uword>(0x2), 0}));
+  const uword expected_digits[] = {0x29, ~static_cast<uword>(0xF0),
+                                   ~static_cast<uword>(0x2), 0};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
 TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  LargeInt lint_42(&scope, newLargeIntWithDigits({42}));
+  const uword digits[1] = {42};
+  LargeInt lint_42(&scope, newLargeIntWithDigits(digits));
   Object norm_42(&scope, runtime.normalizeLargeInt(lint_42));
   EXPECT_TRUE(isIntEqualsWord(*norm_42, 42));
 
-  LargeInt lint_neg1(&scope, newLargeIntWithDigits({uword(-1)}));
+  const uword digits2[1] = {uword(-1)};
+  LargeInt lint_neg1(&scope, newLargeIntWithDigits(digits2));
   Object norm_neg1(&scope, runtime.normalizeLargeInt(lint_neg1));
   EXPECT_TRUE(isIntEqualsWord(*norm_neg1, -1));
 
-  LargeInt lint_min(&scope,
-                    newLargeIntWithDigits({uword(RawSmallInt::kMinValue)}));
+  const uword digits3[1] = {uword(RawSmallInt::kMinValue)};
+  LargeInt lint_min(&scope, newLargeIntWithDigits(digits3));
   Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
   EXPECT_TRUE(isIntEqualsWord(*norm_min, RawSmallInt::kMinValue));
 
-  LargeInt lint_max(&scope, newLargeIntWithDigits({RawSmallInt::kMaxValue}));
+  const uword digits4[1] = {RawSmallInt::kMaxValue};
+  LargeInt lint_max(&scope, newLargeIntWithDigits(digits4));
   Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
   EXPECT_TRUE(isIntEqualsWord(*norm_max, RawSmallInt::kMaxValue));
 
-  LargeInt lint_sext_neg_4(&scope,
-                           newLargeIntWithDigits({uword(-4), kMaxUword}));
+  const uword digits5[2] = {uword(-4), kMaxUword};
+  LargeInt lint_sext_neg_4(&scope, newLargeIntWithDigits(digits5));
   Object norm_neg_4(&scope, runtime.normalizeLargeInt(lint_sext_neg_4));
   EXPECT_TRUE(isIntEqualsWord(*norm_neg_4, -4));
 
-  LargeInt lint_sext_neg_13(
-      &scope,
-      newLargeIntWithDigits({uword(-13), kMaxUword, kMaxUword, kMaxUword}));
+  const uword digits6[4] = {uword(-13), kMaxUword, kMaxUword, kMaxUword};
+  LargeInt lint_sext_neg_13(&scope, newLargeIntWithDigits(digits6));
   Object norm_neg_13(&scope, runtime.normalizeLargeInt(lint_sext_neg_13));
   EXPECT_TRUE(isIntEqualsWord(*norm_neg_13, -13));
 
-  LargeInt lint_zext_66(&scope, newLargeIntWithDigits({66, 0}));
+  const uword digits7[2] = {66, 0};
+  LargeInt lint_zext_66(&scope, newLargeIntWithDigits(digits7));
   Object norm_66(&scope, runtime.normalizeLargeInt(lint_zext_66));
   EXPECT_TRUE(isIntEqualsWord(*norm_66, 66));
 }
@@ -2800,32 +2817,38 @@ TEST(RuntimeIntTest, NormalizeLargeIntToLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  LargeInt lint_max(&scope, newLargeIntWithDigits({kMaxWord}));
+  const uword digits[1] = {kMaxWord};
+  LargeInt lint_max(&scope, newLargeIntWithDigits(digits));
   Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
   EXPECT_TRUE(isIntEqualsWord(*norm_max, kMaxWord));
 
-  LargeInt lint_min(&scope, newLargeIntWithDigits({uword(kMinWord)}));
+  const uword digits2[1] = {uword(kMinWord)};
+  LargeInt lint_min(&scope, newLargeIntWithDigits(digits2));
   Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
   EXPECT_TRUE(isIntEqualsWord(*norm_min, kMinWord));
 
-  LargeInt lint_max_sub_7_zext(&scope,
-                               newLargeIntWithDigits({kMaxWord - 7, 0, 0}));
+  const uword digits3[3] = {kMaxWord - 7, 0, 0};
+  LargeInt lint_max_sub_7_zext(&scope, newLargeIntWithDigits(digits3));
   Object norm_max_sub_7(&scope, runtime.normalizeLargeInt(lint_max_sub_7_zext));
   EXPECT_TRUE(isIntEqualsWord(*norm_max_sub_7, kMaxWord - 7));
 
-  LargeInt lint_min_plus_9_sext(
-      &scope, newLargeIntWithDigits({uword(kMinWord) + 9, kMaxUword}));
+  const uword digits4[2] = {uword(kMinWord) + 9, kMaxUword};
+  LargeInt lint_min_plus_9_sext(&scope, newLargeIntWithDigits(digits4));
   Object norm_min_plus_9(&scope,
                          runtime.normalizeLargeInt(lint_min_plus_9_sext));
   EXPECT_TRUE(isIntEqualsWord(*norm_min_plus_9, kMinWord + 9));
 
-  LargeInt lint_no_sext(&scope, newLargeIntWithDigits({0, kMaxUword}));
+  const uword digits5[2] = {0, kMaxUword};
+  LargeInt lint_no_sext(&scope, newLargeIntWithDigits(digits5));
   Object norm_no_sext(&scope, runtime.normalizeLargeInt(lint_no_sext));
-  EXPECT_TRUE(isIntEqualsDigits(*norm_no_sext, {0, kMaxUword}));
+  const uword expected_digits1[] = {0, kMaxUword};
+  EXPECT_TRUE(isIntEqualsDigits(*norm_no_sext, expected_digits1));
 
-  LargeInt lint_no_zext(&scope, newLargeIntWithDigits({kMaxUword, 0}));
+  const uword digits6[2] = {kMaxUword, 0};
+  LargeInt lint_no_zext(&scope, newLargeIntWithDigits(digits6));
   Object norm_no_zext(&scope, runtime.normalizeLargeInt(lint_no_zext));
-  EXPECT_TRUE(isIntEqualsDigits(*norm_no_zext, {kMaxUword, 0}));
+  const uword expected_digits2[] = {kMaxUword, 0};
+  EXPECT_TRUE(isIntEqualsDigits(*norm_no_zext, expected_digits2));
 }
 
 TEST(InstanceDelTest, DeleteUnknownAttribute) {
