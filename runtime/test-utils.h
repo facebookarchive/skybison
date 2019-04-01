@@ -112,6 +112,8 @@ RawObject callFunction(const Function& func, const Tuple& args);
 
 bool tupleContains(const Tuple& object_array, const Object& key);
 
+bool listContains(const Object& list, const Object& key);
+
 // Get the module bound to name in the given runtime. Returns Error::object() if
 // not found.
 RawObject findModule(Runtime* runtime, const char* name);

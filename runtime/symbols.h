@@ -18,6 +18,7 @@ class Runtime;
   V(DunderAiter, "__aiter__")                                                  \
   V(DunderAnext, "__anext__")                                                  \
   V(DunderAwait, "__await__")                                                  \
+  V(DunderBases, "__bases__")                                                  \
   V(DunderBool, "__bool__")                                                    \
   V(DunderBuildClass, "__build_class__")                                       \
   V(DunderBuiltins, "__builtins__")                                            \
@@ -391,6 +392,7 @@ class Runtime;
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderAddress, "_address")                                                  \
   V(UnderAsciiDecode, "_ascii_decode")                                         \
+  V(UnderBases, "_bases")                                                      \
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \

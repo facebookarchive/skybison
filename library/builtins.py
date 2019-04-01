@@ -59,6 +59,15 @@ def issubclass(obj, ty):
 
 
 class type(bootstrap=True):
+    def _bases(self):
+        # TODO(matthiasb): Remove once we have an actual __bases__.
+        pass
+
+    def _merge_class_dict_keys(self, result):
+        result.update(self.__dict__.keys())
+        for base in type._bases(self):
+            type._merge_class_dict_keys(base, result)
+
     def __call__(self, *args, **kwargs):
         if not isinstance(self, type):
             raise TypeError("self must be a type instance")
@@ -79,6 +88,16 @@ class type(bootstrap=True):
     def __init__(self, name_or_object, bases=_Unbound, dict=_Unbound):
         pass
 
+    def __dir__(self):
+        if not isinstance(self, type):
+            raise TypeError(
+                f"'__dir__' requires a 'type' object "
+                "but received a '{type(self).__name__}'"
+            )
+        result = set()
+        type._merge_class_dict_keys(self, result)
+        return list(result)
+
     def __repr__(self):
         return f"<class '{self.__name__}'>"
 
@@ -93,6 +112,9 @@ class object(bootstrap=True):  # noqa: E999
 
     def __init__(self, *args, **kwargs):
         pass
+
+    def __dir__(self):
+        _unimplemented()
 
     def __eq__(self, other):
         if self is other:
@@ -1888,6 +1910,14 @@ class module(bootstrap=True):
     def __new__(cls, name):
         pass
 
+    def __dir__(self):
+        if not isinstance(self, module):
+            raise TypeError(
+                f"'__dir__' requires a 'module' object "
+                "but received a '{type(self).__name__}'"
+            )
+        return list(self.__dict__.keys())
+
     def __repr__(self):
         import _frozen_importlib
 
@@ -2113,6 +2143,14 @@ def _complex_real(c):
 @_patch
 def _print_str(s, file):
     pass
+
+
+def dir(obj=_Unbound):
+    if obj is _Unbound:
+        names = locals().keys()
+    else:
+        names = type(obj).__dir__(obj)
+    return sorted(names)
 
 
 def print(*args, sep=" ", end="\n", file=_stdout, flush=None):
@@ -2467,10 +2505,6 @@ def bin(x):
 
 
 def delattr(obj, name):
-    _unimplemented()
-
-
-def dir(*args):
     _unimplemented()
 
 

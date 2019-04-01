@@ -28,6 +28,21 @@ TEST(ModuleBuiltinsDeathTest, DirectModuleAccessRaisesNameError) {
                             "name 'module' is not defined"));
 }
 
+TEST(ModuleBuiltinsTest, DunderDirReturnsList) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+import builtins
+list = dir(builtins)
+)")
+                   .isError());
+  Object list(&scope, moduleAt(&runtime, "__main__", "list"));
+  Object ord(&scope, runtime.newStrFromCStr("ord"));
+  EXPECT_TRUE(listContains(list, ord));
+  Object dunder_name(&scope, runtime.newStrFromCStr("__name__"));
+  EXPECT_TRUE(listContains(list, dunder_name));
+}
+
 TEST(ModuleBuiltinsDeathTest, DunderNewNotEnoughArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(

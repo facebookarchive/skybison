@@ -179,6 +179,34 @@ def test(a, b):
   EXPECT_EQ(callFunctionToString(isinstance, args), "True\n");
 }
 
+TEST(BuiltinsModuleTest, DirCallsDunderDirReturnsSortedList) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __dir__(self):
+    return ["B", "A"]
+c = C()
+d = dir(c)
+)")
+                   .isError());
+  Object d_obj(&scope, moduleAt(&runtime, "__main__", "d"));
+  ASSERT_TRUE(d_obj.isList());
+  List d(&scope, *d_obj);
+  ASSERT_EQ(d.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(d.at(0), "A"));
+  EXPECT_TRUE(isStrEqualsCStr(d.at(1), "B"));
+}
+
+TEST(BuiltinsModuleDeathTest, DirWithoutObjectCallsLocals) {
+  Runtime runtime;
+  // locals() is not implemented yet, so we will die here.
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
+dir()
+)"),
+               "locals()");
+}
+
 TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   Runtime runtime;
   Thread* thread = Thread::current();

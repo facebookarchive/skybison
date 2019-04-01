@@ -57,7 +57,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   }
   type.setFlagsAndBuiltinBase(static_cast<RawType::Flag>(flags),
                               base_layout_id);
-
+  type.setBases(*bases);
   return *type;
 }
 
@@ -71,6 +71,7 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
 
 const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kUnderBases, underBases},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -102,6 +103,17 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Tuple bases(&scope, args.get(2));
   Dict dict(&scope, args.get(3));
   return typeNew(thread, metaclass_id, name, bases, dict);
+}
+
+RawObject TypeBuiltins::underBases(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kType);
+  }
+  Type type(&scope, *self_obj);
+  return type.bases();
 }
 
 }  // namespace python

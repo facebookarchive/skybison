@@ -971,6 +971,9 @@ class RawType : public RawHeapObject {
   RawObject instanceLayout() const;
   void setInstanceLayout(RawObject layout) const;
 
+  RawObject bases() const;
+  void setBases(RawObject bases_tuple) const;
+
   RawObject mro() const;
   void setMro(RawObject object_array) const;
 
@@ -1007,7 +1010,8 @@ class RawType : public RawHeapObject {
 
   // Layout.
   static const int kMroOffset = RawHeapObject::kSize;
-  static const int kInstanceLayoutOffset = kMroOffset + kPointerSize;
+  static const int kBasesOffset = kMroOffset + kPointerSize;
+  static const int kInstanceLayoutOffset = kBasesOffset + kPointerSize;
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
   static const int kFlagsOffset = kNameOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
@@ -3217,6 +3221,14 @@ inline void RawImportError::setPath(RawObject path) const {
 }
 
 // RawType
+
+inline RawObject RawType::bases() const {
+  return instanceVariableAt(kBasesOffset);
+}
+
+inline void RawType::setBases(RawObject bases_tuple) const {
+  instanceVariableAtPut(kBasesOffset, bases_tuple);
+}
 
 inline RawObject RawType::mro() const { return instanceVariableAt(kMroOffset); }
 

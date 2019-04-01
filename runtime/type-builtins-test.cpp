@@ -108,6 +108,27 @@ result = type.__call__(C, "C", (), {})
   EXPECT_TRUE(isIntEqualsWord(*result, 17));
 }
 
+TEST(TypeBuiltinsTest, DunderDirReturnsList) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  x = 42
+  def foo(): pass
+class B(A):
+  def bar(): pass
+dir = type.__dir__(B)
+)")
+                   .isError());
+  Object dir(&scope, moduleAt(&runtime, "__main__", "dir"));
+  Object x(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(listContains(dir, x));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(listContains(dir, foo));
+  Object bar(&scope, runtime.newStrFromCStr("bar"));
+  EXPECT_TRUE(listContains(dir, bar));
+}
+
 TEST(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
   runFromCStr(&runtime, "result = type.__repr__(object)");

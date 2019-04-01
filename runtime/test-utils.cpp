@@ -199,6 +199,21 @@ bool tupleContains(const Tuple& object_array, const Object& key) {
   return false;
 }
 
+bool listContains(const Object& list_obj, const Object& key) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  if (!thread->runtime()->isInstanceOfList(*list_obj)) {
+    return false;
+  }
+  List list(&scope, *list_obj);
+  for (word i = 0, num_items = list.numItems(); i < num_items; i++) {
+    if (Object::equals(list.at(i), *key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 RawObject findModule(Runtime* runtime, const char* name) {
   HandleScope scope;
   Object key(&scope, runtime->newStrFromCStr(name));
