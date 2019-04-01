@@ -683,7 +683,8 @@ TEST_F(ModuleExtensionApiTest, MethodWithKeywordArgReturnsArg) {
     return PyLong_FromLong(value);
   };
   PyMethodDef foo_methods[] = {
-      {"kwArgs", reinterpret_cast<binaryfunc>(foo_func),
+      {"kwArgs",
+       reinterpret_cast<binaryfunc>(reinterpret_cast<void*>(foo_func)),
        METH_VARARGS | METH_KEYWORDS},
       {nullptr}};
   static PyModuleDef def;
