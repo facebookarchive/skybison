@@ -13,6 +13,16 @@ def exit(code=0):
     raise SystemExit(code)
 
 
+def getfilesystemencoding():
+    # TODO(T40363016): Allow arbitrary encodings instead of defaulting to utf-8.
+    return "utf-8"
+
+
+def getfilesystemencodeerrors():
+    # TODO(T40363016): Allow arbitrary encodings and error handlings.
+    return "surrogateescape"
+
+
 meta_path = []
 
 
