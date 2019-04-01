@@ -47,6 +47,7 @@ TEST(DebuggingTests, DumpExtendedCode) {
 filename: "filename0"
 consts: ("const0",)
 names: ("name0",)
+cellvars: ("cellvar0",)
 freevars: ("freevar0",)
 varnames: ("variable0",)
    0 LOAD_CONST 0
@@ -80,6 +81,7 @@ code: name: "name0" argcount: 1 kwonlyargcount: 0 nlocals: 0 stacksize: 1
 filename: "filename0"
 consts: ("const0",)
 names: ("name0",)
+cellvars: ("cellvar0",)
 freevars: ("freevar0",)
 varnames: ("variable0",)
    0 LOAD_CONST 0

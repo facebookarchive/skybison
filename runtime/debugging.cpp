@@ -27,6 +27,7 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value) {
      << "filename: " << code.filename() << '\n'
      << "consts: " << code.consts() << '\n'
      << "names: " << code.names() << '\n'
+     << "cellvars: " << code.cellvars() << '\n'
      << "freevars: " << code.freevars() << '\n'
      << "varnames: " << code.varnames() << '\n';
   Object bytecode_obj(&scope, code.code());
