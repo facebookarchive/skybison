@@ -537,16 +537,19 @@ class UnicodeError(bootstrap=True):  # noqa: B903
         self.args = args
 
 
-def _index(num):
-    if not isinstance(num, int):
-        try:
-            # TODO(T41077650): Truncate the result of __index__ to Py_ssize_t
-            return num.__index__()
-        except AttributeError:
-            raise TypeError(
-                f"'{type(num).__name__}' object cannot be interpreted as" " an integer"
-            )
-    return num
+# equivalent to PyNumber_Index
+def _index(obj) -> int:
+    if isinstance(obj, int):
+        return obj
+    try:
+        result = obj.__index__()
+        if isinstance(result, int):
+            return result
+        raise TypeError(f"__index__ returned non-int (type {type(result).__name__})")
+    except AttributeError:
+        raise TypeError(
+            f"'{type(obj).__name__}' object cannot be interpreted as an integer"
+        )
 
 
 class UnicodeDecodeError(UnicodeError, bootstrap=True):
