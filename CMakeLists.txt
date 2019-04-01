@@ -389,6 +389,7 @@ add_library(
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
   runtime/io-module-test.cpp
+  runtime/itertools-module-test.cpp
   runtime/layout-test.cpp
   runtime/list-builtins-test.cpp
   runtime/marshal-module-test.cpp

@@ -36,7 +36,22 @@ class compress:
 
 class count:
     def __init__(self, start=0, step=1):
-        _unimplemented()
+        start_type = type(start)
+        if not hasattr(start_type, "__add__") or not hasattr(start_type, "__sub__"):
+            raise TypeError("a number is required")
+        self.count = start
+        self.step = step
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        result = self.count
+        self.count += self.step
+        return result
+
+    def __repr__(self):
+        return f"count({self.count})"
 
 
 class cycle:
