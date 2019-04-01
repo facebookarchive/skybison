@@ -126,15 +126,15 @@ RawObject strStrip(Thread* thread, const Str& src, const Str& str,
 
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   HandleScope scope(thread);
-  word idx = iter.index();
+  word byte_offset = iter.index();
   Str underlying(&scope, iter.iterable());
-  if (idx >= underlying.length()) {
+  if (byte_offset >= underlying.length()) {
     return Error::object();
   }
-
-  byte item = underlying.charAt(idx);
-  iter.setIndex(idx + 1);
-  return RawSmallStr::fromCodePoint(item);
+  word num_bytes = 0;
+  word code_point = underlying.codePointAt(byte_offset, &num_bytes);
+  iter.setIndex(byte_offset + num_bytes);
+  return RawSmallStr::fromCodePoint(code_point);
 }
 
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {

@@ -1711,7 +1711,7 @@ TEST(StrBuiltinsTest, DunderIterReturnsStrIter) {
   ASSERT_TRUE(iter.isStrIterator());
 }
 
-TEST(StrIteratorBuiltinsTest, CallDunderNextReadsCharactersSequentially) {
+TEST(StrIteratorBuiltinsTest, CallDunderNextReadsAsciiCharactersSequentially) {
   Runtime runtime;
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("ab"));
@@ -1719,13 +1719,30 @@ TEST(StrIteratorBuiltinsTest, CallDunderNextReadsCharactersSequentially) {
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, str));
   ASSERT_TRUE(iter.isStrIterator());
 
+  Object item0(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  EXPECT_TRUE(isStrEqualsCStr(*item0, "a"));
+
   Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item1.isStr());
-  ASSERT_EQ(item1, runtime.newStrFromCStr("a"));
+  EXPECT_TRUE(isStrEqualsCStr(*item1, "b"));
+}
+
+TEST(StrIteratorBuiltinsTest,
+     CallDunderNextReadsUnicodeCharactersSequentially) {
+  Runtime runtime;
+  HandleScope scope;
+  Str str(&scope, runtime.newStrFromCStr(u8"a\u00E4b"));
+
+  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, str));
+  ASSERT_TRUE(iter.isStrIterator());
+
+  Object item0(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  EXPECT_TRUE(isStrEqualsCStr(*item0, "a"));
+
+  Object item1(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
+  EXPECT_EQ(*item1, SmallStr::fromCodePoint(0xe4));
 
   Object item2(&scope, runBuiltin(StrIteratorBuiltins::dunderNext, iter));
-  ASSERT_TRUE(item2.isStr());
-  ASSERT_EQ(item2, runtime.newStrFromCStr("b"));
+  EXPECT_TRUE(isStrEqualsCStr(*item2, "b"));
 }
 
 TEST(StrIteratorBuiltinsTest, DunderIterReturnsSelf) {
