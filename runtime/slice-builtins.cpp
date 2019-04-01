@@ -7,46 +7,24 @@
 
 namespace python {
 
-// Converts obj to Int using __index__ if it is not already an instance of Int.
-static RawObject sliceIndex(Thread* thread, const Object& obj) {
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfInt(*obj)) {
-    return *obj;
-  }
-  HandleScope scope(thread);
-  Object index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
-  if (index.isError()) {
-    if (!thread->hasPendingException()) {
-      // Attribute lookup failed
-      return thread->raiseTypeErrorWithCStr(
-          "slice indices must be integers or None or have an __index__ method");
-    }
-    return *index;
-  }
-  if (!runtime->isInstanceOfInt(*index)) {
-    return thread->raiseTypeErrorWithCStr("__index__() returned non-int");
-  }
-  return *index;
-}
-
 RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
                       word* stop, word* step) {
   HandleScope scope(thread);
   Object step_obj(&scope, slice.step());
-  Int max_index(&scope, SmallInt::fromWord(SmallInt::kMaxValue));
-  Int min_index(&scope, SmallInt::fromWord(SmallInt::kMinValue));
   if (step_obj.isNoneType()) {
     *step = 1;
   } else {
-    step_obj = sliceIndex(thread, step_obj);
+    step_obj = thread->invokeFunction1(SymbolId::kBuiltins,
+                                       SymbolId::kUnderSliceIndex, step_obj);
     if (step_obj.isError()) return *step_obj;
     Int index(&scope, *step_obj);
     if (index.isZero()) {
       return thread->raiseValueErrorWithCStr("slice step cannot be zero");
     }
-    if (index.compare(*max_index) > 0) {
+    word step_word = index.asWordSaturated();
+    if (step_word > SmallInt::kMaxValue) {
       *step = SmallInt::kMaxValue;
-    } else if (index.compare(*min_index) <= 0) {
+    } else if (step_word <= SmallInt::kMinValue) {
       // Here *step might be -SmallInt::kMaxValue - 1.
       // In that case, we replace it with -SmallInt::kMaxValue.
       // This doesn't affect the semantics,
@@ -54,7 +32,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
       // code that does "step = -step" as part of a slice reversal.
       *step = -SmallInt::kMaxValue;
     } else {
-      *step = index.asWord();
+      *step = step_word;
     }
   }
 
@@ -62,15 +40,17 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   if (start_obj.isNoneType()) {
     *start = (*step < 0) ? SmallInt::kMaxValue : 0;
   } else {
-    start_obj = sliceIndex(thread, start_obj);
+    start_obj = thread->invokeFunction1(SymbolId::kBuiltins,
+                                        SymbolId::kUnderSliceIndex, start_obj);
     if (start_obj.isError()) return *start_obj;
     Int index(&scope, *start_obj);
-    if (index.compare(*max_index) > 0) {
+    word start_word = index.asWordSaturated();
+    if (start_word > SmallInt::kMaxValue) {
       *start = SmallInt::kMaxValue;
-    } else if (index.compare(*min_index) < 0) {
+    } else if (start_word < SmallInt::kMinValue) {
       *start = SmallInt::kMinValue;
     } else {
-      *start = index.asWord();
+      *start = start_word;
     }
   }
 
@@ -78,15 +58,17 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   if (stop_obj.isNoneType()) {
     *stop = (*step < 0) ? SmallInt::kMinValue : SmallInt::kMaxValue;
   } else {
-    stop_obj = sliceIndex(thread, stop_obj);
+    stop_obj = thread->invokeFunction1(SymbolId::kBuiltins,
+                                       SymbolId::kUnderSliceIndex, stop_obj);
     if (stop_obj.isError()) return *stop_obj;
     Int index(&scope, *stop_obj);
-    if (index.compare(*max_index) > 0) {
+    word stop_word = index.asWordSaturated();
+    if (stop_word > SmallInt::kMaxValue) {
       *stop = SmallInt::kMaxValue;
-    } else if (index.compare(*min_index) < 0) {
+    } else if (stop_word < SmallInt::kMinValue) {
       *stop = SmallInt::kMinValue;
     } else {
-      *stop = index.asWord();
+      *stop = stop_word;
     }
   }
 

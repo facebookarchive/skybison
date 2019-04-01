@@ -419,6 +419,7 @@ class Runtime;
   V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
+  V(UnderSliceIndex, "_slice_index")                                           \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
