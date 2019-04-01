@@ -31,6 +31,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Super super(&scope, args.get(0));
   Object type_obj(&scope, NoneType::object());
   Object obj(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
   if (args.get(1).isUnbound()) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
@@ -53,8 +54,8 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     RawObject cell = Error::object();
     for (word i = 0; i < free_vars.length(); i++) {
       if (RawStr::cast(free_vars.at(i))
-              .equals(thread->runtime()->symbols()->DunderClass())) {
-        cell = caller_frame->local(code.nlocals() + i);
+              .equals(runtime->symbols()->DunderClass())) {
+        cell = caller_frame->local(code.nlocals() + code.numCellvars() + i);
         break;
       }
     }
@@ -72,7 +73,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     type_obj = args.get(1);
     obj = args.get(2);
   }
-  if (!type_obj.isType()) {
+  if (!runtime->isInstanceOfType(*type_obj)) {
     return thread->raiseTypeErrorWithCStr("super() argument 1 must be type");
   }
   super.setType(*type_obj);
@@ -81,12 +82,12 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Type type(&scope, *type_obj);
   if (obj.isType()) {
     Type obj_type(&scope, *obj);
-    if (thread->runtime()->isSubclass(obj_type, type)) {
+    if (runtime->isSubclass(obj_type, type)) {
       obj_type_obj = *obj;
     }
   } else {
-    Type obj_type(&scope, thread->runtime()->typeOf(*obj));
-    if (thread->runtime()->isSubclass(obj_type, type)) {
+    Type obj_type(&scope, runtime->typeOf(*obj));
+    if (runtime->isSubclass(obj_type, type)) {
       obj_type_obj = *obj_type;
     }
   }

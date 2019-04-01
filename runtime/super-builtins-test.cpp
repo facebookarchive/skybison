@@ -137,6 +137,27 @@ e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
   EXPECT_EQ(*e, Bool::trueObj());
 }
 
+TEST(SuperBuiltinsTest,
+     SuperCalledFromFunctionWithCellVarReturnsSuperInstance) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class MetaA(type):
+    x = 42
+class MetaB(MetaA):
+    def __new__(metacls, cls, bases, classdict):
+        cellvar = None
+        def foobar():
+            return cellvar
+        return super().__new__(metacls, cls, bases, classdict)
+class C(metaclass=MetaB): pass
+result = type(C()).x
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 42));
+}
+
 TEST(SuperTest, NoArgumentRaisesRuntimeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "super()"),
