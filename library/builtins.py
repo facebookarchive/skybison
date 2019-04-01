@@ -1297,9 +1297,67 @@ class range_iterator(bootstrap=True):
         pass
 
 
+def _slice_index(num) -> int:
+    if hasattr(num, "__index__"):
+        return _index(num)
+    raise TypeError(
+        "slice indices must be integers or None or have an __index__ method"
+    )
+
+
 class slice(bootstrap=True):
     def __new__(cls, start_or_stop, stop=_Unbound, step=None):
         pass
+
+    def indices(self, length) -> tuple:  # noqa: C901
+        if not isinstance(self, slice):
+            raise TypeError(
+                "'indices' requires a 'slice' object but received a "
+                f"'{type(self).__name__}'"
+            )
+        length = _index(length)
+        if length < 0:
+            raise ValueError("length should not be negative")
+
+        # Convert step to an integer; raise for zero step
+        if self.step is None:
+            step = 1
+            negative_step = False
+        else:
+            step = _slice_index(self.step)
+            if step == 0:
+                raise ValueError("slice step cannot be zero")
+            negative_step = step < 0
+
+        # Bounds for start and stop
+        lower = -1 if negative_step else 0
+        upper = length + lower if negative_step else length
+
+        # Compute start
+        if self.start is None:
+            start = upper if negative_step else lower
+        else:
+            start = _slice_index(self.start)
+            if start < 0:
+                start += length
+                if start < lower:
+                    start = lower
+            elif start > upper:
+                start = upper
+
+        # Compute stop
+        if self.stop is None:
+            stop = lower if negative_step else upper
+        else:
+            stop = _slice_index(self.stop)
+            if stop < 0:
+                stop += length
+                if stop < lower:
+                    stop = lower
+            elif stop > upper:
+                stop = upper
+
+        return (start, stop, step)
 
 
 class smallint(bootstrap=True):

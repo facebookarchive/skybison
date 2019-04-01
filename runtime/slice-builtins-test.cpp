@@ -243,4 +243,115 @@ TEST(SliceBuiltinsTest, DunderNewWithThreeArgsSetsAllIndices) {
   EXPECT_EQ(slice.step(), SmallInt::fromWord(2));
 }
 
+TEST(SliceBuiltinsTest, IndicesWithNonSliceRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "slice.indices([], 1)"), LayoutId::kTypeError,
+      "'indices' requires a 'slice' object but received a 'list'"));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithNonIntRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "slice(1).indices([])"), LayoutId::kTypeError,
+      "'list' object cannot be interpreted as an integer"));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithNegativeLengthRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "slice(1).indices(-1)"),
+                            LayoutId::kValueError,
+                            "length should not be negative"));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithZeroStepRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "slice(1, 1, 0).indices(10)"),
+                            LayoutId::kValueError,
+                            "slice step cannot be zero"));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithNonIntStartRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "slice('').indices(10)"), LayoutId::kTypeError,
+      "slice indices must be integers or None or have an __index__ method"));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithNonIntStopRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "slice(1, '').indices(10)"), LayoutId::kTypeError,
+      "slice indices must be integers or None or have an __index__ method"));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithNonIntStepRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "slice(1, 6, '').indices(10)"),
+      LayoutId::kTypeError,
+      "slice indices must be integers or None or have an __index__ method"));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithNoneReturnsDefaults) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = slice(None).indices(10)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isTuple());
+  Tuple indices(&scope, *result);
+  ASSERT_EQ(indices.length(), 3);
+  EXPECT_EQ(indices.at(0), SmallInt::fromWord(0));
+  EXPECT_EQ(indices.at(1), SmallInt::fromWord(10));
+  EXPECT_EQ(indices.at(2), SmallInt::fromWord(1));
+}
+
+TEST(SliceBuiltinsTest, IndicesWithNoneAndNegativeReturnsDefaults) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = slice(None, None, -1).indices(10)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isTuple());
+  Tuple indices(&scope, *result);
+  ASSERT_EQ(indices.length(), 3);
+  EXPECT_EQ(indices.at(0), SmallInt::fromWord(9));
+  EXPECT_EQ(indices.at(1), SmallInt::fromWord(-1));
+  EXPECT_EQ(indices.at(2), SmallInt::fromWord(-1));
+}
+
+TEST(SliceBuiltinsTest, IndicesCallsDunderIndex) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Idx:
+  def __init__(self):
+    self.count = 0
+  def __index__(self):
+    self.count += 1
+    return self.count
+idx = Idx()
+result = slice(idx, idx, idx).indices(10)
+)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isTuple());
+  Tuple indices(&scope, *result);
+  ASSERT_EQ(indices.length(), 3);
+  EXPECT_EQ(indices.at(0), SmallInt::fromWord(2));
+  EXPECT_EQ(indices.at(1), SmallInt::fromWord(3));
+  EXPECT_EQ(indices.at(2), SmallInt::fromWord(1));
+}
+
+TEST(SliceBuiltinsTest, IndicesTruncatesToLength) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = slice(-4, 10, 2).indices(5)");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isTuple());
+  Tuple indices(&scope, *result);
+  ASSERT_EQ(indices.length(), 3);
+  EXPECT_EQ(indices.at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(indices.at(1), SmallInt::fromWord(5));
+  EXPECT_EQ(indices.at(2), SmallInt::fromWord(2));
+}
+
 }  // namespace python
