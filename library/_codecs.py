@@ -4,6 +4,7 @@
 # knowledge about its definition and will complain without this gross circular
 # helper here.
 _patch = _patch  # noqa: F821
+_unimplemented = _unimplemented  # noqa: F821
 
 
 def decode(data, encoding: str = "utf-8", errors: str = "strict") -> str:
@@ -11,7 +12,7 @@ def decode(data, encoding: str = "utf-8", errors: str = "strict") -> str:
         return _codec_decode_table[encoding.lower()](data, errors)[0]
     except KeyError:
         # TODO(T39917465): Call the encoding search function
-        raise NotImplementedError("Non-fastpass codecs are unimplemented")
+        _unimplemented()
 
 
 def encode(data, encoding: str = "utf-8", errors: str = "strict") -> bytes:
@@ -19,7 +20,7 @@ def encode(data, encoding: str = "utf-8", errors: str = "strict") -> bytes:
         return _codec_encode_table[encoding.lower()](data, errors)[0]
     except KeyError:
         # TODO(T39917465): Call the encodings search function
-        raise NotImplementedError("Non-fastpass codecs are unimplemented")
+        _unimplemented()
 
 
 @_patch

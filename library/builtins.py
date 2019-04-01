@@ -908,7 +908,7 @@ class bytes(bootstrap=True):
         if encoding is not _Unbound:
             if not isinstance(source, str):
                 raise TypeError("encoding without a string argument")
-            raise NotImplementedError("string encoding")
+            _unimplemented()
         if errors is not _Unbound:
             if isinstance(source, str):
                 raise TypeError("string argument without an encoding")
@@ -1352,13 +1352,11 @@ class str(bootstrap=True):
         if not issubclass(cls, str):
             raise TypeError("cls is not a subtype of str")
         if cls != str:
-            # TODO(T40529650): Add an unimplemented function
-            raise NotImplementedError("__new__ with subtype of str")
+            _unimplemented()
         if type(obj) is str and obj == "":
             return obj
         if encoding != _Unbound or errors != _Unbound:
-            # TODO(T40529650): Add an unimplemented function
-            raise NotImplementedError("str encoding not supported yet")
+            _unimplemented()
         result = type(obj).__str__(obj)
         if not isinstance(result, str):
             raise TypeError("__str__ returned non-str instance")
@@ -1483,7 +1481,7 @@ class str(bootstrap=True):
         for c in str.__iter__(self):
             i = ord(c)
             if i > 127:
-                raise NotImplementedError("unicode")
+                _unimplemented()
             if i not in num and i not in lower and i not in upper:
                 return False
         return True
@@ -1510,7 +1508,7 @@ class str(bootstrap=True):
         for c in str.__iter__(self):
             i = ord(c)
             if i > 127:
-                raise NotImplementedError("unicode")
+                _unimplemented()
             if i not in lower:
                 return False
         return True
@@ -1537,7 +1535,7 @@ class str(bootstrap=True):
         for c in str.__iter__(self):
             i = ord(c)
             if i > 127:
-                raise NotImplementedError("unicode")
+                _unimplemented()
             if i not in upper:
                 return False
         return True
@@ -1641,7 +1639,7 @@ class str(bootstrap=True):
             return [self]
         # If the separator is not specified, split on all whitespace characters.
         if sep is None:
-            raise NotImplementedError("Splitting on whitespace not yet implemented")
+            _unimplemented()
         if not isinstance(sep, str):
             raise TypeError("must be str or None")
         sep_len = len(sep)
@@ -2128,7 +2126,7 @@ def print(*args, sep=" ", end="\n", file=_stdout, flush=None):
             i += 1
     _print_str(end, file)
     if flush:
-        raise NotImplementedError("flush in print")
+        _unimplemented()
 
 
 @_patch

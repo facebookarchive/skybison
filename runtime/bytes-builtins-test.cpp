@@ -1154,9 +1154,8 @@ TEST(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
 
 TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
   Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'hello'.decode('unknown')"),
-                            LayoutId::kNotImplementedError,
-                            "Non-fastpass codecs are unimplemented"));
+  EXPECT_DEATH(runFromCStr(&runtime, "b'hello'.decode('unknown')"),
+               "Unimplemented function called at:");
 }
 
 TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
