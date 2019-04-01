@@ -271,7 +271,7 @@ class property(bootstrap=True):
     def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
         pass
 
-    def __init__(self, fget=None, fset=None, fdel=None):
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
         pass
 
     def deleter(self, fn):

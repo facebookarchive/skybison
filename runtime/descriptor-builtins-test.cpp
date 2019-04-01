@@ -310,7 +310,7 @@ class Setter:
         obj.y = value
 
 class Foo:
-  x = property(None, Setter(), None)
+  x = property(None, Setter(), None, doc="documentation")
 
 foo = Foo()
 foo.x = 123

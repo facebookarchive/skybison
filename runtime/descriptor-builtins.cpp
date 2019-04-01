@@ -183,6 +183,7 @@ RawObject PropertyBuiltins::dunderInit(Thread* thread, Frame* frame,
   property.setGetter(args.get(1));
   property.setSetter(args.get(2));
   property.setDeleter(args.get(3));
+  // TODO(T42363565) Do something with the doc argument.
   return NoneType::object();
 }
 
