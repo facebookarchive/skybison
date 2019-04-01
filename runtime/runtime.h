@@ -206,6 +206,8 @@ class Runtime {
   RawObject newWeakRef(Thread* thread, const Object& referent,
                        const Object& callback);
 
+  RawObject ellipsis() { return ellipsis_; }
+
   void createBuiltinsModule(Thread* thread);
   void createImportlibModule(Thread* thread);
   void createSysModule(Thread* thread);

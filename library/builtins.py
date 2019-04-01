@@ -2488,6 +2488,9 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     pass
 
 
+Ellipsis = ...
+
+
 # For compatibility with previous versions of Python
 EnvironmentError = OSError
 

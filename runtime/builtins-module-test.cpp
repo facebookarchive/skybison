@@ -207,6 +207,11 @@ dir()
                "locals()");
 }
 
+TEST(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
+  Runtime runtime;
+  EXPECT_EQ(moduleAt(&runtime, "builtins", "Ellipsis"), runtime.ellipsis());
+}
+
 TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   Runtime runtime;
   Thread* thread = Thread::current();
