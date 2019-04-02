@@ -118,7 +118,7 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatcReturnsBytes) {
   Int index(&scope, runtime.newInt(1));
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
-  const byte expected_bytes[1] = {0x62};
+  const byte expected_bytes[] = {0x62};
   EXPECT_TRUE(isBytesEqualsBytes(result, expected_bytes));
 }
 
@@ -374,7 +374,7 @@ TEST(MemoryViewBuiltinsTest, DunderLenWithNonMemoryViewRaisesTypeError) {
 TEST(MemoryViewBuiltinsTest, DunderNewWithBytesReturnsMemoryView) {
   Runtime runtime;
   HandleScope scope;
-  const byte bytes_array[1] = {0xa9};
+  const byte bytes_array[] = {0xa9};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
   Object result_obj(&scope,
@@ -392,7 +392,7 @@ TEST(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
   HandleScope scope(thread);
   Type type(&scope, runtime.typeAt(LayoutId::kMemoryView));
   ByteArray bytearray(&scope, runtime.newByteArray());
-  const byte byte_array[1] = {0xce};
+  const byte byte_array[] = {0xce};
   runtime.byteArrayExtend(thread, bytearray, byte_array);
   Object result_obj(&scope,
                     runBuiltin(MemoryViewBuiltins::dunderNew, type, bytearray));

@@ -35,7 +35,7 @@ TEST(ByteArrayBuiltinsTest, AsBytes) {
   array.setBytes(runtime.newBytes(10, 0));
   array.setNumItems(3);
   bytes = byteArrayAsBytes(thread, &runtime, array);
-  const byte expected_bytes[3] = {0, 0, 0};
+  const byte expected_bytes[] = {0, 0, 0};
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected_bytes));
 }
 
@@ -60,7 +60,7 @@ TEST(ByteArrayBuiltinsTest, DunderAddWithByteArrayOtherReturnsNewByteArray) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray other(&scope, runtime.newByteArray());
-  const byte byte_array[3] = {'1', '2', '3'};
+  const byte byte_array[] = {'1', '2', '3'};
   runtime.byteArrayExtend(thread, other, byte_array);
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
@@ -82,7 +82,7 @@ TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  const byte byte_array[3] = {'f', 'o', 'o'};
+  const byte byte_array[] = {'f', 'o', 'o'};
   runtime.byteArrayExtend(thread, self, byte_array);
   Bytes other(&scope, runtime.newBytes(1, 'd'));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
@@ -207,7 +207,7 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithByteArrayOtherConcatenatesToSelf) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray other(&scope, runtime.newByteArray());
-  const byte bytes[3] = {'1', '2', '3'};
+  const byte bytes[] = {'1', '2', '3'};
   runtime.byteArrayExtend(thread, other, bytes);
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
@@ -218,7 +218,7 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  const byte bytes[3] = {'1', '2', '3'};
+  const byte bytes[] = {'1', '2', '3'};
   Bytes other(&scope, runtime.newBytesWithAll(bytes));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
@@ -295,7 +295,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  const uword digits[2] = {1, 1};
+  const uword digits[] = {1, 1};
   Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
@@ -351,7 +351,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithOneReturnsSameByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  const byte bytes[2] = {'a', 'b'};
+  const byte bytes[] = {'a', 'b'};
   runtime.byteArrayExtend(thread, self, bytes);
   Object count(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
@@ -441,7 +441,7 @@ TEST(ByteArrayBuiltinsTest,
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
-  const byte bytes[3] = {0, 0, 0};
+  const byte bytes[] = {0, 0, 0};
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
 }
 
@@ -463,7 +463,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithBytesCopiesBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  const byte bytes[6] = {'f', 'o', 'o', 'b', 'a', 'r'};
+  const byte bytes[] = {'f', 'o', 'o', 'b', 'a', 'r'};
   Bytes source(&scope, runtime.newBytesWithAll(bytes));
   Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
@@ -478,7 +478,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithByteArrayCopiesBytes) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   ByteArray source(&scope, runtime.newByteArray());
-  const byte bytes[6] = {'f', 'o', 'o', 'b', 'a', 'r'};
+  const byte bytes[] = {'f', 'o', 'o', 'b', 'a', 'r'};
   runtime.byteArrayExtend(thread, source, bytes);
   Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
@@ -504,7 +504,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
-  const byte bytes[3] = {1, 2, 6};
+  const byte bytes[] = {1, 2, 6};
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
 }
 
@@ -609,7 +609,7 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  const uword digits[2] = {1, 1};
+  const uword digits[] = {1, 1};
   Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
@@ -665,7 +665,7 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithOneReturnsSameByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
-  const byte bytes[2] = {'a', 'b'};
+  const byte bytes[] = {'a', 'b'};
   runtime.byteArrayExtend(thread, self, bytes);
   Object count(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));

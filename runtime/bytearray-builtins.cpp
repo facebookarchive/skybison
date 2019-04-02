@@ -16,7 +16,7 @@ RawObject byteArrayAsBytes(Thread* thread, Runtime* runtime,
 
 void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value) {
   const byte* hex_digits = reinterpret_cast<const byte*>("0123456789abcdef");
-  const byte bytes[2] = {hex_digits[value >> 4], hex_digits[value & 0xf]};
+  const byte bytes[] = {hex_digits[value >> 4], hex_digits[value & 0xf]};
   thread->runtime()->byteArrayExtend(thread, array, bytes);
 }
 
@@ -355,19 +355,19 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   for (word i = 0; i < length; i++) {
     byte current = self.byteAt(i);
     if (current == quote || current == '\\') {
-      const byte bytes[2] = {'\\', current};
+      const byte bytes[] = {'\\', current};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\t') {
-      const byte bytes[2] = {'\\', 't'};
+      const byte bytes[] = {'\\', 't'};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\n') {
-      const byte bytes[2] = {'\\', 'n'};
+      const byte bytes[] = {'\\', 'n'};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\r') {
-      const byte bytes[2] = {'\\', 'r'};
+      const byte bytes[] = {'\\', 'r'};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current < ' ' || current >= 0x7f) {
-      const byte bytes[2] = {'\\', 'x'};
+      const byte bytes[] = {'\\', 'x'};
       runtime->byteArrayExtend(thread, buffer, bytes);
       writeByteAsHexDigits(thread, buffer, current);
     } else {
@@ -375,7 +375,7 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
     }
   }
 
-  const byte quote_with_paren[2] = {quote, ')'};
+  const byte quote_with_paren[] = {quote, ')'};
   runtime->byteArrayExtend(thread, buffer, quote_with_paren);
   return runtime->newStrFromByteArray(buffer);
 }

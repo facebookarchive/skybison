@@ -459,7 +459,7 @@ TEST(IntBuiltinsTest, DunderAbsWithPositiveIntReturnsInt) {
 TEST(IntBuiltinsTest, DunderAbsWithNegativeIntReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x154a0071b091fb7e, 0x9661bb54b4e68c59};
+  const uword digits[] = {0x154a0071b091fb7e, 0x9661bb54b4e68c59};
   Int self(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
   const uword expected_digits[] = {0xeab5ff8e4f6e0482, 0x699e44ab4b1973a6};
@@ -490,9 +490,9 @@ TEST(IntBuiltinsTest, DunderAddWithLargeInts) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[2] = {0xfedcba0987654321, 0x1234567890abcdef};
+  const uword digits_left[] = {0xfedcba0987654321, 0x1234567890abcdef};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x9876543210abcdef, 0xfedcba0123456789};
+  const uword digits_right[] = {0x9876543210abcdef, 0xfedcba0123456789};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
   const uword expected_digits[] = {0x97530e3b98111110, 0x11111079b3f13579};
@@ -503,9 +503,9 @@ TEST(IntBuiltinsTest, DunderAddWithPositiveLargeIntsCarrying) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[3] = {kMaxUword, kMaxUword, 0};
+  const uword digits_left[] = {kMaxUword, kMaxUword, 0};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[1] = {1};
+  const uword digits_right[] = {1};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
   const uword expected_digits[] = {0, 0, 1};
@@ -516,10 +516,10 @@ TEST(IntBuiltinsTest, DunderAddWithNegativeLargeIntsCarrying) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[1] = {kMaxUword};
+  const uword digits_left[] = {kMaxUword};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));  // == -1.
   // The smallest negative number representable with 2 digits.
-  const uword digits_right[2] = {0, static_cast<uword>(kMinWord)};
+  const uword digits_right[] = {0, static_cast<uword>(kMinWord)};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAdd, left, right));
   const uword expected_digits[] = {kMaxUword, kMaxWord, kMaxUword};
@@ -538,9 +538,9 @@ TEST(IntBuiltinsTest, DunderAndWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderAndWithLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[3] = {0x0f, 0x30, 0x1};
+  const uword digits_left[] = {0x0f, 0x30, 0x1};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[4] = {0x03, 0xf0, 0x2, 7};
+  const uword digits_right[] = {0x03, 0xf0, 0x2, 7};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   const uword expected_digits[] = {0x03, 0x30};
@@ -550,7 +550,7 @@ TEST(IntBuiltinsTest, DunderAndWithLargeIntsReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderAndWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   Int left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
@@ -561,7 +561,7 @@ TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, Str::empty());
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   LargeInt right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -657,7 +657,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithZeroReturnsZero) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(0));
-  const uword digits[4] = {1, 2, 3, 4};
+  const uword digits[] = {1, 2, 3, 4};
   Object right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
@@ -727,7 +727,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithNegativeSmallIntOverflowReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderLshiftWithLargeIntReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {1, 1};
+  const uword digits[] = {1, 1};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(2 * kBitsPerWord + 2));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
@@ -738,7 +738,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithLargeIntReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderLshiftWithNegativeLargeIntReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {kMaxUword - 1, kMaxUword - 1};
+  const uword digits[] = {kMaxUword - 1, kMaxUword - 1};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(2 * kBitsPerWord + 2));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
@@ -749,7 +749,7 @@ TEST(IntBuiltinsTest, DunderLshiftWithNegativeLargeIntReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderLshiftWithLargeIntWholeWordReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0xfe84754526de453c, 0x47e8218b97f94763};
+  const uword digits[] = {0xfe84754526de453c, 0x47e8218b97f94763};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(kBitsPerWord * 2));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
@@ -858,7 +858,7 @@ TEST(IntBuiltinsTest, DunderMulWithSmallIntLargeIntReturnsLargeInt) {
   HandleScope scope;
 
   Int left(&scope, RawSmallInt::fromWord(-3));
-  const uword digits[2] = {0xa1b2c3d4e5f67890, 0xaabbccddeeff};
+  const uword digits[] = {0xa1b2c3d4e5f67890, 0xaabbccddeeff};
   Int right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
   const uword expected_digits[] = {0x1ae7b4814e1c9650, 0xfffdffcc99663301};
@@ -869,7 +869,7 @@ TEST(IntBuiltinsTest, DunderMulWithZeroReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Int left(&scope, newIntWithDigits(&runtime, digits));
   Int right(&scope, RawSmallInt::fromWord(0));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
@@ -880,9 +880,9 @@ TEST(IntBuiltinsTest, DunderMulWithPositiveLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[2] = {0xfedcba0987654321, 0x1234567890abcdef};
+  const uword digits_left[] = {0xfedcba0987654321, 0x1234567890abcdef};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[3] = {0x0123456789abcdef, 0xfedcba9876543210, 0};
+  const uword digits_right[] = {0x0123456789abcdef, 0xfedcba9876543210, 0};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
   const uword expected_digits[] = {0x2236d928fe5618cf, 0xaa6c87569f0ec6a4,
@@ -894,7 +894,7 @@ TEST(IntBuiltinsTest, DunderMulWithMaxPositiveLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[2] = {kMaxUword, 0};
+  const uword digits[] = {kMaxUword, 0};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
   const uword expected_digits[] = {1, kMaxUword - 1, 0};
@@ -906,7 +906,7 @@ TEST(IntBuiltinsTest, DunderMulWithNegativeLargeIntsReturnsLargeInt) {
   HandleScope scope;
 
   // Smallest negative number representable with 2 digits.
-  const uword digits[2] = {0, static_cast<uword>(kMinWord)};
+  const uword digits[] = {0, static_cast<uword>(kMinWord)};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, num, num));
   const uword expected_digits[] = {0, 0, 0, static_cast<uword>(kMinWord) >> 1};
@@ -917,9 +917,9 @@ TEST(IntBuiltinsTest, DunderMulWithNegativePositiveLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[1] = {0xada6d35d8ef7c790};
+  const uword digits_left[] = {0xada6d35d8ef7c790};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x3ff2ca02c44fbb1c, 0x5873a2744317c09a};
+  const uword digits_right[] = {0x3ff2ca02c44fbb1c, 0x5873a2744317c09a};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
   const uword expected_digits[] = {0x6d80780b775003c0, 0xb46184fc0839baa0,
@@ -931,9 +931,9 @@ TEST(IntBuiltinsTest, DunderMulWithPositiveNegativeLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[2] = {0x3ff2ca02c44fbb1c, 0x5873a2744317c09a};
+  const uword digits_left[] = {0x3ff2ca02c44fbb1c, 0x5873a2744317c09a};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[1] = {0xada6d35d8ef7c790};
+  const uword digits_right[] = {0xada6d35d8ef7c790};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderMul, left, right));
   const uword expected_digits[] = {0x6d80780b775003c0, 0xb46184fc0839baa0,
@@ -973,9 +973,9 @@ TEST(IntBuiltinsTest, DunderOrWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderOrWithLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[3] = {0x0C, 0xB0, 0xCAFE};
+  const uword digits_left[] = {0x0C, 0xB0, 0xCAFE};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x03, 0xD0};
+  const uword digits_right[] = {0x03, 0xD0};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   const uword expected_digits[] = {0x0F, 0xF0, 0xCAFE};
@@ -985,7 +985,7 @@ TEST(IntBuiltinsTest, DunderOrWithLargeIntsReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderOrWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   Int left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
@@ -996,7 +996,7 @@ TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, Str::empty());
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   LargeInt right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -1173,7 +1173,7 @@ TEST(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[1] = {static_cast<uword>(kMinWord)};
+  const uword digits[] = {static_cast<uword>(kMinWord)};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1184,7 +1184,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[2] = {0x85b3f6fb0496ac6f, 0x129ef6};
+  const uword digits[] = {0x85b3f6fb0496ac6f, 0x129ef6};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1196,7 +1196,7 @@ TEST(IntBuiltinsTest, DunderFloatWithNegativeLargeIntReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[2] = {0x937822557f9bad3f, 0xb31911a86c86a071};
+  const uword digits[] = {0x937822557f9bad3f, 0xb31911a86c86a071};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1209,7 +1209,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[4] = {1, 0, 0, 0xfffedcc000000000};
+  const uword digits[] = {1, 0, 0, 0xfffedcc000000000};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1224,7 +1224,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownReturnsFloat) {
   // Produce a 1 so that all of the mantissa lies in the high digit but the bit
   // triggering the rounding is in the low digit.
   uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
-  const uword digits[2] = {0, mantissa_high_bit};
+  const uword digits[] = {0, mantissa_high_bit};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1235,8 +1235,8 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[2] = {uword{1} << (kBitsPerWord - kDoubleMantissaBits - 1),
-                           1};
+  const uword digits[] = {uword{1} << (kBitsPerWord - kDoubleMantissaBits - 1),
+                          1};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1249,7 +1249,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
 
   uword mantissa_high_bit_plus_one =
       (static_cast<uword>(1) << kDoubleMantissaBits) + 1;
-  const uword digits[2] = {kHighbitUword, mantissa_high_bit_plus_one};
+  const uword digits[] = {kHighbitUword, mantissa_high_bit_plus_one};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1263,7 +1263,7 @@ TEST(IntBuiltinsTest,
   HandleScope scope;
 
   uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
-  const uword digits[3] = {0, kHighbitUword, ~mantissa_high_bit};
+  const uword digits[] = {0, kHighbitUword, ~mantissa_high_bit};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1277,7 +1277,7 @@ TEST(IntBuiltinsTest,
 
   uword mantissa_high_bit_plus_one =
       (static_cast<uword>(1) << kDoubleMantissaBits) | 1;
-  const uword digits[3] = {0, kHighbitUword, ~mantissa_high_bit_plus_one};
+  const uword digits[] = {0, kHighbitUword, ~mantissa_high_bit_plus_one};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1292,7 +1292,7 @@ TEST(IntBuiltinsTest,
 
   uword mantissa_all_one =
       (static_cast<uword>(1) << (kDoubleMantissaBits + 1)) - 1;
-  const uword digits[2] = {kHighbitUword, mantissa_all_one};
+  const uword digits[] = {kHighbitUword, mantissa_all_one};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
@@ -1671,13 +1671,13 @@ TEST(IntBuiltinsTest, DunderInvertWithSmallIntReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderInvertWithLargeIntReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword num_digits[3] = {0x6c5bfcb426758496, 0xda8bdbe69c009bc5, 0};
+  const uword num_digits[] = {0x6c5bfcb426758496, 0xda8bdbe69c009bc5, 0};
   Object num(&scope, newIntWithDigits(&runtime, num_digits));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderInvert, num));
   ASSERT_TRUE(result_obj.isLargeInt());
   Int result(&scope, *result_obj);
-  const uword expected_digits[3] = {0x93a4034bd98a7b69, 0x2574241963ff643a,
-                                    kMaxUword};
+  const uword expected_digits[] = {0x93a4034bd98a7b69, 0x2574241963ff643a,
+                                   kMaxUword};
   Int expected(&scope, newIntWithDigits(&runtime, expected_digits));
   EXPECT_EQ(expected.compare(*result), 0);
 }
@@ -1804,7 +1804,7 @@ TEST(IntBuiltinsTest, DunderDivmodWithSmallIntAndDivisorMinusOneReturnsTuple) {
 TEST(IntBuiltinsTest, DunderDivmodWithLargeIntAndDivisorMinusOneReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0, kHighbitUword};
+  const uword digits[] = {0, kHighbitUword};
   Object left(&scope, runtime.newIntWithDigits(digits));
   Object right(&scope, runtime.newInt(-1));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1819,7 +1819,7 @@ TEST(IntBuiltinsTest, DunderDivmodWithLargeIntAndDivisorMinusOneReturnsTuple) {
 TEST(IntBuiltinsTest, DunderDivmodWithSingleDigitDivisorReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x4a23475557e990d0, 0x56c1275a8b41bed9};
+  const uword digits[] = {0x4a23475557e990d0, 0x56c1275a8b41bed9};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(77));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1834,7 +1834,7 @@ TEST(IntBuiltinsTest, DunderDivmodWithSingleDigitDivisorReturnsTuple) {
 TEST(IntBuiltinsTest, DunderDivmodWithSingleDigitNegativeDivisorReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef};
+  const uword digits[] = {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(-87654));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1850,7 +1850,7 @@ TEST(IntBuiltinsTest,
      DunderDivmodWithSingleDigitNegativeDivisorNoRemainderReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef};
+  const uword digits[] = {0x6d73444a30629c55, 0x2c4ab2d4de16e2ef};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(-5));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1866,7 +1866,7 @@ TEST(IntBuiltinsTest,
      DunderDivmodWithSingleDigitDivisorNegativeDividendReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x94472249c23c1189, 0xffe0519aab10d602};
+  const uword digits[] = {0x94472249c23c1189, 0xffe0519aab10d602};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(12345));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1883,7 +1883,7 @@ TEST(
     DunderDivmodWithSingleDigitDivisorNegativeDividendNoRemainderReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x94472249c23c1189, 0xffe0519aab10d602};
+  const uword digits[] = {0x94472249c23c1189, 0xffe0519aab10d602};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(5));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1899,7 +1899,7 @@ TEST(IntBuiltinsTest,
      DunderDivmodWithSingleDigitNegativeDivisorNegativeDividendReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x91a950df92c04492, 0xd60eebbadb89de2f};
+  const uword digits[] = {0x91a950df92c04492, 0xd60eebbadb89de2f};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(-1117392329));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1914,7 +1914,7 @@ TEST(IntBuiltinsTest,
 TEST(IntBuiltinsTest, DunderDivmodWithJustNotASingleDigitDivisorReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0xaaa, 3};
+  const uword digits[] = {0xaaa, 3};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(-0x100000000));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -1928,9 +1928,9 @@ TEST(IntBuiltinsTest, DunderDivmodWithJustNotASingleDigitDivisorReturnsTuple) {
 TEST(IntBuiltinsTest, DunderDivmodWithBiggerDivisorReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[1] = {0x575420c5052ae9c6};
+  const uword digits_left[] = {0x575420c5052ae9c6};
   Object left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x383b89d9e2bb74f5, 0x1234};
+  const uword digits_right[] = {0x383b89d9e2bb74f5, 0x1234};
   Object right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -1946,7 +1946,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(-55));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object right(&scope, newIntWithDigits(&runtime, digits));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -1962,7 +1962,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(55));
-  const uword digits[2] = {0, kHighbitUword};
+  const uword digits[] = {0, kHighbitUword};
   Object right(&scope, newIntWithDigits(&runtime, digits));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -1978,7 +1978,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(-55));
-  const uword digits[2] = {0, kMaxUword};
+  const uword digits[] = {0, kMaxUword};
   Object right(&scope, newIntWithDigits(&runtime, digits));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -1991,10 +1991,10 @@ TEST(IntBuiltinsTest,
 TEST(IntBuiltinsTest, DunderDivmodWithLargeIntReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[4] = {0x383b89d9e2bb74f5, 0x410f8dceb8660505,
-                                0x383b1ab8d7938f4b, 0x87108b9b45b43d};
+  const uword digits_left[] = {0x383b89d9e2bb74f5, 0x410f8dceb8660505,
+                               0x383b1ab8d7938f4b, 0x87108b9b45b43d};
   Object left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x975420c5052ae9c6, 0x3bcd71afac71b2e4};
+  const uword digits_right[] = {0x975420c5052ae9c6, 0x3bcd71afac71b2e4};
   Object right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2009,9 +2009,9 @@ TEST(IntBuiltinsTest, DunderDivmodWithLargeIntReturnsTuple) {
 TEST(IntBuiltinsTest, DunderDivmodWithLargeIntPowerOfTwoReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[2] = {0xee31ba892c71000e, 0x7175d128f7c2574a};
+  const uword digits_left[] = {0xee31ba892c71000e, 0x7175d128f7c2574a};
   Object left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0, 1};
+  const uword digits_right[] = {0, 1};
   Object right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2027,7 +2027,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(0));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object right(&scope, newIntWithDigits(&runtime, digits));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2040,10 +2040,10 @@ TEST(IntBuiltinsTest,
 TEST(IntBuiltinsTest, DunderDivmodWithLargeIntNegativeDividendReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[3] = {0x72a8be6d697d55c0, 0x9d95978dc878d9ae,
-                                0xae86bef7900edb79};
+  const uword digits_left[] = {0x72a8be6d697d55c0, 0x9d95978dc878d9ae,
+                               0xae86bef7900edb79};
   Object left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x9893b50147995ab1, 0x73537a3bc36c3a0e};
+  const uword digits_right[] = {0x9893b50147995ab1, 0x73537a3bc36c3a0e};
   Object right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2058,10 +2058,10 @@ TEST(IntBuiltinsTest, DunderDivmodWithLargeIntNegativeDividendReturnsTuple) {
 TEST(IntBuiltinsTest, DunderDivmodWithLargeIntNegativeDivisorReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[3] = {0x11000235a5b61b48, 0x54cb34ee1cde8d78,
-                                0x2ac801d0ae5dcf65};
+  const uword digits_left[] = {0x11000235a5b61b48, 0x54cb34ee1cde8d78,
+                               0x2ac801d0ae5dcf65};
   Object left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0xfb2879c8be1e7dda, 0xf8101cf6608d0f6a};
+  const uword digits_right[] = {0xfb2879c8be1e7dda, 0xf8101cf6608d0f6a};
   Object right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2077,11 +2077,11 @@ TEST(IntBuiltinsTest,
      DunderDivmodWithLargeIntNegativeDividendNegativeDivisorReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[4] = {0xc4b749b3bc2eb7e0, 0x74e4cc72dc8a2e9b,
-                                0x46bb00bd468a1799, 0xc29ae4e0ae05134};
+  const uword digits_left[] = {0xc4b749b3bc2eb7e0, 0x74e4cc72dc8a2e9b,
+                               0x46bb00bd468a1799, 0xc29ae4e0ae05134};
   Object left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[3] = {0x839c30dba1685693, 0xad0140cf78eaee70,
-                                 0xd77ec3cef0613585};
+  const uword digits_right[] = {0x839c30dba1685693, 0xad0140cf78eaee70,
+                                0xd77ec3cef0613585};
   Object right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2097,7 +2097,7 @@ TEST(IntBuiltinsTest,
 TEST(IntBuiltinsTest, DunderDivmodWithLargeIntTriggeringNegateBugReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[3] = {1, 0, 1};
+  const uword digits[] = {1, 0, 1};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(-5));
   Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
@@ -2220,7 +2220,7 @@ TEST(IntBuiltinsTest, DunderNegWithLargeIntReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderNegWithLargeIntReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0xad7721b1763aff22, 0x2afce48517f151b2};
+  const uword digits[] = {0xad7721b1763aff22, 0x2afce48517f151b2};
   Object num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
   const uword expected_digits[] = {0x5288de4e89c500de, 0xd5031b7ae80eae4d};
@@ -2230,7 +2230,7 @@ TEST(IntBuiltinsTest, DunderNegWithLargeIntReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderNegWithLargeIntCarriesReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0, 0xfffffff000000000};
+  const uword digits[] = {0, 0xfffffff000000000};
   Object num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
   const uword expected_digits[] = {0, 0x1000000000};
@@ -2240,7 +2240,7 @@ TEST(IntBuiltinsTest, DunderNegWithLargeIntCarriesReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderNegWithLargeIntOverflowsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0, kHighbitUword};
+  const uword digits[] = {0, kHighbitUword};
   Object num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
   const uword expected_digits[] = {0, kHighbitUword, 0};
@@ -2250,7 +2250,7 @@ TEST(IntBuiltinsTest, DunderNegWithLargeIntOverflowsReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderNegWithLargeIntShrinksReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {kHighbitUword, 0};
+  const uword digits[] = {kHighbitUword, 0};
   Object num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
   const uword expected_digits[] = {kHighbitUword};
@@ -2260,7 +2260,7 @@ TEST(IntBuiltinsTest, DunderNegWithLargeIntShrinksReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderNegWithLargeIntNoShrinksReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[3] = {1, kHighbitUword, 0};
+  const uword digits[] = {1, kHighbitUword, 0};
   Object num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderNeg, num));
   const uword expected_digits[] = {kMaxUword, kHighbitUword - 1, kMaxUword};
@@ -2409,7 +2409,7 @@ TEST(IntBuiltinsTest, FromBytesWithLittleEndianReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const byte bytes_array[2] = {0xca, 0xfe};
+  const byte bytes_array[] = {0xca, 0xfe};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
@@ -2420,8 +2420,8 @@ TEST(IntBuiltinsTest, FromBytesWithLittleEndianReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const byte bytes_array[11] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
-                                0x45, 0x67, 0x89, 0xab, 0xcd};
+  const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
+                              0x45, 0x67, 0x89, 0xab, 0xcd};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
@@ -2434,7 +2434,7 @@ TEST(IntBuiltinsTest, FromBytesWithBigEndianReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const byte bytes_array[2] = {0xca, 0xfe};
+  const byte bytes_array[] = {0xca, 0xfe};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
   Object result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
@@ -2460,8 +2460,8 @@ TEST(IntBuiltinsTest, FromBytesWithBigEndianReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const byte bytes_array[11] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
-                                0x45, 0x67, 0x89, 0xab, 0xcd};
+  const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
+                              0x45, 0x67, 0x89, 0xab, 0xcd};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Str byteorder(&scope, runtime.newStrFromCStr("big"));
   Int result(&scope, runBuiltin(IntBuiltins::fromBytes, bytes, byteorder));
@@ -2535,7 +2535,7 @@ result = int.from_bytes(byteorder='big', bytes=b'\xbe\xef')
 TEST(IntBuiltinsTest, FromBytesWithTooManyArgsRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  const byte bytes_array[1] = {0};
+  const byte bytes_array[] = {0};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Bool extra_arg(&scope, Bool::trueObj());
@@ -2559,7 +2559,7 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderStringRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
 
-  const byte bytes_array[1] = {0};
+  const byte bytes_array[] = {0};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Str invalid_byteorder(&scope, runtime.newStrFromCStr("Not a byteorder"));
   Object result(&scope,
@@ -2571,7 +2571,7 @@ TEST(IntBuiltinsTest, FromBytesWithInvalidByteorderRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
 
-  const byte bytes_array[1] = {0};
+  const byte bytes_array[] = {0};
   Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
   Int not_a_byteorder(&scope, SmallInt::fromWord(42));
   Object result(&scope,
@@ -2689,7 +2689,7 @@ TEST(IntBuiltinsTest, DunderReprWithBoolTrueReturnsStr) {
 TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitReturnsStr) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[1] = {0x7ab65f95e6775822};
+  const uword digits[] = {0x7ab65f95e6775822};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "8842360015809894434"));
@@ -2698,7 +2698,7 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitReturnsStr) {
 TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitMinReturnsStr) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[1] = {0x8000000000000000};
+  const uword digits[] = {0x8000000000000000};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "-9223372036854775808"));
@@ -2707,7 +2707,7 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitMinReturnsStr) {
 TEST(IntBuiltinsTest, DunderReprWithLargeIntOneDigitMaxReturnsStr) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[1] = {0x7fffffffffffffff};
+  const uword digits[] = {0x7fffffffffffffff};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "9223372036854775807"));
@@ -2717,7 +2717,7 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntReturnsStr) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[2] = {0x68ccbb7f61087fb7, 0x4081e2972fe52778};
+  const uword digits[] = {0x68ccbb7f61087fb7, 0x4081e2972fe52778};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(
@@ -2728,9 +2728,9 @@ TEST(IntBuiltinsTest, DunderReprWithNegativeLargeIntReturnsStr) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[5] = {0x49618108301eff93, 0xc70a0c6e0731da35,
-                           0x438a2278e8762294, 0xccf89b106c9b714d,
-                           0xfa694d4cbdf0b0ba};
+  const uword digits[] = {0x49618108301eff93, 0xc70a0c6e0731da35,
+                          0x438a2278e8762294, 0xccf89b106c9b714d,
+                          0xfa694d4cbdf0b0ba};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(
@@ -2743,7 +2743,7 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntManyZerosReturnsStr) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[3] = {0x6ea69b2000000000, 0xf374ff2873cd99de, 0x375c24};
+  const uword digits[] = {0x6ea69b2000000000, 0xf374ff2873cd99de, 0x375c24};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(isStrEqualsCStr(
@@ -2753,7 +2753,7 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntManyZerosReturnsStr) {
 TEST(IntBuiltinsTest, DunderReprWithLargeIntCarriesReturnsStr) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[3] = {kMaxUword, static_cast<uword>(kMaxWord), kMaxUword};
+  const uword digits[] = {kMaxUword, static_cast<uword>(kMaxWord), kMaxUword};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(
@@ -2859,7 +2859,7 @@ TEST(IntBuiltinsTest, DunderRshiftWithOversizedAmountLargeIntReturnsZero) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, runtime.newInt(1));
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   Object right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
@@ -2868,7 +2868,7 @@ TEST(IntBuiltinsTest, DunderRshiftWithOversizedAmountLargeIntReturnsZero) {
 TEST(IntBuiltinsTest, DunderRshiftWithLargeIntOversizedAmountReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(kBitsPerWord * 3));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
@@ -2878,8 +2878,8 @@ TEST(IntBuiltinsTest, DunderRshiftWithLargeIntOversizedAmountReturnsZero) {
 TEST(IntBuiltinsTest, DunderRshiftWithLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[3] = {0x188518dcaaa656f7, 0x7459da1092edebab,
-                           0x692e3b38af8dcfbe};
+  const uword digits[] = {0x188518dcaaa656f7, 0x7459da1092edebab,
+                          0x692e3b38af8dcfbe};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(83));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
@@ -2890,8 +2890,8 @@ TEST(IntBuiltinsTest, DunderRshiftWithLargeIntsReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderRshiftWithLargeIntWholeWordReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[4] = {0x1c386fefbb1baf3d, 0x379bcaa886c98c13,
-                           0xe0f6379843f98b29, 0};
+  const uword digits[] = {0x1c386fefbb1baf3d, 0x379bcaa886c98c13,
+                          0xe0f6379843f98b29, 0};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(kBitsPerWord * 2));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
@@ -2902,7 +2902,7 @@ TEST(IntBuiltinsTest, DunderRshiftWithLargeIntWholeWordReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderRshiftWithLargeIntNegativeReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x3190ff6fa83269bc, 0xe7a1689a33ca9ae6};
+  const uword digits[] = {0x3190ff6fa83269bc, 0xe7a1689a33ca9ae6};
   Object left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, runtime.newInt(13));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
@@ -2982,9 +2982,9 @@ TEST(IntBuiltinsTest, DunderSubWithLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[2] = {0xfedcba0987654321, 0x1234567890abcdef};
+  const uword digits_left[] = {0xfedcba0987654321, 0x1234567890abcdef};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x9876543210abcdef, 0xfedcba0123456789};
+  const uword digits_right[] = {0x9876543210abcdef, 0xfedcba0123456789};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
   const uword expected_digits[] = {0x666665d776b97532, 0x13579c776d666666};
@@ -2995,9 +2995,9 @@ TEST(IntBuiltinsTest, DunderSubWithPositiveLargeIntsBorrowingReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits_left[1] = {1};
+  const uword digits_left[] = {1};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[3] = {kMaxUword, kMaxUword, 0};
+  const uword digits_right[] = {kMaxUword, kMaxUword, 0};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
   const uword expected_digits[] = {2, 0, kMaxUword};
@@ -3009,9 +3009,9 @@ TEST(IntBuiltinsTest, DunderSubWithNegativeLargeIntsBorrowingReturnsLargeInt) {
   HandleScope scope;
 
   // The smallest negative number representable with 2 digits.
-  const uword digits_left[2] = {0, static_cast<uword>(kMinWord)};
+  const uword digits_left[] = {0, static_cast<uword>(kMinWord)};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[1] = {1};
+  const uword digits_right[] = {1};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
   const uword expected_digits[] = {kMaxUword, static_cast<uword>(kMaxWord),
@@ -3051,9 +3051,9 @@ TEST(IntBuiltinsTest, DunderXorWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderXorWithLargeIntsReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_left[3] = {0x0f, 0x30, 0xCAFE};
+  const uword digits_left[] = {0x0f, 0x30, 0xCAFE};
   Int left(&scope, newIntWithDigits(&runtime, digits_left));
-  const uword digits_right[2] = {0x03, 0xf0};
+  const uword digits_right[] = {0x03, 0xf0};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
   const uword expected_digits[] = {0x0C, 0xC0, 0xCAFE};
@@ -3063,7 +3063,7 @@ TEST(IntBuiltinsTest, DunderXorWithLargeIntsReturnsLargeInt) {
 TEST(IntBuiltinsTest, DunderXorWithNonIntReturnsNotImplemented) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   Int left(&scope, newIntWithDigits(&runtime, digits));
   Object right(&scope, Str::empty());
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
@@ -3074,7 +3074,7 @@ TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {
   Runtime runtime;
   HandleScope scope;
   Object left(&scope, Str::empty());
-  const uword digits[2] = {1, 2};
+  const uword digits[] = {1, 2};
   LargeInt right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -3091,7 +3091,7 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
                                    signed_obj));
 
-  const byte bytes[3] = {42, 0, 0};
+  const byte bytes[] = {42, 0, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
@@ -3105,7 +3105,7 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderBigEndianReturnsBytes) {
   Bool signed_obj(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
                                    signed_obj));
-  const byte bytes[2] = {0, 42};
+  const byte bytes[] = {0, 42};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
@@ -3122,7 +3122,7 @@ x4 = (0x1234).to_bytes(length=2, byteorder='little')
 x5 = (0x1234).to_bytes(2, byteorder='little', signed=False)
 x6 = (0x1234).to_bytes(signed=False, byteorder='little', length=2)
 )");
-  const byte bytes[2] = {0x34, 0x12};
+  const byte bytes[] = {0x34, 0x12};
   for (const char* name : {"x0", "x1", "x2", "x3", "x4", "x5", "x6"}) {
     Object x(&scope, moduleAt(&runtime, "__main__", name));
     EXPECT_TRUE(isBytesEqualsBytes(x, bytes)) << name;
@@ -3137,7 +3137,7 @@ TEST(IntBuiltinsTest, ToBytesKwWithNegativeNumberReturnsBytes) {
 x0 = (-777).to_bytes(4, 'little', signed=True)
 )");
   Object x(&scope, moduleAt(&runtime, "__main__", "x0"));
-  const byte bytes[4] = {0xf7, 0xfc, 0xff, 0xff};
+  const byte bytes[] = {0xf7, 0xfc, 0xff, 0xff};
   EXPECT_TRUE(isBytesEqualsBytes(x, bytes));
 }
 
@@ -3155,22 +3155,22 @@ TEST(IntBuiltinsTest, ToBytesWithSignedFalseReturnsBytes) {
   Bool signed_obj(&scope, Bool::falseObj());
   Object result_128(&scope, runBuiltin(IntBuiltins::toBytes, num_128, length_1,
                                        byteorder, signed_obj));
-  const byte bytes[1] = {0x80};
+  const byte bytes[] = {0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_128, bytes));
 
   Int length_2(&scope, SmallInt::fromWord(2));
   Int num_32768(&scope, SmallInt::fromWord(32768));
   Object result_32768(&scope, runBuiltin(IntBuiltins::toBytes, num_32768,
                                          length_2, byteorder, signed_obj));
-  const byte bytes2[2] = {0, 0x80};
+  const byte bytes2[] = {0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_32768, bytes2));
 
   Int length_8(&scope, SmallInt::fromWord(8));
-  const uword digits[2] = {0x8000000000000000, 0};
+  const uword digits[] = {0x8000000000000000, 0};
   Int num_min_word(&scope, newIntWithDigits(&runtime, digits));
   Object result_min_word(&scope, runBuiltin(IntBuiltins::toBytes, num_min_word,
                                             length_8, byteorder, signed_obj));
-  const byte bytes3[8] = {0, 0, 0, 0, 0, 0, 0, 0x80};
+  const byte bytes3[] = {0, 0, 0, 0, 0, 0, 0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_min_word, bytes3));
 }
 
@@ -3185,7 +3185,7 @@ TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderBigEndianReturnsBytes) {
   Bool signed_obj(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
                                    signed_obj));
-  const byte bytes[10] = {0, 0, 0, 0, 0, 0, 0xca, 0xfe, 0xba, 0xbe};
+  const byte bytes[] = {0, 0, 0, 0, 0, 0, 0xca, 0xfe, 0xba, 0xbe};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
@@ -3200,7 +3200,7 @@ TEST(IntBuiltinsTest, ToBytesWithLargeBufferByteorderLittleEndianReturnsBytes) {
   Bool signed_obj(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
                                    signed_obj));
-  const byte bytes[10] = {0xbe, 0xba, 0xfe, 0xca, 0, 0, 0, 0, 0, 0};
+  const byte bytes[] = {0xbe, 0xba, 0xfe, 0xca, 0, 0, 0, 0, 0, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
@@ -3212,14 +3212,14 @@ TEST(IntBuiltinsTest, ToBytesWithSignedTrueReturnsBytes) {
 result = (0x7fffffffffffffff).to_bytes(8, 'little', signed=True)
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  const byte bytes[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f};
+  const byte bytes[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 
   runFromCStr(&runtime, R"(
 result_n_128 = (-128).to_bytes(1, 'little', signed=True)
 )");
   Object result_n_128(&scope, moduleAt(&runtime, "__main__", "result_n_128"));
-  const byte bytes2[1] = {0x80};
+  const byte bytes2[] = {0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_128, bytes2));
 
   runFromCStr(&runtime, R"(
@@ -3227,7 +3227,7 @@ result_n_32768 = (-32768).to_bytes(2, 'little', signed=True)
 )");
   Object result_n_32768(&scope,
                         moduleAt(&runtime, "__main__", "result_n_32768"));
-  const byte bytes3[2] = {0, 0x80};
+  const byte bytes3[] = {0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_32768, bytes3));
 
   runFromCStr(&runtime, R"(
@@ -3235,7 +3235,7 @@ result_n_min_word = (-9223372036854775808).to_bytes(8, 'little', signed=True)
 )");
   Object result_n_min_word(&scope,
                            moduleAt(&runtime, "__main__", "result_n_min_word"));
-  const byte bytes4[8] = {0, 0, 0, 0, 0, 0, 0, 0x80};
+  const byte bytes4[] = {0, 0, 0, 0, 0, 0, 0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_min_word, bytes4));
 }
 
@@ -3250,7 +3250,7 @@ TEST(IntBuiltinsTest,
 result = (-1024).to_bytes(7, 'big', signed=True)
 )");
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  const byte bytes[7] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xfc, 0};
+  const byte bytes[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xfc, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
@@ -3297,7 +3297,7 @@ TEST(IntBuiltinsTest, ToBytesWithBigOverflowRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
 
-  const uword digits[3] = {1, 2, 3};
+  const uword digits[] = {1, 2, 3};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Int length(&scope, SmallInt::fromWord(13));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
@@ -3374,7 +3374,7 @@ TEST(IntBuiltinsTest, ToBytesWithInvalidLengthArgRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
   Int num(&scope, SmallInt::fromWord(42));
-  const uword digits[2] = {0, 1024};
+  const uword digits[] = {0, 1024};
   Int huge_length(&scope, newIntWithDigits(&runtime, digits));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Bool signed_obj(&scope, Bool::falseObj());

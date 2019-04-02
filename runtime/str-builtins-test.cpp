@@ -347,7 +347,7 @@ TEST(StrBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, Str::empty());
-  const uword digits[2] = {1, 1};
+  const uword digits[] = {1, 1};
   Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
                             LayoutId::kOverflowError,

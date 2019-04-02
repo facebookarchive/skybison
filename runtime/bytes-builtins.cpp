@@ -122,24 +122,24 @@ static RawObject bytesReprWithDelimiter(Thread* thread, const Bytes& self,
   // length for the 2-character prefix (b') and the 1-character suffix (').
   // We expect mostly ASCII bytes, so we usually will not have to resize again.
   runtime->byteArrayEnsureCapacity(thread, buffer, len + 3);
-  const byte bytes_delim[2] = {'b', delimiter};
+  const byte bytes_delim[] = {'b', delimiter};
   runtime->byteArrayExtend(thread, buffer, bytes_delim);
   for (word i = 0; i < len; i++) {
     byte current = self.byteAt(i);
     if (current == delimiter || current == '\\') {
-      const byte bytes[2] = {'\\', current};
+      const byte bytes[] = {'\\', current};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\t') {
-      const byte bytes[2] = {'\\', 't'};
+      const byte bytes[] = {'\\', 't'};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\n') {
-      const byte bytes[2] = {'\\', 'n'};
+      const byte bytes[] = {'\\', 'n'};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current == '\r') {
-      const byte bytes[2] = {'\\', 'r'};
+      const byte bytes[] = {'\\', 'r'};
       runtime->byteArrayExtend(thread, buffer, bytes);
     } else if (current < ' ' || current >= 0x7f) {
-      const byte bytes[2] = {'\\', 'x'};
+      const byte bytes[] = {'\\', 'x'};
       runtime->byteArrayExtend(thread, buffer, bytes);
       writeByteAsHexDigits(thread, buffer, current);
     } else {

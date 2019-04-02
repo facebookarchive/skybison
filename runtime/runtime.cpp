@@ -4085,7 +4085,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
     word value_word = value.asWord();
     // Negating kMinWord results in a number with two digits.
     if (value_word == kMinWord) {
-      const uword min_word[2] = {static_cast<uword>(kMinWord), 0};
+      const uword min_word[] = {static_cast<uword>(kMinWord), 0};
       return newIntWithDigits(min_word);
     }
     return newInt(-value_word);

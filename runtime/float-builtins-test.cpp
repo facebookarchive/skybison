@@ -576,7 +576,7 @@ TEST(FloatBuiltinsTest, DunderEqWithSmallIntInexactReturnsFalse) {
 TEST(FloatBuiltinsTest, DunderEqWithLargeIntExactReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, float0, int0), Bool::trueObj());
@@ -585,7 +585,7 @@ TEST(FloatBuiltinsTest, DunderEqWithLargeIntExactReturnsTrue) {
 TEST(FloatBuiltinsTest, DunderEqWithLargeIntInexactReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[2] = {0x800, 1};
+  const uword digits[] = {0x800, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
   ASSERT_EQ(RawFloat::cast(runBuiltin(IntBuiltins::dunderFloat, int0)).value(),
@@ -681,7 +681,7 @@ TEST(FloatBuiltinsTest, DunderGeWithIntSelfNanReturnsFalse) {
   HandleScope scope;
   Object left(&scope,
               runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object right(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, left, right), Bool::falseObj());
 }
@@ -744,12 +744,12 @@ TEST(FloatBuiltinsTest, DunderGeWithLargeIntDifferingSignReturnsBool) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(-1.0));
-  const uword digits0[2] = {0, 1};
+  const uword digits0[] = {0, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits0));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, float0, int0),
             Bool::falseObj());
   Object float1(&scope, runtime.newFloat(1.0));
-  const uword digits1[2] = {0, kMaxUword};
+  const uword digits1[] = {0, kMaxUword};
   Object int1(&scope, runtime.newIntWithDigits(digits1));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, float1, int1), Bool::trueObj());
 }
@@ -758,7 +758,7 @@ TEST(FloatBuiltinsTest, DunderGeWithLargeIntExactEqualsReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, float0, int0), Bool::trueObj());
 }
@@ -767,7 +767,7 @@ TEST(FloatBuiltinsTest, DunderGeWithLargeIntRoundingDownReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
-  const uword digits[2] = {1, 1};
+  const uword digits[] = {1, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   ASSERT_EQ(RawFloat::cast(runBuiltin(IntBuiltins::dunderFloat, int0)).value(),
             RawFloat::cast(*float0).value());
@@ -779,7 +779,7 @@ TEST(FloatBuiltinsTest, DunderGeWithLargeIntRoundingUpReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
-  const uword digits[2] = {kMaxUword, 0};
+  const uword digits[] = {kMaxUword, 0};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   ASSERT_EQ(RawFloat::cast(runBuiltin(IntBuiltins::dunderFloat, int0)).value(),
             RawFloat::cast(*float0).value());
@@ -804,7 +804,7 @@ TEST(FloatBuiltinsTest, DunderGtWithIntSelfNanReturnsFalse) {
   HandleScope scope;
   Object left(&scope,
               runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object right(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, left, right), Bool::falseObj());
 }
@@ -847,7 +847,7 @@ TEST(FloatBuiltinsTest, DunderLeWithIntSelfNanReturnsFalse) {
   HandleScope scope;
   Object left(&scope,
               runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object right(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLe, left, right), Bool::falseObj());
 }
@@ -902,7 +902,7 @@ TEST(FloatBuiltinsTest, DunderLtWithIntSelfNanReturnsFalse) {
   HandleScope scope;
   Object left(&scope,
               runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object right(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, left, right), Bool::falseObj());
 }
@@ -963,11 +963,11 @@ TEST(FloatBuiltinsTest, DunderLtWithLargeIntDifferingSignReturnsBool) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(-1.0));
-  const uword digits0[2] = {0, 1};
+  const uword digits0[] = {0, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits0));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, float0, int0), Bool::trueObj());
   Object float1(&scope, runtime.newFloat(1.0));
-  const uword digits1[2] = {0, kMaxUword};
+  const uword digits1[] = {0, kMaxUword};
   Object int1(&scope, runtime.newIntWithDigits(digits1));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, float1, int1),
             Bool::falseObj());
@@ -977,7 +977,7 @@ TEST(FloatBuiltinsTest, DunderLtWithLargeIntExactEqualsReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
-  const uword digits[2] = {0, 1};
+  const uword digits[] = {0, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, float0, int0),
             Bool::falseObj());
@@ -987,7 +987,7 @@ TEST(FloatBuiltinsTest, DunderLtWithLargeIntRoundingDownReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
-  const uword digits[2] = {1, 1};
+  const uword digits[] = {1, 1};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   ASSERT_EQ(RawFloat::cast(runBuiltin(IntBuiltins::dunderFloat, int0)).value(),
             RawFloat::cast(*float0).value());
@@ -998,7 +998,7 @@ TEST(FloatBuiltinsTest, DunderLtWithLargeIntRoundingUpReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
   Object float0(&scope, runtime.newFloat(std::strtod("0x1p64", nullptr)));
-  const uword digits[2] = {kMaxUword, 0};
+  const uword digits[] = {kMaxUword, 0};
   Object int0(&scope, runtime.newIntWithDigits(digits));
   ASSERT_EQ(RawFloat::cast(runBuiltin(IntBuiltins::dunderFloat, int0)).value(),
             RawFloat::cast(*float0).value());

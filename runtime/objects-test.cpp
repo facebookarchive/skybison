@@ -15,7 +15,7 @@ TEST(ByteArrayTest, DownsizeMaintainsCapacity) {
   Thread* thread = Thread::current();
   HandleScope scope;
   ByteArray array(&scope, runtime.newByteArray());
-  const byte byte_array[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+  const byte byte_array[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
   runtime.byteArrayExtend(thread, array, byte_array);
   ASSERT_EQ(array.numItems(), 9);
   word capacity = array.capacity();
@@ -206,29 +206,29 @@ TEST(IntTest, Compare) {
 TEST(IntTest, LargeIntCompare) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits_great[2] = {1, 1};
+  const uword digits_great[] = {1, 1};
   Int great(&scope, newIntWithDigits(&runtime, digits_great));
-  const uword digits_small[3] = {0, 0, kMaxUword};
+  const uword digits_small[] = {0, 0, kMaxUword};
   Int small(&scope, newIntWithDigits(&runtime, digits_small));
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
-  const uword digits_great2[3] = {1, 1, 1};
-  const uword digits_small2[2] = {1, 1};
+  const uword digits_great2[] = {1, 1, 1};
+  const uword digits_small2[] = {1, 1};
   great = newIntWithDigits(&runtime, digits_great2);
   small = newIntWithDigits(&runtime, digits_small2);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
-  const uword digits_great3[2] = {kMaxUword - 1, 1};
-  const uword digits_small3[2] = {2, 1};
+  const uword digits_great3[] = {kMaxUword - 1, 1};
+  const uword digits_small3[] = {2, 1};
   great = newIntWithDigits(&runtime, digits_great3);
   small = newIntWithDigits(&runtime, digits_small3);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
-  const uword digits_great4[2] = {kMaxUword - 1, kMaxUword - 1};
-  const uword digits_small4[2] = {2, kMaxUword - 1};
+  const uword digits_great4[] = {kMaxUword - 1, kMaxUword - 1};
+  const uword digits_small4[] = {2, kMaxUword - 1};
   great = newIntWithDigits(&runtime, digits_great4);
   small = newIntWithDigits(&runtime, digits_small4);
   EXPECT_EQ(great.compare(*small), 1);
