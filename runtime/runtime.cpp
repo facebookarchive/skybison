@@ -695,7 +695,7 @@ bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
 bool Runtime::isMapping(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetItem).isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetitem).isError();
 }
 
 bool Runtime::isSequence(Thread* thread, const Object& obj) {
@@ -704,7 +704,7 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetItem).isError();
+  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetitem).isError();
 }
 
 RawObject Runtime::newEmptyCode() {

@@ -141,7 +141,7 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGe, dunderGe},
-    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},

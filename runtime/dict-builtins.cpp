@@ -74,7 +74,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   // Generic mapping, use keys() and __getitem__()
   Object subscr_method(&scope,
                        Interpreter::lookupMethod(thread, frame, mapping,
-                                                 SymbolId::kDunderGetItem));
+                                                 SymbolId::kDunderGetitem));
   if (subscr_method.isError()) {
     return thread->raiseTypeErrorWithCStr("object is not subscriptable");
   }
@@ -238,12 +238,12 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderDelItem, dunderDelItem},
+    {SymbolId::kDunderDelitem, dunderDelItem},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderNew, dunderNew},
-    {SymbolId::kDunderSetItem, dunderSetItem},
+    {SymbolId::kDunderSetitem, dunderSetItem},
     {SymbolId::kGet, get},
     {SymbolId::kItems, items},
     {SymbolId::kKeys, keys},

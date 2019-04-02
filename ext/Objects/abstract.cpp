@@ -177,7 +177,7 @@ PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
 static PyObject* getItem(Thread* thread, const Object& obj, const Object& key) {
   HandleScope scope(thread);
   Object result(&scope,
-                thread->invokeMethod2(obj, SymbolId::kDunderGetItem, key));
+                thread->invokeMethod2(obj, SymbolId::kDunderGetitem, key));
   if (result.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("object is not subscriptable");
@@ -949,7 +949,7 @@ PY_EXPORT int PyObject_SetItem(PyObject* obj, PyObject* key, PyObject* value) {
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetItem,
+  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetitem,
                                               key_obj, value_obj));
   if (result.isError()) {
     if (!thread->hasPendingException()) {
@@ -1043,7 +1043,7 @@ PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object idx_obj(&scope, thread->runtime()->newInt(idx));
-  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem,
+  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem,
                                               idx_obj));
   if (result.isError()) {
     return -1;
@@ -1071,7 +1071,7 @@ PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
   Object slice(&scope, makeSlice(thread, low, high));
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object result(
-      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem, slice));
+      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, slice));
   if (result.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("object does not support slice deletion");
@@ -1104,7 +1104,7 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   HandleScope scope(thread);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object idx_obj(&scope, thread->runtime()->newInt(idx));
-  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetItem,
+  Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem,
                                               idx_obj));
   if (result.isError()) {
     if (!thread->hasPendingException()) {
@@ -1125,7 +1125,7 @@ PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
   Object slice(&scope, makeSlice(thread, low, high));
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object result(
-      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetItem, slice));
+      &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem, slice));
   if (result.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("could not call __getitem__");
@@ -1236,10 +1236,10 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
   Object result(&scope, NoneType::object());
   if (obj == nullptr) {
     // Equivalent to PySequence_DelItem
-    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem, idx_obj);
+    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, idx_obj);
   } else {
     Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-    result = thread->invokeMethod3(seq_obj, SymbolId::kDunderSetItem, idx_obj,
+    result = thread->invokeMethod3(seq_obj, SymbolId::kDunderSetitem, idx_obj,
                                    object);
   }
   if (result.isError()) {
@@ -1263,11 +1263,11 @@ PY_EXPORT int PySequence_SetSlice(PyObject* seq, Py_ssize_t low,
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
   Object result(&scope, NoneType::object());
   if (obj == nullptr) {
-    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelItem, slice);
+    result = thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, slice);
   } else {
     Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
     result =
-        thread->invokeMethod3(seq_obj, SymbolId::kDunderSetItem, slice, object);
+        thread->invokeMethod3(seq_obj, SymbolId::kDunderSetitem, slice, object);
   }
   if (result.isError()) {
     if (!thread->hasPendingException()) {

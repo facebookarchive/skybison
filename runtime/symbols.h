@@ -32,7 +32,7 @@ class Runtime;
   V(DunderComplex, "__complex__")                                              \
   V(DunderContains, "__contains__")                                            \
   V(DunderContext, "__context__")                                              \
-  V(DunderDelItem, "__delitem__")                                              \
+  V(DunderDelitem, "__delitem__")                                              \
   V(DunderDelattr, "__delattr__")                                              \
   V(DunderDelete, "__delete__")                                                \
   V(DunderDict, "__dict__")                                                    \
@@ -50,7 +50,7 @@ class Runtime;
   V(DunderFspath, "__fspath__")                                                \
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
-  V(DunderGetItem, "__getitem__")                                              \
+  V(DunderGetitem, "__getitem__")                                              \
   V(DunderGlobals, "__globals__")                                              \
   V(DunderGt, "__gt__")                                                        \
   V(DunderHash, "__hash__")                                                    \
@@ -114,7 +114,7 @@ class Runtime;
   V(DunderRtruediv, "__rtruediv__")                                            \
   V(DunderRxor, "__rxor__")                                                    \
   V(DunderSet, "__set__")                                                      \
-  V(DunderSetItem, "__setitem__")                                              \
+  V(DunderSetitem, "__setitem__")                                              \
   V(DunderSizeof, "__sizeof__")                                                \
   V(DunderSpec, "__spec__")                                                    \
   V(DunderStr, "__str__")                                                      \

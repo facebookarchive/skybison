@@ -28,7 +28,7 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
 
 const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
-    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderImul, dunderImul},
     {SymbolId::kDunderInit, dunderInit},

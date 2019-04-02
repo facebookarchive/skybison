@@ -980,7 +980,7 @@ bool Interpreter::doBinarySubscr(Context* ctx, word) {
   Object container(&scope, ctx->frame->popValue());
   Type type(&scope, runtime->typeOf(*container));
   Object getitem(&scope, runtime->lookupSymbolInMro(ctx->thread, type,
-                                                    SymbolId::kDunderGetItem));
+                                                    SymbolId::kDunderGetitem));
   if (getitem.isError()) {
     ctx->thread->raiseTypeErrorWithCStr("object does not support indexing");
     return unwind(ctx);
@@ -1117,7 +1117,7 @@ bool Interpreter::doStoreSubscr(Context* ctx, word) {
   Object key(&scope, ctx->frame->popValue());
   Object container(&scope, ctx->frame->popValue());
   Object setitem(&scope, lookupMethod(thread, ctx->frame, container,
-                                      SymbolId::kDunderSetItem));
+                                      SymbolId::kDunderSetitem));
   if (setitem.isError()) {
     UNIMPLEMENTED("throw TypeError");
   }
@@ -1136,7 +1136,7 @@ bool Interpreter::doDeleteSubscr(Context* ctx, word) {
   Object key(&scope, ctx->frame->popValue());
   Object container(&scope, ctx->frame->popValue());
   Object delitem(&scope, lookupMethod(thread, ctx->frame, container,
-                                      SymbolId::kDunderDelItem));
+                                      SymbolId::kDunderDelitem));
   if (delitem.isError()) {
     UNIMPLEMENTED("throw TypeError");
   }

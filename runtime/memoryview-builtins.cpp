@@ -6,7 +6,7 @@ namespace python {
 
 const BuiltinMethod MemoryViewBuiltins::kBuiltinMethods[] = {
     {SymbolId::kCast, cast},
-    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},

@@ -72,7 +72,7 @@ const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
-    {SymbolId::kDunderGetItem, dunderGetItem},
+    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
