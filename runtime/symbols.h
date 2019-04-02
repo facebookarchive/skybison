@@ -397,6 +397,8 @@ class Runtime;
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
   V(UnderByteArrayToString, "_bytearray_to_string")                            \
+  V(UnderBytesGetitem, "_bytes_getitem")                                       \
+  V(UnderBytesGetitemSlice, "_bytes_getitem_slice")                            \
   V(UnderBytesJoin, "_bytes_join")                                             \
   V(UnderBytesNew, "_bytes_new")                                               \
   V(UnderCodecs, "_codecs")                                                    \

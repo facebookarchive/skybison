@@ -887,7 +887,21 @@ class bytes(bootstrap=True):
         pass
 
     def __getitem__(self, key):
-        pass
+        if not isinstance(self, bytes):
+            raise TypeError(
+                "'__getitem__' requires a 'bytes' object but received a "
+                f"'{type(self).__name__}'"
+            )
+        if isinstance(key, int):
+            return _bytes_getitem(self, key)
+        if isinstance(key, slice):
+            return _bytes_getitem_slice(self, *key.indices(len(self)))
+        try:
+            return _bytes_getitem(self, _index(key))
+        except TypeError:
+            raise TypeError(
+                f"byte indices must be integers or slice, not {type(key).__name__}"
+            )
 
     def __gt__(self, other):
         pass
@@ -2175,6 +2189,16 @@ def any(iterable):
 
 @_patch
 def _bytearray_join(self: bytearray, iterable) -> bytearray:
+    pass
+
+
+@_patch
+def _bytes_getitem(self, index: int) -> int:
+    pass
+
+
+@_patch
+def _bytes_getitem_slice(self, start: int, stop: int, step: int) -> bytes:
     pass
 
 

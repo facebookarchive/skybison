@@ -388,95 +388,68 @@ TEST(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaisesTypeError) {
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, SmallInt::fromWord(0));
-  Object index(&scope, SmallInt::fromWord(4));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.__getitem__(0, 1)"), LayoutId::kTypeError,
+      "'__getitem__' requires a 'bytes' object but received a 'smallint'"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  uword idx[] = {1, 1};
-  Object index(&scope, runtime.newIntWithDigits(View<uword>(idx, 2)));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_TRUE(raised(*item, LayoutId::kIndexError));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "b''[2**64]"), LayoutId::kIndexError,
+                    "cannot fit 'largeint' into an index-sized integer"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object index(&scope, RawSmallInt::fromWord(4));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_TRUE(raised(*item, LayoutId::kIndexError));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'abc'[3]"),
+                            LayoutId::kIndexError, "index out of range"));
 }
 
 TEST(BytesBuiltinsTest,
      DunderGetItemWithNegativeIntGreaterThanLenRaisesIndexError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object index(&scope, runtime.newInt(-4));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_TRUE(raised(*item, LayoutId::kIndexError));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'abc'[-4]"),
+                            LayoutId::kIndexError, "index out of range"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
   Runtime runtime;
   HandleScope scope;
-  const byte hello[5] = {'h', 'e', 'l', 'l', 'o'};
-  Object self(&scope, runtime.newBytesWithAll(hello));
-  Object index(&scope, runtime.newInt(-5));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_EQ(*item, RawSmallInt::fromWord('h'));
+  runFromCStr(&runtime, "result = b'hello'[-5]");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
   Runtime runtime;
   HandleScope scope;
-  const byte hello[5] = {'h', 'e', 'l', 'l', 'o'};
-  Object self(&scope, runtime.newBytesWithAll(hello));
-  Object index(&scope, RawSmallInt::fromWord(0));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_EQ(*item, RawSmallInt::fromWord('h'));
+  runFromCStr(&runtime, "result = b'hello'[0]");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  const byte hello[] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
-  Bytes self(&scope, runtime.newBytesWithAll(hello));
-  Slice index(&scope, runtime.newSlice());
-  index.setStart(SmallInt::fromWord(0));
-  index.setStop(SmallInt::fromWord(3));
-  index.setStep(SmallInt::fromWord(1));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_TRUE(isBytesEqualsCStr(item, "hel"));
+  runFromCStr(&runtime, "result = b'hello world'[:3]");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "hel"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  const byte hello[] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
-  Bytes self(&scope, runtime.newBytesWithAll(hello));
-  Slice index(&scope, runtime.newSlice());
-  index.setStart(SmallInt::fromWord(1));
-  index.setStop(SmallInt::fromWord(6));
-  index.setStep(SmallInt::fromWord(2));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, index));
-  EXPECT_TRUE(isBytesEqualsCStr(item, "el "));
+  runFromCStr(&runtime, "result = b'hello world'[1:6:2]");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "el "));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  Object other(&scope, runtime.newFloat(1.5));
-  Object item(&scope, runBuiltin(BytesBuiltins::dunderGetItem, self, other));
-  EXPECT_TRUE(raised(*item, LayoutId::kTypeError));
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "b''[1.5]"), LayoutId::kTypeError,
+                    "byte indices must be integers or slice, not float"));
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithTooFewArgsRaisesTypeError) {

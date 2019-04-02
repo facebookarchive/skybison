@@ -2323,6 +2323,25 @@ word Runtime::bytesReplaceFromWith(Thread* thread, const Bytes& buffer,
   UNREACHABLE("source is not bytes-like");
 }
 
+RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
+                              word stop, word step) {
+  word length = 0;
+  if (step < 0) {
+    if (stop < start) {
+      length = (start - stop - 1) / (-step) + 1;
+    }
+  } else if (start < stop) {
+    length = (stop - start - 1) / step + 1;
+  }
+  if (length == 0) return empty_bytes_;
+  HandleScope scope(thread);
+  Bytes result(&scope, heap()->createBytes(length));
+  for (word i = 0, j = start; i < length; i++, j += step) {
+    result.byteAtPut(i, self.byteAt(j));
+  }
+  return *result;
+}
+
 RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
                                word length) {
   DCHECK_BOUND(start, self.length());

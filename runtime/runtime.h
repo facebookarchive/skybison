@@ -347,6 +347,10 @@ class Runtime {
   word bytesReplaceFromWith(Thread* thread, const Bytes& buffer, word start,
                             const Object& source);
 
+  // Returns a new Bytes that contains the specified slice of self.
+  RawObject bytesSlice(Thread* thread, const Bytes& self, word start, word stop,
+                       word stride);
+
   // Returns a new Bytes containing the subsequence of self
   // with the given start index and length.
   RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,

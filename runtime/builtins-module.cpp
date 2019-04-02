@@ -86,6 +86,8 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kSetattr, setattr},
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderByteArrayJoin, ByteArrayBuiltins::join},
+    {SymbolId::kUnderBytesGetitem, underBytesGetItem},
+    {SymbolId::kUnderBytesGetitemSlice, underBytesGetItemSlice},
     {SymbolId::kUnderBytesJoin, BytesBuiltins::join},
     {SymbolId::kUnderBytesNew, underBytesNew},
     {SymbolId::kUnderComplexImag, complexGetImag},
@@ -615,6 +617,40 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
                                  SymbolId::kDunderImport, name, globals, locals,
                                  fromlist, level);
 }
+
+RawObject BuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Bytes self(&scope, args.get(0));
+  Int key(&scope, args.get(1));
+  word index = key.asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseIndexError(thread->runtime()->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &key));
+  }
+  word length = self.length();
+  if (index < 0) {
+    index += length;
+  }
+  if (index < 0 || index >= length) {
+    return thread->raiseIndexErrorWithCStr("index out of range");
+  }
+  return SmallInt::fromWord(self.byteAt(index));
+}
+
+RawObject BuiltinsModule::underBytesGetItemSlice(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Bytes self(&scope, args.get(0));
+  Int start(&scope, args.get(1));
+  Int stop(&scope, args.get(2));
+  Int step(&scope, args.get(3));
+  return thread->runtime()->bytesSlice(thread, self, start.asWord(),
+                                       stop.asWord(), step.asWord());
+}
+
 RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,
                                         word nargs) {
   Arguments args(frame_frame, nargs);
