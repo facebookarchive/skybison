@@ -608,6 +608,70 @@ class C(int, float, metaclass=Meta, hello="world"):
   EXPECT_TRUE(isStrEqualsCStr(runtime.dictAt(c_kwargs, hello), "world"));
 }
 
+TEST(BuiltinsModuleTest, DunderBuildClassCalculatesMostSpecificMetaclass) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Meta(type): pass
+class C1(int, metaclass=Meta): pass
+class C2(C1, metaclass=type): pass
+t1 = type(C1)
+t2 = type(C2)
+)")
+                   .isError());
+  Object meta(&scope, moduleAt(&runtime, "__main__", "Meta"));
+  Object t1(&scope, moduleAt(&runtime, "__main__", "t1"));
+  Object t2(&scope, moduleAt(&runtime, "__main__", "t2"));
+  ASSERT_TRUE(t1.isType());
+  ASSERT_TRUE(t2.isType());
+  EXPECT_EQ(t1, meta);
+  EXPECT_EQ(t2, meta);
+}
+
+TEST(BuiltinsModuleTest,
+     DunderBuildClassWithIncompatibleMetaclassesRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(
+class M1(type): pass
+class M2(type): pass
+class C1(metaclass=M1): pass
+class C2(C1, metaclass=M2): pass
+)"),
+      LayoutId::kTypeError,
+      "metaclass conflict: the metaclass of a derived class must be a "
+      "(non-strict) subclass of the metaclasses of all its bases"));
+}
+
+TEST(BuiltinsModuleTest, DunderBuildClassWithMeetMetaclassUsesMeet) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class M1(type): pass
+class M2(type): pass
+class M3(M1, M2): pass
+class C1(metaclass=M1): pass
+class C2(metaclass=M2): pass
+class C3(C1, C2, metaclass=M3): pass
+t1 = type(C1)
+t2 = type(C2)
+t3 = type(C3)
+)")
+                   .isError());
+  Object m1(&scope, moduleAt(&runtime, "__main__", "M1"));
+  Object m2(&scope, moduleAt(&runtime, "__main__", "M2"));
+  Object m3(&scope, moduleAt(&runtime, "__main__", "M3"));
+  Object t1(&scope, moduleAt(&runtime, "__main__", "t1"));
+  Object t2(&scope, moduleAt(&runtime, "__main__", "t2"));
+  Object t3(&scope, moduleAt(&runtime, "__main__", "t3"));
+  ASSERT_TRUE(t1.isType());
+  ASSERT_TRUE(t2.isType());
+  ASSERT_TRUE(t3.isType());
+  EXPECT_EQ(t1, m1);
+  EXPECT_EQ(t2, m2);
+  EXPECT_EQ(t3, m3);
+}
+
 TEST(BuiltinsModuleTest, DunderBuildClassWithRaisingBodyPropagatesException) {
   Runtime runtime;
   EXPECT_TRUE(raised(runFromCStr(&runtime, R"(

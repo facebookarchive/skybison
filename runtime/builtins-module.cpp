@@ -272,6 +272,24 @@ static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
   }
 }
 
+static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
+                                    const Tuple& bases) {
+  HandleScope scope(thread);
+  Type result(&scope, *metaclass_type);
+  Runtime* runtime = thread->runtime();
+  for (word i = 0, num_bases = bases.length(); i < num_bases; i++) {
+    Type base_type(&scope, runtime->typeOf(bases.at(i)));
+    if (runtime->isSubclass(base_type, result)) {
+      result = *base_type;
+    } else if (!runtime->isSubclass(result, base_type)) {
+      return thread->raiseTypeErrorWithCStr(
+          "metaclass conflict: the metaclass of a derived class must be a "
+          "(non-strict) subclass of the metaclasses of all its bases");
+    }
+  }
+  return *result;
+}
+
 RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
                                            word nargs) {
   Runtime* runtime = thread->runtime();
@@ -321,8 +339,11 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     }
   }
 
-  // TODO(T42099053): Perform the equivalent of _PyType_CalculateMetaclass()
-  // on metaclass.
+  if (runtime->isInstanceOfType(*metaclass)) {
+    Type metaclass_type(&scope, *metaclass);
+    metaclass = calculateMetaclass(thread, metaclass_type, bases);
+    if (metaclass.isError()) return *metaclass;
+  }
 
   // TODO(T31926659): Call metaclass.__prepare__ if it exists.
   Dict type_dict(&scope, runtime->newDict());
