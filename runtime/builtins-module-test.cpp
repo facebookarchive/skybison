@@ -1532,4 +1532,82 @@ result = min(first, second) is first
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
+TEST(BuiltinsModuleTest, MapWithNonIterableArgumentRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "map(1,1)"),
+                            LayoutId::kTypeError,
+                            "'smallint' object is not iterable"));
+}
+
+TEST(BuiltinsModuleTest,
+     MapWithIterableDunderNextReturnsFuncAppliedElementsSequentially) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def inc(e):
+  return e + 1
+
+m = map(inc, [1,2])
+r0 = m.__next__()
+r1 = m.__next__()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "r0"), SmallInt::fromWord(2));
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "r1"), SmallInt::fromWord(3));
+}
+
+TEST(BuiltinsModuleTest,
+     MapWithMultipleIterablesDunderNextReturnsFuncAppliedElementsSequentially) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def inc(e0, e1):
+  return e0 + e1
+
+m = map(inc, [1,2], [100,200])
+r0 = m.__next__()
+r1 = m.__next__()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "r0"), SmallInt::fromWord(101));
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "r1"), SmallInt::fromWord(202));
+}
+
+TEST(BuiltinsModuleTest, MapDunderNextFinishesByRaisingStopIteration) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def inc(e):
+  return e + 1
+
+m = map(inc, [1,2])
+m.__next__()
+m.__next__()
+exc_raised = False
+try:
+  m.__next__()
+except StopIteration:
+  exc_raised = True
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "exc_raised"), Bool::trueObj());
+}
+
+TEST(
+    BuiltinsModuleTest,
+    MapWithMultipleIterablesDunderNextFinishesByRaisingStopIterationOnShorterOne) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def inc(e0, e1):
+  return e0, e1
+
+m = map(inc, [1,2], [100])
+m.__next__()
+exc_raised = False
+try:
+  m.__next__()
+except StopIteration:
+  exc_raised = True
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "exc_raised"), Bool::trueObj());
+}
+
 }  // namespace python

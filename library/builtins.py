@@ -2426,6 +2426,24 @@ def len(seq):
     return dunder_len()
 
 
+class map:
+    def __init__(self, func, *iterables):
+        if len(iterables) < 1:
+            raise TypeError("map() must have at least two arguments.")
+        self.func = func
+        self.iters = tuple(iter(iterable) for iterable in iterables)
+        self.len_iters = len(self.iters)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        func = self.func
+        if self.len_iters == 1:
+            return func(next(self.iters[0]))
+        return func(*[next(iter) for iter in self.iters])
+
+
 @_patch
 def ord(c):
     pass
