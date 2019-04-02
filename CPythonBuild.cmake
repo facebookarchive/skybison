@@ -77,7 +77,8 @@ set(
 	${CPYTHON_SOURCES}
   ${CPYTHON_SOURCES_WITH_CLINIC_ANNOTATIONS}
   "${CPYTHON_DIR}/Objects/accu.c"
-  "${CPYTHON_DIR}/Python/fileutils.c"
+	"${CPYTHON_DIR}/Python/dtoa.c"
+	"${CPYTHON_DIR}/Python/fileutils.c"
   "${CPYTHON_DIR}/Python/mystrtoul.c"
   "${CPYTHON_DIR}/Python/pyarena.c"
   "${CPYTHON_DIR}/Python/pyctype.c"
