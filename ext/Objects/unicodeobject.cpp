@@ -1212,8 +1212,13 @@ PY_EXPORT PyObject* PyUnicode_FromObject(PyObject* /* j */) {
   UNIMPLEMENTED("PyUnicode_FromObject");
 }
 
-PY_EXPORT PyObject* PyUnicode_FromOrdinal(int /* l */) {
-  UNIMPLEMENTED("PyUnicode_FromOrdinal");
+PY_EXPORT PyObject* PyUnicode_FromOrdinal(int ordinal) {
+  Thread* thread = Thread::current();
+  if (ordinal < 0 || ordinal > kMaxUnicode) {
+    thread->raiseValueErrorWithCStr("chr() arg not in range(0x110000)");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, SmallStr::fromCodePoint(ordinal));
 }
 
 PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,

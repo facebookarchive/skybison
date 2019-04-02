@@ -525,6 +525,27 @@ TEST_F(UnicodeExtensionApiTest, FromUnicodeWithNullBufferAbortsPyro) {
 }
 
 TEST_F(UnicodeExtensionApiTest,
+       FromOrdinalWithNegativeCodePointRaisesValueError) {
+  EXPECT_EQ(PyUnicode_FromOrdinal(-1), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromOrdinalWithHugeCodePointRaisesValueError) {
+  EXPECT_EQ(PyUnicode_FromOrdinal(0xFFFFFFFF), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest, FromOrdinalWithValidCodePointReturnsString) {
+  PyObjectPtr str(PyUnicode_FromOrdinal(1488));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_NE(str, nullptr);
+  ASSERT_TRUE(PyUnicode_Check(str));
+  EXPECT_STREQ(PyUnicode_AsUTF8(str), "\xD7\x90");
+}
+
+TEST_F(UnicodeExtensionApiTest,
        FromWideCharWithNullBufferAndZeroSizeReturnsEmpty) {
   PyObjectPtr empty(PyUnicode_FromWideChar(nullptr, 0));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
