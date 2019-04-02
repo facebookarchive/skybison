@@ -146,7 +146,15 @@ TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   // The values in this test are abitrary and are usally set with `sizeof(Foo)`
   int basic_size = 10;
   int item_size = 5;
+  destructor dealloc_func = [](PyObject* self) {
+    PyObjectPtr type(PyObject_Type(self));
+    auto free_function = reinterpret_cast<freefunc>(PyType_GetSlot(
+        reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free));
+    return free_function(self);
+  };
   PyType_Slot slots[] = {
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+      {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)},
       {0, nullptr},
   };
   static PyType_Spec spec;

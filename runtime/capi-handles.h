@@ -43,8 +43,15 @@ class ApiHandle : public PyObject {
   // Check if the type is PyType_Type
   bool isType();
 
-  // Returns true if the handle referent is a managed object.
-  bool isManaged() { return (ob_refcnt & kManagedBit) != 0; }
+  // Returns true if the PyObject* is a managed object.
+  static bool isManaged(const PyObject* obj) {
+    return (obj->ob_refcnt & kManagedBit) != 0;
+  }
+
+  // Returns the reference count of this object by masking the ManagedBit
+  static word maskedRefcnt(const PyObject* obj) {
+    return obj->ob_refcnt & ~kManagedBit;
+  }
 
   // Sets the managed status of the handle.
   void setManaged() { ob_refcnt |= kManagedBit; }

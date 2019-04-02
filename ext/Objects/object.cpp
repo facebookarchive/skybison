@@ -14,22 +14,25 @@ PY_EXPORT PyObject* PyNone_Ptr() {
 }
 
 PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
-  ApiHandle::fromPyObject(obj)->dispose();
+  if (ApiHandle::isManaged(obj)) {
+    ApiHandle::fromPyObject(obj)->dispose();
+    return;
+  }
+  PyTypeObject* type = reinterpret_cast<PyTypeObject*>(PyObject_Type(obj));
+  auto dealloc = bit_cast<destructor>(PyType_GetSlot(type, Py_tp_dealloc));
+  dealloc(obj);
+  Py_DECREF(type);
 }
 
-PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
-  ApiHandle::fromPyObject(obj)->incref();
-}
+PY_EXPORT void Py_INCREF_Func(PyObject* obj) { obj->ob_refcnt++; }
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
-  ApiHandle* handle = ApiHandle::fromPyObject(obj);
-  handle->decref();
-  if (handle->refcnt() == 0) _Py_Dealloc_Func(obj);
+  DCHECK(ApiHandle::maskedRefcnt(obj) > 0, "Reference count underflowed");
+  obj->ob_refcnt--;
+  if (obj->ob_refcnt == 0) _Py_Dealloc_Func(obj);
 }
 
-PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->refcnt();
-}
+PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) { return obj->ob_refcnt; }
 
 PY_EXPORT int PyCallable_Check(PyObject* /* x */) {
   UNIMPLEMENTED("PyCallable_Check");

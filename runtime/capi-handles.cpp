@@ -196,7 +196,7 @@ RawObject ApiHandle::asInstance(RawObject obj) {
 
 RawObject ApiHandle::asObject() {
   // Fast path: All builtin objects except Types
-  if (isManaged()) return RawObject{reinterpret_cast<uword>(reference_)};
+  if (isManaged(this)) return RawObject{reinterpret_cast<uword>(reference_)};
 
   // Create a runtime instance to hold the PyObject pointer
   DCHECK(type(), "ApiHandles must have a type to create an instance");
@@ -214,7 +214,7 @@ ApiHandle* ApiHandle::type() {
 
 void* ApiHandle::cache() {
   // Only managed objects can have a cached value
-  if (!isManaged()) return nullptr;
+  if (!isManaged(this)) return nullptr;
 
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
@@ -242,6 +242,7 @@ void ApiHandle::setCache(void* value) {
 }
 
 void ApiHandle::dispose() {
+  DCHECK(isManaged(this), "Dispose should only be called on managed handles");
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

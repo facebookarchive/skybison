@@ -35,13 +35,13 @@ static void setExtensionSlot(const Type& type, Type::ExtensionSlot slot_id,
 }
 
 PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
-  ApiHandle* handle =
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
-  CHECK(handle->isManaged(),
+  CHECK(ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj)),
         "Type is unmanaged. Please initialize using PyType_FromSpec");
 
   HandleScope scope;
-  Type type(&scope, handle->asObject());
+  Type type(&scope,
+            ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj))
+                ->asObject());
   if (type.isBuiltin()) {
     UNIMPLEMENTED("GetFlags from built-in types");
   }
@@ -224,15 +224,15 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
     return nullptr;
   }
 
-  ApiHandle* handle =
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
-  if (!handle->isManaged()) {
+  if (!ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj))) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
 
   HandleScope scope(thread);
-  Type type(&scope, handle->asObject());
+  Type type(&scope,
+            ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj))
+                ->asObject());
   if (type.isBuiltin()) {
     thread->raiseBadInternalCall();
     return nullptr;
@@ -341,12 +341,12 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
 PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
                                         Py_ssize_t nitems) {
-  ApiHandle* handle =
-      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj));
-  DCHECK(handle->isManaged(),
+  DCHECK(ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj)),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
   HandleScope scope;
-  Type type(&scope, handle->asObject());
+  Type type(&scope,
+            ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj))
+                ->asObject());
   DCHECK(!type.isBuiltin(),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
   DCHECK(!type.extensionSlots().isNoneType(),
