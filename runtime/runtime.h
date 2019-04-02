@@ -601,8 +601,8 @@ class Runtime {
     if (obj.is##ty()) return true;                                             \
     return typeOf(obj).rawCast<RawType>().builtinBase() == LayoutId::k##ty;    \
   }
-  DEFINE_IS_INSTANCE(Bytes)
   DEFINE_IS_INSTANCE(ByteArray)
+  DEFINE_IS_INSTANCE(Bytes)
   DEFINE_IS_INSTANCE(Complex)
   DEFINE_IS_INSTANCE(Dict)
   DEFINE_IS_INSTANCE(Float)
@@ -771,18 +771,18 @@ class Runtime {
   RawObject executeModule(const char* buffer, const Module& module);
 
  private:
-  void initializeThreads();
-  void initializeTypes();
+  void initializeApiData();
   void initializeExceptionTypes();
-  void initializeLayouts();
   void initializeHeapTypes();
   void initializeImmediateTypes();
-  void initializePrimitiveInstances();
   void initializeInterned();
+  void initializeLayouts();
   void initializeModules();
-  void initializeApiData();
+  void initializePrimitiveInstances();
   void initializeRandom();
   void initializeSymbols();
+  void initializeThreads();
+  void initializeTypes();
 
   RawObject createMainModule();
 
@@ -930,13 +930,13 @@ class Runtime {
   RawObject layouts_;
 
   // Cached instances
-  RawObject empty_bytes_;
-  RawObject empty_frozen_set_;
-  RawObject empty_tuple_;
-  RawObject ellipsis_;
   RawObject build_class_;
   RawObject display_hook_;
   RawObject dunder_import_;
+  RawObject ellipsis_;
+  RawObject empty_bytes_;
+  RawObject empty_frozen_set_;
+  RawObject empty_tuple_;
 
   // Interned strings
   RawObject interned_;

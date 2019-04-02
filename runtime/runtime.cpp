@@ -1737,13 +1737,13 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&layouts_);
 
   // Visit instances
-  visitor->visitPointer(&empty_bytes_);
-  visitor->visitPointer(&empty_frozen_set_);
-  visitor->visitPointer(&empty_tuple_);
-  visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&display_hook_);
   visitor->visitPointer(&dunder_import_);
+  visitor->visitPointer(&ellipsis_);
+  visitor->visitPointer(&empty_bytes_);
+  visitor->visitPointer(&empty_frozen_set_);
+  visitor->visitPointer(&empty_tuple_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);

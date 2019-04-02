@@ -82,6 +82,8 @@ set(
   ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/posixmodule.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/abstract.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/boolobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/bytearrayobject.cpp
@@ -133,8 +135,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/random.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/sysmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/traceback.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Modules/posixmodule.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp)
+)
 include(CPythonBuild.cmake)
 
 add_library(capi-headers INTERFACE)
