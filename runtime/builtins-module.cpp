@@ -290,6 +290,21 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
   return *result;
 }
 
+// Wraps every value of the dict with ValueCell.
+static void wrapInValueCells(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  Runtime* runtime = thread->runtime();
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    DCHECK(!Dict::Bucket::value(*data, i).isValueCell(),
+           "ValueCell in Python code");
+    ValueCell cell(&scope, runtime->newValueCell());
+    cell.setValue(Dict::Bucket::value(*data, i));
+    Dict::Bucket::set(*data, i, Dict::Bucket::hash(*data, i),
+                      Dict::Bucket::key(*data, i), *cell);
+  }
+}
+
 RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
                                            word nargs) {
   Runtime* runtime = thread->runtime();
@@ -331,22 +346,61 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     return *type;
   }
 
+  bool metaclass_is_class;
   if (metaclass.isUnbound()) {
+    metaclass_is_class = true;
     if (bases.length() == 0) {
       metaclass = runtime->typeAt(LayoutId::kType);
     } else {
       metaclass = runtime->typeOf(bases.at(0));
     }
+  } else {
+    metaclass_is_class = runtime->isInstanceOfType(*metaclass);
   }
 
-  if (runtime->isInstanceOfType(*metaclass)) {
+  if (metaclass_is_class) {
     Type metaclass_type(&scope, *metaclass);
     metaclass = calculateMetaclass(thread, metaclass_type, bases);
     if (metaclass.isError()) return *metaclass;
   }
 
-  // TODO(T31926659): Call metaclass.__prepare__ if it exists.
-  Dict type_dict(&scope, runtime->newDict());
+  Object dict_obj(&scope, NoneType::object());
+  Object prepare_method(
+      &scope,
+      runtime->attributeAtId(thread, metaclass, SymbolId::kDunderPrepare));
+  if (prepare_method.isError()) {
+    Object given(&scope, thread->pendingExceptionType());
+    Object exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
+    if (!givenExceptionMatches(thread, given, exc)) {
+      return *prepare_method;
+    }
+    thread->clearPendingException();
+    dict_obj = runtime->newDict();
+  } else {
+    frame->pushValue(*prepare_method);
+    Tuple pargs(&scope, runtime->newTuple(3));
+    pargs.atPut(0, *metaclass);
+    pargs.atPut(1, *name);
+    pargs.atPut(2, *bases);
+    frame->pushValue(*pargs);
+    frame->pushValue(*kwargs);
+    dict_obj =
+        Interpreter::callEx(thread, frame, CallFunctionExFlag::VAR_KEYWORDS);
+    if (dict_obj.isError()) return *dict_obj;
+  }
+  if (!runtime->isMapping(thread, dict_obj)) {
+    if (metaclass_is_class) {
+      Type metaclass_type(&scope, *metaclass);
+      Str metaclass_type_name(&scope, metaclass_type.name());
+      return thread->raiseTypeError(runtime->newStrFromFmt(
+          "%S.__prepare__() must return a mapping, not %T",
+          &metaclass_type_name, &dict_obj));
+    }
+    return thread->raiseTypeError(runtime->newStrFromFmt(
+        "<metaclass>.__prepare__() must return a mapping, not %T", &dict_obj));
+  }
+  Dict type_dict(&scope, *dict_obj);
+  wrapInValueCells(thread, type_dict);
 
   // TODO(cshapiro): might need to do some kind of callback here and we want
   // backtraces to work correctly.  The key to doing that would be to put some

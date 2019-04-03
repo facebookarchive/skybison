@@ -95,6 +95,7 @@ class Runtime;
   V(DunderPackage, "__package__")                                              \
   V(DunderPos, "__pos__")                                                      \
   V(DunderPow, "__pow__")                                                      \
+  V(DunderPrepare, "__prepare__")                                              \
   V(DunderQualname, "__qualname__")                                            \
   V(DunderRadd, "__radd__")                                                    \
   V(DunderRand, "__rand__")                                                    \

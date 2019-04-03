@@ -672,6 +672,66 @@ t3 = type(C3)
   EXPECT_EQ(t3, m3);
 }
 
+TEST(BuiltinsModuleTest, DunderBuildClassPropagatesDunderPrepareError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Meta(type):
+  @classmethod
+  def __prepare__(cls, *args, **kwds):
+    raise IndentationError("foo")
+class C(metaclass=Meta):
+  pass
+)"),
+                            LayoutId::kIndentationError, "foo"));
+}
+
+TEST(BuiltinsModuleTest, DunderBuildClassWithNonDictPrepareRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, R"(
+class Meta(type):
+  @classmethod
+  def __prepare__(cls, *args, **kwds):
+    return 42
+class C(metaclass=Meta):
+  pass
+)"),
+                    LayoutId::kTypeError,
+                    "Meta.__prepare__() must return a mapping, not smallint"));
+}
+
+TEST(BuiltinsModuleTest,
+     DunderBuildClassWithNonTypeMetaclassAndNonDictPrepareRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, R"(
+class Meta:
+  def __prepare__(self, *args, **kwds):
+    return 42
+class C(metaclass=Meta()):
+  pass
+)"),
+      LayoutId::kTypeError,
+      "<metaclass>.__prepare__() must return a mapping, not smallint"));
+}
+
+TEST(BuiltinsModuleTest, DunderBuildClassUsesDunderPrepareForClassDict) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Meta(type):
+  @classmethod
+  def __prepare__(cls, *args, **kwds):
+    return {"foo": 42}
+class C(metaclass=Meta):
+  pass
+result = C.foo
+)")
+                   .isError());
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 42));
+}
+
 TEST(BuiltinsModuleTest, DunderBuildClassWithRaisingBodyPropagatesException) {
   Runtime runtime;
   EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
