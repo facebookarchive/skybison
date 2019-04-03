@@ -177,10 +177,6 @@ class __attribute__((warn_unused)) Handle : public T {
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Unbound)                                                                   \
-  V(UnicodeDecodeError)                                                        \
-  V(UnicodeEncodeError)                                                        \
-  V(UnicodeError)                                                              \
-  V(UnicodeTranslateError)                                                     \
   V(ValueCell)                                                                 \
   V(WeakRef)
 
@@ -196,6 +192,10 @@ class __attribute__((warn_unused)) Handle : public T {
   V(StopIteration)                                                             \
   V(SystemExit)                                                                \
   V(Type)                                                                      \
+  V(UnicodeDecodeError)                                                        \
+  V(UnicodeEncodeError)                                                        \
+  V(UnicodeError)                                                              \
+  V(UnicodeTranslateError)                                                     \
   V(UserFloatBase)                                                             \
   V(UserTupleBase)
 

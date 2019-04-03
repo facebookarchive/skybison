@@ -1586,13 +1586,9 @@ void Runtime::initializeExceptionTypes() {
   UnicodeErrorBuiltins::initialize(this);
 
   // UnicodeError subclasses
-  addEmptyBuiltinType(SymbolId::kUnicodeEncodeError,
-                      LayoutId::kUnicodeEncodeError, LayoutId::kUnicodeError);
-  addEmptyBuiltinType(SymbolId::kUnicodeDecodeError,
-                      LayoutId::kUnicodeDecodeError, LayoutId::kUnicodeError);
-  addEmptyBuiltinType(SymbolId::kUnicodeTranslateError,
-                      LayoutId::kUnicodeTranslateError,
-                      LayoutId::kUnicodeError);
+  UnicodeDecodeErrorBuiltins::initialize(this);
+  UnicodeEncodeErrorBuiltins::initialize(this);
+  UnicodeTranslateErrorBuiltins::initialize(this);
 
   // Warning subclasses
   addEmptyBuiltinType(SymbolId::kUserWarning, LayoutId::kUserWarning,

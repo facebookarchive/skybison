@@ -105,4 +105,41 @@ class UnicodeErrorBuiltins
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeErrorBuiltins);
 };
 
+class UnicodeDecodeErrorBuiltins
+    : public Builtins<UnicodeDecodeErrorBuiltins, SymbolId::kUnicodeDecodeError,
+                      LayoutId::kUnicodeDecodeError, LayoutId::kUnicodeError> {
+ public:
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeDecodeErrorBuiltins);
+};
+
+class UnicodeEncodeErrorBuiltins
+    : public Builtins<UnicodeEncodeErrorBuiltins, SymbolId::kUnicodeEncodeError,
+                      LayoutId::kUnicodeEncodeError, LayoutId::kUnicodeError> {
+ public:
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeEncodeErrorBuiltins);
+};
+
+class UnicodeTranslateErrorBuiltins
+    : public Builtins<
+          UnicodeTranslateErrorBuiltins, SymbolId::kUnicodeTranslateError,
+          LayoutId::kUnicodeTranslateError, LayoutId::kUnicodeError> {
+ public:
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeTranslateErrorBuiltins);
+};
+
 }  // namespace python
