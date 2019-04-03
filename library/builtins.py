@@ -2624,7 +2624,15 @@ def globals():
 
 
 def hash(obj):
-    _unimplemented()
+    dunder_hash = type(obj).__hash__
+    try:
+        result = dunder_hash(obj)
+    except TypeError:
+        raise TypeError(f"unhashable type: '{type(obj).__name__}'")
+    if not isinstance(result, int):
+        raise TypeError("__hash__ method should return an integer")
+    # TODO(djang): This needs to be cast to the exact int type.
+    return result
 
 
 def help(obj=_Unbound):

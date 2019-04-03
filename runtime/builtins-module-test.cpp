@@ -880,6 +880,59 @@ obj = hasattr(Foo(), 'bar')
   EXPECT_EQ(*obj, Bool::trueObj());
 }
 
+TEST(BuiltinsModuleTest,
+     HashWithObjectWithNotCallableDunderHashRaisesTypeError) {
+  const char* src = R"(
+class C:
+  __hash__ = None
+
+hash(C())
+)";
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "unhashable type: 'C'"));
+}
+
+TEST(BuiltinsModuleTest, HashWithObjectReturningNonIntRaisesTypeError) {
+  const char* src = R"(
+class C:
+  def __hash__(self): return "10"
+
+hash(C())
+)";
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
+}
+
+TEST(BuiltinsModuleTest, HashWithObjectReturnsObjectDunderHashValue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __hash__(self): return 10
+
+h = hash(C())
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "h"), SmallInt::fromWord(10));
+}
+
+TEST(BuiltinsModuleTest,
+     HashWithObjectWithModifiedDunderHashReturnsClassDunderHashValue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __hash__(self): return 10
+
+def fake_hash(): return 0
+c = C()
+c.__hash__ = fake_hash
+h = hash(c)
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "h"), SmallInt::fromWord(10));
+}
+
 TEST(BuiltinsModuleTest, BuiltInSetAttr) {
   const char* src = R"(
 class Foo:
