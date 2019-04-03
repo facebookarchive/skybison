@@ -48,4 +48,119 @@ TEST_F(ImportExtensionApiTest,
   EXPECT_EQ(_PyImport_ReleaseLock(), -1);
 }
 
+TEST_F(ImportExtensionApiTest, ImportInvalidModuleReturnsNull) {
+  PyObject* module = PyImport_ImportModule("foo");
+  ASSERT_EQ(module, nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ModuleNotFoundError));
+}
+
+TEST_F(ImportExtensionApiTest, ImportModuleReturnsModule) {
+  PyObject* module = PyImport_ImportModule("operator");
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+  Py_DECREF(module);
+}
+
+TEST_F(ImportExtensionApiTest, ImportModuleNoBlockReturnsModule) {
+  PyObject* module = PyImport_ImportModuleNoBlock("operator");
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+  Py_DECREF(module);
+}
+
+TEST_F(ImportExtensionApiTest, ImportFrozenModuleReturnsZeroPyro) {
+  int result = PyImport_ImportFrozenModule("operator");
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, 0);
+}
+
+TEST_F(ImportExtensionApiTest, ImportReturnsModule) {
+  PyObject* name = PyUnicode_FromString("operator");
+  PyObject* module = PyImport_Import(name);
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+  Py_DECREF(name);
+  Py_DECREF(module);
+}
+
+TEST_F(ImportExtensionApiTest, ImportFrozenModuleObjectReturnsZeroPyro) {
+  PyObject* name = PyUnicode_FromString("operator");
+  int result = PyImport_ImportFrozenModuleObject(name);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, 0);
+  Py_DECREF(name);
+}
+
+TEST_F(ImportExtensionApiTest, ImportModuleLevelReturnsModule) {
+  PyObject* globals = PyDict_New();
+  PyObject* fromlist = PyList_New(0);
+  PyObject* module =
+      PyImport_ImportModuleLevel("operator", globals, nullptr, fromlist, 0);
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+  Py_DECREF(globals);
+  Py_DECREF(fromlist);
+  Py_DECREF(module);
+}
+
+TEST_F(ImportExtensionApiTest, ImportModuleLevelObjectReturnsModule) {
+  PyObject* name = PyUnicode_FromString("operator");
+  PyObject* globals = PyDict_New();
+  PyObject* fromlist = PyList_New(0);
+  PyObject* module =
+      PyImport_ImportModuleLevelObject(name, globals, nullptr, fromlist, 0);
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+  Py_DECREF(globals);
+  Py_DECREF(fromlist);
+  Py_DECREF(name);
+}
+
+TEST_F(ImportExtensionApiTest,
+       ImportModuleLevelObjectWithNullNameRaisesValueError) {
+  PyObject* globals = PyDict_New();
+  PyObject* fromlist = PyList_New(0);
+  PyObject* module =
+      PyImport_ImportModuleLevelObject(nullptr, globals, nullptr, fromlist, 0);
+  EXPECT_EQ(module, nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+  Py_DECREF(globals);
+  Py_DECREF(fromlist);
+}
+
+TEST_F(ImportExtensionApiTest,
+       ImportModuleLevelObjectWithNegativeLevelRaisesValueError) {
+  PyObject* name = PyUnicode_FromString("operator");
+  PyObject* globals = PyDict_New();
+  PyObject* fromlist = PyList_New(0);
+  PyObject* module =
+      PyImport_ImportModuleLevelObject(name, globals, nullptr, fromlist, -1);
+  EXPECT_EQ(module, nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+  Py_DECREF(globals);
+  Py_DECREF(fromlist);
+  Py_DECREF(name);
+}
+
+TEST_F(ImportExtensionApiTest,
+       ImportModuleLevelObjectWithNullGlobalsRaisesKeyError) {
+  PyObject* name = PyUnicode_FromString("operator");
+  PyObject* fromlist = PyList_New(0);
+  PyObject* module =
+      PyImport_ImportModuleLevelObject(name, nullptr, nullptr, fromlist, 1);
+  EXPECT_EQ(module, nullptr);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
+  Py_DECREF(fromlist);
+  Py_DECREF(name);
+}
+
 }  // namespace python
