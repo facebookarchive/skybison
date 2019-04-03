@@ -1610,4 +1610,22 @@ ls.sort(reverse=True)
   EXPECT_PYLIST_EQ(ls, {3, 2, 1});
 }
 
+TEST(ListBuiltinsTest, ClearWithNonListRaisesTypeError) {
+  Runtime runtime;
+  ASSERT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "list.clear(None)"), LayoutId::kTypeError,
+      "'clear' requires a 'list' object but got 'NoneType'"));
+}
+
+TEST(ListBuiltinsTest, ClearRemovesElements) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+ls = [2, 3, 1]
+list.clear(ls)
+)");
+  HandleScope scope;
+  Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
+  EXPECT_PYLIST_EQ(ls, {});
+}
+
 }  // namespace python

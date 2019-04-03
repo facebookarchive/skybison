@@ -193,6 +193,7 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderSetitem, dunderSetItem},
     {SymbolId::kAppend, append},
+    {SymbolId::kClear, clear},
     {SymbolId::kExtend, extend},
     {SymbolId::kInsert, insert},
     {SymbolId::kPop, pop},
@@ -269,6 +270,22 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
     }
   }
   return Bool::falseObj();
+}
+
+RawObject ListBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfList(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kList);
+  }
+  List list(&scope, *self);
+  if (list.numItems() > 0) {
+    list.setItems(runtime->newTuple(0));
+    list.setNumItems(0);
+  }
+  return NoneType::object();
 }
 
 RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {

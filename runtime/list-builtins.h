@@ -41,6 +41,7 @@ class ListBuiltins
     : public Builtins<ListBuiltins, SymbolId::kList, LayoutId::kList> {
  public:
   static RawObject append(Thread* thread, Frame* frame, word nargs);
+  static RawObject clear(Thread* thread, Frame* frame, word nargs);
   static RawObject extend(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);

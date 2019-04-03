@@ -159,6 +159,7 @@ class Runtime;
   V(ChildProcessError, "ChildProcessError")                                    \
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
+  V(Clear, "clear")                                                            \
   V(Code, "code")                                                              \
   V(Compile, "compile")                                                        \
   V(Complex, "complex")                                                        \

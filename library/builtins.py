@@ -1223,6 +1223,9 @@ class list(bootstrap=True):
     def append(self, other):
         pass
 
+    def clear(self):
+        pass
+
     def extend(self, other):
         pass
 
