@@ -1,5 +1,6 @@
 // longobject.c implementation
 
+#include "cpython-func.h"
 #include "handles.h"
 #include "int-builtins.h"
 #include "objects.h"
@@ -220,12 +221,24 @@ PY_EXPORT unsigned long PyLong_AsUnsignedLongMask(PyObject* op) {
   return asIntWithoutOverflowCheck<unsigned long>(op);
 }
 
-PY_EXPORT void* PyLong_AsVoidPtr(PyObject* /* v */) {
-  UNIMPLEMENTED("PyLong_AsVoidPtr");
+PY_EXPORT void* PyLong_AsVoidPtr(PyObject* pylong) {
+  static_assert(kPointerSize >= sizeof(long long),
+                "PyLong_AsVoidPtr: sizeof(long long) < sizeof(void*)");
+  long long x;
+  if (PyLong_Check(pylong) && _PyLong_Sign(pylong) < 0) {
+    x = PyLong_AsLongLong(pylong);
+  } else {
+    x = PyLong_AsUnsignedLongLong(pylong);
+  }
+
+  if (x == -1 && PyErr_Occurred()) return nullptr;
+  return reinterpret_cast<void*>(x);
 }
 
-PY_EXPORT PyObject* PyLong_FromVoidPtr(void* /* p */) {
-  UNIMPLEMENTED("PyLong_FromVoidPtr");
+PY_EXPORT PyObject* PyLong_FromVoidPtr(void* ptr) {
+  static_assert(kPointerSize >= sizeof(long long),
+                "PyLong_FromVoidPtr: sizeof(long long) < sizeof(void*)");
+  return PyLong_FromUnsignedLongLong(reinterpret_cast<unsigned long long>(ptr));
 }
 
 PY_EXPORT PyObject* PyLong_GetInfo() { UNIMPLEMENTED("PyLong_GetInfo"); }

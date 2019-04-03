@@ -516,4 +516,25 @@ TEST_F(LongExtensionApiTest, SignNegativeReturnsNegativeOne) {
   ASSERT_EQ(_PyLong_Sign(negative5678), -1);
 }
 
+TEST_F(LongExtensionApiTest, FromVoidPtrReturnsLong) {
+  unsigned long long max_as_int =
+      std::numeric_limits<unsigned long long>::max();
+  void* max_as_ptr = reinterpret_cast<void*>(max_as_int);
+  PyObjectPtr pylong(PyLong_FromVoidPtr(max_as_ptr));
+  EXPECT_EQ(PyLong_AsVoidPtr(pylong), max_as_ptr);
+  EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), max_as_int);
+
+  unsigned long long zero_as_int = 0ULL;
+  void* zero_as_ptr = reinterpret_cast<void*>(zero_as_int);
+  pylong = PyLong_FromVoidPtr(zero_as_ptr);
+  EXPECT_EQ(PyLong_AsVoidPtr(pylong), zero_as_ptr);
+  EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), zero_as_int);
+
+  unsigned long long num_as_int = 1234ULL;
+  void* num_as_ptr = reinterpret_cast<void*>(num_as_int);
+  pylong = PyLong_FromVoidPtr(num_as_ptr);
+  EXPECT_EQ(PyLong_AsVoidPtr(pylong), num_as_ptr);
+  EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), num_as_int);
+}
+
 }  // namespace python
