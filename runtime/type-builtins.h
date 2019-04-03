@@ -16,6 +16,7 @@ class TypeBuiltins
  public:
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
+  static RawObject dunderCall(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject underBases(Thread* thread, Frame* frame, word nargs);
 
