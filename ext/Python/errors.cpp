@@ -6,6 +6,7 @@
 
 #include "exception-builtins.h"
 #include "runtime.h"
+#include "sys-module.h"
 
 namespace python {
 
@@ -124,10 +125,19 @@ PY_EXPORT PyObject* PyErr_FormatV(PyObject* exception, const char* format,
   return nullptr;
 }
 
-PY_EXPORT void PyErr_GetExcInfo(PyObject** /* p_type */,
-                                PyObject** /* p_value */,
-                                PyObject** /* p_traceback */) {
-  UNIMPLEMENTED("PyErr_GetExcInfo");
+PY_EXPORT void PyErr_GetExcInfo(PyObject** p_type, PyObject** p_value,
+                                PyObject** p_traceback) {
+  Thread* thread = Thread::current();
+  if (!thread->hasCaughtException()) {
+    *p_type = nullptr;
+    *p_value = nullptr;
+    *p_traceback = nullptr;
+    return;
+  }
+  *p_type = ApiHandle::newReference(thread, thread->caughtExceptionType());
+  *p_value = ApiHandle::newReference(thread, thread->caughtExceptionValue());
+  // TODO(T42241510): Pass caughtExeptionTraceback() when it becomes available.
+  *p_traceback = nullptr;
 }
 
 PY_EXPORT int PyErr_GivenExceptionMatches(PyObject* given, PyObject* exc) {
@@ -208,9 +218,23 @@ PY_EXPORT PyObject* PyErr_SetExcFromWindowsErrWithFilenameObjects(
   UNIMPLEMENTED("PyErr_SetExcFromWindowsErrWithFilenameObjects");
 }
 
-PY_EXPORT void PyErr_SetExcInfo(PyObject* /* e */, PyObject* /* e */,
-                                PyObject* /* k */) {
-  UNIMPLEMENTED("PyErr_SetExcInfo");
+PY_EXPORT void PyErr_SetExcInfo(PyObject* type, PyObject* value,
+                                PyObject* traceback) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object type_obj(&scope, type == nullptr
+                              ? NoneType::object()
+                              : ApiHandle::fromPyObject(type)->asObject());
+  thread->setCaughtExceptionType(*type_obj);
+  Object value_obj(&scope, value == nullptr
+                               ? NoneType::object()
+                               : ApiHandle::fromPyObject(value)->asObject());
+  thread->setCaughtExceptionValue(*value_obj);
+  Object traceback_obj(&scope,
+                       traceback == nullptr
+                           ? NoneType::object()
+                           : ApiHandle::fromPyObject(traceback)->asObject());
+  thread->setCaughtExceptionTraceback(*traceback_obj);
 }
 
 static void setFromErrno(PyObject* type, PyObject* name1, PyObject* name2) {

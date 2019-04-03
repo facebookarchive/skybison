@@ -164,6 +164,46 @@ TEST_F(ErrorsExtensionApiTest, Fetch) {
   Py_DECREF(value);
 }
 
+TEST_F(ErrorsExtensionApiTest, GetExcInfoWhenNoCaughtException) {
+  PyObject* p_type;
+  PyObject* p_value;
+  PyObject* p_traceback;
+  PyErr_SetExcInfo(nullptr, nullptr, nullptr);
+  PyErr_GetExcInfo(&p_type, &p_value, &p_traceback);
+  EXPECT_EQ(p_type, nullptr);
+  EXPECT_EQ(p_value, nullptr);
+  EXPECT_EQ(p_traceback, nullptr);
+}
+
+TEST_F(ErrorsExtensionApiTest, GetExcInfoWhenCaughtException) {
+  binaryfunc func = [](PyObject*, PyObject*) {
+    PyObject* p_type;
+    PyObject* p_value;
+    PyObject* p_traceback;
+    PyErr_GetExcInfo(&p_type, &p_value, &p_traceback);
+    EXPECT_EQ(p_type, PyExc_Exception);
+    PyObject* args = PyObject_GetAttrString(p_value, "args");
+    PyObject* first_arg = PyTuple_GetItem(args, 0);
+    EXPECT_TRUE(isUnicodeEqualsCStr(first_arg, "some str"));
+    return Py_None;
+  };
+  PyMethodDef foo_methods[] = {{"noargs", func, METH_NOARGS}, {nullptr}};
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT, "foo", nullptr, 0, foo_methods,
+  };
+  PyObjectPtr module(PyModule_Create(&def));
+  moduleSet("__main__", "foo", module);
+  ASSERT_TRUE(PyModule_CheckExact(module));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  PyRun_SimpleString(R"(
+try:
+  raise Exception('some str')
+except:
+  foo.noargs()
+)");
+}
+
 TEST_F(ErrorsExtensionApiTest, GivenExceptionMatches) {
   // An exception matches itself and all of its super types up to and including
   // BaseException.
@@ -374,6 +414,21 @@ class BadException(Exception):
 
   Py_DECREF(val);
   Py_DECREF(exc);
+}
+
+TEST_F(ErrorsExtensionApiTest, SetExcInfoValuesRetrievedByGetExcInfo) {
+  PyObjectPtr type(PyExc_TypeError);
+  PyObjectPtr val(PyUnicode_FromString("some str"));
+  PyObject* traceback = nullptr;
+  PyErr_SetExcInfo(PyExc_TypeError, val, traceback);
+
+  PyObject* p_type;
+  PyObject* p_value;
+  PyObject* p_traceback;
+  PyErr_GetExcInfo(&p_type, &p_value, &p_traceback);
+  EXPECT_EQ(p_type, type);
+  EXPECT_EQ(p_value, val);
+  EXPECT_EQ(p_traceback, traceback);
 }
 
 TEST_F(ErrorsExtensionApiTest, SetFromErrnoWithZeroSetsError) {
