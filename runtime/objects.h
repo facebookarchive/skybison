@@ -974,6 +974,9 @@ class RawType : public RawHeapObject {
   RawObject bases() const;
   void setBases(RawObject bases_tuple) const;
 
+  RawObject doc() const;
+  void setDoc(RawObject doc) const;
+
   RawObject mro() const;
   void setMro(RawObject object_array) const;
 
@@ -1013,7 +1016,8 @@ class RawType : public RawHeapObject {
   static const int kBasesOffset = kMroOffset + kPointerSize;
   static const int kInstanceLayoutOffset = kBasesOffset + kPointerSize;
   static const int kNameOffset = kInstanceLayoutOffset + kPointerSize;
-  static const int kFlagsOffset = kNameOffset + kPointerSize;
+  static const int kDocOffset = kNameOffset + kPointerSize;
+  static const int kFlagsOffset = kDocOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
   static const int kExtensionSlotsOffset = kDictOffset + kPointerSize;
   static const int kSize = kExtensionSlotsOffset + kPointerSize;
@@ -3228,6 +3232,12 @@ inline RawObject RawType::bases() const {
 
 inline void RawType::setBases(RawObject bases_tuple) const {
   instanceVariableAtPut(kBasesOffset, bases_tuple);
+}
+
+inline RawObject RawType::doc() const { return instanceVariableAt(kDocOffset); }
+
+inline void RawType::setDoc(RawObject doc) const {
+  instanceVariableAtPut(kDocOffset, doc);
 }
 
 inline RawObject RawType::mro() const { return instanceVariableAt(kMroOffset); }

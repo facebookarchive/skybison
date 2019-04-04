@@ -324,6 +324,7 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   result.setFlagsAndBuiltinBase(static_cast<RawType::Flag>(0),
                                 LayoutId::kObject);
   result.setDict(*dict);
+  result.setDoc(NoneType::object());
   return *result;
 }
 

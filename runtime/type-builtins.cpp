@@ -65,6 +65,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {SymbolId::kDunderBases, RawType::kBasesOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderDict, RawType::kDictOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kDunderDoc, RawType::kDocOffset},
     {SymbolId::kDunderFlags, RawType::kFlagsOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderMro, RawType::kMroOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderName, RawType::kNameOffset},

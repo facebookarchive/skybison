@@ -129,6 +129,31 @@ dir = type.__dir__(B)
   EXPECT_TRUE(listContains(dir, bar));
 }
 
+TEST(TypeBuiltinsTest, DunderDocOnEmptyTypeReturnsNone) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, "class C: pass").isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object doc(&scope, runtime.attributeAtId(thread, c, SymbolId::kDunderDoc));
+  EXPECT_EQ(doc, NoneType::object());
+}
+
+TEST(TypeBuiltinsTest, DunderDocReturnsDocumentationString) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  """hello documentation"""
+  pass
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object doc(&scope, runtime.attributeAtId(thread, c, SymbolId::kDunderDoc));
+  EXPECT_TRUE(isStrEqualsCStr(*doc, "hello documentation"));
+}
+
 TEST(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
   runFromCStr(&runtime, "result = type.__repr__(object)");
