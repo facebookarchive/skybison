@@ -202,9 +202,14 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
   HandleScope scope;
   Tuple entry(&scope, empty_tuple_);
   for (word i = 0; i < attributes.length(); i++) {
-    AttributeInfo info(
-        attributes.get(i).offset,
-        AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kFixedOffset);
+    DCHECK((attributes.get(i).flags &
+            (AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kDeleted |
+             AttributeInfo::Flag::kFixedOffset)) == 0,
+           "flag not allowed");
+    AttributeInfo info(attributes.get(i).offset,
+                       attributes.get(i).flags |
+                           AttributeInfo::Flag::kInObject |
+                           AttributeInfo::Flag::kFixedOffset);
     entry = newTuple(2);
     SymbolId symbol_id = attributes.get(i).name;
     if (symbol_id == SymbolId::kInvalid) {
@@ -383,7 +388,7 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
   }
 
   Str type_name(&scope, type.name());
-  return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+  return thread->raiseAttributeError(newStrFromFmt(
       "type object '%S' has no attribute '%S'", &type_name, &name));
 }
 
@@ -450,7 +455,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   Dict type_dict(&scope, type.dict());
   if (dictRemove(type_dict, name).isError()) {
     Str type_name(&scope, type.name());
-    return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+    return thread->raiseAttributeError(newStrFromFmt(
         "type object '%S' has no attribute '%S'", &type_name, &name));
   }
 
@@ -503,12 +508,12 @@ RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
   if (receiver.isModule()) {
     Module module(&scope, *receiver);
     Str module_name(&scope, module.name());
-    return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
+    return thread->raiseAttributeError(newStrFromFmt(
         "module '%S' has no attribute '%S'", &module_name, &name));
   }
   Str type_name(&scope, type.name());
-  return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
-      "'%S' object has no attribute '%S'", &type_name, &name));
+  return thread->raiseAttributeError(
+      newStrFromFmt("'%S' object has no attribute '%S'", &type_name, &name));
 }
 
 RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
@@ -554,8 +559,8 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   Object result(&scope, instanceDel(thread, instance, name));
   if (result.isError()) {
     Str type_name(&scope, type.name());
-    return thread->raiseAttributeError(thread->runtime()->newStrFromFmt(
-        "'%S' object has no attribute '%S'", &type_name, &name));
+    return thread->raiseAttributeError(
+        newStrFromFmt("'%S' object has no attribute '%S'", &type_name, &name));
   }
 
   return *result;
@@ -3585,6 +3590,11 @@ RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,
     CHECK(found, "couldn't find attribute on new layout");
   }
 
+  if (info.isReadOnly()) {
+    return thread->raiseAttributeError(
+        newStrFromFmt("'%S' attribute is read-only", &name));
+  }
+
   // Store the attribute
   if (info.isInObject()) {
     instance.instanceVariableAtPut(info.offset(), *value);
@@ -3622,6 +3632,12 @@ RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
   AttributeInfo info;
   bool found = layoutFindAttribute(thread, old_layout, name, &info);
   CHECK(found, "couldn't find attribute");
+
+  if (info.isReadOnly()) {
+    return thread->raiseAttributeError(
+        newStrFromFmt("'%S' attribute is read-only", &name));
+  }
+
   if (info.isInObject()) {
     instance.instanceVariableAtPut(info.offset(), NoneType::object());
   } else {

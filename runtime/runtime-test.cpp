@@ -2943,6 +2943,34 @@ def new_foo():
   EXPECT_FALSE(runtime.layoutFindAttribute(thread, new_layout, attr, &info));
 }
 
+TEST(RuntimeTest, InstanceDelWithReadOnlyAttributeRaisesAttributeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  BuiltinAttribute attrs[] = {
+      {SymbolId::kDunderGlobals, 0, AttributeInfo::Flag::kReadOnly},
+      {SymbolId::kSentinelId, -1},
+  };
+  NativeMethod methods[] = {
+      {SymbolId::kSentinelId, nullptr},
+  };
+  BuiltinMethod builtins[] = {
+      {SymbolId::kSentinelId, nullptr},
+  };
+  LayoutId layout_id = runtime.reserveLayoutId();
+  Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
+                                           LayoutId::kObject, attrs, methods,
+                                           builtins));
+  Layout layout(&scope, type.instanceLayout());
+  runtime.layoutAtPut(layout_id, *layout);
+  HeapObject instance(&scope, runtime.newInstance(layout));
+  Object attribute_name(&scope, runtime.newStrFromCStr("__globals__"));
+  EXPECT_TRUE(raisedWithStr(
+      runtime.instanceDel(thread, instance, attribute_name),
+      LayoutId::kAttributeError, "'__globals__' attribute is read-only"));
+}
+
 TEST(MetaclassTest, ClassWithTypeMetaclassIsConcreteType) {
   const char* src = R"(
 # This is equivalent to `class Foo(type)`
@@ -3325,6 +3353,35 @@ TEST(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
   Thread* thread = Thread::current();
   Object result(&scope, runtime.instanceAtPut(thread, set, attr, value));
   EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
+}
+
+TEST(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  BuiltinAttribute attrs[] = {
+      {SymbolId::kDunderGlobals, 0, AttributeInfo::Flag::kReadOnly},
+      {SymbolId::kSentinelId, -1},
+  };
+  NativeMethod methods[] = {
+      {SymbolId::kSentinelId, nullptr},
+  };
+  BuiltinMethod builtins[] = {
+      {SymbolId::kSentinelId, nullptr},
+  };
+  LayoutId layout_id = runtime.reserveLayoutId();
+  Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
+                                           LayoutId::kObject, attrs, methods,
+                                           builtins));
+  Layout layout(&scope, type.instanceLayout());
+  runtime.layoutAtPut(layout_id, *layout);
+  HeapObject instance(&scope, runtime.newInstance(layout));
+  Object attribute_name(&scope, runtime.newStrFromCStr("__globals__"));
+  Object value(&scope, NoneType::object());
+  EXPECT_TRUE(raisedWithStr(
+      runtime.instanceAtPut(thread, instance, attribute_name, value),
+      LayoutId::kAttributeError, "'__globals__' attribute is read-only"));
 }
 
 // Exception attributes can be set on the fly.

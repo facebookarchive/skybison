@@ -49,6 +49,9 @@ class AttributeInfo {
 
     // Attribute lives at a fixed offset in the layout.
     kFixedOffset = 4,
+
+    // Attribute is read-only for managed code.
+    kReadOnly = 8,
   };
 
   word flags();
@@ -61,6 +64,8 @@ class AttributeInfo {
   bool isDeleted() { return testFlag(Flag::kDeleted); }
 
   bool isFixedOffset() { return testFlag(Flag::kFixedOffset); }
+
+  bool isReadOnly() { return testFlag(Flag::kReadOnly); }
 
   // Casting.
   RawSmallInt asSmallInt();
