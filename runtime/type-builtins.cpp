@@ -63,10 +63,10 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 }
 
 const BuiltinAttribute TypeBuiltins::kAttributes[] = {
-    {SymbolId::kDunderMro, RawType::kMroOffset},
+    {SymbolId::kDunderMro, RawType::kMroOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderName, RawType::kNameOffset},
-    {SymbolId::kDunderFlags, RawType::kFlagsOffset},
-    {SymbolId::kDunderDict, RawType::kDictOffset},
+    {SymbolId::kDunderFlags, RawType::kFlagsOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kDunderDict, RawType::kDictOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 

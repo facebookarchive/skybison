@@ -77,9 +77,9 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
 
 // TODO(T39495507): make these attributes readonly
 const BuiltinAttribute SliceBuiltins::kAttributes[] = {
-    {SymbolId::kStart, RawSlice::kStartOffset},
-    {SymbolId::kStop, RawSlice::kStopOffset},
-    {SymbolId::kStep, RawSlice::kStepOffset},
+    {SymbolId::kStart, RawSlice::kStartOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kStop, RawSlice::kStopOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kStep, RawSlice::kStepOffset, AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
 };
 
