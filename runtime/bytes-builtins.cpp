@@ -171,11 +171,13 @@ RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self) {
   return bytesReprWithDelimiter(thread, self, has_single_quote ? '"' : '\'');
 }
 
+// clang-format off
 const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderLt, dunderLt},
@@ -185,6 +187,7 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kHex, hex},
     {SymbolId::kSentinelId, nullptr},
 };
+// clang-format on
 
 RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
@@ -252,6 +255,17 @@ RawObject BytesBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
   return Bool::fromBool(self.compare(*other) > 0);
+}
+
+RawObject BytesBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kBytes);
+  }
+  return runtime->hash(*self);
 }
 
 RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
