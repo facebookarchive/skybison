@@ -290,11 +290,8 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   type.setMro(*mro);
 
   // Initialize instance Layout
-  Layout layout_init(
-      &scope, runtime->computeInitialLayout(thread, type, LayoutId::kObject));
-  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   Layout layout(&scope,
-                runtime->layoutAddAttribute(thread, layout_init, attr_name, 0));
+                runtime->computeInitialLayout(thread, type, LayoutId::kObject));
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 

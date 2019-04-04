@@ -355,4 +355,25 @@ TEST_F(TypeExtensionApiTest, GetSlotFromExtensionType) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(TypeExtensionApiTest, GetObjectCreatedInManagedCode) {
+  static PyType_Slot slots[1];
+  slots[0] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+  ASSERT_EQ(moduleSet("__main__", "Foo", type), 0);
+
+  // This is similar to CallExtensionTypeReturnsExtensionInstancePyro, but it
+  // tests the RawObject -> PyObject* path for objects that were created on the
+  // managed heap and had no corresponding PyObject* before the call to
+  // moduleGet().
+  ASSERT_EQ(PyRun_SimpleString("f = Foo()"), 0);
+  PyObjectPtr foo(moduleGet("__main__", "f"));
+  EXPECT_NE(foo, nullptr);
+}
+
 }  // namespace python
