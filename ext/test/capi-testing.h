@@ -57,6 +57,8 @@ int moduleSet(const char* module, const char* name, PyObject*);
 // If no module is found, return a nullptr
 PyObject* importGetModule(PyObject* name);
 
+::testing::AssertionResult isLongEqualsLong(PyObject* obj, long value);
+
 ::testing::AssertionResult isUnicodeEqualsCStr(PyObject* obj, const char* str);
 
 // Capture stdout and stderr of the current process. The contents of either one
