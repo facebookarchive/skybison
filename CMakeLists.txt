@@ -473,6 +473,7 @@ set(
   ext/Python/pystate-test.cpp
   ext/Python/pythonrun-test.cpp
   ext/Python/random-test.cpp
+  ext/Python/sysmodule-test.cpp
   ext/test/capi-fixture.h
   ext/test/capi-testing-test.cpp
   ext/test/capi-testing.cpp

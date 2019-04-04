@@ -6,6 +6,22 @@
 
 namespace python {
 
+PY_EXPORT size_t _PySys_GetSizeOf(PyObject* o) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(o)->asObject());
+  Object result_obj(&scope, thread->invokeFunction1(SymbolId::kSys,
+                                                    SymbolId::kGetSizeOf, obj));
+  if (result_obj.isError()) {
+    // Pass through a pending exception if any exists.
+    return static_cast<size_t>(-1);
+  }
+  DCHECK(thread->runtime()->isInstanceOfInt(*result_obj),
+         "sys.getsizeof() should return an int");
+  Int result(&scope, *result_obj);
+  return static_cast<size_t>(result.asWord());
+}
+
 PY_EXPORT PyObject* PySys_GetObject(const char* /* e */) {
   UNIMPLEMENTED("PySys_GetObject");
 }

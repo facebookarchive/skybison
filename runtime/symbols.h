@@ -223,6 +223,7 @@ class Runtime;
   V(Generator, "generator")                                                    \
   V(GeneratorExit, "GeneratorExit")                                            \
   V(Get, "get")                                                                \
+  V(GetSizeOf, "getsizeof")                                                    \
   V(GetFrozenObject, "get_frozen_object")                                      \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \

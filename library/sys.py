@@ -6,6 +6,7 @@
 # knowledge about its definition and will complain without this gross circular
 # helper here.
 _patch = _patch  # noqa: F821
+_Unbound = _Unbound  # noqa: F821
 executable = executable  # noqa: F821
 
 
@@ -72,6 +73,18 @@ def excepthook(exc, value, tb):
 @_patch
 def exc_info():
     pass
+
+
+def getsizeof(obj, default=_Unbound):
+    dunder_sizeof = type(obj).__sizeof__
+    result = dunder_sizeof(obj)
+    if not isinstance(result, int):
+        if default is _Unbound:
+            raise TypeError("an integer is required")
+        return default
+    if result < 0:
+        raise ValueError("__sizeof__() should return >= 0")
+    return result
 
 
 warnoptions = []
