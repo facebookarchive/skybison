@@ -1834,7 +1834,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def upper(self):
-        _unimplemented()
+        pass
 
     def zfill(self, width):
         _unimplemented()

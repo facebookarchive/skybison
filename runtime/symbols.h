@@ -449,6 +449,7 @@ class Runtime;
   V(UnicodeTranslateError, "UnicodeTranslateError")                            \
   V(UnicodeWarning, "UnicodeWarning")                                          \
   V(Update, "update")                                                          \
+  V(Upper, "upper")                                                            \
   V(UserWarning, "UserWarning")                                                \
   V(Value, "value")                                                            \
   V(Values, "values")                                                          \

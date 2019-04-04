@@ -157,6 +157,7 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kLStrip, lstrip},
     {SymbolId::kRStrip, rstrip},
     {SymbolId::kStrip, strip},
+    {SymbolId::kUpper, upper},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -412,19 +413,49 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str self(&scope, *self_obj);
-  byte* buf = new byte[self.length()];
+  std::unique_ptr<byte[]> buf(new byte[self.length()]);
+  byte* bufp = buf.get();
   for (word i = 0; i < self.length(); i++) {
     byte c = self.charAt(i);
-    // TODO(dulinr): Handle UTF-8 code points that need to have their case
-    // changed.
+    if (c > kMaxASCII) {
+      UNIMPLEMENTED("Lowercase non-ASCII characters");
+    }
     if (c >= 'A' && c <= 'Z') {
-      buf[i] = c - 'A' + 'a';
+      bufp[i] = c - 'A' + 'a';
     } else {
-      buf[i] = c;
+      bufp[i] = c;
     }
   }
-  Str result(&scope, runtime->newStrWithAll(View<byte>{buf, self.length()}));
-  delete[] buf;
+  Str result(&scope, runtime->newStrWithAll(View<byte>{bufp, self.length()}));
+  return *result;
+}
+
+RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  }
+  if (!self_obj.isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  Str self(&scope, *self_obj);
+  std::unique_ptr<byte[]> buf(new byte[self.length()]);
+  byte* bufp = buf.get();
+  for (word i = 0; i < self.length(); i++) {
+    byte c = self.charAt(i);
+    if (c > kMaxASCII) {
+      UNIMPLEMENTED("Uppercase non-ASCII characters");
+    }
+    if (c >= 'a' && c <= 'z') {
+      bufp[i] = c - 'a' + 'A';
+    } else {
+      bufp[i] = c;
+    }
+  }
+  Str result(&scope, runtime->newStrWithAll(View<byte>{bufp, self.length()}));
   return *result;
 }
 

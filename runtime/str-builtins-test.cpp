@@ -2594,4 +2594,40 @@ TEST(StrBuiltinsTest, IslowerWithLowercaseLettersReturnsTrue) {
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
+TEST(StrBuiltinsTest, UpperOnASCIILettersReturnsUpperCaseString) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+a = "hello".upper()
+b = "HeLLo".upper()
+c = "hellO".upper()
+)");
+  HandleScope scope;
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "HELLO"));
+  EXPECT_TRUE(isStrEqualsCStr(*b, "HELLO"));
+  EXPECT_TRUE(isStrEqualsCStr(*c, "HELLO"));
+}
+
+TEST(StrBuiltinsTest, UpperOnUppercaseASCIILettersReturnsSameString) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+a = "HELLO".upper()
+)");
+  HandleScope scope;
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "HELLO"));
+}
+
+TEST(StrBuiltinsTest, UpperOnNumbersReturnsSameString) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+a = "foo 123".upper()
+)");
+  HandleScope scope;
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  EXPECT_TRUE(isStrEqualsCStr(*a, "FOO 123"));
+}
+
 }  // namespace python
