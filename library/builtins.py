@@ -2604,8 +2604,17 @@ def delattr(obj, name):
 
 
 class enumerate:
-    def __init__(self, iterable, start=_Unbound):
-        _unimplemented()
+    def __init__(self, iterable, start=0):
+        self.iterator = iter(iterable)
+        self.index = start
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        result = (self.index, next(self.iterator))
+        self.index += 1
+        return result
 
 
 def eval(source, globals=None, locals=None):

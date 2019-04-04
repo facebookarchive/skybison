@@ -1787,4 +1787,36 @@ except StopIteration:
   EXPECT_EQ(moduleAt(&runtime, "__main__", "exc_raised"), Bool::trueObj());
 }
 
+TEST(BuiltinsModuleTest, EnumerateWithNonIterableRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "enumerate(1.0)"),
+                            LayoutId::kTypeError,
+                            "'float' object is not iterable"));
+}
+
+TEST(BuiltinsModuleTest, EnumerateReturnsEnumeratedTuples) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+e = enumerate([7, 3])
+res1 = e.__next__()
+res2 = e.__next__()
+exhausted = False
+try:
+  e.__next__()
+except StopIteration:
+  exhausted = True
+)")
+                   .isError());
+  HandleScope scope;
+  Object res1(&scope, moduleAt(&runtime, "__main__", "res1"));
+  ASSERT_TRUE(res1.isTuple());
+  EXPECT_EQ(RawTuple::cast(*res1).at(0), SmallInt::fromWord(0));
+  EXPECT_EQ(RawTuple::cast(*res1).at(1), SmallInt::fromWord(7));
+  Object res2(&scope, moduleAt(&runtime, "__main__", "res2"));
+  ASSERT_TRUE(res2.isTuple());
+  EXPECT_EQ(RawTuple::cast(*res2).at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(RawTuple::cast(*res2).at(1), SmallInt::fromWord(3));
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "exhausted"), Bool::trueObj());
+}
+
 }  // namespace python
