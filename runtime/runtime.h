@@ -25,6 +25,8 @@ struct BuiltinAttribute {
   AttributeFlags flags;
 };
 
+using AtExitFn = void (*)();
+
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
                                        word nargs);
 
@@ -311,6 +313,11 @@ class Runtime {
   RawObject apiHandles() { return api_handles_; }
 
   RawObject apiCaches() { return api_caches_; }
+
+  void setAtExit(AtExitFn at_exit) { at_exit_ = at_exit; }
+  void atExit() {
+    if (at_exit_ != nullptr) at_exit_();
+  }
 
   Symbols* symbols() { return symbols_; }
 
@@ -969,6 +976,9 @@ class Runtime {
   Symbols* symbols_;
 
   word max_module_index_ = 0;
+
+  // atexit C Function
+  AtExitFn at_exit_ = nullptr;
 
   friend class ApiHandle;
   // ModuleBase uses moduleAddBuiltinType

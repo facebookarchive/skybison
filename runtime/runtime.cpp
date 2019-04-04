@@ -123,6 +123,7 @@ Runtime::~Runtime() {
     CHECK(threads_ != nullptr, "the runtime does not have any threads");
     Thread::setCurrentThread(threads_);
   }
+  atExit();
   freeApiHandles();
   for (Thread* thread = threads_; thread != nullptr;) {
     if (thread == Thread::current()) {
@@ -3881,11 +3882,25 @@ RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
 }
 
 void Runtime::freeApiHandles() {
-  // Clear the allocated ApiHandles
   HandleScope scope;
   Dict dict(&scope, apiHandles());
   Tuple buckets(&scope, dict.data());
+
+  // Call C Extension finalizers
   word i = Dict::Bucket::kFirst;
+  while (Dict::Bucket::nextItem(*buckets, &i)) {
+    Object key(&scope, Dict::Bucket::key(*buckets, i));
+    Object value(&scope, Dict::Bucket::value(*buckets, i));
+    auto handle = static_cast<ApiHandle*>(RawInt::cast(*value).asCPtr());
+    if (key.isModule()) {
+      auto def = reinterpret_cast<PyModuleDef*>(
+          RawInt::cast(RawModule::cast(*key).def()).asCPtr());
+      if (def && def->m_free != nullptr) def->m_free(handle);
+    }
+  }
+
+  // Clear the allocated ApiHandles
+  i = Dict::Bucket::kFirst;
   while (Dict::Bucket::nextItem(*buckets, &i)) {
     Object value(&scope, Dict::Bucket::value(*buckets, i));
     auto handle = static_cast<ApiHandle*>(RawInt::cast(*value).asCPtr());

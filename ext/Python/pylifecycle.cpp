@@ -80,4 +80,8 @@ PY_EXPORT void Py_SetPythonHome(const wchar_t* /* e */) {
   UNIMPLEMENTED("Py_SetPythonHome");
 }
 
+PY_EXPORT void _Py_PyAtExit(void (*func)(void)) {
+  Thread::current()->runtime()->setAtExit(func);
+}
+
 }  // namespace python

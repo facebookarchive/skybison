@@ -434,7 +434,10 @@ RawObject displayException(Thread* thread, const Object& value,
 
 void handleSystemExit(Thread* thread) {
   auto do_exit = [thread](int exit_code) {
-    thread->runtime()->freeApiHandles();
+    thread->clearPendingException();
+    Runtime* runtime = thread->runtime();
+    runtime->atExit();
+    runtime->freeApiHandles();
     std::exit(exit_code);
   };
 
@@ -468,7 +471,6 @@ void handleSystemExit(Thread* thread) {
   fileWriteObjectStr(thread, stderr, result_str);
   thread->clearPendingException();
   fileWriteString(thread, stderr, "\n");
-  thread->clearPendingException();
   do_exit(EXIT_FAILURE);
 }
 

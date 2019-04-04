@@ -2,6 +2,7 @@
 #include "cpython-types.h"
 
 extern "C" PyObject* PyInit__stat();
+extern "C" PyObject* PyInit_atexit();
 extern "C" PyObject* PyInit_errno();
 extern "C" PyObject* PyInit_posix();
 
@@ -17,6 +18,7 @@ PyObject* PyInit__empty() {
 struct _inittab _PyImport_Inittab[] = {
     {"_empty", PyInit__empty},
     {"_stat", PyInit__stat},
+    {"atexit", PyInit_atexit},
     {"errno", PyInit_errno},
     {"posix", PyInit_posix},
     {nullptr, nullptr},

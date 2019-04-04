@@ -34,8 +34,8 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
 
 PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) { return obj->ob_refcnt; }
 
-PY_EXPORT int PyCallable_Check(PyObject* /* x */) {
-  UNIMPLEMENTED("PyCallable_Check");
+PY_EXPORT int PyCallable_Check(PyObject* obj) {
+  return PyObject_HasAttrString(obj, "__call__");
 }
 
 PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
