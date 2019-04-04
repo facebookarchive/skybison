@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 
+#include <cerrno>
+#include <cmath>
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -9,6 +12,48 @@ namespace python {
 using namespace testing;
 
 using ComplexExtensionApiTest = ExtensionApi;
+
+TEST_F(ComplexExtensionApiTest, PyCDiffReturnsComplexDifference) {
+  Py_complex diff = _Py_c_diff({2.0, 5.0}, {4.0, -3.0});
+  EXPECT_EQ(diff.real, -2.0);
+  EXPECT_EQ(diff.imag, 8.0);
+}
+
+TEST_F(ComplexExtensionApiTest, PyCNegReturnsComplexNegation) {
+  Py_complex neg = _Py_c_neg({-123.0, 456.0});
+  EXPECT_EQ(neg.real, 123.0);
+  EXPECT_EQ(neg.imag, -456);
+}
+
+TEST_F(ComplexExtensionApiTest, PyCQuotReturnsComplexQuotient) {
+  // rhs.real > rhs.imag
+  errno = 0;
+  Py_complex q1 = _Py_c_quot({10, 20}, {2, 1});
+  EXPECT_EQ(errno, 0);
+  EXPECT_EQ(q1.real, 8.0);
+  EXPECT_EQ(q1.imag, 6.0);
+
+  // rhs.imag > rhs.real
+  errno = 0;
+  Py_complex q2 = _Py_c_quot({10, 20}, {1, 2});
+  EXPECT_EQ(errno, 0);
+  EXPECT_EQ(q2.real, 10.0);
+  EXPECT_EQ(q2.imag, 0.0);
+
+  // rhs.real = 0
+  errno = 0;
+  Py_complex q3 = _Py_c_quot({10, 10}, {0, 0});
+  EXPECT_EQ(errno, EDOM);
+  EXPECT_EQ(q3.real, 0.0);
+  EXPECT_EQ(q3.imag, 0.0);
+
+  // NAN
+  errno = 0;
+  Py_complex q4 = _Py_c_quot({1, 2}, {NAN, 4});
+  EXPECT_EQ(errno, 0);
+  EXPECT_TRUE(std::isnan(q4.real));
+  EXPECT_TRUE(std::isnan(q4.imag));
+}
 
 TEST_F(ComplexExtensionApiTest, AsCComplexWithComplexReturnsValue) {
   PyObjectPtr cmp(PyComplex_FromDoubles(1.0, 0.0));

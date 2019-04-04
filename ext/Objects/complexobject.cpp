@@ -1,7 +1,39 @@
+#include <cerrno>
+#include <cmath>
+
 #include "float-builtins.h"
 #include "runtime.h"
 
 namespace python {
+
+PY_EXPORT Py_complex _Py_c_diff(Py_complex x, Py_complex y) {
+  return {x.real - y.real, x.imag - y.imag};
+}
+
+PY_EXPORT Py_complex _Py_c_neg(Py_complex x) { return {-x.real, -x.imag}; }
+PY_EXPORT Py_complex _Py_c_quot(Py_complex x, Py_complex y) {
+  double real;
+  double imag;
+  if (y.imag == 0.0) {
+    errno = EDOM;
+    real = 0.0;
+    imag = 0.0;
+  } else if (std::fabs(y.real) >= std::fabs(y.imag)) {
+    double ratio = y.imag / y.real;
+    double den = y.real + y.imag * ratio;
+    real = (x.real + x.imag * ratio) / den;
+    imag = (x.imag - x.real * ratio) / den;
+  } else if (std::fabs(y.imag) >= std::fabs(y.real)) {
+    double ratio = y.real / y.imag;
+    double den = y.real * ratio + y.imag;
+    real = (x.real * ratio + x.imag) / den;
+    imag = (x.imag * ratio - x.real) / den;
+  } else {
+    real = NAN;
+    imag = NAN;
+  }
+  return {real, imag};
+}
 
 PY_EXPORT int PyComplex_CheckExact_Func(PyObject* p) {
   return ApiHandle::fromPyObject(p)->asObject().isComplex();
