@@ -919,8 +919,11 @@ class Runtime {
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(const Type& type, SymbolId name);
 
-  // The size newCapacity grows to if array is empty
-  static const int kInitialEnsuredCapacity = 4;
+  // The size newCapacity grows to if array is empty. Must be large enough to
+  // guarantee a LargeBytes/LargeStr for ByteArray/StrArray.
+  static const int kInitialEnsuredCapacity = kWordSize * 2;
+  static_assert(kInitialEnsuredCapacity > SmallStr::kMaxLength,
+                "array must be backed by a heap type");
 
   static const ModuleInitializer kBuiltinModules[];
 
