@@ -21,8 +21,8 @@ void writeByteAsHexDigits(Thread* thread, const ByteArray& array, byte value) {
 }
 
 const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
-    {SymbolId::kItems, ByteArray::kBytesOffset},
-    {SymbolId::kAllocated, ByteArray::kNumItemsOffset},
+    {SymbolId::kInvalid, ByteArray::kBytesOffset},
+    {SymbolId::kInvalid, ByteArray::kNumItemsOffset},
     {SymbolId::kSentinelId, -1},
 };
 

@@ -282,8 +282,8 @@ RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 }
 
 const BuiltinAttribute FrozenSetBuiltins::kAttributes[] = {
-    {SymbolId::kItems, Set::kDataOffset},
-    {SymbolId::kAllocated, Set::kNumItemsOffset},
+    {SymbolId::kInvalid, Set::kDataOffset},
+    {SymbolId::kInvalid, Set::kNumItemsOffset},
     {SymbolId::kSentinelId, -1},
 };
 
@@ -366,8 +366,8 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
 }
 
 const BuiltinAttribute SetBuiltins::kAttributes[] = {
-    {SymbolId::kItems, Set::kDataOffset},
-    {SymbolId::kAllocated, Set::kNumItemsOffset},
+    {SymbolId::kInvalid, Set::kDataOffset},
+    {SymbolId::kInvalid, Set::kNumItemsOffset},
     {SymbolId::kSentinelId, -1},
 };
 

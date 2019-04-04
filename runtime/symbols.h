@@ -128,7 +128,6 @@ class Runtime;
   V(Abs, "abs")                                                                \
   V(AcquireLock, "acquire_lock")                                               \
   V(Add, "add")                                                                \
-  V(Allocated, "allocated")                                                    \
   V(AndUnder, "and_")                                                          \
   V(Append, "append")                                                          \
   V(Args, "args")                                                              \
