@@ -203,13 +203,12 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
   Tuple entry(&scope, empty_tuple_);
   for (word i = 0; i < attributes.length(); i++) {
     DCHECK((attributes.get(i).flags &
-            (AttributeInfo::Flag::kInObject | AttributeInfo::Flag::kDeleted |
-             AttributeInfo::Flag::kFixedOffset)) == 0,
+            (AttributeFlags::kInObject | AttributeFlags::kDeleted |
+             AttributeFlags::kFixedOffset)) == 0,
            "flag not allowed");
     AttributeInfo info(attributes.get(i).offset,
-                       attributes.get(i).flags |
-                           AttributeInfo::Flag::kInObject |
-                           AttributeInfo::Flag::kFixedOffset);
+                       attributes.get(i).flags | AttributeFlags::kInObject |
+                           AttributeFlags::kFixedOffset);
     entry = newTuple(2);
     SymbolId symbol_id = attributes.get(i).name;
     if (symbol_id == SymbolId::kInvalid) {
@@ -3755,7 +3754,7 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
   Tuple inobject(&scope, layout.inObjectAttributes());
   if (inobject.length() < layout.numInObjectAttributes()) {
     AttributeInfo info(inobject.length() * kPointerSize,
-                       flags | AttributeInfo::Flag::kInObject);
+                       flags | AttributeFlags::kInObject);
     new_layout.setInObjectAttributes(
         layoutAddAttributeEntry(thread, inobject, name, info));
   } else {
@@ -3802,8 +3801,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
       if (entry.at(0) == *iname) {
         entry = newTuple(2);
         entry.atPut(0, NoneType::object());
-        entry.atPut(
-            1, AttributeInfo(0, AttributeInfo::Flag::kDeleted).asSmallInt());
+        entry.atPut(1, AttributeInfo(0, AttributeFlags::kDeleted).asSmallInt());
       }
       new_inobject.atPut(i, *entry);
     }

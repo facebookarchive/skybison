@@ -5,6 +5,25 @@
 
 namespace python {
 
+enum AttributeFlags {
+  kNone = 0,
+
+  // When set, this indicates that the attribute is stored directly on the
+  // instance. When unset, this indicates that the attribute is stored in
+  // the overflow array attached to the instance.
+  kInObject = 1 << 0,
+
+  // Only applies to in-object attributes. When set, it indicates that the
+  // attribute has been deleted.
+  kDeleted = 1 << 1,
+
+  // Attribute lives at a fixed offset in the layout.
+  kFixedOffset = 1 << 2,
+
+  // Attribute is read-only for managed code.
+  kReadOnly = 1 << 3,
+};
+
 // AttributeInfo packs attribute metadata into a SmallInt.
 class AttributeInfo {
  public:
@@ -35,37 +54,18 @@ class AttributeInfo {
   word offset();
   static bool isValidOffset(word offset) { return offset <= kMaxOffset; }
 
-  enum Flag {
-    kNone = 0,
+  AttributeFlags flags();
+  bool hasFlag(AttributeFlags flag);
 
-    // When set, this indicates that the attribute is stored directly on the
-    // instance. When unset, this indicates that the attribute is stored in
-    // the overflow array attached to the instance.
-    kInObject = 1,
+  bool isInObject() { return hasFlag(AttributeFlags::kInObject); }
 
-    // Only applies to in-object attributes. When set, it indicates that the
-    // attribute has been deleted.
-    kDeleted = 2,
+  bool isOverflow() { return !hasFlag(AttributeFlags::kInObject); }
 
-    // Attribute lives at a fixed offset in the layout.
-    kFixedOffset = 4,
+  bool isDeleted() { return hasFlag(AttributeFlags::kDeleted); }
 
-    // Attribute is read-only for managed code.
-    kReadOnly = 8,
-  };
+  bool isFixedOffset() { return hasFlag(AttributeFlags::kFixedOffset); }
 
-  word flags();
-  bool testFlag(Flag flag);
-
-  bool isInObject() { return testFlag(Flag::kInObject); }
-
-  bool isOverflow() { return !testFlag(Flag::kInObject); }
-
-  bool isDeleted() { return testFlag(Flag::kDeleted); }
-
-  bool isFixedOffset() { return testFlag(Flag::kFixedOffset); }
-
-  bool isReadOnly() { return testFlag(Flag::kReadOnly); }
+  bool isReadOnly() { return hasFlag(AttributeFlags::kReadOnly); }
 
   // Casting.
   RawSmallInt asSmallInt();
@@ -94,11 +94,11 @@ inline word AttributeInfo::offset() {
   return (value_ >> kOffsetOffset) & kOffsetMask;
 }
 
-inline word AttributeInfo::flags() {
-  return (value_ >> kFlagsOffset) & kFlagsMask;
+inline AttributeFlags AttributeInfo::flags() {
+  return static_cast<AttributeFlags>((value_ >> kFlagsOffset) & kFlagsMask);
 }
 
-inline bool AttributeInfo::testFlag(Flag flag) {
+inline bool AttributeInfo::hasFlag(AttributeFlags flag) {
   return value_ & (static_cast<uword>(flag) << kFlagsOffset);
 }
 

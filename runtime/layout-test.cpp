@@ -13,7 +13,7 @@ TEST(AttributeInfoTest, WithoutFlags) {
 }
 
 TEST(AttributeInfoTest, WithFlags) {
-  AttributeInfo info(123, AttributeInfo::Flag::kInObject);
+  AttributeInfo info(123, AttributeFlags::kInObject);
   EXPECT_EQ(info.offset(), 123);
   EXPECT_TRUE(info.isInObject());
 }
@@ -32,8 +32,7 @@ TEST(LayoutTest, FindAttribute) {
   // Update the layout to include the new attribute as an in-object attribute
   Tuple entry(&scope, runtime.newTuple(2));
   entry.atPut(0, *attr);
-  entry.atPut(1,
-              AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
+  entry.atPut(1, AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
   Tuple array(&scope, runtime.newTuple(1));
   array.atPut(0, *entry);
   RawLayout::cast(*layout).setInObjectAttributes(*array);
@@ -125,8 +124,7 @@ TEST(LayoutTest, DeleteInObjectAttribute) {
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
   Tuple entry(&scope, runtime.newTuple(2));
   entry.atPut(0, *attr);
-  entry.atPut(1,
-              AttributeInfo(2222, AttributeInfo::Flag::kInObject).asSmallInt());
+  entry.atPut(1, AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
   Tuple array(&scope, runtime.newTuple(1));
   array.atPut(0, *entry);
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
@@ -242,8 +240,8 @@ TEST(LayoutTest, DeleteAndAddInObjectAttribute) {
   // attribute
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
   Object inobject(&scope, runtime.newStrFromCStr("inobject"));
-  layout.setInObjectAttributes(createLayoutAttribute(
-      &runtime, inobject, AttributeInfo::Flag::kInObject));
+  layout.setInObjectAttributes(
+      createLayoutAttribute(&runtime, inobject, AttributeFlags::kInObject));
   Object overflow(&scope, runtime.newStrFromCStr("overflow"));
   layout.setOverflowAttributes(createLayoutAttribute(&runtime, overflow, 0));
 
@@ -266,9 +264,8 @@ TEST(LayoutTest, VerifyChildLayout) {
   HandleScope scope;
   Layout parent(&scope, runtime.newLayout());
   Object attr(&scope, runtime.newStrFromCStr("foo"));
-  Layout child(&scope,
-               runtime.layoutAddAttribute(Thread::current(), parent, attr,
-                                          AttributeInfo::Flag::kNone));
+  Layout child(&scope, runtime.layoutAddAttribute(Thread::current(), parent,
+                                                  attr, AttributeFlags::kNone));
 
   EXPECT_NE(child.id(), parent.id());
   EXPECT_EQ(child.numInObjectAttributes(), parent.numInObjectAttributes());

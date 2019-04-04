@@ -2949,7 +2949,7 @@ TEST(RuntimeTest, InstanceDelWithReadOnlyAttributeRaisesAttributeError) {
   HandleScope scope(thread);
 
   BuiltinAttribute attrs[] = {
-      {SymbolId::kDunderGlobals, 0, AttributeInfo::Flag::kReadOnly},
+      {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
   NativeMethod methods[] = {
@@ -3361,7 +3361,7 @@ TEST(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   HandleScope scope(thread);
 
   BuiltinAttribute attrs[] = {
-      {SymbolId::kDunderGlobals, 0, AttributeInfo::Flag::kReadOnly},
+      {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
   NativeMethod methods[] = {

@@ -22,7 +22,7 @@ class Thread;
 struct BuiltinAttribute {
   SymbolId name;
   int offset;
-  AttributeInfo::Flag flags;
+  AttributeFlags flags;
 };
 
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
