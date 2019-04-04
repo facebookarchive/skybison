@@ -59,13 +59,9 @@ def issubclass(obj, ty):
 
 
 class type(bootstrap=True):
-    def _bases(self):
-        # TODO(matthiasb): Remove once we have an actual __bases__.
-        pass
-
     def _merge_class_dict_keys(self, result):
         result.update(self.__dict__.keys())
-        for base in type._bases(self):
+        for base in self.__bases__:
             type._merge_class_dict_keys(base, result)
 
     def __call__(self, *args, **kwargs):
