@@ -23,20 +23,134 @@ interface to a buffered raw stream (`BufferedIOBase`). Finally, StringIO
 is an in-memory stream for text.
 
 Argument names are not part of the specification, and only the arguments
-of open() are intended to be used as keyword arguments.
-
-data:
-
-DEFAULT_BUFFER_SIZE
-
-   An int containing the default buffer size used by the module's buffered
-   I/O classes. open() uses the file's blksize (as obtained by os.stat) if
-   possible."""
+of open() are intended to be used as keyword arguments."""
 
 # This is the patch decorator, injected by our boot process. flake8 has no
 # knowledge about its definition and will complain without this gross circular
 # helper here.
 _patch = _patch  # noqa: F821
+_unimplemented = _unimplemented  # noqa: F821
+
+
+DEFAULT_BUFFER_SIZE = None
+
+
+class BlockingIOError:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class BufferedRWPair:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class BufferedRandom:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class BufferedReader:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class BufferedWriter:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class BytesIO:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class FileIO:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class IncrementalNewlineDecoder:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class StringIO:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class TextIOWrapper:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class UnsupportedOperation:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class _BufferedIOBase:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class _IOBase:
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class _RawIOBase(_IOBase):
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+class _TextIOBase(_IOBase):
+    """unimplemented"""
+
+    def __init__(self, *args, **kwargs):
+        _unimplemented()
+
+
+def open(
+    file,
+    mode="r",
+    buffering=-1,
+    encoding=None,
+    errors=None,
+    newline=None,
+    closefd=True,
+    opener=None,
+):
+    _unimplemented()
 
 
 @_patch
