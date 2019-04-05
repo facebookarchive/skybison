@@ -27,7 +27,9 @@ def getfilesystemencodeerrors():
 meta_path = []
 
 
-path = ["", executable[: executable.rfind("/")] + "/../third-party/cpython/Lib"]
+_base_dir = executable[: executable.rfind("/")] + "/.."
+# TODO(T42692043) Put the standard library into the python binary instead.
+path = ["", _base_dir + "/library", _base_dir + "/third-party/cpython/Lib"]
 
 
 path_hooks = []

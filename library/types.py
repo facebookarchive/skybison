@@ -25,15 +25,18 @@ def _g():
     yield 1
 GeneratorType = type(_g())
 
-async def _c(): pass
-_c = _c()
-CoroutineType = type(_c)
-_c.close()  # Prevent ResourceWarning
+# TODO(T42623564)
+#async def _c(): pass
+#_c = _c()
+#CoroutineType = type(_c)
+#_c.close()  # Prevent ResourceWarning
+_c = None
 
-async def _ag():
-    yield
-_ag = _ag()
-AsyncGeneratorType = type(_ag)
+# TODO(T42307084)
+#async def _ag():
+#    yield
+#_ag = _ag()
+#AsyncGeneratorType = type(_ag)
 
 class _C:
     def _m(self): pass
@@ -49,12 +52,14 @@ try:
 except TypeError:
     tb = sys.exc_info()[2]
     TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
+# TODO(T42624200)
+#    FrameType = type(tb.tb_frame)
     tb = None; del tb
 
 # For Jython, the following two types are identical
-GetSetDescriptorType = type(FunctionType.__code__)
-MemberDescriptorType = type(FunctionType.__globals__)
+# TODO(T42626925)
+#GetSetDescriptorType = type(FunctionType.__code__)
+#MemberDescriptorType = type(FunctionType.__globals__)
 
 del sys, _f, _g, _C, _c,                           # Not for export
 
@@ -269,4 +274,5 @@ def coroutine(func):
     return wrapped
 
 
-__all__ = [n for n in globals() if n[:1] != '_']
+# TODO(T41326706, T42178923)
+# __all__ = [n for n in globals() if n[:1] != '_']

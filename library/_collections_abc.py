@@ -39,20 +39,25 @@ __name__ = "collections.abc"
 # Note:  in other implementations, these types might not be distinct
 # and they may have their own implementation specific types that
 # are not included on this list.
-bytes_iterator = type(iter(b''))
-bytearray_iterator = type(iter(bytearray()))
+# TODO(T42612384)
+#bytes_iterator = type(iter(b''))
+# TODO(T42612419)
+#bytearray_iterator = type(iter(bytearray()))
 #callable_iterator = ???
 dict_keyiterator = type(iter({}.keys()))
 dict_valueiterator = type(iter({}.values()))
 dict_itemiterator = type(iter({}.items()))
 list_iterator = type(iter([]))
-list_reverseiterator = type(iter(reversed([])))
+# TODO(T42612451)
+#list_reverseiterator = type(iter(reversed([])))
 range_iterator = type(iter(range(0)))
-longrange_iterator = type(iter(range(1 << 1000)))
+# TODO(T42626542)
+#longrange_iterator = type(iter(range(1 << 1000)))
 set_iterator = type(iter(set()))
 str_iterator = type(iter(""))
 tuple_iterator = type(iter(()))
-zip_iterator = type(iter(zip()))
+# TODO(T42612475)
+#zip_iterator = type(iter(zip()))
 ## views ##
 dict_keys = type({}.keys())
 dict_values = type({}.values())
@@ -60,17 +65,19 @@ dict_items = type({}.items())
 ## misc ##
 mappingproxy = type(type.__dict__)
 generator = type((lambda: (yield))())
+# TODO(T42623564)
 ## coroutine ##
-async def _coro(): pass
-_coro = _coro()
-coroutine = type(_coro)
-_coro.close()  # Prevent ResourceWarning
-del _coro
+#async def _coro(): pass
+#_coro = _coro()
+#coroutine = type(_coro)
+#_coro.close()  # Prevent ResourceWarning
+#del _coro
+# TODO(T42307084)
 ## asynchronous generator ##
-async def _ag(): yield
-_ag = _ag()
-async_generator = type(_ag)
-del _ag
+#async def _ag(): yield
+#_ag = _ag()
+#async_generator = type(_ag)
+#del _ag
 
 
 ### ONE-TRICK PONIES ###
@@ -158,7 +165,8 @@ class Coroutine(Awaitable):
         return NotImplemented
 
 
-Coroutine.register(coroutine)
+# TODO(T42623564)
+#Coroutine.register(coroutine)
 
 
 class AsyncIterable(metaclass=ABCMeta):
@@ -243,7 +251,8 @@ class AsyncGenerator(AsyncIterator):
         return NotImplemented
 
 
-AsyncGenerator.register(async_generator)
+# TODO(T42307084)
+#AsyncGenerator.register(async_generator)
 
 
 class Iterable(metaclass=ABCMeta):
@@ -280,20 +289,25 @@ class Iterator(Iterable):
             return _check_methods(C, '__iter__', '__next__')
         return NotImplemented
 
-Iterator.register(bytes_iterator)
-Iterator.register(bytearray_iterator)
+# TODO(T42612384)
+#Iterator.register(bytes_iterator)
+# TODO(T42612419)
+#Iterator.register(bytearray_iterator)
 #Iterator.register(callable_iterator)
 Iterator.register(dict_keyiterator)
 Iterator.register(dict_valueiterator)
 Iterator.register(dict_itemiterator)
 Iterator.register(list_iterator)
-Iterator.register(list_reverseiterator)
+# TODO(T42612451)
+#Iterator.register(list_reverseiterator)
 Iterator.register(range_iterator)
-Iterator.register(longrange_iterator)
+# TODO(T42626542)
+#Iterator.register(longrange_iterator)
 Iterator.register(set_iterator)
 Iterator.register(str_iterator)
 Iterator.register(tuple_iterator)
-Iterator.register(zip_iterator)
+# TODO(T42612475)
+#Iterator.register(zip_iterator)
 
 
 class Reversible(Iterable):

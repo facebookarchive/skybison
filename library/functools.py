@@ -406,7 +406,58 @@ class partialmethod(object):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+# TODO(T42627145)
+# _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize",
+#                                       "currsize"])
+from builtins import property as _property, tuple as _tuple
+from operator import itemgetter as _itemgetter
+from collections import OrderedDict
+class _CacheInfo(tuple):
+    'CacheInfo(hits, misses, maxsize, currsize)'
+
+    __slots__ = ()
+
+    _fields = ('hits', 'misses', 'maxsize', 'currsize')
+
+    def __new__(_cls, hits, misses, maxsize, currsize):
+        'Create new instance of CacheInfo(hits, misses, maxsize, currsize)'
+        return _tuple.__new__(_cls, (hits, misses, maxsize, currsize))
+
+    @classmethod
+    def _make(cls, iterable, new=tuple.__new__, len=len):
+        'Make a new CacheInfo object from a sequence or iterable'
+        result = new(cls, iterable)
+        if len(result) != 4:
+            raise TypeError('Expected 4 arguments, got %d' % len(result))
+        return result
+
+    def _replace(_self, **kwds):
+        'Return a new CacheInfo object replacing specified fields with new values'
+        result = _self._make(map(kwds.pop, ('hits', 'misses', 'maxsize', 'currsize'), _self))
+        if kwds:
+            raise ValueError('Got unexpected field names: %r' % list(kwds))
+        return result
+
+    def __repr__(self):
+        'Return a nicely formatted representation string'
+        return self.__class__.__name__ + '(hits=%r, misses=%r, maxsize=%r, currsize=%r)' % self
+
+    def _asdict(self):
+        'Return a new OrderedDict which maps field names to their values.'
+        return OrderedDict(zip(self._fields, self))
+
+    def __getnewargs__(self):
+        'Return self as a plain tuple.  Used by copy and pickle.'
+        return tuple(self)
+
+    hits = _property(_itemgetter(0), doc='Alias for field number 0')
+
+    misses = _property(_itemgetter(1), doc='Alias for field number 1')
+
+    maxsize = _property(_itemgetter(2), doc='Alias for field number 2')
+
+    currsize = _property(_itemgetter(3), doc='Alias for field number 3')
+
 
 class _HashedSeq(list):
     """ This class guarantees that hash() will be called no more than once
