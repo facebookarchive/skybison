@@ -732,6 +732,32 @@ result = C.foo
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
+TEST(BuiltinsModuleTest, DunderBuildClassPassesNameBasesAndKwargsToPrepare) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class Meta(type):
+  def __init__(metacls, name, bases, namespace, **kwargs):
+    pass
+  def __new__(metacls, name, bases, namespace, **kwargs):
+    return super().__new__(metacls, name, bases, namespace)
+  @classmethod
+  def __prepare__(metacls, name, bases, **kwargs):
+    return {"foo": name, "bar": bases[0], "baz": kwargs["answer"]}
+class C(int, metaclass=Meta, answer=42):
+  pass
+name = C.foo
+base = C.bar
+answer = C.baz
+)");
+  Object name(&scope, moduleAt(&runtime, "__main__", "name"));
+  Object base(&scope, moduleAt(&runtime, "__main__", "base"));
+  Object answer(&scope, moduleAt(&runtime, "__main__", "answer"));
+  EXPECT_TRUE(isStrEqualsCStr(*name, "C"));
+  EXPECT_EQ(base, runtime.typeAt(LayoutId::kInt));
+  EXPECT_TRUE(isIntEqualsWord(*answer, 42));
+}
+
 TEST(BuiltinsModuleTest, DunderBuildClassWithRaisingBodyPropagatesException) {
   Runtime runtime;
   EXPECT_TRUE(raised(runFromCStr(&runtime, R"(

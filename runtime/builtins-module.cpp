@@ -379,10 +379,9 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     dict_obj = runtime->newDict();
   } else {
     frame->pushValue(*prepare_method);
-    Tuple pargs(&scope, runtime->newTuple(3));
-    pargs.atPut(0, *metaclass);
-    pargs.atPut(1, *name);
-    pargs.atPut(2, *bases);
+    Tuple pargs(&scope, runtime->newTuple(2));
+    pargs.atPut(0, *name);
+    pargs.atPut(1, *bases);
     frame->pushValue(*pargs);
     frame->pushValue(*kwargs);
     dict_obj =
