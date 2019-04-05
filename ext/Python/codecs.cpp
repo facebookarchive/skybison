@@ -1,3 +1,4 @@
+#include "cpython-func.h"
 #include "runtime.h"
 
 namespace python {
@@ -28,9 +29,33 @@ PY_EXPORT PyObject* PyCodec_IgnoreErrors(PyObject* /* c */) {
   UNIMPLEMENTED("PyCodec_IgnoreErrors");
 }
 
+static PyObject* makeIncrementalCodec(PyObject* codec_info, const char* errors,
+                                      const char* attrname) {
+  PyObject* inc_codec = PyObject_GetAttrString(codec_info, attrname);
+  if (inc_codec == nullptr) return nullptr;
+  PyObject* ret = nullptr;
+  if (errors) {
+    ret = PyObject_CallFunction(inc_codec, "s", errors);
+  } else {
+    ret = PyObject_CallFunction(inc_codec, nullptr);
+  }
+  Py_DECREF(inc_codec);
+  return ret;
+}
+
+PY_EXPORT PyObject* _PyCodecInfo_GetIncrementalDecoder(PyObject* codec_info,
+                                                       const char* errors) {
+  return makeIncrementalCodec(codec_info, errors, "incrementaldecoder");
+}
+
 PY_EXPORT PyObject* PyCodec_IncrementalDecoder(const char* /* g */,
                                                const char* /* s */) {
   UNIMPLEMENTED("PyCodec_IncrementalDecoder");
+}
+
+PY_EXPORT PyObject* _PyCodecInfo_GetIncrementalEncoder(PyObject* codec_info,
+                                                       const char* errors) {
+  return makeIncrementalCodec(codec_info, errors, "incrementalencoder");
 }
 
 PY_EXPORT PyObject* PyCodec_IncrementalEncoder(const char* /* g */,
