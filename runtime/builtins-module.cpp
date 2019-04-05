@@ -89,6 +89,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
     {SymbolId::kUnderBytesGetitemSlice, underBytesGetItemSlice},
     {SymbolId::kUnderBytesJoin, BytesBuiltins::join},
+    {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
     {SymbolId::kUnderBytesNew, underBytesNew},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
@@ -724,6 +725,46 @@ RawObject BuiltinsModule::underBytesGetItemSlice(Thread* thread, Frame* frame,
   Int step(&scope, args.get(3));
   return thread->runtime()->bytesSlice(thread, self, start.asWord(),
                                        stop.asWord(), step.asWord());
+}
+
+RawObject BuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
+                                              word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object from_obj(&scope, args.get(0));
+  Object to_obj(&scope, args.get(1));
+  word length;
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfBytes(*from_obj)) {
+    Bytes bytes(&scope, *from_obj);
+    length = bytes.length();
+  } else if (runtime->isInstanceOfByteArray(*from_obj)) {
+    ByteArray array(&scope, *from_obj);
+    length = array.numItems();
+    from_obj = array.bytes();
+  } else {
+    UNIMPLEMENTED("bytes-like other than bytes or bytearray");
+  }
+  if (runtime->isInstanceOfBytes(*to_obj)) {
+    Bytes bytes(&scope, *to_obj);
+    DCHECK(bytes.length() == length, "lengths should already be the same");
+  } else if (runtime->isInstanceOfByteArray(*to_obj)) {
+    ByteArray array(&scope, *to_obj);
+    DCHECK(array.numItems() == length, "lengths should already be the same");
+    to_obj = array.bytes();
+  } else {
+    UNIMPLEMENTED("bytes-like other than bytes or bytearray");
+  }
+  Bytes from(&scope, *from_obj);
+  Bytes to(&scope, *to_obj);
+  byte table[BytesBuiltins::kTranslationTableLength];
+  for (word i = 0; i < BytesBuiltins::kTranslationTableLength; i++) {
+    table[i] = i;
+  }
+  for (word i = 0; i < length; i++) {
+    table[from.byteAt(i)] = to.byteAt(i);
+  }
+  return runtime->newBytesWithAll(table);
 }
 
 RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,

@@ -914,4 +914,50 @@ result = bytearray(b' ').join(Foo())
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ab c def"));
 }
 
+TEST(ByteArrayBuiltinsTest, MaketransWithNonBytesLikeFromRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.maketrans([1,2], b'ab')"),
+      LayoutId::kTypeError, "a bytes-like object is required, not 'list'"));
+}
+
+TEST(ByteArrayBuiltinsTest, MaketransWithNonBytesLikeToRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.maketrans(b'1', 2)"),
+      LayoutId::kTypeError, "a bytes-like object is required, not 'smallint'"));
+}
+
+TEST(ByteArrayBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.maketrans(b'12', bytearray())"),
+      LayoutId::kValueError, "maketrans arguments must have same length"));
+}
+
+TEST(ByteArrayBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, "result = bytearray.maketrans(bytearray(), b'')");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  byte expected[256];
+  for (word i = 0; i < 256; i++) {
+    expected[i] = i;
+  }
+  EXPECT_TRUE(isBytesEqualsBytes(result, expected));
+}
+
+TEST(ByteArrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime,
+              "result = bytearray.maketrans(bytearray(b'abc'), b'123')");
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result.isBytes());
+  Bytes actual(&scope, *result);
+  EXPECT_EQ(actual.byteAt('a'), '1');
+  EXPECT_EQ(actual.byteAt('b'), '2');
+  EXPECT_EQ(actual.byteAt('c'), '3');
+}
+
 }  // namespace python

@@ -49,6 +49,7 @@ class BytesBuiltins
   static RawObject join(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
+  static const word kTranslationTableLength = 1 << kBitsPerByte;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesBuiltins);

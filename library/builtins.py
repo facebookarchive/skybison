@@ -798,6 +798,10 @@ class bytearray(bootstrap=True):
     def lstrip(self, bytes=None):
         _unimplemented()
 
+    @staticmethod
+    def maketrans(frm, to) -> bytes:
+        return bytes.maketrans(frm, to)
+
     def partition(self, sep):
         _unimplemented()
 
@@ -1033,8 +1037,18 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     @staticmethod
-    def maketrans(frm, to):
-        _unimplemented()
+    def maketrans(frm, to) -> bytes:
+        if not isinstance(frm, bytes) and not isinstance(frm, bytearray):
+            raise TypeError(
+                f"a bytes-like object is required, not '{type(frm).__name__}'"
+            )
+        if not isinstance(to, bytes) and not isinstance(to, bytearray):
+            raise TypeError(
+                f"a bytes-like object is required, not '{type(to).__name__}'"
+            )
+        if len(frm) != len(to):
+            raise ValueError("maketrans arguments must have same length")
+        return _bytes_maketrans(frm, to)
 
     def partition(self, sep):
         _unimplemented()
@@ -2196,6 +2210,11 @@ def _bytes_getitem_slice(self, start: int, stop: int, step: int) -> bytes:
 
 @_patch
 def _bytes_join(self: bytes, iterable) -> bytes:
+    pass
+
+
+@_patch
+def _bytes_maketrans(frm, to) -> bytes:
     pass
 
 

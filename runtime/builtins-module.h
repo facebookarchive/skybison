@@ -40,6 +40,8 @@ class BuiltinsModule {
   static RawObject underBytesGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGetItemSlice(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
   static RawObject underPrintStr(Thread* thread, Frame* frame, word nargs);
