@@ -40,8 +40,12 @@ __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
            "SEEK_END", "fsencode", "fsdecode", "get_exec_path", "fdopen",
            "popen", "extsep"]
 
+# TODO(T41326706)
+#def _exists(name):
+#    return name in globals()
+_current_module = sys.modules[__name__]
 def _exists(name):
-    return name in globals()
+    return hasattr(_current_module, name)
 
 def _get_exports_list(module):
     try:
@@ -102,10 +106,15 @@ del _names
 
 
 if _exists("_have_functions"):
-    _globals = globals()
+    # TODO(T41326706)
+    #_globals = globals()
+    _globals = None
     def _add(str, fn):
-        if (fn in _globals) and (str in _have_functions):
-            _set.add(_globals[fn])
+        # TODO(T41326706)
+        #if (fn in _globals) and (str in _have_functions):
+        #    _set.add(_globals[fn])
+        if hasattr(_current_module, fn) and (str in _have_functions):
+            _set.add(getattr(_current_module, fn))
 
     _set = set()
     _add("HAVE_FACCESSAT",  "access")
