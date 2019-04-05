@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <cerrno>
 #include <cstdarg>
 
@@ -5,6 +6,7 @@
 #include "cpython-func.h"
 
 #include "exception-builtins.h"
+#include "file.h"
 #include "runtime.h"
 #include "sys-module.h"
 
@@ -332,8 +334,122 @@ PY_EXPORT void PyErr_SyntaxLocationEx(const char* /* e */, int /* o */,
   UNIMPLEMENTED("PyErr_SyntaxLocationEx");
 }
 
-PY_EXPORT void PyErr_WriteUnraisable(PyObject* /* j */) {
-  UNIMPLEMENTED("PyErr_WriteUnraisable");
+static RawObject fileWriteObjectStrUnraisable(Thread* thread,
+                                              const Object& file,
+                                              const Object& obj) {
+  RawObject result = fileWriteObjectStr(thread, file, obj);
+  thread->clearPendingException();
+  return result;
+}
+
+static RawObject fileWriteObjectReprUnraisable(Thread* thread,
+                                               const Object& file,
+                                               const Object& obj) {
+  RawObject result = fileWriteObjectRepr(thread, file, obj);
+  thread->clearPendingException();
+  return result;
+}
+
+static RawObject fileWriteCStrUnraisable(Thread* thread, const Object& file,
+                                         const char* str) {
+  RawObject result = fileWriteString(thread, file, str);
+  thread->clearPendingException();
+  return result;
+}
+
+PY_EXPORT void PyErr_WriteUnraisable(PyObject* obj) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object exc_obj(&scope, thread->pendingExceptionType());
+  Object val(&scope, thread->pendingExceptionValue());
+  thread->clearPendingException();
+
+  Runtime* runtime = thread->runtime();
+  Object sys_stderr(&scope, runtime->lookupNameInModule(thread, SymbolId::kSys,
+                                                        SymbolId::kStderr));
+  if (obj != nullptr) {
+    if (fileWriteCStrUnraisable(thread, sys_stderr, "Exception ignored in: ")
+            .isError()) {
+      return;
+    }
+    Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+    if (fileWriteObjectReprUnraisable(thread, sys_stderr, object).isError()) {
+      if (fileWriteCStrUnraisable(thread, sys_stderr, "<object repr() failed>")
+              .isError()) {
+        return;
+      }
+    }
+    if (fileWriteCStrUnraisable(thread, sys_stderr, "\n").isError()) {
+      return;
+    }
+  }
+
+  if (runtime->printTraceback(thread, sys_stderr).isError()) {
+    thread->clearPendingException();
+    return;
+  }
+
+  if (exc_obj.isNoneType()) {
+    thread->clearPendingException();
+    return;
+  }
+
+  DCHECK(runtime->isInstanceOfType(*exc_obj), "exc must be a type");
+  Type exc_type(&scope, *exc_obj);
+  Type base_exception(&scope, runtime->typeAt(LayoutId::kBaseException));
+  DCHECK(runtime->isSubclass(exc_type, base_exception),
+         "exc must be a subclass of BaseException");
+  // TODO(T42602623): If exc_type.name() is None, Remove dotted components of
+  // name, eg A.B.C => C
+
+  Object module_name_obj(
+      &scope,
+      runtime->attributeAtId(thread, exc_type, SymbolId::kDunderModule));
+  if (!runtime->isInstanceOfStr(*module_name_obj)) {
+    thread->clearPendingException();
+    if (fileWriteCStrUnraisable(thread, sys_stderr, "<unknown>").isError()) {
+      return;
+    }
+  } else {
+    Str module_name(&scope, *module_name_obj);
+    if (!module_name.equalsCStr("builtins")) {
+      if (fileWriteObjectStrUnraisable(thread, sys_stderr, module_name)
+              .isError()) {
+        return;
+      }
+      if (fileWriteCStrUnraisable(thread, sys_stderr, ".").isError()) {
+        return;
+      }
+    }
+  }
+
+  if (exc_type.name().isNoneType()) {
+    if (fileWriteCStrUnraisable(thread, sys_stderr, "<unknown>").isError()) {
+      return;
+    }
+  } else {
+    Str exc_type_name(&scope, exc_type.name());
+    if (fileWriteObjectStrUnraisable(thread, sys_stderr, exc_type_name)
+            .isError()) {
+      return;
+    }
+  }
+
+  if (!val.isNoneType()) {
+    if (fileWriteCStrUnraisable(thread, sys_stderr, ": ").isError()) {
+      return;
+    }
+    if (fileWriteObjectStrUnraisable(thread, sys_stderr, val).isError()) {
+      if (fileWriteCStrUnraisable(thread, sys_stderr,
+                                  "<exception str() failed>")
+              .isError()) {
+        return;
+      }
+    }
+  }
+  if (fileWriteCStrUnraisable(thread, sys_stderr, "\n").isError()) {
+    return;
+  }
 }
 
 PY_EXPORT void _PyErr_BadInternalCall(const char* filename, int lineno) {

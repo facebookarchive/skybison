@@ -1678,6 +1678,14 @@ RawObject Runtime::executeModule(const char* buffer, const Module& module) {
   return Thread::current()->exec(code, globals, globals);
 }
 
+RawObject Runtime::printTraceback(Thread* /* thread */,
+                                  const Object& /* file */) {
+  // TODO(T42602699): Replace this with an actual traceback printer
+  // TODO(T42602545): Write to given file object
+  Utils::printTraceback(stderr);
+  return NoneType::object();
+}
+
 RawObject Runtime::importModuleFromBuffer(const char* buffer,
                                           const Object& name) {
   HandleScope scope;

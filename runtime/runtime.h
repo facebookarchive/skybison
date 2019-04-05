@@ -258,6 +258,10 @@ class Runtime {
   void moduleAtPut(const Module& module, const Object& key,
                    const Object& value);
 
+  // Write the traceback to the given file object. If success, return None.
+  // Else, return Error.
+  RawObject printTraceback(Thread* thread, const Object& file);
+
   // importModuleFromBuffer is exposed for use by the tests. We may be able to
   // remove this later.
   RawObject importModuleFromBuffer(const char* buffer, const Object& name);

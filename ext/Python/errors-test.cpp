@@ -2,6 +2,8 @@
 
 #include "gtest/gtest.h"
 
+#include "gmock/gmock-matchers.h"
+
 #include "Python.h"
 #include "capi-fixture.h"
 #include "capi-testing.h"
@@ -535,6 +537,118 @@ TEST_F(ErrorsExtensionApiTest, FormatFromCauseSetsCauseAndContext) {
   EXPECT_TRUE(PyErr_GivenExceptionMatches(cause, PyExc_MemoryError));
   EXPECT_TRUE(PyErr_GivenExceptionMatches(context, PyExc_MemoryError));
   Py_XDECREF(value);
+}
+
+TEST_F(ErrorsExtensionApiTest, WriteUnraisableClearsException) {
+  PyErr_SetString(PyExc_MemoryError, "original cause");
+  PyErr_WriteUnraisable(Py_None);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ErrorsExtensionApiTest, WriteUnraisableCallsDunderRepr) {
+  PyRun_SimpleString(R"(
+class C:
+  def __repr__(self):
+    return "foo"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyErr_SetString(PyExc_MemoryError, "original cause");
+  CaptureStdStreams streams;
+  PyErr_WriteUnraisable(c);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_THAT(streams.err(),
+              ::testing::StartsWith("Exception ignored in: foo"));
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(ErrorsExtensionApiTest,
+       WriteUnraisableDoesNotFailWithNonCallableDunderRepr) {
+  PyRun_SimpleString(R"(
+class C:
+  __repr__ = 5
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyErr_SetString(PyExc_MemoryError, "original cause");
+  CaptureStdStreams streams;
+  PyErr_WriteUnraisable(c);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_THAT(
+      streams.err(),
+      ::testing::StartsWith("Exception ignored in: <object repr() failed>"));
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(ErrorsExtensionApiTest,
+       WriteUnraisableWithNonStrDunderModuleWritesUnknown) {
+  PyRun_SimpleString(R"(
+class C(BaseException):
+  pass
+C.__module__ = 5
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr ctype(moduleGet("__main__", "C"));
+  PyErr_SetString(ctype, "original cause");
+  CaptureStdStreams streams;
+  PyErr_WriteUnraisable(c);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_THAT(streams.err(),
+              ::testing::EndsWith("<unknown>C: original cause\n"));
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(ErrorsExtensionApiTest, WriteUnraisableWritesModuleName) {
+  PyRun_SimpleString(R"(
+class C(BaseException):
+  pass
+C.__module__ = "foo"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr ctype(moduleGet("__main__", "C"));
+  PyErr_SetString(ctype, "original cause");
+  CaptureStdStreams streams;
+  PyErr_WriteUnraisable(c);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_THAT(streams.err(), ::testing::EndsWith("foo.C: original cause\n"));
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(ErrorsExtensionApiTest, WriteUnraisableCallsDunderStrOnVal) {
+  PyRun_SimpleString(R"(
+class C:
+  def __str__(self):
+    return "bar"
+C.__module__ = "foo"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyErr_SetObject(PyExc_MemoryError, c);
+  CaptureStdStreams streams;
+  PyErr_WriteUnraisable(Py_None);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_THAT(streams.err(), ::testing::EndsWith("MemoryError: bar\n"));
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(ErrorsExtensionApiTest,
+       WriteUnraisableDoesNotFailWithNonCallableDunderStr) {
+  PyRun_SimpleString(R"(
+class C:
+  __str__ = 5
+C.__module__ = "foo"
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyErr_SetObject(PyExc_MemoryError, c);
+  CaptureStdStreams streams;
+  PyErr_WriteUnraisable(Py_None);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_THAT(streams.err(),
+              ::testing::EndsWith("MemoryError: <exception str() failed>\n"));
+  EXPECT_EQ(streams.out(), "");
 }
 
 }  // namespace python
