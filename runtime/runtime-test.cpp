@@ -649,12 +649,22 @@ TEST(RuntimeTest, NewStrFromUTF32WithSmallASCIIStringReturnsString) {
   EXPECT_TRUE(unicode.equalsCStr("ab"));
 }
 
-TEST(RuntimeTest, NewStrFromUTF32WithGreaterThanASCIIAborts) {
+TEST(RuntimeTest, NewStrFromUTF32WithSmallNonASCIIReturnsString) {
   Runtime runtime;
-  int32 str[1] = {0xC4};
-  EXPECT_DEATH(
-      runtime.newStrFromUTF32(View<int32>(str, 1)),
-      "unimplemented: PyUnicode currently only supports ASCII characters");
+  HandleScope scope;
+  const int32 codepoints[] = {0xC4};
+  Str unicode(&scope, runtime.newStrFromUTF32(codepoints));
+  EXPECT_TRUE(unicode.equals(SmallStr::fromCodePoint(0xC4)));
+}
+
+TEST(RuntimeTest, NewStrFromUTF32WithLargeNonASCIIReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  const int32 codepoints[] = {0x3041, ' ', 'c', 0xF6, 0xF6, 'l', ' ', 0x1F192};
+  Str unicode(&scope, runtime.newStrFromUTF32(codepoints));
+  Str expected(&scope, runtime.newStrFromCStr(
+                           "\xe3\x81\x81 c\xC3\xB6\xC3\xB6l \xF0\x9F\x86\x92"));
+  EXPECT_TRUE(unicode.equals(*expected));
 }
 
 TEST(RuntimeTest, HashBools) {

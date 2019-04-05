@@ -1221,28 +1221,45 @@ RawObject Runtime::newStrFromFmt(const char* fmt, ...) {
 }
 
 RawObject Runtime::newStrFromUTF32(View<int32> code_units) {
-  word length = code_units.length();
-  if (length <= RawSmallStr::kMaxLength) {
-    byte buffer[SmallStr::kMaxLength];
-    for (word i = 0; i < length; i++) {
-      if (code_units.get(i) > kMaxASCII) {
-        // TODO(T37440792): Support UTF-8
-        UNIMPLEMENTED("PyUnicode currently only supports ASCII characters");
-      }
-      buffer[i] = code_units.get(i);
+  word size = 0;
+  for (word i = 0; i < code_units.length(); ++i) {
+    int32 cp = code_units.get(i);
+    if (cp <= kMaxASCII) {
+      size += 1;
+    } else if (cp < 0x0800) {
+      size += 2;
+    } else if (cp < 0x010000) {
+      size += 3;
+    } else {
+      DCHECK(cp <= kMaxUnicode, "invalid codepoint");
+      size += 4;
     }
-    return SmallStr::fromBytes(View<byte>(buffer, length));
   }
-  RawObject result = heap()->createLargeStr(length);
+  if (size <= RawSmallStr::kMaxLength) {
+    byte dst[SmallStr::kMaxLength];
+    for (word i = 0, j = 0; i < code_units.length(); ++i) {
+      RawStr src = RawStr::cast(SmallStr::fromCodePoint(code_units.get(i)));
+      word num_bytes = src.length();
+      src.copyTo(&dst[j], num_bytes);
+      j += num_bytes;
+    }
+    return SmallStr::fromBytes(View<byte>(dst, size));
+  }
+  RawObject result = heap()->createLargeStr(size);
   DCHECK(result != Error::object(), "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result).address());
-  for (word i = 0; i < length; ++i) {
-    int32 ch = code_units.get(i);
-    if (ch > kMaxASCII) {
-      // TODO(T37440792): Support UTF-8
-      UNIMPLEMENTED("PyUnicode currently only supports ASCII characters");
+  if (code_units.length() == size) {
+    // ASCII fastpath
+    for (word i = 0; i < size; ++i) {
+      dst[i] = code_units.get(i);
     }
-    dst[i] = ch;
+    return result;
+  }
+  for (word i = 0, j = 0; i < code_units.length(); ++i) {
+    RawStr src = RawStr::cast(SmallStr::fromCodePoint(code_units.get(i)));
+    word num_bytes = src.length();
+    src.copyTo(&dst[j], num_bytes);
+    j += num_bytes;
   }
   return result;
 }

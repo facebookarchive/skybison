@@ -676,42 +676,25 @@ TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesChars) {
   _PyUnicodeWriter writer;
   _PyUnicodeWriter_Init(&writer);
   ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 'a'), 0);
-  ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 'b'), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 0xA0), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 'g'), 0);
   PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
 
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isUnicodeEqualsCStr(unicode, "ab"));
-}
-
-TEST_F(UnicodeExtensionApiTest, WriteCharWithNonASCIIDeathTestPyro) {
-  _PyUnicodeWriter writer;
-  _PyUnicodeWriter_Init(&writer);
-  ASSERT_EQ(_PyUnicodeWriter_WriteChar(&writer, 0xA0), 0);
-  EXPECT_DEATH(
-      _PyUnicodeWriter_Finish(&writer),
-      "unimplemented: PyUnicode currently only supports ASCII characters");
-  _PyUnicodeWriter_Dealloc(&writer);
+  PyObjectPtr test(PyUnicode_FromString("a\xc2\xa0g"));
+  EXPECT_TRUE(_PyUnicode_EQ(unicode, test));
 }
 
 TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesLatin1String) {
   _PyUnicodeWriter writer;
   _PyUnicodeWriter_Init(&writer);
-  ASSERT_EQ(_PyUnicodeWriter_WriteLatin1String(&writer, "hello", 5), 0);
+  ASSERT_EQ(_PyUnicodeWriter_WriteLatin1String(&writer, "hello\xA0", 6), 0);
   ASSERT_EQ(_PyUnicodeWriter_WriteLatin1String(&writer, " world", 6), 0);
   PyObjectPtr unicode(_PyUnicodeWriter_Finish(&writer));
 
   ASSERT_EQ(PyErr_Occurred(), nullptr);
-  EXPECT_TRUE(isUnicodeEqualsCStr(unicode, "hello world"));
-}
-
-TEST_F(UnicodeExtensionApiTest, WriteLatin1WithNonASCIIDeathTestPyro) {
-  _PyUnicodeWriter writer;
-  _PyUnicodeWriter_Init(&writer);
-  ASSERT_EQ(_PyUnicodeWriter_WriteLatin1String(&writer, "\xA0", 1), 0);
-  EXPECT_DEATH(
-      _PyUnicodeWriter_Finish(&writer),
-      "unimplemented: PyUnicode currently only supports ASCII characters");
-  _PyUnicodeWriter_Dealloc(&writer);
+  PyObjectPtr test(PyUnicode_FromString("hello\xc2\xa0 world"));
+  EXPECT_TRUE(_PyUnicode_EQ(unicode, test));
 }
 
 TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterWritesStringObject) {
