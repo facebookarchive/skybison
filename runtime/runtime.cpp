@@ -267,6 +267,10 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   Type superclass(&scope, typeAt(superclass_id));
   subclass.setFlagsAndBuiltinBase(superclass.flags(), subclass_id);
 
+  Tuple bases(&scope, newTuple(1));
+  bases.atPut(0, *superclass);
+  subclass.setBases(*bases);
+
   // Install the layout and class
   layoutAtPut(subclass_id, *layout);
 

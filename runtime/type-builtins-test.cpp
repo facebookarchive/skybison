@@ -10,6 +10,41 @@ namespace python {
 
 using namespace testing;
 
+TEST(TypeBuiltinTest, DunderBasesReturnsTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A: pass
+class B: pass
+class C(A, B): pass
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "A"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "B"));
+  Object c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object dunder_bases(&scope, runtime.newStrFromCStr("__bases__"));
+  Object result_obj(&scope, runtime.attributeAt(thread, c, dunder_bases));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), a);
+  EXPECT_EQ(result.at(1), b);
+}
+
+TEST(TypeBuiltinsTest, DunderBasesOnBuiltinTypeReturnsTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object type(&scope, runtime.typeAt(LayoutId::kInt));
+  Object dunder_bases(&scope, runtime.newStrFromCStr("__bases__"));
+  Object result_obj(&scope, runtime.attributeAt(thread, type, dunder_bases));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 1);
+  EXPECT_EQ(result.at(0), runtime.typeAt(LayoutId::kObject));
+}
+
 TEST(TypeBuiltinsTest, DunderCallType) {
   Runtime runtime;
   HandleScope scope;
