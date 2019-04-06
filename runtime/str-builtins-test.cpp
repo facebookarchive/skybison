@@ -2542,6 +2542,51 @@ TEST(StrBuiltinsTest, IsalnumWithUppercaseLettersReturnsTrue) {
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
+TEST(StrBuiltinsTest, IsspaceWithEmptyStringReturnsFalse) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = ''.isspace()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsspaceWithNonSpaceReturnsFalse) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = ' a '.isspace()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsspaceWithNewlineReturnsTrue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = ' \n '.isspace()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsspaceWithTabReturnsTrue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = ' \t '.isspace()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsspaceWithCarriageReturnReturnsTrue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = ' \r '.isspace()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
 TEST(StrBuiltinsTest, IsupperWithNonStrRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "str.isupper(None)"),

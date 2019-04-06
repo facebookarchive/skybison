@@ -1623,7 +1623,20 @@ class str(bootstrap=True):
         _unimplemented()
 
     def isspace(self):
-        _unimplemented()
+        if not isinstance(self, str):
+            raise TypeError(f"expected 'str' but got {type(self).__name__}")
+        if not self:
+            return False
+        for ch in str.__iter__(self):
+            if ch == " " or ch == "\n" or ch == "\t" or ch == "\r":
+                continue
+            if ch == "\x0B" or ch == "\x0C" or ("\x1C" < ch < "\x1F"):
+                continue
+            if ch >= "\x80":
+                # TODO(T41626183): Support non-ASCII
+                _unimplemented()
+            return False
+        return True
 
     def istitle(self):
         _unimplemented()
