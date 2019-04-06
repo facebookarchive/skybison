@@ -234,6 +234,20 @@ d = a.__add__(b)
   EXPECT_TRUE(isStrEqualsCStr(*d, "helloworld"));
 }
 
+TEST(StrBuiltinsTest, DunderBoolWithEmptyStringReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Str str(&scope, Str::empty());
+  EXPECT_EQ(runBuiltin(StrBuiltins::dunderBool, str), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, DunderBoolWithNonEmptyStringReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Str str(&scope, runtime.newStrFromCStr("hello"));
+  EXPECT_EQ(runBuiltin(StrBuiltins::dunderBool, str), Bool::trueObj());
+}
+
 TEST(StrBuiltinsTest, DunderLenReturnsLength) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

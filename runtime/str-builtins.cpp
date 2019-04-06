@@ -139,6 +139,7 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
 
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderBool, dunderBool},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGetitem, dunderGetItem},
@@ -182,6 +183,19 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Str self_str(&scope, *self);
   Str other_str(&scope, *other);
   return runtime->strConcat(thread, self_str, other_str);
+}
+
+RawObject StrBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (self_obj.isStr()) {
+    return Bool::fromBool(*self_obj != Str::empty());
+  }
+  if (thread->runtime()->isInstanceOfStr(*self_obj)) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  return thread->raiseRequiresType(self_obj, SymbolId::kStr);
 }
 
 RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
