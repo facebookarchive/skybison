@@ -390,14 +390,14 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__getitem__(0, 1)"), LayoutId::kTypeError,
-      "'__getitem__' requires a 'bytes' object but received a 'smallint'"));
+      "'__getitem__' requires a 'bytes' object but received a 'int'"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
   Runtime runtime;
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "b''[2**64]"), LayoutId::kIndexError,
-                    "cannot fit 'largeint' into an index-sized integer"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''[2**64]"),
+                            LayoutId::kIndexError,
+                            "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
@@ -747,7 +747,7 @@ TEST(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytes.__mul__(0, 1)"), LayoutId::kTypeError,
-      "'__mul__' requires a 'bytes' object but got 'smallint'"));
+      "'__mul__' requires a 'bytes' object but got 'int'"));
 }
 
 TEST(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -992,7 +992,7 @@ class Foo:
 bytes(Foo())
 )"),
                             LayoutId::kTypeError,
-                            "__bytes__ returned non-bytes (type smallint)"));
+                            "__bytes__ returned non-bytes (type int)"));
 }
 
 TEST(BytesBuiltinsTest, DunderNewPropagatesDunderBytesError) {
@@ -1137,9 +1137,9 @@ TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
 
 TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
   Runtime runtime;
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"), LayoutId::kTypeError,
-                    "'hex' requires a 'bytes' object but got 'smallint'"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"),
+                            LayoutId::kTypeError,
+                            "'hex' requires a 'bytes' object but got 'int'"));
 }
 
 TEST(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
@@ -1213,7 +1213,7 @@ TEST(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "b' '.join([1])"), LayoutId::kTypeError,
-      "sequence item 0: expected a bytes-like object, smallint found"));
+      "sequence item 0: expected a bytes-like object, int found"));
 }
 
 TEST(BytesBuiltinsTest, JoinWithIterableReturnsBytes) {
@@ -1241,7 +1241,7 @@ TEST(BytesBuiltinsTest, MaketransWithNonBytesLikeToRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.maketrans(b'1', 2)"),
                             LayoutId::kTypeError,
-                            "a bytes-like object is required, not 'smallint'"));
+                            "a bytes-like object is required, not 'int'"));
 }
 
 TEST(BytesBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {

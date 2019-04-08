@@ -697,7 +697,7 @@ class C(metaclass=Meta):
   pass
 )"),
                     LayoutId::kTypeError,
-                    "Meta.__prepare__() must return a mapping, not smallint"));
+                    "Meta.__prepare__() must return a mapping, not int"));
 }
 
 TEST(BuiltinsModuleTest,
@@ -712,7 +712,7 @@ class C(metaclass=Meta()):
   pass
 )"),
       LayoutId::kTypeError,
-      "<metaclass>.__prepare__() must return a mapping, not smallint"));
+      "<metaclass>.__prepare__() must return a mapping, not int"));
 }
 
 TEST(BuiltinsModuleTest, DunderBuildClassUsesDunderPrepareForClassDict) {
@@ -1739,7 +1739,7 @@ TEST(BuiltinsModuleTest, MapWithNonIterableArgumentRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "map(1,1)"),
                             LayoutId::kTypeError,
-                            "'smallint' object is not iterable"));
+                            "'int' object is not iterable"));
 }
 
 TEST(BuiltinsModuleTest,

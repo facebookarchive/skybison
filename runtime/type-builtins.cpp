@@ -85,6 +85,24 @@ void TypeBuiltins::postInitialize(Runtime* /* runtime */,
   layout.setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
 }
 
+RawObject userVisibleTypeOf(Thread* thread, const Object& obj) {
+  LayoutId id = obj.layoutId();
+  // Hide our size-specific type implementations from the user.
+  switch (id) {
+    case LayoutId::kSmallStr:
+    case LayoutId::kLargeStr:
+      id = LayoutId::kStr;
+      break;
+    case LayoutId::kSmallInt:
+    case LayoutId::kLargeInt:
+      id = LayoutId::kInt;
+      break;
+    default:
+      break;
+  }
+  return thread->runtime()->typeAt(id);
+}
+
 RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -95,7 +113,8 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   // Shortcut for type(x) calls.
   if (pargs.length() == 1 && kwargs.numItems() == 0 &&
       metaclass_obj == runtime->typeAt(LayoutId::kType)) {
-    return runtime->typeOf(pargs.at(0));
+    Object obj(&scope, pargs.at(0));
+    return userVisibleTypeOf(thread, obj);
   }
 
   if (!runtime->isInstanceOfType(*metaclass_obj)) {
@@ -142,7 +161,6 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
 RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
   Type metaclass(&scope, args.get(0));
   LayoutId metaclass_id = RawLayout::cast(metaclass.instanceLayout()).id();
   // If the first argument is exactly type, and there are no other arguments,
@@ -151,10 +169,7 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (args.get(2).isUnbound() && args.get(3).isUnbound() &&
       metaclass_id == LayoutId::kType) {
     Object arg(&scope, args.get(1));
-    // TODO(dulinr): In the future, types that should be visible only to the
-    // runtime should be shown here, and things like SmallInt should return Int
-    // instead.
-    return runtime->typeOf(*arg);
+    return userVisibleTypeOf(thread, arg);
   }
   Str name(&scope, args.get(1));
   Tuple bases(&scope, args.get(2));

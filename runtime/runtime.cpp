@@ -1161,7 +1161,7 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       } break;
       case 'T': {
         Object obj(&scope, **va_arg(args, Object*));
-        Type type(&scope, typeOf(*obj));
+        Type type(&scope, userVisibleTypeOf(thread, obj));
         Str value(&scope, type.name());
         if (dst == nullptr) {
           len--;

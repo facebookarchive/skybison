@@ -95,7 +95,7 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytearray.__getitem__(1, 2)"),
       LayoutId::kTypeError,
-      "'__getitem__' requires a 'bytearray' object but got 'smallint'"));
+      "'__getitem__' requires a 'bytearray' object but got 'int'"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
@@ -388,7 +388,7 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithNonByteArraySelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytearray.__init__(3)"), LayoutId::kTypeError,
-      "'__init__' requires a 'bytearray' object but got 'smallint'"));
+      "'__init__' requires a 'bytearray' object but got 'int'"));
 }
 
 TEST(ByteArrayBuiltinsTest,
@@ -897,7 +897,7 @@ TEST(ByteArrayBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytearray(b' ').join([1])"), LayoutId::kTypeError,
-      "sequence item 0: expected a bytes-like object, smallint found"));
+      "sequence item 0: expected a bytes-like object, int found"));
 }
 
 TEST(ByteArrayBuiltinsTest, JoinWithIterableReturnsByteArray) {
@@ -925,7 +925,7 @@ TEST(ByteArrayBuiltinsTest, MaketransWithNonBytesLikeToRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytearray.maketrans(b'1', 2)"),
-      LayoutId::kTypeError, "a bytes-like object is required, not 'smallint'"));
+      LayoutId::kTypeError, "a bytes-like object is required, not 'int'"));
 }
 
 TEST(ByteArrayBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {

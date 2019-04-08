@@ -219,8 +219,8 @@ b = type.__new__(type, "hello");
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
   Type b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kSmallInt);
-  EXPECT_EQ(RawLayout::cast(b.instanceLayout()).id(), LayoutId::kSmallStr);
+  EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kInt);
+  EXPECT_EQ(RawLayout::cast(b.instanceLayout()).id(), LayoutId::kStr);
 }
 
 TEST(TypeBuiltinsTest, DunderNewWithOneMetaclassArgReturnsType) {
@@ -337,6 +337,42 @@ result = C.mro()
   List result(&scope, *result_obj);
   EXPECT_EQ(result.at(0), *ctype);
   EXPECT_EQ(result.at(1), runtime.typeAt(LayoutId::kObject));
+}
+
+TEST(TypeBuiltinTest, TypeofSmallStrReturnsStr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = type('a')
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+            runtime.typeAt(LayoutId::kStr));
+}
+
+TEST(TypeBuiltinTest, TypeofLargeStrReturnsStr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = type('aaaaaaaaaaaaaaaaaaaaaaa')
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+            runtime.typeAt(LayoutId::kStr));
+}
+
+TEST(TypeBuiltinTest, TypeofSmallIntReturnsInt) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = type(5)
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+            runtime.typeAt(LayoutId::kInt));
+}
+
+TEST(TypeBuiltinTest, TypeofLargeIntReturnsInt) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = type(99999999999999999999999999999999999999999)
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+            runtime.typeAt(LayoutId::kInt));
 }
 
 }  // namespace python

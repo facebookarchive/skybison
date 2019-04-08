@@ -1785,7 +1785,7 @@ TEST(StrBuiltinsTest, ReplaceWithNonIntCountRaisesTypeError) {
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime, "'aa'.replace('a', 'a', 'a')"),
                     LayoutId::kTypeError,
-                    "'smallstr' object cannot be interpreted as an integer"));
+                    "'str' object cannot be interpreted as an integer"));
 }
 
 TEST(StrBuiltinsTest, DunderIterReturnsStrIter) {

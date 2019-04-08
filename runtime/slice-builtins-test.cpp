@@ -88,7 +88,7 @@ foo = Foo()
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
-                            "__index__ returned non-int (type smallstr)"));
+                            "__index__ returned non-int (type str)"));
 }
 
 TEST(SliceBuiltinsTest, UnpackWithNonIntIndicesCallsDunderIndex) {

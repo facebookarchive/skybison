@@ -1380,10 +1380,6 @@ class slice(bootstrap=True):
         return start, stop, step
 
 
-class smallint(bootstrap=True):
-    pass
-
-
 @_patch
 def _str_find(self, sub, start, end):
     pass
@@ -2622,14 +2618,12 @@ def _unimplemented():
 
 
 def _long_of_obj(obj):
-    # TODO(T41279675): Unify this into one user-visible int type
-    if type(obj) is smallint or type(obj) is largeint:  # noqa: F821
+    if type(obj) is int:
         return obj
     if hasattr(obj, "__int__"):
         result = obj.__int__()
         result_type = type(result)
-        # TODO(T41279675): Unify this into one user-visible int type
-        if result_type is not smallint and result_type is not largeint:  # noqa: F821
+        if result_type is not int:
             raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
         return result
     if hasattr(obj, "__trunc__"):

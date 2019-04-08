@@ -889,6 +889,7 @@ TEST_F(AbstractExtensionApiTest, PyNumberLongWithIntReturnsInt) {
   PyObjectPtr intobj(PyLong_FromLong(7));
   Py_ssize_t refcnt = Py_REFCNT(intobj);
   PyObjectPtr result(PyNumber_Long(intobj));
+  ASSERT_NE(result, nullptr);
   EXPECT_EQ(result, intobj);
   EXPECT_EQ(Py_REFCNT(result), refcnt + 1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
