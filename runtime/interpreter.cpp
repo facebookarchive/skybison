@@ -1538,7 +1538,6 @@ bool Interpreter::doPopExcept(Context* ctx, word) {
 void Interpreter::doStoreName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  DCHECK(frame->implicitGlobals().isDict(), "expected dict");
   HandleScope scope;
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject names = RawCode::cast(frame->code()).names();
@@ -1551,7 +1550,6 @@ void Interpreter::doStoreName(Context* ctx, word arg) {
 void Interpreter::doDeleteName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  DCHECK(frame->implicitGlobals().isDict(), "expected dict");
   HandleScope scope;
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject names = RawCode::cast(frame->code()).names();

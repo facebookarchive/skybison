@@ -2405,6 +2405,36 @@ TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   EXPECT_TRUE(thread->hasPendingException());
 }
 
+TEST(InterpreterTest, DoDeleteNameOnDictSubclass) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class MyDict(dict): pass
+class Meta(type):
+  @classmethod
+  def __prepare__(cls, *args, **kwargs):
+    d = MyDict()
+    d['x'] = 42
+    return d
+class C(metaclass=Meta):
+  del x
+)")
+                   .isError());
+}
+
+TEST(InterpreterTest, DoStoreNameOnDictSubclass) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class MyDict(dict): pass
+class Meta(type):
+  @classmethod
+  def __prepare__(cls, *args, **kwargs):
+    return MyDict()
+class C(metaclass=Meta):
+  x = 42
+)")
+                   .isError());
+}
+
 TEST(InterpreterTest, StoreSubscr) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
