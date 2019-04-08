@@ -1955,6 +1955,11 @@ class dict(bootstrap=True):
         _repr_leave(self)
         return "{" + ", ".join(kwpairs) + "}"
 
+    def copy(self):
+        if not isinstance(self, dict):
+            raise TypeError(f"expected 'dict' instance but got {type(self).__name__}")
+        return dict(self)
+
     def get(self, key, default=None):
         pass
 

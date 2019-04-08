@@ -9,6 +9,32 @@ namespace python {
 
 using namespace testing;
 
+TEST(DictBuiltinsTest, CopyWithNonDictRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+result = dict.copy(None)
+)"),
+                            LayoutId::kTypeError,
+                            "expected 'dict' instance but got NoneType"));
+}
+
+TEST(DictBuiltinsTest, CopyWithDictReturnsNewInstance) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+d = {'a': 3}
+result = dict.copy(d)
+)")
+                   .isError());
+  HandleScope scope;
+  Object dict(&scope, moduleAt(&runtime, "__main__", "d"));
+  EXPECT_TRUE(dict.isDict());
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result_obj.isDict());
+  Dict result(&scope, *result_obj);
+  EXPECT_NE(*dict, *result);
+  EXPECT_EQ(result.numItems(), 1);
+}
+
 TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   Runtime runtime;
   runFromCStr(&runtime, "result = {'foo': 0}.__contains__('foo')");
