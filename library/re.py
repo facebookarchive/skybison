@@ -166,7 +166,9 @@ class RegexFlag(enum.IntFlag):
     TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     T = TEMPLATE
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-globals().update(RegexFlag.__members__)
+# TODO(T42698674): Fully support enum module
+# TODO(T41326706): Implement builtins.globals
+# globals().update(RegexFlag.__members__)
 
 # sre exception
 error = sre_compile.error
@@ -251,8 +253,9 @@ def template(pattern, flags=0):
 
 _alphanum_str = frozenset(
     "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
-_alphanum_bytes = frozenset(
-    b"_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
+# TODO(T42622443): Implement bytes.__iter__
+# _alphanum_bytes = frozenset(
+#     b"_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
 
 def escape(pattern):
     """
@@ -288,7 +291,8 @@ def escape(pattern):
 
 _cache = {}
 
-_pattern_type = type(sre_compile.compile("", 0))
+# TODO(T38780562): Requires int subclassing
+# _pattern_type = type(sre_compile.compile("", 0))
 
 _MAXCACHE = 512
 def _compile(pattern, flags):
@@ -319,7 +323,8 @@ def _compile(pattern, flags):
         _cache[type(pattern), pattern, flags] = p, loc
     return p
 
-@functools.lru_cache(_MAXCACHE)
+# TODO(T42802697): Import _functools to enable _functools.lru_cache_wrapper
+# @functools.lru_cache(_MAXCACHE)
 def _compile_repl(repl, pattern):
     # internal: compile replacement pattern
     return sre_parse.parse_template(repl, pattern)
@@ -345,7 +350,8 @@ def _subx(pattern, template):
 def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
-copyreg.pickle(_pattern_type, _pickle, _compile)
+# TODO(T38780562): Requires `_pattern_type` from above
+# copyreg.pickle(_pattern_type, _pickle, _compile)
 
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)

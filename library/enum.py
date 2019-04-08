@@ -514,7 +514,9 @@ class EnumMeta(type):
         return __new__, save_new, use_args
 
 
-class Enum(metaclass=EnumMeta):
+# TODO(T42697770): Support metaclasses
+# class Enum(metaclass=EnumMeta):
+class Enum:
     """Generic enumeration.
 
     Derive from this class to define new enumerations.

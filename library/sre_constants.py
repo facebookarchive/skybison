@@ -57,11 +57,15 @@ class error(Exception):
         super().__init__(msg)
 
 
-class _NamedIntConstant(int):
-    def __new__(cls, value, name):
-        self = super(_NamedIntConstant, cls).__new__(cls, value)
+# TODO(T38780562): Requires int subclassing
+# class _NamedIntConstant(int):
+    # def __new__(cls, value, name):
+        # self = super(_NamedIntConstant, cls).__new__(cls, value)
+        # self.name = name
+        # return self
+class _NamedIntConstant():
+    def __init__(self, value, name):
         self.name = name
-        return self
 
     def __str__(self):
         return self.name
@@ -73,7 +77,11 @@ MAXREPEAT = _NamedIntConstant(MAXREPEAT, 'MAXREPEAT')
 def _makecodes(names):
     names = names.strip().split()
     items = [_NamedIntConstant(i, name) for i, name in enumerate(names)]
-    globals().update({item.name: item for item in items})
+    # TODO(T41326706): Implement builtins.globals
+    # globals().update({item.name: item for item in items})
+    import sys
+    for item in items:
+        setattr(sys.modules[__name__], item.name, item)
     return items
 
 # operators
@@ -107,7 +115,8 @@ OPCODES = _makecodes("""
 
     MIN_REPEAT MAX_REPEAT
 """)
-del OPCODES[-2:] # remove MIN_REPEAT and MAX_REPEAT
+# TODO(T42732611): Fix negative index slicing
+# del OPCODES[-2:] # remove MIN_REPEAT and MAX_REPEAT
 
 # positions
 ATCODES = _makecodes("""
