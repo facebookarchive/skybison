@@ -241,7 +241,7 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   if (index.isSmallInt()) {
     word idx = RawSmallInt::cast(*index).value();
     if (idx < 0) {
-      idx = tuple.length() - idx;
+      idx += tuple.length();
     }
     if (idx < 0 || idx >= tuple.length()) {
       return thread->raiseIndexErrorWithCStr("tuple index out of range");

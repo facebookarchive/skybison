@@ -90,6 +90,17 @@ slice = obj[1:3]
   EXPECT_TRUE(isIntEqualsWord(tuple.at(1), 2));
 }
 
+TEST(TupleBuiltinsTest, DunderGetItemWithIndexMinusOneReturnsLastValue) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple tuple(&scope, runtime.newTuple(2));
+  tuple.atPut(0, runtime.newInt(42));
+  tuple.atPut(1, runtime.newInt(7));
+  Object index(&scope, runtime.newInt(-1));
+  Object result(&scope, runBuiltin(TupleBuiltins::dunderGetItem, tuple, index));
+  EXPECT_TRUE(isIntEqualsWord(*result, 7));
+}
+
 TEST(TupleBuiltinsTest, DunderLen) {
   Runtime runtime;
   HandleScope scope;
