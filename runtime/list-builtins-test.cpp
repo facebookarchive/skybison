@@ -9,6 +9,32 @@ namespace python {
 
 using namespace testing;
 
+TEST(ListBuiltinsTest, CopyWithNonListRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+result = list.copy(None)
+)"),
+                            LayoutId::kTypeError,
+                            "expected 'list' instance but got NoneType"));
+}
+
+TEST(ListBuiltinsTest, CopyWithListReturnsNewInstance) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+l = [1, 2, 3]
+result = list.copy(l)
+)")
+                   .isError());
+  HandleScope scope;
+  Object list(&scope, moduleAt(&runtime, "__main__", "l"));
+  EXPECT_TRUE(list.isList());
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(result_obj.isList());
+  List result(&scope, *result_obj);
+  EXPECT_NE(*list, *result);
+  EXPECT_EQ(result.numItems(), 3);
+}
+
 TEST(ListBuiltinsTest, DunderInitFromList) {
   Runtime runtime;
 

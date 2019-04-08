@@ -1239,6 +1239,11 @@ class list(bootstrap=True):
     def clear(self):
         pass
 
+    def copy(self):
+        if not isinstance(self, list):
+            raise TypeError(f"expected 'list' instance but got {type(self).__name__}")
+        return list(self)
+
     def extend(self, other):
         pass
 
