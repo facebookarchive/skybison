@@ -18,6 +18,7 @@
 #include "handles.h"
 #include "os.h"
 #include "runtime.h"
+#include "sys-module.h"
 #include "thread.h"
 #include "utils.h"
 
@@ -143,36 +144,57 @@ template <typename T1, typename T2>
   return ::testing::AssertionSuccess();
 }
 
-// helper function to redirect return stdout/stderr from running a module
-static std::string compileAndRunImpl(Runtime* runtime, const char* src,
-                                     std::ostream** ostream) {
-  std::stringstream tmp_ostream;
-  std::ostream* saved_ostream = *ostream;
-  *ostream = &tmp_ostream;
+std::string compileAndRunToString(Runtime* runtime, const char* src) {
+  // We have to pre-allocate the output buffer. This is the maximum amount of
+  // bytes that we can write when using this function.
+  size_t buffer_size = 16384;
+  std::unique_ptr<char[]> buffer(new char[buffer_size]);
+  memset(buffer.get(), 0, buffer_size);
+  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
+  CHECK(out != nullptr, "fmemopen failed");
+  FILE* prev_stdout = runtime->stdoutFile();
+  runtime->setStdoutFile(out);
   RawObject result = runFromCStr(runtime, src);
   CHECK(result == NoneType::object(), "unexpected result");
-  *ostream = saved_ostream;
-  return tmp_ostream.str();
-}
-
-std::string compileAndRunToString(Runtime* runtime, const char* src) {
-  return compileAndRunImpl(runtime, src, &builtinStdout);
+  runtime->setStdoutFile(prev_stdout);
+  fclose(out);
+  buffer[buffer_size - 1] = '\0';
+  return std::string(buffer.get());
 }
 
 std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
-  return compileAndRunImpl(runtime, src, &builtinStderr);
+  size_t buffer_size = 16384;
+  std::unique_ptr<char[]> buffer(new char[buffer_size]);
+  memset(buffer.get(), 0, buffer_size);
+  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
+  CHECK(out != nullptr, "fmemopen failed");
+  FILE* prev_stderr = runtime->stderrFile();
+  runtime->setStderrFile(out);
+  RawObject result = runFromCStr(runtime, src);
+  CHECK(result == NoneType::object(), "unexpected result");
+  fclose(out);
+  runtime->setStderrFile(prev_stderr);
+  buffer[buffer_size - 1] = '\0';
+  return std::string(buffer.get());
 }
 
 std::string callFunctionToString(const Function& func, const Tuple& args) {
-  std::stringstream stream;
-  std::ostream* old_stream = builtinStdout;
-  builtinStdout = &stream;
   Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  size_t buffer_size = 16384;
+  std::unique_ptr<char[]> buffer(new char[buffer_size]);
+  memset(buffer.get(), 0, buffer_size);
+  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
+  CHECK(out != nullptr, "fmemopen failed");
+  FILE* prev_stdout = runtime->stdoutFile();
+  runtime->setStdoutFile(out);
   thread->pushNativeFrame(bit_cast<void*>(&callFunctionToString), 0);
   callFunction(func, args);
   thread->popFrame();
-  builtinStdout = old_stream;
-  return stream.str();
+  fclose(out);
+  runtime->setStdoutFile(prev_stdout);
+  buffer[buffer_size - 1] = '\0';
+  return std::string(buffer.get());
 }
 
 RawObject callFunction(const Function& func, const Tuple& args) {

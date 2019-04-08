@@ -473,7 +473,7 @@ print("hi", end='ho', file=sys.stdout)
   EXPECT_EQ(output, "hiho");
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintStdErr) {  // pystone dependency
+TEST(BuiltinsModuleTest, BuiltInPrintStdErr) {
   const char* src = R"(
 import sys
 print("hi", file=sys.stderr, end='ya')
@@ -499,6 +499,31 @@ print(['one', 'two'])
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "['one', 'two']\n");
+}
+
+TEST(BuiltinsModuleTest, PrintWithFileNoneWritesToSysStdout) {
+  Runtime runtime;
+  EXPECT_EQ(compileAndRunToString(&runtime, "print(7, file=None)"), "7\n");
+}
+
+TEST(BuiltinsModuleTest, PrintWithSysStdoutNoneDoesNothing) {
+  Runtime runtime;
+  EXPECT_EQ(compileAndRunToString(&runtime, R"(
+import sys
+sys.stdout = None
+print("hello")
+)"),
+            "");
+}
+
+TEST(BuiltinsModuleTest, PrintWithoutSysStdoutRaisesRuntimeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+import sys
+del sys.stdout
+print()
+)"),
+                            LayoutId::kRuntimeError, "lost sys.stdout"));
 }
 
 TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {

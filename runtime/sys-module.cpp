@@ -3,9 +3,11 @@
 
 #include <cerrno>
 #include <cstdio>
+#include <iostream>
 
 #include "builtins-module.h"
 #include "exception-builtins.h"
+#include "file.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -118,6 +120,18 @@ RawObject SysModule::underFdWrite(Thread* thread, Frame* frame_frame,
 
   Runtime* runtime = thread->runtime();
   Object bytes_obj(&scope, args.get(1));
+  // TODO(matthiasb): Remove this and use str.encode() in sys.py once it is
+  // avilable.
+  if (runtime->isInstanceOfStr(*bytes_obj)) {
+    Str str(&scope, *bytes_obj);
+    word str_length = str.length();
+    std::unique_ptr<byte[]> buf(new byte[str_length]);
+    for (word i = 0; i < str_length; i++) {
+      buf[i] = str.charAt(i);
+    }
+    bytes_obj = runtime->newBytesWithAll(View<byte>(buf.get(), str_length));
+  }
+
   if (!runtime->isInstanceOfBytes(*bytes_obj)) {
     return thread->raiseRequiresType(bytes_obj, SymbolId::kBytes);
   }

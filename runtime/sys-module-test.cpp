@@ -226,6 +226,24 @@ result = sys.getsizeof(C(), 10)
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), SmallInt::fromWord(100));
 }
 
+TEST(SysModuleTest, StderrWriteWritesToStderrFile) {
+  Runtime runtime;
+  EXPECT_EQ(compileAndRunToStderrString(&runtime, R"(
+import sys
+sys.stderr.write("Bonjour")
+)"),
+            "Bonjour");
+}
+
+TEST(SysModuleTest, StdoutWriteWritesToStdoutFile) {
+  Runtime runtime;
+  EXPECT_EQ(compileAndRunToString(&runtime, R"(
+import sys
+sys.stdout.write("Hola")
+)"),
+            "Hola");
+}
+
 TEST(SysModuleTest, SysArgvProgArg) {  // pystone dependency
   const char* src = R"(
 import sys
@@ -288,16 +306,6 @@ sys.exit("barf")
 )";
   Runtime runtime;
   ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(1), "barf");
-}
-
-TEST(SysModuleTest, SysStdOutErr) {  // pystone dependency
-  const char* src = R"(
-import sys
-print(sys.stdout, sys.stderr)
-)";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "1 2\n");
 }
 
 TEST(SysModuleTest, Platform) {

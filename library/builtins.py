@@ -5,9 +5,8 @@
 # This is the patch decorator, injected by our boot process. flake8 has no
 # knowledge about its definition and will complain without this gross circular
 # helper here.
-_patch = _patch  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
-_stdout = _stdout  # noqa: F821
+_patch = _patch  # noqa: F821
 
 
 @_patch
@@ -2286,11 +2285,6 @@ def _complex_real(c):
     pass
 
 
-@_patch
-def _print_str(s, file):
-    pass
-
-
 def dir(obj=_Unbound):
     if obj is _Unbound:
         names = locals().keys()
@@ -2299,16 +2293,25 @@ def dir(obj=_Unbound):
     return sorted(names)
 
 
-def print(*args, sep=" ", end="\n", file=_stdout, flush=None):
+def print(*args, sep=" ", end="\n", file=None, flush=False):
+    if file is None:
+        import sys
+
+        try:
+            file = sys.stdout
+        except AttributeError:
+            raise RuntimeError("lost sys.stdout")
+        if file is None:
+            return
     if args:
-        _print_str(str(args[0]), file)
+        file.write(str(args[0]))
         length = len(args)
         i = 1
         while i < length:
-            _print_str(sep, file)
-            _print_str(str(args[i]), file)
+            file.write(sep)
+            file.write(str(args[i]))
             i += 1
-    _print_str(end, file)
+    file.write(end)
     if flush:
         _unimplemented()
 

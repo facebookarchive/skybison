@@ -12,6 +12,20 @@ _stdout_fd = _stdout_fd  # noqa: F821
 executable = executable  # noqa: F821
 
 
+class _IOStream:
+    """Simple io-stream implementation. We will replace this with
+    _io.TextIOWrapper later."""
+
+    def __init__(self, fd):
+        self._fd = fd
+
+    def write(self, text):
+        # TODO(matthiasb): Use text.encode() once it is available and remove
+        # hack from _fd_write().
+        text_bytes = text
+        _fd_write(self._fd, text_bytes)
+
+
 @_patch
 def _fd_write(fd, bytes):
     pass
@@ -43,6 +57,10 @@ path_hooks = []
 
 
 path_importer_cache = {}
+
+
+stdout = _IOStream(_stdout_fd)
+stderr = _IOStream(_stderr_fd)
 
 
 # TODO(T39224400): Implement flags as a structsequence

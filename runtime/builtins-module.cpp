@@ -1,13 +1,9 @@
 #include "builtins-module.h"
 
-#include <unistd.h>
-#include <iostream>
-
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "complex-builtins.h"
 #include "exception-builtins.h"
-#include "file.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -25,9 +21,6 @@
 #include "type-builtins.h"
 
 namespace python {
-
-std::ostream* builtinStdout = &std::cout;
-std::ostream* builtinStderr = &std::cerr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
@@ -94,7 +87,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
     {SymbolId::kUnderListSort, underListSort},
-    {SymbolId::kUnderPrintStr, underPrintStr},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
@@ -774,16 +766,6 @@ RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,
         "Unsupported argument type for 'ls'");
   List list(&scope, args.get(0));
   return listSort(thread, list);
-}
-
-RawObject BuiltinsModule::underPrintStr(Thread* thread, Frame* frame_frame,
-                                        word nargs) {
-  Arguments args(frame_frame, nargs);
-  HandleScope scope(thread);
-  CHECK(args.get(0).isStr(), "Unsupported argument type for 'obj'");
-  Str str(&scope, args.get(0));
-  Object file(&scope, args.get(1));
-  return fileWriteObjectStr(thread, file, str);
 }
 
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)

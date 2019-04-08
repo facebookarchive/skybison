@@ -434,7 +434,6 @@ class Runtime;
   V(UnderLongOfObj, "_long_of_obj")                                            \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderPatch, "_patch")                                                      \
-  V(UnderPrintStr, "_print_str")                                               \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
   V(UnderReferent, "_referent")                                                \

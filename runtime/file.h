@@ -6,6 +6,9 @@ namespace python {
 
 class Thread;
 
+extern std::ostream* builtinStdout;
+extern std::ostream* builtinStderr;
+
 // Internal equivalents to PyFile_WriteObject(): Write str(obj) or repr(obj) to
 // file. They return None on success or Error on failure, and must not be called
 // with a pending exception.

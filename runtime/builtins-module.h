@@ -1,16 +1,11 @@
 #pragma once
 
-#include <iostream>
-
 #include "frame.h"
 #include "globals.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
-
-extern std::ostream* builtinStdout;
-extern std::ostream* builtinStderr;
 
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
@@ -44,7 +39,6 @@ class BuiltinsModule {
                                        word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
-  static RawObject underPrintStr(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprLeave(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
