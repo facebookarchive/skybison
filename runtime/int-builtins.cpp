@@ -876,9 +876,6 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
   // in floating point and the lowest bit to decide whether we should round
   // up or down.
 
-  // We construct the IEEE754 number representation in an equally sized integer.
-  static_assert(kWordSize == kDoubleSize, "expect equal word and double size");
-
   // Extract the highest two digits of the numbers magnitude.
   word num_digits = large_int.numDigits();
   DCHECK(num_digits > 1, "must have more than 1 digit");
@@ -975,7 +972,7 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
   value_as_word &= (uword{1} << kDoubleMantissaBits) - 1;
   value_as_word |= exponent << kDoubleMantissaBits;
   value_as_word |= uword{is_negative} << (kDoubleMantissaBits + exponent_bits);
-  std::memcpy(result, &value_as_word, kDoubleSize);
+  *result = bit_cast<double>(value_as_word);
   return true;
 }
 
