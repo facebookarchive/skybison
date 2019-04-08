@@ -159,6 +159,21 @@ class Runtime;
   V(Chr, "chr")                                                                \
   V(Classmethod, "classmethod")                                                \
   V(Clear, "clear")                                                            \
+  V(CoArgcount, "co_argcount")                                                 \
+  V(CoCellvars, "co_cellvars")                                                 \
+  V(CoCode, "co_code")                                                         \
+  V(CoConsts, "co_consts")                                                     \
+  V(CoFilename, "co_filename")                                                 \
+  V(CoFirstlineno, "co_firstlineno")                                           \
+  V(CoFlags, "co_flags")                                                       \
+  V(CoFreevars, "co_freevars")                                                 \
+  V(CoKwonlyargcount, "co_kwonlyargcount")                                     \
+  V(CoLnotab, "co_lnotab")                                                     \
+  V(CoNlocals, "co_nlocals")                                                   \
+  V(CoName, "co_name")                                                         \
+  V(CoNames, "co_names")                                                       \
+  V(CoStacksize, "co_stacksize")                                               \
+  V(CoVarnames, "co_varnames")                                                 \
   V(Code, "code")                                                              \
   V(Compile, "compile")                                                        \
   V(Complex, "complex")                                                        \

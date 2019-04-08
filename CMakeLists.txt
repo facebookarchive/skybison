@@ -212,6 +212,8 @@ add_library(
   runtime/callback.h
   runtime/capi-handles.cpp
   runtime/capi-handles.h
+  runtime/code-builtins.cpp
+  runtime/code-builtins.h
   runtime/codecs-module.cpp
   runtime/codecs-module.h
   runtime/complex-builtins.cpp
@@ -374,6 +376,7 @@ add_library(
   runtime/bytearray-builtins-test.cpp
   runtime/bytes-builtins-test.cpp
   runtime/capi-handles-test.cpp
+  runtime/code-builtins-test.cpp
   runtime/codecs-module-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/debugging-test.cpp

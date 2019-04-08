@@ -15,6 +15,7 @@
 #include "bytecode.h"
 #include "bytes-builtins.h"
 #include "callback.h"
+#include "code-builtins.h"
 #include "codecs-module.h"
 #include "complex-builtins.h"
 #include "debugging.h"
@@ -1434,6 +1435,7 @@ void Runtime::initializeHeapTypes() {
   BytesBuiltins::initialize(this);
   ClassMethodBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
+  CodeBuiltins::initialize(this);
   ComplexBuiltins::initialize(this);
   CoroutineBuiltins::initialize(this);
   DictBuiltins::initialize(this);
