@@ -1845,4 +1845,30 @@ except StopIteration:
   EXPECT_EQ(moduleAt(&runtime, "__main__", "exhausted"), Bool::trueObj());
 }
 
+TEST(BuiltinsModuleTest, AbsReturnsAbsoluteValue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+res1 = abs(10)
+res2 = abs(-10)
+)");
+
+  HandleScope scope;
+  Object res1(&scope, moduleAt(&runtime, "__main__", "res1"));
+  ASSERT_TRUE(res1.isInt());
+  EXPECT_EQ(RawInt::cast(*res1).asWord(), 10);
+  Object res2(&scope, moduleAt(&runtime, "__main__", "res2"));
+  ASSERT_TRUE(res2.isInt());
+  EXPECT_EQ(RawInt::cast(*res2).asWord(), 10);
+}
+
+TEST(BuiltinsModuleTest, AbsWithoutDunderAbsRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Foo(): pass
+res1 = abs(Foo())
+)"),
+                            LayoutId::kTypeError,
+                            "bad operand type for abs(): 'Foo'"));
+}
+
 }  // namespace python

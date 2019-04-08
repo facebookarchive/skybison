@@ -2627,7 +2627,9 @@ IOError = OSError
 
 
 def abs(x):
-    _unimplemented()
+    import operator
+
+    return operator.abs(x)
 
 
 def bin(x):
