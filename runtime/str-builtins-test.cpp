@@ -1257,6 +1257,77 @@ b = "1,2,3,4".split(",", 5)
   EXPECT_TRUE(isStrEqualsCStr(b.at(3), "4"));
 }
 
+TEST(StrBuiltinsTest, SplitEmptyStringWithNoSepReturnsEmptyList) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "".split()
+)")
+                   .isError());
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.numItems(), 0);
+}
+
+TEST(StrBuiltinsTest, SplitWhitespaceStringWithNoSepReturnsEmptyList) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "  \t\n  ".split()
+)")
+                   .isError());
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.numItems(), 0);
+}
+
+TEST(StrBuiltinsTest, SplitWhitespaceReturnsComponentParts) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "  \t\n  hello\t\n world".split()
+)")
+                   .isError());
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"hello", "world"});
+}
+
+TEST(StrBuiltinsTest,
+     SplitWhitespaceWithMaxsplitEqualsNegativeOneReturnsAllResults) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "  \t\n  hello\t\n world".split(maxsplit=-1)
+)")
+                   .isError());
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"hello", "world"});
+}
+
+TEST(StrBuiltinsTest,
+     SplitWhitespaceWithMaxsplitEqualsZeroReturnsOneElementList) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "  \t\n  hello   world   ".split(maxsplit=0)
+)")
+                   .isError());
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"hello   world   "});
+}
+
+TEST(StrBuiltinsTest,
+     SplitWhitespaceWithMaxsplitEqualsOneReturnsTwoElementList) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "  \t\n  hello world ".split(maxsplit=1)
+)")
+                   .isError());
+  HandleScope scope;
+  List result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(result.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "world "));
+}
+
 TEST(StrBuiltinsTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

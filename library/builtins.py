@@ -1399,6 +1399,40 @@ def _str_replace(self, old, newstr, count):
     pass
 
 
+def _str_split_whitespace(self, maxsplit):
+    length = len(self)
+    i = 0
+    res = []
+    num_split = 0
+    while True:
+        # find the beginning of the next word
+        while i < length:
+            if not str.__getitem__(self, i).isspace():
+                break  # found
+            i += 1
+        else:
+            break  # end of string, finished
+
+        # find the end of the word
+        if maxsplit == num_split:
+            j = length  # take all the rest of the string
+        else:
+            j = i + 1
+            while j < length and not str.__getitem__(self, j).isspace():
+                j += 1
+            num_split += 1
+
+        # the word is self[i:j]
+        res.append(self[i:j])
+
+        # continue to look from the character following the space after the word
+        if j < length:
+            i = j + 1
+        else:
+            break
+    return res
+
+
 class str(bootstrap=True):
     def __add__(self, other):
         pass
@@ -1751,11 +1785,13 @@ class str(bootstrap=True):
         pass
 
     def split(self, sep=None, maxsplit=-1):
-        if maxsplit == 0:
-            return [self]
+        if not isinstance(self, str):
+            raise TypeError(f"expected a 'str' instance but got {type(self).__name__}")
         # If the separator is not specified, split on all whitespace characters.
         if sep is None:
-            _unimplemented()
+            return _str_split_whitespace(self, maxsplit)
+        if maxsplit == 0:
+            return [self]
         if not isinstance(sep, str):
             raise TypeError("must be str or None")
         sep_len = len(sep)
