@@ -101,7 +101,10 @@ static const SymbolId kComparisonSelector[] = {
     SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe};
 
 Runtime::Runtime(word heap_size)
-    : heap_(heap_size), new_value_cell_callback_(this) {
+    : heap_(heap_size),
+      new_value_cell_callback_(this),
+      stderr_file_(stderr),
+      stdout_file_(stdout) {
   initializeDebugging();
   initializeRandom();
   initializeThreads();
@@ -2133,15 +2136,16 @@ void Runtime::createSysModule(Thread* thread) {
   HandleScope scope(thread);
   Str name_str(&scope, symbols()->Sys());
   Module module(&scope, newModule(name_str));
+  display_hook_ = moduleAddBuiltinFunction(module, SymbolId::kDisplayhook,
+                                           SysModule::displayhook);
+  for (word i = 0; SysModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
+       i++) {
+    moduleAddBuiltinFunction(module, SysModule::kBuiltinMethods[i].name,
+                             SysModule::kBuiltinMethods[i].address);
+  }
 
   Object modules(&scope, modules_);
   moduleAddGlobal(module, SymbolId::kModules, modules);
-
-  display_hook_ = moduleAddBuiltinFunction(module, SymbolId::kDisplayhook,
-                                           SysModule::displayhook);
-  moduleAddBuiltinFunction(module, SymbolId::kExcepthook,
-                           SysModule::excepthook);
-  moduleAddBuiltinFunction(module, SymbolId::kExcInfo, SysModule::excInfo);
 
   // Fill in sys...
   Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
@@ -2152,6 +2156,11 @@ void Runtime::createSysModule(Thread* thread) {
 
   Object platform(&scope, newStrFromCStr(OS::name()));
   moduleAddGlobal(module, SymbolId::kPlatform, platform);
+
+  Object stderr_fd_val(&scope, SmallInt::fromWord(kStderrFd));
+  moduleAddGlobal(module, SymbolId::kUnderStderrFd, stderr_fd_val);
+  Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
+  moduleAddGlobal(module, SymbolId::kUnderStdoutFd, stdout_fd_val);
 
   Object byteorder(
       &scope,

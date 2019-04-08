@@ -9,6 +9,9 @@
 
 namespace python {
 
+static const word kStdoutFd = 100;
+static const word kStderrFd = 101;
+
 // Internal equivalents to PySys_Write(Stdout|Stderr): Write a formatted string
 // to sys.stdout or sys.stderr, or stdout or stderr if writing to the Python
 // streams fails. No more than 1000 characters will be written; if the output is
@@ -28,9 +31,11 @@ RawObject initialSysPath(Thread* thread);
 class SysModule {
  public:
   static RawObject displayhook(Thread* thread, Frame* frame, word nargs);
-  static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
   static RawObject excInfo(Thread* thread, Frame* frame, word nargs);
+  static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
+  static RawObject underFdWrite(Thread* thread, Frame* frame, word nargs);
 
+  static const BuiltinMethod kBuiltinMethods[];
   static const char* const kFrozenData;
 };
 

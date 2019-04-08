@@ -5,9 +5,16 @@
 # This is the patch decorator, injected by our boot process. flake8 has no
 # knowledge about its definition and will complain without this gross circular
 # helper here.
-_patch = _patch  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
+_patch = _patch  # noqa: F821
+_stderr_fd = _stderr_fd  # noqa: F821
+_stdout_fd = _stdout_fd  # noqa: F821
 executable = executable  # noqa: F821
+
+
+@_patch
+def _fd_write(fd, bytes):
+    pass
 
 
 def exit(code=0):

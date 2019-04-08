@@ -2,6 +2,7 @@
 
 #include <sys/utsname.h>
 
+#include <cstdio>
 #include <cstdlib>
 
 #include "runtime.h"
@@ -311,8 +312,8 @@ sysname = sys.platform
   ASSERT_TRUE(sysname.isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
-  bool is_darwin = !strcmp(name.sysname, "Darwin");
-  bool is_linux = !strcmp(name.sysname, "Linux");
+  bool is_darwin = !std::strcmp(name.sysname, "Darwin");
+  bool is_linux = !std::strcmp(name.sysname, "Linux");
   ASSERT_TRUE(is_darwin || is_linux);
   if (is_darwin) {
     EXPECT_TRUE(RawStr::cast(*sysname).equalsCStr("darwin"));
@@ -383,6 +384,84 @@ TEST(SysModuleTest, ByteorderIsCorrectString) {
   Object byteorder(&scope, moduleAt(&runtime, "sys", "byteorder"));
   EXPECT_TRUE(isStrEqualsCStr(
       *byteorder, endian::native == endian::little ? "little" : "big"));
+}
+
+TEST(SysModuleTest, UnderFdWriteWithStderrFdStrWritesToStderrFile) {
+  Runtime runtime;
+  HandleScope scope;
+  char buf[128];
+  std::memset(buf, 0, sizeof(buf));
+  FILE* out = fmemopen(buf, sizeof(buf), "w");
+  ASSERT_NE(out, nullptr);
+  runtime.setStderrFile(out);
+  runtime.setStdoutFile(nullptr);
+  Object under_stderr_fd(&scope, moduleAt(&runtime, "sys", "_stderr_fd"));
+  ASSERT_TRUE(under_stderr_fd.isSmallInt());
+  const byte hi[] = {'H', 'i', '!'};
+  Object bytes(&scope, runtime.newBytesWithAll(hi));
+  Object result(&scope,
+                runBuiltin(SysModule::underFdWrite, under_stderr_fd, bytes));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+  std::fclose(out);
+  buf[sizeof(buf) - 1] = '\0';
+  EXPECT_EQ(std::strcmp(buf, "Hi!"), 0);
+}
+
+TEST(SysModuleTest, UnderFdWriteWithStdoutFdStrWritesToStdoutFile) {
+  Runtime runtime;
+  HandleScope scope;
+  char buf[128];
+  std::memset(buf, 0, sizeof(buf));
+  FILE* out = fmemopen(buf, sizeof(buf), "w");
+  ASSERT_NE(out, nullptr);
+  runtime.setStderrFile(nullptr);
+  runtime.setStdoutFile(out);
+  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  ASSERT_TRUE(under_stdout_fd.isSmallInt());
+  const byte yo[] = {'Y', 'o', '!'};
+  Object bytes(&scope, runtime.newBytesWithAll(yo));
+  Object result(&scope,
+                runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+  std::fclose(out);
+  buf[sizeof(buf) - 1] = '\0';
+  EXPECT_EQ(std::strcmp(buf, "Yo!"), 0);
+}
+
+TEST(SysModuleTest, UnderFdWithNonIntFdRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object fd(&scope, NoneType::object());
+  Object bytes(&scope, runtime.newBytes(0, 0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SysModule::underFdWrite, fd, bytes), LayoutId::kTypeError,
+      "'<anonymous>' requires a 'int' object but got 'NoneType'"));
+}
+
+TEST(SysModuleTest, UnderFdWithInvalidFdRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object fd(&scope, runtime.newInt(0xbadf00d));
+  Object bytes(&scope, runtime.newBytes(0, 0));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(SysModule::underFdWrite, fd, bytes),
+                            LayoutId::kValueError,
+                            "_fd_write called with unknown file descriptor"));
+}
+
+TEST(SysModuleTest, UnderFdOnWriteFailureRaisesOSError) {
+  Runtime runtime;
+  HandleScope scope;
+  char buf[1] = "";
+  FILE* out = fmemopen(buf, sizeof(buf), "r");
+  ASSERT_NE(out, nullptr);
+  runtime.setStdoutFile(out);
+  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  const byte hi[] = {'H', 'i', '!'};
+  Object bytes(&scope, runtime.newBytesWithAll(hi));
+  Object result(&scope,
+                runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes));
+  EXPECT_TRUE(raised(*result, LayoutId::kOSError));
+  std::fclose(out);
 }
 
 }  // namespace python

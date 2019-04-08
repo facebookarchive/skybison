@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdio>
 #include <limits>
 
 #include "globals.h"

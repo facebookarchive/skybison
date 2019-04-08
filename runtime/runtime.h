@@ -231,6 +231,12 @@ class Runtime {
 
   Heap* heap() { return &heap_; }
 
+  void setStderrFile(FILE* new_file) { stderr_file_ = new_file; }
+  FILE* stderrFile() { return stderr_file_; }
+
+  void setStdoutFile(FILE* new_file) { stdout_file_ = new_file; }
+  FILE* stdoutFile() { return stdout_file_; }
+
   void visitRoots(PointerVisitor* visitor);
 
   void addModule(const Module& module);
@@ -983,6 +989,9 @@ class Runtime {
 
   // atexit C Function
   AtExitFn at_exit_ = nullptr;
+
+  FILE* stderr_file_;
+  FILE* stdout_file_;
 
   friend class ApiHandle;
   // ModuleBase uses moduleAddBuiltinType

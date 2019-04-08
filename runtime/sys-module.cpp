@@ -1,6 +1,7 @@
 #include "sys-module.h"
 #include <unistd.h>
 
+#include <cerrno>
 #include <cstdio>
 
 #include "builtins-module.h"
@@ -62,6 +63,13 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
   writeImpl(thread, builtinStderr, format, va);
 }
 
+const BuiltinMethod SysModule::kBuiltinMethods[] = {
+    {SymbolId::kExcInfo, excInfo},
+    {SymbolId::kExcepthook, excepthook},
+    {SymbolId::kUnderFdWrite, underFdWrite},
+    {SymbolId::kSentinelId, nullptr},
+};
+
 RawObject SysModule::displayhook(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -96,6 +104,47 @@ RawObject SysModule::excInfo(Thread* thread, Frame* /* frame */,
     result.atPut(2, RawNoneType::object());
   }
   return *result;
+}
+
+RawObject SysModule::underFdWrite(Thread* thread, Frame* frame_frame,
+                                  word nargs) {
+  Arguments args(frame_frame, nargs);
+  HandleScope scope(thread);
+  Object fd_obj(&scope, args.get(0));
+  if (!fd_obj.isSmallInt()) {
+    return thread->raiseRequiresType(fd_obj, SymbolId::kInt);
+  }
+  int fd = SmallInt::cast(*fd_obj).value();
+
+  Runtime* runtime = thread->runtime();
+  Object bytes_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfBytes(*bytes_obj)) {
+    return thread->raiseRequiresType(bytes_obj, SymbolId::kBytes);
+  }
+  Bytes bytes(&scope, *bytes_obj);
+
+  FILE* out;
+  if (fd == kStdoutFd) {
+    out = runtime->stdoutFile();
+  } else if (fd == kStderrFd) {
+    out = runtime->stderrFile();
+  } else {
+    return thread->raiseValueErrorWithCStr(
+        "_fd_write called with unknown file descriptor");
+  }
+
+  // This is a slow way to write. We eventually expect this whole function to
+  // get replaced with something else anyway.
+  word length = bytes.length();
+  for (word i = 0; i < length; i++) {
+    if (fputc(bytes.byteAt(i), out) == EOF) {
+      int errno_value = errno;
+      // TODO(matthiasb): Pick apropriate OSError subclass.
+      return thread->raiseWithFmt(LayoutId::kOSError, "[Errno %d] %s",
+                                  errno_value, std::strerror(errno_value));
+    }
+  }
+  return runtime->newIntFromUnsigned(length);
 }
 
 }  // namespace python
