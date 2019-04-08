@@ -3,11 +3,10 @@
 
 #include <cerrno>
 #include <cstdio>
-#include <iostream>
+#include <cstring>
 
 #include "builtins-module.h"
 #include "exception-builtins.h"
-#include "file.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -21,21 +20,29 @@ namespace python {
 
 const char* const SysModule::kFrozenData = kSysModuleData;
 
-static void writeImpl(Thread* thread, std::ostream* stream, const char* format,
-                      va_list va) {
-  static constexpr int buf_size = 1001;
-  char buffer[buf_size];
-
+static void writeImpl(Thread* thread, const Object& file, FILE* fallback_fp,
+                      const char* format, va_list va) {
   HandleScope scope(thread);
   Object type(&scope, thread->pendingExceptionType());
   Object value(&scope, thread->pendingExceptionValue());
   Object tb(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
 
-  // TODO(T41323917): Use sys.stdout/sys.stderr once we have stream support.
-  int written = std::vsnprintf(buffer, buf_size, format, va);
-  *stream << buffer;
-  if (written >= buf_size) *stream << "... truncated";
+  static const char truncated[] = "... truncated";
+  static constexpr int message_size = 1001;
+  char buffer[message_size + sizeof(truncated) - 1];
+  int written = std::vsnprintf(buffer, message_size, format, va);
+  CHECK(written >= 0, "vsnprintf failed");
+  if (written >= message_size) {
+    std::memcpy(&buffer[message_size - 1], truncated, sizeof(truncated));
+    written = message_size + sizeof(truncated) - 2;
+  }
+  Str str(&scope, thread->runtime()->newStrWithAll(
+                      View<byte>(reinterpret_cast<byte*>(buffer), written)));
+  if (file.isNoneType() ||
+      thread->invokeMethod2(file, SymbolId::kWrite, str).isError()) {
+    fwrite(buffer, 1, written, fallback_fp);
+  }
 
   thread->clearPendingException();
   thread->setPendingExceptionType(*type);
@@ -51,7 +58,13 @@ void writeStdout(Thread* thread, const char* format, ...) {
 }
 
 void writeStdoutV(Thread* thread, const char* format, va_list va) {
-  writeImpl(thread, builtinStdout, format, va);
+  HandleScope scope(thread);
+  ValueCell sys_stdout_cell(&scope, thread->runtime()->sysStdout());
+  Object sys_stdout(&scope, NoneType::object());
+  if (!sys_stdout_cell.isUnbound()) {
+    sys_stdout = sys_stdout_cell.value();
+  }
+  writeImpl(thread, sys_stdout, stdout, format, va);
 }
 
 void writeStderr(Thread* thread, const char* format, ...) {
@@ -62,7 +75,13 @@ void writeStderr(Thread* thread, const char* format, ...) {
 }
 
 void writeStderrV(Thread* thread, const char* format, va_list va) {
-  writeImpl(thread, builtinStderr, format, va);
+  HandleScope scope(thread);
+  ValueCell sys_stderr_cell(&scope, thread->runtime()->sysStderr());
+  Object sys_stderr(&scope, NoneType::object());
+  if (!sys_stderr_cell.isUnbound()) {
+    sys_stderr = sys_stderr_cell.value();
+  }
+  writeImpl(thread, sys_stderr, stderr, format, va);
 }
 
 const BuiltinMethod SysModule::kBuiltinMethods[] = {

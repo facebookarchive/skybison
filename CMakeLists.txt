@@ -226,8 +226,6 @@ add_library(
   runtime/dict-builtins.h
   runtime/exception-builtins.cpp
   runtime/exception-builtins.h
-  runtime/file.cpp
-  runtime/file.h
   runtime/float-builtins.cpp
   runtime/float-builtins.h
   runtime/frame.cpp

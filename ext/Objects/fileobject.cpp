@@ -1,6 +1,5 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
-#include "file.h"
 #include "runtime.h"
 
 namespace python {
@@ -19,18 +18,21 @@ PY_EXPORT int PyFile_WriteObject(PyObject* pyobj, PyObject* pyfile, int flags) {
   }
 
   Object file(&scope, ApiHandle::fromPyObject(pyfile)->asObject());
+  Runtime* runtime = thread->runtime();
   Object obj(&scope, NoneType::object());
   if (pyobj != nullptr) {
     obj = ApiHandle::fromPyObject(pyobj)->asObject();
+    obj = thread->invokeFunction1(
+        SymbolId::kBuiltins,
+        flags & Py_PRINT_RAW ? SymbolId::kStr : SymbolId::kRepr, obj);
+    if (obj.isError()) return -1;
+    DCHECK(runtime->isInstanceOfStr(*obj), "str() and repr() must return str");
   } else {
-    // If we pass "<NULL>" to fileWriteObjectRepr(), we'll incorrectly print
-    // "'<NULL>'".
-    flags |= Py_PRINT_RAW;
-    obj = thread->runtime()->newStrFromCStr("<NULL>");
+    obj = thread->runtime()->symbols()->Null();
   }
 
-  auto func = (flags & Py_PRINT_RAW) ? fileWriteObjectStr : fileWriteObjectRepr;
-  return func(thread, file, obj).isError() ? -1 : 0;
+  Object result(&scope, thread->invokeMethod2(file, SymbolId::kWrite, obj));
+  return result.isError() ? -1 : 0;
 }
 
 PY_EXPORT int PyFile_WriteString(const char* str, PyObject* pyfile) {
@@ -44,7 +46,9 @@ PY_EXPORT int PyFile_WriteString(const char* str, PyObject* pyfile) {
   }
 
   Object file(&scope, ApiHandle::fromPyObject(pyfile)->asObject());
-  return fileWriteString(thread, file, str).isError() ? -1 : 0;
+  Object str_obj(&scope, thread->runtime()->newStrFromCStr(str));
+  Object result(&scope, thread->invokeMethod2(file, SymbolId::kWrite, str_obj));
+  return result.isError() ? -1 : 0;
 }
 
 PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {

@@ -210,6 +210,8 @@ class Runtime {
                        const Object& callback);
 
   RawObject ellipsis() { return ellipsis_; }
+  RawValueCell sysStderr() { return RawValueCell::cast(sys_stderr_); }
+  RawValueCell sysStdout() { return RawValueCell::cast(sys_stdout_); }
 
   void createBuiltinsModule(Thread* thread);
   void createImportlibModule(Thread* thread);
@@ -958,6 +960,8 @@ class Runtime {
   RawObject empty_bytes_;
   RawObject empty_frozen_set_;
   RawObject empty_tuple_;
+  RawObject sys_stderr_;
+  RawObject sys_stdout_;
 
   // Interned strings
   RawObject interned_;

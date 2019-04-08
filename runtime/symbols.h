@@ -475,6 +475,7 @@ class Runtime;
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
   V(Warning, "Warning")                                                        \
+  V(Write, "write")                                                            \
   V(Xmlcharrefreplace, "xmlcharrefreplace")                                    \
   V(Xor, "xor")                                                                \
   V(ZeroDivisionError, "ZeroDivisionError")

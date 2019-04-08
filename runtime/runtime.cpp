@@ -22,7 +22,6 @@
 #include "descriptor-builtins.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
-#include "file.h"
 #include "float-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -1780,6 +1779,8 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_bytes_);
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_tuple_);
+  visitor->visitPointer(&sys_stderr_);
+  visitor->visitPointer(&sys_stdout_);
 
   // Visit interned strings.
   visitor->visitPointer(&interned_);
@@ -2077,10 +2078,6 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   Object unbound_value(&scope, Unbound::object());
   moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
 
-  // TODO(T41323917): Add proper file streams to sys
-  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
-  moduleAddGlobal(module, SymbolId::kUnderStdout, stdout_val);
-
   // Add and execute builtins module.
   addModule(module);
   CHECK(!executeModule(BuiltinsModule::kFrozenData, module).isError(),
@@ -2148,12 +2145,6 @@ void Runtime::createSysModule(Thread* thread) {
   moduleAddGlobal(module, SymbolId::kModules, modules);
 
   // Fill in sys...
-  Object stdout_val(&scope, SmallInt::fromWord(STDOUT_FILENO));
-  moduleAddGlobal(module, SymbolId::kStdout, stdout_val);
-
-  Object stderr_val(&scope, SmallInt::fromWord(STDERR_FILENO));
-  moduleAddGlobal(module, SymbolId::kStderr, stderr_val);
-
   Object platform(&scope, newStrFromCStr(OS::name()));
   moduleAddGlobal(module, SymbolId::kPlatform, platform);
 
@@ -2212,6 +2203,14 @@ void Runtime::createSysModule(Thread* thread) {
   addModule(module);
   CHECK(!executeModule(SysModule::kFrozenData, module).isError(),
         "Failed to initialize sys module");
+
+  Dict module_dict(&scope, module.dict());
+  Object stderr_name(&scope, symbols()->Stderr());
+  sys_stderr_ = dictAt(module_dict, stderr_name);
+  CHECK(!sys_stderr_.isError(), "sys.stderr not found");
+  Object stdout_name(&scope, symbols()->Stdout());
+  sys_stdout_ = dictAt(module_dict, stdout_name);
+  CHECK(!sys_stdout_.isError(), "sys.stdout not found");
 }
 
 RawObject Runtime::createMainModule() {

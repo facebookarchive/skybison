@@ -6,7 +6,6 @@
 #include "cpython-func.h"
 
 #include "exception-builtins.h"
-#include "file.h"
 #include "runtime.h"
 #include "sys-module.h"
 
@@ -337,7 +336,14 @@ PY_EXPORT void PyErr_SyntaxLocationEx(const char* /* e */, int /* o */,
 static RawObject fileWriteObjectStrUnraisable(Thread* thread,
                                               const Object& file,
                                               const Object& obj) {
-  RawObject result = fileWriteObjectStr(thread, file, obj);
+  HandleScope scope(thread);
+  Object obj_str(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                 SymbolId::kStr, obj));
+  if (obj_str.isError()) {
+    thread->clearPendingException();
+    return *obj_str;
+  }
+  RawObject result = thread->invokeMethod2(file, SymbolId::kWrite, obj_str);
   thread->clearPendingException();
   return result;
 }
@@ -345,14 +351,23 @@ static RawObject fileWriteObjectStrUnraisable(Thread* thread,
 static RawObject fileWriteObjectReprUnraisable(Thread* thread,
                                                const Object& file,
                                                const Object& obj) {
-  RawObject result = fileWriteObjectRepr(thread, file, obj);
+  HandleScope scope(thread);
+  Object obj_repr(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                  SymbolId::kRepr, obj));
+  if (obj_repr.isError()) {
+    thread->clearPendingException();
+    return *obj_repr;
+  }
+  RawObject result = thread->invokeMethod2(file, SymbolId::kWrite, obj_repr);
   thread->clearPendingException();
   return result;
 }
 
 static RawObject fileWriteCStrUnraisable(Thread* thread, const Object& file,
-                                         const char* str) {
-  RawObject result = fileWriteString(thread, file, str);
+                                         const char* c_str) {
+  HandleScope scope(thread);
+  Object str(&scope, thread->runtime()->newStrFromFmt(c_str));
+  RawObject result = thread->invokeMethod2(file, SymbolId::kWrite, str);
   thread->clearPendingException();
   return result;
 }

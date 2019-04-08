@@ -19,6 +19,51 @@ TEST_F(SysExtensionApiTest, WriteStdout) {
   EXPECT_EQ(streams.err(), "");
 }
 
+TEST_F(
+    SysExtensionApiTest,
+    WriteStdoutCallsSysStdoutWriteOnExceptionWritesToFallbackAndClearsError) {
+  PyRun_SimpleString(R"(
+import sys
+x = 7
+class C:
+  def write(self, text):
+    global x
+    x = 42
+    raise UserWarning()
+
+sys.stdout = C()
+)");
+  CaptureStdStreams streams;
+  PySys_WriteStdout("a");
+  EXPECT_EQ(streams.out(), "a");
+  EXPECT_EQ(streams.err(), "");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  EXPECT_EQ(PyLong_AsLong(x), 42);
+}
+
+TEST_F(SysExtensionApiTest, WriteStdoutWithSysStdoutNoneWritesToStdout) {
+  PyRun_SimpleString(R"(
+import sys
+sys.stdout = None
+)");
+  CaptureStdStreams streams;
+  PySys_WriteStdout("Hello");
+  EXPECT_EQ(streams.out(), "Hello");
+  EXPECT_EQ(streams.err(), "");
+}
+
+TEST_F(SysExtensionApiTest, WriteStdoutWithoutSysStdoutWritesToStdout) {
+  PyRun_SimpleString(R"(
+import sys
+del sys.stdout
+)");
+  CaptureStdStreams streams;
+  PySys_WriteStdout("Konnichiwa");
+  EXPECT_EQ(streams.out(), "Konnichiwa");
+  EXPECT_EQ(streams.err(), "");
+}
+
 TEST_F(SysExtensionApiTest, WriteStdoutTruncatesLongOutput) {
   static const int max_out_len = 1000;
   std::string long_str;

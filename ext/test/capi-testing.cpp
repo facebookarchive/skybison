@@ -118,7 +118,7 @@ std::string CaptureStdStreams::out() {
   PyErr_Fetch(&exc, &value, &tb);
   PyRun_SimpleString(R"(
 import sys
-if hasattr(sys.stdout, "flush"):
+if hasattr(sys, "stdout") and hasattr(sys.stdout, "flush"):
   sys.stdout.flush()
 )");
   PyErr_Restore(exc, value, tb);
@@ -132,7 +132,7 @@ std::string CaptureStdStreams::err() {
   PyErr_Fetch(&exc, &value, &tb);
   PyRun_SimpleString(R"(
 import sys
-if hasattr(sys.stderr, "flush"):
+if hasattr(sys, "stderr") and hasattr(sys.stderr, "flush"):
   sys.stderr.flush()
 )");
   PyErr_Restore(exc, value, tb);

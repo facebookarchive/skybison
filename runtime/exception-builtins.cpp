@@ -4,7 +4,7 @@
 #include <cinttypes>
 
 #include "builtins-module.h"
-#include "file.h"
+#include "debugging.h"
 #include "frame.h"
 #include "objects.h"
 #include "runtime.h"
@@ -245,6 +245,18 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
   return true;
 }
 
+static RawObject fileWriteString(Thread* thread, const Object& file,
+                                 const char* c_str) {
+  HandleScope scope(thread);
+  Str str(&scope, thread->runtime()->newStrFromCStr(c_str));
+  return thread->invokeMethod2(file, SymbolId::kWrite, str);
+}
+
+static RawObject fileWriteObjectStr(Thread* thread, const Object& file,
+                                    const Object& str) {
+  return thread->invokeMethod2(file, SymbolId::kWrite, str);
+}
+
 // Used to wrap an expression that may return an Error that should be forwarded,
 // or a value that should be ignored otherwise.
 //
@@ -366,12 +378,13 @@ static RawObject printSingleException(Thread* thread, const Object& file,
 
   MAY_RAISE(fileWriteObjectStr(thread, file, type_name));
   MAY_RAISE(fileWriteString(thread, file, ": "));
-  Object str(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                             SymbolId::kStr, value));
-  if (str.isError()) {
+  Object str_obj(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                 SymbolId::kStr, value));
+  if (str_obj.isError()) {
     thread->clearPendingException();
     MAY_RAISE(fileWriteString(thread, file, "<exception str() failed>"));
   } else {
+    Str str(&scope, *str_obj);
     MAY_RAISE(fileWriteObjectStr(thread, file, str));
   }
 
@@ -425,11 +438,18 @@ RawObject displayException(Thread* thread, const Object& value,
     if (exc.traceback().isNoneType()) exc.setTraceback(*traceback);
   }
 
-  // TODO(T41323917): Write to sys.stderr once we have stream support, falling
-  // back to stderr if it doesn't exist. See PyErr_Display() for a model.
-  Object stderr(&scope, runtime->newInt(STDERR_FILENO));
+  ValueCell sys_stderr_cell(&scope, runtime->sysStderr());
+  if (sys_stderr_cell.isUnbound()) {
+    dump(value);
+    fputs("lost sys.stderr\n", stderr);
+    return NoneType::object();
+  }
+  Object sys_stderr(&scope, sys_stderr_cell.value());
+  if (sys_stderr.isNoneType()) {
+    return NoneType::object();
+  }
   Set seen(&scope, runtime->newSet());
-  return printExceptionChain(thread, stderr, value, seen);
+  return printExceptionChain(thread, sys_stderr, value, seen);
 }
 
 void handleSystemExit(Thread* thread) {
@@ -465,12 +485,18 @@ void handleSystemExit(Thread* thread) {
     result = runtime->newStrFromCStr("");
   }
 
-  // TODO(T41323917): Write to sys.stderr.
   Str result_str(&scope, *result);
-  Object stderr(&scope, runtime->newInt(STDERR_FILENO));
-  fileWriteObjectStr(thread, stderr, result_str);
-  thread->clearPendingException();
-  fileWriteString(thread, stderr, "\n");
+  ValueCell sys_stderr_cell(&scope, runtime->sysStderr());
+  if (sys_stderr_cell.isUnbound() || sys_stderr_cell.value().isNoneType()) {
+    unique_c_ptr<char> buf(result_str.toCStr());
+    fwrite(buf.get(), 1, result_str.length(), stderr);
+    fputc('\n', stderr);
+  } else {
+    Object file(&scope, sys_stderr_cell.value());
+    fileWriteObjectStr(thread, file, result_str);
+    thread->clearPendingException();
+    fileWriteString(thread, file, "\n");
+  }
   do_exit(EXIT_FAILURE);
 }
 
