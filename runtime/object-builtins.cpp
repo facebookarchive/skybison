@@ -33,6 +33,7 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
   mro.atPut(0, *object_type);
   object_type.setMro(*mro);
   object_type.setInstanceLayout(*layout);
+  object_type.setBases(runtime->newTuple(0));
   runtime->layoutAtPut(LayoutId::kObject, *layout);
 
   for (uword i = 0; i < ARRAYSIZE(kBuiltinMethods); i++) {

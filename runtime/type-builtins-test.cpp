@@ -32,6 +32,17 @@ class C(A, B): pass
   EXPECT_EQ(result.at(1), b);
 }
 
+TEST(TypeBuiltinTest, ObjectBasesReturnsEmptyTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object type(&scope, runtime.typeAt(LayoutId::kObject));
+  Object dunder_bases(&scope, runtime.newStrFromCStr("__bases__"));
+  Object result_obj(&scope, runtime.attributeAt(thread, type, dunder_bases));
+  ASSERT_TRUE(result_obj.isTuple());
+  EXPECT_EQ(RawTuple::cast(*result_obj).length(), 0);
+}
+
 TEST(TypeBuiltinsTest, DunderBasesOnBuiltinTypeReturnsTuple) {
   Runtime runtime;
   Thread* thread = Thread::current();
