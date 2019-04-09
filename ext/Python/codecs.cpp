@@ -67,6 +67,25 @@ PY_EXPORT int PyCodec_KnownEncoding(const char* /* g */) {
   UNIMPLEMENTED("PyCodec_KnownEncoding");
 }
 
+PY_EXPORT PyObject* _PyCodec_LookupTextEncoding(const char* encoding,
+                                                const char* alternate_command) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Str encoding_str(&scope, runtime->newStrFromCStr(encoding));
+  Str alt_command(&scope, runtime->newStrFromCStr(alternate_command));
+  Object result(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
+                                                SymbolId::kUnderLookupText,
+                                                encoding_str, alt_command));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseSystemErrorWithCStr("could not call _codecs.lookup");
+    }
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
+}
+
 PY_EXPORT PyObject* PyCodec_LookupError(const char* /* e */) {
   UNIMPLEMENTED("PyCodec_LookupError");
 }

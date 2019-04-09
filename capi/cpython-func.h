@@ -153,6 +153,7 @@ PyAPI_FUNC(PyObject*) PyCodec_IncrementalEncoder(const char*, const char*);
 PyAPI_FUNC(PyObject*)
     _PyCodecInfo_GetIncrementalEncoder(PyObject*, const char*);
 PyAPI_FUNC(int) PyCodec_KnownEncoding(const char*);
+PyAPI_FUNC(PyObject*) _PyCodec_LookupTextEncoding(const char*, const char*);
 PyAPI_FUNC(PyObject*) PyCodec_LookupError(const char*);
 PyAPI_FUNC(PyObject*) PyCodec_NameReplaceErrors(PyObject*);
 PyAPI_FUNC(int) PyCodec_Register(PyObject*);

@@ -432,6 +432,7 @@ class Runtime;
   V(UnderIo, "_io")                                                            \
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLongOfObj, "_long_of_obj")                                            \
+  V(UnderLookupText, "_lookup_text")                                           \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderPatch, "_patch")                                                      \
   V(UnderReadBytes, "_readbytes")                                              \

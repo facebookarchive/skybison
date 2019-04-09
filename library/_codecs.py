@@ -7,6 +7,51 @@ _patch = _patch  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
+codec_search_path = []
+
+
+codec_search_cache = {}
+
+
+def register(search_func):
+    if not callable(search_func):
+        raise TypeError("argument must be callable")
+    codec_search_path.append(search_func)
+
+
+def lookup(encoding):
+    encoding = encoding.lower().replace(" ", "-")
+    if encoding in codec_search_cache:
+        return codec_search_cache[encoding]
+    result = None
+    for search_func in codec_search_path:
+        result = search_func(encoding)
+        if result is None:
+            continue
+        if not isinstance(result, tuple) or not len(result) == 4:
+            raise TypeError("codec search functions must return 4-tuples")
+        break
+    if result is None:
+        raise LookupError(f"unknown encoding: {encoding}")
+
+    codec_search_cache[encoding] = result
+    return result
+
+
+def _lookup_text(encoding, alternate_command):
+    codec = lookup(encoding)
+    if type(codec) != tuple:
+        try:
+            if not codec._is_text_encoding:
+                raise LookupError(
+                    f"{encoding} is not a text encoding; "
+                    f"use {alternate_command} to handle arbitrary codecs"
+                )
+        except AttributeError:
+            pass
+    return codec
+
+
 def decode(data, encoding: str = "utf-8", errors: str = "strict") -> str:
     try:
         return _codec_decode_table[encoding.lower()](data, errors)[0]

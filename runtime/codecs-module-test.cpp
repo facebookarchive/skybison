@@ -387,4 +387,103 @@ _codecs._call_decode_errorhandler('test', b'hello', a, 'testing', '', 1, 2)
   EXPECT_TRUE(isBytesEqualsCStr(result_bytes, "test"));
 }
 
+TEST(CodecsModuleTest, RegisterWithNonCallableFails) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+import _codecs
+_codecs.register("test")
+)"),
+                            LayoutId::kTypeError, "argument must be callable"));
+}
+
+TEST(CodecsModuleTest, LookupCodecThatDoesntReturnTupleRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+import _codecs
+_codecs.register(lambda x: 1 if x == "test" else None)
+test = _codecs.lookup("test")
+)"),
+                            LayoutId::kTypeError,
+                            "codec search functions must return 4-tuples"));
+}
+
+TEST(CodecsModuleTest, LookupCodecThatDoesntReturnAFourTupleRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+import _codecs
+_codecs.register(lambda x: (1, 2) if x == "test" else None)
+test = _codecs.lookup("test")
+)"),
+                            LayoutId::kTypeError,
+                            "codec search functions must return 4-tuples"));
+}
+
+TEST(CodecsModuleTest, LookupUnknownCodecRaisesLookupError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+import _codecs
+test = _codecs.lookup("gibberish")
+)"),
+                            LayoutId::kLookupError,
+                            "unknown encoding: gibberish"));
+}
+
+TEST(CodecsModuleTest, LookupReturnsFirstRegisteredCodec) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+import _codecs
+_codecs.register(lambda x: (1, 2, 3, 4) if x == "test" else None)
+_codecs.register(lambda x: (5, 6, 7, 8) if x == "test" else None)
+test = _codecs.lookup("test")
+)");
+  HandleScope scope;
+  Object test(&scope, moduleAt(&runtime, "__main__", "test"));
+  ASSERT_TRUE(test.isTuple());
+
+  Tuple result(&scope, *test);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 3));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 4));
+}
+
+TEST(CodecsModuleTest, LookupProperlyCachesEncodings) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+import _codecs
+def wrapper():
+  a = []
+  def test(exc):
+    a.append(1)
+    return (len(a), 0, 0, 0)
+  return test
+_codecs.register(wrapper())
+first_abc = _codecs.lookup("abc")
+first_bcd = _codecs.lookup("bcd")
+second_abc = _codecs.lookup("abc")
+)");
+  HandleScope scope;
+  Object first_abc(&scope, moduleAt(&runtime, "__main__", "first_abc"));
+  Object first_bcd(&scope, moduleAt(&runtime, "__main__", "first_bcd"));
+  Object second_abc(&scope, moduleAt(&runtime, "__main__", "second_abc"));
+  EXPECT_EQ(*first_abc, *second_abc);
+  EXPECT_NE(*first_abc, *first_bcd);
+}
+
+TEST(CodecsModuleTest, LookupProperlyNormalizedEncodingString) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+import _codecs
+_codecs.register(lambda x: (0, 0, 0, 0) if x == "te-st" else None)
+space = _codecs.lookup("te st")
+uppercase = _codecs.lookup("TE-ST")
+)");
+  HandleScope scope;
+  Object space(&scope, moduleAt(&runtime, "__main__", "space"));
+  Object uppercase(&scope, moduleAt(&runtime, "__main__", "uppercase"));
+  EXPECT_TRUE(space.isTuple());
+  EXPECT_TRUE(uppercase.isTuple());
+}
+
 }  // namespace python

@@ -32,4 +32,55 @@ result = inc_dec.decode(b'hel\x80lo')
   EXPECT_TRUE(isUnicodeEqualsCStr(result, "hello"));
 }
 
+TEST_F(CodecsExtensionApiTest,
+       LookupTextEncodingWithUnknownEncodingRaisesLookupError) {
+  PyObjectPtr error(_PyCodec_LookupTextEncoding("gibberish", "alt"));
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_LookupError));
+  EXPECT_EQ(error, nullptr);
+}
+
+TEST_F(CodecsExtensionApiTest, LookupTextEncodingWithTupleReturnsTuple) {
+  PyRun_SimpleString(R"(
+import _codecs
+_codecs.register(lambda x: (1, 2, 3, 4))
+)");
+  PyObjectPtr codec(_PyCodec_LookupTextEncoding("any", "alt"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyTuple_CheckExact(codec));
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 0)), 1);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 1)), 2);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 2)), 3);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 3)), 4);
+}
+
+TEST_F(CodecsExtensionApiTest,
+       LookupTextEncodingWithTupleSubclassReturnsTuple) {
+  PyRun_SimpleString(R"(
+import _codecs
+class TupSub(tuple): pass
+_codecs.register(lambda x: TupSub((1, 2, 3, 4)))
+)");
+  PyObjectPtr codec(_PyCodec_LookupTextEncoding("any", "alt"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_FALSE(PyTuple_CheckExact(codec));
+  ASSERT_TRUE(PyTuple_Check(codec));
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 0)), 1);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 1)), 2);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 2)), 3);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(codec, 3)), 4);
+}
+
+TEST_F(CodecsExtensionApiTest,
+       LookupTextEncodingWithOverwrittenEncodingFieldRaisesLookupError) {
+  PyRun_SimpleString(R"(
+import _codecs
+class TupSub(tuple):
+  _is_text_encoding = False
+_codecs.register(lambda x: TupSub((1, 2, 3, 4)))
+)");
+  PyObjectPtr error(_PyCodec_LookupTextEncoding("any", "alt"));
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_LookupError));
+  EXPECT_EQ(error, nullptr);
+}
+
 }  // namespace python
