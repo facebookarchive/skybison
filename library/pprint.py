@@ -421,7 +421,8 @@ class PrettyPrinter:
         self._pprint_dict(object, stream, indent, allowance + 1, context, level)
         stream.write(')')
 
-    _dispatch[_collections.defaultdict.__repr__] = _pprint_default_dict
+    # TODO(T42829314): Enable _collections.defaultdict
+    # _dispatch[_collections.defaultdict.__repr__] = _pprint_default_dict
 
     def _pprint_counter(self, object, stream, indent, allowance, context, level):
         if not len(object):
@@ -474,7 +475,8 @@ class PrettyPrinter:
             rml = self._repr(object.maxlen, context, level)
             stream.write('],\n%smaxlen=%s)' % (' ' * indent, rml))
 
-    _dispatch[_collections.deque.__repr__] = _pprint_deque
+    # TODO(T42829314): Enable _collections.deque
+    # _dispatch[_collections.deque.__repr__] = _pprint_deque
 
     def _pprint_user_dict(self, object, stream, indent, allowance, context, level):
         self._format(object.data, stream, indent, allowance, context, level - 1)

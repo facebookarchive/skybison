@@ -40,7 +40,8 @@ from collections import namedtuple as _namedtuple
 from heapq import nlargest as _nlargest
 
 
-Match = _namedtuple('Match', 'a b size')
+# TODO(T42627145): Enable collections.namedtuple
+# Match = _namedtuple('Match', 'a b size')
 
 def _calculate_ratio(matches, length):
     if length:
@@ -1089,21 +1090,22 @@ class Differ:
 # was inserted after "private".  I can live with that <wink>.
 
 
-def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
-    r"""
-    Return 1 for ignorable line: iff `line` is blank or contains a single '#'.
-
-    Examples:
-
-    >>> IS_LINE_JUNK('\n')
-    True
-    >>> IS_LINE_JUNK('  #   \n')
-    True
-    >>> IS_LINE_JUNK('hello\n')
-    False
-    """
-
-    return pat(line) is not None
+# TODO(T42236521): Enable _sre.compile
+# def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
+#     r"""
+#     Return 1 for ignorable line: iff `line` is blank or contains a single '#'.
+# 
+#     Examples:
+# 
+#     >>> IS_LINE_JUNK('\n')
+#     True
+#     >>> IS_LINE_JUNK('  #   \n')
+#     True
+#     >>> IS_LINE_JUNK('hello\n')
+#     False
+#     """
+# 
+#     return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""

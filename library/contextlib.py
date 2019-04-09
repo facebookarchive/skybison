@@ -7,7 +7,8 @@
 import _collections_abc
 import abc
 import sys
-from collections import deque
+# TODO(T42829314): Enable _collections.deque
+# from collections import deque
 from functools import wraps
 
 
