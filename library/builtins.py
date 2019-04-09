@@ -2709,8 +2709,27 @@ def exit():
 
 
 class filter:
-    def __init__(self, function, iterable):
-        _unimplemented()
+    """filter(function or None, iterable) --> filter object
+
+    Return an iterator yielding those items of iterable for which function(item)
+    is true. If function is None, return the items that are true.
+    """
+
+    def __new__(cls, function, iterable, **kwargs):
+        obj = super(filter, cls).__new__(cls)
+        obj.func = (lambda e: e) if function is None else function
+        obj.iter = iter(iterable)
+        return obj
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        func = self.func
+        while True:
+            item = next(self.iter)
+            if func(item):
+                return item
 
 
 def globals():

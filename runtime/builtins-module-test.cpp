@@ -1371,6 +1371,61 @@ result = range(1, 5, 7)
   EXPECT_EQ(result.step(), 7);
 }
 
+TEST(BuiltinsModuleTest, FilterWithNonIterableArgumentRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "filter(None, 1)"),
+                            LayoutId::kTypeError,
+                            "'int' object is not iterable"));
+}
+
+TEST(BuiltinsModuleTest,
+     FilterWithNoneFuncAndIterableReturnsItemsOfTrueBoolValue) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+f = filter(None, [1,0,2,0])
+r0 = f.__next__()
+r1 = f.__next__()
+exhausted = False
+try:
+  f.__next__()
+except StopIteration:
+  exhausted = True
+)")
+                   .isError());
+  HandleScope scope;
+  Object r0(&scope, moduleAt(&runtime, "__main__", "r0"));
+  Object r1(&scope, moduleAt(&runtime, "__main__", "r1"));
+  Object exhausted(&scope, moduleAt(&runtime, "__main__", "exhausted"));
+  EXPECT_TRUE(isIntEqualsWord(*r0, 1));
+  EXPECT_TRUE(isIntEqualsWord(*r1, 2));
+  EXPECT_EQ(*exhausted, Bool::trueObj());
+}
+
+TEST(BuiltinsModuleTest,
+     FilterWithFuncReturningBoolAndIterableReturnsItemsEvaluatedToTrueByFunc) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def even(e): return e % 2 == 0
+
+f = filter(even, [1,2,3,4])
+r0 = f.__next__()
+r1 = f.__next__()
+exhausted = False
+try:
+  f.__next__()
+except StopIteration:
+  exhausted = True
+)")
+                   .isError());
+  HandleScope scope;
+  Object r0(&scope, moduleAt(&runtime, "__main__", "r0"));
+  Object r1(&scope, moduleAt(&runtime, "__main__", "r1"));
+  Object exhausted(&scope, moduleAt(&runtime, "__main__", "exhausted"));
+  EXPECT_TRUE(isIntEqualsWord(*r0, 2));
+  EXPECT_TRUE(isIntEqualsWord(*r1, 4));
+  EXPECT_EQ(*exhausted, Bool::trueObj());
+}
+
 TEST(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(
