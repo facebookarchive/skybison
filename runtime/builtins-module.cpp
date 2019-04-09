@@ -642,11 +642,13 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
     return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'ord'");
   }
   auto str = RawStr::cast(arg);
-  if (str.length() != 1) {
+  word num_bytes;
+  int32 codepoint = str.codePointAt(0, &num_bytes);
+  if (num_bytes != str.length()) {
     return thread->raiseTypeErrorWithCStr(
         "Builtin 'ord' expects string of length 1");
   }
-  return SmallInt::fromWord(str.charAt(0));
+  return SmallInt::fromWord(codepoint);
 }
 
 RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,

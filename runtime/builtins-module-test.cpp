@@ -443,6 +443,31 @@ TEST(BuiltinsModuleTest, BuiltinOrd) {
                             "Unsupported type in builtin 'ord'"));
 }
 
+TEST(BuiltinsModuleTest, BuiltinOrdSupportNonASCII) {
+  Runtime runtime;
+  HandleScope scope;
+  Str two_bytes(&scope, runtime.newStrFromCStr("\xC3\xA9"));
+  Object two_ord(&scope, runBuiltin(BuiltinsModule::ord, two_bytes));
+  EXPECT_TRUE(isIntEqualsWord(*two_ord, 0xE9));
+
+  Str three_bytes(&scope, runtime.newStrFromCStr("\xE2\xB3\x80"));
+  Object three_ord(&scope, runBuiltin(BuiltinsModule::ord, three_bytes));
+  EXPECT_TRUE(isIntEqualsWord(*three_ord, 0x2CC0));
+
+  Str four_bytes(&scope, runtime.newStrFromCStr("\xF0\x9F\x86\x92"));
+  Object four_ord(&scope, runBuiltin(BuiltinsModule::ord, four_bytes));
+  EXPECT_TRUE(isIntEqualsWord(*four_ord, 0x1F192));
+}
+
+TEST(BuiltinsModuleTest, BuiltinOrdWithMultiCodepointStringRaisesError) {
+  Runtime runtime;
+  HandleScope scope;
+  Str two_chars(&scope, runtime.newStrFromCStr("ab"));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, two_chars),
+                            LayoutId::kTypeError,
+                            "Builtin 'ord' expects string of length 1"));
+}
+
 TEST(BuiltinsModuleTest, BuiltInPrintStdOut) {
   const char* src = R"(
 import sys
