@@ -13,6 +13,51 @@ namespace python {
 
 using namespace testing;
 
+TEST(FloatBuiltinsTest, DecodeDoubleWithPositiveDoubleReturnsIsNegFalse) {
+  double input = 100.0;
+  bool is_neg;
+  int exp;
+  uint64 mantissa;
+  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  EXPECT_EQ(is_neg, false);
+}
+
+TEST(FloatBuiltinsTest, DecodeDoubleWithNegativeDoubleReturnsIsNegTrue) {
+  double input = -100.0;
+  bool is_neg;
+  int exp;
+  uint64 mantissa;
+  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  EXPECT_EQ(is_neg, true);
+}
+
+TEST(FloatBuiltinsTest, DecodeDoubleWithMaximumExponentReturnsCorrectValue) {
+  double input = std::strtod("0x1.0p+1024", nullptr);
+  bool is_neg;
+  int exp;
+  uint64 mantissa;
+  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  EXPECT_EQ(exp, 1024);
+}
+
+TEST(FloatBuiltinsTest, DecodeDoubleWithMinimumExponentReturnsCorrectValue) {
+  double input = std::strtod("0x1.0p-1023", nullptr);
+  bool is_neg;
+  int exp;
+  uint64 mantissa;
+  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  EXPECT_EQ(exp, -1023);
+}
+
+TEST(FloatBuiltinsTest, DecodeDoubleWithMantissaReturnsCorrectValue) {
+  double input = std::strtod("0x1.29ef685b3f6fbp+52", nullptr);
+  bool is_neg;
+  int exp;
+  uint64 mantissa;
+  FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
+  EXPECT_EQ(mantissa, 0x29ef685b3f6fb);
+}
+
 TEST(FloatBuiltinsTest, DunderMulWithDoubleReturnsDouble) {
   Runtime runtime;
   HandleScope scope;
@@ -827,6 +872,150 @@ TEST(FloatBuiltinsTest, DunderGtWithSmallIntReturnsBool) {
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, float0, int0), Bool::trueObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, float0, int1),
             Bool::falseObj());
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithNonFloatSelfRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object non_float(&scope, NoneType::object());
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, non_float));
+  EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kTypeError,
+                            "'__int__' requires a 'float' object"));
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithInfinityRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object input_obj(&scope,
+                   runtime.newFloat(std::numeric_limits<double>::infinity()));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kOverflowError,
+                            "cannot convert float infinity to integer"));
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithNaNRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object input_obj(&scope,
+                   runtime.newFloat(std::numeric_limits<double>::quiet_NaN()));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kValueError,
+                            "cannot convert float NaN to integer"));
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithZeroReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object input_obj(&scope, runtime.newFloat(0.0));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  ASSERT_TRUE(result_obj.isSmallInt());
+  SmallInt result(&scope, *result_obj);
+  EXPECT_EQ(result.value(), 0);
+}
+
+TEST(
+    FloatBuiltinsTest,
+    DunderIntWithNegativeNumOfGreatestMagnitudeFitInWordReturnsLargeIntOfSingleWord) {
+  Runtime runtime;
+  HandleScope scope;
+  double input_value = std::strtod("-0x1.0000000000000p+63", nullptr);
+  Object input_obj(&scope, runtime.newFloat(input_value));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  ASSERT_TRUE(result_obj.isLargeInt());
+  LargeInt result(&scope, *result_obj);
+  EXPECT_TRUE(result.isNegative());
+  const uword expected_digits[] = {static_cast<uword>(0x8000000000000000)};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithSmallIntMinValueReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  double input_value = static_cast<double>(SmallInt::kMinValue);
+  // Make sure that the converted double value can fit in SmallInt if
+  // it gets converted back to word.
+  EXPECT_EQ(static_cast<word>(input_value), SmallInt::kMinValue);
+  Object input_obj(&scope, runtime.newFloat(input_value));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  EXPECT_TRUE(result_obj.isSmallInt());
+  SmallInt result(&scope, *result_obj);
+  EXPECT_EQ(result.value(), static_cast<word>(input_value));
+}
+
+TEST(FloatBuiltinsTest,
+     DunderIntWithValueLessThanSmallIntMinValueReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  // Due to the truncation error, static_cast<double>(SmallInt::kMinValue - i)
+  // == SmallInt::kMinValue for i ranging from 0 to 512.
+  ASSERT_EQ(static_cast<word>(static_cast<double>(SmallInt::kMinValue - 512)),
+            SmallInt::kMinValue);
+  ASSERT_LT(static_cast<word>(static_cast<double>(SmallInt::kMinValue - 513)),
+            SmallInt::kMinValue - 1);
+  double input_value = static_cast<double>(SmallInt::kMinValue) - 513;
+  Object input_obj(&scope, runtime.newFloat(input_value));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  EXPECT_TRUE(result_obj.isLargeInt());
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithSmallIntMaxValueReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  // Due to the truncation error, static_cast<double>(SmallInt::kMaxValue) -i)
+  // == SmallInt::kMaxValue + 1 for i ranging from 0 to 255, which makes them
+  // not fit in SmallInt.
+  ASSERT_EQ(static_cast<word>(static_cast<double>(SmallInt::kMaxValue - 255)),
+            SmallInt::kMaxValue + 1);
+  double input_value = static_cast<double>(SmallInt::kMaxValue - 256);
+  Object input_obj(&scope, runtime.newFloat(input_value));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  EXPECT_TRUE(result_obj.isSmallInt());
+  SmallInt result(&scope, *result_obj);
+  EXPECT_EQ(result.value(), static_cast<word>(input_value));
+}
+
+TEST(FloatBuiltinsTest,
+     DunderIntWithValueGreaterThanSmallIntMaxValueReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  // Due to the truncation error, converting MaxValue to double strictly
+  // increases the value.
+  ASSERT_GT(static_cast<word>(static_cast<double>(SmallInt::kMaxValue)),
+            SmallInt::kMaxValue);
+  // Therefore, this is the smallest double greater than kMaxValue.
+  double input_value = static_cast<double>(SmallInt::kMaxValue);
+  Object input_obj(&scope, runtime.newFloat(input_value));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  EXPECT_TRUE(result_obj.isLargeInt());
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithLargePositiveDoubleReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  double input_value = std::strtod("0x1.29ef685b3f6fbp+84", nullptr);
+  Object input_obj(&scope, runtime.newFloat(input_value));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  ASSERT_TRUE(result_obj.isLargeInt());
+  LargeInt result(&scope, *result_obj);
+  EXPECT_TRUE(result.isPositive());
+  const uword expected_digits[] = {0x85b3f6fb00000000, 0x129ef6};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
+}
+
+TEST(FloatBuiltinsTest, DunderIntWithLargeNegativeDoubleReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+  double input_value = std::strtod("-0x1.29ef685b3f6fbp+84", nullptr);
+  Object input_obj(&scope, runtime.newFloat(input_value));
+  Object result_obj(&scope, runBuiltin(FloatBuiltins::dunderInt, input_obj));
+  ASSERT_TRUE(result_obj.isLargeInt());
+  LargeInt result(&scope, *result_obj);
+  EXPECT_TRUE(result.isNegative());
+  // Represented as a two's complement, so 1 is added only to the lowest digit
+  // as long as it doesn't creat a carry.
+  const uword expected_digits[] = {static_cast<uword>(~0x85b3f6fb00000000) + 1,
+                                   static_cast<uword>(~0x129ef6)};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
 TEST(FloatBuiltinsTest, DunderLeWithFloatReturnsBool) {

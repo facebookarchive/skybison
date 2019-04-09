@@ -70,6 +70,7 @@ const BuiltinMethod FloatBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderFloat, dunderFloat},
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
+    {SymbolId::kDunderInt, dunderInt},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderMul, dunderMul},
@@ -261,6 +262,78 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
     return NotImplementedType::object();
   }
   return Bool::fromBool(result);
+}
+
+void FloatBuiltins::decodeDouble(double value, bool* is_neg, int* exp,
+                                 uint64* mantissa) {
+  const uword man_mask = (uword{1} << kDoubleMantissaBits) - 1;
+  const uword num_exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  const uword exp_mask = (uword{1} << num_exp_bits) - 1;
+  const uword exp_bias = (uword{1} << (num_exp_bits - 1)) - 1;
+  uint64 value_bits = bit_cast<uint64>(value);
+  *is_neg = value_bits >> (kBitsPerDouble - 1);
+  *exp = ((value_bits >> kDoubleMantissaBits) & exp_mask) - exp_bias;
+  *mantissa = value_bits & man_mask;
+}
+
+RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseTypeErrorWithCStr(
+        "'__int__' requires a 'float' object");
+  }
+  double dval = RawFloat::cast(*self_obj).value();
+
+  bool is_neg;
+  int exp;
+  uint64 man;
+  decodeDouble(dval, &is_neg, &exp, &man);
+  int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
+  int max_exp = 1 << (exp_bits - 1);
+  if (exp == max_exp) {
+    if (man == 0) {
+      return thread->raiseOverflowErrorWithCStr(
+          "cannot convert float infinity to integer");
+    }
+    return thread->raiseValueErrorWithCStr(
+        "cannot convert float NaN to integer");
+  }
+
+  // No fractional part.
+  if (exp < 0) {
+    return SmallInt::fromWord(0);
+  }
+  // Number of bits needed to represent the result integer in 2's complement.
+  // +1 for the implicit bit of value 1 and +1 for the sign bit.
+  int result_bits = exp + 2;
+  // If the number is the negative number of the greatest magnitude
+  // (-10000...b), then no extra sign bit is needed.
+  if (is_neg && man == 0) {
+    result_bits = exp + 1;
+  }
+  // Fast path for integers that are a word or smaller in size.
+  const word man_with_implicit_one = (word{1} << kDoubleMantissaBits) | man;
+  // Path that fills a digit of Int, and left-shifts it to match
+  // its magnitude with the given exponent.
+  DCHECK(
+      man_with_implicit_one >= 0,
+      "man_with_implicit_one must be positive before the sign bit is applied.");
+  if (result_bits <= kBitsPerWord) {
+    const word result =
+        (exp > kDoubleMantissaBits
+             ? (man_with_implicit_one << (exp - kDoubleMantissaBits))
+             : (man_with_implicit_one >> (kDoubleMantissaBits - exp)));
+    return runtime->newInt(is_neg ? -result : result);
+  }
+  // TODO(djang): Make another interface for intBInaryLshift() to accept
+  // words directly.
+  Int unshifted_result(&scope, runtime->newInt(is_neg ? -man_with_implicit_one
+                                                      : man_with_implicit_one));
+  Int shifting_bits(&scope, runtime->newInt(exp - kDoubleMantissaBits));
+  return runtime->intBinaryLshift(thread, unshifted_result, shifting_bits);
 }
 
 RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
