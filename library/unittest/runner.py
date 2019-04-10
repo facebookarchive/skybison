@@ -21,15 +21,27 @@ class _WritelnDecorator(object):
     def __init__(self,stream):
         self.stream = stream
 
+    # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
     def __getattr__(self, attr):
         if attr in ('stream', '__getstate__'):
             raise AttributeError(attr)
         return getattr(self.stream,attr)
 
+    # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
+    def flush(self):
+        pass
+
+    # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
+    def write(self, *args):
+        self.stream.write(*args)
+
     def writeln(self, arg=None):
         if arg:
-            self.write(arg)
-        self.write('\n') # text-mode streams translate to \r\n if needed
+        # TODO(T42865297): __getattr__ is not intercepting AttributeError calls
+        #     self.write(arg)
+        # self.write('\n') # text-mode streams translate to \r\n if needed
+            self.stream.write(arg)
+        self.stream.write('\n') # text-mode streams translate to \r\n if needed
 
 
 class TextTestResult(result.TestResult):
@@ -161,37 +173,53 @@ class TextTestRunner(object):
         result.failfast = self.failfast
         result.buffer = self.buffer
         result.tb_locals = self.tb_locals
-        with warnings.catch_warnings():
-            if self.warnings:
-                # if self.warnings is set, use it to filter all the warnings
-                warnings.simplefilter(self.warnings)
-                # if the filter is 'default' or 'always', special-case the
-                # warnings from the deprecated unittest methods to show them
-                # no more than once per module, because they can be fairly
-                # noisy.  The -Wd and -Wa flags can be used to bypass this
-                # only when self.warnings is None.
-                if self.warnings in ['default', 'always']:
-                    warnings.filterwarnings('module',
-                            category=DeprecationWarning,
-                            message=r'Please use assert\w+ instead.')
-            startTime = time.time()
-            startTestRun = getattr(result, 'startTestRun', None)
-            if startTestRun is not None:
-                startTestRun()
-            try:
-                test(result)
-            finally:
-                stopTestRun = getattr(result, 'stopTestRun', None)
-                if stopTestRun is not None:
-                    stopTestRun()
-            stopTime = time.time()
+        # TODO(T42598308): warnings.catch_warnings
+        # with warnings.catch_warnings():
+        #     if self.warnings:
+        #         # if self.warnings is set, use it to filter all the warnings
+        #         warnings.simplefilter(self.warnings)
+        #         # if the filter is 'default' or 'always', special-case the
+        #         # warnings from the deprecated unittest methods to show them
+        #         # no more than once per module, because they can be fairly
+        #         # noisy.  The -Wd and -Wa flags can be used to bypass this
+        #         # only when self.warnings is None.
+        #         if self.warnings in ['default', 'always']:
+        #             warnings.filterwarnings('module',
+        #                     category=DeprecationWarning,
+        #                     message=r'Please use assert\w+ instead.')
+        #     startTime = time.time()
+        #     startTestRun = getattr(result, 'startTestRun', None)
+        #     if startTestRun is not None:
+        #         startTestRun()
+        #     try:
+        #         test(result)
+        #     finally:
+        #         stopTestRun = getattr(result, 'stopTestRun', None)
+        #         if stopTestRun is not None:
+        #             stopTestRun()
+        #     stopTime = time.time()
+        startTime = time.time()
+        startTestRun = getattr(result, "startTestRun", None)
+        if startTestRun is not None:
+            startTestRun()
+        try:
+            test(result)
+        finally:
+            stopTestRun = getattr(result, "stopTestRun", None)
+            if stopTestRun is not None:
+                stopTestRun()
+        stopTime = time.time()
         timeTaken = stopTime - startTime
         result.printErrors()
         if hasattr(result, 'separator2'):
             self.stream.writeln(result.separator2)
         run = result.testsRun
-        self.stream.writeln("Ran %d test%s in %.3fs" %
-                            (run, run != 1 and "s" or "", timeTaken))
+        # TODO(T42598228): "%f" is not supported yet
+        # self.stream.writeln(
+        #     "Ran %d test%s in %.3fs" % (run, run != 1 and "s" or "", timeTaken)
+        # )
+        self.stream.writeln(
+            "Ran %d test%s in %gs" % (run, run != 1 and "s" or "", timeTaken))
         self.stream.writeln()
 
         expectedFails = unexpectedSuccesses = skipped = 0

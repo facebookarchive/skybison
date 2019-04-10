@@ -5,7 +5,7 @@
 # fmt: off
 """Various utility functions."""
 
-from collections import OrderedDict, namedtuple
+# from collections import OrderedDict, namedtuple
 from os.path import commonprefix
 
 
@@ -122,7 +122,9 @@ def three_way_cmp(x, y):
     """Return -1 if x < y, 0 if x == y and 1 if x > y"""
     return (x > y) - (x < y)
 
-_Mismatch = namedtuple('Mismatch', 'actual expected value')
+# TODO(T42627145): Enable collections.namedtuple
+# _Mismatch = namedtuple('Mismatch', 'actual expected value')
+def _Mismatch(actual, expected, value): return (actual, expected, value)
 
 def _count_diff_all_purpose(actual, expected):
     'Returns list of (cnt_act, cnt_exp, elem) triples where the counts differ'
@@ -161,7 +163,9 @@ def _count_diff_all_purpose(actual, expected):
 
 def _ordered_count(iterable):
     'Return dict of element counts, in the order they were first seen'
-    c = OrderedDict()
+    # TODO(T42697938): OrderedDict since weakref.proxy implementation is missing
+    # c = OrderedDict()
+    c = {}
     for elem in iterable:
         c[elem] = c.get(elem, 0) + 1
     return c

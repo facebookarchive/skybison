@@ -9,12 +9,17 @@ import functools
 import os
 import re
 import sys
-import traceback
+# TODO(T42595911): traceback module
+# import traceback
 import types
 import warnings
-from fnmatch import fnmatch
 
 from . import case, suite, util
+
+
+# TODO(T42597944): fnmatch module
+# from fnmatch import fnmatch
+
 
 
 __unittest = True
@@ -22,7 +27,8 @@ __unittest = True
 # what about .pyc (etc)
 # we would need to avoid loading the same tests multiple times
 # from '.py', *and* '.pyc'
-VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
+# TODO(T42236521): Enable _sre.compile
+# VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
 
 
 class _FailedTest(case.TestCase):
@@ -41,14 +47,16 @@ class _FailedTest(case.TestCase):
 
 
 def _make_failed_import_test(name, suiteClass):
-    message = 'Failed to import test module: %s\n%s' % (
-        name, traceback.format_exc())
+    # TODO(T42595911): traceback module
+    # message = "Failed to import test module: %s\n%s" % (name, traceback.format_exc())
+    message = "Failed to import test module: %s\n" % (name)
     return _make_failed_test(name, ImportError(message), suiteClass, message)
 
 def _make_failed_load_tests(name, exception, suiteClass):
-    message = 'Failed to call load_tests:\n%s' % (traceback.format_exc(),)
-    return _make_failed_test(
-        name, exception, suiteClass, message)
+    # TODO(T42595911): traceback module
+    # message = "Failed to call load_tests:\n%s" % (traceback.format_exc(),)
+    message = "Failed to call load_tests:\n"
+    return _make_failed_test(name, exception, suiteClass, message)
 
 def _make_failed_test(methodname, exception, suiteClass, message):
     test = _FailedTest(methodname, exception)
@@ -186,8 +194,9 @@ class TestLoader(object):
                     # Otherwise, we signal that an AttributeError has occurred.
                     error_case, error_message = _make_failed_test(
                         part, e, self.suiteClass,
-                        'Failed to access attribute:\n%s' % (
-                            traceback.format_exc(),))
+                        # TODO(T42595911): traceback module
+                        # "Failed to access attribute:\n%s" % (traceback.format_exc(),),
+                        "Failed to access attribute:\n"),
                     self.errors.append(error_message)
                     return error_case
 
@@ -232,8 +241,9 @@ class TestLoader(object):
             return attrname.startswith(prefix) and \
                 callable(getattr(testCaseClass, attrname))
         testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
-        if self.sortTestMethodsUsing:
-            testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
+        # TODO(T42595832): Enable functools.cmp_to_key
+        # if self.sortTestMethodsUsing:
+        #     testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
         return testFnNames
 
     def discover(self, start_dir, pattern='test*.py', top_level_dir=None):
@@ -376,7 +386,9 @@ class TestLoader(object):
 
     def _match_path(self, path, full_path, pattern):
         # override this method to use alternative matching strategy
-        return fnmatch(path, pattern)
+        # TODO(T42597944): fnmatch module
+        # return fnmatch(path, pattern)
+        pass
 
     def _find_tests(self, start_dir, pattern, namespace=False):
         """Used by discovery. Yields test suites it loads."""

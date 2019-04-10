@@ -9,11 +9,13 @@ import collections
 import contextlib
 import difflib
 import functools
-import logging
+# TODO(T42595887): logging module
+# import logging
 import pprint
 import re
 import sys
-import traceback
+# TODO(T42595911): traceback module
+# import traceback
 import warnings
 
 from . import result
@@ -208,17 +210,24 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
             except AttributeError:
                 exc_name = str(self.expected)
             if self.obj_name:
-                self._raiseFailure("{} not raised by {}".format(exc_name,
-                                                                self.obj_name))
+                # TODO(T32655200): Implement str.format
+                # self._raiseFailure("{} not raised by {}".format(exc_name,
+                #                                                 self.obj_name))
+                self._raiseFailure("%s not raised by %s" % (exc_name,
+                                                            self.obj_name))
             else:
-                self._raiseFailure("{} not raised".format(exc_name))
-        else:
-            traceback.clear_frames(tb)
+                # TODO(T32655200): Implement str.format
+                # self._raiseFailure("{} not raised".format(exc_name))
+                self._raiseFailure("%s not raised" % exc_name)
+        # TODO(T42595911): traceback module
+        # else:
+        #     traceback.clear_frames(tb)
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
         # store exception, without traceback, for later retrieval
-        self.exception = exc_value.with_traceback(None)
+        # TODO(T42598618): with_traceback
+        # self.exception = exc_value.with_traceback(None)
         if self.expected_regex is None:
             return True
 
@@ -282,26 +291,28 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
 
 
 
-_LoggingWatcher = collections.namedtuple("_LoggingWatcher",
-                                         ["records", "output"])
+# TODO(T42627145): Enable collections.namedtuple
+# _LoggingWatcher = collections.namedtuple("_LoggingWatcher",
+#                                          ["records", "output"])
 
 
-class _CapturingHandler(logging.Handler):
-    """
-    A logging handler capturing all (raw and formatted) logging output.
-    """
-
-    def __init__(self):
-        logging.Handler.__init__(self)
-        self.watcher = _LoggingWatcher([], [])
-
-    def flush(self):
-        pass
-
-    def emit(self, record):
-        self.watcher.records.append(record)
-        msg = self.format(record)
-        self.watcher.output.append(msg)
+# TODO(T42595887): logging module
+# class _CapturingHandler(logging.Handler):
+#     """
+#     A logging handler capturing all (raw and formatted) logging output.
+#     """
+#
+#     def __init__(self):
+#         logging.Handler.__init__(self)
+#         self.watcher = _LoggingWatcher([], [])
+#
+#     def flush(self):
+#         pass
+#
+#     def emit(self, record):
+#         self.watcher.records.append(record)
+#         msg = self.format(record)
+#         self.watcher.output.append(msg)
 
 
 
@@ -313,28 +324,31 @@ class _AssertLogsContext(_BaseTestCaseContext):
     def __init__(self, test_case, logger_name, level):
         _BaseTestCaseContext.__init__(self, test_case)
         self.logger_name = logger_name
-        if level:
-            self.level = logging._nameToLevel.get(level, level)
-        else:
-            self.level = logging.INFO
+        # TODO(T42595887): logging module
+        # if level:
+        #     self.level = logging._nameToLevel.get(level, level)
+        # else:
+        #     self.level = logging.INFO
         self.msg = None
 
     def __enter__(self):
-        if isinstance(self.logger_name, logging.Logger):
-            logger = self.logger = self.logger_name
-        else:
-            logger = self.logger = logging.getLogger(self.logger_name)
-        formatter = logging.Formatter(self.LOGGING_FORMAT)
-        handler = _CapturingHandler()
-        handler.setFormatter(formatter)
-        self.watcher = handler.watcher
-        self.old_handlers = logger.handlers[:]
-        self.old_level = logger.level
-        self.old_propagate = logger.propagate
-        logger.handlers = [handler]
-        logger.setLevel(self.level)
-        logger.propagate = False
-        return handler.watcher
+        # TODO(T42595887): logging module
+        # if isinstance(self.logger_name, logging.Logger):
+        #     logger = self.logger = self.logger_name
+        # else:
+        #     logger = self.logger = logging.getLogger(self.logger_name)
+        # formatter = logging.Formatter(self.LOGGING_FORMAT)
+        # handler = _CapturingHandler()
+        # handler.setFormatter(formatter)
+        # self.watcher = handler.watcher
+        # self.old_handlers = logger.handlers[:]
+        # self.old_level = logger.level
+        # self.old_propagate = logger.propagate
+        # logger.handlers = [handler]
+        # logger.setLevel(self.level)
+        # logger.propagate = False
+        # return handler.watcher
+        pass
 
     def __exit__(self, exc_type, exc_value, tb):
         self.logger.handlers = self.old_handlers
@@ -343,10 +357,11 @@ class _AssertLogsContext(_BaseTestCaseContext):
         if exc_type is not None:
             # let unexpected exceptions pass through
             return False
-        if len(self.watcher.records) == 0:
-            self._raiseFailure(
-                "no logs of level {} or higher triggered on {}"
-                .format(logging.getLevelName(self.level), self.logger.name))
+        # TODO(T42595887): logging module
+        # if len(self.watcher.records) == 0:
+        #     self._raiseFailure(
+        #         "no logs of level {} or higher triggered on {}"
+        #         .format(logging.getLevelName(self.level), self.logger.name))
 
 
 class TestCase(object):
@@ -412,8 +427,9 @@ class TestCase(object):
                 # but not an *incorrect* or missing method name
                 raise ValueError("no such test method in %s: %s" %
                       (self.__class__, methodName))
-        else:
-            self._testMethodDoc = testMethod.__doc__
+        # TODO(T42598182): Implement method.__doc__
+        # else:
+        #     self._testMethodDoc = testMethod.__doc__
         self._cleanups = []
         self._subtest = None
 
@@ -608,15 +624,19 @@ class TestCase(object):
         try:
             self._outcome = outcome
 
-            with outcome.testPartExecutor(self):
-                self.setUp()
-            if outcome.success:
-                outcome.expecting_failure = expecting_failure
-                with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
-                outcome.expecting_failure = False
-                with outcome.testPartExecutor(self):
-                    self.tearDown()
+            # TODO(T42920305): generator object has no attribute throw
+            # with outcome.testPartExecutor(self):
+            #     self.setUp()
+            # if outcome.success:
+            #     outcome.expecting_failure = expecting_failure
+            #     with outcome.testPartExecutor(self, isTest=True):
+            #         testMethod()
+            #     outcome.expecting_failure = False
+            #     with outcome.testPartExecutor(self):
+            #         self.tearDown()
+            self.setUp()
+            testMethod()
+            self.tearDown()
 
             self.doCleanups()
             for test, reason in outcome.skipped:
@@ -1012,9 +1032,11 @@ class TestCase(object):
                     differing += ('Unable to index element %d '
                                   'of second %s\n' % (len1, seq_type_name))
         standardMsg = differing
-        diffMsg = '\n' + '\n'.join(
-            difflib.ndiff(pprint.pformat(seq1).splitlines(),
-                          pprint.pformat(seq2).splitlines()))
+        # TODO(T42594791): Enable difflib and pprint
+        # diffMsg = '\n' + '\n'.join(
+        #     difflib.ndiff(pprint.pformat(seq1).splitlines(),
+        #                   pprint.pformat(seq2).splitlines()))
+        diffMsg = '\n' + '\n'
 
         standardMsg = self._truncateMessage(standardMsg, diffMsg)
         msg = self._formatMessage(msg, standardMsg)
@@ -1125,9 +1147,11 @@ class TestCase(object):
 
         if d1 != d2:
             standardMsg = '%s != %s' % _common_shorten_repr(d1, d2)
-            diff = ('\n' + '\n'.join(difflib.ndiff(
-                           pprint.pformat(d1).splitlines(),
-                           pprint.pformat(d2).splitlines())))
+            # TODO(T42594791): Enable difflib and pprint
+            # diff = ('\n' + '\n'.join(difflib.ndiff(
+            #                pprint.pformat(d1).splitlines(),
+            #                pprint.pformat(d2).splitlines())))
+            diff = '\n' + '\n'
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 
@@ -1209,7 +1233,9 @@ class TestCase(object):
                 firstlines = [first + '\n']
                 secondlines = [second + '\n']
             standardMsg = '%s != %s' % _common_shorten_repr(first, second)
-            diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
+            # TODO(T42594791): Enable difflib and pprint
+            # diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
+            diff = '\n'
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 

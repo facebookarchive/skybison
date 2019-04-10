@@ -7,7 +7,8 @@
 
 import io
 import sys
-import traceback
+# TODO(T42595911): traceback module
+# import traceback
 from functools import wraps
 
 from . import util
@@ -70,8 +71,12 @@ class TestResult(object):
     def _setupStdout(self):
         if self.buffer:
             if self._stderr_buffer is None:
-                self._stderr_buffer = io.StringIO()
-                self._stdout_buffer = io.StringIO()
+                # TODO(T41323917): Use io instead of temporary sys._IOStream
+                # self._stderr_buffer = io.StringIO()
+                # self._stdout_buffer = io.StringIO()
+                self._stderr_buffer = sys.stderr
+                self._stdout_buffer = sys.stdout
+                pass
             sys.stdout = self._stdout_buffer
             sys.stderr = self._stderr_buffer
 
@@ -183,14 +188,16 @@ class TestResult(object):
         while tb and self._is_relevant_tb_level(tb):
             tb = tb.tb_next
 
-        if exctype is test.failureException:
-            # Skip assert*() traceback levels
-            length = self._count_relevant_tb_levels(tb)
-        else:
-            length = None
-        tb_e = traceback.TracebackException(
-            exctype, value, tb, limit=length, capture_locals=self.tb_locals)
-        msgLines = list(tb_e.format())
+        # TODO(T42595911): traceback module
+        # if exctype is test.failureException:
+        #     # Skip assert*() traceback levels
+        #     length = self._count_relevant_tb_levels(tb)
+        # else:
+        #     length = None
+        # tb_e = traceback.TracebackException(
+        #     exctype, value, tb, limit=length, capture_locals=self.tb_locals)
+        # msgLines = list(tb_e.format())
+        msgLines = []
 
         if self.buffer:
             output = sys.stdout.getvalue()
