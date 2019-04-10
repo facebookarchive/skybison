@@ -308,6 +308,15 @@ sys.exit("barf")
   ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(1), "barf");
 }
 
+TEST(SysModuleTest, SysExitWithFalseReturnsZero) {
+  const char* src = R"(
+import sys
+sys.exit(False)
+)";
+  Runtime runtime;
+  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(0), "");
+}
+
 TEST(SysModuleTest, Platform) {
   Runtime runtime;
   HandleScope scope;

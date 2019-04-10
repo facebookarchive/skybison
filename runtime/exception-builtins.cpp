@@ -472,7 +472,12 @@ void handleSystemExit(Thread* thread) {
     arg = exc.code();
   }
   if (arg.isNoneType()) do_exit(EXIT_SUCCESS);
-  if (arg.isSmallInt()) do_exit(RawSmallInt::cast(*arg).value());
+  if (runtime->isInstanceOfInt(*arg)) {
+    Int arg_int(&scope, *arg);
+    // We could convert and check for overflow error, but the overflow error
+    // should get cleared anyway.
+    do_exit(arg_int.asWordSaturated());
+  }
 
   // The calls below can't have an exception pending
   thread->clearPendingException();
