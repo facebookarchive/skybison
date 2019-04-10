@@ -2760,4 +2760,43 @@ a = "foo 123".upper()
   EXPECT_TRUE(isStrEqualsCStr(*a, "FOO 123"));
 }
 
+TEST(StrBuiltinsTest, CapitalizeWithNonStrRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "str.capitalize(1)"), LayoutId::kTypeError,
+      "'capitalize' requires a 'str' instance but got 'int'"));
+}
+
+TEST(StrBuiltinsTest, CapitalizeReturnsCapitalizedStr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "foo".capitalize()
+)");
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "Foo"));
+}
+
+TEST(StrBuiltinsTest, CapitalizeUpperCaseReturnsUnmodifiedStr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "Foo".capitalize()
+)");
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "Foo"));
+}
+
+TEST(StrBuiltinsTest, CapitalizeAllUppercaseReturnsCapitalizedStr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "FOO".capitalize()
+)");
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "Foo"));
+}
+
+TEST(StrBuiltinsTest, CapitalizeWithEmptyStrReturnsEmptyStr) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "".capitalize()
+)");
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), ""));
+}
+
 }  // namespace python

@@ -1539,7 +1539,16 @@ class str(bootstrap=True):
         return self
 
     def capitalize(self):
-        _unimplemented()
+        if not isinstance(self, str):
+            self_type = type(self).__name__
+            raise TypeError(
+                f"'capitalize' requires a 'str' instance but got '{self_type}'"
+            )
+        if not self:
+            return self
+        first_letter = str.upper(str.__getitem__(self, 0).upper())
+        lowercase_str = str.lower(str.__getitem__(self, slice(1, None, None)))
+        return first_letter + lowercase_str
 
     def casefold(self):
         _unimplemented()
