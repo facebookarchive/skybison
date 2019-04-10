@@ -352,6 +352,11 @@ class Runtime {
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
 
+  // Makes a new copy of the `original` bytes with the specified `size`.
+  // If the new length is less than the old length, truncate the bytes to fit.
+  // If the new length is greater than the old length, pad with trailing zeros.
+  RawObject bytesCopyWithSize(Thread* thread, const Bytes& original, word size);
+
   // Returns a new Bytes from the first `length` int-like elements in the tuple.
   RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
 
@@ -368,8 +373,8 @@ class Runtime {
 
   // Copies a bytes-like object into buffer starting at a given index in buffer.
   // Returns the next index after the copied bytes.
-  word bytesReplaceFromWith(Thread* thread, const Bytes& buffer, word start,
-                            const Object& source);
+  word bytesReplaceFromWith(Thread* thread, const LargeBytes& buffer,
+                            word start, const Object& source);
 
   // Returns a new Bytes that contains the specified slice of self.
   RawObject bytesSlice(Thread* thread, const Bytes& self, word start, word stop,

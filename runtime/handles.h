@@ -150,6 +150,7 @@ class WARN_UNUSED Handle : public T {
   V(Instance)                                                                  \
   V(Int)                                                                       \
   V(KeyError)                                                                  \
+  V(LargeBytes)                                                                \
   V(LargeInt)                                                                  \
   V(LargeStr)                                                                  \
   V(Layout)                                                                    \

@@ -94,7 +94,7 @@ const word RawSmallInt::kMaxValue;
 void RawByteArray::downsize(word new_length) const {
   word original_length = numItems();
   DCHECK_BOUND(new_length, original_length);
-  byte* dst = reinterpret_cast<byte*>(RawBytes::cast(bytes()).address());
+  byte* dst = reinterpret_cast<byte*>(RawLargeBytes::cast(bytes()).address());
   std::memset(dst + new_length, 0, original_length - new_length);
   setNumItems(new_length);
 }
@@ -105,17 +105,17 @@ word RawBytes::compare(RawBytes that) const {
   word this_len = this->length();
   word that_len = that.length();
   word len = Utils::minimum(this_len, that_len);
-  auto b1 = reinterpret_cast<void*>(this->address());
-  auto b2 = reinterpret_cast<void*>(that.address());
+  auto b1 = reinterpret_cast<void*>(RawLargeBytes::cast(*this).address());
+  auto b2 = reinterpret_cast<void*>(RawLargeBytes::cast(that).address());
   word diff = std::memcmp(b1, b2, len);
   if (diff != 0 || this_len == that_len) return diff;
   return this_len < that_len ? -1 : 1;
 }
 
-word RawBytes::replaceFromWith(word start, RawObject src, word len) const {
-  RawBytes src_bytes = RawBytes::cast(src);
+word RawLargeBytes::replaceFromWith(word start, RawBytes src, word len) const {
+  DCHECK_INDEX(start, length());
   DCHECK_BOUND(start + len, length());
-  src_bytes.copyTo(reinterpret_cast<byte*>(address()) + start, len);
+  src.copyTo(reinterpret_cast<byte*>(address()) + start, len);
   return start + len;
 }
 
@@ -291,11 +291,11 @@ word RawLargeInt::copyTo(byte* dst, word copy_length) const {
   return memcpy_size;
 }
 
-void RawLargeInt::copyFrom(View<byte> bytes, byte sign_extension) const {
-  auto dst = reinterpret_cast<char*>(address() + kValueOffset);
+void RawLargeInt::copyFrom(RawBytes bytes, byte sign_extension) const {
+  auto dst = reinterpret_cast<byte*>(address() + kValueOffset);
   word bytes_len = bytes.length();
   DCHECK(bytes_len <= numDigits() * kWordSize, "too many bytes");
-  std::memcpy(dst, bytes.data(), bytes_len);
+  bytes.copyTo(dst, bytes_len);
   std::memset(dst + bytes_len, sign_extension,
               (numDigits() * kWordSize) - bytes_len);
 }

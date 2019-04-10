@@ -23,7 +23,7 @@ TEST(RuntimeTest, CollectGarbage) {
 TEST(RuntimeTest, AllocateAndCollectGarbage) {
   const word heap_size = 32 * kMiB;
   const word array_length = 1024;
-  const word allocation_size = Bytes::allocationSize(array_length);
+  const word allocation_size = LargeBytes::allocationSize(array_length);
   const word total_allocation_size = heap_size * 10;
   Runtime runtime(heap_size);
   ASSERT_TRUE(runtime.heap()->verify());
@@ -509,12 +509,9 @@ TEST(RuntimeTest, NewBytes) {
 
   Bytes len254(&scope, runtime.newBytes(254, 0));
   EXPECT_EQ(len254.length(), 254);
-  EXPECT_EQ(len254.size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
 
   Bytes len255(&scope, runtime.newBytes(255, 0));
   EXPECT_EQ(len255.length(), 255);
-  EXPECT_EQ(len255.size(),
-            Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 }
 
 TEST(RuntimeTest, NewBytesWithAll) {
@@ -527,16 +524,29 @@ TEST(RuntimeTest, NewBytesWithAll) {
   const byte src1[] = {0x42};
   Bytes len1(&scope, runtime.newBytesWithAll(src1));
   EXPECT_EQ(len1.length(), 1);
-  EXPECT_EQ(len1.size(), Utils::roundUp(kPointerSize + 1, kPointerSize));
   EXPECT_EQ(len1.byteAt(0), 0x42);
 
   const byte src3[] = {0xAA, 0xBB, 0xCC};
   Bytes len3(&scope, runtime.newBytesWithAll(src3));
   EXPECT_EQ(len3.length(), 3);
-  EXPECT_EQ(len3.size(), Utils::roundUp(kPointerSize + 3, kPointerSize));
   EXPECT_EQ(len3.byteAt(0), 0xAA);
   EXPECT_EQ(len3.byteAt(1), 0xBB);
   EXPECT_EQ(len3.byteAt(2), 0xCC);
+}
+
+TEST(RuntimeTest, LargeBytesSizeRoundedUpToPointerSizeMultiple) {
+  Runtime runtime;
+  HandleScope scope;
+
+  LargeBytes len10(&scope, runtime.newBytes(10, 0));
+  EXPECT_EQ(len10.size(), Utils::roundUp(kPointerSize + 10, kPointerSize));
+
+  LargeBytes len254(&scope, runtime.newBytes(254, 0));
+  EXPECT_EQ(len254.size(), Utils::roundUp(kPointerSize + 254, kPointerSize));
+
+  LargeBytes len255(&scope, runtime.newBytes(255, 0));
+  EXPECT_EQ(len255.size(),
+            Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 }
 
 TEST(RuntimeTest, NewTuple) {
@@ -718,13 +728,13 @@ TEST(RuntimeTest, HashBools) {
   EXPECT_TRUE(isIntEqualsWord(runtime.hash(Bool::trueObj()), 1));
 }
 
-TEST(RuntimeTest, HashBytes) {
+TEST(RuntimeTest, HashLargeBytes) {
   Runtime runtime;
   HandleScope scope;
 
-  // Strings have their hash codes computed lazily.
+  // LargeBytes have their hash codes computed lazily.
   const byte src1[] = {0x1, 0x2, 0x3};
-  Bytes arr1(&scope, runtime.newBytesWithAll(src1));
+  LargeBytes arr1(&scope, runtime.newBytesWithAll(src1));
   EXPECT_EQ(arr1.header().hashCode(), 0);
   word hash1 = RawSmallInt::cast(runtime.hash(*arr1)).value();
   EXPECT_NE(arr1.header().hashCode(), 0);
@@ -733,18 +743,18 @@ TEST(RuntimeTest, HashBytes) {
   word code1 = runtime.siphash24(src1);
   EXPECT_EQ(code1 & RawHeader::kHashCodeMask, static_cast<uword>(hash1));
 
-  // Str with different values should (ideally) hash differently.
+  // LargeBytes with different values should (ideally) hash differently.
   const byte src2[] = {0x3, 0x2, 0x1};
-  Bytes arr2(&scope, runtime.newBytesWithAll(src2));
+  LargeBytes arr2(&scope, runtime.newBytesWithAll(src2));
   word hash2 = RawSmallInt::cast(runtime.hash(*arr2)).value();
   EXPECT_NE(hash1, hash2);
 
   word code2 = runtime.siphash24(src2);
   EXPECT_EQ(code2 & RawHeader::kHashCodeMask, static_cast<uword>(hash2));
 
-  // Strings with the same value should hash the same.
+  // LargeBytes with the same value should hash the same.
   const byte src3[] = {0x1, 0x2, 0x3};
-  Bytes arr3(&scope, runtime.newBytesWithAll(src3));
+  LargeBytes arr3(&scope, runtime.newBytesWithAll(src1));
   word hash3 = RawSmallInt::cast(runtime.hash(*arr3)).value();
   EXPECT_EQ(hash1, hash3);
 

@@ -23,8 +23,6 @@ class Heap {
   template <typename T>
   RawObject create();
 
-  RawObject createBytes(word length);
-
   RawObject createType(LayoutId metaclass_id);
 
   RawObject createComplex(double real, double imag);
@@ -34,6 +32,8 @@ class Heap {
   RawObject createEllipsis();
 
   RawObject createInstance(LayoutId layout_id, word num_attributes);
+
+  RawObject createLargeBytes(word length);
 
   RawObject createLargeInt(word num_digits);
 

@@ -26,8 +26,8 @@ class Handle;
 #define HEAP_CLASS_NAMES(V)                                                    \
   V(Object)                                                                    \
   V(BoundMethod)                                                               \
-  V(Bytes)                                                                     \
   V(ByteArray)                                                                 \
+  V(Bytes)                                                                     \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
@@ -47,6 +47,7 @@ class Handle;
   V(Generator)                                                                 \
   V(HeapFrame)                                                                 \
   V(Int)                                                                       \
+  V(LargeBytes)                                                                \
   V(LargeInt)                                                                  \
   V(LargeStr)                                                                  \
   V(Layout)                                                                    \
@@ -252,7 +253,6 @@ class RawObject {
   bool isBaseException() const;
   bool isBoundMethod() const;
   bool isByteArray() const;
-  bool isBytes() const;
   bool isClassMethod() const;
   bool isCode() const;
   bool isComplex() const;
@@ -275,6 +275,7 @@ class RawObject {
   bool isImportError() const;
   bool isIndexError() const;
   bool isKeyError() const;
+  bool isLargeBytes() const;
   bool isLargeInt() const;
   bool isLargeStr() const;
   bool isLayout() const;
@@ -310,6 +311,7 @@ class RawObject {
   bool isWeakRef() const;
 
   // superclass objects
+  bool isBytes() const;
   bool isGeneratorBase() const;
   bool isInt() const;
   bool isSetBase() const;
@@ -359,6 +361,28 @@ class OptInt {
 };
 
 // Generic superclasses for Python types with multiple native types
+
+// Common `bytes` wrapper around RawSmallBytes/RawLargeBytes
+class RawBytes : public RawObject {
+ public:
+  // Getters and setters.
+  word length() const;
+  byte byteAt(word index) const;
+  void copyTo(byte* dst, word length) const;
+  // Read adjacent bytes as `uint16_t` integer.
+  uint16_t uint16At(word index) const;
+  // Read adjacent bytes as `uint32_t` integer.
+  uint32_t uint32At(word index) const;
+  // Read adjacent bytes as `uint64_t` integer.
+  uint64_t uint64At(word index) const;
+
+  // Returns a positive value if 'this' is greater than 'that', a negative value
+  // if 'this' is less than 'that', and zero if they are the same.
+  // Does not guarantee to return -1, 0, or 1.
+  word compare(RawBytes that) const;
+
+  RAW_OBJECT_COMMON(Bytes);
+};
 
 // Common `int` wrapper around RawSmallInt/RawLargeInt/RawBool
 class RawInt : public RawObject {
@@ -1038,13 +1062,19 @@ class RawArray : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(Array);
 };
 
-class RawBytes : public RawArray {
+class RawLargeBytes : public RawArray {
  public:
+  // Sizing.
+  static word allocationSize(word length);
+
+  RAW_OBJECT_COMMON(LargeBytes);
+
+ private:
   // Getters and setters.
   byte byteAt(word index) const;
   void byteAtPut(word index, byte value) const;
   void copyTo(byte* dst, word length) const;
-  word replaceFromWith(word start, RawObject src, word length) const;
+  word replaceFromWith(word start, RawBytes src, word length) const;
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
@@ -1052,15 +1082,9 @@ class RawBytes : public RawArray {
   // Read adjacent bytes as `uint64_t` integer.
   uint64_t uint64At(word index) const;
 
-  // Returns a positive value if 'this' is greater that 'other', a negative
-  // value if 'this' is less that 'other', and zero if they are the same.
-  // Does not guarantee to return -1, 0, or 1.
-  word compare(RawBytes other) const;
-
-  // Sizing.
-  static word allocationSize(word length);
-
-  RAW_OBJECT_COMMON(Bytes);
+  friend class RawByteArray;
+  friend class RawBytes;
+  friend class Runtime;
 };
 
 class RawTuple : public RawArray {
@@ -1170,7 +1194,7 @@ class RawLargeInt : public RawHeapObject {
 
   // Copy 'bytes' array into digits; if the array is too small set remaining
   // data to 'sign_extension' byte.
-  void copyFrom(View<byte> bytes, byte sign_extension) const;
+  void copyFrom(RawBytes bytes, byte sign_extension) const;
 
   // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
@@ -2494,10 +2518,6 @@ inline bool RawObject::isByteArray() const {
   return isHeapObjectWithLayout(LayoutId::kByteArray);
 }
 
-inline bool RawObject::isBytes() const {
-  return isHeapObjectWithLayout(LayoutId::kBytes);
-}
-
 inline bool RawObject::isClassMethod() const {
   return isHeapObjectWithLayout(LayoutId::kClassMethod);
 }
@@ -2584,6 +2604,10 @@ inline bool RawObject::isIndexError() const {
 
 inline bool RawObject::isKeyError() const {
   return isHeapObjectWithLayout(LayoutId::kKeyError);
+}
+
+inline bool RawObject::isLargeBytes() const {
+  return isHeapObjectWithLayout(LayoutId::kLargeBytes);
 }
 
 inline bool RawObject::isLargeInt() const {
@@ -2718,6 +2742,8 @@ inline bool RawObject::isWeakRef() const {
   return isHeapObjectWithLayout(LayoutId::kWeakRef);
 }
 
+inline bool RawObject::isBytes() const { return isLargeBytes(); }
+
 inline bool RawObject::isGeneratorBase() const {
   return isGenerator() || isCoroutine();
 }
@@ -2746,6 +2772,32 @@ inline bool RawObject::operator!=(const RawObject& other) const {
 template <typename T>
 T RawObject::rawCast() const {
   return *static_cast<const T*>(this);
+}
+
+// RawBytes
+
+inline word RawBytes::length() const {
+  return RawLargeBytes::cast(*this).length();
+}
+
+inline byte RawBytes::byteAt(word index) const {
+  return RawLargeBytes::cast(*this).byteAt(index);
+}
+
+inline void RawBytes::copyTo(byte* dst, word length) const {
+  RawLargeBytes::cast(*this).copyTo(dst, length);
+}
+
+inline uint16_t RawBytes::uint16At(word index) const {
+  return RawLargeBytes::cast(*this).uint16At(index);
+}
+
+inline uint32_t RawBytes::uint32At(word index) const {
+  return RawLargeBytes::cast(*this).uint32At(index);
+}
+
+inline uint64_t RawBytes::uint64At(word index) const {
+  return RawLargeBytes::cast(*this).uint64At(index);
 }
 
 // RawInt
@@ -3334,34 +3386,34 @@ inline void RawType::sealAttributes() const {
 // RawArray
 
 inline word RawArray::length() const {
-  DCHECK(isBytes() || isTuple() || isLargeStr(), "invalid array type");
+  DCHECK(isLargeBytes() || isTuple() || isLargeStr(), "invalid array type");
   return headerCountOrOverflow();
 }
 
-// RawBytes
+// RawLargeBytes
 
-inline word RawBytes::allocationSize(word length) {
+inline word RawLargeBytes::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline byte RawBytes::byteAt(word index) const {
+inline byte RawLargeBytes::byteAt(word index) const {
   DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
 
-inline void RawBytes::byteAtPut(word index, byte value) const {
+inline void RawLargeBytes::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, length());
   *reinterpret_cast<byte*>(address() + index) = value;
 }
 
-inline void RawBytes::copyTo(byte* dst, word length) const {
+inline void RawLargeBytes::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
-inline uint16_t RawBytes::uint16At(word index) const {
+inline uint16_t RawLargeBytes::uint16At(word index) const {
   uint16_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -3369,7 +3421,7 @@ inline uint16_t RawBytes::uint16At(word index) const {
   return result;
 }
 
-inline uint32_t RawBytes::uint32At(word index) const {
+inline uint32_t RawLargeBytes::uint32At(word index) const {
   uint32_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -3377,7 +3429,7 @@ inline uint32_t RawBytes::uint32At(word index) const {
   return result;
 }
 
-inline uint64_t RawBytes::uint64At(word index) const {
+inline uint64_t RawLargeBytes::uint64At(word index) const {
   uint64_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -3868,7 +3920,7 @@ inline byte RawByteArray::byteAt(word index) const {
 
 inline void RawByteArray::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, numItems());
-  RawBytes::cast(bytes()).byteAtPut(index, value);
+  RawLargeBytes::cast(bytes()).byteAtPut(index, value);
 }
 
 inline word RawByteArray::numItems() const {

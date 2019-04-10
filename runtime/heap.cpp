@@ -84,16 +84,6 @@ bool Heap::verify() {
   return true;
 }
 
-RawObject Heap::createBytes(word length) {
-  word size = Bytes::allocationSize(length);
-  RawObject raw = allocate(size, Bytes::headerSize(length));
-  CHECK(raw != Error::object(), "out of memory");
-  auto result = raw.rawCast<RawBytes>();
-  result.setHeaderAndOverflow(length, 0, LayoutId::kBytes,
-                              ObjectFormat::kDataArray8);
-  return RawBytes::cast(result);
-}
-
 RawObject Heap::createType(LayoutId metaclass_id) {
   RawObject raw = allocate(allocationSize<RawType>(), RawHeader::kSize);
   CHECK(raw != Error::object(), "out of memory");
@@ -146,6 +136,16 @@ RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
                               ObjectFormat::kObjectInstance);
   result.initialize(num_attributes * kPointerSize, NoneType::object());
   return result;
+}
+
+RawObject Heap::createLargeBytes(word length) {
+  word size = LargeBytes::allocationSize(length);
+  RawObject raw = allocate(size, LargeBytes::headerSize(length));
+  CHECK(raw != Error::object(), "out of memory");
+  auto result = raw.rawCast<RawLargeBytes>();
+  result.setHeaderAndOverflow(length, 0, LayoutId::kLargeBytes,
+                              ObjectFormat::kDataArray8);
+  return RawLargeBytes::cast(result);
 }
 
 RawObject Heap::createLargeInt(word num_digits) {

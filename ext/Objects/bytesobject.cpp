@@ -377,12 +377,8 @@ PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
   Bytes bytes(&scope, *obj);
   if (bytes.length() == newsize) return 0;
   // we don't check here that Py_REFCNT(*pyobj) == 1
-  Bytes resized(&scope, runtime->newBytes(newsize, 0));
-  word min_size = Utils::minimum(bytes.length(), static_cast<word>(newsize));
-  for (word i = 0; i < min_size; i++) {
-    resized.byteAtPut(i, bytes.byteAt(i));
-  }
-  *pyobj = ApiHandle::newReference(thread, *resized);
+  *pyobj = ApiHandle::newReference(
+      thread, runtime->bytesCopyWithSize(thread, bytes, newsize));
   handle->decref();
   return 0;
 }

@@ -15,6 +15,18 @@ RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);
 // Scans self to select an appropriate delimiter (single or double quotes).
 RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
 
+class LargeBytesBuiltins
+    : public Builtins<LargeBytesBuiltins, SymbolId::kBytes,
+                      LayoutId::kLargeBytes, LayoutId::kBytes> {
+ public:
+  static void postInitialize(Runtime*, const Type& new_type) {
+    new_type.setBuiltinBase(kSuperType);
+  }
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(LargeBytesBuiltins);
+};
+
 class BytesBuiltins
     : public Builtins<BytesBuiltins, SymbolId::kBytes, LayoutId::kBytes> {
  public:
