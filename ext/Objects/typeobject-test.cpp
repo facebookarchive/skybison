@@ -376,4 +376,38 @@ TEST_F(TypeExtensionApiTest, GetObjectCreatedInManagedCode) {
   EXPECT_NE(foo, nullptr);
 }
 
+TEST_F(TypeExtensionApiTest, GenericNewReturnsExtensionInstance) {
+  // clang-format off
+  struct BarObject {
+    PyObject_HEAD
+  };
+  // clang-format on
+  destructor dealloc_func = [](PyObject* self) {
+    PyObjectPtr type(PyObject_Type(self));
+    auto free_func = reinterpret_cast<freefunc>(PyType_GetSlot(
+        reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free));
+    return free_func(self);
+  };
+  PyType_Slot slots[] = {
+      {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
+      {Py_tp_new, reinterpret_cast<void*>(PyType_GenericNew)},
+      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+      {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "foo.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_TRUE(PyType_CheckExact(type));
+
+  auto new_func = reinterpret_cast<newfunc>(
+      PyType_GetSlot(reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_new));
+  PyObjectPtr bar(
+      new_func(reinterpret_cast<PyTypeObject*>(type.get()), nullptr, nullptr));
+  EXPECT_NE(bar, nullptr);
+}
+
 }  // namespace python

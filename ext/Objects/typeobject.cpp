@@ -383,9 +383,11 @@ PY_EXPORT unsigned int PyType_ClearCache() {
   UNIMPLEMENTED("PyType_ClearCache");
 }
 
-PY_EXPORT PyObject* PyType_GenericNew(PyTypeObject* /* e */, PyObject* /* s */,
-                                      PyObject* /* s */) {
-  UNIMPLEMENTED("PyType_GenericNew");
+PY_EXPORT PyObject* PyType_GenericNew(PyTypeObject* type, PyObject*,
+                                      PyObject*) {
+  auto alloc_func =
+      reinterpret_cast<allocfunc>(PyType_GetSlot(type, Py_tp_alloc));
+  return alloc_func(type, 0);
 }
 
 PY_EXPORT int PyType_IsSubtype(PyTypeObject* a, PyTypeObject* b) {
