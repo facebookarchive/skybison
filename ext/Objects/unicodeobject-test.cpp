@@ -6,6 +6,8 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
+extern "C" int _Py_normalize_encoding(const char*, char*, size_t);
+
 namespace python {
 
 using namespace testing;
@@ -1311,6 +1313,95 @@ TEST_F(UnicodeExtensionApiTest, ContainsWithNotPresentSubstrReturnsTrue) {
   PyObjectPtr other(PyUnicode_FromString("q"));
   EXPECT_EQ(PyUnicode_Contains(self, other), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, NormalizeEncodingEscapesMidStringPunctuation) {
+  char buffer[11] = {0};
+  EXPECT_EQ(_Py_normalize_encoding("utf-8", buffer, sizeof(buffer)), 1);
+  EXPECT_STREQ(buffer, "utf_8");
+  EXPECT_EQ(_Py_normalize_encoding("utf}8", buffer, sizeof(buffer)), 1);
+  EXPECT_STREQ(buffer, "utf_8");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       NormalizeEncodingIgnoresEndOfStringPunctuation) {
+  char buffer[11] = {0};
+  EXPECT_EQ(_Py_normalize_encoding("_utf8", buffer, sizeof(buffer)), 1);
+  EXPECT_STREQ(buffer, "utf8");
+  EXPECT_EQ(_Py_normalize_encoding("utf8_", buffer, sizeof(buffer)), 1);
+  EXPECT_STREQ(buffer, "utf8");
+}
+
+TEST_F(UnicodeExtensionApiTest, NormalizeEncodingProperlyLowercases) {
+  char buffer[11] = {0};
+  EXPECT_EQ(_Py_normalize_encoding("ASCII", buffer, sizeof(buffer)), 1);
+  EXPECT_STREQ(buffer, "ascii");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       NormalizeEncodingWithTooLongStringReturnsEmptyString) {
+  char buffer[5] = {0};
+  EXPECT_EQ(_Py_normalize_encoding("12345", buffer, sizeof(buffer)), 0);
+  EXPECT_STREQ(buffer, "1234");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithEmbeddedNulRaisesValueError) {
+  PyObject* self = PyUnicode_DecodeLocaleAndSize("a\0b", 3, "strict");
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(self, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithNonNulTerminatedStrRaisesValueError) {
+  const char data[] = {'a', 'b'};
+  PyObject* self = PyUnicode_DecodeLocaleAndSize(data, 1, "strict");
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(self, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithUnknownErrorHandlerNameRaisesValueError) {
+  PyObject* self = PyUnicode_DecodeLocaleAndSize("abc", 3, "nonexistant");
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(self, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(UnicodeExtensionApiTest, DecodeLocaleAndSizeWithStrictReturnsStr) {
+  PyObjectPtr str(PyUnicode_DecodeLocaleAndSize("abc", 3, "strict"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "abc"));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithSurrogateescapeReturnsStr) {
+  PyObjectPtr str(PyUnicode_DecodeLocaleAndSize("abc", 3, "surrogateescape"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  EXPECT_TRUE(_PyUnicode_EqualToASCIIString(str, "abc"));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithSurrogateescapeAndSurrogatesReturnsStr) {
+  PyObjectPtr str(
+      PyUnicode_DecodeLocaleAndSize("abc\x80", 4, "surrogateescape"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(str));
+  // Necessary to use DecodeUTF8 because CPython will throw an error if it runs
+  // into a surrogate while decoding without the surrogatepass error handler.
+  PyObjectPtr test(PyUnicode_DecodeUTF8("abc\xed\xb2\x80", 6, "surrogatepass"));
+  EXPECT_TRUE(_PyUnicode_EQ(str, test));
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       DecodeLocaleAndSizeWithStrictAndSurrogatesRaisesError) {
+  PyObject* str = PyUnicode_DecodeLocaleAndSize("abc\x80", 4, "strict");
+  ASSERT_EQ(str, nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeDecodeError));
 }
 
 }  // namespace python

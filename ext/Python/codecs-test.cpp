@@ -83,4 +83,18 @@ _codecs.register(lambda x: TupSub((1, 2, 3, 4)))
   EXPECT_EQ(error, nullptr);
 }
 
+TEST_F(CodecsExtensionApiTest, StrictErrorsWithNonExceptionRaisesTypeError) {
+  PyObjectPtr non_exc(PyLong_FromLong(0));
+  EXPECT_EQ(PyCodec_StrictErrors(non_exc), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(CodecsExtensionApiTest, StrictErrorsWithExceptionRaisesIt) {
+  PyObjectPtr exc(PyUnicodeDecodeError_Create("enc", "obj", 3, 1, 2, "rea"));
+  EXPECT_EQ(PyCodec_StrictErrors(exc), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeDecodeError));
+}
+
 }  // namespace python

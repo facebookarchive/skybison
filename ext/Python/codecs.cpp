@@ -116,8 +116,20 @@ PY_EXPORT PyObject* PyCodec_StreamWriter(const char* /* g */, PyObject* /* m */,
   UNIMPLEMENTED("PyCodec_StreamWriter");
 }
 
-PY_EXPORT PyObject* PyCodec_StrictErrors(PyObject* /* c */) {
-  UNIMPLEMENTED("PyCodec_StrictErrors");
+PY_EXPORT PyObject* PyCodec_StrictErrors(PyObject* exc) {
+  DCHECK(exc != nullptr, "exception should not be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
+  Object result(&scope,
+                thread->invokeFunction1(SymbolId::kUnderCodecs,
+                                        SymbolId::kStrictErrors, exc_obj));
+  if (result.isError()) {
+    if (!thread->hasPendingException()) {
+      thread->raiseTypeErrorWithCStr("could not call _codecs.strict_errors");
+    }
+  }
+  return nullptr;
 }
 
 PY_EXPORT PyObject* PyCodec_XMLCharRefReplaceErrors(PyObject* /* c */) {

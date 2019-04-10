@@ -385,6 +385,7 @@ class Runtime;
   V(Str, "str")                                                                \
   V(StrIterator, "str_iterator")                                               \
   V(Strict, "strict")                                                          \
+  V(StrictErrors, "strict_errors")                                             \
   V(Strip, "strip")                                                            \
   V(Sub, "sub")                                                                \
   V(Super, "super")                                                            \

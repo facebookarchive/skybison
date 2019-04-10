@@ -1,4 +1,5 @@
 // unicodeobject.c implementation
+#include <cerrno>
 #include <cstdarg>
 #include <cstring>
 #include <cwchar>
@@ -14,6 +15,8 @@
 #include "utils.h"
 
 const char* Py_FileSystemDefaultEncodeErrors = "surrogateescape";
+// _Py_DecodeLocaleEx is defined in fileutils.c
+extern "C" wchar_t* _Py_DecodeLocaleEx(const char*, size_t*, int);
 
 namespace python {
 
@@ -936,15 +939,97 @@ PY_EXPORT PyObject* PyUnicode_DecodeLatin1(const char* /* s */,
   UNIMPLEMENTED("PyUnicode_DecodeLatin1");
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeLocale(const char* /* r */,
-                                           const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_DecodeLocale");
+PY_EXPORT PyObject* PyUnicode_DecodeLocale(const char* str,
+                                           const char* errors) {
+  return PyUnicode_DecodeLocaleAndSize(str, std::strlen(str), errors);
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* /* r */,
-                                                  Py_ssize_t /* n */,
-                                                  const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_DecodeLocaleAndSize");
+static word mbstowcsErrorpos(const char* str, size_t len) {
+  const char* start = str;
+  mbstate_t mbs;
+  std::memset(&mbs, 0, sizeof(mbs));
+  while (len != 0) {
+    wchar_t ch;
+    size_t converted = std::mbrtowc(&ch, str, len, &mbs);
+    if (converted == 0) {
+      // Reached end of string
+      break;
+    }
+    if (converted == static_cast<size_t>(-1) ||
+        converted == static_cast<size_t>(-2)) {
+      // Conversion error or incomplete character
+      return str - start;
+    }
+    str += converted;
+    len -= converted;
+  }
+  // failed to find the undecodable byte sequence
+  return 0;
+}
+
+PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
+                                                  Py_ssize_t size,
+                                                  const char* errors) {
+  if (str[size] != '\0' || static_cast<size_t>(size) != std::strlen(str)) {
+    PyErr_SetString(PyExc_ValueError, "embedded null byte");
+    return nullptr;
+  }
+  PyObject* result = nullptr;
+  // TODO(T42479157): Make more efficient by following CPython's implementation
+  if (std::strcmp(errors, "strict") == 0) {
+    wchar_t* wstr = PyMem_New(wchar_t, size + 1);
+    if (wstr == nullptr) {
+      PyErr_NoMemory();
+      return nullptr;
+    }
+
+    size_t wlen = std::mbstowcs(wstr, str, size + 1);
+    if (wlen != static_cast<size_t>(-1)) {
+      result = PyUnicode_FromWideChar(wstr, wlen);
+    }
+    PyMem_Free(wstr);
+  } else if (std::strcmp(errors, "surrogateescape") == 0) {
+    size_t wlen;
+    wchar_t* wstr = _Py_DecodeLocaleEx(str, &wlen, 1);
+    if (wstr == nullptr) {
+      if (wlen == static_cast<size_t>(-1)) {
+        PyErr_NoMemory();
+      } else {
+        PyErr_SetFromErrno(PyExc_OSError);
+      }
+      return nullptr;
+    }
+    result = PyUnicode_FromWideChar(wstr, wlen);
+    PyMem_Free(wstr);
+  } else {
+    PyErr_Format(PyExc_ValueError,
+                 "only 'strict' and 'surrogateescape' error handlers "
+                 "are supported, not '%s'",
+                 errors);
+    return nullptr;
+  }
+  if (result != nullptr) {
+    return result;
+  }
+
+  word error_pos = mbstowcsErrorpos(str, size);
+  // TODO(T42609513): Use Py_DecodeLocale and std::strerror to create a better
+  // error message
+  PyObject* reason = PyUnicode_FromString(
+      "mbstowcs() encountered an invalid multibyte sequence");
+  if (reason == nullptr) {
+    return nullptr;
+  }
+
+  PyObject* exc =
+      PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nnO", "locale", str,
+                            size, error_pos, error_pos + 1, reason);
+  Py_DECREF(reason);
+  if (exc != nullptr) {
+    PyCodec_StrictErrors(exc);
+    Py_XDECREF(exc);
+  }
+  return nullptr;
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeMBCS(const char* /* s */,
@@ -1609,10 +1694,31 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t) {
   UNIMPLEMENTED("PyUnicode_READ_CHAR_Func");
 }
 
-PY_EXPORT int _Py_normalize_encoding(const char* /* encoding */,
-                                     char* /* lower */,
-                                     size_t /* lower_len */) {
-  UNIMPLEMENTED("_Py_normalize_encoding");
+PY_EXPORT int _Py_normalize_encoding(const char* encoding, char* lower,
+                                     size_t lower_len) {
+  char* buffer = lower;
+  const char* lower_end = &lower[lower_len - 1];
+  bool has_punct = false;
+  for (char ch = *encoding; ch != '\0'; ch = *++encoding) {
+    if (Py_ISALNUM(ch) || ch == '.') {
+      if (has_punct && buffer != lower) {
+        if (buffer == lower_end) {
+          return 0;
+        }
+        *buffer++ = '_';
+      }
+      has_punct = false;
+
+      if (buffer == lower_end) {
+        return 0;
+      }
+      *buffer++ = Py_TOLOWER(ch);
+    } else {
+      has_punct = true;
+    }
+  }
+  *buffer = '\0';
+  return 1;
 }
 
 PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
