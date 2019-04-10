@@ -35,6 +35,81 @@ result = list.copy(l)
   EXPECT_EQ(result.numItems(), 3);
 }
 
+TEST(ListBuiltinsTest, DunderEqReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = list.__eq__([1, 2, 3], [1, 2, 3])
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
+}
+
+TEST(ListBuiltinsTest, DunderEqWithSameListReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo:
+    def __eq__(self, other):
+        return False
+a = [1, 2, 3]
+result = list.__eq__(a, a)
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
+}
+
+TEST(ListBuiltinsTest, DunderEqWithSameIdentityElementsReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+nan = float("nan")
+result = list.__eq__([nan], [nan])
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
+}
+
+TEST(ListBuiltinsTest, DunderEqWithEqualElementsReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+class Foo:
+    def __init__(self, value):
+        self.value = value
+    def __eq__(self, other):
+        return type(self.value).__eq__(self.value, other.value)
+a = Foo(1)
+b = Foo(1)
+result = list.__eq__([a], [b])
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
+}
+
+TEST(ListBuiltinsTest, DunderEqWithDifferentSizeReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = list.__eq__([1, 2, 3], [1, 2])
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::falseObj());
+}
+
+TEST(ListBuiltinsTest, DunderEqWithDifferentValuesReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = list.__eq__([1, 2, 3], [1, 2, 4])
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::falseObj());
+}
+
+TEST(ListBuiltinsTest, DunderEqWithNonListRhsRaisesNotImplemented) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = list.__eq__([1, 2, 3], (1, 2, 3));
+)");
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplementedType());
+}
+
+TEST(ListBuiltinsTest, DunderEqWithNonListLhsReturnsTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "list.__eq__((1, 2, 3), [1, 2, 3])"),
+      LayoutId::kTypeError, "'__eq__' requires 'list' but received a 'tuple'"));
+}
+
 TEST(ListBuiltinsTest, DunderInitFromList) {
   Runtime runtime;
 

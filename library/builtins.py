@@ -1228,6 +1228,28 @@ class list(bootstrap=True):
     def __setitem__(self, key, value):
         pass
 
+    def __eq__(self, other):
+        if not isinstance(self, list):
+            raise TypeError(
+                f"'__eq__' requires 'list' but received a '{type(self).__name__}'"
+            )
+        if not isinstance(other, list):
+            return NotImplemented
+
+        if self is other:
+            return True
+        length = list.__len__(self)
+        if length != list.__len__(other):
+            return False
+        i = 0
+        while i < length:
+            lhs = list.__getitem__(self, i)
+            rhs = list.__getitem__(other, i)
+            if lhs is not rhs and not (lhs == rhs):
+                return False
+            i += 1
+        return True
+
     def __repr__(self):
         if _repr_enter(self):
             return "[...]"
