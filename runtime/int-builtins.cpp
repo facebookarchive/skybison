@@ -502,11 +502,17 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   Object maybe_bytes(&scope, *bytes_obj);
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfBytes(*maybe_bytes)) {
-    maybe_bytes = callDunderBytes(thread, bytes_obj);
-    if (maybe_bytes.isNoneType()) {
-      maybe_bytes = bytesFromIterable(thread, bytes_obj);
+    maybe_bytes = thread->invokeMethod1(bytes_obj, SymbolId::kDunderBytes);
+    if (maybe_bytes.isError()) {
+      if (thread->hasPendingException()) return *maybe_bytes;
+      // Attribute lookup failed
+      maybe_bytes = thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderBytesNew, bytes_obj);
+      if (maybe_bytes.isError()) return *maybe_bytes;
+    } else if (!runtime->isInstanceOfBytes(*maybe_bytes)) {
+      return thread->raiseTypeError(runtime->newStrFromFmt(
+          "__bytes__ returned non-bytes (type %T)", &maybe_bytes));
     }
-    if (maybe_bytes.isError()) return *maybe_bytes;
   }
   Bytes bytes(&scope, *maybe_bytes);
 

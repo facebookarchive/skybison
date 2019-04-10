@@ -79,11 +79,12 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kSetattr, setattr},
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderByteArrayJoin, ByteArrayBuiltins::join},
+    {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
     {SymbolId::kUnderBytesGetitemSlice, underBytesGetItemSlice},
     {SymbolId::kUnderBytesJoin, BytesBuiltins::join},
     {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
-    {SymbolId::kUnderBytesNew, underBytesNew},
+    {SymbolId::kUnderBytesRepeat, underBytesRepeat},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
     {SymbolId::kUnderListSort, underListSort},
@@ -687,6 +688,37 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
                                  fromlist, level);
 }
 
+RawObject BuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object src(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  // TODO(T38246066): buffers other than bytes, bytearray
+  if (runtime->isInstanceOfBytes(*src)) {
+    return *src;
+  }
+  if (runtime->isInstanceOfByteArray(*src)) {
+    ByteArray source(&scope, *src);
+    return byteArrayAsBytes(thread, runtime, source);
+  }
+  if (src.isList()) {
+    List source(&scope, *src);
+    Tuple items(&scope, source.items());
+    return runtime->bytesFromTuple(thread, items, source.numItems());
+  }
+  if (src.isTuple()) {
+    Tuple source(&scope, *src);
+    return runtime->bytesFromTuple(thread, source, source.length());
+  }
+  if (runtime->isInstanceOfStr(*src)) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFmt("cannot convert '%T' object to bytes", &src));
+  }
+  // Slow path: iterate over source in Python, collect into list, and call again
+  return NoneType::object();
+}
+
 RawObject BuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
@@ -758,6 +790,24 @@ RawObject BuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
     table[from.byteAt(i)] = to.byteAt(i);
   }
   return runtime->newBytesWithAll(table);
+}
+
+RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Bytes self(&scope, args.get(0));
+  Int num(&scope, args.get(1));
+  word count = num.asWordSaturated();
+  if (!SmallInt::isValid(count)) {
+    return thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &num));
+  }
+  // NOTE: unlike __mul__, we raise a value error for negative count
+  if (count < 0) {
+    return thread->raiseValueErrorWithCStr("negative count");
+  }
+  return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
 
 RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,

@@ -922,7 +922,7 @@ class bytes(bootstrap=True):
     def __ne__(self, other):
         pass
 
-    def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
+    def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
         if not isinstance(cls, type):
             raise TypeError(
                 f"bytes.__new__(X): X is not a type object ({type(cls).__name__})"
@@ -934,7 +934,8 @@ class bytes(bootstrap=True):
             )
         if source is _Unbound:
             if encoding is _Unbound and errors is _Unbound:
-                return _bytes_new(cls, 0)
+                # TODO(T36619847): implement bytes subclasses
+                return b""
             raise TypeError("encoding or errors without sequence argument")
         if encoding is not _Unbound:
             if not isinstance(source, str):
@@ -953,7 +954,11 @@ class bytes(bootstrap=True):
             return result
         if isinstance(source, str):
             raise TypeError("string argument without an encoding")
-        return _bytes_new(cls, source)
+        if isinstance(source, int) or hasattr(source, "__index__"):
+            # TODO(T36619847): implement bytes subclasses
+            return _bytes_repeat(b"\x00", _index(source))
+        # TODO(T36619847): implement bytes subclasses
+        return _bytes_new(source)
 
     def __repr__(self) -> str:  # noqa: T484
         pass
@@ -2290,6 +2295,11 @@ def _bytearray_join(self: bytearray, iterable) -> bytearray:
 
 
 @_patch
+def _bytes_from_ints(source) -> bytes:
+    pass
+
+
+@_patch
 def _bytes_getitem(self, index: int) -> int:
     pass
 
@@ -2309,8 +2319,22 @@ def _bytes_maketrans(frm, to) -> bytes:
     pass
 
 
+# source should be a bytes-like object (fast case), tuple/list of ints (fast case),
+# or an iterable of int-like objects (slow case)
+def _bytes_new(source) -> bytes:
+    result = _bytes_from_ints(source)
+    if result is not None:
+        # source was a list or tuple of ints in range(0, 256)
+        return result
+    try:
+        iterator = iter(source)
+    except TypeError:
+        raise TypeError(f"cannot convert '{type(source).__name__}' object to bytes")
+    return _bytes_from_ints([_index(x) for x in iterator])
+
+
 @_patch
-def _bytes_new(cls, source) -> bytes:
+def _bytes_repeat(self: bytes, count: int) -> bytes:
     pass
 
 

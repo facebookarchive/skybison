@@ -131,6 +131,49 @@ TEST(RuntimeBytesTest, Concat) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "foobar"));
 }
 
+TEST(RuntimeBytesTest, FromTupleWithSizeReturnsBytesMatchingSize) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime.newTuple(3));
+  tuple.atPut(0, SmallInt::fromWord(42));
+  tuple.atPut(1, SmallInt::fromWord(123));
+  Object result(&scope, runtime.bytesFromTuple(thread, tuple, 2));
+  const byte bytes[] = {42, 123};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
+}
+
+TEST(RuntimeBytesTest, FromTupleWithNonIndexReturnsNone) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime.newTuple(1));
+  tuple.atPut(0, runtime.newFloat(1));
+  EXPECT_EQ(runtime.bytesFromTuple(thread, tuple, 1), NoneType::object());
+}
+
+TEST(RuntimeBytesTest, FromTupleWithNegativeIntRaisesValueError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime.newTuple(1));
+  tuple.atPut(0, SmallInt::fromWord(-1));
+  Object result(&scope, runtime.bytesFromTuple(thread, tuple, 1));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
+                            "bytes must be in range(0, 256)"));
+}
+
+TEST(RuntimeBytesTest, FromTupleWithBigIntRaisesValueError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime.newTuple(1));
+  tuple.atPut(0, SmallInt::fromWord(256));
+  Object result(&scope, runtime.bytesFromTuple(thread, tuple, 1));
+  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
+                            "bytes must be in range(0, 256)"));
+}
+
 TEST(RuntimeBytesTest, Subseq) {
   Runtime runtime;
   Thread* thread = Thread::current();

@@ -271,7 +271,8 @@ PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
     return pyobj;
   }
 
-  Object result(&scope, bytesFromIterable(thread, obj));
+  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kUnderBytesNew, obj));
   if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }

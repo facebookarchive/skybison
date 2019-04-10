@@ -240,7 +240,9 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     Bytes bytes(&scope, array.bytes());
     runtime->byteArrayIadd(thread, self, bytes, array.numItems());
   } else {
-    Object maybe_bytes(&scope, bytesFromIterable(thread, source));
+    Object maybe_bytes(
+        &scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                        SymbolId::kUnderBytesNew, source));
     if (maybe_bytes.isError()) return *maybe_bytes;
     Bytes bytes(&scope, *maybe_bytes);
     runtime->byteArrayIadd(thread, self, bytes, bytes.length());

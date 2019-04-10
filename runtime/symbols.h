@@ -414,11 +414,13 @@ class Runtime;
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
   V(UnderByteArrayToString, "_bytearray_to_string")                            \
+  V(UnderBytesFromInts, "_bytes_from_ints")                                    \
   V(UnderBytesGetitem, "_bytes_getitem")                                       \
   V(UnderBytesGetitemSlice, "_bytes_getitem_slice")                            \
   V(UnderBytesJoin, "_bytes_join")                                             \
   V(UnderBytesMaketrans, "_bytes_maketrans")                                   \
   V(UnderBytesNew, "_bytes_new")                                               \
+  V(UnderBytesRepeat, "_bytes_repeat")                                         \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \

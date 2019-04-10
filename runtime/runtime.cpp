@@ -2292,6 +2292,28 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
   return *result;
 }
 
+RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
+                                  word length) {
+  DCHECK_BOUND(length, items.length());
+  HandleScope scope(thread);
+  Bytes result(&scope, heap()->createBytes(length));
+  for (word idx = 0; idx < length; idx++) {
+    Object item(&scope, items.at(idx));
+    if (!isInstanceOfInt(*item)) {
+      // escape into slow path
+      return NoneType::object();
+    }
+    Int index(&scope, *item);
+    OptInt<byte> current_byte = index.asInt<byte>();
+    if (current_byte.error == CastError::None) {
+      result.byteAtPut(idx, current_byte.value);
+    } else {
+      return thread->raiseValueErrorWithCStr("bytes must be in range(0, 256)");
+    }
+  }
+  return *result;
+}
+
 RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
                              const Tuple& src, word src_length) {
   DCHECK_BOUND(src_length, src.length());
@@ -2339,6 +2361,9 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
   DCHECK(count > 0, "count should be positive");
   DCHECK_BOUND(length, source.length());
   DCHECK_BOUND(count, kMaxWord / length);
+  if (length == 1) {
+    return newBytes(count, source.byteAt(0));
+  }
   // TODO(T36997048): immediate small byte arrays
   HandleScope scope(thread);
   Bytes result(&scope, heap()->createBytes(length * count));

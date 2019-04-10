@@ -352,6 +352,9 @@ class Runtime {
   // Returns a new Bytes containing the elements of self and then other.
   RawObject bytesConcat(Thread* thread, const Bytes& self, const Bytes& other);
 
+  // Returns a new Bytes from the first `length` int-like elements in the tuple.
+  RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
+
   // Concatenates an iterable of bytes-like objects with a separator. Returns
   // the concatenated bytes.
   RawObject bytesJoin(Thread* thread, const Object& sep, const Tuple& src,

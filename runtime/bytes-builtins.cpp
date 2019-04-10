@@ -9,98 +9,6 @@
 
 namespace python {
 
-RawObject callDunderBytes(Thread* thread, const Object& obj) {
-  HandleScope scope(thread);
-  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderBytes));
-  if (result.isError()) {
-    if (!thread->hasPendingException()) {
-      // Attribute lookup failed, return None
-      return RawNoneType::object();
-    }
-    return *result;
-  }
-  if (!thread->runtime()->isInstanceOfBytes(*result)) {
-    return thread->raiseTypeErrorWithCStr("__bytes__ returned non-bytes");
-  }
-  return *result;
-}
-
-RawObject bytesFromIterable(Thread* thread, const Object& obj) {
-  // TODO(T38246066): objects other than bytes (and subclasses) as buffers
-  Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfBytes(*obj)) {
-    UNIMPLEMENTED("strict subclass of bytes");  // TODO(T36619847)
-  }
-  HandleScope scope(thread);
-  if (obj.isList()) {
-    List list(&scope, *obj);
-    Tuple tuple(&scope, list.items());
-    return bytesFromTuple(thread, tuple, list.numItems());
-  }
-  if (obj.isTuple()) {
-    Tuple tuple(&scope, *obj);
-    return bytesFromTuple(thread, tuple, tuple.length());
-  }
-  if (!runtime->isInstanceOfStr(*obj)) {
-    Object iter(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIter));
-    if (iter.isError()) {
-      if (!thread->hasPendingException()) {
-        return thread->raiseTypeErrorWithCStr("object is not iterable");
-      }
-      return *iter;
-    }
-    Frame* frame = thread->currentFrame();
-    Object next(&scope, Interpreter::lookupMethod(thread, frame, iter,
-                                                  SymbolId::kDunderNext));
-    if (next.isError()) {
-      return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
-    }
-    Object value(&scope, NoneType::object());
-    List buffer(&scope, runtime->newList());
-    for (;;) {
-      value = Interpreter::callMethod1(thread, frame, next, iter);
-      if (value.isError()) {
-        if (thread->clearPendingStopIteration()) break;
-        return *value;
-      }
-      runtime->listAdd(buffer, value);
-    }
-    Tuple tuple(&scope, buffer.items());
-    return bytesFromTuple(thread, tuple, buffer.numItems());
-  }
-
-  return thread->raiseTypeErrorWithCStr("cannot convert object to bytes");
-}
-
-RawObject bytesFromTuple(Thread* thread, const Tuple& items, word size) {
-  DCHECK_BOUND(size, items.length());
-  HandleScope scope(thread);
-  Bytes result(&scope, thread->runtime()->newBytes(size, 0));
-
-  for (word idx = 0; idx < size; idx++) {
-    Object item(&scope, items.at(idx));
-    item = intFromIndex(thread, item);
-    if (item.isError()) {
-      return *item;
-    }
-
-    // item is now an instance of Int
-    Int index(&scope, *item);
-    OptInt<byte> current_byte = index.asInt<byte>();
-    switch (current_byte.error) {
-      case CastError::None:
-        result.byteAtPut(idx, current_byte.value);
-        continue;
-      case CastError::Overflow:
-      case CastError::Underflow:
-        return thread->raiseValueErrorWithCStr(
-            "bytes must be in range(0, 256)");
-    }
-  }
-
-  return *result;
-}
-
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -363,33 +271,6 @@ RawObject BytesBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Bytes self(&scope, *self_obj);
   Bytes other(&scope, *other_obj);
   return Bool::fromBool(self.compare(*other) != 0);
-}
-
-RawObject underBytesNew(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  // TODO(wmeehan): implement bytes subclasses
-  // Type type(&scope, args.get(0));
-  Object source(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  // if source is an integer, interpret it as the length of a zero-filled bytes
-  if (runtime->isInstanceOfInt(*source)) {
-    Int src(&scope, *source);
-    word size = src.asWordSaturated();
-    if (!SmallInt::isValid(size)) {
-      return thread->raiseOverflowErrorWithCStr(
-          "cannot fit into an index-sized integer");
-    }
-    if (size < 0) {
-      return thread->raiseValueErrorWithCStr("negative count");
-    }
-    return runtime->newBytes(size, 0);
-  }
-  if (source.isBytes()) {
-    return *source;
-  }
-  // last option: source is an iterator that produces bytes
-  return bytesFromIterable(thread, source);
 }
 
 RawObject BytesBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {

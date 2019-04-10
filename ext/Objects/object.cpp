@@ -57,10 +57,10 @@ PY_EXPORT PyObject* PyObject_ASCII(PyObject* pyobj) {
 PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   if (pyobj == nullptr) {
-    View<byte> view(reinterpret_cast<const byte*>("<NULL>"), 6);
-    Bytes result(&scope, thread->runtime()->newBytesWithAll(view));
-    return ApiHandle::newReference(thread, *result);
+    static const byte value[] = "<NULL>";
+    return ApiHandle::newReference(thread, runtime->newBytesWithAll(value));
   }
 
   ApiHandle* handle = ApiHandle::fromPyObject(pyobj);
@@ -70,11 +70,18 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
     return pyobj;
   }
 
-  Object result(&scope, callDunderBytes(thread, obj));
-  if (result.isNoneType()) {
-    result = bytesFromIterable(thread, obj);
+  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderBytes));
+  if (result.isError()) {
+    if (thread->hasPendingException()) return nullptr;
+    // Attribute lookup failed
+    result = thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderBytesNew, obj);
+    if (result.isError()) return nullptr;
+  } else if (!runtime->isInstanceOfBytes(*result)) {
+    thread->raiseTypeError(runtime->newStrFromFmt(
+        "__bytes__ returned non-bytes (type %T)", &result));
+    return nullptr;
   }
-  if (result.isError()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
 
