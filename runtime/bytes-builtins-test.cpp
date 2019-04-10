@@ -365,6 +365,39 @@ TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
   EXPECT_FALSE(RawBool::cast(*gt).value());
 }
 
+TEST(BytesBuiltinsTest, DunderHashReturnsSmallInt) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'h', 'e', 'l', 'l', 'o', '\0'};
+  Bytes bytes_obj(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_TRUE(runBuiltin(BytesBuiltins::dunderHash, bytes_obj).isSmallInt());
+}
+
+TEST(BytesBuiltinsTest, DunderHashSmallBytesReturnsSmallInt) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'h'};
+  Bytes bytes_obj(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_TRUE(runBuiltin(BytesBuiltins::dunderHash, bytes_obj).isSmallInt());
+}
+
+TEST(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'h', 'e', 'l', 'l', 'o', '\0'};
+  Bytes bytes_obj1(&scope, runtime.newBytesWithAll(bytes));
+  Bytes bytes_obj2(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_NE(*bytes_obj1, *bytes_obj2);
+  Object result1(&scope, runBuiltin(BytesBuiltins::dunderHash, bytes_obj1));
+  Object result2(&scope, runBuiltin(BytesBuiltins::dunderHash, bytes_obj2));
+  EXPECT_TRUE(result1.isSmallInt());
+  EXPECT_TRUE(result2.isSmallInt());
+  EXPECT_EQ(*result1, *result2);
+}
+
 TEST(BytesBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
@@ -1161,39 +1194,6 @@ TEST(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('a'), '1');
   EXPECT_EQ(actual.byteAt('b'), '2');
   EXPECT_EQ(actual.byteAt('c'), '3');
-}
-
-TEST(BytesBuiltinsTest, DunderHashReturnsSmallInt) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  const byte bytes[] = {'h', 'e', 'l', 'l', 'o', '\0'};
-  Bytes bytes_obj(&scope, runtime.newBytesWithAll(bytes));
-  EXPECT_TRUE(runBuiltin(BytesBuiltins::dunderHash, bytes_obj).isSmallInt());
-}
-
-TEST(BytesBuiltinsTest, DunderHashSmallBytesReturnsSmallInt) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  const byte bytes[] = {'h'};
-  Bytes bytes_obj(&scope, runtime.newBytesWithAll(bytes));
-  EXPECT_TRUE(runBuiltin(BytesBuiltins::dunderHash, bytes_obj).isSmallInt());
-}
-
-TEST(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  const byte bytes[] = {'h', 'e', 'l', 'l', 'o', '\0'};
-  Bytes bytes_obj1(&scope, runtime.newBytesWithAll(bytes));
-  Bytes bytes_obj2(&scope, runtime.newBytesWithAll(bytes));
-  EXPECT_NE(*bytes_obj1, *bytes_obj2);
-  Object result1(&scope, runBuiltin(BytesBuiltins::dunderHash, bytes_obj1));
-  Object result2(&scope, runBuiltin(BytesBuiltins::dunderHash, bytes_obj2));
-  EXPECT_TRUE(result1.isSmallInt());
-  EXPECT_TRUE(result2.isSmallInt());
-  EXPECT_EQ(*result1, *result2);
 }
 
 }  // namespace python
