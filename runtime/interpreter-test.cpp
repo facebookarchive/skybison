@@ -1683,7 +1683,7 @@ def public_symbol2():
   // Preload the module
   Object name(&scope, runtime.newStrFromCStr("test_module"));
   std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(module_src));
-  runtime.importModuleFromBuffer(buffer.get(), name);
+  ASSERT_FALSE(runtime.importModuleFromBuffer(buffer.get(), name).isError());
 
   runFromCStr(&runtime, R"(
 from test_module import *
@@ -1712,7 +1712,7 @@ def _private_symbol():
   // Preload the module
   Object name(&scope, runtime.newStrFromCStr("test_module"));
   std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(module_src));
-  runtime.importModuleFromBuffer(buffer.get(), name);
+  ASSERT_FALSE(runtime.importModuleFromBuffer(buffer.get(), name).isError());
 
   const char* main_src = R"(
 from test_module import *
@@ -2339,7 +2339,8 @@ TEST(InterpreterTest, MakeFunctionSetsDunderModule) {
   std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(R"(
 def bar(): pass
 )"));
-  runtime.importModuleFromBuffer(buffer.get(), module_name);
+  ASSERT_FALSE(
+      runtime.importModuleFromBuffer(buffer.get(), module_name).isError());
   runFromCStr(&runtime, R"(
 import foo
 def baz(): pass

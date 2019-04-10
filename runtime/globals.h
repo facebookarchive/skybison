@@ -107,6 +107,10 @@ inline D bit_cast(const S& src) {
 #define LIKELY(x) __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 
+// Placeholders for [[nodiscard]] until we move to C++17
+#define NODISCARD __attribute__((warn_unused_result))
+#define WARN_UNUSED __attribute__((warn_unused))
+
 #ifndef __has_builtin
 #define __has_builtin(x) 0
 #endif

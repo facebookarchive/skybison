@@ -222,7 +222,7 @@ class Runtime {
 
   void collectGarbage();
 
-  RawObject run(const char* buffer);
+  NODISCARD RawObject run(const char* buffer);
 
   RawObject hash(RawObject object);
   word siphash24(View<byte> array);
@@ -272,7 +272,8 @@ class Runtime {
 
   // importModuleFromBuffer is exposed for use by the tests. We may be able to
   // remove this later.
-  RawObject importModuleFromBuffer(const char* buffer, const Object& name);
+  NODISCARD RawObject importModuleFromBuffer(const char* buffer,
+                                             const Object& name);
 
   RawObject typeOf(RawObject object);
 
@@ -788,7 +789,7 @@ class Runtime {
   // testing.
   word nextModuleIndex();
 
-  RawObject executeModule(const char* buffer, const Module& module);
+  NODISCARD RawObject executeModule(const char* buffer, const Module& module);
 
  private:
   void initializeApiData();

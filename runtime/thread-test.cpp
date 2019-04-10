@@ -1731,7 +1731,8 @@ hello.say_hello()
   // Pre-load the hello module so is cached.
   std::unique_ptr<char[]> module_buf(Runtime::compileFromCStr(module_src));
   Object name(&scope, runtime.newStrFromCStr("hello"));
-  runtime.importModuleFromBuffer(module_buf.get(), name);
+  ASSERT_FALSE(
+      runtime.importModuleFromBuffer(module_buf.get(), name).isError());
 
   std::string output = compileAndRunToString(&runtime, main_src);
   EXPECT_EQ(output, "hello\n");
@@ -1767,7 +1768,8 @@ hello.foo()
   // Pre-load the hello module so is cached.
   std::unique_ptr<char[]> module_buf(Runtime::compileFromCStr(module_src));
   Object name(&scope, runtime.newStrFromCStr("hello"));
-  runtime.importModuleFromBuffer(module_buf.get(), name);
+  ASSERT_FALSE(
+      runtime.importModuleFromBuffer(module_buf.get(), name).isError());
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, main_src),
                             LayoutId::kAttributeError,
@@ -1794,7 +1796,8 @@ hello.say_hello()
   // Pre-load the hello module so is cached.
   std::unique_ptr<char[]> module_buf(Runtime::compileFromCStr(module_src));
   Object name(&scope, runtime.newStrFromCStr("hello"));
-  runtime.importModuleFromBuffer(module_buf.get(), name);
+  ASSERT_FALSE(
+      runtime.importModuleFromBuffer(module_buf.get(), name).isError());
 
   std::string output = compileAndRunToString(&runtime, main_src);
   EXPECT_EQ(output, "goodbye\n");

@@ -1721,7 +1721,8 @@ RawObject Runtime::importModuleFromBuffer(const char* buffer,
 
   Module module(&scope, newModule(name));
   addModule(module);
-  executeModule(buffer, module);
+  Object result(&scope, executeModule(buffer, module));
+  if (result.isError()) return *result;
   return *module;
 }
 
