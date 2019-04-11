@@ -437,6 +437,8 @@ TEST(IntBuiltinsTest, DunderAbsWithBoolFalseReturnsSmallInt) {
   HandleScope scope;
   Int self(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result.isInt());
+  ASSERT_TRUE(!result.isBool());
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -445,6 +447,8 @@ TEST(IntBuiltinsTest, DunderAbsWithBoolTrueReturnsSmallInt) {
   HandleScope scope;
   Int self(&scope, Bool::trueObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
+  ASSERT_TRUE(result.isInt());
+  ASSERT_TRUE(!result.isBool());
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -1541,39 +1545,35 @@ TEST(IntBuiltinsTest, CompareLargeIntLt) {
 
 TEST(IntBuiltinsTest, StringToIntDPos) {
   Runtime runtime;
+  runFromCStr(&runtime, R"(
+int_0 = int("0")
+int_123 = int("123")
+int_987n = int("-987")
+)");
+
   HandleScope scope;
-  Thread* thread = Thread::current();
-
-  Object str_d0(&scope, runtime.newStrFromCStr("0"));
-  SmallInt int_d0(&scope, IntBuiltins::intFromString(thread, *str_d0, 10));
-  EXPECT_EQ(int_d0.value(), 0);
-
-  Object str_d123(&scope, runtime.newStrFromCStr("123"));
-  SmallInt int_d123(&scope, IntBuiltins::intFromString(thread, *str_d123, 10));
-  EXPECT_EQ(int_d123.value(), 123);
-
-  Object str_d987n(&scope, runtime.newStrFromCStr("-987"));
-  SmallInt int_d987n(&scope,
-                     IntBuiltins::intFromString(thread, *str_d987n, 10));
-  EXPECT_EQ(int_d987n.value(), -987);
+  Int int_0(&scope, moduleAt(&runtime, "__main__", "int_0"));
+  Int int_123(&scope, moduleAt(&runtime, "__main__", "int_123"));
+  Int int_987n(&scope, moduleAt(&runtime, "__main__", "int_987n"));
+  EXPECT_EQ(int_0.asWord(), 0);
+  EXPECT_EQ(int_123.asWord(), 123);
+  EXPECT_EQ(int_987n.asWord(), -987);
 }
 
 TEST(IntBuiltinsTest, StringToIntWithEmptyStringRaisesValueError) {
   Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::current();
-  Object str(&scope, Str::empty());
-  Object result(&scope, IntBuiltins::intFromString(thread, *str, 10));
-  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError, "invalid literal"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+int_empty = int("")
+)"),
+                            LayoutId::kValueError, "invalid literal"));
 }
 
 TEST(IntBuiltinsTest, StringToIntWithWithInvalidStringRaisesValueError) {
   Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::current();
-  Object str(&scope, runtime.newStrFromCStr("12ab"));
-  Object result(&scope, IntBuiltins::intFromString(thread, *str, 10));
-  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError, "invalid literal"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+int_empty = int("12ab")
+)"),
+                            LayoutId::kValueError, "invalid literal"));
 }
 
 TEST(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
@@ -1602,6 +1602,8 @@ TEST(IntBuiltinsTest, DunderIntWithBoolFalseReturnsSmallInt) {
 
   Object self(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  ASSERT_TRUE(result.isInt());
+  ASSERT_TRUE(!result.isBool());
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
@@ -1611,6 +1613,8 @@ TEST(IntBuiltinsTest, DunderIntWithBoolTrueReturnsSmallInt) {
 
   Object self(&scope, Bool::trueObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
+  ASSERT_TRUE(result.isInt());
+  ASSERT_TRUE(!result.isBool());
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
@@ -1829,6 +1833,21 @@ TEST(IntBuiltinsTest, DunderDivmodWithSingleDigitDivisorReturnsTuple) {
   const uword expected_digits[] = {0x79cb7c896c08a31, 0x1206e39b2042db3};
   EXPECT_TRUE(isIntEqualsDigits(result.at(0), expected_digits));
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 19));
+}
+
+TEST(IntBuiltinsTest, DunderDivmodWithBoolDivisorReturnsTuple) {
+  Runtime runtime;
+  HandleScope scope;
+  const uword digits[] = {0x4a23475557e990d0, 0x56c1275a8b41bed9};
+  Object left(&scope, newIntWithDigits(&runtime, digits));
+  Object right(&scope, Bool::trueObj());
+  Object result_obj(&scope, runBuiltin(IntBuiltins::dunderDivmod, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  const uword expected_digits[] = {0x4a23475557e990d0, 0x56c1275a8b41bed9};
+  EXPECT_TRUE(isIntEqualsDigits(result.at(0), expected_digits));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 0));
 }
 
 TEST(IntBuiltinsTest, DunderDivmodWithSingleDigitNegativeDivisorReturnsTuple) {

@@ -61,11 +61,36 @@ void IntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
                                    nativeTrampolineKw<fromBytesKw>);
 }
 
-RawObject IntBuiltins::asInt(const Int& value) {
-  if (value.isBool()) {
-    return RawSmallInt::fromWord(RawBool::cast(*value).value() ? 1 : 0);
+RawObject convertBoolToInt(RawObject object) {
+  DCHECK(object.isBool(), "conversion from bool to int requires a bool object");
+  return RawSmallInt::fromWord(object == RawBool::trueObj() ? 1 : 0);
+}
+
+static RawObject intFromString(Thread* thread, const Str& str, int base) {
+  if (!(base == 0 || (base >= 2 && base <= 36))) {
+    return thread->raiseValueErrorWithCStr(
+        "Invalid base, must be between 2 and 36, or 0");
   }
-  return *value;
+  if (str.length() == 0) {
+    return thread->raiseValueErrorWithCStr("invalid literal");
+  }
+  char* c_str = str.toCStr();  // for strtol()
+  char* end_ptr;
+  errno = 0;
+  long res = std::strtol(c_str, &end_ptr, base);
+  int saved_errno = errno;
+  bool is_complete = (*end_ptr == '\0');
+  free(c_str);
+  if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
+    return thread->raiseValueErrorWithCStr("invalid literal");
+  }
+  if ((res == LONG_MAX || res == LONG_MIN) && saved_errno == ERANGE) {
+    return thread->raiseValueErrorWithCStr("invalid literal (range)");
+  }
+  if (!SmallInt::isValid(res)) {
+    return thread->raiseValueErrorWithCStr("unsupported type");
+  }
+  return SmallInt::fromWord(res);
 }
 
 RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
@@ -85,74 +110,29 @@ RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
         "int.__new__(X): X is not a subtype of int");
   }
 
+  // TODO(T38780562): Handle Int subclasses
   Layout layout(&scope, type.instanceLayout());
   if (layout.id() != LayoutId::kInt) {
-    // TODO(dulinr): Implement __new__ with subtypes of int.
-    UNIMPLEMENTED("int.__new__(<subtype of int>, ...)");
+    UNIMPLEMENTED("int subclassing");
   }
 
+  // int() and int(x)
   Object arg(&scope, args.get(1));
-  if (!arg.isStr()) {
-    // TODO(dulinr): Handle non-string types.
-    UNIMPLEMENTED("int(<non-string>)");
-  }
-
-  // No base argument, use 10 as the base.
-  if (args.get(2).isUnbound()) {
-    return intFromString(thread, *arg, 10);
-  }
-
-  // The third argument is the base of the integer represented in the string.
   Object base(&scope, args.get(2));
-  if (!base.isInt()) {
-    // TODO(dulinr): Call __index__ on base to convert it.
+  if (base.isUnbound()) {
+    return thread->invokeFunction1(SymbolId::kBuiltins,
+                                   SymbolId::kUnderLongOfObj, arg);
+  }
+
+  // int(x, base)
+  if (!runtime->isInstanceOfInt(*base)) {
     UNIMPLEMENTED("Can't handle non-integer base");
   }
-  if (runtime->isInstanceOfBytes(*arg)) {
-    // TODO(T41277914): Int from bytes
-    UNIMPLEMENTED("int.__new__(bytes)");
+  if (!arg.isStr()) {
+    UNIMPLEMENTED("Can't handle non-str arguments");
   }
-  if (runtime->isInstanceOfByteArray(*arg)) {
-    // TODO(T41277959): Int from bytearray
-    UNIMPLEMENTED("int.__new__(bytearray)");
-  }
-  return intFromString(thread, *arg, RawInt::cast(*base).asWord());
-}
-
-RawObject IntBuiltins::intFromString(Thread* thread, RawObject arg_raw,
-                                     int base) {
-  if (!(base == 0 || (base >= 2 && base <= 36))) {
-    return thread->raiseValueErrorWithCStr(
-        "Invalid base, must be between 2 and 36, or 0");
-  }
-  HandleScope scope(thread);
-  Object arg(&scope, arg_raw);
-  if (arg.isInt()) {
-    return *arg;
-  }
-
-  CHECK(arg.isStr(), "not string type");
-  Str s(&scope, *arg);
-  if (s.length() == 0) {
-    return thread->raiseValueErrorWithCStr("invalid literal");
-  }
-  char* c_str = s.toCStr();  // for strtol()
-  char* end_ptr;
-  errno = 0;
-  long res = std::strtol(c_str, &end_ptr, base);
-  int saved_errno = errno;
-  bool is_complete = (*end_ptr == '\0');
-  free(c_str);
-  if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
-    return thread->raiseValueErrorWithCStr("invalid literal");
-  }
-  if ((res == LONG_MAX || res == LONG_MIN) && saved_errno == ERANGE) {
-    return thread->raiseValueErrorWithCStr("invalid literal (range)");
-  }
-  if (!SmallInt::isValid(res)) {
-    return thread->raiseValueErrorWithCStr("unsupported type");
-  }
-  return SmallInt::fromWord(res);
+  Str str(&scope, *arg);
+  return intFromString(thread, str, RawInt::cast(*base).asWord());
 }
 
 static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
@@ -161,17 +141,22 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (self_obj.isInt() && other_obj.isInt()) {
+    Int self(&scope, *self_obj);
+    Int other(&scope, *other_obj);
+    return op(thread, self, other);
+  }
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
-  Object other_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfInt(*other_obj)) {
     return NotImplementedType::object();
   }
-  Int self(&scope, *self_obj);
-  Int other(&scope, *other_obj);
-  return op(thread, self, other);
+
+  // TODO(T38780562): Handle Int subclasses
+  UNIMPLEMENTED("int subclassing");
 }
 
 static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
@@ -179,16 +164,24 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
+  if (self_obj.isInt()) {
+    Int self(&scope, *self_obj);
+    return op(thread, self);
   }
-  Int self(&scope, *self_obj);
-  return op(thread, self);
+  // TODO(T38780562): Handle Int subclasses
+  if (thread->runtime()->isInstanceOfInt(*self_obj)) {
+    UNIMPLEMENTED("int subclassing");
+  }
+  return thread->raiseRequiresType(self_obj, SymbolId::kInt);
 }
 
-RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
-  return intUnaryOp(thread, frame, nargs,
-                    [](Thread*, const Int& self) { return asInt(self); });
+RawObject IntBuiltins::dunderInt(Thread* t, Frame* frame, word nargs) {
+  return intUnaryOp(t, frame, nargs, [](Thread*, const Int& self) -> RawObject {
+    if (self.isBool()) {
+      return convertBoolToInt(*self);
+    }
+    return *self;
+  });
 }
 
 void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
@@ -211,10 +204,14 @@ RawObject IntBuiltins::bitLength(Thread* t, Frame* frame, word nargs) {
 }
 
 RawObject IntBuiltins::dunderAbs(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
-    return self.isNegative() ? thread->runtime()->intNegate(thread, self)
-                             : asInt(self);
-  });
+  return intUnaryOp(t, frame, nargs,
+                    [](Thread* thread, const Int& self) -> RawObject {
+                      if (self.isNegative()) {
+                        return thread->runtime()->intNegate(thread, self);
+                      }
+                      if (self.isBool()) return convertBoolToInt(*self);
+                      return *self;
+                    });
 }
 
 RawObject IntBuiltins::dunderAdd(Thread* t, Frame* frame, word nargs) {
@@ -314,14 +311,23 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
                              const Object& byteorder_obj, bool is_signed) {
   HandleScope scope;
   Runtime* runtime = thread->runtime();
+
+  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
+  if (!self_obj.isInt()) {
+    UNIMPLEMENTED("int subclassing");
+  }
   Int self(&scope, *self_obj);
 
+  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*length_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "length argument cannot be interpreted as an integer");
+  }
+  if (!length_obj.isInt()) {
+    UNIMPLEMENTED("int subclassing");
   }
   Int length_int(&scope, *length_obj);
   OptInt<word> l = length_int.asInt<word>();
@@ -385,6 +391,7 @@ RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   RawObject self = args.get(0);
   RawObject other = args.get(1);
+  // TODO(T38780562): Handle Int subclasses
   if (!self.isSmallInt()) {
     return thread->raiseTypeErrorWithCStr(
         "__truediv__() must be called with int instance as first argument");
@@ -398,7 +405,7 @@ RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
     return runtime->newFloat(left / right);
   }
   if (other.isBool()) {
-    other = IntBuiltins::intFromBool(other);
+    other = convertBoolToInt(other);
   }
   if (other.isInt()) {
     word right = RawInt::cast(other).asWord();
@@ -604,10 +611,6 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   return fromBytesImpl(thread, bytes, byteorder, is_signed);
 }
 
-inline RawObject IntBuiltins::intFromBool(RawObject bool_obj) {
-  return SmallInt::fromWord(bool_obj == Bool::trueObj() ? 1 : 0);
-}
-
 RawObject IntBuiltins::dunderOr(Thread* t, Frame* frame, word nargs) {
   return intBinaryOp(
       t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
@@ -720,6 +723,7 @@ RawObject IntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
+  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseTypeErrorWithCStr("'__repr__' requires a 'int' object");
   }
@@ -835,33 +839,6 @@ const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
-
-RawObject asIntObject(Thread* thread, const Object& object) {
-  if (object.isInt()) {
-    return *object;
-  }
-
-  // TODO(T38780562): Handle Int subclasses
-
-  // Try calling __int__
-  HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
-  Object int_method(&scope, Interpreter::lookupMethod(thread, frame, object,
-                                                      SymbolId::kDunderInt));
-  if (int_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("an integer is required");
-  }
-  Object int_res(&scope,
-                 Interpreter::callMethod1(thread, frame, int_method, object));
-  if (int_res.isError()) return *int_res;
-  if (!thread->runtime()->isInstanceOfInt(*int_res)) {
-    return thread->raiseTypeErrorWithCStr("__int__ returned non-int");
-  }
-
-  // TODO(T38780562): Handle Int subclasses
-
-  return *int_res;
-}
 
 enum RoundingDirection {
   RoundDown = -1,
@@ -982,13 +959,22 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
   return true;
 }
 
-RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
+RawObject convertIntToDouble(Thread* thread, const Object& object,
+                             double* result) {
+  DCHECK(thread->runtime()->isInstanceOfInt(*object),
+         "convertIntToDouble must receive an instance of int");
+  // TODO(T38780562): Handle Int subclasses
+  if (!object.isInt()) {
+    UNIMPLEMENTED("int subclassing");
+  }
+
+  HandleScope scope(thread);
+  Int value(&scope, *object);
   if (value.numDigits() == 1) {
     *result = static_cast<double>(value.asWord());
     return NoneType::object();
   }
 
-  HandleScope scope(thread);
   LargeInt large_int(&scope, *value);
   if (!convertLargeIntToDouble(large_int, result, nullptr)) {
     return thread->raiseOverflowErrorWithCStr(
@@ -1073,8 +1059,12 @@ bool doubleEqualsInt(Thread* thread, double left, const Int& right) {
 
 RawObject intFromIndex(Thread* thread, const Object& obj) {
   Runtime* runtime = thread->runtime();
-  if (runtime->isInstanceOfInt(*obj)) {
+  if (obj.isInt()) {
     return *obj;
+  }
+  // TODO(T38780562): Handle Int subclasses
+  if (runtime->isInstanceOfInt(*obj)) {
+    UNIMPLEMENTED("int subclassing");
   }
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
@@ -1085,10 +1075,14 @@ RawObject intFromIndex(Thread* thread, const Object& obj) {
     }
     return *result;
   }
-  if (!runtime->isInstanceOfInt(*result)) {
-    return thread->raiseTypeErrorWithCStr("__index__ returned non-int");
+  if (result.isInt()) {
+    return *result;
   }
-  return *result;
+  // TODO(T38780562): Handle Int subclasses
+  if (runtime->isInstanceOfInt(*result)) {
+    UNIMPLEMENTED("int subclassing");
+  }
+  return thread->raiseTypeErrorWithCStr("__index__ returned non-int");
 }
 
 }  // namespace python

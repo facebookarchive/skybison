@@ -5,16 +5,15 @@
 
 namespace python {
 
-// Convert object to a RawInt.
-// - If the object is an Int return it unchanged.
-// - If object has an __int__ method call it and return the result.
-// Throws if the conversion isn't possible.
-RawObject asIntObject(Thread* thread, const Object& object);
+// Convert bool `object` to Int.
+RawObject convertBoolToInt(RawObject object);
 
-// Convert int `value` to double.
+// Convert int `object` to double.
 // Returns a NoneType and sets `result` if the conversion was successful,
 // raises an error otherwise.
-RawObject convertIntToDouble(Thread* thread, const Int& value, double* result);
+// This should only be used after passing an isInstanceOfInt check
+RawObject convertIntToDouble(Thread* thread, const Object& object,
+                             double* result);
 
 // Returns true if the Float `left` is equals Int `right`. Returns false if
 // `right` cannot be exactly represented as a Float.
@@ -67,12 +66,7 @@ class IntBuiltins
   static RawObject dunderXor(Thread* thread, Frame* frame, word nargs);
   static RawObject fromBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject fromBytesKw(Thread* thread, Frame* frame, word nargs);
-  static RawObject intFromString(Thread* thread, RawObject str, int base);
-  static RawObject intFromBool(RawObject bool_obj);
   static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
-
-  // Converts a bool value to a small int, returns other values unchanged.
-  static RawObject asInt(const Int& value);
 
   static const BuiltinMethod kBuiltinMethods[];
 

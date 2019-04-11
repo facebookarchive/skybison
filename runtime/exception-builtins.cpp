@@ -215,6 +215,10 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
   result = runtime->attributeAtId(thread, value, SymbolId::kLineno);
   if (result.isError()) return fail();
   if (runtime->isInstanceOfInt(*result)) {
+    // TODO(T38780562): Handle Int subclasses
+    if (!result.isInt()) {
+      UNIMPLEMENTED("int subclassing");
+    }
     Int ival(&scope, *result);
     if (ival.numDigits() > 1) return false;
     *lineno = ival.asWord();
@@ -227,6 +231,10 @@ static bool parseSyntaxError(Thread* thread, const Object& value,
   if (result.isNoneType()) {
     *offset = -1;
   } else if (runtime->isInstanceOfInt(*result)) {
+    // TODO(T38780562): Handle Int subclasses
+    if (!result.isInt()) {
+      UNIMPLEMENTED("int subclassing");
+    }
     Int ival(&scope, *result);
     if (ival.numDigits() > 1) return false;
     *offset = ival.asWord();
@@ -473,6 +481,10 @@ void handleSystemExit(Thread* thread) {
   }
   if (arg.isNoneType()) do_exit(EXIT_SUCCESS);
   if (runtime->isInstanceOfInt(*arg)) {
+    // TODO(T38780562): Handle Int subclasses
+    if (!arg.isInt()) {
+      UNIMPLEMENTED("int subclassing");
+    }
     Int arg_int(&scope, *arg);
     // We could convert and check for overflow error, but the overflow error
     // should get cleared anyway.

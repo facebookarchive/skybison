@@ -116,7 +116,9 @@ RawObject UnderImpModule::execBuiltin(Thread* thread, Frame* frame,
   }
   Module module(&scope, *module_obj);
   Object module_def_obj(&scope, module.def());
-  if (!runtime->isInstanceOfInt(*module_def_obj)) {
+  if (!module_def_obj.isInt()) {
+    CHECK(!runtime->isInstanceOfInt(*module_def_obj),
+          "module_def must be an exact int as it's a C Ptr");
     return runtime->newInt(0);
   }
   Int module_def(&scope, *module_def_obj);

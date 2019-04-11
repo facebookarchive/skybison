@@ -479,9 +479,13 @@ RawObject listFromRange(word start, word stop) {
     }
     return ::testing::AssertionFailure() << "is an Error";
   }
+  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(obj)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, obj) << "'";
+  }
+  if (!obj.isInt()) {
+    UNIMPLEMENTED("int subclassing");
   }
   Int value_int(&scope, obj);
   if (value_int.numDigits() > 1 || value_int.asWord() != value) {
@@ -505,9 +509,13 @@ RawObject listFromRange(word start, word stop) {
     }
     return ::testing::AssertionFailure() << "is an Error";
   }
+  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(obj)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, obj) << "'";
+  }
+  if (!obj.isInt()) {
+    UNIMPLEMENTED("int subclassing");
   }
   Int expected(&scope, newIntWithDigits(runtime, digits));
   Int value_int(&scope, obj);

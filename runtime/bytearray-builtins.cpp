@@ -86,8 +86,8 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   ByteArray self(&scope, *self_obj);
   Object index(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*index)) {
+    // TODO(T38780562): Handle Int subclasses
     if (!index.isInt()) {
-      // TODO(T38780562): strict subclass of int
       UNIMPLEMENTED("subclass of int");
     }
     if (!index.isSmallInt()) {
@@ -221,7 +221,10 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
         "encoding or errors without a string argument");
   }
   if (runtime->isInstanceOfInt(*source)) {
-    // TODO(T38780562): strict subclass of int
+    // TODO(T38780562): Handle Int subclasses
+    if (!source.isInt()) {
+      UNIMPLEMENTED("int subclassing");
+    }
     if (!source.isSmallInt()) {
       return thread->raiseOverflowErrorWithCStr(
           "cannot fit count into an index-sized integer");

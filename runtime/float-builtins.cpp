@@ -54,9 +54,7 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
     return NoneType::object();
   }
   if (thread->runtime()->isInstanceOfInt(*object)) {
-    HandleScope scope(thread);
-    Int value(&scope, *object);
-    return convertIntToDouble(thread, value, result);
+    return convertIntToDouble(thread, object, result);
   }
 
   return NotImplementedType::object();

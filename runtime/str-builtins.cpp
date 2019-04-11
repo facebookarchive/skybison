@@ -682,7 +682,10 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   Str string(&scope, *self);
   Object index(&scope, args.get(1));
   if (runtime->isInstanceOfInt(*index)) {
-    // TODO(T38780562): strict subclass of int
+    // TODO(T38780562): Handle Int subclasses
+    if (!index.isInt()) {
+      UNIMPLEMENTED("int subclassing");
+    }
     if (!index.isSmallInt()) {
       return thread->raiseIndexErrorWithCStr(
           "cannot fit index into an index-sized integer");

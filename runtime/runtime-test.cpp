@@ -1376,12 +1376,12 @@ TEST(RuntimeTest, IsInstanceOf) {
   HandleScope scope;
 
   Object i(&scope, runtime.newInt(123));
-  EXPECT_TRUE(runtime.isInstanceOfInt(*i));
+  EXPECT_TRUE(i.isInt());
   EXPECT_FALSE(runtime.isInstanceOfStr(*i));
 
   Object str(&scope, runtime.newStrFromCStr("this is a long string"));
   EXPECT_TRUE(runtime.isInstanceOfStr(*str));
-  EXPECT_FALSE(runtime.isInstanceOfInt(*str));
+  EXPECT_FALSE(str.isInt());
 
   runFromCStr(&runtime, R"(
 class StopIterationSub(StopIteration):

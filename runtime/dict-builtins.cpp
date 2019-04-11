@@ -413,8 +413,12 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   if (key_hash.isError()) {
     return *key_hash;
   }
+  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*key_hash)) {
     return thread->raiseTypeErrorWithCStr("__hash__ must return 'int'");
+  }
+  if (!key_hash.isInt()) {
+    UNIMPLEMENTED("int subclassing");
   }
 
   // Return results

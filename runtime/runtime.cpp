@@ -1315,7 +1315,7 @@ RawObject Runtime::immediateHash(RawObject object) {
     return object;
   }
   if (object.isBool()) {
-    return SmallInt::fromWord(RawBool::cast(object).value() ? 1 : 0);
+    return convertBoolToInt(object);
   }
   if (object.isSmallStr()) {
     return SmallInt::fromWord(object.raw() >> RawSmallStr::kTagSize);
@@ -4514,10 +4514,12 @@ static void divideWithBiggerDivisor(Thread* thread, const Int& dividend,
     *quotient = RawSmallInt::fromWord(same_sign ? 0 : -1);
   }
   if (modulo != nullptr) {
-    if (same_sign) {
-      *modulo = IntBuiltins::asInt(dividend);
-    } else {
+    if (!same_sign) {
       *modulo = thread->runtime()->intAdd(thread, divisor, dividend);
+    } else if (dividend.isBool()) {
+      *modulo = convertBoolToInt(*dividend);
+    } else {
+      *modulo = *dividend;
     }
   }
 }
@@ -4875,7 +4877,7 @@ RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
   word amount_word = amount.asWord();
   if (amount_word == 0) {
     if (num.isBool()) {
-      return RawSmallInt::fromWord(RawBool::cast(*num).value() ? 1 : 0);
+      return convertBoolToInt(*num);
     }
     return *num;
   }

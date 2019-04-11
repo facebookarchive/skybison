@@ -83,6 +83,39 @@ PY_EXPORT PyObject* PyLong_FromSize_t(size_t ival) {
   return PyLong_FromUnsignedLong(ival);
 }
 
+// Convert object to a RawInt.
+// - If the object is an Int return it unchanged.
+// - If object has an __int__ method call it and return the result.
+// Throws if the conversion isn't possible.
+static RawObject asIntObject(Thread* thread, const Object& object) {
+  if (object.isInt()) {
+    return *object;
+  }
+  // TODO(T38780562): Handle Int subclasses
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfInt(*object)) {
+    UNIMPLEMENTED("int subclassing");
+  }
+
+  // Try calling __int__
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Object int_method(&scope, Interpreter::lookupMethod(thread, frame, object,
+                                                      SymbolId::kDunderInt));
+  if (int_method.isError()) {
+    return thread->raiseTypeErrorWithCStr("an integer is required");
+  }
+  Object int_res(&scope,
+                 Interpreter::callMethod1(thread, frame, int_method, object));
+  if (int_res.isError() || int_res.isInt()) return *int_res;
+  // TODO(T38780562): Handle Int subclasses
+  if (runtime->isInstanceOfInt(*int_res)) {
+    UNIMPLEMENTED("int subclassing");
+  }
+
+  return thread->raiseTypeErrorWithCStr("__int__ returned non-int");
+}
+
 // Attempt to convert the given PyObject to T. When overflow != nullptr,
 // *overflow will be set to -1, 1, or 0 to indicate underflow, overflow, or
 // neither, respectively. When under/overflow occurs, -1 is returned; otherwise,
@@ -203,9 +236,13 @@ PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  // TODO(T38780562): Handle Int subclasses
   if (!thread->runtime()->isInstanceOfInt(*object)) {
     thread->raiseTypeErrorWithCStr("an integer is required");
     return -1.0;
+  }
+  if (!object.isInt()) {
+    UNIMPLEMENTED("int subclassing");
   }
   Int value(&scope, *object);
   double result;
@@ -295,8 +332,9 @@ PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   Object obj(&scope, ApiHandle::fromPyObject(vv)->asObject());
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfInt(*obj), "requires an integer");
+  // TODO(T38780562): Handle Int subclasses
   if (!obj.isInt()) {
-    UNIMPLEMENTED("int subclass");
+    UNIMPLEMENTED("int subclassing");
   }
   Int value(&scope, *obj);
   return value.isZero() ? 0 : (value.isNegative() ? -1 : 1);
