@@ -352,11 +352,6 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
   Type type(&scope, *receiver);
   Type meta_type(&scope, typeOf(*receiver));
 
-  if (RawStr::cast(*name).equals(symbols()->DunderClass())) {
-    // TODO(T27735822): Make __class__ a descriptor
-    return *meta_type;
-  }
-
   // Look for the attribute in the meta class
   Object meta_attr(&scope, lookupNameInMro(thread, meta_type, name));
   if (!meta_attr.isError() && isDataDescriptor(thread, meta_attr)) {
@@ -481,10 +476,6 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
                                    const Object& name) {
   DCHECK(name.isStr(), "Name is not a string");
-  if (RawStr::cast(*name).equals(symbols()->DunderClass())) {
-    // TODO(T27735822): Make __class__ a descriptor
-    return typeOf(*receiver);
-  }
 
   // Look for the attribute in the class
   HandleScope scope(thread);
@@ -3936,8 +3927,8 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
 RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
                                 const Object& name) {
   DCHECK(name.isStr(), "Name is not a string");
+  // This must return `super`.
   if (RawStr::cast(*name).equals(symbols()->DunderClass())) {
-    // TODO(T27735822): Make __class__ a descriptor
     return typeOf(*receiver);
   }
 

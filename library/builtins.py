@@ -91,12 +91,43 @@ class type(bootstrap=True):
         return list(self.__mro__)
 
 
+class property(bootstrap=True):
+    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
+        pass
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        pass
+
+    def deleter(self, fn):
+        pass
+
+    def setter(self, fn):
+        pass
+
+    def getter(self, fn):
+        pass
+
+    def __get__(self, instance, owner):
+        pass
+
+    def __set__(self, instance, value):
+        pass
+
+
 class object(bootstrap=True):  # noqa: E999
     def __new__(cls, *args, **kwargs):
         pass
 
     def __init__(self, *args, **kwargs):
         pass
+
+    @property
+    def __class__(self):
+        return type(self)
+
+    @__class__.setter  # noqa: F811
+    def __class__(self, value):
+        _unimplemented()
 
     def __dir__(self):
         _unimplemented()
@@ -252,29 +283,6 @@ class memoryview(bootstrap=True):
         pass
 
     def cast(self, format: str) -> memoryview:
-        pass
-
-
-class property(bootstrap=True):
-    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
-        pass
-
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        pass
-
-    def deleter(self, fn):
-        pass
-
-    def setter(self, fn):
-        pass
-
-    def getter(self, fn):
-        pass
-
-    def __get__(self, instance, owner):
-        pass
-
-    def __set__(self, instance, value):
         pass
 
 
