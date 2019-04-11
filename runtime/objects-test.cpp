@@ -254,7 +254,7 @@ TEST(IntTest, AsInt) {
 
   Int num(&scope, runtime.newInt(1234));
   EXPECT_EQ(num.asInt<byte>().error, CastError::Overflow);
-  EXPECT_EQ(num.asInt<sbyte>().error, CastError::Overflow);
+  EXPECT_EQ(num.asInt<int8_t>().error, CastError::Overflow);
   EXPECT_VALID(num.asInt<int>(), 1234);
   EXPECT_VALID(num.asInt<long>(), 1234);
   EXPECT_VALID(num.asInt<unsigned>(), 1234U);
@@ -262,7 +262,7 @@ TEST(IntTest, AsInt) {
 
   Int neg_num(&scope, runtime.newInt(-4567));
   EXPECT_EQ(neg_num.asInt<unsigned>().error, CastError::Underflow);
-  EXPECT_EQ(neg_num.asInt<sbyte>().error, CastError::Underflow);
+  EXPECT_EQ(neg_num.asInt<int8_t>().error, CastError::Underflow);
   EXPECT_VALID(neg_num.asInt<int16>(), -4567);
 
   Int neg_one(&scope, runtime.newInt(-1));

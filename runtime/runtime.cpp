@@ -3548,7 +3548,7 @@ word Runtime::codeOffsetToLineNum(Thread* thread, const Code& code,
     if (cur_offset > offset) {
       break;
     }
-    line += static_cast<sbyte>(table.byteAt(i + 1));
+    line += static_cast<int8_t>(table.byteAt(i + 1));
   }
   return line;
 }

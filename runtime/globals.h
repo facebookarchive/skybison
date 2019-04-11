@@ -6,7 +6,6 @@
 #include <type_traits>
 
 typedef unsigned char byte;
-typedef signed char sbyte;
 typedef short int int16;
 typedef int int32;
 typedef long long int64;
