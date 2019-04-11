@@ -1672,7 +1672,24 @@ class str(bootstrap=True):
         _unimplemented()
 
     def isidentifier(self):
-        _unimplemented()
+        if not isinstance(self, str):
+            raise TypeError(
+                f"'isidentifier' expected 'str' but got '{type(self).__name__}'"
+            )
+        if not self:
+            return False
+        is_continue = False
+        for ch in str.__iter__(self):
+            if "A" <= ch <= "Z" or "a" <= ch <= "z" or ch == "_":
+                pass
+            elif is_continue and "0" <= ch <= "9":
+                pass
+            elif ch >= "\x80":
+                _unimplemented()
+            else:
+                return False
+            is_continue = True
+        return True
 
     def islower(self):
         # TODO(T42050373): Support non-ASCII

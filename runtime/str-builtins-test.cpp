@@ -2799,4 +2799,71 @@ result = "".capitalize()
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), ""));
 }
 
+TEST(StrBuiltinsTest, IsidentifierWithEmptyStringReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "".isidentifier()
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsidentifierWithNumberReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "9".isidentifier()
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsidentifierWithPeriodReturnsFalse) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = ".".isidentifier()
+print(result)
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
+}
+
+TEST(StrBuiltinsTest, IsidentifierWithLowercaseLetterReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "a".isidentifier()
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsidentifierWithUppercaseLetterReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "A".isidentifier()
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsidentifierWithUnderscoreReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "_".isidentifier()
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsidentifierWithOnlyLettersReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "abc".isidentifier()
+print(result)
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, IsidentifierWithLettersAndNumbersReturnsTrue) {
+  Runtime runtime;
+  runFromCStr(&runtime, R"(
+result = "abc213".isidentifier()
+print(result)
+)");
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
 }  // namespace python
