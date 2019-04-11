@@ -1952,7 +1952,7 @@ Foo.bar('testing 123')
   EXPECT_EQ(output, "testing 123\n");
 }
 
-TEST(ClassAttributeDeathTest, GetDataDescriptorOnMetaclass) {
+TEST(ClassAttributeTest, GetDataDescriptorOnMetaclass) {
   Runtime runtime;
 
   // Create the data descriptor class
@@ -1962,10 +1962,11 @@ class DataDescriptor:
     pass
 
   def __get__(self, instance, owner):
-    pass
+    return 42
 )";
   runFromCStr(&runtime, src);
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Module main(&scope, findModule(&runtime, "__main__"));
   Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
 
@@ -1978,8 +1979,7 @@ class DataDescriptor:
   Object descr(&scope, runtime.newInstance(layout));
   setInMetaclass(&runtime, type, attr, descr);
 
-  ASSERT_DEATH(runtime.attributeAt(Thread::current(), type, attr),
-               "custom descriptors are unsupported");
+  EXPECT_TRUE(isIntEqualsWord(runtime.attributeAt(thread, type, attr), 42));
 }
 
 TEST(TypeAttributeTest, GetNonDataDescriptorOnMetaclass) {

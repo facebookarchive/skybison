@@ -359,11 +359,9 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
 
   // Look for the attribute in the meta class
   Object meta_attr(&scope, lookupNameInMro(thread, meta_type, name));
-  if (!meta_attr.isError()) {
-    if (isDataDescriptor(thread, meta_attr)) {
-      // TODO(T25692531): Call __get__ from meta_attr
-      UNIMPLEMENTED("custom descriptors are unsupported");
-    }
+  if (!meta_attr.isError() && isDataDescriptor(thread, meta_attr)) {
+    return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                          meta_attr, type, meta_type);
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
@@ -397,9 +395,8 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
   // the metaclass (if any).
   if (!meta_attr.isError()) {
     if (isNonDataDescriptor(thread, meta_attr)) {
-      Object owner(&scope, *meta_type);
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            meta_attr, receiver, owner);
+                                            meta_attr, type, meta_type);
     }
     // If a regular attribute was found in the metaclass, return it
     return *meta_attr;
