@@ -10,7 +10,7 @@ namespace python {
 class ExtensionApi : public ::testing::Test {
  protected:
   void SetUp() override {
-    saved_locale_ = strdup(std::setlocale(LC_CTYPE, nullptr));
+    saved_locale_ = ::strdup(std::setlocale(LC_CTYPE, nullptr));
     std::setlocale(LC_CTYPE, "en_US.UTF-8");
     Py_Initialize();
   }
