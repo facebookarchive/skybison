@@ -1122,8 +1122,7 @@ TEST(ThreadTest, BuildSet) {
   EXPECT_TRUE(runtime.setIncludes(set, none));
 }
 
-static RawObject inspect_block(Thread*, Frame* frame, word)
-    __attribute__((aligned(16)));
+static RawObject inspect_block(Thread*, Frame* frame, word) ALIGN_16;
 
 // inspect_block is meant to be called raw, without any trampoline. When
 // trampolines become mandatory in the future, this function should inspect

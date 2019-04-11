@@ -110,6 +110,8 @@ inline D bit_cast(const S& src) {
 #define NODISCARD __attribute__((warn_unused_result))
 #define WARN_UNUSED __attribute__((warn_unused))
 
+#define ALIGN_16 __attribute__((aligned(16)))
+
 #ifndef __has_builtin
 #define __has_builtin(x) 0
 #endif
