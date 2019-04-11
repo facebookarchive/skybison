@@ -73,6 +73,7 @@ class Runtime {
   RawObject newBoundMethod(const Object& function, const Object& self);
 
   RawObject newByteArray();
+  RawObject newByteArrayIterator(Thread* thread, const ByteArray& bytearray);
 
   RawObject newBytes(word length, byte fill);
   RawObject newBytesWithAll(View<byte> array);

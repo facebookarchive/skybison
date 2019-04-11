@@ -646,6 +646,17 @@ class KeyError(bootstrap=True):
         return super(KeyError, self).__str__()
 
 
+class bytearray_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+
 class bytearray(bootstrap=True):
     def __add__(self, other) -> bytearray:
         pass
@@ -678,7 +689,7 @@ class bytearray(bootstrap=True):
         pass
 
     def __iter__(self):
-        _unimplemented()
+        pass
 
     def __le__(self):
         _unimplemented()

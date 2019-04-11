@@ -960,4 +960,51 @@ TEST(ByteArrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('c'), '3');
 }
 
+TEST(ByteArrayBuiltinsTest, DunderIterReturnsByteArrayIterator) {
+  Runtime runtime;
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = type(bytearray().__iter__())").isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_EQ(*result, runtime.typeAt(LayoutId::kByteArrayIterator));
+}
+
+TEST(ByteArrayIteratorBuiltinsTest, DunderNextReturnsNextElement) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+ba = bytearray(b'abc')
+it = iter(ba)
+r0 = it.__next__()
+r1 = it.__next__()
+r2 = it.__next__()
+try:
+  it.__next__()
+  r3 = False
+except StopIteration:
+  r3 = True
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "r0"), 'a'));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "r1"), 'b'));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "r2"), 'c'));
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "r3"), Bool::trueObj());
+}
+
+TEST(ByteArrayIteratorBuiltinsTest,
+     DunderNextStopsIterationWhenByteArrayIsShrunk) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+ba = bytearray(b'abc')
+it = iter(ba)
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ByteArray ba(&scope, moduleAt(&runtime, "__main__", "ba"));
+  ByteArrayIterator it(&scope, moduleAt(&runtime, "__main__", "it"));
+  ba.setNumItems(0);
+  EXPECT_TRUE(raised(thread->invokeMethod1(it, SymbolId::kDunderNext),
+                     LayoutId::kStopIteration));
+}
+
 }  // namespace python

@@ -110,6 +110,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kBrokenPipeError, LayoutId::kBrokenPipeError},
     {SymbolId::kBufferError, LayoutId::kBufferError},
     {SymbolId::kByteArray, LayoutId::kByteArray},
+    {SymbolId::kByteArrayIterator, LayoutId::kByteArrayIterator},
     {SymbolId::kBytes, LayoutId::kBytes},
     {SymbolId::kBytesWarning, LayoutId::kBytesWarning},
     {SymbolId::kChildProcessError, LayoutId::kChildProcessError},

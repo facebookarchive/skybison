@@ -32,6 +32,7 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderImul, dunderImul},
     {SymbolId::kDunderInit, dunderInit},
+    {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNew, dunderNew},
@@ -253,6 +254,19 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject ByteArrayBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  return runtime->newByteArrayIterator(thread, self);
+}
+
 RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);
@@ -418,6 +432,56 @@ RawObject ByteArrayBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   result.setBytes(*joined);
   result.setNumItems(Bytes::cast(*joined).length());
   return *result;
+}
+
+const BuiltinMethod ByteArrayIteratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLengthHint, dunderLengthHint},
+    {SymbolId::kDunderNext, dunderNext},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+RawObject ByteArrayIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isByteArrayIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kByteArrayIterator);
+  }
+  return *self;
+}
+
+RawObject ByteArrayIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isByteArrayIterator()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArrayIterator);
+  }
+  ByteArrayIterator self(&scope, *self_obj);
+  ByteArray bytearray(&scope, self.iterable());
+  if (self.index() >= bytearray.numItems()) {
+    return thread->raiseStopIteration(NoneType::object());
+  }
+  Int item(&scope, thread->runtime()->newInt(bytearray.byteAt(self.index())));
+  self.setIndex(self.index() + 1);
+  return *item;
+}
+
+RawObject ByteArrayIteratorBuiltins::dunderLengthHint(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isByteArrayIterator()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArrayIterator);
+  }
+  ByteArrayIterator self(&scope, *self_obj);
+  ByteArray bytearray(&scope, self.iterable());
+  return SmallInt::fromWord(bytearray.numItems() - self.index());
 }
 
 }  // namespace python

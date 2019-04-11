@@ -301,6 +301,15 @@ RawObject Runtime::newByteArray() {
   return *result;
 }
 
+RawObject Runtime::newByteArrayIterator(Thread* thread,
+                                        const ByteArray& bytearray) {
+  HandleScope scope(thread);
+  ByteArrayIterator result(&scope, heap()->create<RawByteArrayIterator>());
+  result.setIterable(*bytearray);
+  result.setIndex(0);
+  return *result;
+}
+
 RawObject Runtime::newBytes(word length, byte fill) {
   DCHECK(length >= 0, "invalid length %ld", length);
   if (length == 0) {
@@ -1433,6 +1442,7 @@ void Runtime::initializeHeapTypes() {
 
   // Concrete classes.
   ByteArrayBuiltins::initialize(this);
+  ByteArrayIteratorBuiltins::initialize(this);
   ClassMethodBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   CodeBuiltins::initialize(this);

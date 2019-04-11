@@ -41,8 +41,7 @@ __name__ = "collections.abc"
 # are not included on this list.
 # TODO(T42612384)
 #bytes_iterator = type(iter(b''))
-# TODO(T42612419)
-#bytearray_iterator = type(iter(bytearray()))
+bytearray_iterator = type(iter(bytearray()))
 #callable_iterator = ???
 dict_keyiterator = type(iter({}.keys()))
 dict_valueiterator = type(iter({}.values()))
@@ -291,8 +290,7 @@ class Iterator(Iterable):
 
 # TODO(T42612384)
 #Iterator.register(bytes_iterator)
-# TODO(T42612419)
-#Iterator.register(bytearray_iterator)
+Iterator.register(bytearray_iterator)
 #Iterator.register(callable_iterator)
 Iterator.register(dict_keyiterator)
 Iterator.register(dict_valueiterator)

@@ -149,6 +149,7 @@ class Runtime;
   V(BuiltinModuleNames, "builtin_module_names")                                \
   V(Builtins, "builtins")                                                      \
   V(ByteArray, "bytearray")                                                    \
+  V(ByteArrayIterator, "bytearray_iterator")                                   \
   V(Byteorder, "byteorder")                                                    \
   V(Bytes, "bytes")                                                            \
   V(BytesWarning, "BytesWarning")                                              \

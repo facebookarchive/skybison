@@ -124,6 +124,7 @@ class WARN_UNUSED Handle : public T {
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
   V(ByteArray)                                                                 \
+  V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \

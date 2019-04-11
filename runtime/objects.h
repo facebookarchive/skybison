@@ -27,6 +27,7 @@ class Handle;
   V(Object)                                                                    \
   V(BoundMethod)                                                               \
   V(ByteArray)                                                                 \
+  V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
@@ -253,6 +254,7 @@ class RawObject {
   bool isBaseException() const;
   bool isBoundMethod() const;
   bool isByteArray() const;
+  bool isByteArrayIterator() const;
   bool isClassMethod() const;
   bool isCode() const;
   bool isComplex() const;
@@ -1379,6 +1381,11 @@ class RawIteratorBase : public RawHeapObject {
   static const int kIterableOffset = RawHeapObject::kSize;
   static const int kIndexOffset = kIterableOffset + kPointerSize;
   static const int kSize = kIndexOffset + kPointerSize;
+};
+
+class RawByteArrayIterator : public RawIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(ByteArrayIterator);
 };
 
 class RawSeqIterator : public RawIteratorBase {
@@ -2516,6 +2523,10 @@ inline bool RawObject::isBoundMethod() const {
 
 inline bool RawObject::isByteArray() const {
   return isHeapObjectWithLayout(LayoutId::kByteArray);
+}
+
+inline bool RawObject::isByteArrayIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kByteArrayIterator);
 }
 
 inline bool RawObject::isClassMethod() const {
