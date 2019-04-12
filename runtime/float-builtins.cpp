@@ -561,7 +561,6 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
   if (!self.isFloat()) {
     UNIMPLEMENTED("float subclass");
   }
-  // TODO(T40438612): Implement the modulo operation given the 3rd argument.
   if (!args.get(2).isUnbound()) {
     return thread->raiseTypeErrorWithCStr(
         "pow() 3rd argument not allowed unless all arguments are integers");
