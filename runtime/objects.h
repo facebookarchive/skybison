@@ -2297,11 +2297,11 @@ class RawSuper : public RawHeapObject {
  public:
   // getters and setters
   RawObject type() const;
-  void setType(RawObject tp) const;
+  void setType(RawObject type) const;
   RawObject object() const;
   void setObject(RawObject obj) const;
   RawObject objectType() const;
-  void setObjectType(RawObject tp) const;
+  void setObjectType(RawObject type) const;
 
   // Layout.
   static const int kTypeOffset = RawHeapObject::kSize;
@@ -4481,9 +4481,8 @@ inline RawObject RawSuper::type() const {
   return instanceVariableAt(kTypeOffset);
 }
 
-inline void RawSuper::setType(RawObject tp) const {
-  DCHECK(tp.isType(), "expected type");
-  instanceVariableAtPut(kTypeOffset, tp);
+inline void RawSuper::setType(RawObject type) const {
+  instanceVariableAtPut(kTypeOffset, type);
 }
 
 inline RawObject RawSuper::object() const {
@@ -4498,9 +4497,8 @@ inline RawObject RawSuper::objectType() const {
   return instanceVariableAt(kObjectTypeOffset);
 }
 
-inline void RawSuper::setObjectType(RawObject tp) const {
-  DCHECK(tp.isType(), "expected type");
-  instanceVariableAtPut(kObjectTypeOffset, tp);
+inline void RawSuper::setObjectType(RawObject type) const {
+  instanceVariableAtPut(kObjectTypeOffset, type);
 }
 
 // RawTupleIterator

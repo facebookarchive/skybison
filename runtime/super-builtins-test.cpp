@@ -8,6 +8,24 @@ namespace python {
 
 using namespace testing;
 
+TEST(SuperBuiltinsTest, DunderCallWorksInTypesWithNonDefaultMetaclass) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class M(type): pass
+class A(metaclass=M):
+    x = 2
+class B(A):
+    x = 4
+    def getsuper(self):
+        return super()
+result = B().getsuper().x
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+}
+
 TEST(SuperBuiltinsTest, SuperTest1) {
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, R"(
