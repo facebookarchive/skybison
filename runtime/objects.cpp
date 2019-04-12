@@ -480,7 +480,7 @@ bool RawStr::equalsCStr(const char* c_str) const {
   const char* cp = c_str;
   const word len = length();
   for (word i = 0; i < len; i++, cp++) {
-    char ch = *cp;
+    byte ch = static_cast<byte>(*cp);
     if (ch == '\0' || ch != charAt(i)) {
       return false;
     }

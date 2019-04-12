@@ -897,6 +897,13 @@ TEST(StringTest, CompareSmallStr) {
   EXPECT_FALSE(small.equalsCStr("123456789"));
 }
 
+TEST(StringTest, CompareWithUnicode) {
+  Runtime runtime;
+  HandleScope scope;
+  Str small(&scope, runtime.newStrFromCStr(u8"hello\u2028"));
+  EXPECT_TRUE(small.equalsCStr("hello\u2028"));
+}
+
 TEST(WeakRefTest, EnqueueAndDequeue) {
   Runtime runtime;
   HandleScope scope;
