@@ -1728,7 +1728,8 @@ hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  std::unique_ptr<char[]> module_buf(Runtime::compileFromCStr(module_src));
+  std::unique_ptr<char[]> module_buf(
+      Runtime::compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime.newStrFromCStr("hello"));
   ASSERT_FALSE(
       runtime.importModuleFromBuffer(module_buf.get(), name).isError());
@@ -1765,7 +1766,8 @@ hello.foo()
 )";
 
   // Pre-load the hello module so is cached.
-  std::unique_ptr<char[]> module_buf(Runtime::compileFromCStr(module_src));
+  std::unique_ptr<char[]> module_buf(
+      Runtime::compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime.newStrFromCStr("hello"));
   ASSERT_FALSE(
       runtime.importModuleFromBuffer(module_buf.get(), name).isError());
@@ -1793,7 +1795,8 @@ hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  std::unique_ptr<char[]> module_buf(Runtime::compileFromCStr(module_src));
+  std::unique_ptr<char[]> module_buf(
+      Runtime::compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime.newStrFromCStr("hello"));
   ASSERT_FALSE(
       runtime.importModuleFromBuffer(module_buf.get(), name).isError());

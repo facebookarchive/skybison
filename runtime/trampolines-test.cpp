@@ -503,8 +503,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2, 3);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
-  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, src), LayoutId::kTypeError));
 }
 
 TEST(CallTest, MissingKeyword) {
@@ -514,8 +513,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
-  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, src), LayoutId::kTypeError));
 }
 
 TEST(CallTest, ArgNameMismatch) {
@@ -525,8 +523,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, d = 2, c = 3);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
-  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, src), LayoutId::kTypeError));
 }
 
 TEST(CallTest, TooManyKWArgs) {
@@ -536,8 +533,7 @@ def foo(a,b, *, c):
   print(a,b,c)
 foo(1, 2, 4, c = 3);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
-  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, src), LayoutId::kTypeError));
 }
 
 TEST(CallTest, TooManyArgs) {
@@ -547,8 +543,7 @@ def foo(a,b, c):
   print(a,b,c)
 foo(1, 2, 3, 4);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
-  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, src), LayoutId::kTypeError));
 }
 
 TEST(CallTest, TooFewArgs) {
@@ -558,8 +553,7 @@ def foo(a,b, c):
   print(a,b,c)
 foo(3, 4);
 )";
-  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(src));
-  EXPECT_TRUE(raised(runtime.run(buffer.get()), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime, src), LayoutId::kTypeError));
 }
 
 static RawObject firstArg(Thread*, Frame* frame, word argc) {

@@ -16,22 +16,13 @@ int main(int argc, const char** argv) {
   const char* file_name = argv[1];
   word file_len;
   std::unique_ptr<char[]> buffer(python::OS::readFile(file_name, &file_len));
-  if (buffer.get() == nullptr) {
-    std::exit(EXIT_FAILURE);
-  }
-  bool is_source(true);
+  if (buffer == nullptr) std::exit(EXIT_FAILURE);
 
   // Interpret as bytecode iff file name suffix is '.pyc':
-  const char* delim = strrchr(file_name, '.');
-  if (delim) {
-    const char* ext = delim + 1;
-    if (strcmp(ext, "pyc") == 0) {
-      is_source = false;
-    }
-  }
-  if (is_source) {
-    buffer =
-        python::Runtime::compile(python::View<char>(buffer.get(), file_len));
+  const char* delim = std::strrchr(file_name, '.');
+  if (delim && std::strcmp(delim, ".pyc") != 0) {
+    buffer = python::Runtime::compile(
+        python::View<char>(buffer.get(), file_len), file_name);
   }
 
   // TODO(T39499894): Rewrite this whole function to use the C-API.

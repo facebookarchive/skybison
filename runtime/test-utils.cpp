@@ -332,7 +332,9 @@ RawObject runBuiltin(NativeMethodType method) {
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object result(&scope, runtime->run(Runtime::compileFromCStr(c_str).get()));
+  Object result(
+      &scope,
+      runtime->run(Runtime::compileFromCStr(c_str, "<test string>").get()));
 
   // Barebones emulation of the top-level SystemExit handling, to allow for
   // testing of handleSystemExit().

@@ -2454,15 +2454,16 @@ void Runtime::listAdd(const List& list, const Object& value) {
   list.atPut(index, *value);
 }
 
-std::unique_ptr<char[]> Runtime::compileFromCStr(const char* src) {
+std::unique_ptr<char[]> Runtime::compileFromCStr(const char* src,
+                                                 const char* filename) {
   size_t len = strlen(src);
-  return compile(View<char>(src, static_cast<word>(len)));
+  return compile(View<char>(src, static_cast<word>(len)), filename);
 }
 
-std::unique_ptr<char[]> Runtime::compile(View<char> src) {
+std::unique_ptr<char[]> Runtime::compile(View<char> src, const char* filename) {
   // increment this if you change the caching code, to invalidate existing
   // cache entries.
-  uint64_t seed[2] = {0, 1};
+  uint64_t seed[] = {0, 2};
   word hash = 0;
 
   // Hash the input.
@@ -2492,7 +2493,7 @@ std::unique_ptr<char[]> Runtime::compile(View<char> src) {
 
   // Cache miss, must run the compiler.
   word len;
-  std::unique_ptr<char[]> result = compileWithLen(src, &len);
+  std::unique_ptr<char[]> result = compileWithLen(src, &len, filename);
 
   // Cache the output if possible.
   if (!cache_dir.empty() && OS::dirExists(cache_dir.c_str())) {
@@ -2502,7 +2503,8 @@ std::unique_ptr<char[]> Runtime::compile(View<char> src) {
   return result;
 }
 
-std::unique_ptr<char[]> Runtime::compileWithLen(View<char> src, word* len) {
+std::unique_ptr<char[]> Runtime::compileWithLen(View<char> src, word* len,
+                                                const char* filename) {
   std::unique_ptr<char[]> tmp_dir(OS::temporaryDirectory("python-tests"));
   const std::string dir(tmp_dir.get());
   const std::string py = dir + "/foo.py";
@@ -2512,8 +2514,10 @@ std::unique_ptr<char[]> Runtime::compileWithLen(View<char> src, word* len) {
   output.write(src.data(), src.length());
   output.close();
   const std::string command =
-      "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 -m compileall -q -b " +
-      py;
+      "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6 "
+      "-c \"import py_compile; import sys; py_compile.compile(sys.argv[1], "
+      "sys.argv[2], sys.argv[3], doraise=True)\" '" +
+      py + "' '" + pyc + "' '" + filename + "'";
   CHECK(system(command.c_str()) == 0, "Bytecode compilation failed");
   std::unique_ptr<char[]> result(OS::readFile(pyc.c_str(), len));
   CHECK(system(cleanup.c_str()) == 0, "Bytecode compilation cleanup failed");

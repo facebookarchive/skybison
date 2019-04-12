@@ -432,9 +432,12 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame_frame, word nargs) {
   return SmallStr::fromCStr(s);
 }
 
-static RawObject compileToBytecode(Thread* thread, const char* source) {
+static RawObject compileToBytecode(Thread* thread, const char* source,
+                                   const Str& filename) {
   HandleScope scope(thread);
-  std::unique_ptr<char[]> bytecode_str(Runtime::compileFromCStr(source));
+  unique_c_ptr<char[]> filename_c_str(filename.toCStr());
+  std::unique_ptr<char[]> bytecode_str(
+      Runtime::compileFromCStr(source, filename_c_str.get()));
   Marshal::Reader reader(&scope, thread->runtime(), bytecode_str.get());
   reader.readLong();  // magic
   reader.readLong();  // mtime
@@ -442,18 +445,21 @@ static RawObject compileToBytecode(Thread* thread, const char* source) {
   return reader.readObject();
 }
 
-static RawObject compileBytes(Thread* thread, const Bytes& source) {
+static RawObject compileBytes(Thread* thread, const Bytes& source,
+                              const Str& filename) {
   word bytes_len = source.length();
   unique_c_ptr<byte[]> source_bytes(
       static_cast<byte*>(std::malloc(bytes_len + 1)));
   source.copyTo(source_bytes.get(), bytes_len);
   source_bytes[bytes_len] = '\0';
-  return compileToBytecode(thread, reinterpret_cast<char*>(source_bytes.get()));
+  return compileToBytecode(thread, reinterpret_cast<char*>(source_bytes.get()),
+                           filename);
 }
 
-static RawObject compileStr(Thread* thread, const Str& source) {
+static RawObject compileStr(Thread* thread, const Str& source,
+                            const Str& filename) {
   unique_c_ptr<char[]> source_str(source.toCStr());
-  return compileToBytecode(thread, source_str.get());
+  return compileToBytecode(thread, source_str.get(), filename);
 }
 
 RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
@@ -488,17 +494,12 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
         "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
   }
 
-  Object code_obj(&scope, NoneType::object());
   if (data.isStr()) {
     Str source_str(&scope, *data);
-    code_obj = compileStr(thread, source_str);
-  } else {
-    Bytes source_bytes(&scope, *data);
-    code_obj = compileBytes(thread, source_bytes);
+    return compileStr(thread, source_str, filename);
   }
-  Code code(&scope, *code_obj);
-  code.setFilename(*filename);
-  return *code;
+  Bytes source_bytes(&scope, *data);
+  return compileBytes(thread, source_bytes, filename);
 }
 
 RawObject BuiltinsModule::divmod(Thread*, Frame*, word) {
@@ -553,7 +554,8 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   }
   if (source_obj.isStr()) {
     Str source(&scope, *source_obj);
-    source_obj = compileStr(thread, source);
+    Str filename(&scope, runtime->newStrFromCStr("<exec string>"));
+    source_obj = compileStr(thread, source, filename);
     DCHECK(source_obj.isCode(), "compileStr must return code object");
   }
   Code code(&scope, *source_obj);
