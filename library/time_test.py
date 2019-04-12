@@ -4,7 +4,7 @@ import unittest
 
 
 class TimeTests(unittest.TestCase):
-    def test_timeReturnsFloat(self):
+    def test_time_returns_float(self):
         self.assertIsInstance(time.time(), float)
 
 
