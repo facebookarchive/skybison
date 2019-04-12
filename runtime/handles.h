@@ -77,8 +77,6 @@ class WARN_UNUSED Handle : public T {
 
   Handle<RawObject>* nextHandle() const { return next_; }
 
-  T* operator->() const = delete;
-
   T operator*() const { return *static_cast<const T*>(this); }
 
   // Note that Handle<T>::operator= takes a raw pointer, not a handle, so
