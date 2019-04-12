@@ -1374,6 +1374,7 @@ def func():
 TEST(RuntimeTest, IsInstanceOf) {
   Runtime runtime;
   HandleScope scope;
+  EXPECT_FALSE(runtime.isInstanceOfInt(NoneType::object()));
 
   Object i(&scope, runtime.newInt(123));
   EXPECT_TRUE(i.isInt());
