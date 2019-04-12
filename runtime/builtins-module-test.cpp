@@ -551,6 +551,19 @@ print()
                             LayoutId::kRuntimeError, "lost sys.stdout"));
 }
 
+TEST(BuiltinsModuleTest, PrintWithFlushCallsFileFlush) {
+  Runtime runtime;
+  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+import sys
+class C:
+  def write(self, text): pass
+  def flush(self): raise UserWarning()
+sys.stdout = C()
+print(flush=True)
+)"),
+                     LayoutId::kUserWarning));
+}
+
 TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

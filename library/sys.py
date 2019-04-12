@@ -19,11 +19,19 @@ class _IOStream:
     def __init__(self, fd):
         self._fd = fd
 
+    def flush(self):
+        _fd_flush(self._fd)
+
     def write(self, text):
         # TODO(matthiasb): Use text.encode() once it is available and remove
         # hack from _fd_write().
         text_bytes = text
         _fd_write(self._fd, text_bytes)
+
+
+@_patch
+def _fd_flush(fd):
+    pass
 
 
 @_patch

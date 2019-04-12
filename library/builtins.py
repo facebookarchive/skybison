@@ -2425,7 +2425,7 @@ def print(*args, sep=" ", end="\n", file=None, flush=False):
             i += 1
     file.write(end)
     if flush:
-        _unimplemented()
+        file.flush()
 
 
 @_patch

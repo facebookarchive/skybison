@@ -87,6 +87,7 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
 const BuiltinMethod SysModule::kBuiltinMethods[] = {
     {SymbolId::kExcInfo, excInfo},
     {SymbolId::kExcepthook, excepthook},
+    {SymbolId::kUnderFdFlush, underFdFlush},
     {SymbolId::kUnderFdWrite, underFdWrite},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -127,15 +128,53 @@ RawObject SysModule::excInfo(Thread* thread, Frame* /* frame */,
   return *result;
 }
 
-RawObject SysModule::underFdWrite(Thread* thread, Frame* frame_frame,
-                                  word nargs) {
-  Arguments args(frame_frame, nargs);
-  HandleScope scope(thread);
-  Object fd_obj(&scope, args.get(0));
-  if (!fd_obj.isSmallInt()) {
-    return thread->raiseRequiresType(fd_obj, SymbolId::kInt);
+static RawObject raiseOSErrorFromErrno(Thread* thread) {
+  int errno_value = errno;
+  // TODO(matthiasb): Pick apropriate OSError subclass.
+  return thread->raiseWithFmt(LayoutId::kOSError, "[Errno %d] %s", errno_value,
+                              std::strerror(errno_value));
+}
+
+static RawObject fileFromFd(Thread* thread, const Object& object,
+                            FILE** result) {
+  if (!object.isSmallInt()) {
+    return thread->raiseRequiresType(object, SymbolId::kInt);
   }
-  int fd = SmallInt::cast(*fd_obj).value();
+  int fd = SmallInt::cast(*object).value();
+  if (fd == kStdoutFd) {
+    *result = thread->runtime()->stdoutFile();
+  } else if (fd == kStderrFd) {
+    *result = thread->runtime()->stderrFile();
+  } else {
+    HandleScope scope(thread);
+    Function function(&scope, thread->currentFrame()->function());
+    Str function_name(&scope, function.name());
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "'%S' called with unknown file descriptor",
+                                &function_name);
+  }
+  return NoneType::object();
+}
+
+RawObject SysModule::underFdFlush(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object fd(&scope, args.get(0));
+  FILE* file;
+  Object file_from_fd_result(&scope, fileFromFd(thread, fd, &file));
+  if (file_from_fd_result.isError()) return *file_from_fd_result;
+  int res = fflush(file);
+  if (res != 0) return raiseOSErrorFromErrno(thread);
+  return NoneType::object();
+}
+
+RawObject SysModule::underFdWrite(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object fd(&scope, args.get(0));
+  FILE* file;
+  Object file_from_fd_result(&scope, fileFromFd(thread, fd, &file));
+  if (file_from_fd_result.isError()) return *file_from_fd_result;
 
   Runtime* runtime = thread->runtime();
   Object bytes_obj(&scope, args.get(1));
@@ -156,25 +195,12 @@ RawObject SysModule::underFdWrite(Thread* thread, Frame* frame_frame,
   }
   Bytes bytes(&scope, *bytes_obj);
 
-  FILE* out;
-  if (fd == kStdoutFd) {
-    out = runtime->stdoutFile();
-  } else if (fd == kStderrFd) {
-    out = runtime->stderrFile();
-  } else {
-    return thread->raiseValueErrorWithCStr(
-        "_fd_write called with unknown file descriptor");
-  }
-
   // This is a slow way to write. We eventually expect this whole function to
   // get replaced with something else anyway.
   word length = bytes.length();
   for (word i = 0; i < length; i++) {
-    if (fputc(bytes.byteAt(i), out) == EOF) {
-      int errno_value = errno;
-      // TODO(matthiasb): Pick apropriate OSError subclass.
-      return thread->raiseWithFmt(LayoutId::kOSError, "[Errno %d] %s",
-                                  errno_value, std::strerror(errno_value));
+    if (fputc(bytes.byteAt(i), file) == EOF) {
+      return raiseOSErrorFromErrno(thread);
     }
   }
   return runtime->newIntFromUnsigned(length);

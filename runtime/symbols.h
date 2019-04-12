@@ -426,6 +426,7 @@ class Runtime;
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
+  V(UnderFdFlush, "_fd_flush")                                                 \
   V(UnderFdWrite, "_fd_write")                                                 \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \

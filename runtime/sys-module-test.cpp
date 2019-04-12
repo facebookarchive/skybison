@@ -403,6 +403,67 @@ TEST(SysModuleTest, ByteorderIsCorrectString) {
       *byteorder, endian::native == endian::little ? "little" : "big"));
 }
 
+TEST(SysModuleTest, UnderFdFlushFlushesFile) {
+  Runtime runtime;
+  HandleScope scope;
+  char buf[128];
+  std::memset(buf, 0, sizeof(buf));
+  FILE* out = fmemopen(buf, sizeof(buf), "w");
+  ASSERT_NE(out, nullptr);
+  char stream_buf[64];
+  int res = setvbuf(out, stream_buf, _IOFBF, sizeof(stream_buf));
+  ASSERT_EQ(res, 0);
+  runtime.setStdoutFile(out);
+  Bytes bytes(&scope, runtime.newBytesWithAll(
+                          View<byte>(reinterpret_cast<const byte*>("a"), 1)));
+  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes);
+  EXPECT_EQ(buf[0], 0);
+  Object result(&scope, runBuiltin(SysModule::underFdFlush, under_stdout_fd));
+  EXPECT_TRUE(result.isNoneType());
+  EXPECT_EQ(buf[0], 'a');
+  std::fclose(out);
+}
+
+TEST(SysModuleTest, UnderFdFlushWithNonIntFdRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object fd(&scope, NoneType::object());
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SysModule::underFdFlush, fd), LayoutId::kTypeError,
+      "'<anonymous>' requires a 'int' object but got 'NoneType'"));
+}
+
+TEST(SysModuleTest, UnderFdFlushWithInvalidFdRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object fd(&scope, runtime.newInt(0xbadf00d));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SysModule::underFdFlush, fd), LayoutId::kValueError,
+      "'<anonymous>' called with unknown file descriptor"));
+}
+
+TEST(SysModuleTest, UnderFdFlushOnFailureRaisesOSError) {
+  Runtime runtime;
+  HandleScope scope;
+  char buf[1] = "";
+  FILE* out = fmemopen(buf, sizeof(buf), "w");
+  ASSERT_NE(out, nullptr);
+  char stream_buf[64];
+  int res = setvbuf(out, stream_buf, _IOFBF, sizeof(stream_buf));
+  ASSERT_EQ(res, 0);
+  runtime.setStdoutFile(out);
+  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  const byte aaa[] = {'a', 'a', 'a'};
+  Object bytes(&scope, runtime.newBytesWithAll(aaa));
+  runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes);
+  // The write may or may not have triggered an error depending on the libc.
+  Thread::current()->clearPendingException();
+  EXPECT_TRUE(raised(runBuiltin(SysModule::underFdFlush, under_stdout_fd),
+                     LayoutId::kOSError));
+  std::fclose(out);
+}
+
 TEST(SysModuleTest, UnderFdWriteWithStderrFdStrWritesToStderrFile) {
   Runtime runtime;
   HandleScope scope;
@@ -445,7 +506,7 @@ TEST(SysModuleTest, UnderFdWriteWithStdoutFdStrWritesToStdoutFile) {
   EXPECT_EQ(std::strcmp(buf, "Yo!"), 0);
 }
 
-TEST(SysModuleTest, UnderFdWithNonIntFdRaisesTypeError) {
+TEST(SysModuleTest, UnderFdWriteWithNonIntFdRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object fd(&scope, NoneType::object());
@@ -455,22 +516,24 @@ TEST(SysModuleTest, UnderFdWithNonIntFdRaisesTypeError) {
       "'<anonymous>' requires a 'int' object but got 'NoneType'"));
 }
 
-TEST(SysModuleTest, UnderFdWithInvalidFdRaisesValueError) {
+TEST(SysModuleTest, UnderFdWriteWithInvalidFdRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
   Object fd(&scope, runtime.newInt(0xbadf00d));
   Object bytes(&scope, runtime.newBytes(0, 0));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(SysModule::underFdWrite, fd, bytes),
-                            LayoutId::kValueError,
-                            "_fd_write called with unknown file descriptor"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SysModule::underFdWrite, fd, bytes), LayoutId::kValueError,
+      "'<anonymous>' called with unknown file descriptor"));
 }
 
-TEST(SysModuleTest, UnderFdOnWriteFailureRaisesOSError) {
+TEST(SysModuleTest, UnderFdWriteOnFailureRaisesOSError) {
   Runtime runtime;
   HandleScope scope;
   char buf[1] = "";
   FILE* out = fmemopen(buf, sizeof(buf), "r");
   ASSERT_NE(out, nullptr);
+  int res = setvbuf(out, nullptr, _IONBF, 0);
+  ASSERT_EQ(res, 0);
   runtime.setStdoutFile(out);
   Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
   const byte hi[] = {'H', 'i', '!'};
