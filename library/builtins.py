@@ -20,16 +20,16 @@ def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **k
 
 
 class function(bootstrap=True):
-    def __repr__(self):
-        # TODO(T32655200): Replace 0x with #x when formatting language is
-        # implemented
-        return f"<function {self.__name__} at 0x{_address(self)}>"
-
     def __call__(self, *args, **kwargs):
         return self(*args, **kwargs)
 
     def __get__(self, instance, owner):
         pass
+
+    def __repr__(self):
+        # TODO(T32655200): Replace 0x with #x when formatting language is
+        # implemented
+        return f"<function {self.__name__} at 0x{_address(self)}>"
 
 
 def format(obj, fmt_spec):
@@ -58,19 +58,7 @@ def issubclass(obj, ty):
 
 
 class type(bootstrap=True):
-    def _merge_class_dict_keys(self, result):
-        result.update(self.__dict__.keys())
-        for base in self.__bases__:
-            type._merge_class_dict_keys(base, result)
-
     def __call__(self, *args, **kwargs):
-        pass
-
-    def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound):
-        pass
-
-    # Not a patch; just empty
-    def __init__(self, name_or_object, bases=_Unbound, dict=_Unbound):
         pass
 
     def __dir__(self):
@@ -83,8 +71,20 @@ class type(bootstrap=True):
         type._merge_class_dict_keys(self, result)
         return list(result)
 
+    def __init__(self, name_or_object, bases=_Unbound, dict=_Unbound):
+        # Not a patch; just empty
+        pass
+
+    def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound):
+        pass
+
     def __repr__(self):
         return f"<class '{self.__name__}'>"
+
+    def _merge_class_dict_keys(self, result):
+        result.update(self.__dict__.keys())
+        for base in self.__bases__:
+            type._merge_class_dict_keys(base, result)
 
     def mro(self):
         # TODO(T42302401): Call Runtime computeMro when we support metaclasses.
@@ -92,35 +92,29 @@ class type(bootstrap=True):
 
 
 class property(bootstrap=True):
-    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
+    def __get__(self, instance, owner):
         pass
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
         pass
 
-    def deleter(self, fn):
-        pass
-
-    def setter(self, fn):
-        pass
-
-    def getter(self, fn):
-        pass
-
-    def __get__(self, instance, owner):
+    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
         pass
 
     def __set__(self, instance, value):
         pass
 
+    def deleter(self, fn):
+        pass
+
+    def getter(self, fn):
+        pass
+
+    def setter(self, fn):
+        pass
+
 
 class object(bootstrap=True):  # noqa: E999
-    def __new__(cls, *args, **kwargs):
-        pass
-
-    def __init__(self, *args, **kwargs):
-        pass
-
     @property
     def __class__(self):
         return type(self)
@@ -145,11 +139,17 @@ class object(bootstrap=True):  # noqa: E999
     def __hash__(self):
         pass
 
+    def __init__(self, *args, **kwargs):
+        pass
+
     def __ne__(self, other):
         res = type(self).__eq__(self, other)
         if res is NotImplemented:
             return NotImplemented
         return not res
+
+    def __new__(cls, *args, **kwargs):
+        pass
 
     def __repr__(self):
         # TODO(T32655200): Replace with #x when formatting language is
@@ -254,10 +254,10 @@ class float(bootstrap=True):
     def __rtruediv__(self, n: float) -> float:
         pass
 
-    def __truediv__(self, n: float) -> float:
+    def __sub__(self, n: float) -> float:
         pass
 
-    def __sub__(self, n: float) -> float:
+    def __truediv__(self, n: float) -> float:
         pass
 
 
@@ -287,31 +287,28 @@ class memoryview(bootstrap=True):
 
 
 class classmethod(bootstrap=True):
-    def __new__(cls, fn):
+    def __get__(self, instance, owner):
         pass
 
     def __init__(self, fn):
         pass
 
-    def __get__(self, instance, owner):
+    def __new__(cls, fn):
         pass
 
 
 class staticmethod(bootstrap=True):
-    def __new__(cls, fn):
+    def __get__(self, instance, owner):
         pass
 
     def __init__(self, fn):
         pass
 
-    def __get__(self, instance, owner):
+    def __new__(cls, fn):
         pass
 
 
 class int(bootstrap=True):
-    def __new__(cls, n=0, base=_Unbound):
-        pass
-
     def __abs__(self) -> int:
         pass
 
@@ -327,10 +324,10 @@ class int(bootstrap=True):
     def __ceil__(self) -> int:
         pass
 
-    def __eq__(self, n: int) -> bool:  # noqa: T484
+    def __divmod__(self, n: int):
         pass
 
-    def __divmod__(self, n: int):
+    def __eq__(self, n: int) -> bool:  # noqa: T484
         pass
 
     def __float__(self) -> float:
@@ -378,14 +375,17 @@ class int(bootstrap=True):
     def __neg__(self) -> int:
         pass
 
+    def __new__(cls, n=0, base=_Unbound):
+        pass
+
     def __or__(self, n: int) -> int:
         pass
 
     def __pos__(self) -> int:
         pass
 
-    # TODO(T42359066): Re-write this in C++ if we need a speed boost.
     def __pow__(self, power, mod=None) -> int:
+        # TODO(T42359066): Re-write this in C++ if we need a speed boost.
         if not isinstance(self, int):
             raise TypeError(
                 f"'__pow__' requires an 'int' object but got '{type(self).__name__}'"
@@ -427,15 +427,15 @@ class int(bootstrap=True):
             return NotImplemented
         return int.__and__(n, self)
 
-    def __repr__(self) -> str:  # noqa: T484
-        pass
-
     def __rdivmod__(self, n: int) -> int:
         if not isinstance(self, int):
             raise TypeError("'__rdivmod__' requires a 'int' object")
         if not isinstance(n, int):
             return NotImplemented
         return int.__divmod__(n, self)  # noqa: T484
+
+    def __repr__(self) -> str:  # noqa: T484
+        pass
 
     def __rfloordiv__(self, n: int) -> int:
         if not isinstance(self, int):
@@ -472,15 +472,15 @@ class int(bootstrap=True):
             return NotImplemented
         return int.__or__(n, self)
 
+    def __round__(self) -> int:
+        pass
+
     def __rpow__(self, n: int, *, mod=None):
         if not isinstance(self, int):
             raise TypeError("'__rpow__' requires a 'int' object")
         if not isinstance(n, int):
             return NotImplemented
         return int.__pow__(n, self, mod=mod)  # noqa: T484
-
-    def __round__(self) -> int:
-        pass
 
     def __rrshift__(self, n: int) -> int:
         if not isinstance(self, int):
@@ -490,9 +490,6 @@ class int(bootstrap=True):
         return int.__rshift__(n, self)
 
     def __rshift__(self, n: int) -> int:
-        pass
-
-    def __str__(self) -> str:  # noqa: T484
         pass
 
     def __rsub__(self, n: int) -> int:
@@ -515,6 +512,9 @@ class int(bootstrap=True):
         if not isinstance(n, int):
             return NotImplemented
         return int.__xor__(n, self)
+
+    def __str__(self) -> str:  # noqa: T484
+        pass
 
     def __sub__(self, n: int) -> int:
         pass
@@ -632,6 +632,11 @@ class BaseException(bootstrap=True):
     def __init__(self, *args):
         pass
 
+    def __repr__(self):
+        if not isinstance(self, BaseException):
+            raise TypeError("not a BaseException object")
+        return f"{self.__class__.__name__}{self.args!r}"
+
     def __str__(self):
         if not isinstance(self, BaseException):
             raise TypeError("not a BaseException object")
@@ -640,11 +645,6 @@ class BaseException(bootstrap=True):
         if len(self.args) == 1:
             return str(self.args[0])
         return str(self.args)
-
-    def __repr__(self):
-        if not isinstance(self, BaseException):
-            raise TypeError("not a BaseException object")
-        return f"{self.__class__.__name__}{self.args!r}"
 
 
 class KeyError(bootstrap=True):
@@ -658,10 +658,10 @@ class bytearray_iterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
@@ -1139,9 +1139,6 @@ def _repr_leave(obj: object) -> None:
 
 
 class tuple(bootstrap=True):
-    def __new__(cls, iterable=_Unbound):
-        pass
-
     def __add__(self, other):
         pass
 
@@ -1188,6 +1185,9 @@ class tuple(bootstrap=True):
     def __mul__(self, other):
         pass
 
+    def __new__(cls, iterable=_Unbound):
+        pass
+
     def __repr__(self):
         if _repr_enter(self):
             return "(...)"
@@ -1209,10 +1209,10 @@ class tuple_iterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
@@ -1222,12 +1222,6 @@ def _list_sort(list):
 
 
 class list(bootstrap=True):
-    def __new__(cls, iterable=()):
-        pass
-
-    def __init__(self, iterable=()):
-        self.extend(iterable)
-
     def __add__(self, other):
         pass
 
@@ -1235,21 +1229,6 @@ class list(bootstrap=True):
         pass
 
     def __delitem__(self, key):
-        pass
-
-    def __getitem__(self, key):
-        pass
-
-    def __iter__(self):
-        pass
-
-    def __len__(self):
-        pass
-
-    def __mul__(self, other):
-        pass
-
-    def __setitem__(self, key, value):
         pass
 
     def __eq__(self, other):
@@ -1274,12 +1253,33 @@ class list(bootstrap=True):
             i += 1
         return True
 
+    def __getitem__(self, key):
+        pass
+
+    def __init__(self, iterable=()):
+        self.extend(iterable)
+
+    def __iter__(self):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __mul__(self, other):
+        pass
+
+    def __new__(cls, iterable=()):
+        pass
+
     def __repr__(self):
         if _repr_enter(self):
             return "[...]"
         result = "[" + ", ".join([i.__repr__() for i in self]) + "]"
         _repr_leave(self)
         return result
+
+    def __setitem__(self, key, value):
+        pass
 
     def append(self, other):
         pass
@@ -1344,18 +1344,18 @@ class list_iterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
 class range(bootstrap=True):
-    def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
+    def __iter__(self):
         pass
 
-    def __iter__(self):
+    def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
         pass
 
 
@@ -1363,10 +1363,10 @@ class range_iterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
@@ -1994,10 +1994,10 @@ class str_iterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
@@ -2011,6 +2011,12 @@ class dict(bootstrap=True):
     def __eq__(self, other):
         pass
 
+    def __getitem__(self, key):
+        result = self.get(key, _Unbound)
+        if result is _Unbound:
+            raise KeyError(key)
+        return result
+
     def __init__(self, *args, **kwargs):
         if len(args) > 1:
             raise TypeError("dict expected at most 1 positional argument, got 2")
@@ -2018,22 +2024,13 @@ class dict(bootstrap=True):
             dict.update(self, args[0])
         dict.update(self, kwargs)
 
+    def __iter__(self):
+        pass
+
     def __len__(self):
         pass
 
     def __new__(cls, *args, **kwargs):
-        pass
-
-    def __getitem__(self, key):
-        result = self.get(key, _Unbound)
-        if result is _Unbound:
-            raise KeyError(key)
-        return result
-
-    def __setitem__(self, key, value):
-        pass
-
-    def __iter__(self):
         pass
 
     def __repr__(self):
@@ -2042,6 +2039,9 @@ class dict(bootstrap=True):
         kwpairs = [f"{key!r}: {self[key]!r}" for key in self.keys()]
         _repr_leave(self)
         return "{" + ", ".join(kwpairs) + "}"
+
+    def __setitem__(self, key, value):
+        pass
 
     def copy(self):
         if not isinstance(self, dict):
@@ -2085,10 +2085,10 @@ class dict_itemiterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
@@ -2101,10 +2101,10 @@ class dict_keyiterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
@@ -2117,10 +2117,10 @@ class dict_valueiterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
@@ -2130,9 +2130,6 @@ class dict_values(bootstrap=True):
 
 
 class module(bootstrap=True):
-    def __new__(cls, name):
-        pass
-
     def __dir__(self):
         if not isinstance(self, module):
             raise TypeError(
@@ -2141,6 +2138,9 @@ class module(bootstrap=True):
             )
         return list(self.__dict__.keys())
 
+    def __new__(cls, name):
+        pass
+
     def __repr__(self):
         import _frozen_importlib
 
@@ -2148,9 +2148,6 @@ class module(bootstrap=True):
 
 
 class frozenset(bootstrap=True):
-    def __new__(cls, iterable=_Unbound):
-        pass
-
     def __and__(self, other):
         pass
 
@@ -2169,9 +2166,6 @@ class frozenset(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __ne__(self, other):
-        pass
-
     def __le__(self, other):
         pass
 
@@ -2179,6 +2173,12 @@ class frozenset(bootstrap=True):
         pass
 
     def __lt__(self, other):
+        pass
+
+    def __ne__(self, other):
+        pass
+
+    def __new__(cls, iterable=_Unbound):
         pass
 
     def copy(self):
@@ -2192,22 +2192,6 @@ class frozenset(bootstrap=True):
 
 
 class set(bootstrap=True):
-    def __new__(cls, iterable=()):
-        pass
-
-    def __init__(self, iterable=()):
-        pass
-
-    def __repr__(self):
-        if _repr_enter(self):
-            return f"{type(self).__name__}(...)"
-        if len(self) == 0:
-            _repr_leave(self)
-            return f"{type(self).__name__}()"
-        result = f"{{{', '.join([item.__repr__() for item in self])}}}"
-        _repr_leave(self)
-        return result
-
     def __and__(self, other):
         pass
 
@@ -2226,10 +2210,10 @@ class set(bootstrap=True):
     def __iand__(self, other):
         pass
 
-    def __iter__(self):
+    def __init__(self, iterable=()):
         pass
 
-    def __ne__(self, other):
+    def __iter__(self):
         pass
 
     def __le__(self, other):
@@ -2241,6 +2225,12 @@ class set(bootstrap=True):
     def __lt__(self, other):
         pass
 
+    def __ne__(self, other):
+        pass
+
+    def __new__(cls, iterable=()):
+        pass
+
     def __or__(self, other):
         if not isinstance(self, set) and not isinstance(self, frozenset):
             return NotImplemented
@@ -2250,6 +2240,16 @@ class set(bootstrap=True):
         if self is other:
             return result
         set.update(result, other)
+        return result
+
+    def __repr__(self):
+        if _repr_enter(self):
+            return f"{type(self).__name__}(...)"
+        if len(self) == 0:
+            _repr_leave(self)
+            return f"{type(self).__name__}()"
+        result = f"{{{', '.join([item.__repr__() for item in self])}}}"
+        _repr_leave(self)
         return result
 
     def add(self, value):
@@ -2275,18 +2275,18 @@ class set_iterator(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __next__(self):
+    def __length_hint__(self):
         pass
 
-    def __length_hint__(self):
+    def __next__(self):
         pass
 
 
 class super(bootstrap=True):
-    def __new__(cls, type=_Unbound, type_or_obj=_Unbound):
+    def __init__(self, type=_Unbound, type_or_obj=_Unbound):
         pass
 
-    def __init__(self, type=_Unbound, type_or_obj=_Unbound):
+    def __new__(cls, type=_Unbound, type_or_obj=_Unbound):
         pass
 
 
@@ -2708,14 +2708,14 @@ def _structseq_new(cls, sequence, dict={}):  # noqa B006
 
 
 class _structseq_field:
-    def __init__(self, name, index):
-        self.name = name
-        self.index = index
-
     def __get__(self, instance, owner):
         if self.index is not None:
             return instance[self.index]
         return _structseq_getattr(instance, self.name)
+
+    def __init__(self, name, index):
+        self.name = name
+        self.index = index
 
     def __set__(self, instance, value):
         raise TypeError("readonly attribute")
@@ -2819,14 +2819,14 @@ class filter:
     is true. If function is None, return the items that are true.
     """
 
+    def __iter__(self):
+        return self
+
     def __new__(cls, function, iterable, **kwargs):
         obj = super(filter, cls).__new__(cls)
         obj.func = (lambda e: e) if function is None else function
         obj.iter = iter(iterable)
         return obj
-
-    def __iter__(self):
-        return self
 
     def __next__(self):
         func = self.func
