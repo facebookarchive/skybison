@@ -20,7 +20,7 @@ class FloatBuiltins
     : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
  public:
   static void decodeDouble(double value, bool* is_neg, int* exp,
-                           uint64* mantissa);
+                           uint64_t* mantissa);
   static RawObject dunderAbs(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);

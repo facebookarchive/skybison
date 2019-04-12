@@ -679,16 +679,16 @@ TEST(RuntimeTest, NewStrWithAll) {
 TEST(RuntimeTest, NewStrFromUTF32WithZeroSizeReturnsEmpty) {
   Runtime runtime;
   HandleScope scope;
-  int32 str[2] = {'a', 's'};
-  Str empty(&scope, runtime.newStrFromUTF32(View<int32>(str, 0)));
+  int32_t str[2] = {'a', 's'};
+  Str empty(&scope, runtime.newStrFromUTF32(View<int32_t>(str, 0)));
   EXPECT_EQ(empty.length(), 0);
 }
 
 TEST(RuntimeTest, NewStrFromUTF32WithLargeASCIIStringReturnsString) {
   Runtime runtime;
   HandleScope scope;
-  int32 str[7] = {'a', 'b', 'c', '1', '2', '3', '-'};
-  Str unicode(&scope, runtime.newStrFromUTF32(View<int32>(str, 7)));
+  int32_t str[7] = {'a', 'b', 'c', '1', '2', '3', '-'};
+  Str unicode(&scope, runtime.newStrFromUTF32(View<int32_t>(str, 7)));
   EXPECT_EQ(unicode.length(), 7);
   EXPECT_TRUE(unicode.equalsCStr("abc123-"));
 }
@@ -696,8 +696,8 @@ TEST(RuntimeTest, NewStrFromUTF32WithLargeASCIIStringReturnsString) {
 TEST(RuntimeTest, NewStrFromUTF32WithSmallASCIIStringReturnsString) {
   Runtime runtime;
   HandleScope scope;
-  int32 str[7] = {'a', 'b'};
-  Str unicode(&scope, runtime.newStrFromUTF32(View<int32>(str, 2)));
+  int32_t str[7] = {'a', 'b'};
+  Str unicode(&scope, runtime.newStrFromUTF32(View<int32_t>(str, 2)));
   EXPECT_EQ(unicode.length(), 2);
   EXPECT_TRUE(unicode.equalsCStr("ab"));
 }
@@ -705,7 +705,7 @@ TEST(RuntimeTest, NewStrFromUTF32WithSmallASCIIStringReturnsString) {
 TEST(RuntimeTest, NewStrFromUTF32WithSmallNonASCIIReturnsString) {
   Runtime runtime;
   HandleScope scope;
-  const int32 codepoints[] = {0xC4};
+  const int32_t codepoints[] = {0xC4};
   Str unicode(&scope, runtime.newStrFromUTF32(codepoints));
   EXPECT_TRUE(unicode.equals(SmallStr::fromCodePoint(0xC4)));
 }
@@ -713,7 +713,8 @@ TEST(RuntimeTest, NewStrFromUTF32WithSmallNonASCIIReturnsString) {
 TEST(RuntimeTest, NewStrFromUTF32WithLargeNonASCIIReturnsString) {
   Runtime runtime;
   HandleScope scope;
-  const int32 codepoints[] = {0x3041, ' ', 'c', 0xF6, 0xF6, 'l', ' ', 0x1F192};
+  const int32_t codepoints[] = {0x3041, ' ', 'c', 0xF6,
+                                0xF6,   'l', ' ', 0x1F192};
   Str unicode(&scope, runtime.newStrFromUTF32(codepoints));
   Str expected(&scope, runtime.newStrFromCStr(
                            "\xe3\x81\x81 c\xC3\xB6\xC3\xB6l \xF0\x9F\x86\x92"));

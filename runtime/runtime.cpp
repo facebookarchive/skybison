@@ -1222,10 +1222,10 @@ RawObject Runtime::newStrFromFmt(const char* fmt, ...) {
   return *result;
 }
 
-RawObject Runtime::newStrFromUTF32(View<int32> code_units) {
+RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
   word size = 0;
   for (word i = 0; i < code_units.length(); ++i) {
-    int32 cp = code_units.get(i);
+    int32_t cp = code_units.get(i);
     if (cp <= kMaxASCII) {
       size += 1;
     } else if (cp < 0x0800) {

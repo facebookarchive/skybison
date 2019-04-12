@@ -442,7 +442,7 @@ class RawStr : public RawObject {
   bool equalsCStr(const char* c_str) const;
 
   // Codepoints
-  int32 codePointAt(word index, word* length) const;
+  int32_t codePointAt(word index, word* length) const;
   word codePointLength() const;
 
   // Counts forward through the code points of the string, starting at the
@@ -579,7 +579,7 @@ class RawHeader : public RawObject {
 class RawSmallStr : public RawObject {
  public:
   // Conversion.
-  static RawObject fromCodePoint(int32 code_point);
+  static RawObject fromCodePoint(int32_t code_point);
   static RawObject fromCStr(const char* value);
   static RawObject fromBytes(View<byte> data);
 

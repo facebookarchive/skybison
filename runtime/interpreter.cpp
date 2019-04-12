@@ -2708,7 +2708,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
   for (;;) {
     frame->setVirtualPC(ctx.pc);
     Bytecode bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
-    int32 arg = byte_array.byteAt(ctx.pc++);
+    int32_t arg = byte_array.byteAt(ctx.pc++);
     while (bc == Bytecode::EXTENDED_ARG) {
       bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
       arg = (arg << 8) | byte_array.byteAt(ctx.pc++);

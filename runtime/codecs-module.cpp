@@ -27,7 +27,7 @@ static SymbolId lookupSymbolForErrorHandler(const Str& error) {
 // of bytes used in the encoding.
 // It assumes that it was passed in a byte array at least 4 bytes long
 // It returns -1 if the codepoint fails a bounds check
-static int encodeUTF8CodePoint(int32 codepoint, byte* byte_pattern) {
+static int encodeUTF8CodePoint(int32_t codepoint, byte* byte_pattern) {
   if (codepoint < 0 || codepoint > kMaxUnicode) {
     return -1;
   }

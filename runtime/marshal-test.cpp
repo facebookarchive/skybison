@@ -190,19 +190,19 @@ TEST(MarshalReaderTest, ReadLong) {
   Runtime runtime;
   HandleScope scope;
 
-  int32 a = Marshal::Reader(&scope, &runtime, "\x01\x00\x00\x00").readLong();
+  int32_t a = Marshal::Reader(&scope, &runtime, "\x01\x00\x00\x00").readLong();
   EXPECT_EQ(a, 1);
 
-  int32 b = Marshal::Reader(&scope, &runtime, "\x01\x02\x00\x00").readLong();
+  int32_t b = Marshal::Reader(&scope, &runtime, "\x01\x02\x00\x00").readLong();
   ASSERT_EQ(b, 0x0201);
 
-  int32 c = Marshal::Reader(&scope, &runtime, "\x01\x02\x03\x00").readLong();
+  int32_t c = Marshal::Reader(&scope, &runtime, "\x01\x02\x03\x00").readLong();
   ASSERT_EQ(c, 0x030201);
 
-  int32 d = Marshal::Reader(&scope, &runtime, "\x01\x02\x03\x04").readLong();
+  int32_t d = Marshal::Reader(&scope, &runtime, "\x01\x02\x03\x04").readLong();
   ASSERT_EQ(d, 0x04030201);
 
-  int32 e = Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x80").readLong();
+  int32_t e = Marshal::Reader(&scope, &runtime, "\x00\x00\x00\x80").readLong();
   ASSERT_EQ(e, -2147483648);  // INT32_MIN
 }
 
@@ -412,13 +412,13 @@ TEST(MarshalReaderTest, ReadShort) {
   Runtime runtime;
   HandleScope scope;
 
-  int16 a = Marshal::Reader(&scope, &runtime, "\x01\x00").readShort();
+  int16_t a = Marshal::Reader(&scope, &runtime, "\x01\x00").readShort();
   EXPECT_EQ(a, 1);
 
-  int16 b = Marshal::Reader(&scope, &runtime, "\x01\x02").readShort();
+  int16_t b = Marshal::Reader(&scope, &runtime, "\x01\x02").readShort();
   ASSERT_EQ(b, 0x0201);
 
-  int16 c = Marshal::Reader(&scope, &runtime, "\x00\x80").readShort();
+  int16_t c = Marshal::Reader(&scope, &runtime, "\x00\x80").readShort();
   ASSERT_EQ(c, kMinInt16);
 }
 
@@ -441,11 +441,11 @@ TEST(MarshalReaderTest, ReadObjectCode) {
       "\x00";
   Marshal::Reader reader(&scope, &runtime, buffer);
 
-  int32 magic = reader.readLong();
+  int32_t magic = reader.readLong();
   EXPECT_EQ(magic, 0x0A0D0D33);
-  int32 mtime = reader.readLong();
+  int32_t mtime = reader.readLong();
   EXPECT_EQ(mtime, 0x59B85B3B);
-  int32 size = reader.readLong();
+  int32_t size = reader.readLong();
   EXPECT_EQ(size, 0x05);
 
   RawObject raw_object = reader.readObject();

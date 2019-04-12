@@ -185,7 +185,7 @@ class Runtime {
   // %Y formats a SymbolId
   RawObject newStrFromFmt(const char* fmt, ...);
   RawObject newStrFromFmtV(Thread* thread, const char* fmt, va_list args);
-  RawObject newStrFromUTF32(View<int32> code_units);
+  RawObject newStrFromUTF32(View<int32_t> code_units);
   RawObject newStrWithAll(View<byte> code_units);
 
   RawObject newStrIterator(const Object& iterable);

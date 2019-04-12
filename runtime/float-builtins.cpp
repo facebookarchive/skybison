@@ -263,12 +263,12 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
 }
 
 void FloatBuiltins::decodeDouble(double value, bool* is_neg, int* exp,
-                                 uint64* mantissa) {
+                                 uint64_t* mantissa) {
   const uword man_mask = (uword{1} << kDoubleMantissaBits) - 1;
   const uword num_exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
   const uword exp_mask = (uword{1} << num_exp_bits) - 1;
   const uword exp_bias = (uword{1} << (num_exp_bits - 1)) - 1;
-  uint64 value_bits = bit_cast<uint64>(value);
+  uint64_t value_bits = bit_cast<uint64_t>(value);
   *is_neg = value_bits >> (kBitsPerDouble - 1);
   *exp = ((value_bits >> kDoubleMantissaBits) & exp_mask) - exp_bias;
   *mantissa = value_bits & man_mask;
@@ -287,7 +287,7 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
 
   bool is_neg;
   int exp;
-  uint64 man;
+  uint64_t man;
   decodeDouble(dval, &is_neg, &exp, &man);
   int exp_bits = kBitsPerDouble - kDoubleMantissaBits - 1;
   int max_exp = 1 << (exp_bits - 1);

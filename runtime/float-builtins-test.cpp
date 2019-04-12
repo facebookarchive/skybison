@@ -17,7 +17,7 @@ TEST(FloatBuiltinsTest, DecodeDoubleWithPositiveDoubleReturnsIsNegFalse) {
   double input = 100.0;
   bool is_neg;
   int exp;
-  uint64 mantissa;
+  uint64_t mantissa;
   FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(is_neg, false);
 }
@@ -26,7 +26,7 @@ TEST(FloatBuiltinsTest, DecodeDoubleWithNegativeDoubleReturnsIsNegTrue) {
   double input = -100.0;
   bool is_neg;
   int exp;
-  uint64 mantissa;
+  uint64_t mantissa;
   FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(is_neg, true);
 }
@@ -35,7 +35,7 @@ TEST(FloatBuiltinsTest, DecodeDoubleWithMaximumExponentReturnsCorrectValue) {
   double input = std::strtod("0x1.0p+1024", nullptr);
   bool is_neg;
   int exp;
-  uint64 mantissa;
+  uint64_t mantissa;
   FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(exp, 1024);
 }
@@ -44,7 +44,7 @@ TEST(FloatBuiltinsTest, DecodeDoubleWithMinimumExponentReturnsCorrectValue) {
   double input = std::strtod("0x1.0p-1023", nullptr);
   bool is_neg;
   int exp;
-  uint64 mantissa;
+  uint64_t mantissa;
   FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(exp, -1023);
 }
@@ -53,7 +53,7 @@ TEST(FloatBuiltinsTest, DecodeDoubleWithMantissaReturnsCorrectValue) {
   double input = std::strtod("0x1.29ef685b3f6fbp+52", nullptr);
   bool is_neg;
   int exp;
-  uint64 mantissa;
+  uint64_t mantissa;
   FloatBuiltins::decodeDouble(input, &is_neg, &exp, &mantissa);
   EXPECT_EQ(mantissa, 0x29ef685b3f6fb);
 }

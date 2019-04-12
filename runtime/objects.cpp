@@ -10,7 +10,7 @@ namespace python {
 
 // RawSmallStr
 
-RawObject RawSmallStr::fromCodePoint(int32 code_point) {
+RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
   DCHECK_BOUND(code_point, kMaxUnicode);
   uword cp = static_cast<uword>(code_point);
   // 0xxxxxxx
@@ -482,7 +482,7 @@ bool RawStr::equalsCStr(const char* c_str) const {
   return *cp == '\0';
 }
 
-int32 RawStr::codePointAt(word index, word* length) const {
+int32_t RawStr::codePointAt(word index, word* length) const {
   DCHECK_INDEX(index, this->length());
   byte ch0 = charAt(index);
   if (ch0 <= kMaxASCII) {

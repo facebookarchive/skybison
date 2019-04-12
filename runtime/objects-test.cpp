@@ -263,15 +263,15 @@ TEST(IntTest, AsInt) {
   Int neg_num(&scope, runtime.newInt(-4567));
   EXPECT_EQ(neg_num.asInt<unsigned>().error, CastError::Underflow);
   EXPECT_EQ(neg_num.asInt<int8_t>().error, CastError::Underflow);
-  EXPECT_VALID(neg_num.asInt<int16>(), -4567);
+  EXPECT_VALID(neg_num.asInt<int16_t>(), -4567);
 
   Int neg_one(&scope, runtime.newInt(-1));
   EXPECT_VALID(neg_one.asInt<int>(), -1);
   EXPECT_EQ(neg_one.asInt<unsigned>().error, CastError::Underflow);
 
   Int int_max(&scope, runtime.newInt(kMaxInt32));
-  EXPECT_VALID(int_max.asInt<int32>(), kMaxInt32);
-  EXPECT_EQ(int_max.asInt<int16>().error, CastError::Overflow);
+  EXPECT_VALID(int_max.asInt<int32_t>(), kMaxInt32);
+  EXPECT_EQ(int_max.asInt<int16_t>().error, CastError::Overflow);
 
   Int uword_max(&scope, runtime.newIntFromUnsigned(kMaxUword));
   EXPECT_VALID(uword_max.asInt<uword>(), kMaxUword);
@@ -280,12 +280,12 @@ TEST(IntTest, AsInt) {
   Int word_max(&scope, runtime.newInt(kMaxWord));
   EXPECT_VALID(word_max.asInt<word>(), kMaxWord);
   EXPECT_VALID(word_max.asInt<uword>(), uword{kMaxWord});
-  EXPECT_EQ(word_max.asInt<int32>().error, CastError::Overflow);
+  EXPECT_EQ(word_max.asInt<int32_t>().error, CastError::Overflow);
 
   Int word_min(&scope, runtime.newInt(kMinWord));
   EXPECT_VALID(word_min.asInt<word>(), kMinWord);
   EXPECT_EQ(word_min.asInt<uword>().error, CastError::Underflow);
-  EXPECT_EQ(word_min.asInt<int32>().error, CastError::Overflow);
+  EXPECT_EQ(word_min.asInt<int32_t>().error, CastError::Overflow);
 
   uword digits[] = {0, kMaxUword};
   Int negative(&scope, runtime.newIntWithDigits(digits));

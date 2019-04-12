@@ -33,11 +33,11 @@ TEST(ThreadTest, RunEmptyFunction) {
       "\x00";
   Marshal::Reader reader(&scope, &runtime, buffer);
 
-  int32 magic = reader.readLong();
+  int32_t magic = reader.readLong();
   EXPECT_EQ(magic, 0x0A0D0D33);
-  int32 mtime = reader.readLong();
+  int32_t mtime = reader.readLong();
   EXPECT_EQ(mtime, 0x59B85B3B);
-  int32 size = reader.readLong();
+  int32_t size = reader.readLong();
   EXPECT_EQ(size, 5);
 
   Object code_obj(&scope, reader.readObject());

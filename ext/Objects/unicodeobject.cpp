@@ -72,8 +72,8 @@ PY_EXPORT void _PyUnicodeWriter_Dealloc(_PyUnicodeWriter* writer) {
 PY_EXPORT PyObject* _PyUnicodeWriter_Finish(_PyUnicodeWriter* writer) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str str(&scope, thread->runtime()->newStrFromUTF32(View<int32>(
-                      static_cast<int32*>(writer->data), writer->pos)));
+  Str str(&scope, thread->runtime()->newStrFromUTF32(View<int32_t>(
+                      static_cast<int32_t*>(writer->data), writer->pos)));
   PyMem_Free(writer->data);
   return ApiHandle::newReference(thread, *str);
 }
@@ -98,7 +98,7 @@ PY_EXPORT int _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter* writer,
       // overallocate to limit the number of realloc()
       newlen += newlen / kOverallocateFactor;
     }
-    writer->data = PyMem_Malloc(newlen * sizeof(int32));
+    writer->data = PyMem_Malloc(newlen * sizeof(int32_t));
     if (writer->data == nullptr) return -1;
   } else if (newlen > writer->size) {
     if (writer->overallocate &&
@@ -106,7 +106,7 @@ PY_EXPORT int _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter* writer,
       // overallocate to limit the number of realloc()
       newlen += newlen / kOverallocateFactor;
     }
-    writer->data = PyMem_Realloc(writer->data, newlen * sizeof(int32));
+    writer->data = PyMem_Realloc(writer->data, newlen * sizeof(int32_t));
     if (writer->data == nullptr) return -1;
   }
   writer->size = newlen;
@@ -124,7 +124,7 @@ PY_EXPORT int _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter* writer,
                                                 Py_ssize_t len) {
   if (len == -1) len = std::strlen(ascii);
   if (writer->data == nullptr && !writer->overallocate) {
-    writer->data = PyMem_Malloc(len * sizeof(int32));
+    writer->data = PyMem_Malloc(len * sizeof(int32_t));
     writer->size = len;
   }
 
@@ -1331,7 +1331,7 @@ PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
   }
   return ApiHandle::newReference(
       thread, thread->runtime()->newStrFromUTF32(
-                  View<int32>(bit_cast<int32*>(buffer), size)));
+                  View<int32_t>(bit_cast<int32_t*>(buffer), size)));
 }
 
 PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
@@ -1675,7 +1675,7 @@ PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,
   }
   return ApiHandle::newReference(
       thread, thread->runtime()->newStrFromUTF32(
-                  View<int32>(bit_cast<int32*>(code_units), size)));
+                  View<int32_t>(bit_cast<int32_t*>(code_units), size)));
 }
 
 PY_EXPORT int PyUnicode_KIND_Func(PyObject*) {

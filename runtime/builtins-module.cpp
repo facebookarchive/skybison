@@ -648,7 +648,7 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
   }
   auto str = RawStr::cast(arg);
   word num_bytes;
-  int32 codepoint = str.codePointAt(0, &num_bytes);
+  int32_t codepoint = str.codePointAt(0, &num_bytes);
   if (num_bytes != str.length()) {
     return thread->raiseTypeErrorWithCStr(
         "Builtin 'ord' expects string of length 1");

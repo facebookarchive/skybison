@@ -6,10 +6,6 @@
 #include <type_traits>
 
 typedef unsigned char byte;
-typedef short int int16;
-typedef int int32;
-typedef long long int64;
-typedef unsigned long long uint64;
 typedef intptr_t word;
 typedef uintptr_t uword;
 
@@ -32,13 +28,13 @@ const int kBitsPerDouble = kBitsPerByte * kDoubleSize;
 
 const int kDoubleMantissaBits = 52;
 
-const int16 kMaxInt16 = 0x7FFF;
-const int16 kMinInt16 = -kMaxInt16 - 1;
-const int32 kMaxInt32 = 0x7FFFFFFF;
-const int32 kMinInt32 = -kMaxInt32 - 1;
-const int64 kMaxInt64 = 0x7FFFFFFFFFFFFFFFLL;
-const int64 kMinInt64 = -kMaxInt64 - 1;
-const uint64 kMaxUint64 = 0xFFFFFFFFFFFFFFFFULL;
+const int16_t kMaxInt16 = INT16_MAX;
+const int16_t kMinInt16 = INT16_MIN;
+const int32_t kMaxInt32 = INT32_MAX;
+const int32_t kMinInt32 = INT32_MIN;
+const int64_t kMaxInt64 = INT64_MAX;
+const int64_t kMinInt64 = INT64_MIN;
+const uint64_t kMaxUint64 = UINT64_MAX;
 
 const byte kMaxByte = 0xFF;
 

@@ -21,11 +21,11 @@ class Marshal {
 
     byte readByte();
 
-    int32 readLong();
+    int32_t readLong();
 
     RawObject readObject();
 
-    int16 readShort();
+    int16_t readShort();
 
     const byte* readBytes(int length);
 
@@ -53,8 +53,8 @@ class Marshal {
     RawObject readAndInternStr(word length);
     RawObject readLongObject();
 
-    RawObject doSetElements(int32 length, RawObject set);
-    RawObject doTupleElements(int32 length);
+    RawObject doSetElements(int32_t length, RawObject set);
+    RawObject doTupleElements(int32_t length);
 
     Runtime* runtime_;
     List refs_;

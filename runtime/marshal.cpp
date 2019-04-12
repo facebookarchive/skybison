@@ -70,8 +70,8 @@ byte Marshal::Reader::readByte() {
   return result;
 }
 
-int16 Marshal::Reader::readShort() {
-  int16 result = -1;
+int16_t Marshal::Reader::readShort() {
+  int16_t result = -1;
   const byte* buffer = readBytes(sizeof(result));
   if (buffer != nullptr) {
     result = buffer[0];
@@ -80,8 +80,8 @@ int16 Marshal::Reader::readShort() {
   return result;
 }
 
-int32 Marshal::Reader::readLong() {
-  int32 result = -1;
+int32_t Marshal::Reader::readLong() {
+  int32_t result = -1;
   const byte* buffer = readBytes(4);
   if (buffer != nullptr) {
     result = buffer[0];
@@ -265,7 +265,7 @@ RawObject Marshal::Reader::getRef(word index) { return refs_.at(index); }
 word Marshal::Reader::numRefs() { return refs_.numItems(); }
 
 RawObject Marshal::Reader::readTypeString() {
-  int32 length = readLong();
+  int32_t length = readLong();
   const byte* data = readBytes(length);
   RawObject result = runtime_->newBytesWithAll(View<byte>(data, length));
   if (isRef_) {
@@ -325,21 +325,21 @@ RawObject Marshal::Reader::readAndInternStr(word length) {
 }
 
 RawObject Marshal::Reader::readTypeSmallTuple() {
-  int32 n = readByte();
+  int32_t n = readByte();
   return doTupleElements(n);
 }
 
 RawObject Marshal::Reader::readTypeTuple() {
-  int32 n = readLong();
+  int32_t n = readLong();
   return doTupleElements(n);
 }
 
-RawObject Marshal::Reader::doTupleElements(int32 length) {
+RawObject Marshal::Reader::doTupleElements(int32_t length) {
   RawObject result = runtime_->newTuple(length);
   if (isRef_) {
     addRef(result);
   }
-  for (int32 i = 0; i < length; i++) {
+  for (int32_t i = 0; i < length; i++) {
     RawObject value = readObject();
     RawTuple::cast(result).atPut(i, value);
   }
@@ -347,25 +347,25 @@ RawObject Marshal::Reader::doTupleElements(int32 length) {
 }
 
 RawObject Marshal::Reader::readTypeSet() {
-  int32 n = readLong();
+  int32_t n = readLong();
   return doSetElements(n, runtime_->newSet());
 }
 
 RawObject Marshal::Reader::readTypeFrozenSet() {
-  int32 n = readLong();
+  int32_t n = readLong();
   if (n == 0) {
     return runtime_->emptyFrozenSet();
   }
   return doSetElements(n, runtime_->newFrozenSet());
 }
 
-RawObject Marshal::Reader::doSetElements(int32 n, RawObject raw_set) {
+RawObject Marshal::Reader::doSetElements(int32_t n, RawObject raw_set) {
   if (isRef_) {
     addRef(raw_set);
   }
   HandleScope scope;
   SetBase set(&scope, raw_set);
-  for (int32 i = 0; i < n; i++) {
+  for (int32_t i = 0; i < n; i++) {
     Object value(&scope, readObject());
     RawObject result = runtime_->setAdd(set, value);
     if (result.isError()) {
@@ -381,11 +381,11 @@ RawObject Marshal::Reader::readTypeCode() {
     index = addRef(NoneType::object());
   }
   HandleScope scope;
-  int32 argcount = readLong();
-  int32 kwonlyargcount = readLong();
-  int32 nlocals = readLong();
-  int32 stacksize = readLong();
-  int32 flags = readLong();
+  int32_t argcount = readLong();
+  int32_t kwonlyargcount = readLong();
+  int32_t nlocals = readLong();
+  int32_t stacksize = readLong();
+  int32_t flags = readLong();
   Object code(&scope, readObject());
   Object consts(&scope, readObject());
   Object names(&scope, readObject());
@@ -394,7 +394,7 @@ RawObject Marshal::Reader::readTypeCode() {
   Tuple cellvars(&scope, readObject());
   Object filename(&scope, readObject());
   Object name(&scope, readObject());
-  int32 firstlineno = readLong();
+  int32_t firstlineno = readLong();
   Object lnotab(&scope, readObject());
   Code result(&scope,
               runtime_->newCode(argcount, kwonlyargcount, nlocals, stacksize,
@@ -408,12 +408,12 @@ RawObject Marshal::Reader::readTypeCode() {
 }
 
 RawObject Marshal::Reader::readTypeRef() {
-  int32 n = readLong();
+  int32_t n = readLong();
   return getRef(n);
 }
 
 RawObject Marshal::Reader::readLongObject() {
-  int32 n = readLong();
+  int32_t n = readLong();
   if (n == 0) {
     RawObject zero = SmallInt::fromWord(0);
     if (isRef_) {
@@ -433,7 +433,7 @@ RawObject Marshal::Reader::readLongObject() {
   uword buf = 0;
   word word_offset = 0;
   while (bits_consumed < n_bits) {
-    int16 digit = readShort();
+    int16_t digit = readShort();
     if (digit < 0) {
       return Thread::current()->raiseValueErrorWithCStr(
           "bad marshal data (negative long digit)");
