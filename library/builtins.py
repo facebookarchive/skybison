@@ -1482,6 +1482,11 @@ def _str_split_whitespace(self, maxsplit):
     return res
 
 
+@_patch
+def _str_splitlines(self, keepends):
+    pass
+
+
 class str(bootstrap=True):
     def __add__(self, other):
         pass
@@ -1909,8 +1914,16 @@ class str(bootstrap=True):
         parts.append(self[last_match:])
         return parts
 
-    def splitlines(self, keepends=_Unbound):
-        _unimplemented()
+    def splitlines(self, keepends=False):
+        if not isinstance(self, str):
+            raise TypeError(
+                f"'splitlines' requires a 'str' but got '{type(self).__name__}'"
+            )
+        if isinstance(keepends, float):
+            raise TypeError("integer argument expected, got float")
+        if not isinstance(keepends, (bool, int)):
+            keepends = int(keepends)
+        return _str_splitlines(self, keepends)
 
     def startswith(self, prefix, start=0, end=None):
         def real_bounds_from_slice_bounds(start, end, length):

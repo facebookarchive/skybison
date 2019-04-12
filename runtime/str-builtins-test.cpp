@@ -1328,6 +1328,61 @@ result = "  \t\n  hello world ".split(maxsplit=1)
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "world "));
 }
 
+TEST(StrBuiltinsTest, SplitlinesSplitsOnLineBreaks) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "hello\nworld\rwhats\r\nup".splitlines()
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"hello", "world", "whats", "up"});
+}
+
+TEST(StrBuiltinsTest, SplitlinesWithKeependsKeepsLineBreaks) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "hello\nworld\rwhats\r\nup".splitlines(keepends=True)
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"hello\n", "world\r", "whats\r\n", "up"});
+}
+
+TEST(StrBuiltinsTest, SplitlinesWithNoNewlinesReturnsIdEqualString) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+s = "hello world foo bar"
+[result] = s.splitlines()
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "s"),
+            moduleAt(&runtime, "__main__", "result"));
+}
+
+TEST(StrBuiltinsTest, SplitlinesWithMultiByteNewlineSplitsLine) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "hello\u2028world".splitlines()
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"hello", "world"});
+}
+
+TEST(StrBuiltinsTest, SplitlinesWithMultiByteNewlineAndKeependsSplitsLine) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = "hello\u2028world".splitlines(keepends=True)
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {u8"hello\u2028", "world"});
+}
+
 TEST(StrBuiltinsTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

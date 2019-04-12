@@ -452,6 +452,7 @@ class Runtime;
   V(UnderStrFind, "_str_find")                                                 \
   V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRFind, "_str_rfind")                                               \
+  V(UnderStrSplitlines, "_str_splitlines")                                     \
   V(UnderStructseqField, "_structseq_field")                                   \
   V(UnderStructseqFieldNames, "_structseq_field_names")                        \
   V(UnderStructseqGetAttr, "_structseq_getattr")                               \

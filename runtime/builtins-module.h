@@ -48,6 +48,7 @@ class BuiltinsModule {
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];

@@ -94,6 +94,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
+    {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
     {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
@@ -970,6 +971,77 @@ RawObject BuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
   word end = end_obj.isNoneType() ? kMaxWord
                                   : RawInt::cast(*end_obj).asWordSaturated();
   return strRFind(haystack, needle, start, end);
+}
+
+static bool isLineBreak(int32_t c) {
+  switch (c) {
+    // Common cases
+    case '\n':
+    case '\r':
+    // Less common cases
+    case '\f':
+    case '\v':
+    case '\x1c':
+    case '\x1d':
+    case '\x1e':
+    case '\x85':
+    case 0x2028:
+    case 0x2029:
+      return true;
+    default:
+      return false;
+  }
+}
+
+RawObject BuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  DCHECK(runtime->isInstanceOfStr(args.get(0)),
+         "_str_splitlines requires 'str' instance");
+  DCHECK(runtime->isInstanceOfInt(args.get(1)),
+         "_str_splitlines requires 'int' instance");
+  HandleScope scope(thread);
+  Str self(&scope, args.get(0));
+  Int keepends_int(&scope, args.get(1));
+  bool keepends = !keepends_int.isZero();
+  List result(&scope, runtime->newList());
+  // Looping over code points, not bytes, but i is a byte offset
+  for (word i = 0, j = 0; i < self.length();) {
+    // Skip newline chars
+    word num_bytes;
+    while (i < self.length() && !isLineBreak(self.codePointAt(i, &num_bytes))) {
+      i += num_bytes;
+    }
+
+    word eol_pos = i;
+    if (i < self.length()) {
+      int32_t cp = self.codePointAt(i, &num_bytes);
+      word next = i + num_bytes;
+      word next_num_bytes;
+      // Check for \r\n specifically
+      if (cp == '\r' && next < self.length() &&
+          self.codePointAt(next, &next_num_bytes) == '\n') {
+        i += next_num_bytes;
+      }
+      i += num_bytes;
+      if (keepends) {
+        eol_pos = i;
+      }
+    }
+
+    // If there are no newlines, the str returned should be identity-equal
+    if (j == 0 && eol_pos == self.length() && self.isStr()) {
+      runtime->listAdd(result, self);
+      return *result;
+    }
+
+    Str substr(&scope, runtime->strSubstr(thread, self, j, eol_pos - j));
+    runtime->listAdd(result, substr);
+    j = i;
+  }
+
+  return *result;
 }
 
 RawObject BuiltinsModule::underUnimplemented(Thread*, Frame*, word) {
