@@ -112,12 +112,6 @@ word RawBytes::compare(RawBytes that) const {
   return this_len < that_len ? -1 : 1;
 }
 
-word RawLargeBytes::replaceFromWith(word start, RawBytes src, word len) const {
-  DCHECK_INDEX(start, length());
-  DCHECK_BOUND(start + len, length());
-  src.copyTo(reinterpret_cast<byte*>(address()) + start, len);
-  return start + len;
-}
 
 // RawLargeStr
 

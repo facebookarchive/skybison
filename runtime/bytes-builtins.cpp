@@ -304,11 +304,13 @@ RawObject BytesBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   if (iterable.isList()) {
     List list(&scope, *iterable);
     Tuple src(&scope, list.items());
-    return thread->runtime()->bytesJoin(thread, self, src, list.numItems());
+    return thread->runtime()->bytesJoin(thread, self, self.length(), src,
+                                        list.numItems());
   }
   if (iterable.isTuple()) {
     Tuple src(&scope, *iterable);
-    return thread->runtime()->bytesJoin(thread, self, src, src.length());
+    return thread->runtime()->bytesJoin(thread, self, self.length(), src,
+                                        src.length());
   }
   // Slow path: collect items into list in Python and call again
   return NoneType::object();

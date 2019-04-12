@@ -2327,23 +2327,14 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
   return *result;
 }
 
-RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
+RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
                              const Tuple& src, word src_length) {
   DCHECK_BOUND(src_length, src.length());
   if (src_length == 0) return newBytes(0, 0);
   HandleScope scope(thread);
 
   // first pass to accumulate length and check types
-  word result_length;
-  if (isInstanceOfBytes(*sep)) {
-    Bytes bytes(&scope, *sep);
-    result_length = bytes.length() * (src_length - 1);
-  } else if (isInstanceOfByteArray(*sep)) {
-    ByteArray array(&scope, *sep);
-    result_length = array.numItems() * (src_length - 1);
-  } else {
-    UNREACHABLE("separator is not bytes-like");
-  }
+  word result_length = sep_length * (src_length - 1);
   for (word index = 0; index < src_length; index++) {
     Object obj(&scope, src.at(index));
     if (isInstanceOfBytes(*obj)) {
@@ -2362,14 +2353,30 @@ RawObject Runtime::bytesJoin(Thread* thread, const Object& sep,
   // second pass to accumulate concatenation
   // TODO(T36997048): immediate small byte arrays
   LargeBytes result(&scope, heap()->createLargeBytes(result_length));
-  Object item(&scope, src.at(0));
-  word result_index = bytesReplaceFromWith(thread, result, 0, item);
-  for (word src_index = 1; src_index < src_length; src_index++) {
-    result_index = bytesReplaceFromWith(thread, result, result_index, sep);
+  byte* dst = reinterpret_cast<byte*>(result.address());
+  const byte* const end = dst + result_length;
+  Object item(&scope, Unbound::object());
+  for (word src_index = 0; src_index < src_length; src_index++) {
+    if (src_index > 0) {
+      sep.copyTo(dst, sep_length);
+      dst += sep_length;
+    }
     item = src.at(src_index);
-    result_index = bytesReplaceFromWith(thread, result, result_index, item);
+    Bytes bytes(&scope, empty_bytes_);
+    word length;
+    if (isInstanceOfBytes(*item)) {
+      bytes = *item;
+      length = bytes.length();
+    } else {
+      DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");
+      ByteArray array(&scope, *item);
+      bytes = array.bytes();
+      length = array.numItems();
+    }
+    bytes.copyTo(dst, length);
+    dst += length;
   }
-  DCHECK(result_index == result_length, "unexpected length");
+  DCHECK(dst == end, "unexpected number of bytes written");
   return *result;
 }
 
@@ -2392,22 +2399,6 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
     std::memcpy(dst, src, length);
   }
   return *result;
-}
-
-word Runtime::bytesReplaceFromWith(Thread* thread, const LargeBytes& buffer,
-                                   word start, const Object& source) {
-  DCHECK_INDEX(start, buffer.length());
-  HandleScope scope(thread);
-  if (isInstanceOfBytes(*source)) {
-    Bytes src(&scope, *source);
-    return buffer.replaceFromWith(start, *src, src.length());
-  }
-  if (isInstanceOfByteArray(*source)) {
-    ByteArray src(&scope, *source);
-    Bytes src_bytes(&scope, src.bytes());
-    return buffer.replaceFromWith(start, *src_bytes, src.numItems());
-  }
-  UNREACHABLE("source is not bytes-like");
 }
 
 RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,

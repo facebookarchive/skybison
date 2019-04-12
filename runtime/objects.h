@@ -1076,7 +1076,6 @@ class RawLargeBytes : public RawArray {
   byte byteAt(word index) const;
   void byteAtPut(word index, byte value) const;
   void copyTo(byte* dst, word length) const;
-  word replaceFromWith(word start, RawBytes src, word length) const;
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
