@@ -23,6 +23,12 @@ RawObject strStripSpace(Thread* thread, const Str& src,
                         const StrStripDirection direction);
 RawObject strStrip(Thread* thread, const Str& src, const Str& str,
                    StrStripDirection direction);
+// Split the string into logical lines using \r, \n, and other end-of-line
+// markers. keepends == true keeps the newline characters, keepends == false
+// does not.
+//
+// Returns a list of component strings, either with or without endlines.
+RawObject strSplitlines(Thread* thread, const Str& str, bool keepends);
 
 // Returns the length of the maximum initial span of src composed of code
 // points found in str. Analogous to the C string API function strspn().

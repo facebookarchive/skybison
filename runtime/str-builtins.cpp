@@ -68,6 +68,67 @@ word strRSpan(const Str& src, const Str& str, word rend) {
   return result;
 }
 
+static bool isLineBreak(int32_t c) {
+  switch (c) {
+    // Common cases
+    case '\n':
+    case '\r':
+    // Less common cases
+    case '\f':
+    case '\v':
+    case 0x1c:
+    case 0x1d:
+    case 0x1e:
+    case 0x85:
+    case 0x2028:
+    case 0x2029:
+      return true;
+    default:
+      return false;
+  }
+}
+
+RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  List result(&scope, runtime->newList());
+  // Looping over code points, not bytes, but i is a byte offset
+  for (word i = 0, j = 0; i < str.length(); j = i) {
+    // Skip newline chars
+    word num_bytes;
+    while (i < str.length() && !isLineBreak(str.codePointAt(i, &num_bytes))) {
+      i += num_bytes;
+    }
+
+    word eol_pos = i;
+    if (i < str.length()) {
+      int32_t cp = str.codePointAt(i, &num_bytes);
+      word next = i + num_bytes;
+      word next_num_bytes;
+      // Check for \r\n specifically
+      if (cp == '\r' && next < str.length() &&
+          str.codePointAt(next, &next_num_bytes) == '\n') {
+        i += next_num_bytes;
+      }
+      i += num_bytes;
+      if (keepends) {
+        eol_pos = i;
+      }
+    }
+
+    // If there are no newlines, the str returned should be identity-equal
+    if (j == 0 && eol_pos == str.length() && str.isStr()) {
+      runtime->listAdd(result, str);
+      return *result;
+    }
+
+    Str substr(&scope, runtime->strSubstr(thread, str, j, eol_pos - j));
+    runtime->listAdd(result, substr);
+  }
+
+  return *result;
+}
+
 static bool isAsciiSpace(byte ch) {
   return ((ch >= 0x09) && (ch <= 0x0D)) || ((ch >= 0x1C) && (ch <= 0x1F)) ||
          ch == 0x20;

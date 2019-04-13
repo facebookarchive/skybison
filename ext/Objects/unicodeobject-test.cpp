@@ -1103,6 +1103,32 @@ TEST_F(UnicodeExtensionApiTest, RPartitionReturnsTuple) {
   EXPECT_TRUE(PyTuple_CheckExact(result));
 }
 
+TEST_F(UnicodeExtensionApiTest, SplitlinesWithNonStrStrRaisesTypeError) {
+  PyObjectPtr result(PyUnicode_Splitlines(Py_None, 0));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, SplitlinesReturnsList) {
+  PyObjectPtr str(PyUnicode_FromString("hello\nworld"));
+  PyObjectPtr result(PyUnicode_Splitlines(str, 1));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyList_CheckExact(result));
+}
+
+TEST_F(UnicodeExtensionApiTest, SplitlinesWithNoNewlinesReturnsIdEqualString) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  PyObjectPtr result(PyUnicode_Splitlines(str, 1));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyList_CheckExact(result));
+  ASSERT_EQ(PyList_Size(result), 1);
+  PyObject* str_elt = PyList_GetItem(result, 0);
+  EXPECT_EQ(str, str_elt);
+}
+
 TEST_F(UnicodeExtensionApiTest, SplitWithNonStrStrRaisesTypeError) {
   PyObjectPtr sep(PyUnicode_FromString("."));
   PyObjectPtr result(PyUnicode_Split(Py_None, sep, 5));

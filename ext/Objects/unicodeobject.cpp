@@ -1548,8 +1548,18 @@ PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT PyObject* PyUnicode_Splitlines(PyObject* /* g */, int /* s */) {
-  UNIMPLEMENTED("PyUnicode_Splitlines");
+PY_EXPORT PyObject* PyUnicode_Splitlines(PyObject* str, int keepends) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  if (!thread->runtime()->isInstanceOfStr(*str_obj)) {
+    thread->raiseWithFmt(LayoutId::kTypeError, "must be str, not '%T'",
+                         &str_obj);
+    return nullptr;
+  }
+  Str str_str(&scope, *str_obj);
+  return ApiHandle::newReference(thread,
+                                 strSplitlines(thread, str_str, keepends));
 }
 
 PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
