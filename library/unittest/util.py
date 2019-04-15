@@ -5,8 +5,11 @@
 # fmt: off
 """Various utility functions."""
 
-# from collections import OrderedDict, namedtuple
 from os.path import commonprefix
+
+# TODO(T42627145): Enable collections.namedtuple
+# from collections import OrderedDict, namedtuple
+from _namedtuple import namedtuple
 
 
 __unittest = True
@@ -122,8 +125,7 @@ def three_way_cmp(x, y):
     """Return -1 if x < y, 0 if x == y and 1 if x > y"""
     return (x > y) - (x < y)
 
-# TODO(T42627145): Enable collections.namedtuple
-# _Mismatch = namedtuple('Mismatch', 'actual expected value')
+_Mismatch = namedtuple('Mismatch', 'actual expected value')
 def _Mismatch(actual, expected, value): return (actual, expected, value)
 
 def _count_diff_all_purpose(actual, expected):

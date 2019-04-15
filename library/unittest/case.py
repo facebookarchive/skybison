@@ -18,6 +18,9 @@ import sys
 # import traceback
 import warnings
 
+# TODO(T42627145): Enable collections.namedtuple
+from _namedtuple import namedtuple
+
 from . import result
 from .util import (
     _common_shorten_repr,
@@ -292,8 +295,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
 
 
 # TODO(T42627145): Enable collections.namedtuple
-# _LoggingWatcher = collections.namedtuple("_LoggingWatcher",
-#                                          ["records", "output"])
+_LoggingWatcher = namedtuple("_LoggingWatcher", ["records", "output"])
 
 
 # TODO(T42595887): logging module

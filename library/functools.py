@@ -24,7 +24,9 @@ try:
 except ImportError:
     pass
 from abc import get_cache_token
-from collections import namedtuple
+# TODO(T42627145): Enable collections.namedtuple
+# from collections import namedtuple
+from _namedtuple import namedtuple
 from types import MappingProxyType
 from weakref import WeakKeyDictionary
 from reprlib import recursive_repr
@@ -406,9 +408,8 @@ class partialmethod(object):
 ### LRU Cache function decorator
 ################################################################################
 
-# TODO(T42627145)
-# _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize",
-#                                       "currsize"])
+_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize",
+                                      "currsize"])
 from builtins import property as _property, tuple as _tuple
 from operator import itemgetter as _itemgetter
 from collections import OrderedDict
