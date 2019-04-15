@@ -9,7 +9,7 @@ _Unbound = _Unbound  # noqa: F821
 _patch = _patch  # noqa: F821
 
 
-# Begin: Early definitions that are necessary to parse the rest of the file:
+# Begin: Early definitions that are necessary to process the rest of the file:
 
 
 @_patch
