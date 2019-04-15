@@ -9,9 +9,7 @@ _Unbound = _Unbound  # noqa: F821
 _patch = _patch  # noqa: F821
 
 
-@_patch
-def _address(c):
-    pass
+# Begin: Early definitions that are necessary to parse the rest of the file:
 
 
 @_patch
@@ -32,29 +30,49 @@ class function(bootstrap=True):
         return f"<function {self.__name__} at 0x{_address(self)}>"
 
 
-def format(obj, fmt_spec):
-    if not isinstance(fmt_spec, str):
-        raise TypeError(
-            f"fmt_spec must be str instance, not '{type(fmt_spec).__name__}'"
-        )
-    result = obj.__format__(fmt_spec)
-    if not isinstance(result, str):
-        raise TypeError(
-            f"__format__ must return str instance, not '{type(result).__name__}'"
-        )
-    return result
+class classmethod(bootstrap=True):
+    def __get__(self, instance, owner):
+        pass
+
+    def __init__(self, fn):
+        pass
+
+    def __new__(cls, fn):
+        pass
 
 
-# This needs to be patched before type is patched or the call to isinstance in
-# type.__call__ won't properly check isinstance's arguments.
-@_patch
-def isinstance(obj, ty):
-    pass
+class property(bootstrap=True):
+    def __get__(self, instance, owner):
+        pass
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        pass
+
+    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
+        pass
+
+    def __set__(self, instance, value):
+        pass
+
+    def deleter(self, fn):
+        pass
+
+    def getter(self, fn):
+        pass
+
+    def setter(self, fn):
+        pass
 
 
-@_patch
-def issubclass(obj, ty):
-    pass
+class staticmethod(bootstrap=True):
+    def __get__(self, instance, owner):
+        pass
+
+    def __init__(self, fn):
+        pass
+
+    def __new__(cls, fn):
+        pass
 
 
 class type(bootstrap=True):
@@ -89,29 +107,6 @@ class type(bootstrap=True):
     def mro(self):
         # TODO(T42302401): Call Runtime computeMro when we support metaclasses.
         return list(self.__mro__)
-
-
-class property(bootstrap=True):
-    def __get__(self, instance, owner):
-        pass
-
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        pass
-
-    def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
-        pass
-
-    def __set__(self, instance, value):
-        pass
-
-    def deleter(self, fn):
-        pass
-
-    def getter(self, fn):
-        pass
-
-    def setter(self, fn):
-        pass
 
 
 class object(bootstrap=True):  # noqa: E999
@@ -163,411 +158,70 @@ class object(bootstrap=True):  # noqa: E999
         return type(self).__repr__(self)
 
 
-class bool(bootstrap=True):
-    def __new__(cls, val=False):
+# End: Early definitions
+
+
+class BaseException(bootstrap=True):
+    def __init__(self, *args):
         pass
 
     def __repr__(self):
-        return "True" if self else "False"
+        if not isinstance(self, BaseException):
+            raise TypeError("not a BaseException object")
+        return f"{self.__class__.__name__}{self.args!r}"
 
-    def __str__(self) -> str:  # noqa: T484
-        return bool.__repr__(self)
+    def __str__(self):
+        if not isinstance(self, BaseException):
+            raise TypeError("not a BaseException object")
+        if not self.args:
+            return ""
+        if len(self.args) == 1:
+            return str(self.args[0])
+        return str(self.args)
 
 
-class coroutine(bootstrap=True):
-    def send(self, value):
-        pass
+Ellipsis = ...
 
 
-class float(bootstrap=True):
-    def __abs__(self) -> float:
-        pass
+EnvironmentError = OSError
 
-    def __add__(self, n: float) -> float:
-        pass
 
-    def __bool__(self) -> bool:
-        pass
+IOError = OSError
 
-    def __eq__(self, n: float) -> bool:  # noqa: T484
-        pass
 
-    def __float__(self) -> float:
-        pass
-
-    def __ge__(self, n: float) -> bool:
-        pass
-
-    def __gt__(self, n: float) -> bool:
-        pass
-
-    def __int__(self, n: float) -> int:
-        pass
-
-    def __le__(self, n: float) -> bool:
-        pass
-
-    def __lt__(self, n: float) -> bool:
-        pass
-
-    def __mul__(self, n: float) -> float:
-        pass
-
-    def __ne__(self, n: float) -> float:  # noqa: T484
-        if not isinstance(self, float):
-            raise TypeError(
-                f"'__ne__' requires a 'float' object "
-                f"but received a '{self.__class__.__name__}'"
-            )
-        if not isinstance(n, float) and not isinstance(n, int):
-            return NotImplemented
-        return not float.__eq__(self, n)  # noqa: T484
-
-    def __neg__(self) -> float:
-        pass
-
-    def __new__(cls, arg=0.0) -> float:
-        pass
-
-    def __pow__(self, y, z=_Unbound) -> float:
-        pass
-
-    def __radd__(self, n: float) -> float:
-        # The addition for floating point numbers is commutative:
-        # https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems.
-        # Note: Handling NaN payloads may vary depending on the hardware, but nobody
-        # seems to depend on it due to such variance.
-        return float.__add__(self, n)
-
-    def __repr__(self) -> str:  # noqa: T484
-        pass
-
-    def __rmul__(self, n: float) -> float:
-        # The multiplication for floating point numbers is commutative:
-        # https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems
-        return float.__mul__(self, n)
-
-    def __rsub__(self, n: float) -> float:
-        # n - self == -self + n.
-        return float.__neg__(self).__add__(n)
-
-    def __rtruediv__(self, n: float) -> float:
-        pass
-
-    def __sub__(self, n: float) -> float:
-        pass
-
-    def __truediv__(self, n: float) -> float:
-        pass
-
-
-class generator(bootstrap=True):
-    def __iter__(self):
-        pass
-
-    def __next__(self):
-        pass
-
-    def send(self, value):
-        pass
-
-
-class memoryview(bootstrap=True):
-    def __getitem__(self, index):
-        pass
-
-    def __len__(self) -> int:
-        pass
-
-    def __new__(cls, object):
-        pass
-
-    def cast(self, format: str) -> memoryview:
-        pass
-
-
-class classmethod(bootstrap=True):
-    def __get__(self, instance, owner):
-        pass
-
-    def __init__(self, fn):
-        pass
-
-    def __new__(cls, fn):
-        pass
-
-
-class staticmethod(bootstrap=True):
-    def __get__(self, instance, owner):
-        pass
-
-    def __init__(self, fn):
-        pass
-
-    def __new__(cls, fn):
-        pass
-
-
-class int(bootstrap=True):
-    def __abs__(self) -> int:
-        pass
-
-    def __add__(self, n: int) -> int:
-        pass
-
-    def __and__(self, n: int) -> int:
-        pass
-
-    def __bool__(self) -> bool:
-        pass
-
-    def __ceil__(self) -> int:
-        pass
-
-    def __divmod__(self, n: int):
-        pass
-
-    def __eq__(self, n: int) -> bool:  # noqa: T484
-        pass
-
-    def __float__(self) -> float:
-        pass
-
-    def __floor__(self) -> int:
-        pass
-
-    def __floordiv__(self, n: int) -> int:
-        pass
-
-    def __ge__(self, n: int) -> bool:
-        pass
-
-    def __gt__(self, n: int) -> bool:
-        pass
-
-    def __index__(self) -> int:
-        pass
-
-    def __int__(self) -> int:
-        pass
-
-    def __invert__(self) -> int:
-        pass
-
-    def __le__(self, n: int) -> bool:
-        pass
-
-    def __lshift__(self, n: int) -> int:
-        pass
-
-    def __lt__(self, n: int) -> bool:
-        pass
-
-    def __mod__(self, n: int) -> int:
-        pass
-
-    def __mul__(self, n: int) -> int:
-        pass
-
-    def __ne__(self, n: int) -> int:  # noqa: T484
-        pass
-
-    def __neg__(self) -> int:
-        pass
-
-    def __new__(cls, n=0, base=_Unbound):
-        pass
-
-    def __or__(self, n: int) -> int:
-        pass
-
-    def __pos__(self) -> int:
-        pass
-
-    def __pow__(self, power, mod=None) -> int:
-        # TODO(T42359066): Re-write this in C++ if we need a speed boost.
-        if not isinstance(self, int):
-            raise TypeError(
-                f"'__pow__' requires an 'int' object but got '{type(self).__name__}'"
-            )
-        if not isinstance(power, int):
-            return NotImplemented
-        if mod is not None and not isinstance(mod, int):
-            return NotImplemented
-        if power < 0:
-            if mod is not None:
-                raise ValueError(
-                    "pow() 2nd argument cannot be negative when 3rd argument specified"
-                )
-            else:
-                return float.__pow__(float(self), power)
-        if 0 == power:
-            return 1
-        if 1 == mod:
-            return 0
-        result = self
-        while int.__gt__(power, 1):
-            result = int.__mul__(result, self)
-            power = int.__sub__(power, 1)
-        if mod is not None:
-            result = int.__mod__(result, mod)
-        return result
-
-    def __radd__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__radd__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__add__(n, self)
-
-    def __rand__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rand__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__and__(n, self)
-
-    def __rdivmod__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rdivmod__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__divmod__(n, self)  # noqa: T484
-
-    def __repr__(self) -> str:  # noqa: T484
-        pass
-
-    def __rfloordiv__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rfloordiv__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__floordiv__(n, self)  # noqa: T484
-
-    def __rlshift__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rlshift__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__lshift__(n, self)
-
-    def __rmod__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rmod__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__mod__(n, self)  # noqa: T484
-
-    def __rmul__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rmul__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__mul__(n, self)
-
-    def __ror__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__ror__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__or__(n, self)
-
-    def __round__(self) -> int:
-        pass
-
-    def __rpow__(self, n: int, *, mod=None):
-        if not isinstance(self, int):
-            raise TypeError("'__rpow__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__pow__(n, self, mod=mod)  # noqa: T484
-
-    def __rrshift__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rrshift__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__rshift__(n, self)
-
-    def __rshift__(self, n: int) -> int:
-        pass
-
-    def __rsub__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rsub__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__sub__(n, self)
-
-    def __rtruediv__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rtruediv__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__truediv__(n, self)  # noqa: T484
-
-    def __rxor__(self, n: int) -> int:
-        if not isinstance(self, int):
-            raise TypeError("'__rxor__' requires a 'int' object")
-        if not isinstance(n, int):
-            return NotImplemented
-        return int.__xor__(n, self)
-
-    def __str__(self) -> str:  # noqa: T484
-        pass
-
-    def __sub__(self, n: int) -> int:
-        pass
-
-    def __truediv__(self, other):
-        pass
-
-    def __trunc__(self) -> int:
-        pass
-
-    def __xor__(self, n: int) -> int:
-        pass
-
-    def bit_length(self) -> int:
-        pass
-
-    def conjugate(self) -> int:
-        pass
-
-    @property
-    def denominator(self) -> int:
-        return 1  # noqa: T484
-
-    @property
-    def imag(self) -> int:
-        return 0  # noqa: T484
-
-    numerator = property(__int__)
-
-    real = property(__int__)
-
-    def to_bytes(self, length, byteorder, signed=False):
-        pass
-
-
-class UnicodeError(bootstrap=True):  # noqa: B903
-    def __init__(self, *args):
+class ImportError(bootstrap=True):
+    def __init__(self, *args, name=None, path=None):
+        # TODO(mpage): Call super once we have EX calling working for built-in methods
         self.args = args
+        if len(args) == 1:
+            self.msg = args[0]
+        self.name = name
+        self.path = path
 
 
-# equivalent to PyNumber_Index
-def _index(obj) -> int:
-    if isinstance(obj, int):
-        return obj
-    try:
-        result = obj.__index__()
-        if isinstance(result, int):
-            return result
-        raise TypeError(f"__index__ returned non-int (type {type(result).__name__})")
-    except AttributeError:
-        raise TypeError(
-            f"'{type(obj).__name__}' object cannot be interpreted as an integer"
-        )
+class KeyError(bootstrap=True):
+    def __str__(self):
+        if isinstance(self.args, tuple) and len(self.args) == 1:
+            return repr(self.args[0])
+        return super(KeyError, self).__str__()
+
+
+class NoneType(bootstrap=True):
+    def __new__(cls):
+        pass
+
+    def __repr__(self):
+        pass
+
+
+class StopIteration(bootstrap=True):
+    def __init__(self, *args, **kwargs):
+        pass
+
+
+class SystemExit(bootstrap=True):
+    def __init__(self, *args, **kwargs):
+        pass
 
 
 class UnicodeDecodeError(UnicodeError, bootstrap=True):
@@ -605,6 +259,11 @@ class UnicodeEncodeError(UnicodeError, bootstrap=True):
         self.reason = reason
 
 
+class UnicodeError(bootstrap=True):  # noqa: B903
+    def __init__(self, *args):
+        self.args = args
+
+
 class UnicodeTranslateError(UnicodeError, bootstrap=True):
     def __init__(self, obj, start, end, reason):
         super(UnicodeTranslateError, self).__init__(obj, start, end, reason)
@@ -618,51 +277,315 @@ class UnicodeTranslateError(UnicodeError, bootstrap=True):
         self.reason = reason
 
 
-class ImportError(bootstrap=True):
-    def __init__(self, *args, name=None, path=None):
-        # TODO(mpage): Call super once we have EX calling working for built-in methods
-        self.args = args
-        if len(args) == 1:
-            self.msg = args[0]
+@_patch
+def __import__(name, globals=None, locals=None, fromlist=(), level=0):
+    pass
+
+
+@_patch
+def _address(c):
+    pass
+
+
+@_patch
+def _bytearray_join(self: bytearray, iterable) -> bytearray:
+    pass
+
+
+@_patch
+def _bytes_from_ints(source) -> bytes:
+    pass
+
+
+@_patch
+def _bytes_getitem(self, index: int) -> int:
+    pass
+
+
+@_patch
+def _bytes_getitem_slice(self, start: int, stop: int, step: int) -> bytes:
+    pass
+
+
+@_patch
+def _bytes_join(self: bytes, iterable) -> bytes:
+    pass
+
+
+@_patch
+def _bytes_maketrans(frm, to) -> bytes:
+    pass
+
+
+def _bytes_new(source) -> bytes:
+    # source should be a bytes-like object (fast case), tuple/list of ints (fast case),
+    # or an iterable of int-like objects (slow case)
+    # patch is not patched because that would cause a circularity problem.
+    result = _bytes_from_ints(source)
+    if result is not None:
+        # source was a list or tuple of ints in range(0, 256)
+        return result
+    try:
+        iterator = iter(source)
+    except TypeError:
+        raise TypeError(f"cannot convert '{type(source).__name__}' object to bytes")
+    return _bytes_from_ints([_index(x) for x in iterator])
+
+
+@_patch
+def _bytes_repeat(self: bytes, count: int) -> bytes:
+    pass
+
+
+@_patch
+def _complex_imag(c):
+    pass
+
+
+@_patch
+def _complex_real(c):
+    pass
+
+
+def _index(obj) -> int:
+    # equivalent to PyNumber_Index
+    if isinstance(obj, int):
+        return obj
+    try:
+        result = obj.__index__()
+        if isinstance(result, int):
+            return result
+        raise TypeError(f"__index__ returned non-int (type {type(result).__name__})")
+    except AttributeError:
+        raise TypeError(
+            f"'{type(obj).__name__}' object cannot be interpreted as an integer"
+        )
+
+
+@_patch
+def _list_sort(list):
+    pass
+
+
+def _long_of_obj(obj):
+    if type(obj) is int:
+        return obj
+    if hasattr(obj, "__int__"):
+        result = obj.__int__()
+        result_type = type(result)
+        if result_type is not int:
+            raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
+        return result
+    if hasattr(obj, "__trunc__"):
+        trunc_result = obj.__trunc__()
+        if isinstance(trunc_result, int):
+            return trunc_result
+        return trunc_result.__int__()
+    if isinstance(obj, str) or isinstance(obj, bytes) or isinstance(obj, bytearray):
+        return int(obj, 10)
+    # TODO(T41277979): Create from an object that implements the buffer protocol
+    raise TypeError(
+        f"int() argument must be a string, a bytes-like object or a number, not"
+        f" {type(obj).__name__}"
+    )
+
+
+@_patch
+def _repr_enter(obj: object) -> bool:
+    pass
+
+
+@_patch
+def _repr_leave(obj: object) -> None:
+    pass
+
+
+def _slice_index(num) -> int:
+    if hasattr(num, "__index__"):
+        return _index(num)
+    raise TypeError(
+        "slice indices must be integers or None or have an __index__ method"
+    )
+
+
+@_patch
+def _str_escape_non_ascii(s):
+    pass
+
+
+@_patch
+def _str_find(self, sub, start, end):
+    pass
+
+
+@_patch
+def _str_replace(self, old, newstr, count):
+    pass
+
+
+@_patch
+def _str_rfind(self, sub, start, end):
+    pass
+
+
+def _str_split_whitespace(self, maxsplit):
+    length = len(self)
+    i = 0
+    res = []
+    num_split = 0
+    while True:
+        # find the beginning of the next word
+        while i < length:
+            if not str.__getitem__(self, i).isspace():
+                break  # found
+            i += 1
+        else:
+            break  # end of string, finished
+
+        # find the end of the word
+        if maxsplit == num_split:
+            j = length  # take all the rest of the string
+        else:
+            j = i + 1
+            while j < length and not str.__getitem__(self, j).isspace():
+                j += 1
+            num_split += 1
+
+        # the word is self[i:j]
+        res.append(self[i:j])
+
+        # continue to look from the character following the space after the word
+        if j < length:
+            i = j + 1
+        else:
+            break
+    return res
+
+
+@_patch
+def _str_splitlines(self, keepends):
+    pass
+
+
+class _structseq_field:
+    def __get__(self, instance, owner):
+        if self.index is not None:
+            return instance[self.index]
+        return _structseq_getattr(instance, self.name)
+
+    def __init__(self, name, index):
         self.name = name
-        self.path = path
+        self.index = index
+
+    def __set__(self, instance, value):
+        raise TypeError("readonly attribute")
 
 
-class BaseException(bootstrap=True):
-    def __init__(self, *args):
+@_patch
+def _structseq_getattr(obj, name):
+    pass
+
+
+def _structseq_getitem(self, pos):
+    if pos < 0 or pos >= type(self).n_fields:
+        raise IndexError("index out of bounds")
+    if pos < len(self):
+        return self[pos]
+    else:
+        name = self._structseq_field_names[pos]
+        return _structseq_getattr(self, name)
+
+
+def _structseq_new(cls, sequence, dict={}):  # noqa B006
+    seq_tuple = tuple(sequence)
+    seq_len = len(seq_tuple)
+    max_len = cls.n_fields
+    min_len = cls.n_sequence_fields
+    if seq_len < min_len:
+        raise TypeError(
+            f"{cls.__name__} needs at least a {min_len}-sequence "
+            f"({seq_len}-sequence given)"
+        )
+    if seq_len > max_len:
+        raise TypeError(
+            f"{cls.__name__} needs at most a {max_len}-sequence "
+            f"({seq_len}-sequence given)"
+        )
+
+    # Create the tuple of size min_len
+    structseq = tuple.__new__(cls, seq_tuple[:min_len])
+
+    # Fill the rest of the hidden fields
+    for i in range(min_len, seq_len):
+        key = cls._structseq_field_names[i]
+        _structseq_setattr(structseq, key, seq_tuple[min_len])
+
+    # Fill the remaining from the dict or set to None
+    for i in range(seq_len, max_len):
+        key = cls._structseq_field_names[i]
+        _structseq_setattr(structseq, key, dict.get(key))
+
+    return structseq
+
+
+def _structseq_repr(self):
+    if not isinstance(self, tuple):
+        raise TypeError("__repr__(): self is not a tuple")
+    if not hasattr(self, "n_sequence_fields"):
+        raise TypeError("__repr__(): self is not a self")
+    # TODO(T40273054): Iterate attributes and return field names
+    tuple_values = ", ".join([i.__repr__() for i in self])
+    return f"{type(self).__name__}({tuple_values})"
+
+
+@_patch
+def _structseq_setattr(obj, name, value):
+    pass
+
+
+@_patch
+def _unimplemented():
+    """Prints a message and a stacktrace, and stops the program execution."""
+    pass
+
+
+def abs(x):
+    import operator
+
+    return operator.abs(x)
+
+
+def all(iterable):
+    for element in iterable:
+        if not element:
+            return False
+    return True
+
+
+def any(iterable):
+    for element in iterable:
+        if element:
+            return True
+    return False
+
+
+def ascii(obj):
+    return _str_escape_non_ascii(repr(obj))
+
+
+def bin(x):
+    _unimplemented()
+
+
+class bool(bootstrap=True):
+    def __new__(cls, val=False):
         pass
 
     def __repr__(self):
-        if not isinstance(self, BaseException):
-            raise TypeError("not a BaseException object")
-        return f"{self.__class__.__name__}{self.args!r}"
+        return "True" if self else "False"
 
-    def __str__(self):
-        if not isinstance(self, BaseException):
-            raise TypeError("not a BaseException object")
-        if not self.args:
-            return ""
-        if len(self.args) == 1:
-            return str(self.args[0])
-        return str(self.args)
-
-
-class KeyError(bootstrap=True):
-    def __str__(self):
-        if isinstance(self.args, tuple) and len(self.args) == 1:
-            return repr(self.args[0])
-        return super(KeyError, self).__str__()
-
-
-class bytearray_iterator(bootstrap=True):
-    def __iter__(self):
-        pass
-
-    def __length_hint__(self):
-        pass
-
-    def __next__(self):
-        pass
+    def __str__(self) -> str:  # noqa: T484
+        return bool.__repr__(self)
 
 
 class bytearray(bootstrap=True):
@@ -882,6 +805,17 @@ class bytearray(bootstrap=True):
 
     def zfill(self):
         _unimplemented()
+
+
+class bytearray_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+    def __next__(self):
+        pass
 
 
 class bytes(bootstrap=True):
@@ -1129,30 +1063,67 @@ class bytes(bootstrap=True):
 
 
 @_patch
-def _repr_enter(obj: object) -> bool:
+def callable(f):
     pass
 
 
 @_patch
-def _repr_leave(obj: object) -> None:
+def chr(c):
     pass
 
 
-class tuple(bootstrap=True):
-    def __add__(self, other):
+@_patch
+def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
+    pass
+
+
+class complex(bootstrap=True):
+    def __new__(cls, real=0.0, imag=0.0):
         pass
 
-    def __contains__(self, key):
+    def __repr__(self):
+        return f"({self.real}+{self.imag}j)"
+
+    @property
+    def imag(self):
+        return _complex_imag(self)
+
+    @property
+    def real(self):
+        return _complex_real(self)
+
+
+class coroutine(bootstrap=True):
+    def send(self, value):
+        pass
+
+
+def delattr(obj, name):
+    _unimplemented()
+
+
+class dict(bootstrap=True):
+    def __contains__(self, key) -> bool:
+        return self.get(key, _Unbound) is not _Unbound  # noqa: T484
+
+    def __delitem__(self, key):
         pass
 
     def __eq__(self, other):
         pass
 
-    def __getitem__(self, index):
-        pass
+    def __getitem__(self, key):
+        result = self.get(key, _Unbound)
+        if result is _Unbound:
+            raise KeyError(key)
+        return result
 
-    def __hash__(self):
-        pass
+    def __init__(self, *args, **kwargs):
+        if len(args) > 1:
+            raise TypeError("dict expected at most 1 positional argument, got 2")
+        if len(args) == 1:
+            dict.update(self, args[0])
+        dict.update(self, kwargs)
 
     def __iter__(self):
         pass
@@ -1160,52 +1131,58 @@ class tuple(bootstrap=True):
     def __len__(self):
         pass
 
-    def __lt__(self, other):
-        if not isinstance(self, tuple):
-            raise TypeError(f"__lt__ expected 'tuple' but got {type(self).__name__}")
-        if not isinstance(other, tuple):
-            raise TypeError(f"__lt__ expected 'tuple' but got {type(other).__name__}")
-        len_self = tuple.__len__(self)
-        len_other = tuple.__len__(other)
-        # TODO(T42050051): Use builtin.min when it's developed
-        min_len = len_self if len_self < len_other else len_other
-        # Find the first non-equal item in the tuples
-        i = 0
-        while i < min_len:
-            self_i = tuple.__getitem__(self, i)
-            other_i = tuple.__getitem__(other, i)
-            if self_i is not other_i and self_i != other_i:
-                break
-            i += 1
-        if i >= min_len:
-            # If the items are all up equal up to min_len, compare lengths
-            return len_self < len_other
-        return self_i < other_i
-
-    def __mul__(self, other):
-        pass
-
-    def __new__(cls, iterable=_Unbound):
+    def __new__(cls, *args, **kwargs):
         pass
 
     def __repr__(self):
         if _repr_enter(self):
-            return "(...)"
-        num_elems = len(self)
-        output = "("
-        i = 0
-        while i < num_elems:
-            if i != 0:
-                output += ", "
-            output += repr(self[i])
-            i += 1
+            return "{...}"
+        kwpairs = [f"{key!r}: {self[key]!r}" for key in self.keys()]
         _repr_leave(self)
-        if num_elems == 1:
-            output += ","
-        return output + ")"
+        return "{" + ", ".join(kwpairs) + "}"
+
+    def __setitem__(self, key, value):
+        pass
+
+    def copy(self):
+        if not isinstance(self, dict):
+            raise TypeError(f"expected 'dict' instance but got {type(self).__name__}")
+        return dict(self)
+
+    def get(self, key, default=None):
+        pass
+
+    def items(self):
+        pass
+
+    def keys(self):
+        pass
+
+    def pop(self, key, default=_Unbound):
+        value = dict.get(self, key, default)
+        if value is _Unbound:
+            raise KeyError(key)
+        if key in self:
+            dict.__delitem__(self, key)
+        return value
+
+    def setdefault(self, key, default=None):
+        if not isinstance(self, dict):
+            raise TypeError("setdefault expected 'dict' but got {type(self).__name__}")
+        value = dict.get(self, key, _Unbound)
+        if value is _Unbound:
+            dict.__setitem__(self, key, default)
+            return default
+        return value
+
+    def update(self, other):
+        pass
+
+    def values(self):
+        pass
 
 
-class tuple_iterator(bootstrap=True):
+class dict_itemiterator(bootstrap=True):
     def __iter__(self):
         pass
 
@@ -1216,9 +1193,584 @@ class tuple_iterator(bootstrap=True):
         pass
 
 
+class dict_items(bootstrap=True):
+    def __iter__(self):
+        pass
+
+
+class dict_keyiterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+
+class dict_keys(bootstrap=True):
+    def __iter__(self):
+        pass
+
+
+class dict_valueiterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+
+class dict_values(bootstrap=True):
+    def __iter__(self):
+        pass
+
+
+def dir(obj=_Unbound):
+    if obj is _Unbound:
+        names = locals().keys()
+    else:
+        names = type(obj).__dir__(obj)
+    return sorted(names)
+
+
 @_patch
-def _list_sort(list):
+def divmod(a, b):
     pass
+
+
+class enumerate:
+    def __init__(self, iterable, start=0):
+        self.iterator = iter(iterable)
+        self.index = start
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        result = (self.index, next(self.iterator))
+        self.index += 1
+        return result
+
+
+def eval(source, globals=None, locals=None):
+    _unimplemented()
+
+
+@_patch
+def exec(source, globals=None, locals=None):
+    pass
+
+
+def exit():
+    _unimplemented()
+
+
+class filter:
+    """filter(function or None, iterable) --> filter object
+
+    Return an iterator yielding those items of iterable for which function(item)
+    is true. If function is None, return the items that are true.
+    """
+
+    def __iter__(self):
+        return self
+
+    def __new__(cls, function, iterable, **kwargs):
+        obj = super(filter, cls).__new__(cls)
+        obj.func = (lambda e: e) if function is None else function
+        obj.iter = iter(iterable)
+        return obj
+
+    def __next__(self):
+        func = self.func
+        while True:
+            item = next(self.iter)
+            if func(item):
+                return item
+
+
+class float(bootstrap=True):
+    def __abs__(self) -> float:
+        pass
+
+    def __add__(self, n: float) -> float:
+        pass
+
+    def __bool__(self) -> bool:
+        pass
+
+    def __eq__(self, n: float) -> bool:  # noqa: T484
+        pass
+
+    def __float__(self) -> float:
+        pass
+
+    def __ge__(self, n: float) -> bool:
+        pass
+
+    def __gt__(self, n: float) -> bool:
+        pass
+
+    def __int__(self, n: float) -> int:
+        pass
+
+    def __le__(self, n: float) -> bool:
+        pass
+
+    def __lt__(self, n: float) -> bool:
+        pass
+
+    def __mul__(self, n: float) -> float:
+        pass
+
+    def __ne__(self, n: float) -> float:  # noqa: T484
+        if not isinstance(self, float):
+            raise TypeError(
+                f"'__ne__' requires a 'float' object "
+                f"but received a '{self.__class__.__name__}'"
+            )
+        if not isinstance(n, float) and not isinstance(n, int):
+            return NotImplemented
+        return not float.__eq__(self, n)  # noqa: T484
+
+    def __neg__(self) -> float:
+        pass
+
+    def __new__(cls, arg=0.0) -> float:
+        pass
+
+    def __pow__(self, y, z=_Unbound) -> float:
+        pass
+
+    def __radd__(self, n: float) -> float:
+        # The addition for floating point numbers is commutative:
+        # https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems.
+        # Note: Handling NaN payloads may vary depending on the hardware, but nobody
+        # seems to depend on it due to such variance.
+        return float.__add__(self, n)
+
+    def __repr__(self) -> str:  # noqa: T484
+        pass
+
+    def __rmul__(self, n: float) -> float:
+        # The multiplication for floating point numbers is commutative:
+        # https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems
+        return float.__mul__(self, n)
+
+    def __rsub__(self, n: float) -> float:
+        # n - self == -self + n.
+        return float.__neg__(self).__add__(n)
+
+    def __rtruediv__(self, n: float) -> float:
+        pass
+
+    def __sub__(self, n: float) -> float:
+        pass
+
+    def __truediv__(self, n: float) -> float:
+        pass
+
+
+def format(obj, fmt_spec):
+    if not isinstance(fmt_spec, str):
+        raise TypeError(
+            f"fmt_spec must be str instance, not '{type(fmt_spec).__name__}'"
+        )
+    result = obj.__format__(fmt_spec)
+    if not isinstance(result, str):
+        raise TypeError(
+            f"__format__ must return str instance, not '{type(result).__name__}'"
+        )
+    return result
+
+
+class frozenset(bootstrap=True):
+    def __and__(self, other):
+        pass
+
+    def __contains__(self, value):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __le__(self, other):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __lt__(self, other):
+        pass
+
+    def __ne__(self, other):
+        pass
+
+    def __new__(cls, iterable=_Unbound):
+        pass
+
+    def copy(self):
+        pass
+
+    def intersection(self, other):
+        pass
+
+    def isdisjoint(self, other):
+        pass
+
+
+class generator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def send(self, value):
+        pass
+
+
+@_patch
+def getattr(obj, key, default=_Unbound):
+    pass
+
+
+def globals():
+    _unimplemented()
+
+
+@_patch
+def hasattr(obj, name):
+    pass
+
+
+def hash(obj):
+    dunder_hash = type(obj).__hash__
+    try:
+        result = dunder_hash(obj)
+    except TypeError:
+        raise TypeError(f"unhashable type: '{type(obj).__name__}'")
+    if not isinstance(result, int):
+        raise TypeError("__hash__ method should return an integer")
+    # TODO(djang): This needs to be cast to the exact int type.
+    return result
+
+
+def help(obj=_Unbound):
+    _unimplemented()
+
+
+def hex(number):
+    _unimplemented()
+
+
+def id(obj):
+    _unimplemented()
+
+
+def input(prompt=None):
+    _unimplemented()
+
+
+class int(bootstrap=True):
+    def __abs__(self) -> int:
+        pass
+
+    def __add__(self, n: int) -> int:
+        pass
+
+    def __and__(self, n: int) -> int:
+        pass
+
+    def __bool__(self) -> bool:
+        pass
+
+    def __ceil__(self) -> int:
+        pass
+
+    def __divmod__(self, n: int):
+        pass
+
+    def __eq__(self, n: int) -> bool:  # noqa: T484
+        pass
+
+    def __float__(self) -> float:
+        pass
+
+    def __floor__(self) -> int:
+        pass
+
+    def __floordiv__(self, n: int) -> int:
+        pass
+
+    def __ge__(self, n: int) -> bool:
+        pass
+
+    def __gt__(self, n: int) -> bool:
+        pass
+
+    def __index__(self) -> int:
+        pass
+
+    def __int__(self) -> int:
+        pass
+
+    def __invert__(self) -> int:
+        pass
+
+    def __le__(self, n: int) -> bool:
+        pass
+
+    def __lshift__(self, n: int) -> int:
+        pass
+
+    def __lt__(self, n: int) -> bool:
+        pass
+
+    def __mod__(self, n: int) -> int:
+        pass
+
+    def __mul__(self, n: int) -> int:
+        pass
+
+    def __ne__(self, n: int) -> int:  # noqa: T484
+        pass
+
+    def __neg__(self) -> int:
+        pass
+
+    def __new__(cls, n=0, base=_Unbound):
+        pass
+
+    def __or__(self, n: int) -> int:
+        pass
+
+    def __pos__(self) -> int:
+        pass
+
+    def __pow__(self, power, mod=None) -> int:
+        # TODO(T42359066): Re-write this in C++ if we need a speed boost.
+        if not isinstance(self, int):
+            raise TypeError(
+                f"'__pow__' requires an 'int' object but got '{type(self).__name__}'"
+            )
+        if not isinstance(power, int):
+            return NotImplemented
+        if mod is not None and not isinstance(mod, int):
+            return NotImplemented
+        if power < 0:
+            if mod is not None:
+                raise ValueError(
+                    "pow() 2nd argument cannot be negative when 3rd argument specified"
+                )
+            else:
+                return float.__pow__(float(self), power)
+        if 0 == power:
+            return 1
+        if 1 == mod:
+            return 0
+        result = self
+        while int.__gt__(power, 1):
+            result = int.__mul__(result, self)
+            power = int.__sub__(power, 1)
+        if mod is not None:
+            result = int.__mod__(result, mod)
+        return result
+
+    def __radd__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__radd__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__add__(n, self)
+
+    def __rand__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rand__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__and__(n, self)
+
+    def __rdivmod__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rdivmod__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__divmod__(n, self)  # noqa: T484
+
+    def __repr__(self) -> str:  # noqa: T484
+        pass
+
+    def __rfloordiv__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rfloordiv__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__floordiv__(n, self)  # noqa: T484
+
+    def __rlshift__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rlshift__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__lshift__(n, self)
+
+    def __rmod__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rmod__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__mod__(n, self)  # noqa: T484
+
+    def __rmul__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rmul__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__mul__(n, self)
+
+    def __ror__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__ror__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__or__(n, self)
+
+    def __round__(self) -> int:
+        pass
+
+    def __rpow__(self, n: int, *, mod=None):
+        if not isinstance(self, int):
+            raise TypeError("'__rpow__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__pow__(n, self, mod=mod)  # noqa: T484
+
+    def __rrshift__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rrshift__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__rshift__(n, self)
+
+    def __rshift__(self, n: int) -> int:
+        pass
+
+    def __rsub__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rsub__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__sub__(n, self)
+
+    def __rtruediv__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rtruediv__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__truediv__(n, self)  # noqa: T484
+
+    def __rxor__(self, n: int) -> int:
+        if not isinstance(self, int):
+            raise TypeError("'__rxor__' requires a 'int' object")
+        if not isinstance(n, int):
+            return NotImplemented
+        return int.__xor__(n, self)
+
+    def __str__(self) -> str:  # noqa: T484
+        pass
+
+    def __sub__(self, n: int) -> int:
+        pass
+
+    def __truediv__(self, other):
+        pass
+
+    def __trunc__(self) -> int:
+        pass
+
+    def __xor__(self, n: int) -> int:
+        pass
+
+    def bit_length(self) -> int:
+        pass
+
+    def conjugate(self) -> int:
+        pass
+
+    @property
+    def denominator(self) -> int:
+        return 1  # noqa: T484
+
+    @property
+    def imag(self) -> int:
+        return 0  # noqa: T484
+
+    numerator = property(__int__)
+
+    real = property(__int__)
+
+    def to_bytes(self, length, byteorder, signed=False):
+        pass
+
+
+@_patch
+def isinstance(obj, ty):
+    pass
+
+
+@_patch
+def issubclass(obj, ty):
+    pass
+
+
+def iter(obj, sentinel=None):
+    if sentinel is None:
+        try:
+            dunder_iter = type(obj).__iter__
+        except AttributeError:
+            raise TypeError(f"'{type(obj).__name__}' object is not iterable")
+        return dunder_iter(obj)
+
+    class CallIter:
+        def __init__(self, callable, sentinel):
+            self.__callable = callable
+            self.__sentinel = sentinel
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            value = self.__callable()
+            if self.__sentinel == value:
+                raise StopIteration()
+            return value
+
+        def __reduce__(self):
+            return (iter, (self.__callable, self.__sentinel))
+
+    return CallIter(obj, sentinel)
+
+
+def len(seq):
+    dunder_len = getattr(seq, "__len__", None)
+    if dunder_len is None:
+        raise TypeError("object has no len()")
+    return dunder_len()
 
 
 class list(bootstrap=True):
@@ -1351,6 +1903,219 @@ class list_iterator(bootstrap=True):
         pass
 
 
+def locals():
+    _unimplemented()
+
+
+class map:
+    def __init__(self, func, *iterables):
+        if len(iterables) < 1:
+            raise TypeError("map() must have at least two arguments.")
+        self.func = func
+        self.iters = tuple(iter(iterable) for iterable in iterables)
+        self.len_iters = len(self.iters)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        func = self.func
+        if self.len_iters == 1:
+            return func(next(self.iters[0]))
+        return func(*[next(iter) for iter in self.iters])
+
+
+def max(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C901
+    if arg2 is not _Unbound:
+        if default is not _Unbound:
+            raise TypeError(
+                "Cannot specify a default for max() with multiple positional arguments"
+            )
+        # compare positional arguments and varargs
+        if key is _Unbound:
+            # using argument values
+            result = arg2 if arg2 > arg1 else arg1
+            if args:
+                for item in args:
+                    result = item if item > result else result
+        else:
+            # using ordering function values
+            key1 = key(arg1)
+            key2 = key(arg2)
+            key_max = key2 if key2 > key1 else key1
+            result = arg1 if key_max is key1 else arg2
+            if args:
+                for item in args:
+                    key_item = key(item)
+                    if key_item > key_max:
+                        key_max, result = key_item, item
+    else:
+        # compare iterable items
+        result = default
+        if key is _Unbound:
+            # using iterable item values
+            for item in arg1:
+                if result is _Unbound or item > result:
+                    result = item
+        else:
+            # using ordering function values
+            key_max = _Unbound
+            for item in arg1:
+                key_item = key(item)
+                if key_max is _Unbound or key_item > key_max:
+                    key_max = key_item
+                    result = item
+        if result is _Unbound:
+            raise ValueError("max() arg is an empty sequence")
+    return result
+
+
+class memoryview(bootstrap=True):
+    def __getitem__(self, index):
+        pass
+
+    def __len__(self) -> int:
+        pass
+
+    def __new__(cls, object):
+        pass
+
+    def cast(self, format: str) -> memoryview:
+        pass
+
+
+def min(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C901
+    # NOTE: Sync this with max() since min() is copied from max().
+    if arg2 is not _Unbound:
+        if default is not _Unbound:
+            raise TypeError(
+                "Cannot specify a default for min() with multiple positional arguments"
+            )
+        # compare positional arguments and varargs
+        if key is _Unbound:
+            # using argument values
+            result = arg2 if arg2 < arg1 else arg1
+            if args:
+                for item in args:
+                    result = item if item < result else result
+        else:
+            # using ordering function values
+            key1 = key(arg1)
+            key2 = key(arg2)
+            key_max = key2 if key2 < key1 else key1
+            result = arg1 if key_max is key1 else arg2
+            if args:
+                for item in args:
+                    key_item = key(item)
+                    if key_item < key_max:
+                        key_max, result = key_item, item
+    else:
+        # compare iterable items
+        result = default
+        if key is _Unbound:
+            # using iterable item values
+            for item in arg1:
+                if result is _Unbound or item < result:
+                    result = item
+        else:
+            # using ordering function values
+            key_max = _Unbound
+            for item in arg1:
+                key_item = key(item)
+                if key_max is _Unbound or key_item < key_max:
+                    key_max = key_item
+                    result = item
+        if result is _Unbound:
+            raise ValueError("min() arg is an empty sequence")
+    return result
+
+
+class module(bootstrap=True):
+    def __dir__(self):
+        if not isinstance(self, module):
+            raise TypeError(
+                f"'__dir__' requires a 'module' object "
+                "but received a '{type(self).__name__}'"
+            )
+        return list(self.__dict__.keys())
+
+    def __new__(cls, name):
+        pass
+
+    def __repr__(self):
+        import _frozen_importlib
+
+        return _frozen_importlib._module_repr(self)
+
+
+def next(iterator, default=_Unbound):
+    try:
+        dunder_next = _Unbound
+        dunder_next = type(iterator).__next__
+        return dunder_next(iterator)
+    except StopIteration:
+        if default is _Unbound:
+            raise
+        return default
+    except AttributeError:
+        if dunder_next is _Unbound:
+            raise TypeError(f"'{type(iterator).__name__}' object is not iterable")
+        raise
+
+
+def oct(number):
+    _unimplemented()
+
+
+def open(
+    file,
+    mode="r",
+    buffering=-1,
+    encoding=None,
+    errors=None,
+    newline=None,
+    closefd=True,
+    opener=None,
+):
+    _unimplemented()
+
+
+@_patch
+def ord(c):
+    pass
+
+
+def pow(x, y, z=None):
+    _unimplemented()
+
+
+def print(*args, sep=" ", end="\n", file=None, flush=False):
+    if file is None:
+        import sys
+
+        try:
+            file = sys.stdout
+        except AttributeError:
+            raise RuntimeError("lost sys.stdout")
+        if file is None:
+            return
+    if args:
+        file.write(str(args[0]))
+        length = len(args)
+        i = 1
+        while i < length:
+            file.write(sep)
+            file.write(str(args[i]))
+            i += 1
+    file.write(end)
+    if flush:
+        file.flush()
+
+
+def quit():
+    _unimplemented()
+
+
 class range(bootstrap=True):
     def __iter__(self):
         pass
@@ -1370,12 +2135,116 @@ class range_iterator(bootstrap=True):
         pass
 
 
-def _slice_index(num) -> int:
-    if hasattr(num, "__index__"):
-        return _index(num)
-    raise TypeError(
-        "slice indices must be integers or None or have an __index__ method"
-    )
+def repr(obj):
+    result = type(obj).__repr__(obj)
+    if not isinstance(result, str):
+        raise TypeError("__repr__ returned non-string")
+    return result
+
+
+class reversed:
+    def __init__(self, sequence):
+        _unimplemented()
+
+
+def round(number, ndigits=_Unbound):
+    _unimplemented()
+
+
+class set(bootstrap=True):
+    def __and__(self, other):
+        pass
+
+    def __contains__(self, value):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __ge__(self, other):
+        pass
+
+    def __gt__(self, other):
+        pass
+
+    def __iand__(self, other):
+        pass
+
+    def __init__(self, iterable=()):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __le__(self, other):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __lt__(self, other):
+        pass
+
+    def __ne__(self, other):
+        pass
+
+    def __new__(cls, iterable=()):
+        pass
+
+    def __or__(self, other):
+        if not isinstance(self, set) and not isinstance(self, frozenset):
+            return NotImplemented
+        if not isinstance(other, set) and not isinstance(other, frozenset):
+            return NotImplemented
+        result = set.copy(self)
+        if self is other:
+            return result
+        set.update(result, other)
+        return result
+
+    def __repr__(self):
+        if _repr_enter(self):
+            return f"{type(self).__name__}(...)"
+        if len(self) == 0:
+            _repr_leave(self)
+            return f"{type(self).__name__}()"
+        result = f"{{{', '.join([item.__repr__() for item in self])}}}"
+        _repr_leave(self)
+        return result
+
+    def add(self, value):
+        pass
+
+    def copy(self):
+        pass
+
+    def intersection(self, other):
+        pass
+
+    def isdisjoint(self, other):
+        pass
+
+    def pop(self):
+        pass
+
+    def update(self, *args):
+        pass
+
+
+class set_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+
+@_patch
+def setattr(obj, name, value):
+    pass
 
 
 class slice(bootstrap=True):
@@ -1433,58 +2302,10 @@ class slice(bootstrap=True):
         return start, stop, step
 
 
-@_patch
-def _str_find(self, sub, start, end):
-    pass
-
-
-@_patch
-def _str_rfind(self, sub, start, end):
-    pass
-
-
-@_patch
-def _str_replace(self, old, newstr, count):
-    pass
-
-
-def _str_split_whitespace(self, maxsplit):
-    length = len(self)
-    i = 0
-    res = []
-    num_split = 0
-    while True:
-        # find the beginning of the next word
-        while i < length:
-            if not str.__getitem__(self, i).isspace():
-                break  # found
-            i += 1
-        else:
-            break  # end of string, finished
-
-        # find the end of the word
-        if maxsplit == num_split:
-            j = length  # take all the rest of the string
-        else:
-            j = i + 1
-            while j < length and not str.__getitem__(self, j).isspace():
-                j += 1
-            num_split += 1
-
-        # the word is self[i:j]
-        res.append(self[i:j])
-
-        # continue to look from the character following the space after the word
-        if j < length:
-            i = j + 1
-        else:
-            break
-    return res
-
-
-@_patch
-def _str_splitlines(self, keepends):
-    pass
+def sorted(iterable, *, key=None, reverse=False):
+    result = list(iterable)
+    result.sort(key=key, reverse=reverse)
+    return result
 
 
 class str(bootstrap=True):
@@ -1789,7 +2610,8 @@ class str(bootstrap=True):
     def partition(self, sep):
         if not isinstance(self, str):
             raise TypeError(
-                f"descriptor 'partition' requires a 'str' object but received a {type(self).__name__}"
+                f"descriptor 'partition' requires a 'str' object "
+                f"but received a {type(self).__name__}"
             )
         if not isinstance(sep, str):
             raise TypeError(f"must be str, not {type(sep).__name__}")
@@ -1864,7 +2686,7 @@ class str(bootstrap=True):
     def rstrip(self, other=None):
         pass
 
-    def split(self, sep=None, maxsplit=-1):
+    def split(self, sep=None, maxsplit=-1):  # noqa: C901
         if not isinstance(self, str):
             raise TypeError(f"expected a 'str' instance but got {type(self).__name__}")
         # If the separator is not specified, split on all whitespace characters.
@@ -1925,7 +2747,7 @@ class str(bootstrap=True):
             keepends = int(keepends)
         return _str_splitlines(self, keepends)
 
-    def startswith(self, prefix, start=0, end=None):
+    def startswith(self, prefix, start=0, end=None):  # noqa: C901
         def real_bounds_from_slice_bounds(start, end, length):
             if start < 0:
                 start = length + start
@@ -2001,285 +2823,8 @@ class str_iterator(bootstrap=True):
         pass
 
 
-class dict(bootstrap=True):
-    def __contains__(self, key) -> bool:
-        return self.get(key, _Unbound) is not _Unbound  # noqa: T484
-
-    def __delitem__(self, key):
-        pass
-
-    def __eq__(self, other):
-        pass
-
-    def __getitem__(self, key):
-        result = self.get(key, _Unbound)
-        if result is _Unbound:
-            raise KeyError(key)
-        return result
-
-    def __init__(self, *args, **kwargs):
-        if len(args) > 1:
-            raise TypeError("dict expected at most 1 positional argument, got 2")
-        if len(args) == 1:
-            dict.update(self, args[0])
-        dict.update(self, kwargs)
-
-    def __iter__(self):
-        pass
-
-    def __len__(self):
-        pass
-
-    def __new__(cls, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        if _repr_enter(self):
-            return "{...}"
-        kwpairs = [f"{key!r}: {self[key]!r}" for key in self.keys()]
-        _repr_leave(self)
-        return "{" + ", ".join(kwpairs) + "}"
-
-    def __setitem__(self, key, value):
-        pass
-
-    def copy(self):
-        if not isinstance(self, dict):
-            raise TypeError(f"expected 'dict' instance but got {type(self).__name__}")
-        return dict(self)
-
-    def get(self, key, default=None):
-        pass
-
-    def items(self):
-        pass
-
-    def keys(self):
-        pass
-
-    def pop(self, key, default=_Unbound):
-        value = dict.get(self, key, default)
-        if value is _Unbound:
-            raise KeyError(key)
-        if key in self:
-            dict.__delitem__(self, key)
-        return value
-
-    def setdefault(self, key, default=None):
-        if not isinstance(self, dict):
-            raise TypeError("setdefault expected 'dict' but got {type(self).__name__}")
-        value = dict.get(self, key, _Unbound)
-        if value is _Unbound:
-            dict.__setitem__(self, key, default)
-            return default
-        return value
-
-    def update(self, other):
-        pass
-
-    def values(self):
-        pass
-
-
-class dict_itemiterator(bootstrap=True):
-    def __iter__(self):
-        pass
-
-    def __length_hint__(self):
-        pass
-
-    def __next__(self):
-        pass
-
-
-class dict_items(bootstrap=True):
-    def __iter__(self):
-        pass
-
-
-class dict_keyiterator(bootstrap=True):
-    def __iter__(self):
-        pass
-
-    def __length_hint__(self):
-        pass
-
-    def __next__(self):
-        pass
-
-
-class dict_keys(bootstrap=True):
-    def __iter__(self):
-        pass
-
-
-class dict_valueiterator(bootstrap=True):
-    def __iter__(self):
-        pass
-
-    def __length_hint__(self):
-        pass
-
-    def __next__(self):
-        pass
-
-
-class dict_values(bootstrap=True):
-    def __iter__(self):
-        pass
-
-
-class module(bootstrap=True):
-    def __dir__(self):
-        if not isinstance(self, module):
-            raise TypeError(
-                f"'__dir__' requires a 'module' object "
-                "but received a '{type(self).__name__}'"
-            )
-        return list(self.__dict__.keys())
-
-    def __new__(cls, name):
-        pass
-
-    def __repr__(self):
-        import _frozen_importlib
-
-        return _frozen_importlib._module_repr(self)
-
-
-class frozenset(bootstrap=True):
-    def __and__(self, other):
-        pass
-
-    def __contains__(self, value):
-        pass
-
-    def __eq__(self, other):
-        pass
-
-    def __ge__(self, other):
-        pass
-
-    def __gt__(self, other):
-        pass
-
-    def __iter__(self):
-        pass
-
-    def __le__(self, other):
-        pass
-
-    def __len__(self):
-        pass
-
-    def __lt__(self, other):
-        pass
-
-    def __ne__(self, other):
-        pass
-
-    def __new__(cls, iterable=_Unbound):
-        pass
-
-    def copy(self):
-        pass
-
-    def intersection(self, other):
-        pass
-
-    def isdisjoint(self, other):
-        pass
-
-
-class set(bootstrap=True):
-    def __and__(self, other):
-        pass
-
-    def __contains__(self, value):
-        pass
-
-    def __eq__(self, other):
-        pass
-
-    def __ge__(self, other):
-        pass
-
-    def __gt__(self, other):
-        pass
-
-    def __iand__(self, other):
-        pass
-
-    def __init__(self, iterable=()):
-        pass
-
-    def __iter__(self):
-        pass
-
-    def __le__(self, other):
-        pass
-
-    def __len__(self):
-        pass
-
-    def __lt__(self, other):
-        pass
-
-    def __ne__(self, other):
-        pass
-
-    def __new__(cls, iterable=()):
-        pass
-
-    def __or__(self, other):
-        if not isinstance(self, set) and not isinstance(self, frozenset):
-            return NotImplemented
-        if not isinstance(other, set) and not isinstance(other, frozenset):
-            return NotImplemented
-        result = set.copy(self)
-        if self is other:
-            return result
-        set.update(result, other)
-        return result
-
-    def __repr__(self):
-        if _repr_enter(self):
-            return f"{type(self).__name__}(...)"
-        if len(self) == 0:
-            _repr_leave(self)
-            return f"{type(self).__name__}()"
-        result = f"{{{', '.join([item.__repr__() for item in self])}}}"
-        _repr_leave(self)
-        return result
-
-    def add(self, value):
-        pass
-
-    def copy(self):
-        pass
-
-    def intersection(self, other):
-        pass
-
-    def isdisjoint(self, other):
-        pass
-
-    def pop(self):
-        pass
-
-    def update(self, *args):
-        pass
-
-
-class set_iterator(bootstrap=True):
-    def __iter__(self):
-        pass
-
-    def __length_hint__(self):
-        pass
-
-    def __next__(self):
-        pass
+def sum(iterable, start=0):
+    _unimplemented()
 
 
 class super(bootstrap=True):
@@ -2290,624 +2835,82 @@ class super(bootstrap=True):
         pass
 
 
-class StopIteration(bootstrap=True):
-    def __init__(self, *args, **kwargs):
+class tuple(bootstrap=True):
+    def __add__(self, other):
         pass
 
-
-class SystemExit(bootstrap=True):
-    def __init__(self, *args, **kwargs):
+    def __contains__(self, key):
         pass
 
-
-class complex(bootstrap=True):
-    def __new__(cls, real=0.0, imag=0.0):
+    def __eq__(self, other):
         pass
 
-    def __repr__(self):
-        return f"({self.real}+{self.imag}j)"
-
-    @property
-    def imag(self):
-        return _complex_imag(self)
-
-    @property
-    def real(self):
-        return _complex_real(self)
-
-
-class NoneType(bootstrap=True):
-    def __new__(cls):
+    def __getitem__(self, index):
         pass
 
-    def __repr__(self):
+    def __hash__(self):
         pass
 
+    def __iter__(self):
+        pass
 
-def all(iterable):
-    for element in iterable:
-        if not element:
-            return False
-    return True
+    def __len__(self):
+        pass
 
-
-def any(iterable):
-    for element in iterable:
-        if element:
-            return True
-    return False
-
-
-@_patch
-def _bytearray_join(self: bytearray, iterable) -> bytearray:
-    pass
-
-
-@_patch
-def _bytes_from_ints(source) -> bytes:
-    pass
-
-
-@_patch
-def _bytes_getitem(self, index: int) -> int:
-    pass
-
-
-@_patch
-def _bytes_getitem_slice(self, start: int, stop: int, step: int) -> bytes:
-    pass
-
-
-@_patch
-def _bytes_join(self: bytes, iterable) -> bytes:
-    pass
-
-
-@_patch
-def _bytes_maketrans(frm, to) -> bytes:
-    pass
-
-
-# source should be a bytes-like object (fast case), tuple/list of ints (fast case),
-# or an iterable of int-like objects (slow case)
-def _bytes_new(source) -> bytes:
-    result = _bytes_from_ints(source)
-    if result is not None:
-        # source was a list or tuple of ints in range(0, 256)
-        return result
-    try:
-        iterator = iter(source)
-    except TypeError:
-        raise TypeError(f"cannot convert '{type(source).__name__}' object to bytes")
-    return _bytes_from_ints([_index(x) for x in iterator])
-
-
-@_patch
-def _bytes_repeat(self: bytes, count: int) -> bytes:
-    pass
-
-
-@_patch
-def _complex_imag(c):
-    pass
-
-
-@_patch
-def _complex_real(c):
-    pass
-
-
-def dir(obj=_Unbound):
-    if obj is _Unbound:
-        names = locals().keys()
-    else:
-        names = type(obj).__dir__(obj)
-    return sorted(names)
-
-
-def print(*args, sep=" ", end="\n", file=None, flush=False):
-    if file is None:
-        import sys
-
-        try:
-            file = sys.stdout
-        except AttributeError:
-            raise RuntimeError("lost sys.stdout")
-        if file is None:
-            return
-    if args:
-        file.write(str(args[0]))
-        length = len(args)
-        i = 1
-        while i < length:
-            file.write(sep)
-            file.write(str(args[i]))
+    def __lt__(self, other):
+        if not isinstance(self, tuple):
+            raise TypeError(f"__lt__ expected 'tuple' but got {type(self).__name__}")
+        if not isinstance(other, tuple):
+            raise TypeError(f"__lt__ expected 'tuple' but got {type(other).__name__}")
+        len_self = tuple.__len__(self)
+        len_other = tuple.__len__(other)
+        # TODO(T42050051): Use builtin.min when it's developed
+        min_len = len_self if len_self < len_other else len_other
+        # Find the first non-equal item in the tuples
+        i = 0
+        while i < min_len:
+            self_i = tuple.__getitem__(self, i)
+            other_i = tuple.__getitem__(other, i)
+            if self_i is not other_i and self_i != other_i:
+                break
             i += 1
-    file.write(end)
-    if flush:
-        file.flush()
+        if i >= min_len:
+            # If the items are all up equal up to min_len, compare lengths
+            return len_self < len_other
+        return self_i < other_i
+
+    def __mul__(self, other):
+        pass
+
+    def __new__(cls, iterable=_Unbound):
+        pass
+
+    def __repr__(self):
+        if _repr_enter(self):
+            return "(...)"
+        num_elems = len(self)
+        output = "("
+        i = 0
+        while i < num_elems:
+            if i != 0:
+                output += ", "
+            output += repr(self[i])
+            i += 1
+        _repr_leave(self)
+        if num_elems == 1:
+            output += ","
+        return output + ")"
 
 
-@_patch
-def _str_escape_non_ascii(s):
-    pass
-
-
-def repr(obj):
-    result = type(obj).__repr__(obj)
-    if not isinstance(result, str):
-        raise TypeError("__repr__ returned non-string")
-    return result
-
-
-def ascii(obj):
-    return _str_escape_non_ascii(repr(obj))
-
-
-@_patch
-def callable(f):
-    pass
-
-
-@_patch
-def chr(c):
-    pass
-
-
-@_patch
-def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
-    pass
-
-
-@_patch
-def divmod(a, b):
-    pass
-
-
-@_patch
-def exec(source, globals=None, locals=None):
-    pass
-
-
-@_patch
-def getattr(obj, key, default=_Unbound):
-    pass
-
-
-# patch is not patched because that would cause a circularity problem.
-
-
-@_patch
-def hasattr(obj, name):
-    pass
-
-
-def iter(obj, sentinel=None):
-    if sentinel is None:
-        try:
-            dunder_iter = type(obj).__iter__
-        except AttributeError:
-            raise TypeError(f"'{type(obj).__name__}' object is not iterable")
-        return dunder_iter(obj)
-
-    class CallIter:
-        def __init__(self, callable, sentinel):
-            self.__callable = callable
-            self.__sentinel = sentinel
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            value = self.__callable()
-            if self.__sentinel == value:
-                raise StopIteration()
-            return value
-
-        def __reduce__(self):
-            return (iter, (self.__callable, self.__sentinel))
-
-    return CallIter(obj, sentinel)
-
-
-def max(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C901
-    if arg2 is not _Unbound:
-        if default is not _Unbound:
-            raise TypeError(
-                "Cannot specify a default for max() with multiple positional arguments"
-            )
-        # compare positional arguments and varargs
-        if key is _Unbound:
-            # using argument values
-            result = arg2 if arg2 > arg1 else arg1
-            if args:
-                for item in args:
-                    result = item if item > result else result
-        else:
-            # using ordering function values
-            key1 = key(arg1)
-            key2 = key(arg2)
-            key_max = key2 if key2 > key1 else key1
-            result = arg1 if key_max is key1 else arg2
-            if args:
-                for item in args:
-                    key_item = key(item)
-                    if key_item > key_max:
-                        key_max, result = key_item, item
-    else:
-        # compare iterable items
-        result = default
-        if key is _Unbound:
-            # using iterable item values
-            for item in arg1:
-                if result is _Unbound or item > result:
-                    result = item
-        else:
-            # using ordering function values
-            key_max = _Unbound
-            for item in arg1:
-                key_item = key(item)
-                if key_max is _Unbound or key_item > key_max:
-                    key_max = key_item
-                    result = item
-        if result is _Unbound:
-            raise ValueError("max() arg is an empty sequence")
-    return result
-
-
-# NOTE: Sync this with max() since min() is copied from max().
-def min(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C901
-    if arg2 is not _Unbound:
-        if default is not _Unbound:
-            raise TypeError(
-                "Cannot specify a default for min() with multiple positional arguments"
-            )
-        # compare positional arguments and varargs
-        if key is _Unbound:
-            # using argument values
-            result = arg2 if arg2 < arg1 else arg1
-            if args:
-                for item in args:
-                    result = item if item < result else result
-        else:
-            # using ordering function values
-            key1 = key(arg1)
-            key2 = key(arg2)
-            key_max = key2 if key2 < key1 else key1
-            result = arg1 if key_max is key1 else arg2
-            if args:
-                for item in args:
-                    key_item = key(item)
-                    if key_item < key_max:
-                        key_max, result = key_item, item
-    else:
-        # compare iterable items
-        result = default
-        if key is _Unbound:
-            # using iterable item values
-            for item in arg1:
-                if result is _Unbound or item < result:
-                    result = item
-        else:
-            # using ordering function values
-            key_max = _Unbound
-            for item in arg1:
-                key_item = key(item)
-                if key_max is _Unbound or key_item < key_max:
-                    key_max = key_item
-                    result = item
-        if result is _Unbound:
-            raise ValueError("min() arg is an empty sequence")
-    return result
-
-
-def next(iterator, default=_Unbound):
-    try:
-        dunder_next = _Unbound
-        dunder_next = type(iterator).__next__
-        return dunder_next(iterator)
-    except StopIteration:
-        if default is _Unbound:
-            raise
-        return default
-    except AttributeError:
-        if dunder_next is _Unbound:
-            raise TypeError(f"'{type(iterator).__name__}' object is not iterable")
-        raise
-
-
-def sorted(iterable, *, key=None, reverse=False):
-    result = list(iterable)
-    result.sort(key=key, reverse=reverse)
-    return result
-
-
-def len(seq):
-    dunder_len = getattr(seq, "__len__", None)
-    if dunder_len is None:
-        raise TypeError("object has no len()")
-    return dunder_len()
-
-
-class map:
-    def __init__(self, func, *iterables):
-        if len(iterables) < 1:
-            raise TypeError("map() must have at least two arguments.")
-        self.func = func
-        self.iters = tuple(iter(iterable) for iterable in iterables)
-        self.len_iters = len(self.iters)
-
+class tuple_iterator(bootstrap=True):
     def __iter__(self):
-        return self
+        pass
+
+    def __length_hint__(self):
+        pass
 
     def __next__(self):
-        func = self.func
-        if self.len_iters == 1:
-            return func(next(self.iters[0]))
-        return func(*[next(iter) for iter in self.iters])
-
-
-@_patch
-def ord(c):
-    pass
-
-
-@_patch
-def setattr(obj, name, value):
-    pass
-
-
-@_patch
-def _structseq_setattr(obj, name, value):
-    pass
-
-
-@_patch
-def _structseq_getattr(obj, name):
-    pass
-
-
-def _structseq_getitem(self, pos):
-    if pos < 0 or pos >= type(self).n_fields:
-        raise IndexError("index out of bounds")
-    if pos < len(self):
-        return self[pos]
-    else:
-        name = self._structseq_field_names[pos]
-        return _structseq_getattr(self, name)
-
-
-def _structseq_new(cls, sequence, dict={}):  # noqa B006
-    seq_tuple = tuple(sequence)
-    seq_len = len(seq_tuple)
-    max_len = cls.n_fields
-    min_len = cls.n_sequence_fields
-    if seq_len < min_len:
-        raise TypeError(
-            f"{cls.__name__} needs at least a {min_len}-sequence ({seq_len}-sequence given)"
-        )
-    if seq_len > max_len:
-        raise TypeError(
-            f"{cls.__name__} needs at most a {max_len}-sequence ({seq_len}-sequence given)"
-        )
-
-    # Create the tuple of size min_len
-    structseq = tuple.__new__(cls, seq_tuple[:min_len])
-
-    # Fill the rest of the hidden fields
-    for i in range(min_len, seq_len):
-        key = cls._structseq_field_names[i]
-        _structseq_setattr(structseq, key, seq_tuple[min_len])
-
-    # Fill the remaining from the dict or set to None
-    for i in range(seq_len, max_len):
-        key = cls._structseq_field_names[i]
-        _structseq_setattr(structseq, key, dict.get(key))
-
-    return structseq
-
-
-class _structseq_field:
-    def __get__(self, instance, owner):
-        if self.index is not None:
-            return instance[self.index]
-        return _structseq_getattr(instance, self.name)
-
-    def __init__(self, name, index):
-        self.name = name
-        self.index = index
-
-    def __set__(self, instance, value):
-        raise TypeError("readonly attribute")
-
-
-def _structseq_repr(self):
-    if not isinstance(self, tuple):
-        raise TypeError("__repr__(): self is not a tuple")
-    if not hasattr(self, "n_sequence_fields"):
-        raise TypeError("__repr__(): self is not a self")
-    # TODO(T40273054): Iterate attributes and return field names
-    tuple_values = ", ".join([i.__repr__() for i in self])
-    return f"{type(self).__name__}({tuple_values})"
-
-
-@_patch
-def _unimplemented():
-    """Prints a message and a stacktrace, and stops the program execution."""
-    pass
-
-
-def _long_of_obj(obj):
-    if type(obj) is int:
-        return obj
-    if hasattr(obj, "__int__"):
-        result = obj.__int__()
-        result_type = type(result)
-        if result_type is not int:
-            raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
-        return result
-    if hasattr(obj, "__trunc__"):
-        trunc_result = obj.__trunc__()
-        if isinstance(trunc_result, int):
-            return trunc_result
-        return trunc_result.__int__()
-    if isinstance(obj, str) or isinstance(obj, bytes) or isinstance(obj, bytearray):
-        return int(obj, 10)
-    # TODO(T41277979): Create from an object that implements the buffer protocol
-    raise TypeError(
-        f"int() argument must be a string, a bytes-like object or a number, not"
-        f" {type(obj).__name__}"
-    )
-
-
-@_patch
-def __import__(name, globals=None, locals=None, fromlist=(), level=0):
-    pass
-
-
-Ellipsis = ...
-
-
-# For compatibility with previous versions of Python
-EnvironmentError = OSError
-
-
-# For compatibility with previous versions of Python
-IOError = OSError
-
-
-def abs(x):
-    import operator
-
-    return operator.abs(x)
-
-
-def bin(x):
-    _unimplemented()
-
-
-def delattr(obj, name):
-    _unimplemented()
-
-
-class enumerate:
-    def __init__(self, iterable, start=0):
-        self.iterator = iter(iterable)
-        self.index = start
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        result = (self.index, next(self.iterator))
-        self.index += 1
-        return result
-
-
-def eval(source, globals=None, locals=None):
-    _unimplemented()
-
-
-def exit():
-    _unimplemented()
-
-
-class filter:
-    """filter(function or None, iterable) --> filter object
-
-    Return an iterator yielding those items of iterable for which function(item)
-    is true. If function is None, return the items that are true.
-    """
-
-    def __iter__(self):
-        return self
-
-    def __new__(cls, function, iterable, **kwargs):
-        obj = super(filter, cls).__new__(cls)
-        obj.func = (lambda e: e) if function is None else function
-        obj.iter = iter(iterable)
-        return obj
-
-    def __next__(self):
-        func = self.func
-        while True:
-            item = next(self.iter)
-            if func(item):
-                return item
-
-
-def globals():
-    _unimplemented()
-
-
-def hash(obj):
-    dunder_hash = type(obj).__hash__
-    try:
-        result = dunder_hash(obj)
-    except TypeError:
-        raise TypeError(f"unhashable type: '{type(obj).__name__}'")
-    if not isinstance(result, int):
-        raise TypeError("__hash__ method should return an integer")
-    # TODO(djang): This needs to be cast to the exact int type.
-    return result
-
-
-def help(obj=_Unbound):
-    _unimplemented()
-
-
-def hex(number):
-    _unimplemented()
-
-
-def id(obj):
-    _unimplemented()
-
-
-def input(prompt=None):
-    _unimplemented()
-
-
-def locals():
-    _unimplemented()
-
-
-def oct(number):
-    _unimplemented()
-
-
-def open(
-    file,
-    mode="r",
-    buffering=-1,
-    encoding=None,
-    errors=None,
-    newline=None,
-    closefd=True,
-    opener=None,
-):
-    _unimplemented()
-
-
-def pow(x, y, z=None):
-    _unimplemented()
-
-
-def quit():
-    _unimplemented()
-
-
-class reversed:
-    def __init__(self, sequence):
-        _unimplemented()
-
-
-def round(number, ndigits=_Unbound):
-    _unimplemented()
-
-
-def sum(iterable, start=0):
-    _unimplemented()
+        pass
 
 
 def vars(*args):

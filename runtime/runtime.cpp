@@ -704,6 +704,7 @@ bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
 }
 
 bool Runtime::isMapping(Thread* thread, const Object& obj) {
+  if (obj.isDict()) return true;
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
   return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetitem).isError();
