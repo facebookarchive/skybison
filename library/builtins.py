@@ -362,32 +362,43 @@ def _index(obj) -> int:
         )
 
 
+def _int(obj) -> int:
+    # equivalent to _PyLong_FromNbInt
+    obj_type = type(obj)
+    if obj_type is int:
+        return obj
+    if not hasattr(obj, "__int__"):
+        raise TypeError(f"an integer is required (got type {obj_type.__name__})")
+    result = obj.__int__()
+    result_type = type(result)
+    if result_type is int:
+        return result
+    raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
+
+
 @_patch
-def _list_sort(list):
+def _int_from_bytearray(cls: type, x: bytearray, base: int) -> int:
     pass
 
 
-def _long_of_obj(obj):
-    if type(obj) is int:
-        return obj
-    if hasattr(obj, "__int__"):
-        result = obj.__int__()
-        result_type = type(result)
-        if result_type is not int:
-            raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
-        return result
-    if hasattr(obj, "__trunc__"):
-        trunc_result = obj.__trunc__()
-        if isinstance(trunc_result, int):
-            return trunc_result
-        return trunc_result.__int__()
-    if isinstance(obj, str) or isinstance(obj, bytes) or isinstance(obj, bytearray):
-        return int(obj, 10)
-    # TODO(T41277979): Create from an object that implements the buffer protocol
-    raise TypeError(
-        f"int() argument must be a string, a bytes-like object or a number, not"
-        f" {type(obj).__name__}"
-    )
+@_patch
+def _int_from_bytes(cls: type, x: bytes, base: int) -> int:
+    pass
+
+
+@_patch
+def _int_from_int(cls: type, value: int) -> int:
+    pass
+
+
+@_patch
+def _int_from_str(cls: type, x: str, base: int) -> int:
+    pass
+
+
+@_patch
+def _list_sort(list):
+    pass
 
 
 @_patch
@@ -1553,8 +1564,55 @@ class int(bootstrap=True):
     def __neg__(self) -> int:
         pass
 
-    def __new__(cls, n=0, base=_Unbound):
-        pass
+    def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
+        if not isinstance(cls, type):
+            raise TypeError(
+                f"int.__new__(X): X is not a type object ({type(cls).__name__})"
+            )
+        if not issubclass(cls, int):
+            raise TypeError(
+                f"bytes.__new__({cls.__name__}): {cls.__name__} is not a subtype of int"
+            )
+        if x is _Unbound:
+            if base is _Unbound:
+                return _int_from_int(cls, 0)
+            raise TypeError("int() missing string argument")
+        if base is _Unbound:
+            if type(x) is int:
+                return _int_from_int(cls, x)
+            if hasattr(x, "__int__"):
+                return _int_from_int(cls, _int(x))
+            if hasattr(x, "__trunc__"):
+                trunc_result = x.__trunc__()
+                result_type = type(trunc_result)
+                if result_type is int:
+                    return _int_from_int(cls, trunc_result)
+                if not hasattr(trunc_result, "__int__"):
+                    raise TypeError(
+                        "__trunc__ returned non-Integral "
+                        f"(type {result_type.__name__})"
+                    )
+                return _int_from_int(cls, _int(trunc_result))
+            if isinstance(x, str):
+                return _int_from_str(cls, x, 10)
+            if isinstance(x, bytes):
+                return _int_from_bytes(cls, x, 10)
+            if isinstance(x, bytearray):
+                return _int_from_bytearray(cls, x, 10)
+            raise TypeError(
+                f"int() argument must be a string, a bytes-like object "
+                f"or a number, not {type(x).__name__}"
+            )
+        base = _index(base)
+        if base > 36 or (base < 2 and base != 0):
+            raise ValueError("int() base must be >= 2 and <= 36")
+        if isinstance(x, str):
+            return _int_from_str(cls, x, base)
+        if isinstance(x, bytes):
+            return _int_from_bytes(cls, x, base)
+        if isinstance(x, bytearray):
+            return _int_from_bytearray(cls, x, base)
+        raise TypeError("int() can't convert non-string with explicit base")
 
     def __or__(self, n: int) -> int:
         pass

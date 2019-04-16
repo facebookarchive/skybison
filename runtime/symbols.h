@@ -435,9 +435,12 @@ class Runtime;
   V(UnderFunctools, "_functools")                                              \
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
+  V(UnderIntFromByteArray, "_int_from_bytearray")                              \
+  V(UnderIntFromBytes, "_int_from_bytes")                                      \
+  V(UnderIntFromInt, "_int_from_int")                                          \
+  V(UnderIntFromStr, "_int_from_str")                                          \
   V(UnderIo, "_io")                                                            \
   V(UnderListSort, "_list_sort")                                               \
-  V(UnderLongOfObj, "_long_of_obj")                                            \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderModuleRepr, "_module_repr")                                           \
   V(UnderPatch, "_patch")                                                      \

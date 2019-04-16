@@ -50,7 +50,6 @@ class IntBuiltins
   static RawObject dunderMod(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNeg(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInvert(Thread* thread, Frame* frame, word nargs);

@@ -509,9 +509,8 @@ PY_EXPORT PyObject* PyNumber_Long(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Object result(&scope,
-                thread->invokeFunction1(SymbolId::kBuiltins,
-                                        SymbolId::kUnderLongOfObj, object));
+  Object result(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kInt, object));
   if (result.isError()) {
     return nullptr;
   }

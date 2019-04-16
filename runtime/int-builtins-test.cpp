@@ -30,38 +30,6 @@ TEST(IntBuiltinsTest, BuiltinBases) {
   EXPECT_EQ(boolean.builtinBase(), LayoutId::kInt);
 }
 
-TEST(IntBuiltinsTest, NewWithStringReturnsInt) {
-  Runtime runtime;
-  runFromCStr(&runtime, R"(
-a = int("123")
-b = int("-987")
-)");
-  HandleScope scope;
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  EXPECT_TRUE(isIntEqualsWord(*a, 123));
-  EXPECT_TRUE(isIntEqualsWord(*b, -987));
-}
-
-TEST(IntBuiltinsTest, NewWithStringAndIntBaseReturnsInt) {
-  Runtime runtime;
-  runFromCStr(&runtime, R"(
-a = int("23", 8)
-b = int("abc", 16)
-c = int("023", 0)
-d = int("0xabc", 0)
-)");
-  HandleScope scope;
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Object d(&scope, moduleAt(&runtime, "__main__", "d"));
-  EXPECT_TRUE(isIntEqualsWord(*a, 19));
-  EXPECT_TRUE(isIntEqualsWord(*b, 2748));
-  EXPECT_TRUE(isIntEqualsWord(*c, 19));
-  EXPECT_TRUE(isIntEqualsWord(*d, 2748));
-}
-
 TEST(IntBuiltinsTest, CompareSmallIntEq) {
   Runtime runtime;
   HandleScope scope;
@@ -1541,39 +1509,6 @@ TEST(IntBuiltinsTest, CompareLargeIntLt) {
   Object cmp_6(&scope, runBuiltin(IntBuiltins::dunderLt, b, b));
   ASSERT_TRUE(cmp_6.isBool());
   EXPECT_EQ(*cmp_6, Bool::falseObj());
-}
-
-TEST(IntBuiltinsTest, StringToIntDPos) {
-  Runtime runtime;
-  runFromCStr(&runtime, R"(
-int_0 = int("0")
-int_123 = int("123")
-int_987n = int("-987")
-)");
-
-  HandleScope scope;
-  Int int_0(&scope, moduleAt(&runtime, "__main__", "int_0"));
-  Int int_123(&scope, moduleAt(&runtime, "__main__", "int_123"));
-  Int int_987n(&scope, moduleAt(&runtime, "__main__", "int_987n"));
-  EXPECT_EQ(int_0.asWord(), 0);
-  EXPECT_EQ(int_123.asWord(), 123);
-  EXPECT_EQ(int_987n.asWord(), -987);
-}
-
-TEST(IntBuiltinsTest, StringToIntWithEmptyStringRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-int_empty = int("")
-)"),
-                            LayoutId::kValueError, "invalid literal"));
-}
-
-TEST(IntBuiltinsTest, StringToIntWithWithInvalidStringRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-int_empty = int("12ab")
-)"),
-                            LayoutId::kValueError, "invalid literal"));
 }
 
 TEST(IntBuiltinsTest, DunderIndexAliasesDunderInt) {

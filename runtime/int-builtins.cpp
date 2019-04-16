@@ -1,6 +1,5 @@
 #include "int-builtins.h"
 
-#include <cerrno>
 #include <cinttypes>
 #include <climits>
 #include <cmath>
@@ -39,7 +38,6 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNeg, dunderNeg},
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderOr, dunderOr},
     {SymbolId::kDunderPos, dunderInt},
     {SymbolId::kDunderRepr, dunderRepr},
@@ -64,75 +62,6 @@ void IntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
 RawObject convertBoolToInt(RawObject object) {
   DCHECK(object.isBool(), "conversion from bool to int requires a bool object");
   return RawSmallInt::fromWord(object == RawBool::trueObj() ? 1 : 0);
-}
-
-static RawObject intFromString(Thread* thread, const Str& str, int base) {
-  if (!(base == 0 || (base >= 2 && base <= 36))) {
-    return thread->raiseValueErrorWithCStr(
-        "Invalid base, must be between 2 and 36, or 0");
-  }
-  if (str.length() == 0) {
-    return thread->raiseValueErrorWithCStr("invalid literal");
-  }
-  char* c_str = str.toCStr();  // for strtol()
-  char* end_ptr;
-  errno = 0;
-  long res = std::strtol(c_str, &end_ptr, base);
-  int saved_errno = errno;
-  bool is_complete = (*end_ptr == '\0');
-  free(c_str);
-  if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
-    return thread->raiseValueErrorWithCStr("invalid literal");
-  }
-  if ((res == LONG_MAX || res == LONG_MIN) && saved_errno == ERANGE) {
-    return thread->raiseValueErrorWithCStr("invalid literal (range)");
-  }
-  if (!SmallInt::isValid(res)) {
-    return thread->raiseValueErrorWithCStr("unsupported type");
-  }
-  return SmallInt::fromWord(res);
-}
-
-RawObject IntBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-
-  Object type_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "int.__new__(X): X is not a type object");
-  }
-
-  Type type(&scope, *type_obj);
-  if (type.builtinBase() != LayoutId::kInt) {
-    return thread->raiseTypeErrorWithCStr(
-        "int.__new__(X): X is not a subtype of int");
-  }
-
-  // TODO(T38780562): Handle Int subclasses
-  Layout layout(&scope, type.instanceLayout());
-  if (layout.id() != LayoutId::kInt) {
-    UNIMPLEMENTED("int subclassing");
-  }
-
-  // int() and int(x)
-  Object arg(&scope, args.get(1));
-  Object base(&scope, args.get(2));
-  if (base.isUnbound()) {
-    return thread->invokeFunction1(SymbolId::kBuiltins,
-                                   SymbolId::kUnderLongOfObj, arg);
-  }
-
-  // int(x, base)
-  if (!runtime->isInstanceOfInt(*base)) {
-    UNIMPLEMENTED("Can't handle non-integer base");
-  }
-  if (!arg.isStr()) {
-    UNIMPLEMENTED("Can't handle non-str arguments");
-  }
-  Str str(&scope, *arg);
-  return intFromString(thread, str, RawInt::cast(*base).asWord());
 }
 
 static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,

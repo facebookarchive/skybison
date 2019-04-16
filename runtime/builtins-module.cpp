@@ -1,5 +1,7 @@
 #include "builtins-module.h"
 
+#include <cerrno>
+
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "complex-builtins.h"
@@ -87,6 +89,10 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
+    {SymbolId::kUnderIntFromBytes, underIntFromBytes},
+    {SymbolId::kUnderIntFromByteArray, underIntFromByteArray},
+    {SymbolId::kUnderIntFromInt, underIntFromInt},
+    {SymbolId::kUnderIntFromStr, underIntFromStr},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
@@ -812,6 +818,126 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
     return thread->raiseValueErrorWithCStr("negative count");
   }
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
+}
+
+static RawObject intOrUserSubclass(Thread* /* t */, const Type& type,
+                                   const Object& value) {
+  DCHECK(value.isSmallInt() || value.isLargeInt(),
+         "builtin value should have type int");
+  DCHECK(type.builtinBase() == LayoutId::kInt, "type must subclass int");
+  if (type.isBuiltin()) return *value;
+  UNIMPLEMENTED("subclass of int");  // TODO(T38780562)
+}
+
+static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
+                              word base) {
+  DCHECK_BOUND(length, bytes.length());
+  DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
+  if (length == 0) {
+    return Error::object();
+  }
+  unique_c_ptr<char[]> str(reinterpret_cast<char*>(std::malloc(length + 1)));
+  bytes.copyTo(reinterpret_cast<byte*>(str.get()), length);
+  str[length] = '\0';
+  char* end;
+  const word result = std::strtoll(str.get(), &end, base);
+  const int saved_errno = errno;
+  if (end != str.get() + length || saved_errno == EINVAL) {
+    return Error::object();
+  }
+  if (SmallInt::isValid(result) && saved_errno != ERANGE) {
+    return SmallInt::fromWord(result);
+  }
+  UNIMPLEMENTED("LargeInt from bytes-like");
+}
+
+RawObject BuiltinsModule::underIntFromByteArray(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  ByteArray array(&scope, args.get(1));
+  Bytes bytes(&scope, array.bytes());
+  Int base_int(&scope, args.get(2));
+  DCHECK(base_int.numDigits() == 1, "invalid base");
+  word base = base_int.asWord();
+  Object result(&scope, intFromBytes(thread, bytes, array.numItems(), base));
+  if (result.isError()) {
+    Runtime* runtime = thread->runtime();
+    Bytes truncated(&scope, byteArrayAsBytes(thread, runtime, array));
+    Str repr(&scope, bytesReprSmartQuotes(thread, truncated));
+    return thread->raiseValueError(runtime->newStrFromFmt(
+        "invalid literal for int() with base %w: %S", base, &repr));
+  }
+  return intOrUserSubclass(thread, type, result);
+}
+
+RawObject BuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Bytes bytes(&scope, args.get(1));
+  Int base_int(&scope, args.get(2));
+  DCHECK(base_int.numDigits() == 1, "invalid base");
+  word base = base_int.asWord();
+  Object result(&scope, intFromBytes(thread, bytes, bytes.length(), base));
+  if (result.isError()) {
+    Str repr(&scope, bytesReprSmartQuotes(thread, bytes));
+    return thread->raiseValueError(thread->runtime()->newStrFromFmt(
+        "invalid literal for int() with base %w: %S", base, &repr));
+  }
+  return intOrUserSubclass(thread, type, result);
+}
+
+RawObject BuiltinsModule::underIntFromInt(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Int value(&scope, args.get(1));
+  if (value.isBool()) {
+    value = convertBoolToInt(*value);
+  }
+  return intOrUserSubclass(thread, type, value);
+}
+
+static RawObject intFromStr(Thread* /* t */, const Str& str, word base) {
+  DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
+  if (str.length() == 0) {
+    return Error::object();
+  }
+  unique_c_ptr<char> c_str(str.toCStr());  // for strtol()
+  char* end_ptr;
+  errno = 0;
+  long res = std::strtol(c_str.get(), &end_ptr, base);
+  int saved_errno = errno;
+  bool is_complete = (*end_ptr == '\0');
+  if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
+    return Error::object();
+  }
+  if (SmallInt::isValid(res) && saved_errno != ERANGE) {
+    return SmallInt::fromWord(res);
+  }
+  UNIMPLEMENTED("LargeInt from str");
+}
+
+RawObject BuiltinsModule::underIntFromStr(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Str str(&scope, args.get(1));
+  Int base_int(&scope, args.get(2));
+  DCHECK(base_int.numDigits() == 1, "invalid base");
+  word base = base_int.asWord();
+  Object result(&scope, intFromStr(thread, str, base));
+  if (result.isError()) {
+    Str repr(&scope, thread->invokeMethod1(str, SymbolId::kDunderRepr));
+    return thread->raiseValueError(thread->runtime()->newStrFromFmt(
+        "invalid literal for int() with base %w: %S", base, &repr));
+  }
+  return intOrUserSubclass(thread, type, result);
 }
 
 RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,
