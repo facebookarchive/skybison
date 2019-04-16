@@ -1053,7 +1053,7 @@ TEST(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
 TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
   Runtime runtime;
   EXPECT_DEATH(runFromCStr(&runtime, "b'hello'.decode('unknown')"),
-               "Unimplemented function called at:");
+               ".*'_unimplemented' called in function 'decode'");
 }
 
 TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {

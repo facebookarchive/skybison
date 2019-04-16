@@ -323,7 +323,7 @@ def func(arg0, arg1):
   ss << thread->currentFrame();
   EXPECT_THAT(ss.str(), ::testing::MatchesRegex(R"(- pc: 8
 - pc: 42
-  function: None
+  function: n/a
   0: "foo bar"
 - pc: 4 (.+)
   function: <function "func">

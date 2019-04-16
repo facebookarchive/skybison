@@ -1404,7 +1404,17 @@ def chr(self):
 TEST(BuiltinsModuleDeathTest, UnderUnimplementedAbortsProgram) {
   Runtime runtime;
   ASSERT_DEATH(runFromCStr(&runtime, "_unimplemented()"),
-               "Unimplemented function called at:");
+               ".*'_unimplemented' called.");
+}
+
+TEST(BuiltinsModuleDeathTest, UnderUnimplementedPrintsFunctionName) {
+  Runtime runtime;
+  ASSERT_DEATH(runFromCStr(&runtime, R"(
+def foobar():
+  _unimplemented()
+foobar()
+)"),
+               ".*'_unimplemented' called in function 'foobar'.");
 }
 
 TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {

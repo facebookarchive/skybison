@@ -1116,9 +1116,23 @@ RawObject BuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
   return strSplitlines(thread, self, keepends);
 }
 
-RawObject BuiltinsModule::underUnimplemented(Thread*, Frame*, word) {
-  fputs("Unimplemented function called at:\n", stderr);
+RawObject BuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
+                                             word) {
   python::Utils::printTraceback();
+
+  // Attempt to identify the calling function.
+  HandleScope scope(thread);
+  Object function_obj(&scope, frame->previousFrame()->function());
+  if (!function_obj.isError()) {
+    Function function(&scope, *function_obj);
+    Str function_name(&scope, function.name());
+    unique_c_ptr<char> name_cstr(function_name.toCStr());
+    fprintf(stderr, "\n'_unimplemented' called in function '%s'.\n",
+            name_cstr.get());
+  } else {
+    fputs("\n'_unimplemented' called.\n", stderr);
+  }
+
   std::abort();
 }
 

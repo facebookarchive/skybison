@@ -311,7 +311,13 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   os << '\n';
 
   if (frame->previousFrame() != nullptr) {
-    os << "  function: " << frame->function() << '\n';
+    Object function(&scope, frame->function());
+    os << "  function: ";
+    if (function.isError()) {
+      os << "n/a\n";
+    } else {
+      os << function << '\n';
+    }
   }
   // TODO(matthiasb): Also dump the block stack.
   word var_names_length = var_names.length();
