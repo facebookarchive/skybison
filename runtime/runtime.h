@@ -955,7 +955,6 @@ class Runtime {
   RawObject display_hook_;
   RawObject dunder_import_;
   RawObject ellipsis_;
-  RawObject empty_bytes_;
   RawObject empty_frozen_set_;
   RawObject empty_tuple_;
   RawObject sys_stderr_;

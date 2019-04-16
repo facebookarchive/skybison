@@ -243,7 +243,7 @@ RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   }
   word length = self.length();
   if (count <= 0 || length == 0) {
-    return runtime->newBytes(0, 0);
+    return Bytes::empty();
   }
   if (count == 1) {
     return *self;

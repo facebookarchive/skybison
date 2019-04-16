@@ -328,8 +328,8 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithNegativeReturnsEmptyByteArray) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  self.setBytes(runtime.newBytes(4, 'a'));
-  self.setNumItems(4);
+  self.setBytes(runtime.newBytes(8, 'a'));
+  self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(-5));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
@@ -339,8 +339,8 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithZeroReturnsEmptyByteArray) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  self.setBytes(runtime.newBytes(4, 'a'));
-  self.setNumItems(4);
+  self.setBytes(runtime.newBytes(8, 'a'));
+  self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
@@ -642,8 +642,8 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithNegativeReturnsEmptyByteArray) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  self.setBytes(runtime.newBytes(4, 'a'));
-  self.setNumItems(4);
+  self.setBytes(runtime.newBytes(8, 'a'));
+  self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(-5));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
@@ -653,8 +653,8 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithZeroReturnsEmptyByteArray) {
   Runtime runtime;
   HandleScope scope;
   ByteArray self(&scope, runtime.newByteArray());
-  self.setBytes(runtime.newBytes(4, 'a'));
-  self.setNumItems(4);
+  self.setBytes(runtime.newBytes(8, 'a'));
+  self.setNumItems(8);
   Object count(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
@@ -719,16 +719,6 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithNonByteArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "bytearray.__repr__(b'')"), LayoutId::kTypeError,
       "'__repr__' requires a 'bytearray' object but got 'bytes'"));
-}
-
-TEST(ByteArrayBuiltinsTest, DunderReprWithOverlongByteArrayRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  ByteArray self(&scope, runtime.newByteArray());
-  self.setNumItems(kMaxWord / 4);
-  Object repr(&scope, runBuiltin(ByteArrayBuiltins::dunderRepr, self));
-  EXPECT_TRUE(raisedWithStr(*repr, LayoutId::kOverflowError,
-                            "bytearray object is too large to make repr"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderReprWithEmptyByteArrayReturnsEmptyRepr) {

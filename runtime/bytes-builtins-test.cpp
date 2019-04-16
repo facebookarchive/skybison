@@ -387,7 +387,7 @@ TEST(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  const byte bytes[] = {'h', 'e', 'l', 'l', 'o', '\0'};
+  const byte bytes[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd', '\0'};
   Bytes bytes_obj1(&scope, runtime.newBytesWithAll(bytes));
   Bytes bytes_obj2(&scope, runtime.newBytesWithAll(bytes));
   EXPECT_NE(*bytes_obj1, *bytes_obj2);
@@ -615,7 +615,7 @@ TEST(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
 TEST(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  Object self(&scope, runtime.newBytes(0, 0));
+  Object self(&scope, Bytes::empty());
   Object count(&scope, runtime.newList());
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kTypeError,
@@ -671,7 +671,7 @@ count = C()
 TEST(BytesBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Runtime runtime;
   HandleScope scope;
-  Object self(&scope, runtime.newBytes(0, 0));
+  Object self(&scope, Bytes::empty());
   const uword digits[] = {1, 1};
   Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
@@ -692,7 +692,7 @@ TEST(BytesBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {
 TEST(BytesBuiltinsTest, DunderMulWithEmptyBytesReturnsEmptyBytes) {
   Runtime runtime;
   HandleScope scope;
-  Object self(&scope, runtime.newBytes(0, 0));
+  Object self(&scope, Bytes::empty());
   Object count(&scope, runtime.newInt(10));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, ""));
@@ -976,7 +976,7 @@ TEST(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
 TEST(BytesBuiltinsTest, DunderReprWithEmptyBytesReturnsEmptyRepr) {
   Runtime runtime;
   HandleScope scope;
-  Object self(&scope, runtime.newBytes(0, 0));
+  Object self(&scope, Bytes::empty());
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "b''"));
 }
@@ -1066,7 +1066,7 @@ TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
 TEST(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
   Runtime runtime;
   HandleScope scope;
-  Bytes self(&scope, runtime.newBytes(0, 0));
+  Bytes self(&scope, Bytes::empty());
   Object result(&scope, runBuiltin(BytesBuiltins::hex, self));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
@@ -1107,7 +1107,7 @@ TEST(BytesBuiltinsTest, JoinWithEmptySeparatorReturnsBytes) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Bytes self(&scope, runtime.newBytes(0, 0));
+  Bytes self(&scope, Bytes::empty());
   Tuple iter(&scope, runtime.newTuple(3));
   iter.atPut(0, runtime.newBytes(1, 'A'));
   iter.atPut(1, runtime.newBytes(2, 'B'));

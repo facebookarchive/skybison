@@ -139,6 +139,7 @@ RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
 }
 
 RawObject Heap::createLargeBytes(word length) {
+  DCHECK(length > SmallBytes::kMaxLength, "fits into a SmallBytes");
   word size = LargeBytes::allocationSize(length);
   RawObject raw = allocate(size, LargeBytes::headerSize(length));
   CHECK(raw != Error::object(), "out of memory");

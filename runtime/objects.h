@@ -16,6 +16,7 @@ class Handle;
 // Python types that store their value directly in a RawObject.
 #define IMMEDIATE_CLASS_NAMES(V)                                               \
   V(SmallInt)                                                                  \
+  V(SmallBytes)                                                                \
   V(SmallStr)                                                                  \
   V(Bool)                                                                      \
   V(NotImplementedType)                                                        \
@@ -165,6 +166,7 @@ enum class LayoutId : word {
   // looked up simply by using the low 5 bits of the immediate value. This
   // implies that all other immediate class ids must be odd.
   kSmallInt = 0,
+  kSmallBytes = 5,
   kBool = 7,
   kSmallStr = 13,
   kNotImplementedType = 15,
@@ -243,6 +245,7 @@ class RawObject {
   bool isHeader() const;
   bool isNoneType() const;
   bool isNotImplementedType() const;
+  bool isSmallBytes() const;
   bool isSmallInt() const;
   bool isSmallStr() const;
   bool isUnbound() const;
@@ -367,6 +370,9 @@ class OptInt {
 // Common `bytes` wrapper around RawSmallBytes/RawLargeBytes
 class RawBytes : public RawObject {
  public:
+  // Singleton.
+  static RawBytes empty();
+
   // Getters and setters.
   word length() const;
   byte byteAt(word index) const;
@@ -574,6 +580,33 @@ class RawHeader : public RawObject {
   static const word kMaxLayoutId = (1L << (kLayoutIdSize + 1)) - 1;
 
   RAW_OBJECT_COMMON(Header);
+};
+
+class RawSmallBytes : public RawObject {
+ public:
+  // Conversion.
+  static RawObject fromBytes(View<byte> data);
+
+  // Tagging.
+  static const int kTag = 5;  // 0b00101
+  static const int kTagSize = 5;
+  static const uword kTagMask = (1 << kTagSize) - 1;
+
+  static const word kMaxLength = kWordSize - 1;
+
+  RAW_OBJECT_COMMON(SmallBytes);
+
+ private:
+  // Getters and setters.
+  word length() const;
+  byte byteAt(word index) const;
+  void copyTo(byte* dst, word length) const;
+  // Read adjacent bytes as `uint16_t` integer.
+  uint16_t uint16At(word index) const;
+  // Read adjacent bytes as `uint32_t` integer.
+  uint32_t uint32At(word index) const;
+
+  friend class RawBytes;
 };
 
 class RawSmallStr : public RawObject {
@@ -1720,6 +1753,7 @@ class RawModule : public RawHeapObject {
  * A mutable array of bytes.
  *
  * Invariant: All allocated bytes past the end of the array are 0.
+ * Invariant: bytes() is empty (upon initialization) or a mutable LargeBytes.
  *
  * RawLayout:
  *   [RawType pointer]
@@ -2486,6 +2520,10 @@ inline bool RawObject::isNotImplementedType() const {
          RawNotImplementedType::kTag;
 }
 
+inline bool RawObject::isSmallBytes() const {
+  return (raw() & RawSmallBytes::kTagMask) == RawSmallBytes::kTag;
+}
+
 inline bool RawObject::isSmallInt() const {
   return (raw() & RawSmallInt::kTagMask) == RawSmallInt::kTag;
 }
@@ -2752,7 +2790,9 @@ inline bool RawObject::isWeakRef() const {
   return isHeapObjectWithLayout(LayoutId::kWeakRef);
 }
 
-inline bool RawObject::isBytes() const { return isLargeBytes(); }
+inline bool RawObject::isBytes() const {
+  return isSmallBytes() || isLargeBytes();
+}
 
 inline bool RawObject::isGeneratorBase() const {
   return isGenerator() || isCoroutine();
@@ -2786,27 +2826,48 @@ T RawObject::rawCast() const {
 
 // RawBytes
 
+inline RawBytes RawBytes::empty() {
+  return RawObject{RawSmallBytes::kTag}.rawCast<RawBytes>();
+}
+
 inline word RawBytes::length() const {
+  if (isSmallBytes()) {
+    return RawSmallBytes::cast(*this).length();
+  }
   return RawLargeBytes::cast(*this).length();
 }
 
 inline byte RawBytes::byteAt(word index) const {
+  if (isSmallBytes()) {
+    return RawSmallBytes::cast(*this).byteAt(index);
+  }
   return RawLargeBytes::cast(*this).byteAt(index);
 }
 
 inline void RawBytes::copyTo(byte* dst, word length) const {
+  if (isSmallBytes()) {
+    RawSmallBytes::cast(*this).copyTo(dst, length);
+    return;
+  }
   RawLargeBytes::cast(*this).copyTo(dst, length);
 }
 
 inline uint16_t RawBytes::uint16At(word index) const {
+  if (isSmallBytes()) {
+    return RawSmallBytes::cast(*this).uint16At(index);
+  }
   return RawLargeBytes::cast(*this).uint16At(index);
 }
 
 inline uint32_t RawBytes::uint32At(word index) const {
+  if (isSmallBytes()) {
+    return RawSmallBytes::cast(*this).uint32At(index);
+  }
   return RawLargeBytes::cast(*this).uint32At(index);
 }
 
 inline uint64_t RawBytes::uint64At(word index) const {
+  DCHECK(isLargeBytes(), "uint64_t cannot fit into SmallBytes");
   return RawLargeBytes::cast(*this).uint64At(index);
 }
 
@@ -2999,6 +3060,42 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
   result |= static_cast<uword>(id) << kLayoutIdOffset;
   result |= static_cast<uword>(format) << kFormatOffset;
   return cast(RawObject{result});
+}
+
+// RawSmallBytes
+
+inline word RawSmallBytes::length() const {
+  return (raw() >> kTagSize) & kMaxLength;
+}
+
+inline byte RawSmallBytes::byteAt(word index) const {
+  DCHECK_INDEX(index, length());
+  return raw() >> (kBitsPerByte * (index + 1));
+}
+
+inline void RawSmallBytes::copyTo(byte* dst, word length) const {
+  DCHECK_BOUND(length, this->length());
+  for (word i = 0; i < length; i++) {
+    *dst++ = byteAt(i);
+  }
+}
+
+inline uint16_t RawSmallBytes::uint16At(word index) const {
+  uint16_t result;
+  DCHECK_INDEX(index, length() - word{sizeof(result) - 1});
+  const byte buffer[] = {byteAt(index), byteAt(index + 1)};
+  std::memcpy(&result, buffer, sizeof(result));
+  return result;
+}
+
+inline uint32_t RawSmallBytes::uint32At(word index) const {
+  uint32_t result;
+  DCHECK(kMaxLength >= sizeof(result), "SmallBytes cannot fit uint32_t");
+  DCHECK_INDEX(index, length() - word{sizeof(result) - 1});
+  const byte buffer[] = {byteAt(index), byteAt(index + 1), byteAt(index + 2),
+                         byteAt(index + 3)};
+  std::memcpy(&result, buffer, sizeof(result));
+  return result;
 }
 
 // RawSmallStr
@@ -3938,6 +4035,7 @@ inline word RawByteArray::numItems() const {
 }
 
 inline void RawByteArray::setNumItems(word num_bytes) const {
+  DCHECK_BOUND(num_bytes, capacity());
   instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_bytes));
 }
 
@@ -3946,6 +4044,8 @@ inline RawObject RawByteArray::bytes() const {
 }
 
 inline void RawByteArray::setBytes(RawObject new_bytes) const {
+  DCHECK(new_bytes == RawBytes::empty() || new_bytes.isLargeBytes(),
+         "backed by LargeBytes once capacity > 0 ensured");
   instanceVariableAtPut(kBytesOffset, new_bytes);
 }
 

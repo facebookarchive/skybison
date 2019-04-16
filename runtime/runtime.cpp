@@ -296,8 +296,8 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
 RawObject Runtime::newByteArray() {
   HandleScope scope;
   ByteArray result(&scope, heap()->create<RawByteArray>());
+  result.setBytes(Bytes::empty());
   result.setNumItems(0);
-  result.setBytes(empty_bytes_);
   return *result;
 }
 
@@ -312,8 +312,12 @@ RawObject Runtime::newByteArrayIterator(Thread* thread,
 
 RawObject Runtime::newBytes(word length, byte fill) {
   DCHECK(length >= 0, "invalid length %ld", length);
-  if (length == 0) {
-    return empty_bytes_;
+  if (length <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    for (word i = 0; i < SmallBytes::kMaxLength; i++) {
+      buffer[i] = fill;
+    }
+    return SmallBytes::fromBytes({buffer, length});
   }
   HandleScope scope;
   LargeBytes result(&scope, heap()->createLargeBytes(length));
@@ -323,8 +327,8 @@ RawObject Runtime::newBytes(word length, byte fill) {
 
 RawObject Runtime::newBytesWithAll(View<byte> array) {
   word length = array.length();
-  if (length == 0) {
-    return empty_bytes_;
+  if (length <= SmallBytes::kMaxLength) {
+    return SmallBytes::fromBytes(array);
   }
   HandleScope scope;
   LargeBytes result(&scope, heap()->createLargeBytes(length));
@@ -1305,7 +1309,7 @@ RawObject Runtime::hash(RawObject object) {
   if (!object.isHeapObject()) {
     return immediateHash(object);
   }
-  if (object.isBytes() || object.isLargeStr()) {
+  if (object.isLargeBytes() || object.isLargeStr()) {
     return valueHash(object);
   }
   return identityHash(object);
@@ -1317,6 +1321,9 @@ RawObject Runtime::immediateHash(RawObject object) {
   }
   if (object.isBool()) {
     return convertBoolToInt(object);
+  }
+  if (object.isSmallBytes()) {
+    return SmallInt::fromWord(object.raw() >> RawSmallBytes::kTagSize);
   }
   if (object.isSmallStr()) {
     return SmallInt::fromWord(object.raw() >> RawSmallStr::kTagSize);
@@ -1648,6 +1655,7 @@ void Runtime::initializeExceptionTypes() {
 void Runtime::initializeImmediateTypes() {
   BoolBuiltins::initialize(this);
   NoneBuiltins::initialize(this);
+  SmallBytesBuiltins::initialize(this);
   SmallStrBuiltins::initialize(this);
   SmallIntBuiltins::initialize(this);
 }
@@ -1738,7 +1746,6 @@ void Runtime::initializeThreads() {
 void Runtime::initializePrimitiveInstances() {
   empty_tuple_ = heap()->createTuple(0, NoneType::object());
   empty_frozen_set_ = newFrozenSet();
-  empty_bytes_ = heap()->createLargeBytes(0);
   ellipsis_ = heap()->createEllipsis();
   callbacks_ = NoneType::object();
 }
@@ -1805,7 +1812,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&display_hook_);
   visitor->visitPointer(&dunder_import_);
   visitor->visitPointer(&ellipsis_);
-  visitor->visitPointer(&empty_bytes_);
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&sys_stderr_);
@@ -2272,6 +2278,8 @@ void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
   word curr_capacity = array.capacity();
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);
+  DCHECK(new_capacity > SmallBytes::kMaxLength,
+         "non-empty ByteArray must be backed by LargeBytes");
   HandleScope scope(thread);
   Bytes old_bytes(&scope, array.bytes());
   LargeBytes new_bytes(&scope, heap()->createLargeBytes(new_capacity));
@@ -2284,24 +2292,28 @@ void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
 
 void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
                               View<byte> view) {
-  word num_items = array.numItems();
   word length = view.length();
-  byteArrayEnsureCapacity(thread, array, num_items + length);
+  if (length == 0) return;
+  word num_items = array.numItems();
+  word new_length = num_items + length;
+  byteArrayEnsureCapacity(thread, array, new_length);
   byte* dst =
       reinterpret_cast<byte*>(LargeBytes::cast(array.bytes()).address());
   std::memcpy(dst + num_items, view.data(), length);
-  array.setNumItems(num_items + length);
+  array.setNumItems(new_length);
 }
 
 void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
                             const Bytes& bytes, word length) {
   DCHECK_BOUND(length, bytes.length());
+  if (length == 0) return;
   word num_items = array.numItems();
-  byteArrayEnsureCapacity(thread, array, num_items + length);
+  word new_length = num_items + length;
+  byteArrayEnsureCapacity(thread, array, new_length);
   byte* dst =
       reinterpret_cast<byte*>(LargeBytes::cast(array.bytes()).address());
   bytes.copyTo(dst + num_items, length);
-  array.setNumItems(num_items + length);
+  array.setNumItems(new_length);
 }
 
 // Bytes
@@ -2311,7 +2323,12 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
   word self_len = self.length();
   word other_len = other.length();
   word len = self_len + other_len;
-  // TODO(T36997048): intern 1-element byte arrays
+  if (len <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    self.copyTo(buffer, self_len);
+    other.copyTo(buffer + self_len, other_len);
+    return SmallBytes::fromBytes({buffer, len});
+  }
   HandleScope scope(thread);
   LargeBytes result(&scope, heap()->createLargeBytes(len));
   byte* buffer = reinterpret_cast<byte*>(result.address());
@@ -2323,9 +2340,14 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
 RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
                                      word new_length) {
   DCHECK(new_length > 0, "length must be positive");
+  word old_length = original.length();
+  if (new_length <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    original.copyTo(buffer, Utils::minimum(old_length, new_length));
+    return SmallBytes::fromBytes({buffer, new_length});
+  }
   HandleScope scope(thread);
   LargeBytes copy(&scope, heap()->createLargeBytes(new_length));
-  word old_length = original.length();
   byte* dst = reinterpret_cast<byte*>(copy.address());
   if (old_length < new_length) {
     original.copyTo(dst, old_length);
@@ -2340,7 +2362,15 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
                                   word length) {
   DCHECK_BOUND(length, items.length());
   HandleScope scope(thread);
-  LargeBytes result(&scope, heap()->createLargeBytes(length));
+  Object result(&scope, Unbound::object());
+  byte buffer[SmallBytes::kMaxLength];
+  byte* dst;
+  if (length <= SmallBytes::kMaxLength) {
+    dst = buffer;
+  } else {
+    result = heap()->createLargeBytes(length);
+    dst = reinterpret_cast<byte*>(LargeBytes::cast(*result).address());
+  }
   for (word idx = 0; idx < length; idx++) {
     Object item(&scope, items.at(idx));
     if (!isInstanceOfInt(*item)) {
@@ -2350,50 +2380,58 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
     Int index(&scope, *item);
     OptInt<byte> current_byte = index.asInt<byte>();
     if (current_byte.error == CastError::None) {
-      result.byteAtPut(idx, current_byte.value);
+      dst[idx] = current_byte.value;
     } else {
       return thread->raiseValueErrorWithCStr("bytes must be in range(0, 256)");
     }
   }
-  return *result;
+  return length <= SmallBytes::kMaxLength
+             ? SmallBytes::fromBytes({buffer, length})
+             : *result;
 }
 
 RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
                              const Tuple& src, word src_length) {
   DCHECK_BOUND(src_length, src.length());
-  if (src_length == 0) return newBytes(0, 0);
+  if (src_length == 0) return Bytes::empty();
   HandleScope scope(thread);
 
   // first pass to accumulate length and check types
   word result_length = sep_length * (src_length - 1);
+  Object item(&scope, Unbound::object());
   for (word index = 0; index < src_length; index++) {
-    Object obj(&scope, src.at(index));
-    if (isInstanceOfBytes(*obj)) {
-      Bytes bytes(&scope, *obj);
+    item = src.at(index);
+    if (isInstanceOfBytes(*item)) {
+      Bytes bytes(&scope, *item);
       result_length += bytes.length();
-    } else if (isInstanceOfByteArray(*obj)) {
-      ByteArray array(&scope, *obj);
+    } else if (isInstanceOfByteArray(*item)) {
+      ByteArray array(&scope, *item);
       result_length += array.numItems();
     } else {
       return thread->raiseTypeError(newStrFromFmt(
           "sequence item %w: expected a bytes-like object, %T found", index,
-          &obj));
+          &item));
     }
   }
 
   // second pass to accumulate concatenation
-  // TODO(T36997048): immediate small byte arrays
-  LargeBytes result(&scope, heap()->createLargeBytes(result_length));
-  byte* dst = reinterpret_cast<byte*>(result.address());
+  Object result(&scope, Unbound::object());
+  byte buffer[SmallBytes::kMaxLength];
+  byte* dst;
+  if (result_length <= SmallBytes::kMaxLength) {
+    dst = buffer;
+  } else {
+    result = heap()->createLargeBytes(result_length);
+    dst = reinterpret_cast<byte*>(LargeBytes::cast(*result).address());
+  }
   const byte* const end = dst + result_length;
-  Object item(&scope, Unbound::object());
   for (word src_index = 0; src_index < src_length; src_index++) {
     if (src_index > 0) {
       sep.copyTo(dst, sep_length);
       dst += sep_length;
     }
     item = src.at(src_index);
-    Bytes bytes(&scope, empty_bytes_);
+    Bytes bytes(&scope, Bytes::empty());
     word length;
     if (isInstanceOfBytes(*item)) {
       bytes = *item;
@@ -2408,7 +2446,9 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
     dst += length;
   }
   DCHECK(dst == end, "unexpected number of bytes written");
-  return *result;
+  return result_length <= SmallBytes::kMaxLength
+             ? SmallBytes::fromBytes({buffer, result_length})
+             : *result;
 }
 
 RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
@@ -2420,14 +2460,20 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
   if (length == 1) {
     return newBytes(count, source.byteAt(0));
   }
-  // TODO(T36997048): immediate small byte arrays
+  word new_length = length * count;
+  if (new_length <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    byte* dst = buffer;
+    for (word i = 0; i < count; i++, dst += length) {
+      source.copyTo(dst, length);
+    }
+    return SmallBytes::fromBytes({buffer, new_length});
+  }
   HandleScope scope(thread);
-  LargeBytes result(&scope, heap()->createLargeBytes(length * count));
-  const byte* src =
-      reinterpret_cast<byte*>(LargeBytes::cast(*source).address());
+  LargeBytes result(&scope, heap()->createLargeBytes(new_length));
   byte* dst = reinterpret_cast<byte*>(result.address());
   for (word i = 0; i < count; i++, dst += length) {
-    std::memcpy(dst, src, length);
+    source.copyTo(dst, length);
   }
   return *result;
 }
@@ -2442,7 +2488,13 @@ RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
   } else if (start < stop) {
     length = (stop - start - 1) / step + 1;
   }
-  if (length == 0) return empty_bytes_;
+  if (length <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    for (word i = 0, j = start; i < length; i++, j += step) {
+      buffer[i] = self.byteAt(j);
+    }
+    return SmallBytes::fromBytes({buffer, length});
+  }
   HandleScope scope(thread);
   LargeBytes result(&scope, heap()->createLargeBytes(length));
   for (word i = 0, j = start; i < length; i++, j += step) {
@@ -2455,7 +2507,13 @@ RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
                                word length) {
   DCHECK_BOUND(start, self.length());
   DCHECK_BOUND(length, self.length() - start);
-  if (length == 0) return empty_bytes_;
+  if (length <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    for (word i = length - 1; i >= 0; i--) {
+      buffer[i] = self.byteAt(start + i);
+    }
+    return SmallBytes::fromBytes({buffer, length});
+  }
   HandleScope scope(thread);
   LargeBytes copy(&scope, heap()->createLargeBytes(length));
   const byte* src = reinterpret_cast<byte*>(LargeBytes::cast(*self).address());
@@ -4998,11 +5056,18 @@ RawObject Runtime::intSubtract(Thread* thread, const Int& left,
 RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
                               endian endianness) {
   HandleScope scope(thread);
-  LargeBytes result(&scope, heap()->createLargeBytes(length));
+  Object result(&scope, Unbound::object());
+  byte buffer[SmallBytes::kMaxLength];
+  byte* dst;
+  if (length <= SmallBytes::kMaxLength) {
+    dst = buffer;
+  } else {
+    result = heap()->createLargeBytes(length);
+    dst = reinterpret_cast<byte*>(LargeBytes::cast(*result).address());
+  }
   word extension_idx;
   word extension_length;
   if (endianness == endian::little && endian::native == endian::little) {
-    byte* dst = reinterpret_cast<byte*>(result.address());
     word copied = num.copyTo(dst, length);
     extension_idx = copied;
     extension_length = length - copied;
@@ -5015,11 +5080,15 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
         byte b = digit & kMaxByte;
         // The last digit may have more (insignificant) bits than the
         // resulting buffer.
-        if (idx >= length) return *result;
+        if (idx >= length) {
+          return length <= SmallBytes::kMaxLength
+                     ? SmallBytes::fromBytes({buffer, length})
+                     : *result;
+        }
         if (endianness == endian::big) {
           idx = length - idx - 1;
         }
-        result.byteAtPut(idx, b);
+        dst[idx] = b;
         digit >>= kBitsPerByte;
       }
     }
@@ -5030,10 +5099,12 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
   if (extension_length > 0) {
     byte sign_extension = num.isNegative() ? 0xff : 0;
     for (word i = 0; i < extension_length; ++i) {
-      result.byteAtPut(extension_idx + i, sign_extension);
+      dst[extension_idx + i] = sign_extension;
     }
   }
-  return *result;
+  return length <= SmallBytes::kMaxLength
+             ? SmallBytes::fromBytes({buffer, length})
+             : *result;
 }
 
 // TODO(djang, emacs): Use this for strFind/strRFind.

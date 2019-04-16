@@ -2990,7 +2990,7 @@ TEST(TrampolinesTest, PushCallFrameWithSameGlobalsPropagatesBuiltins) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Code code(&scope, runtime.newEmptyCode());
-  code.setCode(runtime.newBytes(0, 0));
+  code.setCode(Bytes::empty());
   code.setNames(runtime.newTuple(0));
 
   Function function(&scope, runtime.newFunction());
@@ -3013,7 +3013,7 @@ TEST(TrampolinesTest, PushCallFrameWithGlobalsWithoutBuiltinsSetsMinimalDict) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Code code(&scope, runtime.newEmptyCode());
-  code.setCode(runtime.newBytes(0, 0));
+  code.setCode(Bytes::empty());
   code.setNames(runtime.newTuple(0));
 
   Function function(&scope, runtime.newFunction());
@@ -3039,7 +3039,7 @@ TEST(ThreadTest, PushExecFrameSetsMissingDunderBuiltins) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Code code(&scope, runtime.newEmptyCode());
-  code.setCode(runtime.newBytes(0, 0));
+  code.setCode(Bytes::empty());
   code.setNames(runtime.newTuple(0));
   Dict globals(&scope, runtime.newDict());
   Dict empty_builtins(&scope, runtime.newDict());

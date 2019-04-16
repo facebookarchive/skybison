@@ -280,26 +280,17 @@ PY_EXPORT PyObject* PyBytes_FromObject(PyObject* pyobj) {
 PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
                                               Py_ssize_t size) {
   Thread* thread = Thread::current();
-
   if (size < 0) {
     thread->raiseSystemErrorWithCStr(
         "Negative size passed to PyBytes_FromStringAndSize");
     return nullptr;
   }
-
   if (str == nullptr) {
     UNIMPLEMENTED("mutable, uninitialized bytes");
   }
-
-  // TODO(T36997048): intern 1-element byte arrays
-
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  View<byte> view(reinterpret_cast<const byte*>(str), size);
-  Object bytes_obj(&scope, runtime->newBytesWithAll(view));
-
-  return ApiHandle::newReference(thread, *bytes_obj);
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newBytesWithAll(
+                  {reinterpret_cast<const byte*>(str), size}));
 }
 
 PY_EXPORT PyObject* PyBytes_FromString(const char* str) {

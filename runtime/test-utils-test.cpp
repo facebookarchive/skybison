@@ -21,8 +21,7 @@ TEST(TestUtils, IsByteArrayEquals) {
   EXPECT_STREQ(type_err.message(), type_msg);
 
   ByteArray array(&scope, runtime.newByteArray());
-  array.setBytes(*bytes);
-  array.setNumItems(3);
+  runtime.byteArrayExtend(thread, array, view);
   auto const ok = isByteArrayEqualsBytes(array, view);
   EXPECT_TRUE(ok);
 

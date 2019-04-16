@@ -167,12 +167,12 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
     return thread->raiseOverflowErrorWithCStr(
         "cannot fit count into an index-sized integer");
   }
+  if (count == 1) {
+    return *self;
+  }
   word length = self.numItems();
   if (count <= 0 || length == 0) {
     self.downsize(0);
-    return *self;
-  }
-  if (count == 1) {
     return *self;
   }
   word new_length;
@@ -181,8 +181,17 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
     return thread->raiseMemoryError();
   }
   Bytes source(&scope, self.bytes());
+  if (new_length <= self.capacity()) {
+    // fits into existing backing LargeBytes - repeat in place
+    for (word i = 1; i < count; i++) {
+      runtime->byteArrayIadd(thread, self, source, length);
+    }
+    return *self;
+  }
+  // grows beyond existing bytes - allocate new
   self.setBytes(runtime->bytesRepeat(thread, source, length, count));
-  self.setNumItems(self.capacity());
+  DCHECK(self.capacity() == new_length, "unexpected result length");
+  self.setNumItems(new_length);
   return *self;
 }
 
@@ -309,8 +318,14 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
   }
   Bytes source(&scope, self.bytes());
   ByteArray result(&scope, runtime->newByteArray());
-  result.setBytes(runtime->bytesRepeat(thread, source, length, count));
-  result.setNumItems(result.capacity());
+  Bytes repeated(&scope, runtime->bytesRepeat(thread, source, length, count));
+  DCHECK(repeated.length() == new_length, "unexpected result length");
+  if (repeated.isSmallBytes()) {
+    runtime->byteArrayIadd(thread, result, repeated, new_length);
+  } else {
+    result.setBytes(*repeated);
+    result.setNumItems(new_length);
+  }
   return *result;
 }
 
@@ -328,8 +343,8 @@ RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
   Layout layout(&scope, type.instanceLayout());
   Runtime* runtime = thread->runtime();
   ByteArray result(&scope, runtime->newInstance(layout));
+  result.setBytes(Bytes::empty());
   result.setNumItems(0);
-  result.setBytes(runtime->newBytes(0, 0));
   return *result;
 }
 
@@ -432,8 +447,14 @@ RawObject ByteArrayBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   // Check for error or slow path
   if (!joined.isBytes()) return *joined;
   ByteArray result(&scope, runtime->newByteArray());
-  result.setBytes(*joined);
-  result.setNumItems(Bytes::cast(*joined).length());
+  Bytes joined_bytes(&scope, *joined);
+  if (joined.isSmallBytes()) {
+    Bytes bytes(&scope, *joined);
+    runtime->byteArrayIadd(thread, result, joined_bytes, bytes.length());
+  } else {
+    result.setBytes(*joined);
+    result.setNumItems(Bytes::cast(*joined).length());
+  }
   return *result;
 }
 

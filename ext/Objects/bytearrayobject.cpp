@@ -68,16 +68,16 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   ByteArray result(&scope, runtime->newByteArray());
-  if (size > 0) {
-    word capacity = static_cast<word>(size);
-    if (str == nullptr) {
-      result.setBytes(runtime->newBytes(capacity, 0));
-    } else {
-      View<byte> view(reinterpret_cast<const byte*>(str), capacity);
-      result.setBytes(runtime->newBytesWithAll(view));
-    }
-    result.setNumItems(capacity);
+  if (size <= 0) {
+    return ApiHandle::newReference(thread, *result);
   }
+  if (str == nullptr) {
+    runtime->byteArrayEnsureCapacity(thread, result, size);
+  } else {
+    runtime->byteArrayExtend(thread, result,
+                             {reinterpret_cast<const byte*>(str), size});
+  }
+  result.setNumItems(size);
   return ApiHandle::newReference(thread, *result);
 }
 

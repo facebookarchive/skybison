@@ -222,6 +222,8 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
       return os << RawFloat::cast(value);
     case LayoutId::kFunction:
       return os << RawFunction::cast(value);
+    case LayoutId::kLargeBytes:
+      return os << RawBytes::cast(value);
     case LayoutId::kLargeInt:
       return os << RawLargeInt::cast(value);
     case LayoutId::kLargeStr:
@@ -232,6 +234,8 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
       return os << RawModule::cast(value);
     case LayoutId::kNoneType:
       return os << RawNoneType::cast(value);
+    case LayoutId::kSmallBytes:
+      return os << RawBytes::cast(value);
     case LayoutId::kSmallInt:
       return os << RawSmallInt::cast(value);
     case LayoutId::kSmallStr:

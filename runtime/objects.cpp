@@ -8,6 +8,18 @@
 
 namespace python {
 
+// RawSmallBytes
+
+RawObject RawSmallBytes::fromBytes(View<byte> data) {
+  word length = data.length();
+  DCHECK_BOUND(length, kMaxLength);
+  uword result = 0;
+  for (word i = length - 1; i >= 0; i--) {
+    result = (result << kBitsPerByte) | data.get(i);
+  }
+  return RawObject{result << kBitsPerByte | length << kTagSize | kTag};
+}
+
 // RawSmallStr
 
 RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
@@ -94,6 +106,7 @@ const word RawSmallInt::kMaxValue;
 void RawByteArray::downsize(word new_length) const {
   word original_length = numItems();
   DCHECK_BOUND(new_length, original_length);
+  if (original_length == 0) return;
   byte* dst = reinterpret_cast<byte*>(RawLargeBytes::cast(bytes()).address());
   std::memset(dst + new_length, 0, original_length - new_length);
   setNumItems(new_length);
@@ -105,13 +118,12 @@ word RawBytes::compare(RawBytes that) const {
   word this_len = this->length();
   word that_len = that.length();
   word len = Utils::minimum(this_len, that_len);
-  auto b1 = reinterpret_cast<void*>(RawLargeBytes::cast(*this).address());
-  auto b2 = reinterpret_cast<void*>(RawLargeBytes::cast(that).address());
-  word diff = std::memcmp(b1, b2, len);
-  if (diff != 0 || this_len == that_len) return diff;
-  return this_len < that_len ? -1 : 1;
+  for (word i = 0; i < len; i++) {
+    word diff = this->byteAt(i) - that.byteAt(i);
+    if (diff != 0) return diff;
+  }
+  return this_len - that_len;
 }
-
 
 // RawLargeStr
 

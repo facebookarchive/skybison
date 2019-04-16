@@ -499,7 +499,7 @@ TEST(RuntimeTest, NewBytes) {
   Runtime runtime;
   HandleScope scope;
 
-  Bytes len0(&scope, runtime.newBytes(0, 0));
+  Bytes len0(&scope, Bytes::empty());
   EXPECT_EQ(len0.length(), 0);
 
   Bytes len3(&scope, runtime.newBytes(3, 9));
@@ -735,7 +735,7 @@ TEST(RuntimeTest, HashLargeBytes) {
   HandleScope scope;
 
   // LargeBytes have their hash codes computed lazily.
-  const byte src1[] = {0x1, 0x2, 0x3};
+  const byte src1[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8};
   LargeBytes arr1(&scope, runtime.newBytesWithAll(src1));
   EXPECT_EQ(arr1.header().hashCode(), 0);
   word hash1 = RawSmallInt::cast(runtime.hash(*arr1)).value();
@@ -746,7 +746,7 @@ TEST(RuntimeTest, HashLargeBytes) {
   EXPECT_EQ(code1 & RawHeader::kHashCodeMask, static_cast<uword>(hash1));
 
   // LargeBytes with different values should (ideally) hash differently.
-  const byte src2[] = {0x3, 0x2, 0x1};
+  const byte src2[] = {0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1};
   LargeBytes arr2(&scope, runtime.newBytesWithAll(src2));
   word hash2 = RawSmallInt::cast(runtime.hash(*arr2)).value();
   EXPECT_NE(hash1, hash2);
@@ -755,13 +755,10 @@ TEST(RuntimeTest, HashLargeBytes) {
   EXPECT_EQ(code2 & RawHeader::kHashCodeMask, static_cast<uword>(hash2));
 
   // LargeBytes with the same value should hash the same.
-  const byte src3[] = {0x1, 0x2, 0x3};
   LargeBytes arr3(&scope, runtime.newBytesWithAll(src1));
+  EXPECT_NE(arr3, arr1);
   word hash3 = RawSmallInt::cast(runtime.hash(*arr3)).value();
   EXPECT_EQ(hash1, hash3);
-
-  word code3 = runtime.siphash24(src3);
-  EXPECT_EQ(code3 & RawHeader::kHashCodeMask, static_cast<uword>(hash3));
 }
 
 TEST(RuntimeTest, HashSmallInts) {

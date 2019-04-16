@@ -239,7 +239,7 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
   EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, exc, types),
             Bool::trueObj());
 
-  Object bytes(&scope, runtime.newBytes(0, 0));
+  Object bytes(&scope, Bytes::empty());
   EXPECT_EQ(runBuiltin(BuiltinsModule::isinstance, bytes, types),
             Bool::falseObj());
 

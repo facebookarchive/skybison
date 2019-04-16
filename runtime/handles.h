@@ -168,6 +168,7 @@ class WARN_UNUSED Handle : public T {
   V(SeqIterator)                                                               \
   V(SetIterator)                                                               \
   V(Slice)                                                                     \
+  V(SmallBytes)                                                                \
   V(SmallInt)                                                                  \
   V(SmallStr)                                                                  \
   V(StaticMethod)                                                              \
