@@ -9,6 +9,8 @@ based on a Java version:
  Translation from C++, Mario Wolczko
  Outer loop added by Alex Jacoby
 """
+import sys
+
 
 # Task IDs
 I_IDLE = 1
@@ -405,5 +407,8 @@ class Richards(object):
         return True
 
 
+num_iterations = 5
+if len(sys.argv) > 1:
+    num_iterations = int(sys.argv[1])
 richards = Richards()
-richards.run(5)
+richards.run(num_iterations)
