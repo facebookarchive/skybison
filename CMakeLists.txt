@@ -195,9 +195,15 @@ target_include_directories(
   ${FROZEN_MODULE_OUTPUT_DIR})
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-  set(RUNTIME_OS_SOURCES runtime/os-darwin.cpp)
+  set(
+    RUNTIME_OS_SOURCES
+    runtime/os-darwin.cpp
+    runtime/mutex-darwin.cpp)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set(RUNTIME_OS_SOURCES runtime/os-linux.cpp)
+  set(
+    RUNTIME_OS_SOURCES
+    runtime/os-linux.cpp
+    runtime/mutex-linux.cpp)
 endif()
 add_library(
   runtime
@@ -261,6 +267,7 @@ add_library(
   runtime/memoryview-builtins.h
   runtime/module-builtins.cpp
   runtime/module-builtins.h
+  runtime/mutex.h
   runtime/mro.cpp
   runtime/mro.h
   runtime/namedtuple-module.cpp
@@ -401,6 +408,7 @@ add_library(
   runtime/marshal-test.cpp
   runtime/memoryview-builtins-test.cpp
   runtime/module-builtins-test.cpp
+  runtime/mutex-test.cpp
   runtime/mro-test.cpp
   runtime/namedtuple-module-test.cpp
   runtime/object-builtins-test.cpp

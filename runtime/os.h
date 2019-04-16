@@ -1,6 +1,7 @@
 #pragma once
 
 #include "globals.h"
+#include "mutex.h"
 
 namespace python {
 
