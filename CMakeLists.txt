@@ -134,6 +134,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Python/pythonrun.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/random.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/sysmodule.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Python/thread.cpp
   ${CMAKE_SOURCE_DIR}/ext/Python/traceback.cpp
 )
 include(CPythonBuild.cmake)
@@ -488,6 +489,7 @@ set(
   ext/Python/pythonrun-test.cpp
   ext/Python/random-test.cpp
   ext/Python/sysmodule-test.cpp
+  ext/Python/thread-test.cpp
   ext/test/capi-fixture.h
   ext/test/capi-testing-test.cpp
   ext/test/capi-testing.cpp
