@@ -2824,7 +2824,17 @@ class str_iterator(bootstrap=True):
 
 
 def sum(iterable, start=0):
-    _unimplemented()
+    if isinstance(start, str):
+        raise TypeError("sum() can't sum strings [use ''.join(seq) instead]")
+    if isinstance(start, bytes):
+        raise TypeError("sum() can't sum bytes [use b''.join(seq) instead]")
+    if isinstance(start, bytearray):
+        raise TypeError("sum() can't sum bytearray [use b''.join(seq) instead]")
+
+    result = start
+    for item in iterable:
+        result = result + item
+    return result
 
 
 class super(bootstrap=True):
