@@ -509,17 +509,6 @@ class Runtime {
   // Returns type's __init__ method, or None
   RawObject classConstructor(const Type& type);
 
-  // Looks up name in the dict of each entry in type's MRO.
-  //
-  // This is equivalent to CPython's PyType_Lookup. Returns the Error object if
-  // the name wasn't found.
-  RawObject lookupNameInMro(Thread* thread, const Type& type,
-                            const Object& name);
-
-  // Looks up symbol name in the dict of each entry in type's MRO.
-  RawObject lookupSymbolInMro(Thread* thread, const Type& type,
-                              SymbolId symbol);
-
   // Implements `receiver.name`
   RawObject attributeAt(Thread* thread, const Object& receiver,
                         const Object& name);

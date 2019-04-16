@@ -279,6 +279,91 @@ TEST(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   ASSERT_TRUE(result.isDict());
 }
 
+TEST(TypeBuiltinsTest, TypeLookupNameInMroReturnsValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  foo = 2
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupNameInMro(thread, a, foo), 2));
+}
+
+TEST(TypeBuiltinsTest, TypeLookupNameInMroReturnsParentValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  foo = 2
+class B(A):
+  bar = 4
+)")
+                   .isError());
+  Object b_obj(&scope, moduleAt(&runtime, "__main__", "B"));
+  ASSERT_TRUE(b_obj.isType());
+  Type b(&scope, *b_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupNameInMro(thread, b, foo), 2));
+}
+
+TEST(TypeBuiltinsTest, TypeLookupNameInMroReturnsOverriddenValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  foo = 2
+class B(A):
+  foo = 4
+)")
+                   .isError());
+  Object b_obj(&scope, moduleAt(&runtime, "__main__", "B"));
+  ASSERT_TRUE(b_obj.isType());
+  Type b(&scope, *b_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(typeLookupNameInMro(thread, b, foo), 4));
+}
+
+TEST(TypeBuiltinsTest, TypeLookupNameInMroWithNonExistentNameReturnsError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  bar = 2
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(typeLookupNameInMro(thread, a, foo).isError());
+  EXPECT_TRUE(!thread->hasPendingException());
+}
+
+TEST(TypeBuiltinsTest, TypeLookupSymbolInMroReturnsValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  __add__ = 3
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  EXPECT_TRUE(isIntEqualsWord(
+      typeLookupSymbolInMro(thread, a, SymbolId::kDunderAdd), 3));
+}
+
 TEST(TypeBuiltinsTest, DunderCallReceivesExArgs) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

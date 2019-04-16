@@ -1192,56 +1192,6 @@ TEST(RuntimeStrTest, StrConcat) {
   EXPECT_TRUE(concat31.isLargeStr());
 }
 
-struct LookupNameInMroData {
-  const char* test_name;
-  const char* name;
-  RawObject expected;
-};
-
-static std::string lookupNameInMroTestName(
-    ::testing::TestParamInfo<LookupNameInMroData> info) {
-  return info.param.test_name;
-}
-
-class LookupNameInMroTest
-    : public ::testing::TestWithParam<LookupNameInMroData> {};
-
-TEST_P(LookupNameInMroTest, Lookup) {
-  Runtime runtime;
-  HandleScope scope;
-
-  auto create_class_with_attr = [&](const char* attr, word value) {
-    Type type(&scope, runtime.newType());
-    Dict dict(&scope, type.dict());
-    Object key(&scope, runtime.newStrFromCStr(attr));
-    Object val(&scope, SmallInt::fromWord(value));
-    runtime.dictAtPutInValueCell(dict, key, val);
-    return *type;
-  };
-
-  Tuple mro(&scope, runtime.newTuple(3));
-  mro.atPut(0, create_class_with_attr("foo", 2));
-  mro.atPut(1, create_class_with_attr("bar", 4));
-  mro.atPut(2, create_class_with_attr("baz", 8));
-
-  Type type(&scope, mro.at(0));
-  type.setMro(*mro);
-
-  auto param = GetParam();
-  Object key(&scope, runtime.newStrFromCStr(param.name));
-  RawObject result = runtime.lookupNameInMro(Thread::current(), type, key);
-  EXPECT_EQ(result, param.expected);
-}
-
-INSTANTIATE_TEST_CASE_P(
-    LookupNameInMro, LookupNameInMroTest,
-    ::testing::Values(
-        LookupNameInMroData{"OnInstance", "foo", SmallInt::fromWord(2)},
-        LookupNameInMroData{"OnParent", "bar", SmallInt::fromWord(4)},
-        LookupNameInMroData{"OnGrandParent", "baz", SmallInt::fromWord(8)},
-        LookupNameInMroData{"NonExistent", "xxx", Error::object()}),
-    lookupNameInMroTestName);
-
 TEST(RuntimeTypeCallTest, TypeCallNoInitMethod) {
   Runtime runtime;
   HandleScope scope;

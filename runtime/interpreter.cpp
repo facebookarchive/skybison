@@ -14,6 +14,7 @@
 #include "thread.h"
 #include "trampolines.h"
 #include "tuple-builtins.h"
+#include "type-builtins.h"
 
 namespace python {
 
@@ -52,8 +53,8 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
       // This does not use Runtime::isCallable because that would involve two
       // loads.
       Type type(&scope, runtime->typeOf(*callable));
-      Object attr(&scope, runtime->lookupSymbolInMro(thread, type,
-                                                     SymbolId::kDunderCall));
+      Object attr(&scope,
+                  typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall));
       if (!attr.isError()) {
         if (attr.isFunction()) {
           // Do not create a short-lived bound method object.
@@ -201,8 +202,8 @@ RawObject Interpreter::callDescriptorGet(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, runtime->lookupSymbolInMro(thread, descriptor_type,
-                                                   SymbolId::kDunderGet));
+  Object method(&scope, typeLookupSymbolInMro(thread, descriptor_type,
+                                              SymbolId::kDunderGet));
   DCHECK(!method.isError(), "no __get__ method found");
   return callMethod3(thread, caller, method, descriptor, receiver,
                      receiver_type);
@@ -215,8 +216,8 @@ RawObject Interpreter::callDescriptorSet(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, runtime->lookupSymbolInMro(thread, descriptor_type,
-                                                   SymbolId::kDunderSet));
+  Object method(&scope, typeLookupSymbolInMro(thread, descriptor_type,
+                                              SymbolId::kDunderSet));
   DCHECK(!method.isError(), "no __set__ method found");
   return callMethod3(thread, caller, method, descriptor, receiver, value);
 }
@@ -227,8 +228,8 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type descriptor_type(&scope, runtime->typeOf(*descriptor));
-  Object method(&scope, runtime->lookupSymbolInMro(thread, descriptor_type,
-                                                   SymbolId::kDunderDelete));
+  Object method(&scope, typeLookupSymbolInMro(thread, descriptor_type,
+                                              SymbolId::kDunderDelete));
   DCHECK(!method.isError(), "no __delete__ method found");
   return callMethod2(thread, caller, method, descriptor, receiver);
 }
@@ -238,7 +239,7 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* caller,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
-  Object method(&scope, runtime->lookupSymbolInMro(thread, type, selector));
+  Object method(&scope, typeLookupSymbolInMro(thread, type, selector));
   if (method.isFunction()) {
     // Do not create a short-lived bound method object.
     return *method;
@@ -979,8 +980,8 @@ bool Interpreter::doBinarySubscr(Context* ctx, word) {
   Object key(&scope, ctx->frame->popValue());
   Object container(&scope, ctx->frame->popValue());
   Type type(&scope, runtime->typeOf(*container));
-  Object getitem(&scope, runtime->lookupSymbolInMro(ctx->thread, type,
-                                                    SymbolId::kDunderGetitem));
+  Object getitem(&scope, typeLookupSymbolInMro(ctx->thread, type,
+                                               SymbolId::kDunderGetitem));
   if (getitem.isError()) {
     ctx->thread->raiseTypeErrorWithCStr("object does not support indexing");
     return unwind(ctx);

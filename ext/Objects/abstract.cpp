@@ -8,6 +8,7 @@
 #include "int-builtins.h"
 #include "list-builtins.h"
 #include "runtime.h"
+#include "type-builtins.h"
 
 namespace python {
 
@@ -236,8 +237,7 @@ static RawObject getIter(Thread* thread, const Object& obj) {
   }
   // If the object has __iter__, ensure that the resulting object has __next__.
   Type type(&scope, runtime->typeOf(*iter));
-  if (runtime->lookupSymbolInMro(thread, type, SymbolId::kDunderNext)
-          .isError()) {
+  if (typeLookupSymbolInMro(thread, type, SymbolId::kDunderNext).isError()) {
     return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
   }
   return *iter;

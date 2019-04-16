@@ -353,14 +353,14 @@ RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
   Type meta_type(&scope, typeOf(*receiver));
 
   // Look for the attribute in the meta class
-  Object meta_attr(&scope, lookupNameInMro(thread, meta_type, name));
+  Object meta_attr(&scope, typeLookupNameInMro(thread, meta_type, name));
   if (!meta_attr.isError() && isDataDescriptor(thread, meta_attr)) {
     return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
                                           meta_attr, type, meta_type);
   }
 
   // No data descriptor found on the meta class, look in the mro of the type
-  Object attr(&scope, lookupNameInMro(thread, type, name));
+  Object attr(&scope, typeLookupNameInMro(thread, type, name));
   if (!attr.isError()) {
     if (isNonDataDescriptor(thread, attr)) {
       // Unfortunately calling `__get__` for a lookup on `type(None)` will look
@@ -417,7 +417,7 @@ RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
 
   // Check for a data descriptor
   Type metatype(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, lookupNameInMro(thread, metatype, name));
+  Object meta_attr(&scope, typeLookupNameInMro(thread, metatype, name));
   if (!meta_attr.isError()) {
     if (isDataDescriptor(thread, meta_attr)) {
       // TODO(T25692531): Call __set__ from meta_attr
@@ -453,7 +453,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
   // Check for a delete descriptor
   Type metatype(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, lookupNameInMro(thread, metatype, name));
+  Object meta_attr(&scope, typeLookupNameInMro(thread, metatype, name));
   if (!meta_attr.isError()) {
     if (isDeleteDescriptor(thread, meta_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -480,7 +480,7 @@ RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
   // Look for the attribute in the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupNameInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDataDescriptor(thread, type_attr)) {
       Object owner(&scope, *type);
@@ -528,7 +528,7 @@ RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
   // Check for a data descriptor
   HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupNameInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDataDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorSet(thread, thread->currentFrame(),
@@ -552,7 +552,7 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   // Check for a descriptor with __delete__
   HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupNameInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -645,7 +645,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // Check for a descriptor with __delete__
   HandleScope scope(thread);
   Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, lookupNameInMro(thread, type, name));
+  Object type_attr(&scope, typeLookupNameInMro(thread, type, name));
   if (!type_attr.isError()) {
     if (isDeleteDescriptor(thread, type_attr)) {
       return Interpreter::callDescriptorDelete(thread, thread->currentFrame(),
@@ -679,35 +679,37 @@ bool Runtime::isCallable(Thread* thread, const Object& obj) {
     return true;
   }
   Type type(&scope, typeOf(*obj));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderCall).isError();
+  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall).isError();
 }
 
 bool Runtime::isDataDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderSet).isError();
+  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderSet).isError();
 }
 
 bool Runtime::isNonDataDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGet).isError();
+  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderGet).isError();
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
   // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderDelete).isError();
+  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderDelete)
+              .isError();
 }
 
 bool Runtime::isMapping(Thread* thread, const Object& obj) {
   if (obj.isDict()) return true;
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetitem).isError();
+  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetitem)
+              .isError();
 }
 
 bool Runtime::isSequence(Thread* thread, const Object& obj) {
@@ -716,7 +718,8 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
   }
   HandleScope scope(thread);
   Type type(&scope, typeOf(*obj));
-  return !lookupSymbolInMro(thread, type, SymbolId::kDunderGetitem).isError();
+  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetitem)
+              .isError();
 }
 
 RawObject Runtime::newEmptyCode() {
@@ -3255,21 +3258,6 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
   return *layout;
 }
 
-RawObject Runtime::lookupNameInMro(Thread* thread, const Type& type,
-                                   const Object& name) {
-  HandleScope scope(thread);
-  Tuple mro(&scope, type.mro());
-  for (word i = 0; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
-    Dict dict(&scope, mro_type.dict());
-    Object value_cell(&scope, dictAt(dict, name));
-    if (!value_cell.isError()) {
-      return RawValueCell::cast(*value_cell).value();
-    }
-  }
-  return Error::object();
-}
-
 RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
                                const Object& name) {
   if (!name.isStr()) {
@@ -3337,7 +3325,7 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
   // If present, __delattr__ overrides all attribute deletion logic.
   Type type(&scope, typeOf(*receiver));
   Object dunder_delattr(
-      &scope, lookupSymbolInMro(thread, type, SymbolId::kDunderDelattr));
+      &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderDelattr));
   RawObject result;
   if (!dunder_delattr.isError()) {
     result = Interpreter::callMethod2(thread, thread->currentFrame(),
@@ -3990,22 +3978,6 @@ void Runtime::freeApiHandles() {
     std::free(handle);
     Dict::Bucket::setTombstone(*buckets, i);
   }
-}
-
-RawObject Runtime::lookupSymbolInMro(Thread* thread, const Type& type,
-                                     SymbolId symbol) {
-  HandleScope scope(thread);
-  Tuple mro(&scope, type.mro());
-  Object key(&scope, symbols()->at(symbol));
-  for (word i = 0; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
-    Dict dict(&scope, mro_type.dict());
-    Object value_cell(&scope, dictAt(dict, key));
-    if (!value_cell.isError()) {
-      return RawValueCell::cast(*value_cell).value();
-    }
-  }
-  return Error::object();
 }
 
 RawObject Runtime::iteratorLengthHint(Thread* thread, const Object& iterator) {

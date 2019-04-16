@@ -3,6 +3,7 @@
 
 #include "float-builtins.h"
 #include "runtime.h"
+#include "type-builtins.h"
 
 namespace python {
 
@@ -58,8 +59,8 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
   // Try calling __complex__
   Frame* frame = thread->currentFrame();
   Type type(&scope, runtime->typeOf(*obj));
-  Object comp_method(&scope, runtime->lookupSymbolInMro(
-                                 thread, type, SymbolId::kDunderComplex));
+  Object comp_method(
+      &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderComplex));
   if (!comp_method.isError()) {
     Object result(&scope,
                   Interpreter::callMethod1(thread, frame, comp_method, obj));

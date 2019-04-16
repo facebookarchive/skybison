@@ -11,6 +11,29 @@
 
 namespace python {
 
+RawObject typeLookupNameInMro(Thread* thread, const Type& type,
+                              const Object& name_str) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple mro(&scope, type.mro());
+  for (word i = 0; i < mro.length(); i++) {
+    Type mro_type(&scope, mro.at(i));
+    Dict dict(&scope, mro_type.dict());
+    Object value(&scope, runtime->typeDictAt(dict, name_str));
+    if (!value.isError()) {
+      return *value;
+    }
+  }
+  return Error::object();
+}
+
+RawObject typeLookupSymbolInMro(Thread* thread, const Type& type,
+                                SymbolId symbol) {
+  HandleScope scope(thread);
+  Object symbol_str(&scope, thread->runtime()->symbols()->at(symbol));
+  return typeLookupNameInMro(thread, type, symbol_str);
+}
+
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict) {
   HandleScope scope(thread);

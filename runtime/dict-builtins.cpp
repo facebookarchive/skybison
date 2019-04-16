@@ -7,6 +7,7 @@
 #include "runtime.h"
 #include "thread.h"
 #include "trampolines-inl.h"
+#include "type-builtins.h"
 
 namespace python {
 
@@ -455,8 +456,7 @@ RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
   }
   Dict dict(&scope, *self);
   Type other_type(&scope, runtime->typeOf(*other));
-  if (!runtime->lookupSymbolInMro(thread, other_type, SymbolId::kKeys)
-           .isError()) {
+  if (!typeLookupSymbolInMro(thread, other_type, SymbolId::kKeys).isError()) {
     return dictMergeOverride(thread, dict, other);
   }
 

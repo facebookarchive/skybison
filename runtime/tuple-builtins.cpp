@@ -8,6 +8,7 @@
 #include "slice-builtins.h"
 #include "thread.h"
 #include "trampolines-inl.h"
+#include "type-builtins.h"
 
 namespace python {
 
@@ -394,9 +395,9 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // If the iterator has a __length_hint__, use that as max_len to avoid
   // resizes.
   Type iter_type(&scope, runtime->typeOf(*iterator));
-  Object length_hint(&scope,
-                     runtime->lookupSymbolInMro(thread, iter_type,
-                                                SymbolId::kDunderLengthHint));
+  Object length_hint(
+      &scope,
+      typeLookupSymbolInMro(thread, iter_type, SymbolId::kDunderLengthHint));
   if (length_hint.isSmallInt()) {
     max_len = RawSmallInt::cast(*length_hint).value();
   }

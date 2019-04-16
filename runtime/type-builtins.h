@@ -8,6 +8,16 @@
 
 namespace python {
 
+// Looks up `name` in the dict of each entry in type's MRO. Returns an `Error`
+// object if the name wasn't found.
+RawObject typeLookupNameInMro(Thread* thread, const Type& type,
+                              const Object& name_str);
+
+// Looks up `symbol` in the dict of each entry in type's MRO. Returns an `Error`
+// object if the name wasn't found.
+RawObject typeLookupSymbolInMro(Thread* thread, const Type& type,
+                                SymbolId symbol);
+
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict);
 // Returns the "user-visible" type of an object. This hides the smallint,
