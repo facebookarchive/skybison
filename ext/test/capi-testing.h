@@ -24,7 +24,7 @@ class PyObjectPtr {
     Py_XDECREF(obj_);
     obj_ = obj;
     return *this;
-  };
+  }
 
   operator PyObject*() const { return obj_; }
 

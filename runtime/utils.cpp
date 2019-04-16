@@ -68,7 +68,7 @@ class TracebackPrinter : public FrameVisitor {
     }
 
     lines_.emplace_back(line.str());
-  };
+  }
 
   void print(FILE* fp) {
     fprintf(fp, "Traceback (most recent call last)\n");
