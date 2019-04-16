@@ -74,6 +74,8 @@ set(
   -Wpedantic
   -Wshadow
   -fno-exceptions
+  -fno-omit-frame-pointer
+  -fno-optimize-sibling-calls
   -fno-rtti
 )
 
