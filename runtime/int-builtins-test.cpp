@@ -3520,84 +3520,54 @@ bar = Bar()
   }
 }
 
-TEST(SmallIntBuiltinsTest, DunderTrueDivZeroDivisionRaisesZeroDivisonError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = 0.0
-a / b
-)"),
-                            LayoutId::kZeroDivisionError,
-                            "float division by zero"));
-}
-
-TEST(SmallIntBuiltinsTest, DunderTrueDivWithBoolFalseRaisesZeroDivisionError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = False
-a / b
-)"),
-                            LayoutId::kZeroDivisionError, "division by zero"));
-}
-
-TEST(SmallIntBuiltinsTest, DunderTrueDivWithIntZeroRaisesZeroDivisionError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-a = 10
-b = 0
-a / b
-)"),
-                            LayoutId::kZeroDivisionError, "division by zero"));
-}
-
-TEST(SmallIntBuiltinsTest, DunderTrueDivWithFloat) {
+TEST(IntBuiltinsTest, DunderTrueDivWithZeroLeftReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  Int hundred(&scope, SmallInt::fromWord(100));
-
-  // Test dividing a positive smallint by a positive float
-  Float float1(&scope, runtime.newFloat(1.5));
-  Float result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, hundred, float1));
-  EXPECT_NEAR(result.value(), 66.66666666666667, DBL_EPSILON);
-
-  // Test dividing a positive smallint by a negative float
-  Float float2(&scope, runtime.newFloat(-1.5));
-  Float result1(&scope,
-                runBuiltin(IntBuiltins::dunderTrueDiv, hundred, float2));
-  EXPECT_NEAR(result1.value(), -66.66666666666667, DBL_EPSILON);
-
-  // Test dividing a positive smallint by infinity
-  Float float_inf(&scope, runtime.newFloat(INFINITY));
-  Float result2(&scope,
-                runBuiltin(IntBuiltins::dunderTrueDiv, hundred, float_inf));
-  EXPECT_NEAR(result2.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing a positive smallint by negative infinity
-  Float neg_float_inf(&scope, runtime.newFloat(-INFINITY));
-  Float result3(&scope,
-                runBuiltin(IntBuiltins::dunderTrueDiv, hundred, neg_float_inf));
-  EXPECT_NEAR(result3.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing a negative smallint by infinity
-  Int minus_hundred(&scope, SmallInt::fromWord(-100));
-  Float result4(
-      &scope, runBuiltin(IntBuiltins::dunderTrueDiv, minus_hundred, float_inf));
-  EXPECT_NEAR(result4.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing a negative smallint by negative infinity
-  Float result5(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, minus_hundred,
-                                   neg_float_inf));
-  EXPECT_NEAR(result5.value(), 0.0, DBL_EPSILON);
-
-  // Test dividing negative smallint by nan
-  Float nan(&scope, runtime.newFloat(NAN));
-  Float result6(&scope,
-                runBuiltin(IntBuiltins::dunderTrueDiv, minus_hundred, nan));
-  EXPECT_TRUE(std::isnan(result6.value()));
+  Int left(&scope, SmallInt::fromWord(0));
+  Int right(&scope, SmallInt::fromWord(17));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, left, right));
+  ASSERT_TRUE(result.isFloat());
+  Float flt(&scope, *result);
+  EXPECT_EQ(flt.value(), 0.0);
 }
 
-TEST(SmallIntBuiltinsTest, DunderTrueDivWithSmallInt) {
+TEST(IntBuiltinsTest, DunderTrueDivWithBoolFalseRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object numerator(&scope, SmallInt::fromWord(10));
+  Object denominator(&scope, Bool::falseObj());
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(IntBuiltins::dunderTrueDiv, numerator, denominator),
+      LayoutId::kZeroDivisionError, "division by zero"));
+}
+
+TEST(IntBuiltinsTest, DunderTrueDivWithIntZeroRaisesZeroDivisionError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object numerator(&scope, SmallInt::fromWord(10));
+  Object denominator(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(IntBuiltins::dunderTrueDiv, numerator, denominator),
+      LayoutId::kZeroDivisionError, "division by zero"));
+}
+
+TEST(IntBuiltinsTest, DunderTrueDivWithNonIntLeftRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "int.__truediv__(1.0, 2)"), LayoutId::kTypeError,
+      "'__truediv__' requires a 'int' object but got 'float'"));
+}
+
+TEST(IntBuiltinsTest, DunderTrueDivWithFloatRightReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object left(&scope, SmallInt::fromWord(100));
+  Object right(&scope, runtime.newFloat(1.5));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderTrueDiv, left, right));
+  EXPECT_EQ(result, NotImplementedType::object());
+}
+
+TEST(IntBuiltinsTest, DunderTrueDivWithSmallIntsReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 

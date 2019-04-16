@@ -386,37 +386,6 @@ RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
                      RawBool::cast(args.get(3)).value());
 }
 
-RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
-  RawObject self = args.get(0);
-  RawObject other = args.get(1);
-  // TODO(T38780562): Handle Int subclasses
-  if (!self.isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__truediv__() must be called with int instance as first argument");
-  }
-  word left = RawSmallInt::cast(self).value();
-  if (other.isFloat()) {
-    double right = RawFloat::cast(other).value();
-    if (right == 0.0) {
-      return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
-    }
-    return runtime->newFloat(left / right);
-  }
-  if (other.isBool()) {
-    other = convertBoolToInt(other);
-  }
-  if (other.isInt()) {
-    word right = RawInt::cast(other).asWord();
-    if (right == 0) {
-      return thread->raiseZeroDivisionErrorWithCStr("division by zero");
-    }
-    return runtime->newFloat(left / static_cast<double>(right));
-  }
-  return NotImplementedType::object();
-}
-
 RawObject IntBuiltins::dunderLt(Thread* t, Frame* frame, word nargs) {
   return intBinaryOp(
       t, frame, nargs,
@@ -491,6 +460,20 @@ RawObject IntBuiltins::dunderSub(Thread* t, Frame* frame, word nargs) {
   return intBinaryOp(
       t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
         return thread->runtime()->intSubtract(thread, left, right);
+      });
+}
+
+RawObject IntBuiltins::dunderTrueDiv(Thread* t, Frame* frame, word nargs) {
+  return intBinaryOp(
+      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+        if (right.isZero()) {
+          return thread->raiseZeroDivisionErrorWithCStr("division by zero");
+        }
+        if (left.isLargeInt() || right.isLargeInt()) {
+          UNIMPLEMENTED("true division of LargeInts");  // TODO(T40072578)
+        }
+        return thread->runtime()->newFloat(static_cast<double>(left.asWord()) /
+                                           right.asWord());
       });
 }
 
