@@ -3,6 +3,72 @@ import unittest
 
 
 class StrTests(unittest.TestCase):
+    def test_format_single_open_curly_brace_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.format("{")
+        self.assertEqual(
+            str(context.exception), "Single '{' encountered in format string"
+        )
+
+    def test_format_single_close_curly_brace_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.format("}")
+        self.assertEqual(
+            str(context.exception), "Single '}' encountered in format string"
+        )
+
+    def test_format_index_out_of_args_raises_index_error(self):
+        with self.assertRaises(IndexError) as context:
+            str.format("{1}", 4)
+        self.assertEqual(str(context.exception), "tuple index out of range")
+
+    def test_format_not_existing_key_in_kwargs_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            str.format("{a}", b=4)
+        self.assertEqual(str(context.exception), "'a'")
+
+    def test_format_not_index_field_not_in_kwargs_raises_key_error(self):
+        with self.assertRaises(KeyError) as context:
+            str.format("{-1}", b=4)
+        self.assertEqual(str(context.exception), "'-1'")
+
+    def test_format_str_without_field_returns_itself(self):
+        result = str.format("no field added")
+        self.assertEqual(result, "no field added")
+
+    def test_format_double_open_curly_braces_returns_single(self):
+        result = str.format("{{")
+        self.assertEqual(result, "{")
+
+    def test_format_double_close_open_curly_braces_returns_single(self):
+        result = str.format("}}")
+        self.assertEqual(result, "}")
+
+    def test_format_auto_index_field_returns_str_replaced_for_matching_args(self):
+        result = str.format("a{}b{}c", 0, 1)
+        self.assertEqual(result, "a0b1c")
+
+    def test_format_auto_index_field_with_explicit_index_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            str.format("a{}b{0}c", 0)
+        self.assertEqual(
+            str(context.exception),
+            "cannot switch from automatic field numbering to manual "
+            "field specification",
+        )
+
+    def test_format_auto_index_field_with_keyword_returns_formatted_str(self):
+        result = str.format("a{}b{keyword}c{}d", 0, 1, keyword=888)
+        self.assertEqual(result, "a0b888c1d")
+
+    def test_format_explicit_index_fields_returns_formatted_str(self):
+        result = str.format("a{2}b{1}c{0}d{1}e", 0, 1, 2)
+        self.assertEqual(result, "a2b1c0d1e")
+
+    def test_format_keyword_fields_returns_formatted_str(self):
+        result = str.format("1{a}2{b}3{c}4{b}5", a="a", b="b", c="c")
+        self.assertEqual(result, "1a2b3c4b5")
+
     def test_splitlines_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.splitlines(None)

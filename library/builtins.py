@@ -2479,7 +2479,9 @@ class str(bootstrap=True):
         return _str_find(self, sub, start, end)
 
     def format(self, *args, **kwargs):
-        _unimplemented()
+        import _str_format
+
+        return _str_format.str_format(self, args, kwargs)
 
     def format_map(self, mapping):
         _unimplemented()
