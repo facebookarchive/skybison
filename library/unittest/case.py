@@ -231,6 +231,7 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
         # store exception, without traceback, for later retrieval
         # TODO(T42598618): with_traceback
         # self.exception = exc_value.with_traceback(None)
+        self.exception = exc_value
         if self.expected_regex is None:
             return True
 
