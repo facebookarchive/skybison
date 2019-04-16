@@ -1748,9 +1748,36 @@ void Runtime::initializeInterned() { interned_ = newSet(); }
 void Runtime::initializeRandom() {
   uword random_state[2];
   uword hash_secret[2];
-  OS::secureRandom(reinterpret_cast<byte*>(&random_state),
-                   sizeof(random_state));
-  OS::secureRandom(reinterpret_cast<byte*>(&hash_secret), sizeof(hash_secret));
+  // TODO(T43142858) Replace getenv with a configuration system.
+  const char* hashseed = std::getenv("PYTHONHASHSEED");
+  if (hashseed == nullptr || std::strcmp(hashseed, "random") == 0) {
+    OS::secureRandom(reinterpret_cast<byte*>(&random_state),
+                     sizeof(random_state));
+    OS::secureRandom(reinterpret_cast<byte*>(&hash_secret),
+                     sizeof(hash_secret));
+  } else {
+    char* endptr;
+    unsigned long seed = std::strtoul(hashseed, &endptr, 10);
+    if (*endptr != '\0' || seed > 4294967295 ||
+        (seed == ULONG_MAX && errno == ERANGE)) {
+      std::fprintf(stderr,
+                   "Fatal Python error: PYTHONHASHSEED must be "
+                   "\"random\" or an integer in range [0; 4294967295]");
+      std::exit(EXIT_FAILURE);
+    }
+    // Splitmix64 as suggested by http://http://xoshiro.di.unimi.it.
+    uword state = static_cast<uword>(seed);
+    auto next = [&state]() {
+      uword z = (state += 0x9e3779b97f4a7c15);
+      z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
+      z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
+      return z ^ (z >> 31);
+    };
+    random_state[0] = next();
+    random_state[1] = next();
+    hash_secret[0] = next();
+    hash_secret[1] = next();
+  }
   seedRandom(random_state, hash_secret);
 }
 
@@ -2475,6 +2502,7 @@ std::unique_ptr<char[]> Runtime::compile(View<char> src, const char* filename) {
             reinterpret_cast<const uint8_t*>(seed),
             reinterpret_cast<uint8_t*>(&hash), sizeof(hash));
 
+  // TODO(T43142858) Replace getenv with a configuration system.
   const char* cache_env = OS::getenv("PYRO_CACHE_DIR");
   std::string cache_dir;
   if (cache_env != nullptr) {

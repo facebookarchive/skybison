@@ -67,13 +67,16 @@ def compile_benchmark(build_dir, benchmark):
 
 
 def run_benchmark(build_dir, python_bin, benchmark_pyc):
+    env = dict(os.environ)
+    env["PYTHONHASHSEED"] = "0"
+
     # We execute measure_command.py instead of importing it, so users see it
     # in the log and can replicate the command.
     command = [f"{PYRO_PATH}/util/measure_command.py", "--time"]
     if logging.root.level <= logging.DEBUG:
         command += ["-v"]
     command += ["--", python_bin, benchmark_pyc]
-    completed_process = run(command, cwd=build_dir, stdout=subprocess.PIPE)
+    completed_process = run(command, cwd=build_dir, stdout=subprocess.PIPE, env=env)
     completed_process.check_returncode()
     return json.loads(completed_process.stdout)
 

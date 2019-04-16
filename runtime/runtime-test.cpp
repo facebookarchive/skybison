@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include <cstdlib>
 #include <memory>
 
 #include "bytecode.h"
@@ -804,6 +805,32 @@ TEST(RuntimeTest, HashStr) {
   Str str3(&scope, runtime.newStrFromCStr("testing 123"));
   RawSmallInt hash3 = RawSmallInt::cast(runtime.hash(*str3));
   EXPECT_EQ(hash1, hash3);
+}
+
+TEST(RuntimeTest, InitializeRandomSetsRandomRandomRNGSeed) {
+  ::unsetenv("PYTHONHASHSEED");
+  Runtime runtime0;
+  uword r0 = runtime0.random();
+  Runtime runtime1;
+  uword r1 = runtime1.random();
+  Runtime runtime2;
+  uword r2 = runtime2.random();
+  // Having 3 random numbers be the same will practically never happen.
+  EXPECT_TRUE(r0 != r1 || r0 != r2);
+}
+
+TEST(RuntimeTest,
+     InitializeRandomWithPyroHashSeedEnvVarSetsDeterministicRNGSeed) {
+  ::setenv("PYTHONHASHSEED", "0", 1);
+  Runtime runtime0;
+  uword r0_a = runtime0.random();
+  uword r0_b = runtime0.random();
+  Runtime runtime1;
+  uword r1_a = runtime1.random();
+  uword r1_b = runtime1.random();
+  EXPECT_EQ(r0_a, r1_a);
+  EXPECT_EQ(r0_b, r1_b);
+  ::unsetenv("PYTHONHASHSEED");
 }
 
 TEST(RuntimeTest, Random) {
