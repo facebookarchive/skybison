@@ -276,14 +276,14 @@ RawObject ListBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfList(*self)) {
+  if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
   if (list.numItems() > 0) {
-    list.setItems(runtime->newTuple(0));
     list.setNumItems(0);
+    Tuple items(&scope, list.items());
+    items.fill(NoneType::object());
   }
   return NoneType::object();
 }

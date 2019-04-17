@@ -1729,4 +1729,29 @@ list.clear(ls)
   EXPECT_PYLIST_EQ(ls, {});
 }
 
+TEST(ListBuiltinsTest, ClearRemovesAllElements) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  pass
+l = [C()]
+)")
+                   .isError());
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  List list(&scope, moduleAt(&runtime, "__main__", "l"));
+  Object ref_obj(&scope, NoneType::object());
+  {
+    Object none(&scope, NoneType::object());
+    Object c(&scope, list.at(0));
+    ref_obj = runtime.newWeakRef(thread, c, none);
+  }
+  WeakRef ref(&scope, *ref_obj);
+  EXPECT_NE(ref.referent(), NoneType::object());
+  runBuiltin(ListBuiltins::clear, list);
+  runtime.collectGarbage();
+  EXPECT_EQ(ref.referent(), NoneType::object());
+}
+
 }  // namespace python
