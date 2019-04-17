@@ -337,6 +337,8 @@ target_link_libraries(
   frozen-modules
   dl
   siphash)
+# TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
+target_compile_definitions(runtime PRIVATE PYRO_BASEDIR=\"${CMAKE_SOURCE_DIR}\")
 
 add_library(
   extension
