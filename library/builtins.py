@@ -430,6 +430,11 @@ def _str_find(self, sub, start, end):
 
 
 @_patch
+def _str_from_str(cls: type, value: str) -> str:
+    pass
+
+
+@_patch
 def _str_replace(self, old, newstr, count):
     pass
 
@@ -687,7 +692,9 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def decode(self, encoding="utf-8", errors="strict"):
-        _unimplemented()
+        import _codecs
+
+        return _codecs.decode(self, encoding, errors)
 
     def endswith(self, suffix, start=_Unbound, end=_Unbound):
         _unimplemented()
@@ -2419,21 +2426,40 @@ class str(bootstrap=True):
     def __ne__(self, other):
         pass
 
-    def __new__(cls, obj="", encoding=_Unbound, errors=_Unbound):
+    def __new__(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
         if not isinstance(cls, type):
             raise TypeError("cls is not a type object")
         if not issubclass(cls, str):
             raise TypeError("cls is not a subtype of str")
-        if cls != str:
-            _unimplemented()
-        if type(obj) is str and obj == "":
-            return obj
-        if encoding != _Unbound or errors != _Unbound:
-            _unimplemented()
-        result = type(obj).__str__(obj)
-        if not isinstance(result, str):
-            raise TypeError("__str__ returned non-str instance")
-        return result
+        if obj is _Unbound:
+            return _str_from_str(cls, "")
+        if encoding is _Unbound and errors is _Unbound:
+            if type(obj) is str:
+                return _str_from_str(cls, obj)
+            try:
+                result = type(obj).__str__(obj)
+                if not isinstance(result, str):
+                    raise TypeError(
+                        "__str__ returned non-string '{type(obj).__name__}'"
+                    )
+                return _str_from_str(cls, result)
+            except AttributeError:
+                return _str_from_str(cls, type(obj).__repr__(obj))
+        if isinstance(obj, str):
+            raise TypeError("decoding str is not supported")
+        # TODO(T38246066): Replace with a check for the buffer protocol
+        if not isinstance(obj, (bytes, bytearray)):
+            raise TypeError(
+                "decoding to str: need a bytes-like object, "
+                f"'{type(obj).__name__}' found"
+            )
+        import _codecs
+
+        if errors is _Unbound:
+            return _str_from_str(cls, _codecs.decode(obj, encoding))
+        if encoding is _Unbound:
+            return _str_from_str(cls, _codecs.decode(obj, errors=errors))
+        return _str_from_str(cls, _codecs.decode(obj, encoding, errors))
 
     def __repr__(self):
         pass

@@ -98,6 +98,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderReprLeave, underReprLeave},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
+    {SymbolId::kUnderStrFromStr, underStrFromStr},
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
@@ -1063,6 +1064,17 @@ RawObject BuiltinsModule::underStrFind(Thread* thread, Frame* frame,
   word end = end_obj.isNoneType() ? kMaxWord
                                   : RawInt::cast(*end_obj).asWordSaturated();
   return strFind(haystack, needle, start, end);
+}
+
+RawObject BuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
+                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Str value(&scope, args.get(1));
+  DCHECK(type.builtinBase() == LayoutId::kStr, "type must subclass str");
+  if (type.isBuiltin()) return *value;
+  UNIMPLEMENTED("subclass of str");  // TODO(T36619828)
 }
 
 RawObject BuiltinsModule::underStrReplace(Thread* thread, Frame* frame,

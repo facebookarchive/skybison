@@ -51,6 +51,7 @@ class BuiltinsModule {
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrFromStr(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);

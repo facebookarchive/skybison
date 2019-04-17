@@ -456,6 +456,7 @@ class Runtime;
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
+  V(UnderStrFromStr, "_str_from_str")                                          \
   V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRFind, "_str_rfind")                                               \
   V(UnderStrSplitlines, "_str_splitlines")                                     \
