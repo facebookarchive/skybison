@@ -11,4 +11,4 @@ if [[ ! -f "$CPYTHON_BIN" ]]; then
   exit 1
 fi
 
-PYTHON_BIN="$CPYTHON_BIN" FIND_FILTER="[a-zA-Z]*_test.py" ./python-tests-pyro.sh "$@"
+PYTHON_BIN="$CPYTHON_BIN" FIND_FILTER="[a-zA-Z]*_test.py" ./python_tests_pyro.sh "$@"

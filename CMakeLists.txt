@@ -608,5 +608,5 @@ add_custom_command(
   COMMAND cp -a ${CPYTHON_DIR}/Lib/. ${CPYTHON_BUILD_DIR}/Lib/)
 
 # Copy scripts to run python tests
-file(COPY util/python-tests-pyro.sh DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY util/python-tests-cpython.sh DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY util/python_tests_pyro.sh DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY util/python_tests_cpython.sh DESTINATION ${CMAKE_BINARY_DIR})
