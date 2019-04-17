@@ -967,4 +967,17 @@ TEST(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(list, NoneType::object());
 }
 
+TEST(TupleTest, NoneFillTupleFillsTupleWithNone) {
+  Runtime runtime;
+  HandleScope scope;
+  Tuple tuple(&scope, runtime.newTuple(3));
+  tuple.atPut(0, SmallInt::fromWord(0));
+  tuple.atPut(1, SmallInt::fromWord(1));
+  tuple.atPut(2, SmallInt::fromWord(2));
+  tuple.fill(NoneType::object());
+  EXPECT_TRUE(tuple.at(0).isNoneType());
+  EXPECT_TRUE(tuple.at(1).isNoneType());
+  EXPECT_TRUE(tuple.at(2).isNoneType());
+}
+
 }  // namespace python

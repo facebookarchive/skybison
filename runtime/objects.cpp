@@ -328,6 +328,14 @@ void RawTuple::copyTo(RawObject array) const {
   }
 }
 
+void RawTuple::fill(RawObject value) const {
+  DCHECK(header().hashCode() == 0,
+         "tuple has been hashed and cannot be modified");
+  for (word i = 0; i < length(); i++) {
+    atPut(i, value);
+  }
+}
+
 void RawTuple::replaceFromWith(word start, RawObject array) const {
   RawTuple src = RawTuple::cast(array);
   word count = Utils::minimum(this->length() - start, src.length());

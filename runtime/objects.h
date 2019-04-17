@@ -1132,6 +1132,8 @@ class RawTuple : public RawArray {
 
   void copyTo(RawObject dst) const;
 
+  void fill(RawObject value) const;
+
   void replaceFromWith(word start, RawObject array) const;
 
   bool contains(RawObject object) const;
