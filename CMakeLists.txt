@@ -381,6 +381,20 @@ target_link_libraries(
   runtime
   modules)
 
+add_executable(
+  test_lldb_support
+  EXCLUDE_FROM_ALL
+  util/test_lldb_support.cpp)
+target_link_libraries(
+  test_lldb_support
+  PRIVATE
+  runtime
+  modules)
+target_include_directories(
+  test_lldb_support
+  PRIVATE
+  runtime)
+
 add_library(
   runtime-tests
   STATIC

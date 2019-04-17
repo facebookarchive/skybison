@@ -1,0 +1,8 @@
+command script import util/lldb_support.py
+type summary add -F lldb_support.format_raw_object -p -x "python::Raw.*"
+
+run
+frame select 3
+frame variable
+
+exit
