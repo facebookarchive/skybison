@@ -1,14 +1,19 @@
 #!/bin/bash
 
-# Add .exe for cpython's MacOS binary
-CPYTHON_BIN="third-party/cpython/python"
-if [ "$(uname)" == "Darwin" ]; then
-  CPYTHON_BIN="$CPYTHON_BIN.exe"
+if [[ -z $BUILD_DIR ]]; then
+  BUILD_DIR="$(dirname "$0")/../build"
 fi
 
-if [[ ! -f "$CPYTHON_BIN" ]]; then
-  echo "Please build using 'make cpython-tests'"
+# Add .exe for cpython's MacOS binary
+CPYTHON_BIN="$BUILD_DIR/third-party/cpython/python"
+if [[ "$(uname)" == "Darwin" ]]; then
+  CPYTHON_BIN+=".exe"
+fi
+
+if [[ ! -x "$CPYTHON_BIN" ]]; then
+  echo "$CPYTHON_BIN is not executable. Please build using 'make compile-cpython'" 1>&2
   exit 1
 fi
 
-PYTHON_BIN="$CPYTHON_BIN" FIND_FILTER="[a-zA-Z]*_test.py" ./python_tests_pyro.sh "$@"
+BUILD_DIR="$BUILD_DIR" PYTHON_BIN="$CPYTHON_BIN" FIND_FILTER="[a-zA-Z]*_test.py" \
+  "$(dirname "$0")/python_tests_pyro.sh" "$@"
