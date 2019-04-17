@@ -413,6 +413,7 @@ class Runtime;
   V(UnderAddress, "_address")                                                  \
   V(UnderAsciiDecode, "_ascii_decode")                                         \
   V(UnderBases, "_bases")                                                      \
+  V(UnderBaseDir, "_base_dir")                                                 \
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \

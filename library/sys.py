@@ -2,10 +2,10 @@
 """The sys module"""
 
 
-# This is the patch decorator, injected by our boot process. flake8 has no
-# knowledge about its definition and will complain without this gross circular
-# helper here.
+# These values are all injected by our boot process. flake8 has no knowledge
+# about their definitions and will complain without these lines.
 _Unbound = _Unbound  # noqa: F821
+_base_dir = _base_dir  # noqa: F821
 _patch = _patch  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
@@ -56,7 +56,6 @@ def getfilesystemencodeerrors():
 meta_path = []
 
 
-_base_dir = executable[: executable.rfind("/")] + "/.."
 # TODO(T42692043) Put the standard library into the python binary instead.
 path = ["", _base_dir + "/library", _base_dir + "/third-party/cpython/Lib"]
 

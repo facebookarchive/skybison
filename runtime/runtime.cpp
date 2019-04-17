@@ -2188,6 +2188,17 @@ void Runtime::createSysModule(Thread* thread) {
   Object stdout_fd_val(&scope, SmallInt::fromWord(kStdoutFd));
   moduleAddGlobal(module, SymbolId::kUnderStdoutFd, stdout_fd_val);
 
+  // TODO(T42692043): This awkwardness should go away once we freeze the
+  // standard library into the binary and/or support PYTHONPATH.
+  std::string filename(__FILE__);
+  std::string suffix("/pyro");
+  auto dir_pos = filename.rfind(suffix);
+  CHECK(dir_pos != std::string::npos, "Couldn't find suffix %s in filename %s",
+        suffix.c_str(), filename.c_str());
+  Object path(&scope, newStrFromCStr(
+                          filename.substr(0, dir_pos + suffix.size()).c_str()));
+  moduleAddGlobal(module, SymbolId::kUnderBaseDir, path);
+
   Object byteorder(
       &scope,
       newStrFromCStr(endian::native == endian::little ? "little" : "big"));
