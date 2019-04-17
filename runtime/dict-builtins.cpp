@@ -239,6 +239,7 @@ const BuiltinAttribute DictBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kClear, clear},
     {SymbolId::kDunderDelitem, dunderDelItem},
     {SymbolId::kDunderEq, dunderEq},
     {SymbolId::kDunderIter, dunderIter},
@@ -252,6 +253,22 @@ const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
     {SymbolId::kValues, values},
     {SymbolId::kSentinelId, nullptr},
 };
+
+RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfDict(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kDict);
+  }
+  Dict dict(&scope, *self);
+  if (dict.numItems() > 0) {
+    dict.setNumItems(0);
+    Tuple data(&scope, dict.data());
+    data.fill(NoneType::object());
+  }
+  return NoneType::object();
+}
 
 RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
                                       word nargs) {

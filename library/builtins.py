@@ -1155,6 +1155,9 @@ class dict(bootstrap=True):
     def __setitem__(self, key, value):
         pass
 
+    def clear(self):
+        pass
+
     def copy(self):
         if not isinstance(self, dict):
             raise TypeError(f"expected 'dict' instance but got {type(self).__name__}")

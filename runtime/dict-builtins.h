@@ -47,6 +47,7 @@ RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter);
 class DictBuiltins
     : public Builtins<DictBuiltins, SymbolId::kDict, LayoutId::kDict> {
  public:
+  static RawObject clear(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);

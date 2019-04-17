@@ -9,6 +9,32 @@ namespace python {
 
 using namespace testing;
 
+TEST(DictBuiltinsTest, ClearRemovesAllElements) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  pass
+d = {'a': C()}
+)")
+                   .isError());
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
+  Object ref_obj(&scope, NoneType::object());
+  {
+    Object none(&scope, NoneType::object());
+    Str key(&scope, runtime.newStrFromCStr("a"));
+    Object c(&scope, runtime.dictAt(dict, key));
+    ref_obj = runtime.newWeakRef(thread, c, none);
+  }
+  WeakRef ref(&scope, *ref_obj);
+  EXPECT_NE(ref.referent(), NoneType::object());
+  runBuiltin(DictBuiltins::clear, dict);
+  runtime.collectGarbage();
+  EXPECT_EQ(ref.referent(), NoneType::object());
+}
+
 TEST(DictBuiltinsTest, CopyWithNonDictRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(

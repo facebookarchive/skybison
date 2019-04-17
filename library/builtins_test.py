@@ -2,6 +2,18 @@
 import unittest
 
 
+class DictTests(unittest.TestCase):
+    def test_clear_with_non_dict_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            dict.clear(None)
+
+    def test_clear_removes_all_elements(self):
+        d = {"a": 1}
+        self.assertEqual(dict.clear(d), None)
+        self.assertEqual(d.__len__(), 0)
+        self.assertNotIn("a", d)
+
+
 class IntTests(unittest.TestCase):
     def test_new_with_base_without_str_raises_type_error(self):
         with self.assertRaises(TypeError):
