@@ -68,7 +68,6 @@ set(
   -Wall
   -Werror
   -Wextra
-  -Wextra-semi
   -Wno-missing-braces
   -Wno-missing-field-initializers
   -Wpedantic
