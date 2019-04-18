@@ -3182,61 +3182,10 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
   return *layout;
 }
 
-RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
-                               const Object& name) {
-  if (!name.isStr()) {
-    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
-  }
-
-  // A minimal implementation of getattr needed to get richards running.
-  HandleScope scope(thread);
-  if (isInstanceOfType(*receiver)) {
-    Type type(&scope, *receiver);
-    Object result(&scope, typeGetAttribute(thread, type, name));
-    if (result.isError() && !thread->hasPendingException()) {
-      Str type_name(&scope, type.name());
-      return thread->raiseAttributeError(newStrFromFmt(
-          "type object '%S' has no attribute '%S'", &type_name, &name));
-    }
-    return *result;
-  }
-  if (receiver.isModule()) {
-    Module module(&scope, *receiver);
-    Object result(&scope, moduleGetAttribute(thread, module, name));
-    if (result.isError() && !thread->hasPendingException()) {
-      Str module_name(&scope, module.name());
-      return thread->raiseAttributeError(newStrFromFmt(
-          "module '%S' has no attribute '%S'", &module_name, &name));
-    }
-    return *result;
-  }
-  if (receiver.isSuper()) {
-    Super super(&scope, *receiver);
-    Object result(&scope, superGetAttribute(thread, super, name));
-    if (result.isError() && !thread->hasPendingException()) {
-      return thread->raiseAttributeError(
-          newStrFromFmt("super object has no attribute '%S'", &name));
-    }
-    return *result;
-  }
-  if (receiver.isFunction()) {
-    Function function(&scope, *receiver);
-    Object result(&scope, functionGetAttribute(thread, function, name));
-    if (result.isError() && !thread->hasPendingException()) {
-      Str function_name(&scope, function.name());
-      return thread->raiseAttributeError(newStrFromFmt(
-          "function '%S' has no attribute '%S'", &function_name, &name));
-    }
-    return *result;
-  }
-
-  // everything else should fallback to instance
-  Object result(&scope, objectGetAttribute(thread, receiver, name));
-  if (result.isError() && !thread->hasPendingException()) {
-    return thread->raiseAttributeError(
-        newStrFromFmt("'%T' object has no attribute '%S'", &receiver, &name));
-  }
-  return *result;
+RawObject Runtime::attributeAt(Thread* thread, const Object& object,
+                               const Object& name_str) {
+  DCHECK(isInstanceOfStr(*name_str), "name must be a str subclass");
+  return thread->invokeMethod2(object, SymbolId::kDunderGetattribute, name_str);
 }
 
 RawObject Runtime::attributeAtId(Thread* thread, const Object& receiver,

@@ -34,6 +34,45 @@ TEST(RuntimeTest, AllocateAndCollectGarbage) {
   ASSERT_TRUE(runtime.heap()->verify());
 }
 
+TEST(RuntimeTest, AttributeAtCallsDunderGetattribute) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  foo = None
+  def __getattribute__(self, name):
+    return (self, name)
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object result_obj(&scope, runtime.attributeAt(thread, c, name));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), c);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "foo"));
+}
+
+TEST(RuntimeTest, AttributeAtPropagatesExceptionFromDunderGetAttribute) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __getattribute__(self, name):
+    raise UserWarning()
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(
+      raised(runtime.attributeAt(thread, c, name), LayoutId::kUserWarning));
+}
+
 // Return the raw name of a builtin LayoutId, or "<invalid>" for user-defined or
 // invalid LayoutIds.
 static const char* layoutIdName(LayoutId id) {
@@ -1783,94 +1822,6 @@ TEST(TypeAttributeTest, SetAttrOnType) {
   EXPECT_EQ(RawValueCell::cast(*value_cell).value(), SmallInt::fromWord(100));
 }
 
-TEST(TypeAttributeTest, Simple) {
-  Runtime runtime;
-  const char* src = R"(
-class A:
-  foo = 'hello'
-print(A.foo)
-)";
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "hello\n");
-}
-
-TEST(TypeAttributeTest, SingleInheritance) {
-  Runtime runtime;
-  const char* src = R"(
-class A:
-  foo = 'hello'
-class B(A): pass
-class C(B): pass
-print(A.foo, B.foo, C.foo)
-B.foo = 123
-print(A.foo, B.foo, C.foo)
-)";
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "hello hello hello\nhello 123 123\n");
-}
-
-TEST(TypeAttributeTest, MultipleInheritance) {
-  Runtime runtime;
-  const char* src = R"(
-class A:
-  foo = 'hello'
-class B:
-  bar = 'there'
-class C(B, A): pass
-print(C.foo, C.bar)
-)";
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "hello there\n");
-}
-
-TEST(ClassAttributeTest, GetMissingAttribute) {
-  Runtime runtime;
-  const char* src = R"(
-class A: pass
-print(A.foo)
-)";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
-                            LayoutId::kAttributeError,
-                            "type object 'A' has no attribute 'foo'"));
-}
-
-TEST(ModuleAttributeTest, GetMissingAttribute) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-import builtins
-builtins.foo
-)"),
-                            LayoutId::kAttributeError,
-                            "module 'builtins' has no attribute 'foo'"));
-}
-
-TEST(TypeAttributeTest, GetFunction) {
-  Runtime runtime;
-  const char* src = R"(
-class Foo:
-  def bar(self):
-    print(self)
-Foo.bar('testing 123')
-)";
-  std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "testing 123\n");
-}
-
-TEST(InstanceAttributeTest, GetMissingAttributeRaisesAttributeError) {
-  Runtime runtime;
-  runFromCStr(&runtime, R"(
-class Foo: pass
-caught_attribute_error = False
-try:
-  Foo().non_existant_attribute
-except AttributeError:
-  caught_attribute_error = True
-)");
-  HandleScope scope;
-  Object res(&scope, moduleAt(&runtime, "__main__", "caught_attribute_error"));
-  EXPECT_EQ(*res, Bool::trueObj());
-}
-
 // Set an attribute defined in __init__
 TEST(InstanceAttributeTest, SetInstanceAttribute) {
   Runtime runtime;
@@ -1939,38 +1890,6 @@ def test(x):
   Instance foo2(&scope, runtime.newInstance(layout));
   args.atPut(0, *foo2);
   EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
-}
-
-// This is the real deal
-TEST(InstanceAttributeTest, CallInstanceMethod) {
-  Runtime runtime;
-  const char* src = R"(
-class Foo:
-  def __init__(self):
-    self.attr = 'testing 123'
-
-  def doit(self):
-    print(self.attr)
-    self.attr = '321 testing'
-    print(self.attr)
-
-def test(x):
-  Foo.__init__(x)
-  x.doit()
-)";
-  runFromCStr(&runtime, src);
-
-  // Create the instance
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type.instanceLayout());
-  args.atPut(0, runtime.newInstance(layout));
-
-  // Run __init__ then call the method
-  Function test(&scope, moduleAt(&runtime, main, "test"));
-  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
 }
 
 TEST(InstanceAttributeTest, ManipulateMultipleAttributes) {
@@ -2914,42 +2833,6 @@ foo.x = 3
   Object key(&scope, runtime.newStrFromCStr("x"));
   Object value(&scope, runtime.dictAt(function_dict, key));
   EXPECT_TRUE(isIntEqualsWord(*value, 3));
-}
-
-TEST(FunctionAttrTest, GetAttribute) {
-  Runtime runtime;
-  runFromCStr(&runtime, R"(
-def foo(): pass
-foo.x = 3
-value = foo.x
-)");
-  HandleScope scope;
-  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
-  EXPECT_TRUE(isIntEqualsWord(*value, 3));
-}
-
-TEST(FunctionAttrTest, GetAttributePrefersBuiltinAttributesOverDict) {
-  Runtime runtime;
-  runFromCStr(&runtime, R"(
-def foo(): pass
-foo.__doc__ = "bar"
-foo.__dict__['__doc__'] = "baz"
-value = foo.__doc__
-)");
-  HandleScope scope;
-  Object value(&scope, moduleAt(&runtime, "__main__", "value"));
-  ASSERT_TRUE(value.isStr());
-  EXPECT_TRUE(RawStr::cast(*value).equalsCStr("bar"));
-}
-
-TEST(FunctionAttrTest, GetInvalidAttribute) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-def foo(): pass
-value = foo.x
-)"),
-                            LayoutId::kAttributeError,
-                            "function 'foo' has no attribute 'x'"));
 }
 
 TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {

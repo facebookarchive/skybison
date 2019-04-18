@@ -11,6 +11,7 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
 class ObjectBuiltins {
  public:
   static void initialize(Runtime* runtime);
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
   static RawObject dunderGetattribute(Thread*, Frame*, word);
   static RawObject dunderHash(Thread*, Frame*, word);

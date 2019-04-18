@@ -80,6 +80,20 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
     runtime->typeAddBuiltinFunction(object_type, kBuiltinMethods[i].name,
                                     kBuiltinMethods[i].address);
   }
+
+  postInitialize(runtime, object_type);
+}
+
+void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  // Manually set argcount to avoid bootstrap problems.
+  HandleScope scope;
+  Dict type_dict(&scope, new_type.dict());
+  Object dunder_getattribute_name(&scope,
+                                  runtime->symbols()->DunderGetattribute());
+  Function dunder_getattribute(
+      &scope, runtime->typeDictAt(type_dict, dunder_getattribute_name));
+  Code code(&scope, dunder_getattribute.code());
+  code.setArgcount(2);
 }
 
 RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
@@ -95,10 +109,8 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   }
   Object result(&scope, objectGetAttribute(thread, self, name));
   if (result.isError() && !thread->hasPendingException()) {
-    Type type(&scope, runtime->typeOf(*self));
-    Object type_name(&scope, type.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "'%S' object has no attribute '%S'", &type_name,
+                                "'%T' object has no attribute '%S'", &self,
                                 &name);
   }
   return *result;
