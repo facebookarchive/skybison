@@ -18,5 +18,17 @@ fi
 
 BINARY_LIBS=$(ls -d "$BUILD_DIR"/third-party/cpython/build/lib*)
 export ASAN_OPTIONS=detect_leaks=0
-export PYTHONPATH="$BUILD_DIR/third-party/cpython/Lib:$BINARY_LIBS"
-"$CPYTHON_TESTS" "--gtest_filter=-*Pyro" "$@"
+PYTHONPATH="$BUILD_DIR/third-party/cpython/Lib:$BINARY_LIBS"
+COMMAND=("$CPYTHON_TESTS" "--gtest_filter=-*Pyro" "$@")
+if [[ -n $DEBUG_CPYTHON_TESTS ]]; then
+    if ! command -v lldb >/dev/null; then
+        echo "lldb not found in PATH." 1>&2
+        exit 1
+    fi
+
+    # Don't set PYTHONPATH for lldb, since it uses Python internally and would
+    # get confused.
+    lldb -s <(echo "env PYTHONPATH=$PYTHONPATH") -- "${COMMAND[@]}"
+else
+    PYTHONPATH=$PYTHONPATH "${COMMAND[@]}"
+fi

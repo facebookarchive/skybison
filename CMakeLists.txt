@@ -552,15 +552,18 @@ target_link_libraries(
 
 # Extension tests with CPython
 set(CPYTHON_CONFIGURE_FLAGS "")
+set(CPYTHON_CFLAGS "")
 if (${CMAKE_BUILD_TYPE} MATCHES "^Debug")
   set(CPYTHON_CONFIGURE_FLAGS "--with-assertions")
+  set(CPYTHON_CFLAGS "CFLAGS=-O0")
 endif()
 set(LIBPYTHON_BIN "libpython3.6m.a")
 set(CPYTHON_BUILD_DIR ${CMAKE_BINARY_DIR}/third-party/cpython)
 file(MAKE_DIRECTORY ${CPYTHON_BUILD_DIR})
 add_custom_command(
   OUTPUT ${CPYTHON_BUILD_DIR}/${LIBPYTHON_BIN}
-  COMMAND ${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS} && make -j
+  COMMAND ${CPYTHON_CFLAGS} ${CPYTHON_DIR}/configure ${CPYTHON_CONFIGURE_FLAGS}
+  COMMAND make -j
   WORKING_DIRECTORY ${CPYTHON_BUILD_DIR})
 add_custom_target(
   compile-cpython
