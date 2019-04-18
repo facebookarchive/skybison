@@ -12,7 +12,7 @@ using namespace testing;
 
 using LongExtensionApiTest = ExtensionApi;
 
-TEST_F(LongExtensionApiTest, PyLongCheckOnInt) {
+TEST_F(LongExtensionApiTest, CheckWithIntReturnsTrue) {
   PyObjectPtr pylong(PyLong_FromLong(10));
   EXPECT_TRUE(PyLong_Check(pylong));
   EXPECT_TRUE(PyLong_CheckExact(pylong));
@@ -34,7 +34,17 @@ TEST_F(LongExtensionApiTest, PyLongCheckOnInt) {
   EXPECT_TRUE(PyLong_CheckExact(pylong));
 }
 
-TEST_F(LongExtensionApiTest, PyLongCheckOnType) {
+TEST_F(LongExtensionApiTest, CheckWithIntSubclass) {
+  PyRun_SimpleString(R"(
+class X(int): pass
+x = X()
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  EXPECT_TRUE(PyLong_Check(x));
+  EXPECT_FALSE(PyLong_CheckExact(x));
+}
+
+TEST_F(LongExtensionApiTest, CheckWithTypeReturnsFalse) {
   PyObjectPtr pylong(PyLong_FromLong(10));
   PyObjectPtr type(reinterpret_cast<PyObject*>(Py_TYPE(pylong)));
   EXPECT_FALSE(PyLong_Check(type));
@@ -74,6 +84,16 @@ TEST_F(LongExtensionApiTest, AsDoubleWithLargeIntReturnsDouble) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(LongExtensionApiTest, AsDoubleWithIntSubclassReturnsDouble) {
+  PyRun_SimpleString(R"(
+class X(int): pass
+x = X(42)
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsDouble(x), 42.0);
+}
+
 TEST_F(LongExtensionApiTest, AsDoubleWithOverflowRaisesOverflowError) {
   unsigned char bytes[129] = {1};
   PyObjectPtr obj(_PyLong_FromByteArray(bytes, sizeof(bytes), false, false));
@@ -99,6 +119,16 @@ TEST_F(LongExtensionApiTest, AsIntWithLongMaxRaisesOverflowError) {
   ASSERT_EQ(_PyLong_AsInt(num), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, AsIntWithIntSubclassReturnsInt) {
+  PyRun_SimpleString(R"(
+class X(int): pass
+x = X(42)
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(_PyLong_AsInt(x), 42);
 }
 
 TEST_F(LongExtensionApiTest, AsIntWithInvalidDunderIntRaisesTypeError) {
@@ -139,6 +169,16 @@ TEST_F(LongExtensionApiTest, AsLongWithNonIntegerReturnsNegative) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(LongExtensionApiTest, AsLongWithIntSubclassReturnsLong) {
+  PyRun_SimpleString(R"(
+class X(int): pass
+x = X(42)
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyLong_AsLong(x), 42);
+}
+
 TEST_F(LongExtensionApiTest, AsLongWithInvalidDunderInt) {
   PyRun_SimpleString(R"(
 class X:
@@ -168,6 +208,7 @@ TEST_F(LongExtensionApiTest, FromLongReturnsLong) {
   const int val = 10;
   PyObjectPtr pylong(PyLong_FromLong(val));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(pylong));
 
   EXPECT_EQ(PyLong_AsLong(pylong), val);
   EXPECT_EQ(PyLong_AsLongLong(pylong), val);
@@ -176,11 +217,13 @@ TEST_F(LongExtensionApiTest, FromLongReturnsLong) {
   auto const val2 = std::numeric_limits<long>::min();
   PyObjectPtr pylong2(PyLong_FromLong(val2));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(pylong2));
   EXPECT_EQ(PyLong_AsLong(pylong2), val2);
 
   auto const val3 = std::numeric_limits<long>::max();
   PyObjectPtr pylong3(PyLong_FromLong(val3));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(pylong3));
   EXPECT_EQ(PyLong_AsLong(pylong3), val3);
 }
 
@@ -188,6 +231,7 @@ TEST_F(LongExtensionApiTest, FromUnsignedReturnsLong) {
   auto const ulmax = std::numeric_limits<unsigned long>::max();
   PyObjectPtr pylong(PyLong_FromUnsignedLong(ulmax));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(pylong));
   EXPECT_EQ(PyLong_AsUnsignedLong(pylong), ulmax);
   EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong), ulmax);
   EXPECT_EQ(PyLong_AsSize_t(pylong), ulmax);
@@ -195,11 +239,13 @@ TEST_F(LongExtensionApiTest, FromUnsignedReturnsLong) {
   auto const ullmax = std::numeric_limits<unsigned long long>::max();
   PyObjectPtr pylong2(PyLong_FromUnsignedLongLong(ullmax));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(pylong2));
   EXPECT_EQ(PyLong_AsUnsignedLongLong(pylong2), ullmax);
 
   auto const uval = 1234UL;
   PyObjectPtr pylong3(PyLong_FromUnsignedLong(uval));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(pylong3));
   EXPECT_EQ(PyLong_AsUnsignedLong(pylong3), uval);
 }
 
@@ -450,6 +496,21 @@ TEST_F(LongExtensionApiTest, AsByteArraySignedNegativeWritesBytesLittleEndian) {
   EXPECT_EQ(dst[2], 0xff);
 }
 
+TEST_F(LongExtensionApiTest, AsByteArrayWithIntSubclassWritesBytes) {
+  PyRun_SimpleString(R"(
+class X(int): pass
+x = X(0xface)
+)");
+  PyObjectPtr x(moduleGet("__main__", "x"));
+  PyLongObject* obj = x.asLongObject();
+  unsigned char dst[3];
+  ASSERT_EQ(_PyLong_AsByteArray(obj, dst, sizeof(dst), false, true), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(dst[0], 0x00);
+  EXPECT_EQ(dst[1], 0xfa);
+  EXPECT_EQ(dst[2], 0xce);
+}
+
 TEST_F(LongExtensionApiTest, FromByteArrayWithZeroSizeReturnsZero) {
   PyObjectPtr num(_PyLong_FromByteArray(nullptr, 0, false, false));
   ASSERT_EQ(PyErr_Occurred(), nullptr);
@@ -514,6 +575,21 @@ TEST_F(LongExtensionApiTest, SignNegativeReturnsNegativeOne) {
   ASSERT_EQ(_PyLong_Sign(negative1), -1);
   PyObjectPtr negative5678(PyLong_FromLong(-5678));
   ASSERT_EQ(_PyLong_Sign(negative5678), -1);
+}
+
+TEST_F(LongExtensionApiTest, SignWithIntSubclassReturnsSign) {
+  PyRun_SimpleString(R"(
+class X(int): pass
+a = X(-42)
+b = X(0)
+c = X(42)
+)");
+  PyObjectPtr a(moduleGet("__main__", "a"));
+  PyObjectPtr b(moduleGet("__main__", "b"));
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(_PyLong_Sign(a), -1);
+  EXPECT_EQ(_PyLong_Sign(b), 0);
+  EXPECT_EQ(_PyLong_Sign(c), 1);
 }
 
 TEST_F(LongExtensionApiTest, FromVoidPtrReturnsLong) {

@@ -198,6 +198,7 @@ class WARN_UNUSED Handle : public T {
   V(UnicodeError)                                                              \
   V(UnicodeTranslateError)                                                     \
   V(UserFloatBase)                                                             \
+  V(UserIntBase)                                                               \
   V(UserTupleBase)
 
 #define HANDLE_ALIAS(ty) using ty = Handle<class Raw##ty>;

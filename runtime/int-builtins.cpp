@@ -71,11 +71,6 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Object other_obj(&scope, args.get(1));
-  if (self_obj.isInt() && other_obj.isInt()) {
-    Int self(&scope, *self_obj);
-    Int other(&scope, *other_obj);
-    return op(thread, self, other);
-  }
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kInt);
@@ -83,9 +78,9 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   if (!runtime->isInstanceOfInt(*other_obj)) {
     return NotImplementedType::object();
   }
-
-  // TODO(T38780562): Handle Int subclasses
-  UNIMPLEMENTED("int subclassing");
+  Int self(&scope, intUnderlying(thread, self_obj));
+  Int other(&scope, intUnderlying(thread, other_obj));
+  return op(thread, self, other);
 }
 
 static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
@@ -93,15 +88,11 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (self_obj.isInt()) {
-    Int self(&scope, *self_obj);
-    return op(thread, self);
+  if (!thread->runtime()->isInstanceOfInt(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
-  // TODO(T38780562): Handle Int subclasses
-  if (thread->runtime()->isInstanceOfInt(*self_obj)) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  return thread->raiseRequiresType(self_obj, SymbolId::kInt);
+  Int self(&scope, intUnderlying(thread, self_obj));
+  return op(thread, self);
 }
 
 RawObject IntBuiltins::dunderInt(Thread* t, Frame* frame, word nargs) {
@@ -240,25 +231,15 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
                              const Object& byteorder_obj, bool is_signed) {
   HandleScope scope;
   Runtime* runtime = thread->runtime();
-
-  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
-  if (!self_obj.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  Int self(&scope, *self_obj);
-
-  // TODO(T38780562): Handle Int subclasses
+  Int self(&scope, intUnderlying(thread, self_obj));
   if (!runtime->isInstanceOfInt(*length_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "length argument cannot be interpreted as an integer");
   }
-  if (!length_obj.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  Int length_int(&scope, *length_obj);
+  Int length_int(&scope, intUnderlying(thread, length_obj));
   OptInt<word> l = length_int.asInt<word>();
   if (l.error != CastError::None) {
     return thread->raiseOverflowErrorWithCStr(
@@ -635,11 +616,10 @@ RawObject IntBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr("'__repr__' requires a 'int' object");
+    return thread->raiseRequiresType(self_obj, SymbolId::kInt);
   }
-  Int self(&scope, *self_obj);
+  Int self(&scope, intUnderlying(thread, self_obj));
   if (self.numDigits() == 1) {
     word value = self.asWord();
     uword magnitude = value >= 0 ? value : -static_cast<uword>(value);
@@ -871,22 +851,12 @@ static inline bool convertLargeIntToDouble(const LargeInt& large_int,
   return true;
 }
 
-RawObject convertIntToDouble(Thread* thread, const Object& object,
-                             double* result) {
-  DCHECK(thread->runtime()->isInstanceOfInt(*object),
-         "convertIntToDouble must receive an instance of int");
-  // TODO(T38780562): Handle Int subclasses
-  if (!object.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-
-  HandleScope scope(thread);
-  Int value(&scope, *object);
+RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
   if (value.numDigits() == 1) {
     *result = static_cast<double>(value.asWord());
     return NoneType::object();
   }
-
+  HandleScope scope(thread);
   LargeInt large_int(&scope, *value);
   if (!convertLargeIntToDouble(large_int, result, nullptr)) {
     return thread->raiseOverflowErrorWithCStr(
@@ -971,30 +941,32 @@ bool doubleEqualsInt(Thread* thread, double left, const Int& right) {
 
 RawObject intFromIndex(Thread* thread, const Object& obj) {
   Runtime* runtime = thread->runtime();
-  if (obj.isInt()) {
-    return *obj;
-  }
-  // TODO(T38780562): Handle Int subclasses
   if (runtime->isInstanceOfInt(*obj)) {
-    UNIMPLEMENTED("int subclassing");
+    return *obj;
   }
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
   if (result.isError()) {
     if (!thread->hasPendingException()) {
-      return thread->raiseTypeErrorWithCStr(
-          "object cannot be interpreted as an integer");
+      return thread->raiseTypeError(runtime->newStrFromFmt(
+          "'%T' object cannot be interpreted as an integer", &obj));
     }
     return *result;
   }
-  if (result.isInt()) {
+  if (runtime->isInstanceOfInt(*result)) {
     return *result;
   }
-  // TODO(T38780562): Handle Int subclasses
-  if (runtime->isInstanceOfInt(*result)) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  return thread->raiseTypeErrorWithCStr("__index__ returned non-int");
+  return thread->raiseTypeError(
+      runtime->newStrFromFmt("__index__ returned non-int (type %T)", &result));
+}
+
+RawObject intUnderlying(Thread* thread, const Object& obj) {
+  DCHECK(thread->runtime()->isInstanceOfInt(*obj),
+         "cannot get a base int value from a non-int");
+  if (obj.isInt()) return *obj;
+  HandleScope scope(thread);
+  UserIntBase user_int(&scope, *obj);
+  return user_int.value();
 }
 
 }  // namespace python

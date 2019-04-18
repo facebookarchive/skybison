@@ -8,12 +8,9 @@ namespace python {
 // Convert bool `object` to Int.
 RawObject convertBoolToInt(RawObject object);
 
-// Convert int `object` to double.
-// Returns a NoneType and sets `result` if the conversion was successful,
-// raises an error otherwise.
-// This should only be used after passing an isInstanceOfInt check
-RawObject convertIntToDouble(Thread* thread, const Object& object,
-                             double* result);
+// Convert int `value` to double. Returns a NoneType and sets `result` if the
+// conversion was successful, raises an OverflowError otherwise.
+RawObject convertIntToDouble(Thread* thread, const Int& value, double* result);
 
 // Returns true if the Float `left` is equals Int `right`. Returns false if
 // `right` cannot be exactly represented as a Float.
@@ -30,6 +27,9 @@ bool compareDoubleWithInt(Thread* thread, double left, const Int& right,
 // Returns obj if obj is an instance of Int. Raises a TypeError if a non-Int obj
 // does not have __index__ or if __index__ returns non-int.
 RawObject intFromIndex(Thread* thread, const Object& obj);
+
+// Grabs the base int value from an instance of int.
+RawObject intUnderlying(Thread* thread, const Object& obj);
 
 class IntBuiltins
     : public Builtins<IntBuiltins, SymbolId::kInt, LayoutId::kInt> {

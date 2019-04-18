@@ -88,31 +88,24 @@ PY_EXPORT PyObject* PyLong_FromSize_t(size_t ival) {
 // - If object has an __int__ method call it and return the result.
 // Throws if the conversion isn't possible.
 static RawObject asIntObject(Thread* thread, const Object& object) {
-  if (object.isInt()) {
-    return *object;
-  }
-  // TODO(T38780562): Handle Int subclasses
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfInt(*object)) {
-    UNIMPLEMENTED("int subclassing");
+    return *object;
   }
 
   // Try calling __int__
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  Object int_method(&scope, Interpreter::lookupMethod(thread, frame, object,
-                                                      SymbolId::kDunderInt));
-  if (int_method.isError()) {
+  Object method(&scope, Interpreter::lookupMethod(thread, frame, object,
+                                                  SymbolId::kDunderInt));
+  if (method.isError()) {
     return thread->raiseTypeErrorWithCStr("an integer is required");
   }
-  Object int_res(&scope,
-                 Interpreter::callMethod1(thread, frame, int_method, object));
-  if (int_res.isError() || int_res.isInt()) return *int_res;
-  // TODO(T38780562): Handle Int subclasses
-  if (runtime->isInstanceOfInt(*int_res)) {
-    UNIMPLEMENTED("int subclassing");
+  Object result(&scope,
+                Interpreter::callMethod1(thread, frame, method, object));
+  if (result.isError() || runtime->isInstanceOfInt(*result)) {
+    return *result;
   }
-
   return thread->raiseTypeErrorWithCStr("__int__ returned non-int");
 }
 
@@ -139,7 +132,8 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
     return -1;
   }
 
-  auto const result = RawInt::cast(*longobj).asInt<T>();
+  Int num(&scope, intUnderlying(thread, longobj));
+  auto const result = num.asInt<T>();
   if (result.error == CastError::None) {
     if (overflow) *overflow = 0;
     return result.value;
@@ -174,7 +168,7 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
     return -1;
   }
   static_assert(sizeof(T) <= sizeof(word), "T requires multiple digits");
-  Int intobj(&scope, *longobj);
+  Int intobj(&scope, intUnderlying(thread, longobj));
   return intobj.digitAt(0);
 }
 
@@ -236,15 +230,11 @@ PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
   }
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  // TODO(T38780562): Handle Int subclasses
   if (!thread->runtime()->isInstanceOfInt(*object)) {
     thread->raiseTypeErrorWithCStr("an integer is required");
     return -1.0;
   }
-  if (!object.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  Int value(&scope, *object);
+  Int value(&scope, intUnderlying(thread, object));
   double result;
   Object err(&scope, convertIntToDouble(thread, value, &result));
   return err.isError() ? -1.0 : result;
@@ -287,7 +277,8 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   PyObject* pyobj = reinterpret_cast<PyObject*>(longobj);
-  Int self(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Object self_obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Int self(&scope, intUnderlying(thread, self_obj));
   if (!is_signed && self.isNegative()) {
     thread->raiseOverflowErrorWithCStr(
         "can't convert negative int to unsigned");
@@ -330,13 +321,8 @@ PY_EXPORT int _PyLong_Sign(PyObject* vv) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(vv)->asObject());
-  Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfInt(*obj), "requires an integer");
-  // TODO(T38780562): Handle Int subclasses
-  if (!obj.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  Int value(&scope, *obj);
+  DCHECK(thread->runtime()->isInstanceOfInt(*obj), "requires an integer");
+  Int value(&scope, intUnderlying(thread, obj));
   return value.isZero() ? 0 : (value.isNegative() ? -1 : 1);
 }
 

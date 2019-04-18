@@ -651,6 +651,7 @@ class Runtime {
            RawType::cast(typeOf(obj)).builtinBase() == LayoutId::k##ty;        \
   }
   DEFINE_IS_USER_INSTANCE(Float)
+  DEFINE_IS_USER_INSTANCE(Int)
   DEFINE_IS_USER_INSTANCE(Tuple)
 #undef DEFINE_IS_USER_INSTANCE
 

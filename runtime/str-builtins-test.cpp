@@ -306,9 +306,9 @@ TEST(StrBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, runtime.newStrFromCStr("foo"));
   Object count(&scope, runtime.newList());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
-                            LayoutId::kTypeError,
-                            "object cannot be interpreted as an integer"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(StrBuiltins::dunderMul, self, count), LayoutId::kTypeError,
+      "'list' object cannot be interpreted as an integer"));
 }
 
 TEST(StrBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedStr) {
@@ -339,7 +339,7 @@ count = C()
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
                             LayoutId::kTypeError,
-                            "__index__ returned non-int"));
+                            "__index__ returned non-int (type str)"));
 }
 
 TEST(StrBuiltinsTest, DunderMulPropagatesDunderIndexError) {

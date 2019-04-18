@@ -54,9 +54,10 @@ static RawObject convertToDouble(Thread* thread, const Object& object,
     return NoneType::object();
   }
   if (thread->runtime()->isInstanceOfInt(*object)) {
-    return convertIntToDouble(thread, object, result);
+    HandleScope scope(thread);
+    Int value(&scope, intUnderlying(thread, object));
+    return convertIntToDouble(thread, value, result);
   }
-
   return NotImplementedType::object();
 }
 
@@ -192,8 +193,8 @@ RawObject FloatBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
     result = left == RawFloat::cast(*right).value();
-  } else if (right.isInt()) {
-    Int right_int(&scope, *right);
+  } else if (runtime->isInstanceOfInt(*right)) {
+    Int right_int(&scope, intUnderlying(thread, right));
     result = doubleEqualsInt(thread, left, right_int);
   } else {
     return NotImplementedType::object();
@@ -230,8 +231,8 @@ RawObject FloatBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
     result = left >= RawFloat::cast(*right).value();
-  } else if (right.isInt()) {
-    Int right_int(&scope, *right);
+  } else if (runtime->isInstanceOfInt(*right)) {
+    Int right_int(&scope, intUnderlying(thread, right));
     result = compareDoubleWithInt(thread, left, right_int, GE);
   } else {
     return NotImplementedType::object();
@@ -253,8 +254,8 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
     result = left > RawFloat::cast(*right).value();
-  } else if (right.isInt()) {
-    Int right_int(&scope, *right);
+  } else if (runtime->isInstanceOfInt(*right)) {
+    Int right_int(&scope, intUnderlying(thread, right));
     result = compareDoubleWithInt(thread, left, right_int, GT);
   } else {
     return NotImplementedType::object();
@@ -348,8 +349,8 @@ RawObject FloatBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
     result = left <= RawFloat::cast(*right).value();
-  } else if (right.isInt()) {
-    Int right_int(&scope, *right);
+  } else if (runtime->isInstanceOfInt(*right)) {
+    Int right_int(&scope, intUnderlying(thread, right));
     result = compareDoubleWithInt(thread, left, right_int, LE);
   } else {
     return NotImplementedType::object();
@@ -371,8 +372,8 @@ RawObject FloatBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   bool result;
   if (runtime->isInstanceOfFloat(*right)) {
     result = left < RawFloat::cast(*right).value();
-  } else if (right.isInt()) {
-    Int right_int(&scope, *right);
+  } else if (runtime->isInstanceOfInt(*right)) {
+    Int right_int(&scope, intUnderlying(thread, right));
     result = compareDoubleWithInt(thread, left, right_int, LT);
   } else {
     return NotImplementedType::object();

@@ -735,11 +735,12 @@ RawObject BuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, args.get(0));
-  Int key(&scope, args.get(1));
+  Object key_obj(&scope, args.get(1));
+  Int key(&scope, intUnderlying(thread, key_obj));
   word index = key.asWordSaturated();
   if (!SmallInt::isValid(index)) {
     return thread->raiseIndexError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &key));
+        "cannot fit '%T' into an index-sized integer", &key_obj));
   }
   word length = self.length();
   if (index < 0) {
@@ -756,9 +757,12 @@ RawObject BuiltinsModule::underBytesGetItemSlice(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, args.get(0));
-  Int start(&scope, args.get(1));
-  Int stop(&scope, args.get(2));
-  Int step(&scope, args.get(3));
+  Object obj(&scope, args.get(1));
+  Int start(&scope, intUnderlying(thread, obj));
+  obj = args.get(2);
+  Int stop(&scope, intUnderlying(thread, obj));
+  obj = args.get(3);
+  Int step(&scope, intUnderlying(thread, obj));
   return thread->runtime()->bytesSlice(thread, self, start.asWord(),
                                        stop.asWord(), step.asWord());
 }
@@ -808,11 +812,12 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Bytes self(&scope, args.get(0));
-  Int num(&scope, args.get(1));
-  word count = num.asWordSaturated();
+  Object count_obj(&scope, args.get(1));
+  Int count_int(&scope, intUnderlying(thread, count_obj));
+  word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
     return thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &num));
+        "cannot fit '%T' into an index-sized integer", &count_obj));
   }
   // NOTE: unlike __mul__, we raise a value error for negative count
   if (count < 0) {
@@ -821,13 +826,17 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
 
-static RawObject intOrUserSubclass(Thread* /* t */, const Type& type,
+static RawObject intOrUserSubclass(Thread* thread, const Type& type,
                                    const Object& value) {
   DCHECK(value.isSmallInt() || value.isLargeInt(),
          "builtin value should have type int");
   DCHECK(type.builtinBase() == LayoutId::kInt, "type must subclass int");
   if (type.isBuiltin()) return *value;
-  UNIMPLEMENTED("subclass of int");  // TODO(T38780562)
+  HandleScope scope(thread);
+  Layout layout(&scope, type.instanceLayout());
+  UserIntBase instance(&scope, thread->runtime()->newInstance(layout));
+  instance.setValue(*value);
+  return *instance;
 }
 
 static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
@@ -859,7 +868,8 @@ RawObject BuiltinsModule::underIntFromByteArray(Thread* thread, Frame* frame,
   Type type(&scope, args.get(0));
   ByteArray array(&scope, args.get(1));
   Bytes bytes(&scope, array.bytes());
-  Int base_int(&scope, args.get(2));
+  Object base_obj(&scope, args.get(2));
+  Int base_int(&scope, intUnderlying(thread, base_obj));
   DCHECK(base_int.numDigits() == 1, "invalid base");
   word base = base_int.asWord();
   Object result(&scope, intFromBytes(thread, bytes, array.numItems(), base));
@@ -879,7 +889,8 @@ RawObject BuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Bytes bytes(&scope, args.get(1));
-  Int base_int(&scope, args.get(2));
+  Object base_obj(&scope, args.get(2));
+  Int base_int(&scope, intUnderlying(thread, base_obj));
   DCHECK(base_int.numDigits() == 1, "invalid base");
   word base = base_int.asWord();
   Object result(&scope, intFromBytes(thread, bytes, bytes.length(), base));
@@ -896,9 +907,11 @@ RawObject BuiltinsModule::underIntFromInt(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
-  Int value(&scope, args.get(1));
+  Object value(&scope, args.get(1));
   if (value.isBool()) {
     value = convertBoolToInt(*value);
+  } else if (!value.isSmallInt() && !value.isLargeInt()) {
+    value = intUnderlying(thread, value);
   }
   return intOrUserSubclass(thread, type, value);
 }
@@ -929,7 +942,8 @@ RawObject BuiltinsModule::underIntFromStr(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
   Str str(&scope, args.get(1));
-  Int base_int(&scope, args.get(2));
+  Object base_obj(&scope, args.get(2));
+  Int base_int(&scope, intUnderlying(thread, base_obj));
   DCHECK(base_int.numDigits() == 1, "invalid base");
   word base = base_int.asWord();
   Object result(&scope, intFromStr(thread, str, base));
@@ -1088,7 +1102,8 @@ RawObject BuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
   Str self(&scope, args.get(0));
   Str oldstr(&scope, args.get(1));
   Str newstr(&scope, args.get(2));
-  Int count(&scope, args.get(3));
+  Object count_obj(&scope, args.get(3));
+  Int count(&scope, intUnderlying(thread, count_obj));
   return runtime->strReplace(thread, self, oldstr, newstr,
                              count.asWordSaturated());
 }
@@ -1123,7 +1138,8 @@ RawObject BuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
          "_str_splitlines requires 'int' instance");
   HandleScope scope(thread);
   Str self(&scope, args.get(0));
-  Int keepends_int(&scope, args.get(1));
+  Object keepends_obj(&scope, args.get(1));
+  Int keepends_int(&scope, intUnderlying(thread, keepends_obj));
   bool keepends = !keepends_int.isZero();
   return strSplitlines(thread, self, keepends);
 }

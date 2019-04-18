@@ -237,9 +237,10 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, runtime.newByteArray());
   Object count(&scope, runtime.newList());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
-      LayoutId::kTypeError, "object cannot be interpreted as an integer"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+                    LayoutId::kTypeError,
+                    "'list' object cannot be interpreted as an integer"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithDunderIndexReturnsRepeatedBytes) {
@@ -270,9 +271,9 @@ class C:
 count = C()
 )");
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
-                    LayoutId::kTypeError, "__index__ returned non-int"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
+      LayoutId::kTypeError, "__index__ returned non-int (type str)"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderImulPropagatesDunderIndexError) {
@@ -551,9 +552,10 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
   HandleScope scope;
   Object self(&scope, runtime.newByteArray());
   Object count(&scope, runtime.newList());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
-      LayoutId::kTypeError, "object cannot be interpreted as an integer"));
+  EXPECT_TRUE(
+      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+                    LayoutId::kTypeError,
+                    "'list' object cannot be interpreted as an integer"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
@@ -584,9 +586,9 @@ class C:
 count = C()
 )");
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
-  EXPECT_TRUE(
-      raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
-                    LayoutId::kTypeError, "__index__ returned non-int"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
+      LayoutId::kTypeError, "__index__ returned non-int (type str)"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderMulPropagatesDunderIndexError) {

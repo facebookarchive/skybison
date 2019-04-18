@@ -572,6 +572,24 @@ TEST(FloatBuiltinsTest, DunderEqWithFloatsReturnsBool) {
             Bool::trueObj());
 }
 
+TEST(FloatBuiltinsTest, DunderEqWithIntSubclassReturnsBool) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C(int): pass
+zero = C()
+one = C(1)
+two = C(2)
+)");
+  Object self(&scope, runtime.newFloat(1.0));
+  Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
+  Object one(&scope, moduleAt(&runtime, "__main__", "one"));
+  Object two(&scope, moduleAt(&runtime, "__main__", "two"));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, self, zero), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, self, one), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderEq, self, two), Bool::falseObj());
+}
+
 TEST(FloatBuiltinsTest, DunderEqWithSmallIntExactReturnsBool) {
   Runtime runtime;
   HandleScope scope;
@@ -831,6 +849,24 @@ TEST(FloatBuiltinsTest, DunderGeWithLargeIntRoundingUpReturnsTrue) {
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, float0, int0), Bool::trueObj());
 }
 
+TEST(FloatBuiltinsTest, DunderGeWithIntSubclassReturnsBool) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C(int): pass
+zero = C()
+one = C(1)
+two = C(2)
+)");
+  Object self(&scope, runtime.newFloat(1.0));
+  Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
+  Object one(&scope, moduleAt(&runtime, "__main__", "one"));
+  Object two(&scope, moduleAt(&runtime, "__main__", "two"));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, self, zero), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, self, one), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGe, self, two), Bool::falseObj());
+}
+
 TEST(FloatBuiltinsTest, DunderGtWithFloatReturnsBool) {
   Runtime runtime;
   HandleScope scope;
@@ -872,6 +908,24 @@ TEST(FloatBuiltinsTest, DunderGtWithSmallIntReturnsBool) {
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, float0, int0), Bool::trueObj());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, float0, int1),
             Bool::falseObj());
+}
+
+TEST(FloatBuiltinsTest, DunderGtWithIntSubclassReturnsBool) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C(int): pass
+zero = C()
+one = C(1)
+two = C(2)
+)");
+  Object self(&scope, runtime.newFloat(1.0));
+  Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
+  Object one(&scope, moduleAt(&runtime, "__main__", "one"));
+  Object two(&scope, moduleAt(&runtime, "__main__", "two"));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, self, zero), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, self, one), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderGt, self, two), Bool::falseObj());
 }
 
 TEST(FloatBuiltinsTest, DunderIntWithNonFloatSelfRaisesTypeError) {
@@ -1073,6 +1127,24 @@ TEST(FloatBuiltinsTest, DunderLeWithBoolReturnsBool) {
             Bool::trueObj());
 }
 
+TEST(FloatBuiltinsTest, DunderLeWithIntSubclassReturnsBool) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C(int): pass
+zero = C()
+one = C(1)
+two = C(2)
+)");
+  Object self(&scope, runtime.newFloat(1.0));
+  Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
+  Object one(&scope, moduleAt(&runtime, "__main__", "one"));
+  Object two(&scope, moduleAt(&runtime, "__main__", "two"));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLe, self, zero), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLe, self, one), Bool::trueObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLe, self, two), Bool::trueObj());
+}
+
 TEST(FloatBuiltinsTest, DunderLtWithFloatReturnsBool) {
   Runtime runtime;
   HandleScope scope;
@@ -1193,6 +1265,24 @@ TEST(FloatBuiltinsTest, DunderLtWithLargeIntRoundingUpReturnsFalse) {
             RawFloat::cast(*float0).value());
   EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, float0, int0),
             Bool::falseObj());
+}
+
+TEST(FloatBuiltinsTest, DunderLtWithIntSubclassReturnsBool) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class C(int): pass
+zero = C()
+one = C(1)
+two = C(2)
+)");
+  Object self(&scope, runtime.newFloat(1.0));
+  Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
+  Object one(&scope, moduleAt(&runtime, "__main__", "one"));
+  Object two(&scope, moduleAt(&runtime, "__main__", "two"));
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, self, zero), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, self, one), Bool::falseObj());
+  EXPECT_EQ(runBuiltin(FloatBuiltins::dunderLt, self, two), Bool::trueObj());
 }
 
 }  // namespace python

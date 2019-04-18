@@ -438,6 +438,23 @@ TEST(IntBuiltinsTest, DunderAbsWithNegativeIntReturnsInt) {
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
+TEST(IntBuiltinsTest, DunderAbsWithIntSubclassReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+neg = X(-42)
+pos = X(42)
+zero = X()
+)");
+  Object neg(&scope, moduleAt(&runtime, "__main__", "neg"));
+  Object pos(&scope, moduleAt(&runtime, "__main__", "pos"));
+  Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
+  EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, neg), SmallInt::fromWord(42));
+  EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, pos), SmallInt::fromWord(42));
+  EXPECT_EQ(runBuiltin(IntBuiltins::dunderAbs, zero), SmallInt::fromWord(0));
+}
+
 TEST(IntBuiltinsTest, DunderAddWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
@@ -537,6 +554,20 @@ TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
   LargeInt right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderAndWithIntSubclassReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+left = X(0b0011)
+right = X(0b0101)
+)");
+  Object left(&scope, moduleAt(&runtime, "__main__", "left"));
+  Object right(&scope, moduleAt(&runtime, "__main__", "right"));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
+  EXPECT_EQ(result, SmallInt::fromWord(1));  // 0b0001
 }
 
 TEST(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
@@ -758,6 +789,20 @@ TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
+TEST(IntBuiltinsTest, DunderLshiftWithIntSubclassReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+left = X(0b1101)
+right = X(3)
+)");
+  Object left(&scope, moduleAt(&runtime, "__main__", "left"));
+  Object right(&scope, moduleAt(&runtime, "__main__", "right"));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
+  EXPECT_EQ(result, SmallInt::fromWord(0x68));  // 0b1101000
+}
+
 TEST(IntBuiltinsTest, DunderModWithSmallIntReturnsInt) {
   Runtime runtime;
   HandleScope scope;
@@ -972,6 +1017,20 @@ TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
   LargeInt right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
+}
+
+TEST(IntBuiltinsTest, DunderOrWithIntSubclassReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+left = X(0b0011)
+right = X(0b0101)
+)");
+  Object left(&scope, moduleAt(&runtime, "__main__", "left"));
+  Object right(&scope, moduleAt(&runtime, "__main__", "right"));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
+  EXPECT_EQ(result, SmallInt::fromWord(7));  // 0b0111
 }
 
 TEST(IntBuiltinsTest, BinaryAddSmallInt) {
@@ -2714,6 +2773,18 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntCarriesReturnsStr) {
       isStrEqualsCStr(*result, "-170141183460469231731687303715884105729"));
 }
 
+TEST(IntBuiltinsTest, DunderReprWithIntSubclassReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+num = X(0xdeadbeef)
+)");
+  Object num(&scope, moduleAt(&runtime, "__main__", "num"));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "3735928559"));
+}
+
 TEST(IntBuiltinsTest, DunderRdivmodWithSmallIntsReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
@@ -2892,6 +2963,20 @@ TEST(IntBuiltinsTest, DunderRshiftWithNonIntReturnsNotImplemented) {
   EXPECT_TRUE(result.isNotImplementedType());
 }
 
+TEST(IntBuiltinsTest, DunderRshiftWithIntSubclassReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+left = X(-1234)
+right = X(3)
+)");
+  Object left(&scope, moduleAt(&runtime, "__main__", "left"));
+  Object right(&scope, moduleAt(&runtime, "__main__", "right"));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
+  EXPECT_EQ(result, SmallInt::fromWord(-155));
+}
+
 TEST(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
   Runtime runtime;
   HandleScope scope;
@@ -3034,6 +3119,20 @@ TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
+TEST(IntBuiltinsTest, DunderXorWithIntSubclassReturnsInt) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+left = X(0b0011)
+right = X(0b0101)
+)");
+  Object left(&scope, moduleAt(&runtime, "__main__", "left"));
+  Object right(&scope, moduleAt(&runtime, "__main__", "right"));
+  Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
+  EXPECT_EQ(result, SmallInt::fromWord(6));  // 0b0110
+}
+
 TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
@@ -3045,6 +3144,24 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
   Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
                                    signed_obj));
 
+  const byte bytes[] = {42, 0, 0};
+  EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
+}
+
+TEST(IntBuiltinsTest, ToBytesWithIntSubclassReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  runFromCStr(&runtime, R"(
+class X(int): pass
+num = X(42)
+length = X(3)
+)");
+  Object num(&scope, moduleAt(&runtime, "__main__", "num"));
+  Object length(&scope, moduleAt(&runtime, "__main__", "length"));
+  Object byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object signed_obj(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(IntBuiltins::toBytes, num, length, byteorder,
+                                   signed_obj));
   const byte bytes[] = {42, 0, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
