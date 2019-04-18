@@ -87,10 +87,9 @@ def ascii_decode(data: bytes, errors: str = "strict"):
     while i < len(data):
         encoded, i = _ascii_decode(data, errors, i, result)
         if isinstance(encoded, int):
-            data, pos = _call_decode_errorhandler(
+            data, i = _call_decode_errorhandler(
                 errors, data, result, "ordinal not in range(128)", "ascii", encoded, i
             )
-            i += pos
     if isinstance(encoded, str):
         return encoded, i
     # The error handler was the last to write to the result
@@ -113,7 +112,7 @@ def ignore_errors(error):
         raise TypeError(
             f"don't know how to handle {type(error).__name__} in error callback"
         )
-    return ("", 0)
+    return ("", error.end)
 
 
 def lookup_error(error: str):
