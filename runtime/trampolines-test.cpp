@@ -1992,4 +1992,39 @@ TEST(TrampolinesDeathTest, BuiltinTrampolineExWithTooManyArgsRaisesTypeError) {
       "TypeError: 'dummy' takes max 2 positional arguments but 5 given"));
 }
 
+TEST(TrampolinesTest, SlotTrampolineKwAllowsCallWithNoKwargs) {
+  Function::Entry func = [](Thread*, Frame* frame, word argc) -> RawObject {
+    EXPECT_EQ(argc, 1);
+    Arguments args(frame, argc);
+    return args.get(0);
+  };
+
+  Runtime runtime;
+  HandleScope scope;
+  Function callee(&scope, runtime.newFunction());
+  callee.setEntryKw(slotTrampolineKw);
+  Code callee_code(&scope, runtime.newEmptyCode());
+  callee_code.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
+  callee.setCode(*callee_code);
+
+  // Set up a code object that calls the function with one positional arg and an
+  // empty keyword names tuple.
+  Code code(&scope, runtime.newEmptyCode());
+  Tuple consts(&scope, runtime.newTuple(3));
+  consts.atPut(0, *callee);
+  consts.atPut(1, runtime.newInt(1234));
+  Tuple kw_tuple(&scope, runtime.newTuple(0));
+  consts.atPut(2, *kw_tuple);
+  code.setConsts(*consts);
+
+  const byte bytecode[] = {LOAD_CONST,       0, LOAD_CONST,   1, LOAD_CONST, 2,
+                           CALL_FUNCTION_KW, 1, RETURN_VALUE, 0};
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setStacksize(3);
+
+  // Execute the code and make sure we get back the result we expect.
+  Object result(&scope, Thread::current()->run(code));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1234));
+}
+
 }  // namespace python

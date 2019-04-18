@@ -597,10 +597,6 @@ class Runtime {
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
 
-  // Helper function to add extension functions to extension classes
-  void classAddExtensionFunction(const Type& type, SymbolId name,
-                                 void* c_function);
-
   // Converts the offset in code's bytecode into the corresponding line number
   // in the backing source file.
   word codeOffsetToLineNum(Thread* thread, const Code& code, word offset);

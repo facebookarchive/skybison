@@ -7,6 +7,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
@@ -886,78 +887,6 @@ RawObject moduleTrampolineKeywordArgsEx(Thread* thread, Frame* caller,
   return callMethKeywordArgs(thread, function, varargs, keywords);
 }
 
-typedef PyObject* (*PyCFunction)(PyObject*, PyObject*, PyObject*);
-
-RawObject extensionTrampoline(Thread* thread, Frame* caller, word argc) {
-  HandleScope scope(thread);
-
-  // Set the address pointer to the function pointer
-  Function function(&scope, caller->peek(argc));
-  Int address(&scope, function.code());
-
-  Object object(&scope, caller->topValue());
-  Runtime* runtime = thread->runtime();
-  Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  PyObject* none = ApiHandle::borrowedReference(thread, NoneType::object());
-
-  if (object.isType()) {
-    Type type_class(&scope, *object);
-    PyCFunction new_function = bit_cast<PyCFunction>(address.asCPtr());
-    PyObject* new_pyobject = (*new_function)(
-        ApiHandle::borrowedReference(thread, *type_class), none, none);
-    return ApiHandle::fromPyObject(new_pyobject)->asObject();
-  }
-
-  HeapObject instance(&scope, *object);
-  Int object_ptr(&scope, runtime->instanceAt(thread, instance, attr_name));
-  PyObject* self = static_cast<PyObject*>(object_ptr.asCPtr());
-
-  PyCFunction init_function = bit_cast<PyCFunction>(address.asCPtr());
-  (*init_function)(self, none, none);
-
-  return NoneType::object();
-}
-
-RawObject extensionTrampolineKw(Thread*, Frame*, word) {
-  UNIMPLEMENTED("ExtensionTrampolineKw");
-}
-
-RawObject extensionTrampolineEx(Thread* thread, Frame* caller, word argc) {
-  HandleScope scope(thread);
-
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
-  Object varargs(&scope, caller->peek(has_varkeywords ? 1 : 0));
-  DCHECK(varargs.isTuple(), "varargs should be tuple");
-  if (Tuple::cast(*varargs).length() < 1) {
-    return thread->raiseTypeErrorWithCStr("function needs *args");
-  }
-
-  Function function(&scope, caller->peek(has_varkeywords ? 2 : 1));
-  Int address(&scope, function.code());
-
-  Object object(&scope, Tuple::cast(*varargs).at(0));
-  Runtime* runtime = thread->runtime();
-  Str attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  PyObject* none = ApiHandle::borrowedReference(thread, NoneType::object());
-
-  if (object.isType()) {
-    Type type_class(&scope, *object);
-    PyCFunction new_function = bit_cast<PyCFunction>(address.asCPtr());
-    PyObject* new_pyobject = (*new_function)(
-        ApiHandle::borrowedReference(thread, *type_class), none, none);
-    return ApiHandle::fromPyObject(new_pyobject)->asObject();
-  }
-
-  HeapObject instance(&scope, *object);
-  Int object_ptr(&scope, runtime->instanceAt(thread, instance, attr_name));
-  PyObject* self = static_cast<PyObject*>(object_ptr.asCPtr());
-
-  PyCFunction init_function = bit_cast<PyCFunction>(address.asCPtr());
-  (*init_function)(self, none, none);
-
-  return NoneType::object();
-}
-
 RawObject unimplementedTrampoline(Thread*, Frame*, word) {
   UNIMPLEMENTED("Trampoline");
 }
@@ -1008,6 +937,110 @@ RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc) {
       [&](const Function& function, const Code& code) {
         return prepareExplodeCall(thread, function, code, caller, argc);
       });
+}
+
+RawObject slotTrampoline(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+  Function func(&scope, caller->peek(argc));
+  Code code(&scope, func.code());
+  auto fn = bit_cast<Function::Entry>(RawInt::cast(code.code()).asCPtr());
+  Frame* frame = thread->openAndLinkFrame(argc, 0, 0);
+  frame->setCode(*code);
+  Object result(&scope, fn(thread, frame, argc));
+  thread->popFrame();
+  return *result;
+}
+
+RawObject slotTrampolineKw(Thread* thread, Frame* frame, word argc) {
+  HandleScope scope(thread);
+  Tuple kw_names(&scope, frame->popValue());
+  if (kw_names.length() != 0) {
+    return thread->raiseTypeErrorWithCStr(
+        "function takes no keyword arguments");
+  }
+  return slotTrampoline(thread, frame, argc);
+}
+
+RawObject slotTrampolineEx(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+
+  if (argc & CallFunctionExFlag::VAR_KEYWORDS) {
+    Dict kwargs(&scope, caller->popValue());
+    if (kwargs.numItems() != 0) {
+      return thread->raiseTypeErrorWithCStr(
+          "function takes no keyword arguments");
+    }
+    argc &= ~CallFunctionExFlag::VAR_KEYWORDS;
+  }
+  DCHECK(argc == 0, "unexpected arg flag");
+
+  Tuple args(&scope, caller->popValue());
+  argc = args.length();
+  for (word i = 0; i < argc; ++i) {
+    caller->pushValue(args.at(i));
+  }
+
+  return slotTrampoline(thread, caller, argc);
+}
+
+RawObject varkwSlotTrampoline(Thread* thread, Frame* caller, word argc) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (argc < 1) {
+    Str msg(&scope, runtime->newStrFromFmt("function needs an argument"));
+    return thread->raiseTypeError(*msg);
+  }
+  // Pack everything except self up into a tuple.
+  Tuple args(&scope, runtime->newTuple(argc - 1));
+  for (word i = argc - 2; i >= 0; i--) {
+    args.atPut(i, caller->popValue());
+  }
+  caller->pushValue(*args);
+  caller->pushValue(NoneType::object());
+  return slotTrampoline(thread, caller, 3);
+}
+
+RawObject varkwSlotTrampolineKw(Thread* thread, Frame* caller, word argc) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Tuple kw_names(&scope, caller->popValue());
+  word num_kwargs = kw_names.length();
+  argc -= num_kwargs;
+  if (argc < 1) {
+    return thread->raiseTypeErrorWithCStr("function needs an argument");
+  }
+
+  Dict kwargs(&scope, runtime->newDict());
+  for (word i = num_kwargs - 1; i >= 0; i--) {
+    Object key(&scope, kw_names.at(i));
+    Object value(&scope, caller->popValue());
+    runtime->dictAtPut(kwargs, key, value);
+  }
+  Tuple args(&scope, runtime->newTuple(argc - 1));
+  for (word i = argc - 2; i >= 0; i--) {
+    args.atPut(i, caller->popValue());
+  }
+  caller->pushValue(*args);
+  caller->pushValue(*kwargs);
+  return slotTrampoline(thread, caller, 3);
+}
+
+RawObject varkwSlotTrampolineEx(Thread* thread, Frame* caller, word flags) {
+  HandleScope scope(thread);
+  Object kwargs(&scope, NoneType::object());
+  if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
+    kwargs = caller->popValue();
+  }
+  Tuple args(&scope, caller->popValue());
+  if (args.length() < 1) {
+    return thread->raiseTypeErrorWithCStr("function needs an argument");
+  }
+  Object self(&scope, args.at(0));
+  args = TupleBuiltins::sliceWithWords(thread, args, 1, args.length(), 1);
+  caller->pushValue(*self);
+  caller->pushValue(*args);
+  caller->pushValue(*kwargs);
+  return slotTrampoline(thread, caller, 3);
 }
 
 }  // namespace python

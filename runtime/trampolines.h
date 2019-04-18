@@ -81,13 +81,6 @@ RawObject moduleTrampolineKeywordArgsKw(Thread* thread, Frame* caller,
 RawObject moduleTrampolineKeywordArgsEx(Thread* thread, Frame* caller,
                                         word argc) ALIGN_16;
 
-RawObject extensionTrampoline(Thread* thread, Frame* caller,
-                              word argc) ALIGN_16;
-RawObject extensionTrampolineKw(Thread* thread, Frame* caller,
-                                word argc) ALIGN_16;
-RawObject extensionTrampolineEx(Thread* thread, Frame* caller,
-                                word argc) ALIGN_16;
-
 // Aborts immediately when called
 RawObject unimplementedTrampoline(Thread* thread, Frame* caller_frame,
                                   word argc) ALIGN_16;
@@ -97,5 +90,16 @@ RawObject builtinTrampolineKw(Thread* thread, Frame* caller,
                               word argc) ALIGN_16;
 RawObject builtinTrampolineEx(Thread* thread, Frame* caller,
                               word argc) ALIGN_16;
+
+RawObject slotTrampoline(Thread* thread, Frame* caller, word argc) ALIGN_16;
+RawObject slotTrampolineKw(Thread* thread, Frame*, word argc) ALIGN_16;
+RawObject slotTrampolineEx(Thread* thread, Frame* caller, word argc) ALIGN_16;
+
+RawObject varkwSlotTrampoline(Thread* thread, Frame* caller,
+                              word argc) ALIGN_16;
+RawObject varkwSlotTrampolineKw(Thread* thread, Frame* caller,
+                                word argc) ALIGN_16;
+RawObject varkwSlotTrampolineEx(Thread* thread, Frame* caller,
+                                word flags) ALIGN_16;
 
 }  // namespace python

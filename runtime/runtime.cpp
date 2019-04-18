@@ -907,23 +907,6 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
   dictAtPutInValueCell(dict, key, function);
 }
 
-void Runtime::classAddExtensionFunction(const Type& type, SymbolId name,
-                                        void* c_function) {
-  DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
-
-  HandleScope scope;
-  Function function(&scope, newFunction());
-  Object key(&scope, symbols()->at(name));
-  function.setName(*key);
-  function.setCode(newIntFromCPtr(c_function));
-  function.setEntry(extensionTrampoline);
-  function.setEntryKw(extensionTrampolineKw);
-  function.setEntryEx(extensionTrampolineEx);
-  Object value(&scope, *function);
-  Dict dict(&scope, type.dict());
-  dictAtPutInValueCell(dict, key, value);
-}
-
 RawObject Runtime::newList() {
   HandleScope scope;
   List result(&scope, heap()->create<RawList>());

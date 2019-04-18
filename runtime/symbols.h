@@ -32,6 +32,7 @@ class Runtime;
   V(DunderComplex, "__complex__")                                              \
   V(DunderContains, "__contains__")                                            \
   V(DunderContext, "__context__")                                              \
+  V(DunderDel, "__del__")                                                      \
   V(DunderDelitem, "__delitem__")                                              \
   V(DunderDelattr, "__delattr__")                                              \
   V(DunderDelete, "__delete__")                                                \
@@ -50,6 +51,8 @@ class Runtime;
   V(DunderFspath, "__fspath__")                                                \
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
+  V(DunderGetattr, "__getattr__")                                              \
+  V(DunderGetattribute, "__getattribute__")                                    \
   V(DunderGetitem, "__getitem__")                                              \
   V(DunderGlobals, "__globals__")                                              \
   V(DunderGt, "__gt__")                                                        \
@@ -115,6 +118,7 @@ class Runtime;
   V(DunderRtruediv, "__rtruediv__")                                            \
   V(DunderRxor, "__rxor__")                                                    \
   V(DunderSet, "__set__")                                                      \
+  V(DunderSetattr, "__setattr__")                                              \
   V(DunderSetitem, "__setitem__")                                              \
   V(DunderSizeof, "__sizeof__")                                                \
   V(DunderSpec, "__spec__")                                                    \
@@ -283,6 +287,7 @@ class Runtime;
   V(KeyError, "KeyError")                                                      \
   V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
   V(Keys, "keys")                                                              \
+  V(Len, "len")                                                                \
   V(Length, "length")                                                          \
   V(LStrip, "lstrip")                                                          \
   V(LargeInt, "largeint")                                                      \

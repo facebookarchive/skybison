@@ -1,4 +1,6 @@
 #include "capi-handles.h"
+
+#include "cpython-func.h"
 #include "cpython-types.h"
 #include "runtime.h"
 #include "visitor.h"
@@ -140,6 +142,17 @@ ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
   return ApiHandle::ensure(thread, obj);
 }
 
+RawObject ApiHandle::stealReference(Thread* thread, PyObject* py_obj) {
+  if (py_obj == nullptr) return Error::object();
+
+  HandleScope scope(thread);
+  // Using ApiHandle::fromPyObject() here is sketchy since the provenance of
+  // py_obj is unknown, but it's the best we can do for now.
+  Object obj(&scope, ApiHandle::fromPyObject(py_obj)->asObject());
+  // TODO(T42827325): We should decref py_obj before returning.
+  return *obj;
+}
+
 void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
   HandleScope scope;
   Dict dict(&scope, handles);
@@ -190,6 +203,8 @@ RawObject ApiHandle::asInstance(RawObject obj) {
   Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   runtime->instanceAtPut(thread, instance, attr_name, object_ptr);
+  // TODO(T42827325): incref this before returning to represent the reference
+  // stored in ___extension___.
 
   return *instance;
 }

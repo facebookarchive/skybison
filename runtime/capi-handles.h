@@ -18,6 +18,11 @@ class ApiHandle : public PyObject {
   // of the handle.
   static ApiHandle* borrowedReference(Thread* thread, RawObject obj);
 
+  // If py_obj == nullptr, return Error. Otherwise, convert py_obj to a managed
+  // object, decref it, and return the managed object. This effectively converts
+  // one reference to py_obj into a managed reference.
+  static RawObject stealReference(Thread* thread, PyObject* py_obj);
+
   static ApiHandle* fromPyObject(PyObject* py_obj) {
     return static_cast<ApiHandle*>(py_obj);
   }
