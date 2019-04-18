@@ -8,6 +8,9 @@
 
 namespace python {
 
+RawObject functionGetAttribute(Thread* thread, const Function& function,
+                               const Object& name_str);
+
 class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
                                          LayoutId::kFunction> {
  public:

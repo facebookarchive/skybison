@@ -32,7 +32,7 @@ class C(A, B): pass
   EXPECT_EQ(result.at(1), b);
 }
 
-TEST(TypeBuiltinTest, ObjectBasesReturnsEmptyTuple) {
+TEST(TypeBuiltinTest, DunderBasesOnObjectReturnsEmptyTuple) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -433,6 +433,172 @@ result = C.mro()
   List result(&scope, *result_obj);
   EXPECT_EQ(result.at(0), *ctype);
   EXPECT_EQ(result.at(1), runtime.typeAt(LayoutId::kObject));
+}
+
+TEST(TypeBuiltinTest, TypeGetAttributeReturnsAttributeValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  x = 42
+)")
+                   .isError());
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*c_obj));
+  Type c(&scope, *c_obj);
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread, c, name), 42));
+}
+
+TEST(TypeBuiltinTest, TypeGetAttributeReturnsMetaclassAttributeValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class M(type):
+  x = 77
+class C(metaclass=M): pass
+)")
+                   .isError());
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*c_obj));
+  Type c(&scope, *c_obj);
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread, c, name), 77));
+}
+
+TEST(TypeBuiltinTest, TypeGetAttributeWithMissingAttributeReturnsError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, "class C: pass").isError());
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*c_obj));
+  Type c(&scope, *c_obj);
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(typeGetAttribute(thread, c, name).isError());
+  EXPECT_FALSE(thread->hasPendingException());
+}
+
+TEST(TypeBuiltinsTest, TypeGetAttributeCallsDunderGetOnDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): pass
+  def __get__(self, instance, owner): return (self, instance, owner)
+class M(type):
+  foo = D()
+class A(metaclass=M): pass
+)")
+                   .isError());
+  Object d_obj(&scope, moduleAt(&runtime, "__main__", "D"));
+  ASSERT_TRUE(d_obj.isType());
+  Type d(&scope, *d_obj);
+  Object m(&scope, moduleAt(&runtime, "__main__", "M"));
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  Object result_obj(&scope, typeGetAttribute(thread, a, foo));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+  Object result_0(&scope, result.at(0));
+  EXPECT_TRUE(runtime.isInstance(result_0, d));
+  EXPECT_EQ(result.at(1), a);
+  EXPECT_EQ(result.at(2), m);
+}
+
+TEST(TypeBuiltinsTest, TypeGetAttributeCallsDunderGetOnNonDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __get__(self, instance, owner): return 42
+class M(type):
+  foo = D()
+class A(metaclass=M): pass
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread, a, foo), 42));
+}
+
+TEST(TypeBuiltinsTest, TypeGetAttributePrefersDataDescriptorOverTypeAttr) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): pass
+  def __get__(self, instance, owner): return 42
+class M(type):
+  foo = D()
+class A(metaclass=M):
+  foo = 12
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread, a, foo), 42));
+}
+
+TEST(TypeBuiltinsTest, TypeGetAttributePrefersFieldOverNonDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __get__(self, instance, owner): return 42
+class M(type):
+  foo = D()
+class A(metaclass=M):
+  foo = 12
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(typeGetAttribute(thread, a, foo), 12));
+}
+
+TEST(TypeBuiltinsTest, TypeGetAttributePropagatesDunderGetException) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): pass
+  def __get__(self, instance, owner): raise UserWarning()
+class M(type):
+  foo = D()
+class A(metaclass=M): pass
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(raised(typeGetAttribute(thread, a, foo), LayoutId::kUserWarning));
+}
+
+TEST(TypeBuiltinsTest, TypeGetAttributeOnNoneTypeReturnsFunction) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type none_type(&scope, runtime.typeAt(LayoutId::kNoneType));
+  Object name(&scope, runtime.newStrFromCStr("__repr__"));
+  EXPECT_TRUE(typeGetAttribute(thread, none_type, name).isFunction());
 }
 
 TEST(TypeBuiltinTest, TypeofSmallStrReturnsStr) {

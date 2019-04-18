@@ -349,63 +349,6 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   return *result;
 }
 
-RawObject Runtime::classGetAttr(Thread* thread, const Object& receiver,
-                                const Object& name) {
-  DCHECK(name.isStr(), "Name is not a string");
-  HandleScope scope(thread);
-  Type type(&scope, *receiver);
-  Type meta_type(&scope, typeOf(*receiver));
-
-  // Look for the attribute in the meta class
-  Object meta_attr(&scope, typeLookupNameInMro(thread, meta_type, name));
-  if (!meta_attr.isError() && isDataDescriptor(thread, meta_attr)) {
-    return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                          meta_attr, type, meta_type);
-  }
-
-  // No data descriptor found on the meta class, look in the mro of the type
-  Object attr(&scope, typeLookupNameInMro(thread, type, name));
-  if (!attr.isError()) {
-    if (isNonDataDescriptor(thread, attr)) {
-      // Unfortunately calling `__get__` for a lookup on `type(None)` will look
-      // exactly the same as calling it for a lookup on the `None` object.
-      // To solve the ambiguity we add a special case for `type(None)` here.
-      // Luckily it is impossible for the user to change the type so we can
-      // special case the desired lookup behavior here.
-      // Also see `FunctionBuiltins::dunderGet` for the related special casing
-      // of lookups on the `None` object.
-      if (type.builtinBase() == LayoutId::kNoneType) {
-        return *attr;
-      }
-      Object none(&scope, NoneType::object());
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            attr, none, receiver);
-    }
-    return *attr;
-  }
-
-  // No data descriptor found on the meta class, look on the type
-  Object result(&scope, instanceAt(thread, type, name));
-  if (!result.isError()) {
-    return *result;
-  }
-
-  // No attr found in type or its mro, use the non-data descriptor found in
-  // the metaclass (if any).
-  if (!meta_attr.isError()) {
-    if (isNonDataDescriptor(thread, meta_attr)) {
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            meta_attr, type, meta_type);
-    }
-    // If a regular attribute was found in the metaclass, return it
-    return *meta_attr;
-  }
-
-  Str type_name(&scope, type.name());
-  return thread->raiseAttributeError(newStrFromFmt(
-      "type object '%S' has no attribute '%S'", &type_name, &name));
-}
-
 RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
                                 const Object& name, const Object& value) {
   DCHECK(name.isStr(), "Name is not a string");
@@ -423,7 +366,8 @@ RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
   Type metatype(&scope, typeOf(*receiver));
   Object meta_attr(&scope, typeLookupNameInMro(thread, metatype, name));
   if (!meta_attr.isError()) {
-    if (isDataDescriptor(thread, meta_attr)) {
+    Type meta_attr_type(&scope, typeOf(*meta_attr));
+    if (typeIsDataDescriptor(thread, meta_attr_type)) {
       // TODO(T25692531): Call __set__ from meta_attr
       UNIMPLEMENTED("custom descriptors are unsupported");
     }
@@ -476,56 +420,6 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   return NoneType::object();
 }
 
-// Generic attribute lookup code used for instance objects
-RawObject Runtime::instanceGetAttr(Thread* thread, const Object& receiver,
-                                   const Object& name) {
-  DCHECK(name.isStr(), "Name is not a string");
-
-  // Look for the attribute in the class
-  HandleScope scope(thread);
-  Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupNameInMro(thread, type, name));
-  if (!type_attr.isError()) {
-    if (isDataDescriptor(thread, type_attr)) {
-      Object owner(&scope, *type);
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            type_attr, receiver, owner);
-    }
-  }
-
-  // No data descriptor found on the class, look at the instance.
-  if (receiver.isHeapObject()) {
-    HeapObject instance(&scope, *receiver);
-    Object result(&scope, instanceAt(thread, instance, name));
-    if (!result.isError()) {
-      return *result;
-    }
-  }
-
-  // Nothing found in the instance, if we found a non-data descriptor via the
-  // class search, use it.
-  if (!type_attr.isError()) {
-    if (isNonDataDescriptor(thread, type_attr)) {
-      Object owner(&scope, *type);
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            type_attr, receiver, owner);
-    }
-
-    // If a regular attribute was found in the class, return it
-    return *type_attr;
-  }
-
-  if (receiver.isModule()) {
-    Module module(&scope, *receiver);
-    Str module_name(&scope, module.name());
-    return thread->raiseAttributeError(newStrFromFmt(
-        "module '%S' has no attribute '%S'", &module_name, &name));
-  }
-  Str type_name(&scope, type.name());
-  return thread->raiseAttributeError(
-      newStrFromFmt("'%S' object has no attribute '%S'", &type_name, &name));
-}
-
 RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
                                    const Object& name, const Object& value) {
   DCHECK(name.isStr(), "Name is not a string");
@@ -534,7 +428,8 @@ RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
   Type type(&scope, typeOf(*receiver));
   Object type_attr(&scope, typeLookupNameInMro(thread, type, name));
   if (!type_attr.isError()) {
-    if (isDataDescriptor(thread, type_attr)) {
+    Type type_attr_type(&scope, typeOf(*type_attr));
+    if (typeIsDataDescriptor(thread, type_attr_type)) {
       return Interpreter::callDescriptorSet(thread, thread->currentFrame(),
                                             type_attr, receiver, value);
     }
@@ -576,21 +471,6 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   return *result;
 }
 
-// TODO(T39611261): Replace this with instanceGetAttr
-RawObject Runtime::functionGetAttr(Thread* thread, const Object& receiver,
-                                   const Object& name) {
-  DCHECK(name.isStr(), "Name is not a string");
-
-  // Initialize Dict if non-existent
-  HandleScope scope(thread);
-  Function func(&scope, *receiver);
-  if (func.dict().isNoneType()) {
-    func.setDict(newDict());
-  }
-
-  return instanceGetAttr(thread, receiver, name);
-}
-
 RawObject Runtime::functionSetAttr(Thread* thread, const Object& receiver,
                                    const Object& name, const Object& value) {
   DCHECK(name.isStr(), "Name is not a string");
@@ -611,22 +491,6 @@ RawObject Runtime::functionSetAttr(Thread* thread, const Object& receiver,
   Dict function_dict(&scope, func.dict());
   dictAtPut(function_dict, name, value);
   return NoneType::object();
-}
-
-// Note that PEP 562 adds support for data descriptors in module objects.
-// We are targeting python 3.6 for now, so we won't worry about that.
-RawObject Runtime::moduleGetAttr(Thread* thread, const Object& receiver,
-                                 const Object& name) {
-  DCHECK(name.isStr(), "Name is not a string");
-  HandleScope scope(thread);
-  Module mod(&scope, *receiver);
-  Object ret(&scope, moduleAt(mod, name));
-
-  if (!ret.isError()) {
-    return *ret;
-  }
-
-  return instanceGetAttr(thread, receiver, name);
 }
 
 RawObject Runtime::moduleSetAttr(Thread* thread, const Object& receiver,
@@ -684,20 +548,6 @@ bool Runtime::isCallable(Thread* thread, const Object& obj) {
   }
   Type type(&scope, typeOf(*obj));
   return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall).isError();
-}
-
-bool Runtime::isDataDescriptor(Thread* thread, const Object& object) {
-  // TODO(T25692962): Track "descriptorness" through a bit on the class
-  HandleScope scope(thread);
-  Type type(&scope, typeOf(*object));
-  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderSet).isError();
-}
-
-bool Runtime::isNonDataDescriptor(Thread* thread, const Object& object) {
-  // TODO(T25692962): Track "descriptorness" through a bit on the class
-  HandleScope scope(thread);
-  Type type(&scope, typeOf(*object));
-  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderGet).isError();
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
@@ -3339,21 +3189,54 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& receiver,
   }
 
   // A minimal implementation of getattr needed to get richards running.
-  RawObject result;
+  HandleScope scope(thread);
   if (isInstanceOfType(*receiver)) {
-    result = classGetAttr(thread, receiver, name);
-  } else if (receiver.isModule()) {
-    result = moduleGetAttr(thread, receiver, name);
-  } else if (receiver.isSuper()) {
-    // TODO(T27518836): remove when we support __getattro__
-    result = superGetAttr(thread, receiver, name);
-  } else if (receiver.isFunction()) {
-    result = functionGetAttr(thread, receiver, name);
-  } else {
-    // everything else should fallback to instance
-    result = instanceGetAttr(thread, receiver, name);
+    Type type(&scope, *receiver);
+    Object result(&scope, typeGetAttribute(thread, type, name));
+    if (result.isError() && !thread->hasPendingException()) {
+      Str type_name(&scope, type.name());
+      return thread->raiseAttributeError(newStrFromFmt(
+          "type object '%S' has no attribute '%S'", &type_name, &name));
+    }
+    return *result;
   }
-  return result;
+  if (receiver.isModule()) {
+    Module module(&scope, *receiver);
+    Object result(&scope, moduleGetAttribute(thread, module, name));
+    if (result.isError() && !thread->hasPendingException()) {
+      Str module_name(&scope, module.name());
+      return thread->raiseAttributeError(newStrFromFmt(
+          "module '%S' has no attribute '%S'", &module_name, &name));
+    }
+    return *result;
+  }
+  if (receiver.isSuper()) {
+    Super super(&scope, *receiver);
+    Object result(&scope, superGetAttribute(thread, super, name));
+    if (result.isError() && !thread->hasPendingException()) {
+      return thread->raiseAttributeError(
+          newStrFromFmt("super object has no attribute '%S'", &name));
+    }
+    return *result;
+  }
+  if (receiver.isFunction()) {
+    Function function(&scope, *receiver);
+    Object result(&scope, functionGetAttribute(thread, function, name));
+    if (result.isError() && !thread->hasPendingException()) {
+      Str function_name(&scope, function.name());
+      return thread->raiseAttributeError(newStrFromFmt(
+          "function '%S' has no attribute '%S'", &function_name, &name));
+    }
+    return *result;
+  }
+
+  // everything else should fallback to instance
+  Object result(&scope, objectGetAttribute(thread, receiver, name));
+  if (result.isError() && !thread->hasPendingException()) {
+    return thread->raiseAttributeError(
+        newStrFromFmt("'%T' object has no attribute '%S'", &receiver, &name));
+  }
+  return *result;
 }
 
 RawObject Runtime::attributeAtId(Thread* thread, const Object& receiver,
@@ -3980,49 +3863,6 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   layoutAddEdge(edges, iname, value);
 
   return *new_layout;
-}
-
-RawObject Runtime::superGetAttr(Thread* thread, const Object& receiver,
-                                const Object& name) {
-  DCHECK(name.isStr(), "Name is not a string");
-  // This must return `super`.
-  if (RawStr::cast(*name).equals(symbols()->DunderClass())) {
-    return typeOf(*receiver);
-  }
-
-  HandleScope scope(thread);
-  Super super(&scope, *receiver);
-  Type start_type(&scope, super.objectType());
-  Tuple mro(&scope, start_type.mro());
-  word i;
-  for (i = 0; i < mro.length(); i++) {
-    if (super.type() == mro.at(i)) {
-      // skip super->type (if any)
-      i++;
-      break;
-    }
-  }
-  for (; i < mro.length(); i++) {
-    Type type(&scope, mro.at(i));
-    Dict dict(&scope, type.dict());
-    Object value_cell(&scope, dictAt(dict, name));
-    if (value_cell.isError()) {
-      continue;
-    }
-    Object value(&scope, RawValueCell::cast(*value_cell).value());
-    if (!isNonDataDescriptor(thread, value)) {
-      return *value;
-    }
-    Object self(&scope, NoneType::object());
-    if (super.object() != *start_type) {
-      self = super.object();
-    }
-    Object owner(&scope, *start_type);
-    return Interpreter::callDescriptorGet(thread, thread->currentFrame(), value,
-                                          self, owner);
-  }
-  // fallback to normal instance getattr
-  return instanceGetAttr(thread, receiver, name);
 }
 
 void Runtime::freeApiHandles() {

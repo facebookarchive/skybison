@@ -2,12 +2,24 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
 #include "trampolines-inl.h"
 
 namespace python {
+
+RawObject functionGetAttribute(Thread* thread, const Function& function,
+                               const Object& name_str) {
+  // TODO(T39611261): Figure out a way to skip dict init.
+  // Initialize Dict if non-existent
+  if (function.dict().isNoneType()) {
+    function.setDict(thread->runtime()->newDict());
+  }
+
+  return objectGetAttribute(thread, function, name_str);
+}
 
 const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGet, dunderGet},

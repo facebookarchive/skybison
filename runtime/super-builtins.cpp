@@ -2,11 +2,55 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "type-builtins.h"
 
 namespace python {
+
+RawObject superGetAttribute(Thread* thread, const Super& super,
+                            const Object& name_str) {
+  // This must return `super`.
+  Runtime* runtime = thread->runtime();
+  if (RawStr::cast(runtime->symbols()->DunderClass()).equals(*name_str)) {
+    return runtime->typeOf(*super);
+  }
+
+  HandleScope scope(thread);
+  Type start_type(&scope, super.objectType());
+  Tuple mro(&scope, start_type.mro());
+  word i;
+  word mro_length = mro.length();
+  for (i = 0; i < mro_length; i++) {
+    if (super.type() == mro.at(i)) {
+      // skip super->type (if any)
+      i++;
+      break;
+    }
+  }
+  for (; i < mro_length; i++) {
+    Type type(&scope, mro.at(i));
+    Dict dict(&scope, type.dict());
+    Object value(&scope, runtime->typeDictAt(dict, name_str));
+    if (value.isError()) {
+      continue;
+    }
+    Type value_type(&scope, runtime->typeOf(*value));
+    if (!typeIsNonDataDescriptor(thread, value_type)) {
+      return *value;
+    }
+    Object self(&scope, NoneType::object());
+    if (super.object() != *start_type) {
+      self = super.object();
+    }
+    return Interpreter::callDescriptorGet(thread, thread->currentFrame(), value,
+                                          self, start_type);
+  }
+
+  return objectGetAttribute(thread, super, name_str);
+}
 
 const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderInit, dunderInit},

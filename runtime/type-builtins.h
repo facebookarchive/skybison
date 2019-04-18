@@ -8,6 +8,15 @@
 
 namespace python {
 
+RawObject typeGetAttribute(Thread* thread, const Type& type,
+                           const Object& name_str);
+
+// Returns true if the type defines a __set__ method.
+bool typeIsDataDescriptor(Thread* thread, const Type& type);
+
+// Returns true if the type defines a __get__ method.
+bool typeIsNonDataDescriptor(Thread* thread, const Type& type);
+
 // Looks up `name` in the dict of each entry in type's MRO. Returns an `Error`
 // object if the name wasn't found.
 RawObject typeLookupNameInMro(Thread* thread, const Type& type,

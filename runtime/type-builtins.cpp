@@ -34,6 +34,78 @@ RawObject typeLookupSymbolInMro(Thread* thread, const Type& type,
   return typeLookupNameInMro(thread, type, symbol_str);
 }
 
+bool typeIsDataDescriptor(Thread* thread, const Type& type) {
+  // TODO(T25692962): Track "descriptorness" through a bit on the class
+  HandleScope scope(thread);
+  Object dunder_set_name(&scope, thread->runtime()->symbols()->DunderSet());
+  return !typeLookupNameInMro(thread, type, dunder_set_name).isError();
+}
+
+bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
+  // TODO(T25692962): Track "descriptorness" through a bit on the class
+  HandleScope scope(thread);
+  Object dunder_get_name(&scope, thread->runtime()->symbols()->DunderGet());
+  return !typeLookupNameInMro(thread, type, dunder_get_name).isError();
+}
+
+RawObject typeGetAttribute(Thread* thread, const Type& type,
+                           const Object& name_str) {
+  // Look for the attribute in the meta class
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type meta_type(&scope, runtime->typeOf(*type));
+  Object meta_attr(&scope, typeLookupNameInMro(thread, meta_type, name_str));
+  if (!meta_attr.isError()) {
+    Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
+    if (typeIsDataDescriptor(thread, meta_attr_type)) {
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            meta_attr, type, meta_type);
+    }
+  }
+
+  // No data descriptor found on the meta class, look in the mro of the type
+  Object attr(&scope, typeLookupNameInMro(thread, type, name_str));
+  if (!attr.isError()) {
+    Type attr_type(&scope, runtime->typeOf(*attr));
+    if (typeIsNonDataDescriptor(thread, attr_type)) {
+      // Unfortunately calling `__get__` for a lookup on `type(None)` will look
+      // exactly the same as calling it for a lookup on the `None` object.
+      // To solve the ambiguity we add a special case for `type(None)` here.
+      // Luckily it is impossible for the user to change the type so we can
+      // special case the desired lookup behavior here.
+      // Also see `FunctionBuiltins::dunderGet` for the related special casing
+      // of lookups on the `None` object.
+      if (type.builtinBase() == LayoutId::kNoneType) {
+        return *attr;
+      }
+      Object none(&scope, NoneType::object());
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            attr, none, type);
+    }
+    return *attr;
+  }
+
+  // No data descriptor found on the meta class, look on the type
+  Object result(&scope, runtime->instanceAt(thread, type, name_str));
+  if (!result.isError()) {
+    return *result;
+  }
+
+  // No attr found in type or its mro, use the non-data descriptor found in
+  // the metaclass (if any).
+  if (!meta_attr.isError()) {
+    Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
+    if (typeIsNonDataDescriptor(thread, meta_attr_type)) {
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            meta_attr, type, meta_type);
+    }
+    // If a regular attribute was found in the metaclass, return it
+    return *meta_attr;
+  }
+
+  return Error::object();
+}
+
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict) {
   HandleScope scope(thread);

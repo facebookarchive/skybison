@@ -8,8 +8,49 @@
 #include "runtime.h"
 #include "thread.h"
 #include "trampolines-inl.h"
+#include "type-builtins.h"
 
 namespace python {
+
+RawObject objectGetAttribute(Thread* thread, const Object& object,
+                             const Object& name_str) {
+  // Look for the attribute in the class
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->typeOf(*object));
+  Object type_attr(&scope, typeLookupNameInMro(thread, type, name_str));
+  if (!type_attr.isError()) {
+    Type type_attr_type(&scope, runtime->typeOf(*type_attr));
+    if (typeIsDataDescriptor(thread, type_attr_type)) {
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            type_attr, object, type);
+    }
+  }
+
+  // No data descriptor found on the class, look at the instance.
+  if (object.isHeapObject()) {
+    HeapObject instance(&scope, *object);
+    Object result(&scope, runtime->instanceAt(thread, instance, name_str));
+    if (!result.isError()) {
+      return *result;
+    }
+  }
+
+  // Nothing found in the instance, if we found a non-data descriptor via the
+  // class search, use it.
+  if (!type_attr.isError()) {
+    Type type_attr_type(&scope, runtime->typeOf(*type_attr));
+    if (typeIsNonDataDescriptor(thread, type_attr_type)) {
+      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
+                                            type_attr, object, type);
+    }
+
+    // If a regular attribute was found in the class, return it
+    return *type_attr;
+  }
+
+  return Error::object();
+}
 
 // clang-format off
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {

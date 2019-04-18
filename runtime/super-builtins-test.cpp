@@ -191,4 +191,134 @@ f(1)
                             "super(): __class__ cell not found"));
 }
 
+TEST(SuperBuiltinsTest, SuperGetAttributeReturnsAttributeInSuperClass) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  x = 13
+class B(A):
+  x = 42
+  def getsuper(self):
+    return super()
+s = B().getsuper()
+)")
+                   .isError());
+  Object s_obj(&scope, moduleAt(&runtime, "__main__", "s"));
+  ASSERT_TRUE(s_obj.isSuper());
+  Super s(&scope, *s_obj);
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(isIntEqualsWord(superGetAttribute(thread, s, name), 13));
+}
+
+TEST(SuperBuiltinsTest, SuperGetAttributeWithMissingAttributeReturnsError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A: pass
+class B(A):
+  x = 42
+  def getsuper(self):
+    return super()
+s = B().getsuper()
+)")
+                   .isError());
+  Object s_obj(&scope, moduleAt(&runtime, "__main__", "s"));
+  ASSERT_TRUE(s_obj.isSuper());
+  Super s(&scope, *s_obj);
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(superGetAttribute(thread, s, name).isError());
+  EXPECT_FALSE(thread->hasPendingException());
+}
+
+TEST(SuperBuiltinsTest, SuperGetAttributeCallsDunderGetOnDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): pass
+  def __get__(self, instance, owner): return (self, instance, owner)
+d = D()
+class A:
+  x = d
+class B(A):
+  x = 42
+  def getsuper(self):
+    return super()
+i = B()
+s = i.getsuper()
+)")
+                   .isError());
+  Object d(&scope, moduleAt(&runtime, "__main__", "d"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "B"));
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object s_obj(&scope, moduleAt(&runtime, "__main__", "s"));
+  ASSERT_TRUE(s_obj.isSuper());
+  Super s(&scope, *s_obj);
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  Object result_obj(&scope, superGetAttribute(thread, s, name));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_EQ(result.at(0), d);
+  EXPECT_EQ(result.at(1), i);
+  EXPECT_EQ(result.at(2), b);
+}
+
+TEST(SuperBuiltinsTest, SuperGetAttributeCallsDunderGetOnNonDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __get__(self, instance, owner): return (self, instance, owner)
+d = D()
+class A:
+  x = d
+class B(A):
+  x = 42
+  def getsuper(self):
+    return super()
+i = B()
+s = i.getsuper()
+)")
+                   .isError());
+  Object d(&scope, moduleAt(&runtime, "__main__", "d"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "B"));
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object s_obj(&scope, moduleAt(&runtime, "__main__", "s"));
+  ASSERT_TRUE(s_obj.isSuper());
+  Super s(&scope, *s_obj);
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  Object result_obj(&scope, superGetAttribute(thread, s, name));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_EQ(result.at(0), d);
+  EXPECT_EQ(result.at(1), i);
+  EXPECT_EQ(result.at(2), b);
+}
+
+TEST(SuperBuiltinsTest, SuperGetAttributeDunderClassReturnsSuper) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def foo(self):
+    return super()
+s = C().foo()
+)")
+                   .isError());
+  Object s_obj(&scope, moduleAt(&runtime, "__main__", "s"));
+  ASSERT_TRUE(s_obj.isSuper());
+  Super s(&scope, *s_obj);
+  Object name(&scope, runtime.newStrFromCStr("__class__"));
+  Type super_type(&scope, runtime.typeAt(LayoutId::kSuper));
+  EXPECT_EQ(superGetAttribute(thread, s, name), super_type);
+}
+
 }  // namespace python

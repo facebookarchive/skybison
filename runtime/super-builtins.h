@@ -8,6 +8,9 @@
 
 namespace python {
 
+RawObject superGetAttribute(Thread* thread, const Super& super,
+                            const Object& name_str);
+
 class SuperBuiltins
     : public Builtins<SuperBuiltins, SymbolId::kSuper, LayoutId::kSuper> {
  public:

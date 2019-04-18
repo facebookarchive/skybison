@@ -693,12 +693,6 @@ class Runtime {
   // instance, only __call__ defined on the type.
   bool isCallable(Thread* thread, const Object& object);
 
-  // Returns whether object's class provides a __set__ method
-  bool isDataDescriptor(Thread* thread, const Object& object);
-
-  // Returns whether object's class provides a __get__ method
-  bool isNonDataDescriptor(Thread* thread, const Object& object);
-
   // Returns whether object's class provides a __delete__ method
   bool isDeleteDescriptor(Thread* thread, const Object& object);
 
@@ -826,10 +820,6 @@ class Runtime {
 
   RawTuple setGrow(const Tuple& data);
 
-  // Generic attribute lookup code used for class objects
-  RawObject classGetAttr(Thread* thread, const Object& receiver,
-                         const Object& name);
-
   // Generic attribute setting code used for class objects
   RawObject classSetAttr(Thread* thread, const Object& receiver,
                          const Object& name, const Object& value);
@@ -837,10 +827,6 @@ class Runtime {
   // Generic attribute deletion code used for class objects
   RawObject classDelAttr(Thread* thread, const Object& receiver,
                          const Object& name);
-
-  // Generic attribute lookup code used for instance objects
-  RawObject instanceGetAttr(Thread* thread, const Object& receiver,
-                            const Object& name);
 
   // Generic attribute setting code used for instance objects
   RawObject instanceSetAttr(Thread* thread, const Object& receiver,
@@ -850,10 +836,6 @@ class Runtime {
   RawObject instanceDelAttr(Thread* thread, const Object& receiver,
                             const Object& name);
 
-  // Generic attribute lookup code used for module objects
-  RawObject moduleGetAttr(Thread* thread, const Object& receiver,
-                          const Object& name);
-
   // Generic attribute setting code used for module objects
   RawObject moduleSetAttr(Thread* thread, const Object& receiver,
                           const Object& name, const Object& value);
@@ -861,14 +843,6 @@ class Runtime {
   // Generic attribute deletion code used for module objects
   RawObject moduleDelAttr(Thread* thread, const Object& receiver,
                           const Object& name);
-
-  // Specialized attribute lookup code used for super objects
-  RawObject superGetAttr(Thread* thread, const Object& receiver,
-                         const Object& name);
-
-  // Generic attribute lookup code used for function objects
-  RawObject functionGetAttr(Thread* thread, const Object& receiver,
-                            const Object& name);
 
   // Generic attribute setting code used for function objects
   RawObject functionSetAttr(Thread* thread, const Object& receiver,

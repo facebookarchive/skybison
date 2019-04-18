@@ -5,6 +5,9 @@
 
 namespace python {
 
+RawObject objectGetAttribute(Thread* thread, const Object& object,
+                             const Object& name_str);
+
 class ObjectBuiltins {
  public:
   static void initialize(Runtime* runtime);

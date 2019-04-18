@@ -2,12 +2,28 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
 #include "trampolines-inl.h"
 
 namespace python {
+
+RawObject moduleGetAttribute(Thread* thread, const Module& module,
+                             const Object& name_str) {
+  // Note that PEP 562 adds support for data descriptors in module objects.
+  // We are targeting python 3.6 for now, so we won't worry about that.
+
+  HandleScope scope(thread);
+  Object result(&scope, thread->runtime()->moduleAt(module, name_str));
+  if (!result.isError()) return *result;
+
+  // TODO(T42983855) dispatching to objectGetAttribute like this does not make
+  // data properties on the type override module members.
+
+  return objectGetAttribute(thread, module, name_str);
+}
 
 int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   Runtime* runtime = thread->runtime();

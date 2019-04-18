@@ -62,7 +62,8 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
           callable = *attr;
           break;
         }
-        if (runtime->isNonDataDescriptor(thread, attr)) {
+        Type attr_type(&scope, runtime->typeOf(*attr));
+        if (typeIsNonDataDescriptor(thread, attr_type)) {
           Object owner(&scope, *type);
           callable = callDescriptorGet(thread, frame, attr, callable, owner);
           if (callable.isFunction()) {
@@ -245,7 +246,8 @@ RawObject Interpreter::lookupMethod(Thread* thread, Frame* caller,
     return *method;
   }
   if (!method.isError()) {
-    if (runtime->isNonDataDescriptor(thread, method)) {
+    Type method_type(&scope, runtime->typeOf(*method));
+    if (typeIsNonDataDescriptor(thread, method_type)) {
       Object owner(&scope, *type);
       return callDescriptorGet(thread, caller, method, receiver, owner);
     }

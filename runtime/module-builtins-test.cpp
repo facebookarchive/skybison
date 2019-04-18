@@ -116,6 +116,27 @@ result = sys.__dict__
   EXPECT_TRUE(result.isDict());
 }
 
+TEST(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, "x = 42").isError());
+  Module module(&scope, runtime.findModuleById(SymbolId::kDunderMain));
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(isIntEqualsWord(moduleGetAttribute(thread, module, name), 42));
+}
+
+TEST(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object module_name(&scope, runtime.newStrFromCStr(""));
+  Module module(&scope, runtime.newModule(module_name));
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(moduleGetAttribute(thread, module, name).isError());
+  EXPECT_FALSE(thread->hasPendingException());
+}
+
 TEST(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
   Runtime runtime;
   HandleScope scope;

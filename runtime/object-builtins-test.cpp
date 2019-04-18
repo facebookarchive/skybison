@@ -264,4 +264,153 @@ TEST(NoneBuiltinsTest, DunderReprReturnsNone) {
   EXPECT_TRUE(isStrEqualsCStr(*a, "None"));
 }
 
+TEST(ObjectBuiltinsTest, ObjectGetAttributeReturnsInstanceValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+c = C()
+c.__hash__ = 42
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object name(&scope, runtime.newStrFromCStr("__hash__"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, c, name), 42));
+}
+
+TEST(ObjectBuiltinsTest, ObjectGetAttributeReturnsTypeValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  x = -11
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object name(&scope, runtime.newStrFromCStr("x"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, c, name), -11));
+}
+
+TEST(ObjectBuiltinsTest, ObjectGetAttributeWithNonExistentNameReturnsError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(objectGetAttribute(thread, c, name).isError());
+  EXPECT_FALSE(thread->hasPendingException());
+}
+
+TEST(ObjectBuiltinsTest, ObjectGetAttributeCallsDunderGetOnDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): pass
+  def __get__(self, instance, owner): return 42
+class A:
+  foo = D()
+a = A()
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, a, foo), 42));
+}
+
+TEST(ObjectBuiltinsTest, ObjectGetAttributeCallsDunderGetOnNonDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __get__(self, instance, owner): return 42
+class A:
+  foo = D()
+a = A()
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, a, foo), 42));
+}
+
+TEST(ObjectBuiltinsTest,
+     ObjectGetAttributePrefersDataDescriptorOverInstanceAttr) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): pass
+  def __get__(self, instance, owner): return 42
+class A:
+  pass
+a = A()
+a.foo = 12
+A.foo = D()
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, a, foo), 42));
+}
+
+TEST(ObjectBuiltinsTest,
+     ObjectGetAttributePrefersInstanceAttrOverNonDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __get__(self, instance, owner): return 42
+class A:
+  foo = D()
+a = A()
+a.foo = 12
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, a, foo), 12));
+}
+
+TEST(ObjectBuiltinsTest, ObjectGetAttributePropagatesDunderGetException) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): pass
+  def __get__(self, instance, owner): raise UserWarning()
+class A:
+  foo = D()
+a = A()
+)")
+                   .isError());
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(
+      raised(objectGetAttribute(thread, a, foo), LayoutId::kUserWarning));
+}
+
+TEST(ObjectBuiltinsTest,
+     ObjectGetAttributeOnNoneNonDataDescriptorReturnsBoundMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object none(&scope, NoneType::object());
+  Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
+  EXPECT_TRUE(objectGetAttribute(thread, none, attr_name).isBoundMethod());
+}
+
 }  // namespace python

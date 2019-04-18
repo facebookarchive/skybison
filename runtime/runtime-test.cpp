@@ -1722,78 +1722,6 @@ static RawObject createType(Runtime* runtime) {
   return *type;
 }
 
-static void setInTypeDict(Runtime* runtime, const Object& type,
-                          const Object& attr, const Object& value) {
-  HandleScope scope;
-  Type k(&scope, *type);
-  Dict type_dict(&scope, k.dict());
-  runtime->dictAtPutInValueCell(type_dict, attr, value);
-}
-
-static void setInMetaclass(Runtime* runtime, const Object& type,
-                           const Object& attr, const Object& value) {
-  HandleScope scope;
-  Object meta_type(&scope, runtime->typeOf(*type));
-  setInTypeDict(runtime, meta_type, attr, value);
-}
-
-// Get an attribute that corresponds to a function on the metaclass
-TEST(TypeGetAttrTest, MetaClassFunction) {
-  Runtime runtime;
-  HandleScope scope;
-  Object type(&scope, createType(&runtime));
-
-  // Store the function on the metaclass
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Object value(&scope, runtime.newFunction());
-  setInMetaclass(&runtime, type, attr, value);
-
-  // Fetch it from the class and ensure the bound method was created
-  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
-  ASSERT_TRUE(result.isBoundMethod());
-  BoundMethod bm(&scope, result);
-  EXPECT_TRUE(Object::equals(bm.function(), *value));
-  EXPECT_TRUE(Object::equals(bm.self(), *type));
-}
-
-// Get an attribute that resides on the metaclass
-TEST(TypeGetAttrTest, MetaclassAttr) {
-  Runtime runtime;
-  HandleScope scope;
-  Object type(&scope, createType(&runtime));
-
-  // Store the attribute on the metaclass
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Object value(&scope, SmallInt::fromWord(100));
-  setInMetaclass(&runtime, type, attr, value);
-
-  // Fetch it from the class
-  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
-  EXPECT_TRUE(Object::equals(result, *value));
-}
-
-// Get an attribute that resides on the class and shadows an attribute on
-// the metaclass
-TEST(TypeGetAttrTest, ShadowingAttr) {
-  Runtime runtime;
-  HandleScope scope;
-  Object type(&scope, createType(&runtime));
-
-  // Store the attribute on the metaclass
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Object meta_type_value(&scope, SmallInt::fromWord(100));
-  setInMetaclass(&runtime, type, attr, meta_type_value);
-
-  // Store the attribute on the class so that it shadows the attr
-  // on the metaclass
-  Object type_value(&scope, SmallInt::fromWord(200));
-  setInTypeDict(&runtime, type, attr, type_value);
-
-  // Fetch it from the class
-  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
-  EXPECT_TRUE(Object::equals(result, *type_value));
-}
-
 struct IntrinsicTypeSetAttrTestData {
   LayoutId layout_id;
   const char* name;
@@ -1928,124 +1856,6 @@ Foo.bar('testing 123')
   EXPECT_EQ(output, "testing 123\n");
 }
 
-TEST(ClassAttributeTest, GetDataDescriptorOnMetaclass) {
-  Runtime runtime;
-
-  // Create the data descriptor class
-  const char* src = R"(
-class DataDescriptor:
-  def __set__(self, instance, value):
-    pass
-
-  def __get__(self, instance, owner):
-    return 42
-)";
-  runFromCStr(&runtime, src);
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
-
-  // Create the class
-  Object type(&scope, createType(&runtime));
-
-  // Create an instance of the descriptor and store it on the metaclass
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_type.instanceLayout());
-  Object descr(&scope, runtime.newInstance(layout));
-  setInMetaclass(&runtime, type, attr, descr);
-
-  EXPECT_TRUE(isIntEqualsWord(runtime.attributeAt(thread, type, attr), 42));
-}
-
-TEST(TypeAttributeTest, GetNonDataDescriptorOnMetaclass) {
-  Runtime runtime;
-
-  // Create the non-data descriptor class
-  const char* src = R"(
-class DataDescriptor:
-  def __get__(self, instance, owner):
-    return (self, instance, owner)
-)";
-  runFromCStr(&runtime, src);
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
-
-  // Create the class
-  Object type(&scope, createType(&runtime));
-
-  // Create an instance of the descriptor and store it on the metaclass
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_type.instanceLayout());
-  Object descr(&scope, runtime.newInstance(layout));
-  setInMetaclass(&runtime, type, attr, descr);
-
-  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
-  ASSERT_EQ(RawTuple::cast(result).length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawTuple::cast(result).at(0)), *descr_type);
-  EXPECT_EQ(RawTuple::cast(result).at(1), *type);
-  EXPECT_EQ(RawTuple::cast(result).at(2), runtime.typeOf(*type));
-}
-
-TEST(TypeAttributeTest, GetNonDataDescriptorOnType) {
-  Runtime runtime;
-
-  // Create the non-data descriptor class
-  const char* src = R"(
-class DataDescriptor:
-  def __get__(self, instance, owner):
-    return (self, instance, owner)
-)";
-  runFromCStr(&runtime, src);
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescriptor"));
-
-  // Create the class
-  Object type(&scope, createType(&runtime));
-
-  // Create an instance of the descriptor and store it on the metaclass
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Layout layout(&scope, descr_type.instanceLayout());
-  Object descr(&scope, runtime.newInstance(layout));
-  setInTypeDict(&runtime, type, attr, descr);
-
-  RawObject result = runtime.attributeAt(Thread::current(), type, attr);
-  ASSERT_EQ(RawTuple::cast(result).length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawTuple::cast(result).at(0)), *descr_type);
-  EXPECT_EQ(RawTuple::cast(result).at(1), NoneType::object());
-  EXPECT_EQ(RawTuple::cast(result).at(2), *type);
-}
-
-TEST(TypeAttributeTest, GetNonDataDescriptorOnNoneTypeReturnsFunction) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Type none_type(&scope, runtime.typeAt(LayoutId::kNoneType));
-  Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
-  Object result(&scope, runtime.attributeAt(thread, none_type, attr_name));
-  EXPECT_TRUE(result.isFunction());
-}
-
-TEST(GetTypeAttributeTest, GetMetaclassAttribute) {
-  Runtime runtime;
-  const char* src = R"(
-class MyMeta(type):
-    attr = 'foo'
-
-class Foo(metaclass=MyMeta):
-    pass
-)";
-  runFromCStr(&runtime, src);
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object foo(&scope, moduleAt(&runtime, main, "Foo"));
-  Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), foo, attr));
-  EXPECT_TRUE(isStrEqualsCStr(*result, "foo"));
-}
-
 TEST(InstanceAttributeTest, GetMissingAttributeRaisesAttributeError) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
@@ -2059,57 +1869,6 @@ except AttributeError:
   HandleScope scope;
   Object res(&scope, moduleAt(&runtime, "__main__", "caught_attribute_error"));
   EXPECT_EQ(*res, Bool::trueObj());
-}
-
-// Fetch an attribute defined on the class
-TEST(InstanceAttributeTest, GetClassAttribute) {
-  Runtime runtime;
-  const char* src = R"(
-class Foo:
-  attr = 'testing 123'
-
-def test(x):
-  print(x.attr)
-)";
-  runFromCStr(&runtime, src);
-
-  // Create the instance
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Function test(&scope, moduleAt(&runtime, main, "test"));
-  Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type.instanceLayout());
-  args.atPut(0, runtime.newInstance(layout));
-
-  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
-}
-
-// Fetch an attribute defined in __init__
-TEST(InstanceAttributeTest, GetInstanceAttribute) {
-  Runtime runtime;
-  const char* src = R"(
-class Foo:
-  def __init__(self):
-    self.attr = 'testing 123'
-
-def test(x):
-  Foo.__init__(x)
-  print(x.attr)
-)";
-  runFromCStr(&runtime, src);
-
-  // Create the instance
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type type(&scope, moduleAt(&runtime, main, "Foo"));
-  Tuple args(&scope, runtime.newTuple(1));
-  Layout layout(&scope, type.instanceLayout());
-  args.atPut(0, runtime.newInstance(layout));
-
-  // Run __init__
-  Function test(&scope, moduleAt(&runtime, main, "test"));
-  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n");
 }
 
 // Set an attribute defined in __init__
@@ -2212,84 +1971,6 @@ def test(x):
   // Run __init__ then call the method
   Function test(&scope, moduleAt(&runtime, main, "test"));
   EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
-}
-
-TEST(InstanceAttributeTest, GetDataDescriptor) {
-  Runtime runtime;
-  const char* src = R"(
-class DataDescr:
-  def __set__(self, instance, value):
-    pass
-
-  def __get__(self, instance, owner):
-    return (self, instance, owner)
-
-class Foo:
-  pass
-)";
-  runFromCStr(&runtime, src);
-
-  // Create an instance of the descriptor and store it on the class
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_type(&scope, moduleAt(&runtime, main, "DataDescr"));
-  Object type(&scope, moduleAt(&runtime, main, "Foo"));
-  Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Layout descr_layout(&scope, descr_type.instanceLayout());
-  Object descr(&scope, runtime.newInstance(descr_layout));
-  setInTypeDict(&runtime, type, attr, descr);
-
-  // Fetch it from the instance
-  Layout instance_layout(&scope, RawType::cast(*type).instanceLayout());
-  Object instance(&scope, runtime.newInstance(instance_layout));
-  Tuple result(&scope, runtime.attributeAt(Thread::current(), instance, attr));
-  ASSERT_EQ(result.length(), 3);
-  EXPECT_EQ(runtime.typeOf(result.at(0)), *descr_type);
-  EXPECT_EQ(result.at(1), *instance);
-  EXPECT_EQ(result.at(2), *type);
-}
-
-TEST(InstanceAttributeTest, GetNonDataDescriptor) {
-  Runtime runtime;
-  const char* src = R"(
-class Descr:
-  def __get__(self, instance, owner):
-    return (self, instance, owner)
-
-class Foo:
-  pass
-)";
-  runFromCStr(&runtime, src);
-
-  // Create an instance of the descriptor and store it on the class
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Type descr_type(&scope, moduleAt(&runtime, main, "Descr"));
-  Object type(&scope, moduleAt(&runtime, main, "Foo"));
-  Object attr(&scope, runtime.newStrFromCStr("attr"));
-  Layout descr_layout(&scope, descr_type.instanceLayout());
-  Object descr(&scope, runtime.newInstance(descr_layout));
-  setInTypeDict(&runtime, type, attr, descr);
-
-  // Fetch it from the instance
-  Layout instance_layout(&scope, RawType::cast(*type).instanceLayout());
-  Object instance(&scope, runtime.newInstance(instance_layout));
-
-  RawObject result = runtime.attributeAt(Thread::current(), instance, attr);
-  ASSERT_EQ(RawTuple::cast(result).length(), 3);
-  EXPECT_EQ(runtime.typeOf(RawTuple::cast(result).at(0)), *descr_type);
-  EXPECT_EQ(RawTuple::cast(result).at(1), *instance);
-  EXPECT_EQ(RawTuple::cast(result).at(2), *type);
-}
-
-TEST(InstanceAttributeTest, GetNonDataDescriptorOnNoneReturnsBoundMethod) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object none(&scope, NoneType::object());
-  Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
-  Object result(&scope, runtime.attributeAt(thread, none, attr_name));
-  EXPECT_TRUE(result.isBoundMethod());
 }
 
 TEST(InstanceAttributeTest, ManipulateMultipleAttributes) {
@@ -3268,7 +2949,7 @@ def foo(): pass
 value = foo.x
 )"),
                             LayoutId::kAttributeError,
-                            "'function' object has no attribute 'x'"));
+                            "function 'foo' has no attribute 'x'"));
 }
 
 TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
