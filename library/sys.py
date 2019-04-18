@@ -109,16 +109,23 @@ def exc_info():
     pass
 
 
-def getsizeof(obj, default=_Unbound):
-    dunder_sizeof = type(obj).__sizeof__
-    result = dunder_sizeof(obj)
+def getsizeof(object, default=_Unbound):
+    # It is possible (albeit difficult) to define a class without __sizeof__
+    try:
+        cls = type(object)
+        size = cls.__sizeof__
+    except AttributeError:
+        if default is _Unbound:
+            raise TypeError(f"Type {cls.__name__} doesn't define __sizeof__")
+        return default
+    result = size(object)
     if not isinstance(result, int):
         if default is _Unbound:
             raise TypeError("an integer is required")
         return default
     if result < 0:
         raise ValueError("__sizeof__() should return >= 0")
-    return result
+    return int(result)
 
 
 warnoptions = []

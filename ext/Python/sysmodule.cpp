@@ -16,8 +16,7 @@ PY_EXPORT size_t _PySys_GetSizeOf(PyObject* o) {
     // Pass through a pending exception if any exists.
     return static_cast<size_t>(-1);
   }
-  DCHECK(thread->runtime()->isInstanceOfInt(*result_obj),
-         "sys.getsizeof() should return an int");
+  DCHECK(result_obj.isInt(), "sys.getsizeof() should return an int");
   Int result(&scope, *result_obj);
   return static_cast<size_t>(result.asWord());
 }

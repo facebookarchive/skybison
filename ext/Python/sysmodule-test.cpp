@@ -10,7 +10,7 @@ using namespace testing;
 
 using SysModuleExtensionApiTest = ExtensionApi;
 
-TEST_F(SysModuleExtensionApiTest, GetSizeOfPassesThroughRaisedExceptionPyro) {
+TEST_F(SysModuleExtensionApiTest, GetSizeOfPropagatesException) {
   PyRun_SimpleString(R"(
 class C:
   def __sizeof__(self): raise Exception()
@@ -22,8 +22,7 @@ o = C()
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_Exception));
 }
 
-TEST_F(SysModuleExtensionApiTest,
-       GetSizeOfReturnsValueOfObjectDunderSizeOfPyro) {
+TEST_F(SysModuleExtensionApiTest, GetSizeOfReturnsDunderSizeOfPyro) {
   PyRun_SimpleString(R"(
 class C:
   def __sizeof__(self): return 10
