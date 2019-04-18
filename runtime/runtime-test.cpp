@@ -73,6 +73,49 @@ c = C()
       raised(runtime.attributeAt(thread, c, name), LayoutId::kUserWarning));
 }
 
+TEST(RuntimeTest, AttributeAtCallsDunderGetattr) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  foo = 10
+  def __getattr__(self, name):
+    return (self, name)
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(runtime.attributeAt(thread, c, foo), 10));
+  Object bar(&scope, runtime.newStrFromCStr("bar"));
+  Object result_obj(&scope, runtime.attributeAt(thread, c, bar));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), c);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "bar"));
+}
+
+TEST(RuntimeTest, AttributeAtDoesNotCallDunderGetattrOnNonAttributeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __getattribute__(self, name):
+    raise UserWarning()
+  def __getattr__(self, name):
+    _unimplemented()
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object foo(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(
+      raised(runtime.attributeAt(thread, c, foo), LayoutId::kUserWarning));
+}
+
 // Return the raw name of a builtin LayoutId, or "<invalid>" for user-defined or
 // invalid LayoutIds.
 static const char* layoutIdName(LayoutId id) {

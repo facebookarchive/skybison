@@ -3185,7 +3185,31 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
 RawObject Runtime::attributeAt(Thread* thread, const Object& object,
                                const Object& name_str) {
   DCHECK(isInstanceOfStr(*name_str), "name must be a str subclass");
-  return thread->invokeMethod2(object, SymbolId::kDunderGetattribute, name_str);
+  HandleScope scope(thread);
+  Object result(&scope, thread->invokeMethod2(
+                            object, SymbolId::kDunderGetattribute, name_str));
+  if (!result.isError()) {
+    return *result;
+  }
+  Type pending_exception_type(&scope, thread->pendingExceptionType());
+  Type attribute_error(&scope, typeAt(LayoutId::kAttributeError));
+  if (!givenExceptionMatches(thread, pending_exception_type, attribute_error)) {
+    return *result;
+  }
+
+  // Save the attribute error and clear it then attempt to call `__getattr__`.
+  Object exception_type(&scope, thread->pendingExceptionType());
+  Object exception_value(&scope, thread->pendingExceptionValue());
+  Object exception_traceback(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+  result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
+  if (result.isError() && !thread->hasPendingException()) {
+    thread->setPendingExceptionType(*exception_type);
+    thread->setPendingExceptionValue(*exception_value);
+    thread->setPendingExceptionTraceback(*exception_traceback);
+    return Error::object();
+  }
+  return *result;
 }
 
 RawObject Runtime::attributeAtId(Thread* thread, const Object& receiver,
