@@ -94,9 +94,35 @@ const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod ModuleBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
+
+RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfModule(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kModule);
+  }
+  Module self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
+  }
+  Object result(&scope, moduleGetAttribute(thread, self, name));
+  if (result.isError() && !thread->hasPendingException()) {
+    Object module_name(&scope, self.name());
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "module '%S' has no attribute '%S'",
+                                &module_name, &name);
+  }
+  return *result;
+}
 
 RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);

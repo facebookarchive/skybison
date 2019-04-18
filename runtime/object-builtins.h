@@ -12,6 +12,7 @@ class ObjectBuiltins {
  public:
   static void initialize(Runtime* runtime);
 
+  static RawObject dunderGetattribute(Thread*, Frame*, word);
   static RawObject dunderHash(Thread*, Frame*, word);
   static RawObject dunderInit(Thread*, Frame*, word);
   static RawObject dunderNew(Thread*, Frame*, word);

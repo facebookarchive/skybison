@@ -26,6 +26,62 @@ result = B().getsuper().x
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
+TEST(SuperBuiltinsTest, DunderGetattributeReturnsAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  foo = 8
+class B(A):
+  foo = 10
+  def getsuper(self):
+    return super()
+s = B().getsuper()
+)")
+                   .isError());
+  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(SuperBuiltins::dunderGetattribute, s, name), 8));
+}
+
+TEST(SuperBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A: pass
+class B(A):
+  def getsuper(self):
+    return super()
+s = B().getsuper()
+)")
+                   .isError());
+  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
+  Object name(&scope, runtime.newInt(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
+      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+}
+
+TEST(SuperBuiltinsTest,
+     DunderGetattributeWithMissingAttributeRaisesAttributeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A: pass
+class B(A):
+  def getsuper(self):
+    return super()
+s = B().getsuper()
+)")
+                   .isError());
+  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(SuperBuiltins::dunderGetattribute, s, name),
+      LayoutId::kAttributeError, "super object has no attribute 'xxx'"));
+}
+
 TEST(SuperBuiltinsTest, SuperTest1) {
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, R"(

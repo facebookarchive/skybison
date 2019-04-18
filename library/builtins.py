@@ -24,6 +24,9 @@ class function(bootstrap=True):
     def __get__(self, instance, owner):
         pass
 
+    def __getattribute__(self, name):
+        pass
+
     def __repr__(self):
         # TODO(T32655200): Replace 0x with #x when formatting language is
         # implemented
@@ -89,6 +92,9 @@ class type(bootstrap=True):
         type._merge_class_dict_keys(self, result)
         return list(result)
 
+    def __getattribute__(self, name):
+        pass
+
     def __init__(self, name_or_object, bases=_Unbound, dict=_Unbound):
         # Not a patch; just empty
         pass
@@ -130,6 +136,9 @@ class object(bootstrap=True):  # noqa: E999
         if format_spec != "":
             raise TypeError("format_spec must be empty string")
         return str(self)
+
+    def __getattribute__(self, name):
+        pass
 
     def __hash__(self):
         pass
@@ -2107,6 +2116,9 @@ class module(bootstrap=True):
             )
         return list(self.__dict__.keys())
 
+    def __getattribute__(self, name):
+        pass
+
     def __new__(cls, name):
         pass
 
@@ -2928,6 +2940,9 @@ def sum(iterable, start=0):
 
 class super(bootstrap=True):
     def __init__(self, type=_Unbound, type_or_obj=_Unbound):
+        pass
+
+    def __getattribute__(self, name):
         pass
 
     def __new__(cls, type=_Unbound, type_or_obj=_Unbound):

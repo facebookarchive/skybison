@@ -52,15 +52,14 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
   return Error::object();
 }
 
-// clang-format off
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderSizeof, dunderSizeof},
     // no sentinel needed because the iteration below is manual
 };
-// clang-format on
 
 void ObjectBuiltins::initialize(Runtime* runtime) {
   HandleScope scope;
@@ -81,6 +80,28 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
     runtime->typeAddBuiltinFunction(object_type, kBuiltinMethods[i].name,
                                     kBuiltinMethods[i].address);
   }
+}
+
+RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
+  }
+  Object result(&scope, objectGetAttribute(thread, self, name));
+  if (result.isError() && !thread->hasPendingException()) {
+    Type type(&scope, runtime->typeOf(*self));
+    Object type_name(&scope, type.name());
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "'%S' object has no attribute '%S'", &type_name,
+                                &name);
+  }
+  return *result;
 }
 
 RawObject ObjectBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {

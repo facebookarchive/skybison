@@ -86,6 +86,43 @@ TEST(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   EXPECT_EQ(result, func);
 }
 
+TEST(FunctionBuiltinsTest, DunderGetattributeReturnsAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def foo(): pass
+foo.bar = -4
+)")
+                   .isError());
+  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Object name(&scope, runtime.newStrFromCStr("bar"));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name), -4));
+}
+
+TEST(FunctionBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, "def foo(): pass").isError());
+  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Object name(&scope, runtime.newInt(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name),
+      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+}
+
+TEST(FunctionBuiltinsTest,
+     DunderGetattributeWithMissingAttributeRaisesAttributeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, "def foo(): pass").isError());
+  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(FunctionBuiltins::dunderGetattribute, foo, name),
+      LayoutId::kAttributeError, "function 'foo' has no attribute 'xxx'"));
+}
+
 TEST(FunctionBuiltinsTest, ReprHandlesNormalFunctions) {
   Runtime runtime;
   runFromCStr(&runtime, R"(

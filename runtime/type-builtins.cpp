@@ -169,6 +169,7 @@ const BuiltinAttribute TypeBuiltins::kAttributes[] = {
 
 const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderCall, dunderCall},
+    {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -251,6 +252,31 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
         runtime->newStrFromFmt("%S.__init__ returned non None", &type_name));
   }
   return *instance;
+}
+
+RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
+                                           word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kType);
+  }
+  Type self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
+  }
+  Object result(&scope, typeGetAttribute(thread, self, name));
+  if (result.isError() && !thread->hasPendingException()) {
+    Object type_name(&scope, self.name());
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "type object '%S' has no attribute '%S'",
+                                &type_name, &name);
+  }
+  return *result;
 }
 
 RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

@@ -9,7 +9,7 @@ namespace python {
 
 using namespace testing;
 
-TEST(ObjectBuiltinsTest, ObjectDunderReprReturnsTypeNameAndPointer) {
+TEST(ObjectBuiltinsTest, DunderReprReturnsTypeNameAndPointer) {
   Runtime runtime;
   runFromCStr(&runtime, R"(
 class Foo:
@@ -54,6 +54,42 @@ result = object.__eq__(object(), object())
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isNotImplementedType());
+}
+
+TEST(ObjectBuiltinsTest, DunderGetattributeReturnsAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+i = C()
+i.foo = 79
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(ObjectBuiltins::dunderGetattribute, i, name), 79));
+}
+
+TEST(ObjectBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object object(&scope, NoneType::object());
+  Object name(&scope, runtime.newInt(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ObjectBuiltins::dunderGetattribute, object, name),
+      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+}
+
+TEST(ObjectBuiltinsTest,
+     DunderGetattributeWithMissingAttributeRaisesAttributeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object object(&scope, NoneType::object());
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ObjectBuiltins::dunderGetattribute, object, name),
+      LayoutId::kAttributeError, "'NoneType' object has no attribute 'xxx'"));
 }
 
 TEST(ObjectBuiltinsTest, DunderSizeofWithNonHeapObjectReturnsSizeofRawObject) {

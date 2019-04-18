@@ -17,6 +17,7 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def);
 class ModuleBuiltins
     : public Builtins<ModuleBuiltins, SymbolId::kModule, LayoutId::kModule> {
  public:
+  static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];

@@ -43,6 +43,39 @@ list = dir(builtins)
   EXPECT_TRUE(listContains(list, dunder_name));
 }
 
+TEST(ModuleBuiltinsTest, DunderGetattributeReturnsAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, "foo = -6").isError());
+  Module module(&scope, runtime.findModuleById(SymbolId::kDunderMain));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(ModuleBuiltins::dunderGetattribute, module, name), -6));
+}
+
+TEST(ModuleBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, "").isError());
+  Module module(&scope, runtime.findModuleById(SymbolId::kDunderMain));
+  Object name(&scope, runtime.newInt(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
+      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+}
+
+TEST(ModuleBuiltinsTest,
+     DunderGetattributeWithMissingAttributeRaisesAttributeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, "").isError());
+  Module module(&scope, runtime.findModuleById(SymbolId::kDunderMain));
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ModuleBuiltins::dunderGetattribute, module, name),
+      LayoutId::kAttributeError, "module '__main__' has no attribute 'xxx'"));
+}
+
 TEST(ModuleBuiltinsDeathTest, DunderNewNotEnoughArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(

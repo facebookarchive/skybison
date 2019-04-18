@@ -53,10 +53,34 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
 }
 
 const BuiltinMethod SuperBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
+
+RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!self_obj.isSuper()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kSuper);
+  }
+  Super self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
+  }
+  Object result(&scope, superGetAttribute(thread, self, name));
+  if (result.isError() && !thread->hasPendingException()) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "super object has no attribute '%S'", &name);
+  }
+  return *result;
+}
 
 RawObject SuperBuiltins::dunderNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newSuper();

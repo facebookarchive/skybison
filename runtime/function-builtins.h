@@ -17,6 +17,7 @@ class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
   static void postInitialize(Runtime* runtime, const Type& new_type);
 
   static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];

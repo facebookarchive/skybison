@@ -200,6 +200,51 @@ class C:
   EXPECT_TRUE(isStrEqualsCStr(*doc, "hello documentation"));
 }
 
+TEST(TypeBuiltinsTest, DunderGetattributeReturnsAttribute) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  foo = -13
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(TypeBuiltins::dunderGetattribute, c, name), -13));
+}
+
+TEST(TypeBuiltinsTest, DunderGetattributeWithNonStringNameRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  pass
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object name(&scope, runtime.newInt(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(TypeBuiltins::dunderGetattribute, c, name),
+      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+}
+
+TEST(TypeBuiltinsTest,
+     DunderGetattributeWithMissingAttributeRaisesAttributeError) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  pass
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(TypeBuiltins::dunderGetattribute, c, name),
+      LayoutId::kAttributeError, "type object 'C' has no attribute 'xxx'"));
+}
+
 TEST(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
   runFromCStr(&runtime, "result = type.__repr__(object)");
