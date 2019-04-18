@@ -3330,7 +3330,7 @@ inline RawObject RawBaseException::causeOrUnbound() const {
 }
 
 inline void RawBaseException::setCause(RawObject cause) const {
-  return instanceVariableAtPut(kCauseOffset, cause);
+  instanceVariableAtPut(kCauseOffset, cause);
 }
 
 inline RawObject RawBaseException::context() const {
@@ -3343,7 +3343,7 @@ inline RawObject RawBaseException::contextOrUnbound() const {
 }
 
 inline void RawBaseException::setContext(RawObject context) const {
-  return instanceVariableAtPut(kContextOffset, context);
+  instanceVariableAtPut(kContextOffset, context);
 }
 
 inline RawObject RawBaseException::suppressContext() const {
@@ -4125,7 +4125,7 @@ inline RawObject RawFunction::annotations() const {
 }
 
 inline void RawFunction::setAnnotations(RawObject annotations) const {
-  return instanceVariableAtPut(kAnnotationsOffset, annotations);
+  instanceVariableAtPut(kAnnotationsOffset, annotations);
 }
 
 inline RawObject RawFunction::closure() const {
@@ -4133,7 +4133,7 @@ inline RawObject RawFunction::closure() const {
 }
 
 inline void RawFunction::setClosure(RawObject closure) const {
-  return instanceVariableAtPut(kClosureOffset, closure);
+  instanceVariableAtPut(kClosureOffset, closure);
 }
 
 inline RawObject RawFunction::code() const {
@@ -4141,7 +4141,7 @@ inline RawObject RawFunction::code() const {
 }
 
 inline void RawFunction::setCode(RawObject code) const {
-  return instanceVariableAtPut(kCodeOffset, code);
+  instanceVariableAtPut(kCodeOffset, code);
 }
 
 inline RawObject RawFunction::defaults() const {
@@ -4149,7 +4149,7 @@ inline RawObject RawFunction::defaults() const {
 }
 
 inline void RawFunction::setDefaults(RawObject defaults) const {
-  return instanceVariableAtPut(kDefaultsOffset, defaults);
+  instanceVariableAtPut(kDefaultsOffset, defaults);
 }
 
 inline bool RawFunction::hasDefaults() const {
@@ -4202,7 +4202,7 @@ inline RawObject RawFunction::globals() const {
 }
 
 inline void RawFunction::setGlobals(RawObject globals) const {
-  return instanceVariableAtPut(kGlobalsOffset, globals);
+  instanceVariableAtPut(kGlobalsOffset, globals);
 }
 
 inline RawObject RawFunction::kwDefaults() const {
@@ -4210,7 +4210,7 @@ inline RawObject RawFunction::kwDefaults() const {
 }
 
 inline void RawFunction::setKwDefaults(RawObject kw_defaults) const {
-  return instanceVariableAtPut(kKwDefaultsOffset, kw_defaults);
+  instanceVariableAtPut(kKwDefaultsOffset, kw_defaults);
 }
 
 inline RawObject RawFunction::module() const {
@@ -4218,7 +4218,7 @@ inline RawObject RawFunction::module() const {
 }
 
 inline void RawFunction::setModule(RawObject module) const {
-  return instanceVariableAtPut(kModuleOffset, module);
+  instanceVariableAtPut(kModuleOffset, module);
 }
 
 inline RawObject RawFunction::name() const {
@@ -4242,7 +4242,7 @@ inline RawObject RawFunction::fastGlobals() const {
 }
 
 inline void RawFunction::setFastGlobals(RawObject fast_globals) const {
-  return instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
+  instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
 }
 
 inline RawObject RawFunction::dict() const {
