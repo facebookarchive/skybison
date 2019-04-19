@@ -45,6 +45,51 @@ class DictTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             dict.__delitem__({}, C())
 
+    def test_update_with_tuple_keys_propagates_exceptions_from_dunder_hash(self):
+        class C:
+            def __hash__(self):
+                raise UserWarning("foo")
+
+        class D:
+            def keys(self):
+                return (C(),)
+
+            def __getitem__(self, key):
+                return "foo"
+
+        with self.assertRaises(UserWarning):
+            dict.update({}, D())
+
+    def test_update_with_list_keys_propagates_exceptions_from_dunder_hash(self):
+        class C:
+            def __hash__(self):
+                raise UserWarning("foo")
+
+        class D:
+            def keys(self):
+                return [C()]
+
+            def __getitem__(self, key):
+                return "foo"
+
+        with self.assertRaises(UserWarning):
+            dict.update({}, D())
+
+    def test_update_with_iter_keys_propagates_exceptions_from_dunder_hash(self):
+        class C:
+            def __hash__(self):
+                raise UserWarning("foo")
+
+        class D:
+            def keys(self):
+                return [C()].__iter__()
+
+            def __getitem__(self, key):
+                return "foo"
+
+        with self.assertRaises(UserWarning):
+            dict.update({}, D())
+
 
 class IntTests(unittest.TestCase):
     def test_new_with_base_without_str_raises_type_error(self):

@@ -63,6 +63,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
 
   HandleScope scope;
   Object key(&scope, NoneType::object());
+  Object key_hash(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   Frame* frame = thread->currentFrame();
   Object keys_method(&scope, Interpreter::lookupMethod(thread, frame, mapping,
@@ -87,12 +88,16 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     List keys_list(&scope, *keys);
     for (word i = 0; i < keys_list.numItems(); ++i) {
       key = keys_list.at(i);
+      key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
+      if (key_hash.isError()) {
+        return *key_hash;
+      }
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludes(dict, key)) {
+          !runtime->dictIncludesWithHash(dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        runtime->dictAtPut(dict, key, value);
+        runtime->dictAtPutWithHash(dict, key, value, key_hash);
       } else if (do_override == Override::kError) {
         return thread->raiseKeyError(*key);
       }
@@ -104,12 +109,16 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     Tuple keys_tuple(&scope, *keys);
     for (word i = 0; i < keys_tuple.length(); ++i) {
       key = keys_tuple.at(i);
+      key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
+      if (key_hash.isError()) {
+        return *key_hash;
+      }
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludes(dict, key)) {
+          !runtime->dictIncludesWithHash(dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        runtime->dictAtPut(dict, key, value);
+        runtime->dictAtPutWithHash(dict, key, value, key_hash);
       } else if (do_override == Override::kError) {
         return thread->raiseKeyError(*key);
       }
@@ -144,12 +153,16 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (thread->clearPendingStopIteration()) break;
       return *key;
     }
+    key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
+    if (key_hash.isError()) {
+      return *key_hash;
+    }
     if (do_override == Override::kOverride ||
-        !runtime->dictIncludes(dict, key)) {
+        !runtime->dictIncludesWithHash(dict, key, key_hash)) {
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
       if (value.isError()) return *value;
-      runtime->dictAtPut(dict, key, value);
+      runtime->dictAtPutWithHash(dict, key, value, key_hash);
     } else if (do_override == Override::kError) {
       return thread->raiseKeyError(*key);
     }
