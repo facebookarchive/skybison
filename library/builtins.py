@@ -2246,8 +2246,36 @@ def repr(obj):
 
 
 class reversed:
-    def __init__(self, sequence):
-        _unimplemented()
+    def __iter__(self):
+        return self
+
+    def __new__(cls, seq, **kwargs):
+        seq_cls = type(seq)
+        if hasattr(seq_cls, "__reversed__"):
+            meth = seq_cls.__reversed__
+            if meth is None:
+                raise TypeError(f"{seq_cls.__name__} is not reversible")
+            return meth(seq)
+        return object.__new__(cls)
+
+    def __init__(self, seq):
+        self.remaining = len(seq)
+        self.seq = seq
+
+    def __next__(self):
+        i = self.remaining - 1
+        if i >= 0:
+            try:
+                item = self.seq[i]
+                self.remaining = i
+                return item
+            except (IndexError, StopIteration):
+                pass
+        self.remaining = -1
+        raise StopIteration
+
+    def __length_hint__(self):
+        return self.remaining
 
 
 def round(number, ndigits=_Unbound):

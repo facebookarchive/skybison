@@ -153,6 +153,40 @@ class IntTests(unittest.TestCase):
         self.assertIs(int(), 0)
 
 
+class ReversedTests(unittest.TestCase):
+    def test_reversed_iterates_backwards_over_iterable(self):
+        it = reversed([1, 2, 3])
+        self.assertEqual(it.__next__(), 3)
+        self.assertEqual(it.__next__(), 2)
+        self.assertEqual(it.__next__(), 1)
+        with self.assertRaises(StopIteration):
+            it.__next__()
+
+    def test_reversed_calls_dunder_reverse(self):
+        class C:
+            def __reversed__(self):
+                return "foo"
+
+        self.assertEqual(reversed(C()), "foo")
+
+    def test_reversed_with_none_dunder_reverse_raises_type_error(self):
+        class C:
+            __reversed__ = None
+
+        with self.assertRaises(TypeError):
+            reversed(C())
+
+    def test_reversed_length_hint(self):
+        it = reversed([1, 2, 3])
+        self.assertEqual(it.__length_hint__(), 3)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), 2)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), 1)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), 0)
+
+
 class StrTests(unittest.TestCase):
     def test_format_single_open_curly_brace_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
