@@ -923,6 +923,31 @@ TEST(RuntimeTest, Random) {
   EXPECT_NE(r3, r4);
 }
 
+TEST(RuntimeTest, TrackObjectAndUnTrackObject) {
+  Runtime runtime;
+  ListEntry entry0{nullptr, nullptr};
+  ListEntry entry1{nullptr, nullptr};
+
+  EXPECT_TRUE(runtime.trackObject(&entry0));
+  EXPECT_TRUE(runtime.trackObject(&entry1));
+  // Trying to track an already tracked object returns false.
+  EXPECT_FALSE(runtime.trackObject(&entry0));
+  EXPECT_FALSE(runtime.trackObject(&entry1));
+
+  EXPECT_TRUE(runtime.untrackObject(&entry0));
+  EXPECT_TRUE(runtime.untrackObject(&entry1));
+
+  // Trying to untrack an already untracked object returns false.
+  EXPECT_FALSE(runtime.untrackObject(&entry0));
+  EXPECT_FALSE(runtime.untrackObject(&entry1));
+
+  // Verify untracked entires are reset to nullptr.
+  EXPECT_EQ(entry0.prev, nullptr);
+  EXPECT_EQ(entry0.next, nullptr);
+  EXPECT_EQ(entry1.prev, nullptr);
+  EXPECT_EQ(entry1.next, nullptr);
+}
+
 TEST(RuntimeTest, HashCodeSizeCheck) {
   Runtime runtime;
   RawObject code = runtime.newEmptyCode();

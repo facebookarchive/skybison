@@ -84,6 +84,7 @@ set(
   ${CMAKE_SOURCE_DIR}/capi/cpython-data.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-func.h
   ${CMAKE_SOURCE_DIR}/capi/cpython-types.h
+  ${CMAKE_SOURCE_DIR}/ext/Modules/gcmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/posixmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Modules/signalmodule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/abstract.cpp
@@ -469,6 +470,7 @@ target_link_libraries(
 
 set(
   EXTENSION_TESTS
+  ext/Modules/gcmodule-test.cpp
   ext/Modules/posixmodule-test.cpp
   ext/Modules/sysmodule-test.cpp
   ext/Objects/abstract-test.cpp

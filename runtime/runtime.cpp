@@ -1191,6 +1191,40 @@ void Runtime::setArgv(int argc, const char** argv) {
   moduleAddGlobal(sys_module, SymbolId::kArgv, argv_value);
 }
 
+bool Runtime::trackObject(ListEntry* entry) {
+  // If already tracked, do nothing.
+  if (entry->prev != nullptr || entry->next != nullptr ||
+      entry == tracked_objects_) {
+    return false;
+  }
+  entry->prev = nullptr;
+  entry->next = tracked_objects_;
+  if (tracked_objects_ != nullptr) {
+    tracked_objects_->prev = entry;
+  }
+  tracked_objects_ = entry;
+  return true;
+}
+
+bool Runtime::untrackObject(ListEntry* entry) {
+  // The node is the first node of the list.
+  if (tracked_objects_ == entry) {
+    tracked_objects_ = entry->next;
+  } else if (entry->prev == nullptr && entry->next == nullptr) {
+    // This is an already untracked object.
+    return false;
+  }
+  if (entry->prev != nullptr) {
+    entry->prev->next = entry->next;
+  }
+  if (entry->next != nullptr) {
+    entry->next->prev = entry->prev;
+  }
+  entry->prev = nullptr;
+  entry->next = nullptr;
+  return true;
+}
+
 RawObject Runtime::identityHash(RawObject object) {
   RawHeapObject src = RawHeapObject::cast(object);
   word code = src.header().hashCode();

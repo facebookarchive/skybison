@@ -25,6 +25,11 @@ struct BuiltinAttribute {
   AttributeFlags flags;
 };
 
+struct ListEntry {
+  ListEntry* prev;
+  ListEntry* next;
+};
+
 using AtExitFn = void (*)();
 
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
@@ -233,6 +238,14 @@ class Runtime {
   void setArgv(int argc, const char** argv);
 
   Heap* heap() { return &heap_; }
+
+  // Tracks extension's native objects for gcmodule.
+  // Returns true if an untracked entry becomes tracked, false, otherwise.
+  bool trackObject(ListEntry* entry);
+
+  // Untracks extension's native objects for gcmodule.
+  // Returns true if a tracked entry becomes untracked, false, otherwise.
+  bool untrackObject(ListEntry* entry);
 
   void setStderrFile(FILE* new_file) { stderr_file_ = new_file; }
   FILE* stderrFile() { return stderr_file_; }
@@ -922,6 +935,9 @@ class Runtime {
   static const ModuleInitializer kBuiltinModules[];
 
   Heap heap_;
+
+  // Linked list of tracked extension objects.
+  ListEntry* tracked_objects_ = nullptr;
 
   // A List of Layout objects, indexed by layout id.
   RawObject layouts_;

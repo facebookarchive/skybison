@@ -139,7 +139,6 @@ set(
   "${CPYTHON_DIR}/Modules/errnomodule.c"
   "${CPYTHON_DIR}/Modules/fpectlmodule.c"
   "${CPYTHON_DIR}/Modules/fpetestmodule.c"
-  "${CPYTHON_DIR}/Modules/gcmodule.c"
   "${CPYTHON_DIR}/Modules/getbuildinfo.c"
   "${CPYTHON_DIR}/Modules/getpath.c"
   "${CPYTHON_DIR}/Modules/hashlib.h"
