@@ -308,10 +308,12 @@ def func(arg0, arg1):
   root->pushValue(NoneType::object());
   ASSERT_EQ(root->previousFrame(), nullptr);
 
-  Frame* frame0 = thread->openAndLinkFrame(0, 1, 1);
-  frame0->setLocal(0, runtime.newStrFromCStr("foo bar"));
-  frame0->pushValue(*func);
+  Frame* frame0 = thread->openAndLinkFrame(0, 2, 1);
+  frame0->setCode(makeTestCode(thread));
   frame0->setVirtualPC(42);
+  frame0->setLocal(0, runtime.newStrFromCStr("foo bar"));
+  frame0->setLocal(1, runtime.newStrFromCStr("bar foo"));
+  frame0->pushValue(*func);
   Frame* frame1 = thread->openAndLinkFrame(0, 3, 2);
   frame1->setVirtualPC(4);
   frame1->setCode(func.code());
@@ -321,16 +323,23 @@ def func(arg0, arg1):
 
   std::stringstream ss;
   ss << thread->currentFrame();
-  EXPECT_THAT(ss.str(), ::testing::MatchesRegex(R"(- pc: 8
-- pc: 42
-  function: n/a
-  0: "foo bar"
-- pc: 4 (.+)
+  EXPECT_EQ(ss.str(), R"(- pc: 8
+  - stack:
+    0: None
+- pc: 42 ("filename0")
+  code: "name0"
+  - locals:
+    0 "variable0": "foo bar"
+    1: "bar foo"
+  - stack:
+    0: <function "func">
+- pc: 4 ("<test string>":4)
   function: <function "func">
-  0 "arg0": -9
-  1 "arg1": 17
-  2 "hello": "world"
-)"));
+  - locals:
+    0 "arg0": -9
+    1 "arg1": 17
+    2 "hello": "world"
+)");
 }
 
 TEST(DebuggingTests, FormatFrameNullptr) {

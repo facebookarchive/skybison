@@ -314,23 +314,30 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   }
   os << '\n';
 
-  if (frame->previousFrame() != nullptr) {
-    Object function(&scope, frame->function());
-    os << "  function: ";
-    if (function.isError()) {
-      os << "n/a\n";
-    } else {
-      os << function << '\n';
-    }
+  Object function(&scope, frame->function());
+  if (!function.isError()) {
+    os << "  function: " << function << '\n';
+  } else if (code_obj.isCode()) {
+    Code code(&scope, *code_obj);
+    os << "  code: " << code.name() << '\n';
   }
+
   // TODO(matthiasb): Also dump the block stack.
   word var_names_length = var_names.length();
-  for (word l = 0, num_locals = frame->numLocals(); l < num_locals; l++) {
-    os << "  " << l;
+  word num_locals = frame->numLocals();
+  if (num_locals > 0) os << "  - locals:\n";
+  for (word l = 0; l < num_locals; l++) {
+    os << "    " << l;
     if (l < var_names_length) {
       os << ' ' << var_names.at(l);
     }
     os << ": " << frame->local(l) << '\n';
+  }
+
+  word stack_size = frame->valueStackSize();
+  if (stack_size > 0) os << "  - stack:\n";
+  for (word i = stack_size - 1; i >= 0; i--) {
+    os << "    " << i << ": " << frame->peek(i) << '\n';
   }
 }
 
