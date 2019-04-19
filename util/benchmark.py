@@ -66,13 +66,13 @@ def compile_benchmark(build_dir, benchmark):
     return benchmark_pyc
 
 
-def run_benchmark(build_dir, python_bin, benchmark_pyc):
+def run_benchmark(build_dir, python_bin, benchmark_pyc, measure_flags):
     env = dict(os.environ)
     env["PYTHONHASHSEED"] = "0"
 
     # We execute measure_command.py instead of importing it, so users see it
     # in the log and can replicate the command.
-    command = [f"{PYRO_PATH}/util/measure_command.py", "--time"]
+    command = [f"{PYRO_PATH}/util/measure_command.py"] + measure_flags
     if logging.root.level <= logging.DEBUG:
         command += ["-v"]
     command += ["--", python_bin, benchmark_pyc]
@@ -110,6 +110,21 @@ def main(argv):
     parser.add_argument(
         "--keep", "-k", help="Do not remove build directory", action="store_true"
     )
+    parser.add_argument(
+        "--time",
+        help="Measure time",
+        dest="measure_flags",
+        default=[],
+        action="append_const",
+        const="--time",
+    )
+    parser.add_argument(
+        "--callgrind",
+        help="Measure number of instructions executed",
+        dest="measure_flags",
+        action="append_const",
+        const="--callgrind",
+    )
     parser.add_argument("--pyro-build", help="Use an already-built Pyro.")
     args = parser.parse_args(argv)
 
@@ -141,10 +156,15 @@ def main(argv):
         for benchmark in args.benchmarks:
             benchmark_pyc = compile_benchmark(build_root, benchmark)
             results = run_benchmark(
-                build_root, os.path.join(pyro_build, "python"), benchmark_pyc
+                build_root,
+                os.path.join(pyro_build, "python"),
+                benchmark_pyc,
+                args.measure_flags,
             )
             samples.append(make_sample(benchmark, "Pyro", revision, results))
-            results = run_benchmark(build_root, CPYTHON, benchmark_pyc)
+            results = run_benchmark(
+                build_root, CPYTHON, benchmark_pyc, args.measure_flags
+            )
             samples.append(make_sample(benchmark, "CPython", revision, results))
         for sample in samples:
             print(json.dumps(sample, indent=2, sort_keys=True))
