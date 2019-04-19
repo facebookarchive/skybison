@@ -6,6 +6,7 @@
 #include "runtime.h"
 #include "thread.h"
 #include "trampolines-inl.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
@@ -604,7 +605,7 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*starargs_obj)) {
     return thread->raiseRequiresType(starargs_obj, SymbolId::kTuple);
   }
-  Tuple starargs(&scope, *starargs_obj);
+  Tuple starargs(&scope, tupleUnderlying(thread, starargs_obj));
   Object result(&scope, NoneType::object());
   for (word i = 0; i < starargs.length(); i++) {
     Object other(&scope, starargs.at(i));

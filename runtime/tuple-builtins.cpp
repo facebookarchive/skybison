@@ -64,6 +64,15 @@ RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   return item;
 }
 
+RawObject tupleUnderlying(Thread* thread, const Object& obj) {
+  DCHECK(thread->runtime()->isInstanceOfTuple(*obj), "Non-tuple value");
+  if (obj.isTuple()) return *obj;
+
+  HandleScope scope(thread);
+  UserTupleBase base(&scope, *obj);
+  return base.tupleValue();
+}
+
 const BuiltinAttribute TupleBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
     {SymbolId::kSentinelId, -1},
@@ -90,22 +99,14 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*lhs)) {
     return thread->raiseRequiresType(lhs, SymbolId::kTuple);
   }
-  if (!lhs.isTuple()) {
-    UserTupleBase lhs_user(&scope, *lhs);
-    lhs = lhs_user.tupleValue();
-  }
-  Tuple left(&scope, *lhs);
+  Tuple left(&scope, tupleUnderlying(thread, lhs));
   Object rhs(&scope, args.get(1));
   if (!runtime->isInstanceOfTuple(*rhs)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "can only concatenate tuple to tuple, got %T",
                                 &rhs);
   }
-  if (!rhs.isTuple()) {
-    UserTupleBase rhs_user(&scope, *rhs);
-    rhs = rhs_user.tupleValue();
-  }
-  Tuple right(&scope, *rhs);
+  Tuple right(&scope, tupleUnderlying(thread, rhs));
   word llength = left.length();
   word rlength = right.length();
 
@@ -134,7 +135,7 @@ RawObject TupleBuiltins::dunderContains(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
   }
 
-  Tuple self(&scope, *self_obj);
+  Tuple self(&scope, tupleUnderlying(thread, self_obj));
   Object value(&scope, args.get(1));
   Object item(&scope, NoneType::object());
   Object comp_result(&scope, NoneType::object());
@@ -169,17 +170,8 @@ RawObject TupleBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     return NotImplementedType::object();
   }
 
-  if (!self_obj.isTuple()) {
-    UserTupleBase user_self(&scope, *self_obj);
-    self_obj = user_self.tupleValue();
-  }
-  if (!other_obj.isTuple()) {
-    UserTupleBase user_other(&scope, *other_obj);
-    other_obj = user_other.tupleValue();
-  }
-
-  Tuple self(&scope, *self_obj);
-  Tuple other(&scope, *other_obj);
+  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  Tuple other(&scope, tupleUnderlying(thread, other_obj));
   if (self.length() != other.length()) {
     return Bool::falseObj();
   }
@@ -232,12 +224,7 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kTuple);
   }
 
-  if (!self.isTuple()) {
-    UserTupleBase user_tuple(&scope, *self);
-    self = user_tuple.tupleValue();
-  }
-
-  Tuple tuple(&scope, *self);
+  Tuple tuple(&scope, tupleUnderlying(thread, self));
   Object index(&scope, args.get(1));
   if (index.isSmallInt()) {
     word idx = RawSmallInt::cast(*index).value();
@@ -265,7 +252,7 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
   }
-  Tuple self(&scope, *self_obj);
+  Tuple self(&scope, tupleUnderlying(thread, self_obj));
   Object elt(&scope, NoneType::object());
   Object hash_result_obj(&scope, NoneType::object());
   uword result = 0x345678UL;
@@ -297,11 +284,7 @@ RawObject TupleBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*obj)) {
     return thread->raiseRequiresType(obj, SymbolId::kTuple);
   }
-  if (!obj.isTuple()) {
-    UserTupleBase user_tuple(&scope, *obj);
-    obj = user_tuple.tupleValue();
-  }
-  Tuple self(&scope, *obj);
+  Tuple self(&scope, tupleUnderlying(thread, obj));
   return runtime->newInt(self.length());
 }
 
@@ -446,11 +429,7 @@ RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfTuple(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kTuple);
   }
-  if (!self.isTuple()) {
-    UserTupleBase user_tuple(&scope, *self);
-    self = user_tuple.tupleValue();
-  }
-  Tuple tuple(&scope, *self);
+  Tuple tuple(&scope, tupleUnderlying(thread, self));
   return runtime->newTupleIterator(tuple, tuple.length());
 }
 

@@ -1916,8 +1916,7 @@ static RawObject excMatch(Interpreter::Context* ctx, const Object& left,
   static const char* cannot_catch_msg =
       "catching classes that do not inherit from BaseException is not allowed";
   if (runtime->isInstanceOfTuple(*right)) {
-    // TODO(bsimmers): handle tuple subclasses
-    Tuple tuple(&scope, *right);
+    Tuple tuple(&scope, tupleUnderlying(ctx->thread, right));
     for (word i = 0, length = tuple.length(); i < length; i++) {
       Object obj(&scope, tuple.at(i));
       if (!(runtime->isInstanceOfType(*obj) &&

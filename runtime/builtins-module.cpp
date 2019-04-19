@@ -587,7 +587,7 @@ static RawObject isinstanceImpl(Thread* thread, const Object& obj,
   }
 
   if (runtime->isInstanceOfTuple(*type_obj)) {
-    Tuple types(&scope, *type_obj);
+    Tuple types(&scope, tupleUnderlying(thread, type_obj));
     Object elem(&scope, NoneType::object());
     Object result(&scope, NoneType::object());
     for (word i = 0, len = types.length(); i < len; i++) {

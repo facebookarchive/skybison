@@ -10,6 +10,7 @@
 #include "runtime.h"
 #include "sys-module.h"
 #include "trampolines-inl.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
@@ -53,7 +54,7 @@ RawObject createException(Thread* thread, const Type& type,
   }
   if (thread->runtime()->isInstanceOfTuple(*value)) {
     HandleScope scope(thread);
-    Tuple args(&scope, *value);
+    Tuple args(&scope, tupleUnderlying(thread, value));
     return Interpreter::callFunction(thread, caller, type, args);
   }
   return Interpreter::callFunction1(thread, caller, type, value);

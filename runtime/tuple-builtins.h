@@ -26,6 +26,10 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq);
 // Return the next item from the iterator, or Error if there are no items left.
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter);
 
+// If obj is exactly a Tuple, return it. Otherwise, assume it's a UserTupleBase
+// and return its underlying Tuple.
+RawObject tupleUnderlying(Thread* thread, const Object& obj);
+
 class TupleBuiltins
     : public Builtins<TupleBuiltins, SymbolId::kTuple, LayoutId::kTuple> {
  public:

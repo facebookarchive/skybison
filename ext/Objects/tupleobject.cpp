@@ -37,12 +37,7 @@ PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
     return -1;
   }
 
-  if (!tupleobj.isTuple()) {
-    UserTupleBase user_tuple(&scope, *tupleobj);
-    tupleobj = user_tuple.tupleValue();
-  }
-
-  Tuple tuple(&scope, *tupleobj);
+  Tuple tuple(&scope, tupleUnderlying(thread, tupleobj));
   return tuple.length();
 }
 
@@ -58,12 +53,7 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
     return -1;
   }
 
-  if (!tupleobj.isTuple()) {
-    UserTupleBase user_tuple(&scope, *tupleobj);
-    tupleobj = user_tuple.tupleValue();
-  }
-
-  Tuple tuple(&scope, *tupleobj);
+  Tuple tuple(&scope, tupleUnderlying(thread, tupleobj));
   if (pos < 0 || pos >= tuple.length()) {
     thread->raiseIndexErrorWithCStr("tuple assignment index out of range");
     return -1;
@@ -84,12 +74,7 @@ PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
     return nullptr;
   }
 
-  if (!tupleobj.isTuple()) {
-    UserTupleBase user_tuple(&scope, *tupleobj);
-    tupleobj = user_tuple.tupleValue();
-  }
-
-  Tuple tuple(&scope, *tupleobj);
+  Tuple tuple(&scope, tupleUnderlying(thread, tupleobj));
   if (pos < 0 || pos >= tuple.length()) {
     return nullptr;
   }
@@ -130,7 +115,7 @@ PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
     thread->raiseBadInternalCall();
     return nullptr;
   }
-  Tuple tuple(&scope, *tuple_obj);
+  Tuple tuple(&scope, tupleUnderlying(thread, tuple_obj));
   if (low < 0) {
     low = 0;
   } else if (low > tuple.length()) {
