@@ -30,6 +30,21 @@ class DictTests(unittest.TestCase):
         self.assertEqual(d["a"], "b")
         self.assertEqual(d["c"], "d")
 
+    def test_dunder_delitem_with_none_dunder_hash(self):
+        class C:
+            __hash__ = None
+
+        with self.assertRaises(TypeError):
+            dict.__delitem__({}, C())
+
+    def test_dunder_delitem_propagates_exceptions_from_dunder_hash(self):
+        class C:
+            def __hash__(self):
+                raise UserWarning("foo")
+
+        with self.assertRaises(UserWarning):
+            dict.__delitem__({}, C())
+
 
 class IntTests(unittest.TestCase):
     def test_new_with_base_without_str_raises_type_error(self):

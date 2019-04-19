@@ -280,8 +280,12 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
+  Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
+  if (key_hash.isError()) {
+    return *key_hash;
+  }
   // Remove the key. If it doesn't exist, throw a KeyError.
-  if (runtime->dictRemove(dict, key).isError()) {
+  if (runtime->dictRemoveWithHash(dict, key, key_hash).isError()) {
     return thread->raiseKeyError(*key);
   }
   return NoneType::object();
