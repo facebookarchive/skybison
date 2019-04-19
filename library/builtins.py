@@ -1129,6 +1129,13 @@ def delattr(obj, name):
     _unimplemented()
 
 
+# TODO(T43319065): Re-write the non-dict-dict case in managed code in
+# dict.update
+@_patch
+def _dict_update_mapping(self, seq):
+    pass
+
+
 class dict(bootstrap=True):
     def __contains__(self, key) -> bool:
         return self.get(key, _Unbound) is not _Unbound  # noqa: T484
@@ -1205,8 +1212,24 @@ class dict(bootstrap=True):
             return default
         return value
 
-    def update(self, other):
-        pass
+    def update(self, seq=_Unbound):
+        if not isinstance(self, dict):
+            raise TypeError("update expected 'dict' but got {type(self).__name__}")
+        if seq is _Unbound:
+            return
+        if hasattr(seq, "keys"):
+            return _dict_update_mapping(self, seq)
+        idx = 0
+        for x in iter(seq):
+            item = tuple(x)
+            if len(item) != 2:
+                raise ValueError(
+                    f"dictionary update sequence element {idx} has length "
+                    f"{len(item)}; 2 is required"
+                )
+            key = item[0]
+            value = item[1]
+            dict.__setitem__(self, key, value)
 
     def values(self):
         pass

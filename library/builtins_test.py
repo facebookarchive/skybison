@@ -13,6 +13,23 @@ class DictTests(unittest.TestCase):
         self.assertEqual(d.__len__(), 0)
         self.assertNotIn("a", d)
 
+    def test_update_with_malformed_sequence_elt_raises_type_error(self):
+        with self.assertRaises(ValueError):
+            dict.update({}, [("a",)])
+
+    def test_update_with_no_params_does_nothing(self):
+        d = {"a": 1}
+        d.update()
+        self.assertEqual(len(d), 1)
+
+    def test_update_with_mapping_adds_elements(self):
+        d = {"a": 1}
+        d.update([("a", "b"), ("c", "d")])
+        self.assertIn("a", d)
+        self.assertIn("c", d)
+        self.assertEqual(d["a"], "b")
+        self.assertEqual(d["c"], "d")
+
 
 class IntTests(unittest.TestCase):
     def test_new_with_base_without_str_raises_type_error(self):

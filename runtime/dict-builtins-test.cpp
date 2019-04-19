@@ -303,27 +303,20 @@ TEST(DictBuiltinsTest, UpdateWithNoArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime, "dict.update()"), LayoutId::kTypeError,
-      "TypeError: 'dict.update' takes 2 positional arguments but 0 given"));
+      "TypeError: 'dict.update' takes min 1 positional arguments but 0 given"));
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonDictRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  List list(&scope, runtime.newList());
-  Object none(&scope, NoneType::object());
-  EXPECT_TRUE(raised(runBuiltin(DictBuiltins::update, list, none),
+  EXPECT_TRUE(raised(runFromCStr(&runtime, "dict.update([], None)"),
                      LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, UpdateWithNonMappingTypeRaisesTypeError) {
   Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Dict dict(&scope, runtime.newDict());
-  Int i(&scope, runtime.newInt(1));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(DictBuiltins::update, dict, i),
-                            LayoutId::kTypeError, "object is not a mapping"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "dict.update({}, 1)"),
+                            LayoutId::kTypeError,
+                            "'int' object is not iterable"));
 }
 
 TEST(DictBuiltinsTest, UpdateWithDictReturnsUpdatedDict) {
@@ -339,12 +332,11 @@ d3 = {"a": 123}
   Dict d2(&scope, moduleAt(&runtime, "__main__", "d2"));
   ASSERT_EQ(d1.numItems(), 2);
   ASSERT_EQ(d2.numItems(), 2);
-  ASSERT_TRUE(runBuiltin(DictBuiltins::update, d1, d2).isNoneType());
+  ASSERT_TRUE(runFromCStr(&runtime, "d1.update(d2)").isNoneType());
   EXPECT_EQ(d1.numItems(), 4);
   EXPECT_EQ(d2.numItems(), 2);
 
-  Dict d3(&scope, moduleAt(&runtime, "__main__", "d3"));
-  ASSERT_TRUE(runBuiltin(DictBuiltins::update, d1, d3).isNoneType());
+  ASSERT_TRUE(runFromCStr(&runtime, "d1.update(d3)").isNoneType());
   EXPECT_EQ(d1.numItems(), 4);
   Str a(&scope, runtime.newStrFromCStr("a"));
   Object a_val(&scope, runtime.dictAt(d1, a));

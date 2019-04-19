@@ -44,6 +44,8 @@ RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter);
 // Returns Error::object() if there are no more objects
 RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter);
 
+RawObject underDictUpdateMapping(Thread* thread, Frame* frame, word nargs);
+
 class DictBuiltins
     : public Builtins<DictBuiltins, SymbolId::kDict, LayoutId::kDict> {
  public:
@@ -57,7 +59,6 @@ class DictBuiltins
 
   static RawObject items(Thread* thread, Frame* frame, word nargs);
   static RawObject keys(Thread* thread, Frame* frame, word nargs);
-  static RawObject update(Thread* thread, Frame* frame, word nargs);
   static RawObject values(Thread* thread, Frame* frame, word nargs);
   static RawObject get(Thread* thread, Frame* frame, word nargs);
 

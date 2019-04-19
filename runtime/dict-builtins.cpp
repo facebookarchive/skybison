@@ -249,7 +249,6 @@ const BuiltinMethod DictBuiltins::kBuiltinMethods[] = {
     {SymbolId::kGet, get},
     {SymbolId::kItems, items},
     {SymbolId::kKeys, keys},
-    {SymbolId::kUpdate, update},
     {SymbolId::kValues, values},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -462,23 +461,18 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject DictBuiltins::update(Thread* thread, Frame* frame, word nargs) {
+RawObject underDictUpdateMapping(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfDict(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kDict);
-  }
-  Dict dict(&scope, *self);
+  DCHECK(runtime->isInstanceOfDict(*self_obj), "self must be instance of dict");
   Type other_type(&scope, runtime->typeOf(*other));
-  if (!typeLookupSymbolInMro(thread, other_type, SymbolId::kKeys).isError()) {
-    return dictMergeOverride(thread, dict, other);
-  }
-
-  // TODO(bsimmers): Support iterables of pairs, like PyDict_MergeFromSeq2().
-  return thread->raiseTypeErrorWithCStr("object is not a mapping");
+  DCHECK(!typeLookupSymbolInMro(thread, other_type, SymbolId::kKeys).isError(),
+         "other must have 'keys' method");
+  Dict self(&scope, *self_obj);
+  return dictMergeOverride(thread, self, other);
 }
 
 // TODO(T35787656): Instead of re-writing everything for every class, make a

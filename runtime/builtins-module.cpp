@@ -5,6 +5,7 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "complex-builtins.h"
+#include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -89,6 +90,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
+    {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntFromByteArray, underIntFromByteArray},
     {SymbolId::kUnderIntFromInt, underIntFromInt},
