@@ -2,6 +2,8 @@
 
 namespace python {
 
+PY_EXPORT int PyCFunction_ClearFreeList() { return 0; }
+
 PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* /* l */, PyObject* /* f */,
                                       PyObject* /* e */) {
   UNIMPLEMENTED("PyCFunction_NewEx");

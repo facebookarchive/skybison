@@ -2,6 +2,8 @@
 
 namespace python {
 
+PY_EXPORT int PyFrame_ClearFreeList() { return 0; }
+
 PY_EXPORT void PyFrame_FastToLocals(PyFrameObject* /* f */) {
   UNIMPLEMENTED("PyFrame_FastToLocals");
 }

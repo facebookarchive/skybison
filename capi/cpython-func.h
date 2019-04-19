@@ -295,6 +295,7 @@ PyAPI_FUNC(PyObject*) PyFloat_FromString(PyObject*);
 PyAPI_FUNC(PyObject*) PyFloat_GetInfo();
 PyAPI_FUNC(double) PyFloat_GetMax();
 PyAPI_FUNC(double) PyFloat_GetMin();
+PyAPI_FUNC(int) PyFrame_ClearFreeList();
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject*);
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject*);
 PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject*, int);

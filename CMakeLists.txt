@@ -483,10 +483,12 @@ set(
   ext/Objects/exceptions-test.cpp
   ext/Objects/fileobject-test.cpp
   ext/Objects/floatobject-test.cpp
+  ext/Objects/frameobject-test.cpp
   ext/Objects/iterobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/longobject-test.cpp
   ext/Objects/memoryobject-test.cpp
+  ext/Objects/methodobject-test.cpp
   ext/Objects/moduleobject-test.cpp
   ext/Objects/object-test.cpp
   ext/Objects/obmalloc-test.cpp

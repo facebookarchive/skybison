@@ -4,9 +4,9 @@
 #include "capi-fixture.h"
 
 namespace python {
-using MethodExtensionApiTest = ExtensionApi;
+using ClassExtensionApiTest = ExtensionApi;
 
-TEST_F(MethodExtensionApiTest, ClearFreeListReturnsZeroPyro) {
+TEST_F(ClassExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyMethod_ClearFreeList(), 0);
 }
 
