@@ -1776,17 +1776,6 @@ void Runtime::initializeApiData() {
   api_caches_ = newDict();
 }
 
-RawObject Runtime::typeOf(RawObject object) {
-  HandleScope scope;
-  Layout layout(&scope, layoutAt(object.layoutId()));
-  return layout.describedType();
-}
-
-RawObject Runtime::layoutAt(LayoutId layout_id) {
-  DCHECK(layout_id != LayoutId::kError, "Error has no Layout");
-  return RawList::cast(layouts_).at(static_cast<word>(layout_id));
-}
-
 void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
   RawList::cast(layouts_).atPut(static_cast<word>(layout_id), object);
 }

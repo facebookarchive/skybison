@@ -276,13 +276,18 @@ class Runtime {
   NODISCARD RawObject importModuleFromBuffer(const char* buffer,
                                              const Object& name);
 
-  RawObject typeOf(RawObject object);
+  RawObject typeOf(RawObject object) {
+    return RawLayout::cast(layoutAt(object.layoutId())).describedType();
+  }
 
   RawObject typeDictAt(const Dict& dict, const Object& key);
   RawObject typeDictAtPut(const Dict& dict, const Object& key,
                           const Object& value);
   RawObject typeAt(LayoutId layout_id);
-  RawObject layoutAt(LayoutId layout_id);
+  RawObject layoutAt(LayoutId layout_id) {
+    DCHECK(layout_id != LayoutId::kError, "Error has no Layout");
+    return RawList::cast(layouts_).at(static_cast<word>(layout_id));
+  }
   void layoutAtPut(LayoutId layout_id, RawObject object);
 
   // Bootstrapping primitive for creating a built-in class that has built-in
