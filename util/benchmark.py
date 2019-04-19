@@ -29,13 +29,13 @@ PYRO_PATH = f"{REPO_ROOT}/fbcode/pyro"
 CPYTHON = "/usr/local/fbcode/gcc-5-glibc-2.23/bin/python3.6"
 
 
-def compile_pyro(pyro_build_dir):
+def compile_pyro(pyro_source, pyro_build_dir):
     os.makedirs(pyro_build_dir, exist_ok=True)
     cmake_flags = ["-DCMAKE_BUILD_TYPE=Release"]
     if shutil.which("gcc.par"):
         cmake_flags += ["-DCMAKE_C_COMPILER=gcc.par"]
         cmake_flags += ["-DCMAKE_CXX_COMPILER=g++.par"]
-    cmake_flags += [PYRO_PATH]
+    cmake_flags += [pyro_source]
     run(
         ["cmake"] + cmake_flags,
         cwd=pyro_build_dir,
@@ -81,10 +81,18 @@ def run_benchmark(build_dir, python_bin, benchmark_pyc, measure_flags):
     return json.loads(completed_process.stdout)
 
 
-def describe_revision():
-    completed_process = run(["hg", "id"], cwd=PYRO_PATH, stdout=subprocess.PIPE)
-    completed_process.check_returncode()
-    return completed_process.stdout.strip()
+def describe_revision(pyro_source):
+    try:
+        completed_process = run(
+            ["hg", "id"],
+            cwd=pyro_source,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        completed_process.check_returncode()
+        return completed_process.stdout.strip()
+    except subprocess.CalledProcessError:
+        return "n/a"
 
 
 def make_sample(benchmark, interpreter, revision, results):
@@ -109,6 +117,9 @@ def main(argv):
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument(
         "--keep", "-k", help="Do not remove build directory", action="store_true"
+    )
+    parser.add_argument(
+        "--pyro-source", default=PYRO_PATH, help="Pyro source directory"
     )
     parser.add_argument(
         "--time",
@@ -150,9 +161,9 @@ def main(argv):
             do_build = True
 
         samples = []
-        revision = describe_revision()
+        revision = describe_revision(args.pyro_source)
         if do_build:
-            compile_pyro(pyro_build)
+            compile_pyro(args.pyro_source, pyro_build)
         for benchmark in args.benchmarks:
             benchmark_pyc = compile_benchmark(build_root, benchmark)
             results = run_benchmark(
