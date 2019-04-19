@@ -128,9 +128,6 @@ word RawBytes::compare(RawBytes that) const {
 // RawLargeStr
 
 bool RawLargeStr::equals(RawObject that) const {
-  if (*this == that) {
-    return true;
-  }
   if (!that.isLargeStr()) {
     return false;
   }

@@ -4369,10 +4369,8 @@ inline word RawStr::length() const {
 }
 
 inline bool RawStr::equals(RawObject that) const {
-  if (isSmallStr()) {
-    return *this == that;
-  }
-  DCHECK(isLargeStr(), "unexpected type");
+  if (*this == that) return true;
+  if (isSmallStr()) return false;
   return RawLargeStr::cast(*this).equals(that);
 }
 
