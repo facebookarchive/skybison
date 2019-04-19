@@ -4349,7 +4349,7 @@ inline void RawModule::setDef(RawObject dict) const {
 // RawStr
 
 inline RawStr RawStr::empty() {
-  return RawSmallStr::fromCStr("").rawCast<RawStr>();
+  return RawObject{RawSmallStr::kTag}.rawCast<RawStr>();
 }
 
 inline byte RawStr::charAt(word index) const {

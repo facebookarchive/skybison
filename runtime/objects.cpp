@@ -69,12 +69,10 @@ RawObject RawSmallStr::fromBytes(View<byte> data) {
   word length = data.length();
   DCHECK_BOUND(length, kMaxLength);
   uword result = 0;
-  for (word i = length; i > 0;) {
-    i -= 1;
+  for (word i = length - 1; i >= 0; i--) {
     result = (result << kBitsPerByte) | data.get(i);
   }
-  result = (result << kBitsPerByte) | (length << kTagSize) | kTag;
-  return cast(RawObject{result});
+  return RawObject{result << kBitsPerByte | length << kTagSize | kTag};
 }
 
 char* RawSmallStr::toCStr() const {
