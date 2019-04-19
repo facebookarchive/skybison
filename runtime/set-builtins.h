@@ -59,6 +59,7 @@ class SetBuiltins
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject add(Thread* thread, Frame* frame, word nargs);
   static RawObject pop(Thread* thread, Frame* frame, word nargs);
+  static RawObject remove(Thread* thread, Frame* frame, word nargs);
   static RawObject update(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];

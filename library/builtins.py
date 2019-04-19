@@ -2358,6 +2358,9 @@ class set(bootstrap=True):
     def pop(self):
         pass
 
+    def remove(self, elt):
+        pass
+
     def update(self, *args):
         pass
 

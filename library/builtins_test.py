@@ -187,6 +187,22 @@ class ReversedTests(unittest.TestCase):
         self.assertEqual(it.__length_hint__(), 0)
 
 
+class SetTests(unittest.TestCase):
+    def test_remove_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.remove(None, 1)
+
+    def test_remove_with_non_member_raises_key_error(self):
+        with self.assertRaises(KeyError):
+            set.remove(set(), 1)
+
+    def test_remove_with_member_removes_element(self):
+        s = set([1, 2, 3])
+        self.assertIn(1, s)
+        set.remove(s, 1)
+        self.assertNotIn(1, s)
+
+
 class StrTests(unittest.TestCase):
     def test_format_single_open_curly_brace_raises_value_error(self):
         with self.assertRaises(ValueError) as context:

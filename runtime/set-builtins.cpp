@@ -391,6 +391,7 @@ const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kIntersection, intersection},
     {SymbolId::kIsDisjoint, isDisjoint},
     {SymbolId::kPop, pop},
+    {SymbolId::kRemove, remove},
     {SymbolId::kUpdate, update},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -572,6 +573,22 @@ RawObject SetBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, args.get(0));
   return setPop(thread, set);
+}
+
+RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Object value(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSet(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kSet);
+  }
+  Set set(&scope, *self);
+  if (!runtime->setRemove(set, value)) {
+    return thread->raiseKeyError(*value);
+  }
+  return NoneType::object();
 }
 
 RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
