@@ -89,6 +89,9 @@ const BuiltinMethod SysModule::kBuiltinMethods[] = {
     {SymbolId::kExcepthook, excepthook},
     {SymbolId::kUnderFdFlush, underFdFlush},
     {SymbolId::kUnderFdWrite, underFdWrite},
+    {SymbolId::kUnderGetframeCode, underGetframeCode},
+    {SymbolId::kUnderGetframeGlobals, underGetframeGlobals},
+    {SymbolId::kUnderGetframeLineno, underGetframeLineno},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -204,6 +207,80 @@ RawObject SysModule::underFdWrite(Thread* thread, Frame* frame, word nargs) {
     }
   }
   return runtime->newIntFromUnsigned(length);
+}
+
+class UserVisibleFrameVisitor : public FrameVisitor {
+ public:
+  UserVisibleFrameVisitor(word depth) : target_depth_(depth) {}
+
+  bool visit(Frame* frame) {
+    if (current_depth_ == target_depth_) {
+      target_ = frame;
+      return false;
+    }
+    current_depth_++;
+    return true;
+  }
+
+  Frame* target() { return target_; }
+
+ private:
+  word current_depth_ = 0;
+  const word target_depth_;
+  Frame* target_ = nullptr;
+};
+
+static Frame* frameAtDepth(Thread* thread, word depth) {
+  DCHECK(depth >= 0, "depth must be nonnegative");
+  UserVisibleFrameVisitor visitor(depth + 1);
+  thread->visitFrames(&visitor);
+  return visitor.target();
+}
+
+RawObject SysModule::underGetframeCode(Thread* thread, Frame* frame,
+                                       word nargs) {
+  Arguments args(frame, nargs);
+  DCHECK(args.get(0).isSmallInt(), "depth must be smallint");
+  word depth = SmallInt::cast(args.get(0)).value();
+  frame = frameAtDepth(thread, depth);
+  if (frame == nullptr) {
+    return thread->raiseValueErrorWithCStr("call stack is not deep enough");
+  }
+  if (frame->isNativeFrame()) {
+    return NoneType::object();
+  }
+  return frame->code();
+}
+
+RawObject SysModule::underGetframeGlobals(Thread* thread, Frame* frame,
+                                          word nargs) {
+  Arguments args(frame, nargs);
+  DCHECK(args.get(0).isSmallInt(), "depth must be smallint");
+  word depth = SmallInt::cast(args.get(0)).value();
+  frame = frameAtDepth(thread, depth);
+  if (frame == nullptr) {
+    return thread->raiseValueErrorWithCStr("call stack is not deep enough");
+  }
+  return frame->globals();
+}
+
+RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  DCHECK(args.get(0).isSmallInt(), "depth must be smallint");
+  word depth = SmallInt::cast(args.get(0)).value();
+  frame = frameAtDepth(thread, depth);
+  if (frame == nullptr) {
+    return thread->raiseValueErrorWithCStr("call stack is not deep enough");
+  }
+  if (frame->isNativeFrame()) {
+    return SmallInt::fromWord(-1);
+  }
+  HandleScope scope(thread);
+  Code code(&scope, frame->code());
+  word pc = frame->virtualPC();
+  word lineno = thread->runtime()->codeOffsetToLineNum(thread, code, pc);
+  return SmallInt::fromWord(lineno);
 }
 
 }  // namespace python

@@ -586,7 +586,9 @@ void Thread::setCaughtExceptionState(RawObject state) {
 void Thread::visitFrames(FrameVisitor* visitor) {
   Frame* frame = currentFrame();
   while (!frame->isSentinelFrame()) {
-    visitor->visit(frame);
+    if (!visitor->visit(frame)) {
+      break;
+    }
     frame = frame->previousFrame();
   }
 }

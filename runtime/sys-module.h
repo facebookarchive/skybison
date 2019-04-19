@@ -35,6 +35,11 @@ class SysModule {
   static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
   static RawObject underFdWrite(Thread* thread, Frame* frame, word nargs);
   static RawObject underFdFlush(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetframeCode(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetframeGlobals(Thread* thread, Frame* frame,
+                                        word nargs);
+  static RawObject underGetframeLineno(Thread* thread, Frame* frame,
+                                       word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const char* const kFrozenData;

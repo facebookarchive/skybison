@@ -440,6 +440,9 @@ class Runtime;
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFunctools, "_functools")                                              \
+  V(UnderGetframeCode, "_getframe_code")                                       \
+  V(UnderGetframeGlobals, "_getframe_globals")                                 \
+  V(UnderGetframeLineno, "_getframe_lineno")                                   \
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
   V(UnderIntFromByteArray, "_int_from_bytearray")                              \

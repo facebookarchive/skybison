@@ -283,7 +283,7 @@ class Frame {
 
 class FrameVisitor {
  public:
-  virtual void visit(Frame* frame) = 0;
+  virtual bool visit(Frame* frame) = 0;
   virtual ~FrameVisitor() = default;
 };
 

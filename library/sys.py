@@ -128,4 +128,19 @@ def getsizeof(object, default=_Unbound):
     return int(result)
 
 
+@_patch
+def _getframe_code(depth=0):
+    pass
+
+
+@_patch
+def _getframe_globals(depth=0):
+    pass
+
+
+@_patch
+def _getframe_lineno(depth=0) -> int:
+    pass
+
+
 warnoptions = []

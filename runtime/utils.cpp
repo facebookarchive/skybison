@@ -15,7 +15,7 @@ namespace python {
 
 class TracebackPrinter : public FrameVisitor {
  public:
-  void visit(Frame* frame) {
+  bool visit(Frame* frame) {
     std::stringstream line;
 
     if (frame->code().isInt()) {
@@ -30,11 +30,11 @@ class TracebackPrinter : public FrameVisitor {
       }
       line << ")>";
       lines_.emplace_back(line.str());
-      return;
+      return true;
     }
     if (!frame->code().isCode()) {
       lines_.emplace_back("  <unknown>");
-      return;
+      return true;
     }
 
     Thread* thread = Thread::current();
@@ -68,6 +68,7 @@ class TracebackPrinter : public FrameVisitor {
     }
 
     lines_.emplace_back(line.str());
+    return true;
   }
 
   void print(FILE* fp) {
