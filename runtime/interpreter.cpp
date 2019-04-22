@@ -1280,7 +1280,7 @@ bool Interpreter::doYieldFrom(Context* ctx, word) {
   if (result.isError()) {
     if (!thread->hasPendingStopIteration()) return unwind(ctx);
 
-    frame->setTopValue(thread->pendingExceptionValue());
+    frame->setTopValue(thread->pendingStopIterationValue());
     thread->clearPendingException();
     return false;
   }

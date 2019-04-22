@@ -1485,6 +1485,20 @@ TEST(ThreadTest, NativeExceptions) {
   EXPECT_TRUE(str.equalsCStr("test exception"));
 }
 
+TEST(ThreadTest, PendingStopIterationValueInspectsTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Tuple tuple(&scope, runtime.newTuple(2));
+  tuple.atPut(0, runtime.newInt(123));
+  tuple.atPut(1, runtime.newInt(456));
+  thread->raiseStopIteration(*tuple);
+
+  ASSERT_TRUE(thread->hasPendingStopIteration());
+  EXPECT_TRUE(isIntEqualsWord(thread->pendingStopIterationValue(), 123));
+}
+
 // MRO tests
 
 static RawStr className(RawObject obj) {

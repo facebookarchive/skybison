@@ -283,6 +283,10 @@ class Thread {
   // true. Otherwise, return false.
   bool clearPendingStopIteration();
 
+  // Assuming there is a StopIteration pending, returns its value, accounting
+  // for various potential states of normalization.
+  RawObject pendingStopIterationValue();
+
   // If there's a pending exception, clears it.
   void clearPendingException();
 

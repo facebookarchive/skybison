@@ -11,6 +11,7 @@
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
+#include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "utils.h"
 #include "visitor.h"
@@ -522,6 +523,23 @@ bool Thread::clearPendingStopIteration() {
     return true;
   }
   return false;
+}
+
+RawObject Thread::pendingStopIterationValue() {
+  DCHECK(hasPendingStopIteration(),
+         "Shouldn't be called without a pending StopIteration");
+
+  HandleScope scope(this);
+  Object exc_value(&scope, pendingExceptionValue());
+  if (runtime()->isInstanceOfStopIteration(*exc_value)) {
+    StopIteration si(&scope, *exc_value);
+    return si.value();
+  }
+  if (runtime()->isInstanceOfTuple(*exc_value)) {
+    Tuple tuple(&scope, tupleUnderlying(this, exc_value));
+    return tuple.at(0);
+  }
+  return *exc_value;
 }
 
 void Thread::ignorePendingException() {
