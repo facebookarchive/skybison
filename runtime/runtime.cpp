@@ -576,25 +576,28 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
               .isError();
 }
 
-RawObject Runtime::newEmptyCode() {
+RawObject Runtime::newEmptyCode(const Object& name) {
   HandleScope scope;
   Object none(&scope, NoneType::object());
   Tuple empty_tuple(&scope, newTuple(0));
-  return newCode(0,            // argcount
-                 0,            // kwonlyargcount
-                 0,            // nlocals
-                 0,            // stacksize
-                 0,            // flags
-                 none,         // code
-                 none,         // consts
-                 none,         // names
-                 empty_tuple,  // varnames
-                 empty_tuple,  // freevars
-                 empty_tuple,  // cellvars
-                 none,         // filename
-                 none,         // name
-                 0,            // firlineno
-                 none          // lnotab
+  Object empty_string(&scope, Str::empty());
+  Object empty_bytes(&scope, Bytes::empty());
+
+  return newCode(0,             // argcount
+                 0,             // kwonlyargcount
+                 0,             // nlocals
+                 0,             // stacksize
+                 0,             // flags
+                 none,          // code
+                 empty_tuple,   // consts
+                 empty_tuple,   // names
+                 empty_tuple,   // varnames
+                 empty_tuple,   // freevars
+                 empty_tuple,   // cellvars
+                 empty_string,  // filename
+                 name,          // name
+                 0,             // firlineno
+                 empty_bytes    // lnotab
   );
 }
 
@@ -605,6 +608,15 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
                            const Tuple& cellvars, const Object& filename,
                            const Object& name, word firstlineno,
                            const Object& lnotab) {
+  DCHECK(isInstanceOfTuple(*consts), "expected tuple");
+  DCHECK(isInstanceOfTuple(*names), "expected tuple");
+  DCHECK(isInstanceOfTuple(*varnames), "expected tuple");
+  DCHECK(isInstanceOfTuple(*freevars), "expected tuple");
+  DCHECK(isInstanceOfTuple(*cellvars), "expected tuple");
+  DCHECK(isInstanceOfStr(*filename), "expected str");
+  DCHECK(isInstanceOfStr(*name), "expected str");
+  DCHECK(isInstanceOfBytes(*lnotab), "expected bytes");
+
   HandleScope scope;
   Code result(&scope, heap()->create<RawCode>());
   result.setArgcount(argcount);
@@ -661,7 +673,8 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
   Function function(
       &scope, newNativeFunction(name, qualname, builtinTrampoline,
                                 builtinTrampolineKw, builtinTrampolineEx));
-  function.setCode(newEmptyCode());
+  Object name_str(&scope, symbols()->at(name));
+  function.setCode(newEmptyCode(name_str));
   Code code(&scope, function.code());
   code.setCode(newInt(bit_cast<uword>(entry)));
   return *function;

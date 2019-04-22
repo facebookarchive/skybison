@@ -28,7 +28,7 @@ static RawObject makeTestCode(Thread* thread) {
   cellvars.atPut(0, runtime->newStrFromCStr("cellvar0"));
   Str filename(&scope, runtime->newStrFromCStr("filename0"));
   Str name(&scope, runtime->newStrFromCStr("name0"));
-  Object lnotab(&scope, NoneType::object());
+  Object lnotab(&scope, Bytes::empty());
   return runtime->newCode(1, 0, 0, 1, 0, bytes, consts, names, varnames,
                           freevars, cellvars, filename, name, 0, lnotab);
 }
@@ -99,8 +99,8 @@ TEST(DebuggingTests, FormatBool) {
 TEST(DebuggingTests, FormatCode) {
   Runtime runtime;
   HandleScope scope;
-  Code code(&scope, runtime.newEmptyCode());
-  code.setName(runtime.newStrFromCStr("foobar"));
+  Object name(&scope, runtime.newStrFromCStr("foobar"));
+  Code code(&scope, runtime.newEmptyCode(name));
   std::stringstream ss;
   ss << code;
   EXPECT_EQ(ss.str(), "<code \"foobar\">");
@@ -326,7 +326,7 @@ def func(arg0, arg1):
   EXPECT_EQ(ss.str(), R"(- pc: 8
   - stack:
     0: None
-- pc: 42 ("filename0")
+- pc: 42 ("filename0":0)
   code: "name0"
   - locals:
     0 "variable0": "foo bar"

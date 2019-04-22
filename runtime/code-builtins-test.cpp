@@ -25,7 +25,8 @@ static RawObject makeTestCode() {
   cellvars.atPut(0, runtime->newStrFromCStr("cellvar0"));
   Object filename(&scope, runtime->newStrFromCStr("filename0"));
   Object name(&scope, runtime->newStrFromCStr("name0"));
-  Object lnotab(&scope, NoneType::object());
+  byte lnotab_array[] = {'l', 'n', 'o', 't', 'a', 'b'};
+  Object lnotab(&scope, runtime->newBytesWithAll(lnotab_array));
   return runtime->newCode(0, 1, 2, 3, 4, bytes, consts, names, varnames,
                           freevars, cellvars, filename, name, 5, lnotab);
 }
@@ -170,7 +171,7 @@ TEST(CodeBuiltinsTest, CoLnotabReturnsLnotab) {
   Object code(&scope, makeTestCode());
   Object key(&scope, runtime.newStrFromCStr("co_lnotab"));
   Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
-  EXPECT_TRUE(result.isNoneType());
+  EXPECT_TRUE(isBytesEqualsCStr(result, "lnotab"));
 }
 
 }  // namespace python

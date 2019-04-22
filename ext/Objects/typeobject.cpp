@@ -887,7 +887,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // Create the wrapper function.
     Str qualname(&scope,
                  runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
-    Code code(&scope, runtime->newEmptyCode());
+    Code code(&scope, runtime->newEmptyCode(slot_name));
     code.setCode(runtime->newIntFromCPtr(bit_cast<void*>(slot.wrapper)));
     Tuple consts(&scope, runtime->newTuple(1));
     consts.atPut(0, *slot_value);

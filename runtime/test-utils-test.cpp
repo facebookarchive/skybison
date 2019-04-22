@@ -152,21 +152,22 @@ TEST(TestUtils, NewEmptyCode) {
   Runtime runtime;
   HandleScope scope;
 
-  Code code(&scope, runtime.newEmptyCode());
+  Object name(&scope, runtime.newStrFromCStr("foobar"));
+  Code code(&scope, runtime.newEmptyCode(name));
   EXPECT_EQ(code.argcount(), 0);
   EXPECT_TRUE(code.cell2arg().isNoneType());
   ASSERT_TRUE(code.cellvars().isTuple());
   EXPECT_EQ(RawTuple::cast(code.cellvars()).length(), 0);
   EXPECT_TRUE(code.code().isNoneType());
-  EXPECT_TRUE(code.consts().isNoneType());
-  EXPECT_TRUE(code.filename().isNoneType());
+  EXPECT_TRUE(code.consts().isTuple());
+  EXPECT_TRUE(code.filename().isStr());
   EXPECT_EQ(code.firstlineno(), 0);
   EXPECT_EQ(code.flags(), 0);
   ASSERT_TRUE(code.freevars().isTuple());
   EXPECT_EQ(RawTuple::cast(code.freevars()).length(), 0);
   EXPECT_EQ(code.kwonlyargcount(), 0);
-  EXPECT_TRUE(code.lnotab().isNoneType());
-  EXPECT_TRUE(code.name().isNoneType());
+  EXPECT_TRUE(code.lnotab().isBytes());
+  EXPECT_TRUE(code.name().isStr());
   EXPECT_EQ(code.nlocals(), 0);
   EXPECT_EQ(code.stacksize(), 0);
   EXPECT_TRUE(code.varnames().isTuple());

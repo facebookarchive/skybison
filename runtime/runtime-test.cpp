@@ -950,7 +950,9 @@ TEST(RuntimeTest, TrackObjectAndUnTrackObject) {
 
 TEST(RuntimeTest, HashCodeSizeCheck) {
   Runtime runtime;
-  RawObject code = runtime.newEmptyCode();
+  HandleScope scope;
+  Object name(&scope, Str::empty());
+  RawObject code = runtime.newEmptyCode(name);
   ASSERT_TRUE(code.isHeapObject());
   EXPECT_EQ(RawHeapObject::cast(code).header().hashCode(), 0);
   // Verify that large-magnitude random numbers are properly
@@ -1094,7 +1096,8 @@ TEST(RuntimeTest, CollectAttributes) {
   consts.atPut(2, SmallInt::fromWord(300));
   consts.atPut(3, NoneType::object());
 
-  Code code(&scope, runtime.newEmptyCode());
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
   code.setNames(*names);
   // Bytecode for the snippet:
   //
@@ -1159,7 +1162,8 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, NoneType::object());
 
-  Code code(&scope, runtime.newEmptyCode());
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
   code.setNames(*names);
   // Bytecode for the snippet:
   //
@@ -2960,9 +2964,12 @@ TEST(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   cellvars.atPut(1, *foobaz);
   Object none(&scope, NoneType::object());
   Tuple empty_tuple(&scope, runtime.newTuple(0));
-  Code code(&scope, runtime.newCode(argcount, kwargcount, 0, 0, 0, none, none,
-                                    none, varnames, empty_tuple, cellvars, none,
-                                    none, 0, none));
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_str(&scope, Str::empty());
+  Code code(&scope,
+            runtime.newCode(argcount, kwargcount, 0, 0, 0, none, empty_tuple,
+                            empty_tuple, varnames, empty_tuple, cellvars,
+                            empty_str, empty_str, 0, empty_bytes));
   EXPECT_TRUE(code.cell2arg().isNoneType());
 }
 
@@ -2984,9 +2991,12 @@ TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   cellvars.atPut(1, *foobar);
   Object none(&scope, NoneType::object());
   Tuple empty_tuple(&scope, runtime.newTuple(0));
-  Code code(&scope, runtime.newCode(argcount, kwargcount, 0, 0, 0, none, none,
-                                    none, varnames, empty_tuple, cellvars, none,
-                                    none, 0, none));
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_str(&scope, Str::empty());
+  Code code(&scope,
+            runtime.newCode(argcount, kwargcount, 0, 0, 0, none, empty_tuple,
+                            empty_tuple, varnames, empty_tuple, cellvars,
+                            empty_str, empty_str, 0, empty_bytes));
   ASSERT_FALSE(code.cell2arg().isNoneType());
   Tuple cell2arg(&scope, code.cell2arg());
   ASSERT_EQ(cell2arg.length(), 2);
