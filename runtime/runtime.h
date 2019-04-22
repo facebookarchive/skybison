@@ -314,7 +314,6 @@ class Runtime {
   RawObject addBuiltinType(SymbolId name, LayoutId subclass_id,
                            LayoutId superclass_id,
                            const BuiltinAttribute attrs[],
-                           const NativeMethod methods[],
                            const BuiltinMethod builtins[]);
 
   LayoutId reserveLayoutId();
@@ -1000,7 +999,6 @@ class BuiltinsBase {
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
-  static const NativeMethod kNativeMethods[];
 
  protected:
   static const SymbolId kName;
@@ -1014,9 +1012,9 @@ class Builtins : public BuiltinsBase {
  public:
   static void initialize(Runtime* runtime) {
     HandleScope scope;
-    Type new_type(&scope, runtime->addBuiltinType(
-                              T::kName, T::kType, T::kSuperType, T::kAttributes,
-                              T::kNativeMethods, T::kBuiltinMethods));
+    Type new_type(&scope,
+                  runtime->addBuiltinType(T::kName, T::kType, T::kSuperType,
+                                          T::kAttributes, T::kBuiltinMethods));
     new_type.sealAttributes();
     T::postInitialize(runtime, new_type);
   }

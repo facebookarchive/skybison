@@ -228,7 +228,7 @@ void Runtime::appendBuiltinAttributes(View<BuiltinAttribute> attributes,
 RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                                        LayoutId superclass_id) {
   return addBuiltinType(name, subclass_id, superclass_id,
-                        BuiltinsBase::kAttributes, BuiltinsBase::kNativeMethods,
+                        BuiltinsBase::kAttributes,
                         BuiltinsBase::kBuiltinMethods);
 }
 
@@ -236,14 +236,12 @@ RawObject Runtime::addBuiltinTypeWithBuiltinMethods(
     SymbolId name, LayoutId subclass_id, LayoutId superclass_id,
     const BuiltinMethod builtins[]) {
   return addBuiltinType(name, subclass_id, superclass_id,
-                        BuiltinsBase::kAttributes, BuiltinsBase::kNativeMethods,
-                        builtins);
+                        BuiltinsBase::kAttributes, builtins);
 }
 
 RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
                                   LayoutId superclass_id,
                                   const BuiltinAttribute attrs[],
-                                  const NativeMethod methods[],
                                   const BuiltinMethod builtins[]) {
   HandleScope scope;
 
@@ -276,12 +274,6 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
 
   // Install the layout and class
   layoutAtPut(subclass_id, *layout);
-
-  // Add the provided methods.
-  for (word i = 0; methods[i].name != SymbolId::kSentinelId; i++) {
-    const NativeMethod& meth = methods[i];
-    typeAddNativeFunction(subclass, meth.name, meth.address);
-  }
 
   // Add the provided methods.
   for (word i = 0; builtins[i].name != SymbolId::kSentinelId; i++) {
@@ -5069,9 +5061,6 @@ const BuiltinAttribute BuiltinsBase::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 const BuiltinMethod BuiltinsBase::kBuiltinMethods[] = {
-    {SymbolId::kSentinelId, nullptr},
-};
-const NativeMethod BuiltinsBase::kNativeMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 

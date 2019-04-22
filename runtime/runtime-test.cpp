@@ -2664,16 +2664,12 @@ TEST(RuntimeTest, InstanceDelWithReadOnlyAttributeRaisesAttributeError) {
       {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
-  NativeMethod methods[] = {
-      {SymbolId::kSentinelId, nullptr},
-  };
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
   LayoutId layout_id = runtime.reserveLayoutId();
   Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
-                                           LayoutId::kObject, attrs, methods,
-                                           builtins));
+                                           LayoutId::kObject, attrs, builtins));
   Layout layout(&scope, type.instanceLayout());
   runtime.layoutAtPut(layout_id, *layout);
   HeapObject instance(&scope, runtime.newInstance(layout));
@@ -3046,16 +3042,12 @@ TEST(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
       {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
       {SymbolId::kSentinelId, -1},
   };
-  NativeMethod methods[] = {
-      {SymbolId::kSentinelId, nullptr},
-  };
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
   LayoutId layout_id = runtime.reserveLayoutId();
   Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
-                                           LayoutId::kObject, attrs, methods,
-                                           builtins));
+                                           LayoutId::kObject, attrs, builtins));
   Layout layout(&scope, type.instanceLayout());
   runtime.layoutAtPut(layout_id, *layout);
   HeapObject instance(&scope, runtime.newInstance(layout));
