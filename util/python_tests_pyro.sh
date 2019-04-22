@@ -41,4 +41,11 @@ cd "$BUILD_DIR" || exit 1
 rm -rf tests
 mkdir tests
 find "$SOURCE_DIR/library/" -name "$FIND_FILTER" -exec cp {} tests/ \;
-find "$BUILD_DIR/tests/" -name "$FIND_FILTER" -print0 | xargs -0 -n1 -t "$PYTHON_BIN"
+
+if command -v parallel >/dev/null; then
+    TEST_RUNNER=(parallel -v)
+else
+    NUM_CPUS="$(python -c 'import multiprocessing; print(multiprocessing.cpu_count())')"
+    TEST_RUNNER=(xargs -t -P "$NUM_CPUS")
+fi
+find "$BUILD_DIR/tests/" -name "$FIND_FILTER" -print0 | "${TEST_RUNNER[@]}" -0 -n1 "$PYTHON_BIN"
