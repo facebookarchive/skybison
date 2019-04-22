@@ -243,6 +243,21 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
                     "'list' object cannot be interpreted as an integer"));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderImulWithIntSubclassReturnsRepeatedBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  byteArrayAdd(thread, &runtime, self, 'a');
+  runFromCStr(&runtime, R"(
+class C(int): pass
+count = C(5)
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "aaaaa"));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderImulWithDunderIndexReturnsRepeatedBytes) {
   Runtime runtime;
   Thread* thread = Thread::current();
@@ -301,7 +316,7 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
                     LayoutId::kOverflowError,
-                    "cannot fit count into an index-sized integer"));
+                    "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithOverflowRaisesMemoryError) {
@@ -558,6 +573,22 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
                     "'list' object cannot be interpreted as an integer"));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderMulWithIntSubclassReturnsRepeatedBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte view[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, view);
+  runFromCStr(&runtime, R"(
+class C(int): pass
+count = C(3)
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "foofoofoo"));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
   Runtime runtime;
   Thread* thread = Thread::current();
@@ -616,7 +647,7 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
                     LayoutId::kOverflowError,
-                    "cannot fit count into an index-sized integer"));
+                    "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithOverflowRaisesMemoryError) {

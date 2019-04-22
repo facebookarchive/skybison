@@ -538,10 +538,10 @@ RawObject makeIndex(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Object converted(&scope, intFromIndex(thread, obj));
   if (converted.isError()) return *converted;
-  Int i(&scope, *converted);
+  Int i(&scope, intUnderlying(thread, converted));
   if (i.numDigits() != 1) {
-    return thread->raiseOverflowErrorWithCStr(
-        "cannot fit index into an index-sized integer");
+    return thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &obj));
   }
   return *i;
 }

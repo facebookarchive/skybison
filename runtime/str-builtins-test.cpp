@@ -365,7 +365,7 @@ TEST(StrBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
                             LayoutId::kOverflowError,
-                            "cannot fit count into an index-sized integer"));
+                            "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST(StrBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {

@@ -622,6 +622,20 @@ TEST(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
       "'list' object cannot be interpreted as an integer"));
 }
 
+TEST(BytesBuiltinsTest, DunderMulWithIntSubclassReturnsRepeatedBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  const byte view[] = {'a', 'b', 'c'};
+  Object self(&scope, runtime.newBytesWithAll(view));
+  runFromCStr(&runtime, R"(
+class C(int): pass
+count = C(4)
+)");
+  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "abcabcabcabc"));
+}
+
 TEST(BytesBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
   Runtime runtime;
   HandleScope scope;
@@ -676,7 +690,7 @@ TEST(BytesBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   Object count(&scope, runtime.newIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kOverflowError,
-                            "cannot fit count into an index-sized integer"));
+                            "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST(BytesBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {

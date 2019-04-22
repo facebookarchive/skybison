@@ -374,6 +374,30 @@ TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithIntReturnsInt) {
   EXPECT_EQ(result, 10);
 }
 
+TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithIntSubclassReturnsInt) {
+  PyRun_SimpleString(R"(
+class C(int):
+  def __index__(self): return 10
+obj = C(42);
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  Py_ssize_t result = PyNumber_AsSsize_t(obj, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, 42);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberAsSsizeTWithDunderIndexReturnsInt) {
+  PyRun_SimpleString(R"(
+class C:
+  def __index__(self): return 42
+obj = C();
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  Py_ssize_t result = PyNumber_AsSsize_t(obj, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, 42);
+}
+
 TEST_F(AbstractExtensionApiTest,
        PyNumberAsSsizeTWithNegativeOneReturnsNegativeOne) {
   PyObjectPtr num(PyLong_FromLong(-1));
@@ -533,6 +557,16 @@ TEST_F(AbstractExtensionApiTest, PyNumberIndexOnIntReturnsSelf) {
   PyObjectPtr pylong(PyLong_FromLong(666));
   PyObjectPtr index(PyNumber_Index(pylong));
   EXPECT_EQ(index, pylong);
+}
+
+TEST_F(AbstractExtensionApiTest, PyNumberIndexOnIntSubclassReturnsSelf) {
+  PyRun_SimpleString(R"(
+class C(int): pass
+obj = C(42);
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr index(PyNumber_Index(obj));
+  EXPECT_EQ(index, obj);
 }
 
 TEST_F(AbstractExtensionApiTest, PyNumberIndexCallsDunderIndex) {
@@ -1786,6 +1820,33 @@ obj = Bar()
   PyObjectPtr obj(moduleGet("__main__", "obj"));
   ASSERT_EQ(PyObject_Length(obj), -1);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthWithIntSubclassLargeRaisesOverflowError) {
+  PyRun_SimpleString(R"(
+class Foo(int): pass
+class Bar:
+  def __len__(self): return Foo(2**63)
+obj = Bar()
+)");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  ASSERT_EQ(PyObject_Length(obj), -1);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectLengthWithIntSubclassReturnsValue) {
+  PyRun_SimpleString(R"(
+class Foo(int): pass
+class Bar:
+  def __len__(self): return Foo(5)
+obj = Bar()
+)");
+
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_Length(obj), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjectLengthWithIndexReturnsValue) {

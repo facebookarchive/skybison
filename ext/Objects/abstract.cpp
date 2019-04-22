@@ -53,21 +53,21 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
 
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Object len(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
-  if (len.isError()) {
+  Object len_index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
+  if (len_index.isError()) {
     if (!thread->hasPendingException()) {
       thread->raiseTypeErrorWithCStr("object has no len()");
     }
     return -1;
   }
-  len = intFromIndex(thread, len);
+  Object len(&scope, intFromIndex(thread, len_index));
   if (len.isError()) {
     return -1;
   }
-  Int index(&scope, *len);
+  Int index(&scope, intUnderlying(thread, len));
   if (index.numDigits() > 1) {
-    thread->raiseOverflowErrorWithCStr(
-        "cannot fit 'int' into an index-sized integer");
+    thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &len_index));
     return -1;
   }
   if (index.isNegative()) {
@@ -375,15 +375,18 @@ PY_EXPORT Py_ssize_t PyNumber_AsSsize_t(PyObject* obj, PyObject* overflow_err) {
   }
   HandleScope scope(thread);
   Object index(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  index = intFromIndex(thread, index);
-  if (index.isError()) return -1;
-  Int number(&scope, *index);
+  Object num(&scope, intFromIndex(thread, index));
+  if (num.isError()) return -1;
+  Int number(&scope, intUnderlying(thread, num));
   if (overflow_err == nullptr || number.numDigits() == 1) {
     // Overflows should be clipped, or value is already in range.
     return number.asWordSaturated();
   }
   // Value overflows, raise an exception.
-  PyErr_Format(overflow_err, "cannot fit index into an index-sized integer");
+  thread->setPendingExceptionType(
+      ApiHandle::fromPyObject(overflow_err)->asObject());
+  thread->setPendingExceptionValue(thread->runtime()->newStrFromFmt(
+      "cannot fit '%T' into an index-sized integer", &index));
   return -1;
 }
 

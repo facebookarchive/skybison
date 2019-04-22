@@ -160,11 +160,12 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Object index_obj(&scope, args.get(1));
   Object index_int_obj(&scope, intFromIndex(thread, index_obj));
   if (index_int_obj.isError()) return *index_int_obj;
-  if (!index_int_obj.isSmallInt()) {
-    return thread->raiseIndexErrorWithCStr(
-        "cannot fit 'int' into an index-sized integer");
+  Int index_int(&scope, intUnderlying(thread, index_int_obj));
+  if (index_int.isLargeInt()) {
+    return thread->raiseIndexError(thread->runtime()->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &index_obj));
   }
-  word index = RawSmallInt::cast(*index_int_obj).value();
+  word index = index_int.asWord();
   // TODO(T36619828) support str subclasses
   Str format(&scope, self.format());
   char format_c = formatChar(format);

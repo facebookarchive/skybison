@@ -681,14 +681,14 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfStr(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  Object count_obj(&scope, args.get(1));
-  count_obj = intFromIndex(thread, count_obj);
+  Object count_index(&scope, args.get(1));
+  Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
-  Int count_int(&scope, *count_obj);
+  Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowErrorWithCStr(
-        "cannot fit count into an index-sized integer");
+    return thread->raiseOverflowError(runtime->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &count_index));
   }
   Str self(&scope, *self_obj);
   word length = self.length();

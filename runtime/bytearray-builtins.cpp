@@ -158,14 +158,14 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
-  Object count_obj(&scope, args.get(1));
-  count_obj = intFromIndex(thread, count_obj);
+  Object count_index(&scope, args.get(1));
+  Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
-  Int count_int(&scope, *count_obj);
+  Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowErrorWithCStr(
-        "cannot fit count into an index-sized integer");
+    return thread->raiseOverflowError(runtime->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &count_index));
   }
   if (count == 1) {
     return *self;
@@ -298,14 +298,14 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
-  Object count_obj(&scope, args.get(1));
-  count_obj = intFromIndex(thread, count_obj);
+  Object count_index(&scope, args.get(1));
+  Object count_obj(&scope, intFromIndex(thread, count_index));
   if (count_obj.isError()) return *count_obj;
-  Int count_int(&scope, *count_obj);
+  Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowErrorWithCStr(
-        "cannot fit count into an index-sized integer");
+    return thread->raiseOverflowError(runtime->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &count_index));
   }
   word length = self.numItems();
   if (count <= 0 || length == 0) {
