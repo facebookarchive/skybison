@@ -17,5 +17,21 @@ class YieldFromTest(unittest.TestCase):
         self.assertEqual(next(g), "hello")
 
 
+class AttributesTest(unittest.TestCase):
+    def test_gi_running(self):
+        def gen():
+            self.assertTrue(g.gi_running)
+            yield 1
+            self.assertTrue(g.gi_running)
+            yield 2
+
+        g = gen()
+        self.assertFalse(g.gi_running)
+        next(g)
+        self.assertFalse(g.gi_running)
+        next(g)
+        self.assertFalse(g.gi_running)
+
+
 if __name__ == "__main__":
     unittest.main()

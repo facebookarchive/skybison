@@ -21,6 +21,7 @@ class GeneratorBuiltins
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinAttribute kAttributes[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(GeneratorBuiltins);
@@ -31,6 +32,7 @@ class CoroutineBuiltins
                       LayoutId::kCoroutine> {
  public:
   static const BuiltinMethod kBuiltinMethods[];
+  static const BuiltinAttribute kAttributes[];
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(CoroutineBuiltins);

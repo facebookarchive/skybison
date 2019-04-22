@@ -7,17 +7,34 @@
 
 namespace python {
 
-// Common work between send() and __next__(): Check if the generator has already
-// finished, run it, then check if it's newly-finished.
+// Check that the generator is in an OK state to resume, run it, then check if
+// it's newly-finished.
 static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
                           const Object& value) {
   HandleScope scope(thread);
   HeapFrame heap_frame(&scope, gen.heapFrame());
-  if (heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC) {
-    // The generator has already finished.
+  // Don't resume an already-running generator.
+  if (gen.running() == Bool::trueObj()) {
+    return thread->raiseWithFmt(LayoutId::kValueError, "%T already executing",
+                                &gen);
+  }
+  // If the generator has finished and we're not already sending an exception,
+  // raise StopIteration.
+  if (heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC &&
+      !thread->hasPendingException()) {
     return thread->raiseStopIteration(NoneType::object());
   }
+  // Don't allow sending non-None values before the generator is primed.
+  if (heap_frame.frame()->virtualPC() == 0 && !value.isNoneType()) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "can't send non-None value to a just-started %T",
+        &gen);
+  }
+
+  gen.setRunning(Bool::trueObj());
   Object result(&scope, thread->runtime()->genSend(thread, gen, value));
+  gen.setRunning(Bool::falseObj());
+
   if (!result.isError() &&
       heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC) {
     // The generator finished normally. Forward its return value in a
@@ -47,11 +64,6 @@ RawObject GeneratorBaseBuiltins::send(Thread* thread, Frame* frame,
         &type_name));
   }
   GeneratorBase gen(&scope, *self);
-  if (RawHeapFrame::cast(gen.heapFrame()).frame()->virtualPC() == 0 &&
-      !args.get(1).isNoneType()) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFmt(
-        "can't send non-None value to a just-started %S", &type_name));
-  }
   Object value(&scope, args.get(1));
   return sendImpl(thread, gen, value);
 }
@@ -61,6 +73,12 @@ const BuiltinMethod GeneratorBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNext, dunderNext},
     {SymbolId::kSend, GeneratorBaseBuiltins::send<LayoutId::kGenerator>},
     {SymbolId::kSentinelId, nullptr},
+};
+
+const BuiltinAttribute GeneratorBuiltins::kAttributes[] = {
+    {SymbolId::kGiRunning, RawGenerator::kRunningOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
 };
 
 RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -92,6 +110,12 @@ RawObject GeneratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 const BuiltinMethod CoroutineBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSend, GeneratorBaseBuiltins::send<LayoutId::kCoroutine>},
     {SymbolId::kSentinelId, nullptr},
+};
+
+const BuiltinAttribute CoroutineBuiltins::kAttributes[] = {
+    {SymbolId::kCrRunning, RawCoroutine::kRunningOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
 };
 
 }  // namespace python

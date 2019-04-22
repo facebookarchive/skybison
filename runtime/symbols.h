@@ -193,6 +193,7 @@ class Runtime;
   V(CountOf, "countOf")                                                        \
   V(Coroutine, "coroutine")                                                    \
   V(CreateBuiltin, "create_builtin")                                           \
+  V(CrRunning, "cr_running")                                                   \
   V(Deleter, "deleter")                                                        \
   V(DeprecationWarning, "DeprecationWarning")                                  \
   V(Dict, "dict")                                                              \
@@ -247,6 +248,7 @@ class Runtime;
   V(GetFrozenObject, "get_frozen_object")                                      \
   V(Getattr, "getattr")                                                        \
   V(Getter, "getter")                                                          \
+  V(GiRunning, "gi_running")                                                   \
   V(Hasattr, "hasattr")                                                        \
   V(Hex, "hex")                                                                \
   V(Iadd, "iadd")                                                              \
