@@ -2349,6 +2349,9 @@ class set(bootstrap=True):
     def copy(self):
         pass
 
+    def discard(self, elem):
+        pass
+
     def intersection(self, other):
         pass
 

@@ -375,6 +375,7 @@ const BuiltinAttribute SetBuiltins::kAttributes[] = {
 const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
     {SymbolId::kAdd, add},
     {SymbolId::kCopy, copy},
+    {SymbolId::kDiscard, discard},
     {SymbolId::kDunderAnd, dunderAnd},
     {SymbolId::kDunderContains, dunderContains},
     {SymbolId::kDunderEq, dunderEq},
@@ -520,6 +521,20 @@ RawObject SetBuiltins::copy(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, *self);
   return setCopy(thread, set);
+}
+
+RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Object value(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfSet(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kSet);
+  }
+  Set self(&scope, *self_obj);
+  runtime->setRemove(self, value);
+  return NoneType::object();
 }
 
 RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {

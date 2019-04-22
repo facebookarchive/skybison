@@ -202,6 +202,7 @@ class Runtime;
   V(DictKeyIterator, "dict_keyiterator")                                       \
   V(DictValues, "dict_values")                                                 \
   V(DictValueIterator, "dict_valueiterator")                                   \
+  V(Discard, "discard")                                                        \
   V(Displayhook, "displayhook")                                                \
   V(Divmod, "divmod")                                                          \
   V(DotSo, ".so")                                                              \

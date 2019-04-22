@@ -188,6 +188,19 @@ class ReversedTests(unittest.TestCase):
 
 
 class SetTests(unittest.TestCase):
+    def test_discard_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.discard(None, 1)
+
+    def test_discard_with_non_member_returns_none(self):
+        self.assertIs(set.discard(set(), 1), None)
+
+    def test_discard_with_member_removes_element(self):
+        s = {1, 2, 3}
+        self.assertIn(1, s)
+        self.assertIs(set.discard(s, 1), None)
+        self.assertNotIn(1, s)
+
     def test_remove_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):
             set.remove(None, 1)
@@ -197,7 +210,7 @@ class SetTests(unittest.TestCase):
             set.remove(set(), 1)
 
     def test_remove_with_member_removes_element(self):
-        s = set([1, 2, 3])
+        s = {1, 2, 3}
         self.assertIn(1, s)
         set.remove(s, 1)
         self.assertNotIn(1, s)
