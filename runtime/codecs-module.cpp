@@ -69,6 +69,7 @@ static int asciiDecode(Thread* thread, const ByteArray& dst, const Bytes& src,
 
 const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
+    {SymbolId::kUnderUtf8Encode, underUtf8Encode},
     {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
     {SymbolId::kUnderByteArrayToString, underByteArrayToString},
     {SymbolId::kSentinelId, nullptr},
@@ -135,6 +136,74 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
   }
   result.atPut(0, runtime->newStrFromByteArray(dst));
   result.atPut(1, runtime->newIntFromUnsigned(length));
+  return *result;
+}
+
+static bool isSurrogate(int32_t codepoint) {
+  return 0xD800 <= codepoint && codepoint <= 0xDFFF;
+}
+
+// CPython encodes latin1 codepoints into the low-surrogate range, and is able
+// to recover the original codepoints from those decodable surrogate points.
+static bool isEscapedLatin1Surrogate(int32_t codepoint) {
+  return 0xDC80 <= codepoint && codepoint <= 0xDCFF;
+}
+
+RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  DCHECK(args.get(0).isStr(), "First arg to _utf_8_encode must be str");
+  Str data(&scope, args.get(0));
+  DCHECK(args.get(1).isStr(), "Second arg to _utf_8_encode must be str");
+  Str errors(&scope, args.get(1));
+  DCHECK(args.get(2).isInt(), "Third arg to _utf_8_encode must be int");
+  Int index_obj(&scope, args.get(2));
+  DCHECK(args.get(3).isByteArray(),
+         "Fourth arg to _utf_8_encode must be bytearray");
+  ByteArray output(&scope, args.get(3));
+
+  Runtime* runtime = thread->runtime();
+  Tuple result(&scope, runtime->newTuple(2));
+  SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
+  word index = index_obj.asWord();
+  for (word byte_offset = data.offsetByCodePoints(0, index);
+       byte_offset < data.length(); index++) {
+    word num_bytes;
+    int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
+    byte_offset += num_bytes;
+    if (!isSurrogate(codepoint)) {
+      for (word i = byte_offset - num_bytes; i < byte_offset; i++) {
+        byteArrayAdd(thread, runtime, output, data.charAt(i));
+      }
+    } else {
+      switch (error_symbol) {
+        case SymbolId::kIgnore:
+          continue;
+        case SymbolId::kReplace:
+          byteArrayAdd(thread, runtime, output, '?');
+          continue;
+        case SymbolId::kSurrogateescape:
+          if (isEscapedLatin1Surrogate(codepoint)) {
+            byteArrayAdd(thread, runtime, output, codepoint - 0xDC00);
+            continue;
+          }
+          break;
+        default:
+          break;
+      }
+      result.atPut(0, runtime->newInt(index));
+      while (byte_offset < data.length() &&
+             isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
+        byte_offset += num_bytes;
+        index++;
+      }
+      result.atPut(1, runtime->newInt(index + 1));
+      return *result;
+    }
+  }
+  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(1, runtime->newInt(index));
   return *result;
 }
 

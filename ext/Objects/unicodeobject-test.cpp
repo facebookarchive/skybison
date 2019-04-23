@@ -77,6 +77,29 @@ TEST_F(UnicodeExtensionApiTest, AsUTF8StringReturnsBytes) {
   EXPECT_STREQ(PyBytes_AsString(bytes), "foo");
 }
 
+TEST_F(UnicodeExtensionApiTest,
+       AsUTF8StringWithInvalidCodepointRaisesEncodeError) {
+  PyObjectPtr unicode(PyUnicode_DecodeASCII("h\x80i", 3, "surrogateescape"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(unicode));
+  PyObjectPtr bytes(_PyUnicode_AsUTF8String(unicode, nullptr));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeEncodeError));
+  EXPECT_EQ(bytes, nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUTF8StringWithReplaceErrorsReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_DecodeASCII("foo\x80", 4, "surrogateescape"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(unicode));
+  PyObjectPtr bytes(_PyUnicode_AsUTF8String(unicode, "replace"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 4);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo?");
+}
+
 TEST_F(UnicodeExtensionApiTest, AsUCS4WithNonStringReturnsNull) {
   // Pass a non string object.
   Py_UCS4* ucs4_string = PyUnicode_AsUCS4(Py_None, nullptr, 0, 0);

@@ -96,9 +96,61 @@ def ascii_decode(data: bytes, errors: str = "strict"):
     return _bytearray_to_string(result), i
 
 
+@_patch
+def _utf_8_encode(data: str, errors: str, index: int, out: bytearray):
+    """Tries to encode `data`, starting from `index`, into the `out` bytearray.
+    If it encounters an error, it tries using the `errors` error handler to
+    fix it internally, but returns the a tuple of the first and last index of
+    the error.
+    If it finishes encoding, it returns a tuple of the final bytes and length.
+    """
+    pass
+
+
+def utf_8_encode(data: str, errors: str = "strict"):
+    if not isinstance(data, str):
+        raise TypeError(
+            f"utf_8_encode() argument 1 must be str, not {type(data).__name__}"
+        )
+    if not isinstance(errors, str):
+        raise TypeError(
+            "utf_8_encode() argument 2 must be str or None, not "
+            f"{type(errors).__name__}"
+        )
+    result = bytearray()
+    i = 0
+    encoded = bytes()
+    while i < len(data):
+        encoded, i = _utf_8_encode(data, errors, i, result)
+        if isinstance(encoded, int):
+            unicode, pos = _call_encode_errorhandler(
+                errors, data, "surrogates not allowed", "utf-8", encoded, i
+            )
+            if isinstance(unicode, bytes):
+                result += unicode
+                i = pos
+                continue
+            for char in unicode:
+                if ord(char) > 127:
+                    raise UnicodeEncodeError(
+                        "utf-8", unicode, encoded, i, "surrogates not allowed"
+                    )
+            _bytearray_string_append(result, unicode)
+            i = pos
+    if isinstance(encoded, bytes):
+        return encoded, i
+    # _utf_8_encode encountered an error and _call_encode_errorhandler was the
+    # last function to write to `result`.
+    return bytes(result), i
+
+
 _codec_decode_table = {"ascii": ascii_decode, "us_ascii": ascii_decode}
 
-_codec_encode_table = {}  # noqa: T484
+_codec_encode_table = {
+    "utf_8": utf_8_encode,
+    "utf-8": utf_8_encode,
+    "utf8": utf_8_encode,
+}
 
 
 def strict_errors(error):
@@ -185,6 +237,41 @@ def _call_decode_errorhandler(
     _bytearray_string_append(output, replacement)
 
     return (input, pos)
+
+
+def _call_encode_errorhandler(
+    errors: str, input: str, reason: str, encoding: str, start: int, end: int
+):
+    """
+    Generic encoding errorhandling function
+    Creates a UnicodeEncodeError, looks up an error handler, and calls the
+    error handler with the UnicodeEncodeError.
+    Makes sure the error handler returns a (str/bytes, int) tuple and returns it
+
+    errors: The name of the error handling function to call
+    input: The input to be encoded
+    reason: The reason the errorhandler was called
+    encoding: The encoding being used
+    start: The index of the first non-erroneus byte
+    end: The index of the first non-erroneous byte
+    """
+    exception = UnicodeEncodeError(encoding, input, start, end, reason)
+    result = lookup_error(errors)(exception)
+    if (
+        not isinstance(result, tuple)
+        or len(result) != 2
+        or not isinstance(result[0], (str, bytes))
+        or not hasattr(result[1], "__index__")
+    ):
+        raise TypeError("encoding error handler must return (str/bytes, int) tuple")
+    unicode = result[0]
+    pos = _index(result[1])
+    if pos < 0:
+        pos += len(input)
+    if not 0 <= pos <= len(input):
+        raise IndexError(f"position {pos} from error handler out of bounds")
+
+    return unicode, pos
 
 
 def _index(num):

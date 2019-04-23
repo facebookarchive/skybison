@@ -775,8 +775,8 @@ PY_EXPORT PyObject* PyUnicode_AsUTF32String(PyObject* /* e */) {
   UNIMPLEMENTED("PyUnicode_AsUTF32String");
 }
 
-PY_EXPORT PyObject* PyUnicode_AsUTF8String(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_AsUTF8String");
+PY_EXPORT PyObject* PyUnicode_AsUTF8String(PyObject* unicode) {
+  return _PyUnicode_AsUTF8String(unicode, "strict");
 }
 
 PY_EXPORT PyObject* PyUnicode_AsUnicodeEscapeString(PyObject* /* e */) {
@@ -1732,13 +1732,25 @@ PY_EXPORT int _Py_normalize_encoding(const char* encoding, char* lower,
 }
 
 PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
-                                            const char* /* errors */) {
-  if (!PyUnicode_Check(unicode)) {
-    PyErr_BadArgument();
+                                            const char* errors) {
+  DCHECK(unicode != nullptr, "unicode cannot be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  if (!runtime->isInstanceOfStr(*str)) {
+    thread->raiseBadArgument();
     return nullptr;
   }
-  return PyBytes_FromStringAndSize(PyUnicode_AsUTF8(unicode),
-                                   PyUnicode_GetLength(unicode));
+  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object result(
+      &scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
+                                      SymbolId::kUtf8Encode, str, errors_obj));
+  if (result.isError()) {
+    return nullptr;
+  }
+  Tuple result_tuple(&scope, *result);
+  return ApiHandle::newReference(thread, result_tuple.at(0));
 }
 
 PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* /* s */,

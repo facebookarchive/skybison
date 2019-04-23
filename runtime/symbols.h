@@ -493,6 +493,8 @@ class Runtime;
   V(Update, "update")                                                          \
   V(Upper, "upper")                                                            \
   V(UserWarning, "UserWarning")                                                \
+  V(UnderUtf8Encode, "_utf_8_encode")                                          \
+  V(Utf8Encode, "utf_8_encode")                                                \
   V(Value, "value")                                                            \
   V(Values, "values")                                                          \
   V(ValueCell, "valuecell")                                                    \

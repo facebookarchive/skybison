@@ -131,6 +131,43 @@ class DecodeASCIITests(unittest.TestCase):
         self.assertEqual(consumed, 4)
 
 
+class EncodeUTF8Tests(unittest.TestCase):
+    def test_encode_utf_8_with_non_str_first_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.utf_8_encode([])
+
+    def test_encode_utf_8_with_non_str_second_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.utf_8_encode("", [])
+
+    def test_encode_utf_8_with_zero_length_returns_empty_bytes(self):
+        encoded, consumed = _codecs.utf_8_encode("")
+        self.assertEqual(encoded, b"")
+        self.assertEqual(consumed, 0)
+
+    def test_encode_utf_8_with_well_formed_ascii_returns_bytes(self):
+        encoded, consumed = _codecs.utf_8_encode("hello")
+        self.assertEqual(encoded, b"hello")
+        self.assertEqual(consumed, 5)
+
+    def test_encode_utf_8_with_custom_error_handler_mid_bytes_error_returns_bytes(self):
+        _codecs.register_error("test", lambda x: (b"-testing-", x.end))
+        encoded, consumed = _codecs.utf_8_encode("ab\udc80c", "test")
+        self.assertEqual(encoded, b"ab-testing-c")
+        self.assertEqual(consumed, 4)
+
+    def test_encode_utf_8_with_custom_error_handler_end_bytes_error_returns_bytes(self):
+        _codecs.register_error("test", lambda x: (b"-testing-", x.end))
+        encoded, consumed = _codecs.utf_8_encode("ab\udc80", "test")
+        self.assertEqual(encoded, b"ab-testing-")
+        self.assertEqual(consumed, 3)
+
+    def test_encode_utf_8_with_non_ascii_error_handler_raises_decode_error(self):
+        _codecs.register_error("test", lambda x: ("\x80", x.end))
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs.utf_8_encode("ab\udc80", "test")
+
+
 class GeneralizedErrorHandlerTests(unittest.TestCase):
     def test_call_decode_error_with_strict_raises_unicode_decode_error(self):
         with self.assertRaises(UnicodeDecodeError):
@@ -239,6 +276,92 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
             "well-behaved-test", b"bad_input", result, "reason", "encoding", 1, 2
         )
         self.assertEqual(bytes(result), b"str_to_append")
+
+    def test_call_encode_error_with_strict_calls_function(self):
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs._call_encode_errorhandler(
+                "strict", "bad_input", "reason", "encoding", 0, 0
+            )
+
+    def test_call_encode_error_with_ignore_calls_function(self):
+        result, new_pos = _codecs._call_encode_errorhandler(
+            "ignore", "bad_input", "reason", "encoding", 1, 2
+        )
+        self.assertEqual(result, "")
+        self.assertEqual(new_pos, 2)
+
+    def test_call_encode_error_with_non_tuple_return_raises_type_error(self):
+        def error_function(exc):
+            return "not-a-tuple"
+
+        _codecs.register_error("not-a-tuple", error_function)
+        with self.assertRaises(TypeError):
+            _codecs._call_encode_errorhandler(
+                "not-a-tuple", "bad_input", "reason", "encoding", 1, 2
+            )
+
+    def test_call_encode_error_with_small_tuple_return_raises_type_error(self):
+        def error_function(exc):
+            return ("one",)
+
+        _codecs.register_error("small-tuple", error_function)
+        with self.assertRaises(TypeError):
+            _codecs._call_encode_errorhandler(
+                "small-tuple", "bad_input", "reason", "encoding", 1, 2
+            )
+
+    def test_call_encode_error_with_int_first_tuple_return_raises_type_error(self):
+        def error_function(exc):
+            return 1, 1
+
+        _codecs.register_error("int-first", error_function)
+        with self.assertRaises(TypeError):
+            _codecs._call_encode_errorhandler(
+                "int-first", "bad_input", "reason", "encoding", 1, 2
+            )
+
+    def test_call_encode_error_with_str_second_tuple_return_raises_type_error(self):
+        def error_function(exc):
+            return "str_to_append", "new_pos"
+
+        _codecs.register_error("str-second", error_function)
+        with self.assertRaises(TypeError):
+            _codecs._call_encode_errorhandler(
+                "str-second", "bad_input", "reason", "encoding", 1, 2
+            )
+
+    def test_call_encode_error_with_changed_input_ignores_change(self):
+        def error_function(err):
+            err.object = 1
+            return "str_to_append", err.end
+
+        _codecs.register_error("change-input-to-int", error_function)
+        result, new_pos = _codecs._call_encode_errorhandler(
+            "change-input-to-int", "bad_input", "reason", "encoding", 1, 2
+        )
+        self.assertEqual(result, "str_to_append")
+        self.assertEqual(new_pos, 2)
+
+    def test_call_encode_error_with_out_of_bounds_index_raises_index_error(self):
+        def error_function(exc):
+            return "str_to_append", 10
+
+        _codecs.register_error("out-of-bounds-pos", error_function)
+        with self.assertRaises(IndexError):
+            _codecs._call_encode_errorhandler(
+                "out-of-bounds-pos", "bad_input", "reason", "encoding", 1, 2
+            )
+
+    def test_call_encode_error_with_negative_index_returns_proper_index(self):
+        def error_function(exc):
+            return "str_to_append", -1
+
+        _codecs.register_error("negative-pos", error_function)
+        result, new_pos = _codecs._call_encode_errorhandler(
+            "negative-pos", "bad_input", "reason", "encoding", 1, 2
+        )
+        self.assertEqual(result, "str_to_append")
+        self.assertEqual(new_pos, 8)
 
 
 if __name__ == "__main__":
