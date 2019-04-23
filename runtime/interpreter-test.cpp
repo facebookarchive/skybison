@@ -1269,11 +1269,11 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   consts.atPut(1, NoneType::object());
   code.setConsts(*consts);
   code.setNlocals(0);
-  const byte bc[] = {
+  const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST,   1, SETUP_ASYNC_WITH, 0,
       POP_BLOCK,  0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bytecode));
   RawObject result = Thread::current()->run(code);
   EXPECT_EQ(result, SmallInt::fromWord(42));
 }
@@ -2320,12 +2320,12 @@ foo = Foo()
   // foo = Foo()
   // def bar():
   //     yield from foo
-  const byte bc[] = {
+  const byte bytecode[] = {
       LOAD_CONST,          0,  // (foo)
       GET_YIELD_FROM_ITER, 0,  // iter(foo)
       RETURN_VALUE,        0,
   };
-  code.setCode(runtime.newBytesWithAll(bc));
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   // Confirm that the returned value is the iterator of Foo
   Object result(&scope, Thread::current()->run(code));

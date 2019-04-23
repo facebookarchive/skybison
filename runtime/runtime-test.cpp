@@ -1107,10 +1107,10 @@ TEST(RuntimeTest, CollectAttributes) {
   //
   // The assignment to self.foo is intentionally duplicated to ensure that we
   // only record a single attribute name.
-  const byte bc[] = {LOAD_CONST,   0, LOAD_FAST, 0, STORE_ATTR, 0,
-                     LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 0,
-                     RETURN_VALUE, 0};
-  code.setCode(runtime.newBytesWithAll(bc));
+  const byte bytecode[] = {LOAD_CONST,   0, LOAD_FAST, 0, STORE_ATTR, 0,
+                           LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 0,
+                           RETURN_VALUE, 0};
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
@@ -1172,10 +1172,10 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   //
   // There is an additional LOAD_FAST that is preceded by an EXTENDED_ARG
   // that must be skipped.
-  const byte bc[] = {LOAD_CONST, 0, EXTENDED_ARG, 10, LOAD_FAST, 0,
-                     STORE_ATTR, 1, LOAD_CONST,   0,  LOAD_FAST, 0,
-                     STORE_ATTR, 0, RETURN_VALUE, 0};
-  code.setCode(runtime.newBytesWithAll(bc));
+  const byte bytecode[] = {LOAD_CONST, 0, EXTENDED_ARG, 10, LOAD_FAST, 0,
+                           STORE_ATTR, 1, LOAD_CONST,   0,  LOAD_FAST, 0,
+                           STORE_ATTR, 0, RETURN_VALUE, 0};
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict attributes(&scope, runtime.newDict());
   runtime.collectAttributes(code, attributes);
