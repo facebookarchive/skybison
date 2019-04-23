@@ -574,6 +574,27 @@ r4 = Bar.__call__(*args)
   EXPECT_EQ(PyTuple_GetItem(r4, 2), Py_None);
 }
 
+TEST_F(TypeExtensionApiTest, CallGetattroSlotFromManagedCode) {
+  getattrofunc getattr_func = [](PyObject* self, PyObject* name) {
+    return PyTuple_Pack(2, name, self);
+  };
+  ASSERT_NO_FATAL_FAILURE(createBarTypeWithSlot(Py_tp_getattro, getattr_func));
+
+  ASSERT_EQ(PyRun_SimpleString(R"(
+b = Bar()
+r = b.foo_bar
+)"),
+            0);
+
+  PyObjectPtr b(moduleGet("__main__", "b"));
+  ASSERT_NE(b, nullptr);
+  PyObjectPtr r(moduleGet("__main__", "r"));
+  ASSERT_NE(r, nullptr);
+  ASSERT_EQ(PyTuple_Check(r), 1);
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(r, 0), "foo_bar"));
+  EXPECT_EQ(PyTuple_GetItem(r, 1), b);
+}
+
 // Pyro-only due to
 // https://github.com/python/cpython/commit/4dcdb78c6ffd203c9d72ef41638cc4a0e3857adf
 TEST_F(TypeExtensionApiTest, CallSetattroSlotFromManagedCodePyro) {
