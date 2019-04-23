@@ -962,6 +962,50 @@ PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* spec) {
   return PyType_FromSpecWithBases(spec, nullptr);
 }
 
+static RawObject addMethod(Thread* thread, const Object& name,
+                           PyMethodDef* def) {
+  DCHECK(def != nullptr, "methods should not be nullptr");
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function function(&scope, runtime->newFunction());
+  function.setName(*name);
+  function.setCode(runtime->newIntFromCPtr(bit_cast<void*>(def->ml_meth)));
+  if (def->ml_doc != nullptr) {
+    Object doc(&scope, runtime->newStrFromCStr(def->ml_doc));
+    function.setDoc(*doc);
+  }
+  switch (def->ml_flags) {
+    case METH_NOARGS:
+      function.setEntry(methodTrampolineNoArgs);
+      function.setEntryKw(methodTrampolineNoArgsKw);
+      function.setEntryEx(methodTrampolineNoArgsEx);
+      break;
+    case METH_O:
+      function.setEntry(methodTrampolineOneArg);
+      function.setEntryKw(methodTrampolineOneArgKw);
+      function.setEntryEx(methodTrampolineOneArgEx);
+      break;
+    case METH_VARARGS:
+      function.setEntry(methodTrampolineVarArgs);
+      function.setEntryKw(methodTrampolineVarArgsKw);
+      function.setEntryEx(methodTrampolineVarArgsEx);
+      break;
+    case METH_VARARGS | METH_KEYWORDS:
+      function.setEntry(methodTrampolineKeywords);
+      function.setEntryKw(methodTrampolineKeywordsKw);
+      function.setEntryEx(methodTrampolineKeywordsEx);
+      break;
+    case METH_FASTCALL:
+      UNIMPLEMENTED("METH_FASTCALL");
+      break;
+    default:
+      UNIMPLEMENTED(
+          "Bad call flags in PyCFunction_Call. METH_OLDARGS is no longer "
+          "supported!");
+  }
+  return *function;
+}
+
 PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                                              PyObject* /* bases */) {
   Thread* thread = Thread::current();
@@ -1001,6 +1045,8 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
       &scope, runtime->newTuple(static_cast<int>(Type::ExtensionSlot::kEnd)));
   type.setExtensionSlots(*extension_slots);
 
+  PyMethodDef* methods = nullptr;
+
   // Set the type slots
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
     void* slot_ptr = slot->pfunc;
@@ -1011,6 +1057,18 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
       return nullptr;
     }
     setExtensionSlot(type, field_id, *field);
+
+    if (slot->slot == Py_tp_methods) {
+      methods = static_cast<PyMethodDef*>(slot_ptr);
+    }
+  }
+
+  if (methods != nullptr) {
+    for (word i = 0; methods[i].ml_name != nullptr; i++) {
+      Object name(&scope, runtime->newStrFromCStr(methods[i].ml_name));
+      Object function(&scope, addMethod(thread, name, &methods[i]));
+      runtime->dictAtPutInValueCell(dict, name, function);
+    }
   }
 
   // Set size

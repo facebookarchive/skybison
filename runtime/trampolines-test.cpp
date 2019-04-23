@@ -1641,7 +1641,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineKeywordArgs);
+  callee.setEntry(moduleTrampolineKeywords);
 
   // Set up a code object that calls the function without arguments
   Object name(&scope, Str::empty());
@@ -1671,7 +1671,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineKeywordArgs);
+  callee.setEntry(moduleTrampolineKeywords);
 
   // Set up a code object that calls the function with a single argument.
   Object name(&scope, Str::empty());
@@ -1701,7 +1701,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineKeywordArgs);
+  callee.setEntry(moduleTrampolineKeywords);
 
   // Set up a code object that calls the function without arguments
   Object name(&scope, Str::empty());
@@ -1736,7 +1736,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineKeywordArgsKw);
+  callee.setEntryKw(moduleTrampolineKeywordsKw);
 
   // Set up a code object that calls the builtin with ("bar", foo=1111)
   Object name(&scope, Str::empty());
@@ -1774,7 +1774,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineKeywordArgsKw);
+  callee.setEntryKw(moduleTrampolineKeywordsKw);
 
   // Set up a code object that calls the builtin with (123, 456, foo=789)
   Object name(&scope, Str::empty());
@@ -1818,7 +1818,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineKeywordArgsKw);
+  callee.setEntryKw(moduleTrampolineKeywordsKw);
 
   // Set up a code object that calls the builtin with ("foo"=1234, "bar"=5678)
   Object name(&scope, Str::empty());
@@ -1857,7 +1857,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineKeywordArgsEx);
+  callee.setEntryEx(moduleTrampolineKeywordsEx);
 
   // Set up a code object that calls with (*(10))
   Object name(&scope, Str::empty());
@@ -1897,7 +1897,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
   callee.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineKeywordArgsEx);
+  callee.setEntryEx(moduleTrampolineKeywordsEx);
 
   // Set up a code object that calls with (*(10), **{"foo":1111})
   Object name(&scope, Str::empty());

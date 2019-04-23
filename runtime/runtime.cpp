@@ -3056,6 +3056,19 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
   return *dst;
 }
 
+RawObject Runtime::tupleSubseq(Thread* thread, const Tuple& self, word start,
+                               word length) {
+  DCHECK_BOUND(start, self.length());
+  DCHECK_BOUND(length, self.length() - start);
+  if (length == 0) return empty_tuple_;
+  HandleScope scope(thread);
+  Tuple result(&scope, newTuple(length));
+  for (word i = 0; i < length; i++) {
+    result.atPut(i, self.at(i + start));
+  }
+  return *result;
+}
+
 // Push a new Frame below caller_frame, and copy a HeapFrame into it. Stack
 // overflow checks must be done by the caller. Returns a pointer to the new
 // stack Frame.

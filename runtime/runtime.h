@@ -480,6 +480,9 @@ class Runtime {
   RawObject setUpdate(Thread* thread, const SetBase& set,
                       const Object& iterable);
 
+  RawObject tupleSubseq(Thread* thread, const Tuple& self, word start,
+                        word length);
+
   // Resume a GeneratorBase, passing it the given value and returning either the
   // yielded value or Error on termination.
   RawObject genSend(Thread* thread, const GeneratorBase& gen,

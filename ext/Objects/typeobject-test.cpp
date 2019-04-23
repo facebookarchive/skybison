@@ -357,6 +357,560 @@ TEST_F(TypeExtensionApiTest, GetSlotFromExtensionType) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+// METH_NOARGS and CALL_FUNCTION
+
+TEST_F(TypeExtensionApiTest, MethodsMethNoargsPosCall) {
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
+  static PyMethodDef methods[] = {{"noargs", meth, METH_NOARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+result = C().noargs()
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 1234);
+}
+
+// METH_NOARGS and CALL_FUNCTION_EX
+
+TEST_F(TypeExtensionApiTest, MethodsMethNoargsExCall) {
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
+  static PyMethodDef methods[] = {{"noargs", meth, METH_NOARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+result = C().noargs(*[])
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 1234);
+}
+
+// METH_NOARGS and CALL_FUNCTION_EX with VARKEYWORDS
+
+TEST_F(TypeExtensionApiTest, MethodsMethNoargsExNoKwargsCall) {
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
+  static PyMethodDef methods[] = {{"noargs", meth, METH_NOARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+result = C().noargs(*[],**{})
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyLong_AsLong(result), 1234);
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethNoargsExHasKwargsRaisesTypeError) {
+  binaryfunc meth = [](PyObject*, PyObject*) { return PyLong_FromLong(1234); };
+  static PyMethodDef methods[] = {{"noargs", meth, METH_NOARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = False
+try:
+  self.noargs(*[],**{'foo': 'bar'})
+except:
+  result = True
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_EQ(result, Py_True);
+}
+
+// METH_O and CALL_FUNCTION
+
+TEST_F(TypeExtensionApiTest, MethodsMethOneArgPosCall) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    return PyTuple_Pack(2, self, arg);
+  };
+  static PyMethodDef methods[] = {{"onearg", meth, METH_O}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.onearg(1234)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(result, 1)), 1234);
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethOneArgNoArgsRaisesTypeError) {
+  binaryfunc meth = [](PyObject*, PyObject*) {
+    ADD_FAILURE();  // unreachable
+    return Py_None;
+  };
+  static PyMethodDef methods[] = {{"onearg", meth, METH_O}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+result = False
+self = C()
+try:
+  self.onearg()
+except TypeError:
+  result = True
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(result, Py_True);
+}
+
+// METH_O and CALL_FUNCTION_KW
+
+TEST_F(TypeExtensionApiTest, MethodsMethOneArgKwCall) {
+  binaryfunc meth = [](PyObject*, PyObject*) {
+    ADD_FAILURE();  // unreachable
+    return Py_None;
+  };
+  static PyMethodDef methods[] = {{"onearg", meth, METH_O}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  ASSERT_NO_FATAL_FAILURE(PyRun_SimpleString(R"(
+try:
+  obj = C().onearg(foo=1234)
+  result = False
+except TypeError:
+  result = True
+)"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  EXPECT_EQ(result, Py_True);
+}
+
+// METH_O and CALL_FUNCTION_EX
+
+TEST_F(TypeExtensionApiTest, MethodsMethOneArgExCall) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    return PyTuple_Pack(2, self, arg);
+  };
+  static PyMethodDef methods[] = {{"onearg", meth, METH_O}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+obj = C()
+result = obj.onearg(*[1234])
+)");
+  PyObjectPtr obj(testing::moduleGet("__main__", "obj"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), obj);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(result, 1)), 1234);
+}
+
+// METH_VARARGS and CALL_FUNCTION
+
+TEST_F(TypeExtensionApiTest, MethodsVarargsArgPosCall) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    return PyTuple_Pack(2, self, arg);
+  };
+  static PyMethodDef methods[] = {{"varargs", meth, METH_VARARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.varargs(1234)
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(args, 0)), 1234);
+}
+
+TEST_F(TypeExtensionApiTest, MethodsVarargsArgPosNoArgsCall) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    return PyTuple_Pack(2, self, arg);
+  };
+  static PyMethodDef methods[] = {{"varargs", meth, METH_VARARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.varargs()
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyTuple_Size(args), 0);
+}
+
+// METH_VARARGS and CALL_FUNCTION_KW
+
+TEST_F(TypeExtensionApiTest, MethodsVarargsArgKwCall) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    return PyTuple_Pack(2, self, arg);
+  };
+  static PyMethodDef methods[] = {{"varargs", meth, METH_VARARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+try:
+  obj = C().varargs(foo=1234)
+  result = False
+except TypeError:
+  result = True
+)");
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  EXPECT_EQ(result, Py_True);
+}
+
+// METH_VARARGS and CALL_FUNCTION_EX
+
+TEST_F(TypeExtensionApiTest, MethodsVarargsArgExCall) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    return PyTuple_Pack(2, self, arg);
+  };
+  static PyMethodDef methods[] = {{"varargs", meth, METH_VARARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.varargs(*[1234])
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(args, 0)), 1234);
+}
+
+TEST_F(TypeExtensionApiTest, MethodsVarargsArgExHasEmptyKwargsCall) {
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    return PyTuple_Pack(2, self, arg);
+  };
+  static PyMethodDef methods[] = {{"varargs", meth, METH_VARARGS}, {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.varargs(*[1234], **{})
+)");
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(args, 0)), 1234);
+}
+
+// METH_KEYWORDS and CALL_FUNCTION
+
+TEST_F(TypeExtensionApiTest, MethodsMethKeywordsPosCall) {
+  ternaryfunc meth = [](PyObject* self, PyObject* args, PyObject* kwargs) {
+    if (kwargs == nullptr) return PyTuple_Pack(2, self, args);
+    return PyTuple_Pack(3, self, args, kwargs);
+  };
+  static PyMethodDef methods[] = {
+      {"keywords", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_VARARGS | METH_KEYWORDS},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.keywords(1234)
+)");
+
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyTuple_Size(args), 1);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(args, 0)), 1234);
+}
+
+// METH_KEYWORDS and CALL_FUNCTION_KW
+
+TEST_F(TypeExtensionApiTest, MethodsMethKeywordsKwCall) {
+  ternaryfunc meth = [](PyObject* self, PyObject* args, PyObject* kwargs) {
+    if (kwargs == nullptr) return PyTuple_Pack(2, self, args);
+    return PyTuple_Pack(3, self, args, kwargs);
+  };
+  static PyMethodDef methods[] = {
+      {"keywords", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_VARARGS | METH_KEYWORDS},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.keywords(1234, kwarg=5678)
+)");
+
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyTuple_Size(args), 1);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(args, 0)), 1234);
+
+  PyObject* kwargs = PyTuple_GetItem(result, 2);
+  EXPECT_TRUE(PyDict_CheckExact(kwargs));
+  ASSERT_EQ(PyDict_Size(kwargs), 1);
+  PyObject* item = PyDict_GetItemString(kwargs, "kwarg");
+  EXPECT_TRUE(isLongEqualsLong(item, 5678));
+}
+
+// METH_KEYWORDS and CALL_FUNCTION_EX
+
+TEST_F(TypeExtensionApiTest, MethodsMethKeywordsExCall) {
+  ternaryfunc meth = [](PyObject* self, PyObject* args, PyObject* kwargs) {
+    return PyTuple_Pack(3, self, args, kwargs);
+  };
+  static PyMethodDef methods[] = {
+      {"keywords", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_VARARGS | METH_KEYWORDS},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.keywords(*[1234], kwarg=5678)
+)");
+
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyTuple_Size(args), 1);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(args, 0)), 1234);
+
+  PyObject* kwargs = PyTuple_GetItem(result, 2);
+  EXPECT_TRUE(PyDict_CheckExact(kwargs));
+  ASSERT_EQ(PyDict_Size(kwargs), 1);
+  PyObject* item = PyDict_GetItemString(kwargs, "kwarg");
+  EXPECT_TRUE(isLongEqualsLong(item, 5678));
+}
+
+TEST_F(TypeExtensionApiTest, MethodsMethKeywordsExEmptyKwargsCall) {
+  ternaryfunc meth = [](PyObject* self, PyObject* args, PyObject* kwargs) {
+    if (kwargs == nullptr) return PyTuple_Pack(2, self, args);
+    return PyTuple_Pack(3, self, args, kwargs);
+  };
+  static PyMethodDef methods[] = {
+      {"keywords", reinterpret_cast<PyCFunction>(reinterpret_cast<void*>(meth)),
+       METH_VARARGS | METH_KEYWORDS},
+      {nullptr}};
+  PyType_Slot slots[] = {
+      {Py_tp_methods, methods},
+      {0, nullptr},
+  };
+
+  static PyType_Spec spec;
+  spec = {
+      "__main__.C", 0, 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  testing::moduleSet("__main__", "C", type);
+  PyRun_SimpleString(R"(
+self = C()
+result = self.keywords(*[1234], *{})
+)");
+
+  PyObjectPtr self(testing::moduleGet("__main__", "self"));
+  PyObjectPtr result(testing::moduleGet("__main__", "result"));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(result), 1);
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0), self);
+
+  PyObject* args = PyTuple_GetItem(result, 1);
+  EXPECT_TRUE(PyTuple_CheckExact(args));
+  EXPECT_EQ(PyTuple_Size(args), 1);
+  EXPECT_EQ(PyLong_AsLong(PyTuple_GetItem(args, 0)), 1234);
+}
+
 TEST_F(TypeExtensionApiTest, GetObjectCreatedInManagedCode) {
   static PyType_Slot slots[1];
   slots[0] = {0, nullptr};

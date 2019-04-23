@@ -53,6 +53,38 @@ RawObject nativeTrampoline(Thread* thread, Frame* caller, word argc) ALIGN_16;
 template <RawObject (*Fn)(Thread*, Frame*, word)>
 RawObject nativeTrampolineKw(Thread* thread, Frame* caller, word argc) ALIGN_16;
 
+// method trampolines
+
+RawObject methodTrampolineNoArgs(Thread* thread, Frame* caller,
+                                 word argc) ALIGN_16;
+RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* caller,
+                                   word argc) ALIGN_16;
+RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* caller,
+                                   word argc) ALIGN_16;
+
+RawObject methodTrampolineOneArg(Thread* thread, Frame* caller,
+                                 word argc) ALIGN_16;
+RawObject methodTrampolineOneArgKw(Thread* thread, Frame* caller,
+                                   word argc) ALIGN_16;
+RawObject methodTrampolineOneArgEx(Thread* thread, Frame* caller,
+                                   word argc) ALIGN_16;
+
+RawObject methodTrampolineVarArgs(Thread* thread, Frame* caller,
+                                  word argc) ALIGN_16;
+RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* caller,
+                                    word argc) ALIGN_16;
+RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* caller,
+                                    word argc) ALIGN_16;
+
+RawObject methodTrampolineKeywords(Thread* thread, Frame* caller,
+                                   word argc) ALIGN_16;
+RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* caller,
+                                     word argc) ALIGN_16;
+RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* caller,
+                                     word argc) ALIGN_16;
+
+// module trampolines
+
 RawObject moduleTrampolineNoArgs(Thread* thread, Frame* caller,
                                  word argc) ALIGN_16;
 RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller,
@@ -74,12 +106,12 @@ RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* caller,
 RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller,
                                     word argc) ALIGN_16;
 
-RawObject moduleTrampolineKeywordArgs(Thread* thread, Frame* caller,
-                                      word argc) ALIGN_16;
-RawObject moduleTrampolineKeywordArgsKw(Thread* thread, Frame* caller,
-                                        word argc) ALIGN_16;
-RawObject moduleTrampolineKeywordArgsEx(Thread* thread, Frame* caller,
-                                        word argc) ALIGN_16;
+RawObject moduleTrampolineKeywords(Thread* thread, Frame* caller,
+                                   word argc) ALIGN_16;
+RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* caller,
+                                     word argc) ALIGN_16;
+RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* caller,
+                                     word argc) ALIGN_16;
 
 // Aborts immediately when called
 RawObject unimplementedTrampoline(Thread* thread, Frame* caller_frame,
