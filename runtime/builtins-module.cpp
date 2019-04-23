@@ -852,6 +852,7 @@ static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
   bytes.copyTo(reinterpret_cast<byte*>(str.get()), length);
   str[length] = '\0';
   char* end;
+  errno = 0;
   const word result = std::strtoll(str.get(), &end, base);
   const int saved_errno = errno;
   if (end != str.get() + length || saved_errno == EINVAL) {
