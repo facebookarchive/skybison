@@ -17,9 +17,9 @@ using namespace testing;
 
 TEST(InterpreterTest, IsTrueBool) {
   Runtime runtime;
-  HandleScope scope;
-
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -33,9 +33,9 @@ TEST(InterpreterTest, IsTrueBool) {
 
 TEST(InterpreterTest, IsTrueInt) {
   Runtime runtime;
-  HandleScope scope;
-
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -49,8 +49,8 @@ TEST(InterpreterTest, IsTrueInt) {
 
 TEST(InterpreterTest, IsTrueWithDunderBoolRaisingPropagatesException) {
   Runtime runtime;
-  HandleScope scope;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   runFromCStr(&runtime, R"(
 class Foo:
@@ -65,8 +65,8 @@ value = Foo()
 
 TEST(InterpreterTest, IsTrueWithDunderLenRaisingPropagatesException) {
   Runtime runtime;
-  HandleScope scope;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   runFromCStr(&runtime, R"(
 class Foo:
@@ -81,9 +81,9 @@ value = Foo()
 
 TEST(InterpreterTest, IsTrueDunderLen) {
   Runtime runtime;
-  HandleScope scope;
-
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -166,7 +166,8 @@ not C()
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -177,7 +178,6 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -199,7 +199,8 @@ right = C()
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -212,7 +213,6 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -234,7 +234,8 @@ right = C()
 
 TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -249,7 +250,6 @@ left = C()
 right = D()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -270,7 +270,8 @@ right = D()
 
 TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -284,7 +285,6 @@ left = C()
 right = D()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -350,7 +350,8 @@ b = B()
 
 TEST(InterpreterTest, ImportFromWithMissingAttributeRaisesImportError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str name(&scope, runtime.newStrFromCStr("foo"));
   Module module(&scope, runtime.newModule(name));
   runtime.addModule(module);
@@ -361,7 +362,8 @@ TEST(InterpreterTest, ImportFromWithMissingAttributeRaisesImportError) {
 
 TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -372,7 +374,6 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -393,7 +394,8 @@ right = C()
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -404,7 +406,6 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -424,7 +425,8 @@ right = C()
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -437,7 +439,6 @@ left = C()
 right = C()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -459,7 +460,8 @@ right = C()
 // method on the left side of the comparison should be used.
 TEST(InterpreterTest, CompareOpSameType) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -473,7 +475,6 @@ c10 = C(10)
 c20 = C(20)
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -493,7 +494,8 @@ c20 = C(20)
 
 TEST(InterpreterTest, CompareOpFallback) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class C:
@@ -504,7 +506,6 @@ c10 = C(10)
 c20 = C(20)
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -529,10 +530,9 @@ c20 = C(20)
 }
 
 TEST(InterpreterTest, CompareOpSubclass) {
-  using namespace testing;
-
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 called = None
@@ -568,7 +568,6 @@ b = B()
 c = C()
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
 
@@ -611,7 +610,8 @@ c = C()
 
 TEST(InterpreterTest, SequenceContains) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 a = {1, 2}
@@ -620,7 +620,6 @@ b = 1
 c = 3
 )");
 
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
 
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -638,12 +637,12 @@ c = 3
 
 TEST(InterpreterTest, SequenceIterSearchWithNoDunderIterRaisesTypeError) {
   Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C: pass
 container = C()
 )");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -655,13 +654,13 @@ container = C()
 TEST(InterpreterTest,
      SequenceIterSearchWithNonCallableDunderIterRaisesTypeError) {
   Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
   __iter__ = None
 container = C()
 )");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -672,6 +671,8 @@ container = C()
 
 TEST(InterpreterTest, SequenceIterSearchWithNoDunderNextRaisesTypeError) {
   Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class D: pass
 class C:
@@ -679,8 +680,6 @@ class C:
     return D()
 container = C()
 )");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -692,6 +691,8 @@ container = C()
 TEST(InterpreterTest,
      SequenceIterSearchWithNonCallableDunderNextRaisesTypeError) {
   Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class D:
   __next__ = None
@@ -700,8 +701,6 @@ class C:
     return D()
 container = C()
 )");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -738,14 +737,14 @@ TEST(InterpreterTest, SequenceIterSearchWithListReturnsFalse) {
 
 TEST(InterpreterTest, SequenceIterSearchWithIterThatRaisesPropagatesException) {
   Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
   def __iter__(self):
     raise ZeroDivisionError("boom")
 container = C()
 )");
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, SmallInt::fromWord(5));
   Frame* frame = thread->currentFrame();
@@ -772,7 +771,8 @@ with Foo():
 
 )";
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, src);
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
@@ -790,8 +790,8 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   // default argument expansion
   //
   Runtime runtime;
-  HandleScope scope;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
@@ -846,8 +846,8 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   // after ex and default argument expansion
   //
   Runtime runtime;
-  HandleScope scope;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
@@ -896,6 +896,10 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
 }
 
 TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
   // Build the following function
   //    def foo(a=1, b=2):
   //      return 42
@@ -903,9 +907,6 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   // Then call as "foo(b=4)" and verify that the stack is cleaned up after
   // ex and default argument expansion
   //
-  Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::current();
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
@@ -960,7 +961,8 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
 
 TEST(InterpreterTest, LookupMethodInvokesDescriptor) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 def f(): pass
 
@@ -973,7 +975,6 @@ class C:
 
 c = C()
   )");
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -1034,7 +1035,8 @@ c()
 
 TEST(InterpreterTest, LookupMethodLoopsOnCallBoundToDescriptor) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 def f(args):
     return args
@@ -1056,7 +1058,6 @@ class C3:
 c = C3()
 result = c(42)
   )");
-  Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -1088,7 +1089,8 @@ a, b = Foo()
 
 TEST(InterpreterTest, UnpackSequence) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 a, b, c = l
@@ -1124,7 +1126,8 @@ a, b, c = l
 
 TEST(InterpreterTest, PrintExprInvokesDisplayhook) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 import sys
 
@@ -1165,7 +1168,8 @@ sys.displayhook = my_displayhook
 
 TEST(InterpreterTest, GetAiterCallsAiter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class AsyncIterable:
   def __aiter__(self):
@@ -1191,7 +1195,8 @@ a = AsyncIterable()
 
 TEST(InterpreterTest, GetAiterOnNonIterable) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
   Tuple consts(&scope, runtime.newTuple(1));
@@ -1206,7 +1211,8 @@ TEST(InterpreterTest, GetAiterOnNonIterable) {
 
 TEST(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 enter = None
 exit = None
@@ -1243,7 +1249,6 @@ manager = M()
 
   Dict globals(&scope, main.dict());
   Dict builtins(&scope, runtime.newDict());
-  Thread* thread = Thread::current();
   Frame* frame = thread->pushFrame(code, globals, builtins);
   frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
 
@@ -1260,7 +1265,8 @@ manager = M()
 
 TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
@@ -1280,7 +1286,8 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
 
 TEST(InterpreterTest, UnpackSequenceEx) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 l = [1, 2, 3, 4, 5, 6, 7]
 a, b, c, *d, e, f, g  = l
@@ -1309,7 +1316,8 @@ a, b, c, *d, e, f, g  = l
 
 TEST(InterpreterTest, UnpackSequenceExWithNoElementsAfter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 l = [1, 2, 3, 4]
 a, b, *c = l
@@ -1330,7 +1338,8 @@ a, b, *c = l
 
 TEST(InterpreterTest, UnpackSequenceExWithNoElementsBefore) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 l = [1, 2, 3, 4]
 *a, b, c = l
@@ -1351,7 +1360,8 @@ l = [1, 2, 3, 4]
 
 TEST(InterpreterTest, BuildMapUnpackWithDict) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
 )");
@@ -1382,7 +1392,8 @@ d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
 
 TEST(InterpreterTest, BuildMapUnpackWithListKeysMapping) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self):
@@ -1427,7 +1438,8 @@ d = {**Foo(), 'd': 4}
 
 TEST(InterpreterTest, BuildMapUnpackWithTupleKeysMapping) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self):
@@ -1472,7 +1484,8 @@ d = {**Foo(), 'd': 4}
 
 TEST(InterpreterTest, BuildMapUnpackWithIterableKeysMapping) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class KeysIter:
     def __init__(self, keys):
@@ -1621,7 +1634,8 @@ l = [1, 2]
 
 TEST(InterpreterTest, BuildTupleUnpackWithCall) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 def foo(*args):
     return args
@@ -1642,7 +1656,8 @@ t = foo(*(1,2), *(3, 4))
 
 TEST(InterpreterTest, FunctionDerefsVariable) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 def outer():
     var = 1
@@ -1679,7 +1694,8 @@ v = outer()
 
 TEST(InterpreterTest, ImportStarImportsPublicSymbols) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   const char* module_src = R"(
 def public_symbol():
@@ -1709,7 +1725,8 @@ b = public_symbol2()
 
 TEST(InterpreterTest, ImportStarDoesNotImportPrivateSymbols) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   const char* module_src = R"(
 def public_symbol():
@@ -1749,7 +1766,8 @@ import builtins
 
 TEST(InterpreterTest, GetAnextCallsAnextAndAwait) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 anext_called = None
 await_called = None
@@ -1788,7 +1806,8 @@ a = AsyncIterator()
 
 TEST(InterpreterTest, GetAnextOnNonIterable) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
   Tuple consts(&scope, runtime.newTuple(1));
@@ -1803,7 +1822,8 @@ TEST(InterpreterTest, GetAnextOnNonIterable) {
 
 TEST(InterpreterTest, GetAnextWithInvalidAnext) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class AsyncIterator:
   def __anext__(self):
@@ -1828,7 +1848,8 @@ a = AsyncIterator()
 
 TEST(InterpreterTest, GetAwaitableCallsAwait) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Awaitable:
   def __await__(self):
@@ -1854,7 +1875,8 @@ a = Awaitable()
 
 TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
   Tuple consts(&scope, runtime.newTuple(1));
@@ -1869,7 +1891,8 @@ TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
 
 TEST(InterpreterTest, BuildMapUnpackWithCallDict) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 def foo(**kwargs):
     return kwargs
@@ -1903,7 +1926,8 @@ d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
 
 TEST(InterpreterTest, BuildMapUnpackWithCallTupleKeys) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self, d):
@@ -1947,7 +1971,8 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
 TEST(InterpreterTest, BuildMapUnpackWithCallListKeys) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self, d):
@@ -1991,7 +2016,8 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
 
 TEST(InterpreterTest, BuildMapUnpackWithCallIteratorKeys) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class Iter:
     def __init__(self, keys):
@@ -2293,7 +2319,8 @@ foo(**{'a': 1, 'b': 2}, **Foo())
 
 TEST(InterpreterTest, YieldFromIterReturnsIter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   runFromCStr(&runtime, R"(
 class FooIterator:
@@ -2350,7 +2377,8 @@ for i in yield_from_func():
 
 TEST(InterpreterTest, MakeFunctionSetsDunderModule) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
   std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(R"(
 def bar(): pass
@@ -2374,6 +2402,7 @@ b = getattr(baz, '__module__')
 
 TEST(InterpreterTest, MakeFunctionSetsDunderQualname) {
   Runtime runtime;
+  HandleScope scope;
   runFromCStr(&runtime, R"(
 class Foo():
     def bar(): pass
@@ -2381,7 +2410,6 @@ def baz(): pass
 a = getattr(Foo.bar, '__qualname__')
 b = getattr(baz, '__qualname__')
 )");
-  HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isStr());
   EXPECT_TRUE(Str::cast(*a).equalsCStr("Foo.bar"));
@@ -2392,13 +2420,13 @@ b = getattr(baz, '__qualname__')
 
 TEST(InterpreterTest, MakeFunctionSetsDunderDoc) {
   Runtime runtime;
+  HandleScope scope;
   runFromCStr(&runtime, R"(
 def foo():
     """This is a docstring"""
     pass
 def bar(): pass
 )");
-  HandleScope scope;
   Object foo(&scope, testing::moduleAt(&runtime, "__main__", "foo"));
   ASSERT_TRUE(foo.isFunction());
   Object foo_docstring(&scope, RawFunction::cast(*foo).doc());
@@ -2413,8 +2441,8 @@ def bar(): pass
 
 TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Str not_a_func(&scope, Str::empty());
   frame->pushValue(*not_a_func);
@@ -2655,7 +2683,8 @@ TEST(InterpreterTest, RaiseWithNoActiveExceptionRaisesRuntimeError) {
 
 TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Set up a code object that runs: {}.foo
   Object name(&scope, Str::empty());
@@ -2677,7 +2706,8 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
 
 TEST(InterpreterTest, ExplodeCallAcceptsList) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 def f(a, b):
   return [b, a]
@@ -2708,13 +2738,13 @@ result = f(*gen())
 TEST(InterpreterTest, FormatValueCallsDunderStr) {
   Runtime runtime;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
   def __str__(self):
     return "foobar"
 result = f"{C()!s}"
 )");
-  HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
@@ -2722,13 +2752,13 @@ result = f"{C()!s}"
 TEST(InterpreterTest, FormatValueFallsBackToDunderRepr) {
   Runtime runtime;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
     return "foobar"
 result = f"{C()!s}"
 )");
-  HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
@@ -2736,13 +2766,13 @@ result = f"{C()!s}"
 TEST(InterpreterTest, FormatValueCallsDunderRepr) {
   Runtime runtime;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
     return "foobar"
 result = f"{C()!r}"
 )");
-  HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
@@ -2750,20 +2780,21 @@ result = f"{C()!r}"
 TEST(InterpreterTest, FormatValueAsciiCallsDunderRepr) {
   Runtime runtime;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
     return "foobar"
 result = f"{C()!a}"
 )");
-  HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
 
 TEST(InterpreterTest, BreakInTryBreaks) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 result = 0
 for i in range(5):
@@ -2779,7 +2810,8 @@ result = 10
 
 TEST(InterpreterTest, ContinueInExceptContinues) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 result = 0
 for i in range(5):
@@ -2797,7 +2829,8 @@ for i in range(5):
 
 TEST(InterpreterTest, RaiseInLoopRaisesRuntimeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 result = 0
 try:
@@ -2815,7 +2848,8 @@ except:
 
 TEST(InterpreterTest, ReturnInsideTryRunsFinally) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 ran_finally = False
 
@@ -2837,7 +2871,8 @@ result = f()
 
 TEST(InterpreterTest, ReturnInsideFinallyOverridesEarlierReturn) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 def f():
   try:
@@ -2853,7 +2888,8 @@ result = f()
 
 TEST(InterpreterTest, ReturnInsideWithRunsDunderExit) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   runFromCStr(&runtime, R"(
 sequence = ""
 
@@ -2936,7 +2972,8 @@ with Mgr():
 
 TEST(InterpreterTest, WithStatementPassesCorrectExceptionToExit) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
 raised_exc = None
 exit_info = None
@@ -2971,7 +3008,8 @@ with Mgr():
 
 TEST(InterpreterTest, WithStatementSwallowsException) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   EXPECT_FALSE(runFromCStr(&runtime, R"(
 class Mgr:
   def __enter__(self):
