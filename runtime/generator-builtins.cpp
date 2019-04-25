@@ -76,6 +76,7 @@ const BuiltinMethod GeneratorBuiltins::kBuiltinMethods[] = {
 };
 
 const BuiltinAttribute GeneratorBuiltins::kAttributes[] = {
+    {SymbolId::kDunderQualname, RawGeneratorBase::kQualnameOffset},
     {SymbolId::kGiRunning, RawGenerator::kRunningOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},
@@ -113,6 +114,7 @@ const BuiltinMethod CoroutineBuiltins::kBuiltinMethods[] = {
 };
 
 const BuiltinAttribute CoroutineBuiltins::kAttributes[] = {
+    {SymbolId::kDunderQualname, RawGeneratorBase::kQualnameOffset},
     {SymbolId::kCrRunning, RawCoroutine::kRunningOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kSentinelId, -1},

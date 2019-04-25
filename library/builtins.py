@@ -1124,6 +1124,9 @@ class coroutine(bootstrap=True):
     def send(self, value):
         pass
 
+    def __repr__(self):
+        return f"<coroutine object {self.__qualname__} at {_address(self)}>"
+
 
 def delattr(obj, name):
     _unimplemented()
@@ -1495,6 +1498,9 @@ class generator(bootstrap=True):
 
     def send(self, value):
         pass
+
+    def __repr__(self):
+        return f"<generator object {self.__qualname__} at {_address(self)}>"
 
 
 @_patch

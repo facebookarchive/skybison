@@ -2461,11 +2461,15 @@ class RawGeneratorBase : public RawHeapObject {
   RawObject running() const;
   void setRunning(RawObject obj) const;
 
+  RawObject qualname() const;
+  void setQualname(RawObject obj) const;
+
   // Layout.
   static const int kFrameOffset = RawHeapObject::kSize;
   static const int kExceptionStateOffset = kFrameOffset + kPointerSize;
   static const int kRunningOffset = kExceptionStateOffset + kPointerSize;
-  static const int kSize = kRunningOffset + kPointerSize;
+  static const int kQualnameOffset = kRunningOffset + kPointerSize;
+  static const int kSize = kQualnameOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(GeneratorBase);
 };
@@ -4698,6 +4702,14 @@ inline RawObject RawGeneratorBase::running() const {
 
 inline void RawGeneratorBase::setRunning(RawObject obj) const {
   instanceVariableAtPut(kRunningOffset, obj);
+}
+
+inline RawObject RawGeneratorBase::qualname() const {
+  return instanceVariableAt(kQualnameOffset);
+}
+
+inline void RawGeneratorBase::setQualname(RawObject obj) const {
+  instanceVariableAtPut(kQualnameOffset, obj);
 }
 
 // RawHeapFrame

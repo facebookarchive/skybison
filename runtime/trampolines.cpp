@@ -463,7 +463,8 @@ static RawObject prepareExplodeCall(Thread* thread, const Function& function,
   return NoneType::object();
 }
 
-static RawObject createGenerator(const Code& code, Thread* thread) {
+static RawObject createGenerator(Thread* thread, const Code& code,
+                                 const Str& qualname) {
   CHECK(code.hasCoroutineOrGenerator(), "must be a coroutine or generator");
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -471,6 +472,7 @@ static RawObject createGenerator(const Code& code, Thread* thread) {
                                                      : runtime->newCoroutine());
   gen_base.setHeapFrame(runtime->newHeapFrame(code));
   gen_base.setExceptionState(runtime->newExceptionState());
+  gen_base.setQualname(*qualname);
   runtime->genSave(thread, gen_base);
   thread->popFrame();
   return *gen_base;
@@ -485,7 +487,8 @@ RawObject generatorTrampoline(Thread* thread, Frame* caller, word arg) {
     return error;
   }
   pushCallee(thread, function);
-  return createGenerator(code, thread);
+  Str qualname(&scope, function.qualname());
+  return createGenerator(thread, code, qualname);
 }
 
 RawObject generatorTrampolineKw(Thread* thread, Frame* caller, word argc) {
@@ -499,7 +502,8 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* caller, word argc) {
   }
   Code code(&scope, function.code());
   pushCallee(thread, function);
-  return createGenerator(code, thread);
+  Str qualname(&scope, function.qualname());
+  return createGenerator(thread, code, qualname);
 }
 
 RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
@@ -514,7 +518,8 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
     return error;
   }
   pushCallee(thread, function);
-  return createGenerator(code, thread);
+  Str qualname(&scope, function.qualname());
+  return createGenerator(thread, code, qualname);
 }
 
 RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word arg) {
@@ -527,7 +532,8 @@ RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word arg) {
   }
   Frame* callee_frame = pushCallee(thread, function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
-  return createGenerator(code, thread);
+  Str qualname(&scope, function.qualname());
+  return createGenerator(thread, code, qualname);
 }
 
 RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
@@ -543,7 +549,8 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
   Code code(&scope, function.code());
   Frame* callee_frame = pushCallee(thread, function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
-  return createGenerator(code, thread);
+  Str qualname(&scope, function.qualname());
+  return createGenerator(thread, code, qualname);
 }
 
 RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
@@ -560,7 +567,8 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
   }
   Frame* callee_frame = pushCallee(thread, function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
-  return createGenerator(code, thread);
+  Str qualname(&scope, function.qualname());
+  return createGenerator(thread, code, qualname);
 }
 
 RawObject interpreterTrampoline(Thread* thread, Frame* caller, word argc) {

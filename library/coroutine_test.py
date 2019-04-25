@@ -12,5 +12,19 @@ class AttributesTest(unittest.TestCase):
         self.assertFalse(cr.cr_running)
 
 
+class MethodTest(unittest.TestCase):
+    def test_dunder_repr(self):
+        async def foo():
+            return 5
+
+        self.assertTrue(
+            foo()
+            .__repr__()
+            .startswith(
+                "<coroutine object MethodTest.test_dunder_repr.<locals>.foo at "
+            )
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
