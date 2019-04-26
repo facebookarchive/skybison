@@ -307,10 +307,6 @@ class Runtime {
   // attributes and/or methods.
   RawObject addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                                 LayoutId superclass_id);
-  RawObject addBuiltinTypeWithBuiltinMethods(SymbolId name,
-                                             LayoutId subclass_id,
-                                             LayoutId superclass_id,
-                                             const BuiltinMethod methods[]);
   RawObject addBuiltinType(SymbolId name, LayoutId subclass_id,
                            LayoutId superclass_id,
                            const BuiltinAttribute attrs[],

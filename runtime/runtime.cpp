@@ -232,13 +232,6 @@ RawObject Runtime::addEmptyBuiltinType(SymbolId name, LayoutId subclass_id,
                         BuiltinsBase::kBuiltinMethods);
 }
 
-RawObject Runtime::addBuiltinTypeWithBuiltinMethods(
-    SymbolId name, LayoutId subclass_id, LayoutId superclass_id,
-    const BuiltinMethod builtins[]) {
-  return addBuiltinType(name, subclass_id, superclass_id,
-                        BuiltinsBase::kAttributes, builtins);
-}
-
 RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
                                   LayoutId superclass_id,
                                   const BuiltinAttribute attrs[],
