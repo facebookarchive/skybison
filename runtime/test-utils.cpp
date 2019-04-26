@@ -16,6 +16,7 @@
 #include "exception-builtins.h"
 #include "frame.h"
 #include "handles.h"
+#include "int-builtins.h"
 #include "os.h"
 #include "runtime.h"
 #include "sys-module.h"
@@ -481,15 +482,12 @@ RawObject listFromRange(word start, word stop) {
     }
     return ::testing::AssertionFailure() << "is an Error";
   }
-  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(obj)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, obj) << "'";
   }
-  if (!obj.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  Int value_int(&scope, obj);
+  Object object(&scope, obj);
+  Int value_int(&scope, intUnderlying(thread, object));
   if (value_int.numDigits() > 1 || value_int.asWord() != value) {
     return ::testing::AssertionFailure()
            << value_int << " is not equal to " << value;

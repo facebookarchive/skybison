@@ -67,6 +67,7 @@ class IntBuiltins
   static RawObject fromBytesKw(Thread* thread, Frame* frame, word nargs);
   static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
 
+  static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
 
  private:

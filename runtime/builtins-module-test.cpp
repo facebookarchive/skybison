@@ -480,6 +480,24 @@ TEST(BuiltinsModuleTest, IntFromIntWithBoolReturnsSmallInt) {
   EXPECT_EQ(true_result, SmallInt::fromWord(1));
 }
 
+TEST(BuiltinsModuleTest, IntFromIntWithSubClassReturnsValueOfSubClass) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubInt(int):
+  def __new__(cls, value):
+      self = super(SubInt, cls).__new__(cls, value)
+      self.name = "subint instance"
+      return self
+
+result = SubInt(50)
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_FALSE(result.isInt());
+  EXPECT_TRUE(isIntEqualsWord(*result, 50));
+}
+
 TEST(BuiltinsModuleTest, IntFromStrWithZeroBaseReturnsCodeLiteral) {
   Runtime runtime;
   HandleScope scope;

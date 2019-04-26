@@ -13,6 +13,12 @@
 
 namespace python {
 
+// Used only for UserIntBase as a heap-allocated object.
+const BuiltinAttribute IntBuiltins::kAttributes[] = {
+    {SymbolId::kInvalid, UserIntBase::kValueOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
 const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kBitLength, bitLength},
     {SymbolId::kConjugate, dunderInt},
