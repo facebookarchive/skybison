@@ -1124,6 +1124,9 @@ class coroutine(bootstrap=True):
     def send(self, value):
         pass
 
+    def throw(self, exc, value=_Unbound, tb=_Unbound):
+        pass
+
     def __repr__(self):
         return f"<coroutine object {self.__qualname__} at {_address(self)}>"
 
@@ -1497,6 +1500,9 @@ class generator(bootstrap=True):
         pass
 
     def send(self, value):
+        pass
+
+    def throw(self, exc, value=_Unbound, tb=_Unbound):
         pass
 
     def __repr__(self):

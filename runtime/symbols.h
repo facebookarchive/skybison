@@ -408,6 +408,7 @@ class Runtime;
   V(SystemExit, "SystemExit")                                                  \
   V(TabError, "TabError")                                                      \
   V(Text, "text")                                                              \
+  V(Throw, "throw")                                                            \
   V(Time, "time")                                                              \
   V(TimeoutError, "TimeoutError")                                              \
   V(ToBytes, "to_bytes")                                                       \

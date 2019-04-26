@@ -299,6 +299,10 @@ class Thread {
   RawObject pendingExceptionValue() { return pending_exc_value_; }
   RawObject pendingExceptionTraceback() { return pending_exc_traceback_; }
 
+  // Returns whether or not the pending exception type (which must be set) is a
+  // subtype of the given type.
+  bool pendingExceptionMatches(LayoutId type);
+
   // Sets the type, value, or traceback of the pending exception.
   void setPendingExceptionType(RawObject type) { pending_exc_type_ = type; }
   void setPendingExceptionValue(RawObject value) { pending_exc_value_ = value; }

@@ -2707,6 +2707,26 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
   ctx.pc = frame->virtualPC();
   ctx.thread = thread;
   ctx.frame = frame;
+
+  auto do_return = [&ctx] {
+    RawObject return_val = ctx.frame->popValue();
+    ctx.thread->popFrame();
+    return return_val;
+  };
+
+  // TODO(bsimmers): This check is only relevant for generators, and each
+  // callsite of Interpreter::execute() can know statically whether or not an
+  // exception is ready for throwing. Once the shape of the interpreter settles
+  // down, we should restructure it to take advantage of this fact, likely by
+  // adding an alternate entry point that always throws (and asserts that an
+  // exception is pending).
+  if (thread->hasPendingException()) {
+    DCHECK(code.hasCoroutineOrGenerator(),
+           "Entered dispatch loop with a pending exception outside of "
+           "generator/coroutine");
+    if (unwind(&ctx)) return do_return();
+  }
+
   for (;;) {
     frame->setVirtualPC(ctx.pc);
     Bytecode bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
@@ -2716,11 +2736,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
       arg = (arg << 8) | byte_array.byteAt(ctx.pc++);
     }
 
-    if (kOpTable[bc](&ctx, arg)) {
-      RawObject return_val = frame->popValue();
-      thread->popFrame();
-      return return_val;
-    }
+    if (kOpTable[bc](&ctx, arg)) return do_return();
   }
 }
 

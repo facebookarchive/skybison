@@ -243,6 +243,11 @@ class Frame {
   void* nativeFunctionPointer();
   void makeNativeFrame(RawObject fn_pointer_as_int);
 
+  // Versions of valueStackTop() and popValue() for a Frame that's had
+  // stashInternalPointers() called on it.
+  RawObject* stashedValueStackTop();
+  RawObject stashedPopValue();
+
   // Adjust and/or save the values of internal pointers after copying this Frame
   // from the stack to the heap.
   void stashInternalPointers(Frame* old_frame);
@@ -268,6 +273,7 @@ class Frame {
   static const int kSize = kFastGlobalsOffset + kPointerSize;
 
   static const word kFinishedGeneratorPC = RawSmallInt::kMinValue;
+  static const word kCodeUnitSize = 2;
 
  private:
   uword address();
@@ -506,6 +512,20 @@ inline void Frame::makeNativeFrame(RawObject fn_pointer_as_int) {
   setCode(fn_pointer_as_int);
 }
 
+inline RawObject* Frame::stashedValueStackTop() {
+  auto depth = reinterpret_cast<word>(valueStackTop());
+  return valueStackBase() - depth;
+}
+
+inline RawObject Frame::stashedPopValue() {
+  RawObject result = *stashedValueStackTop();
+  // valueStackTop() contains the stack depth as a RawSmallInt rather than a
+  // pointer, so decrement it by 1.
+  setValueStackTop(reinterpret_cast<RawObject*>(
+      reinterpret_cast<word>(valueStackTop()) - 1));
+  return result;
+}
+
 inline void Frame::stashInternalPointers(Frame* old_frame) {
   // Replace ValueStackTop with the stack depth while this Frame is on the heap,
   // to survive being moved by the GC.
@@ -513,8 +533,7 @@ inline void Frame::stashInternalPointers(Frame* old_frame) {
 }
 
 inline void Frame::unstashInternalPointers() {
-  auto stashed_size = reinterpret_cast<word>(valueStackTop());
-  setValueStackTop(valueStackBase() - stashed_size);
+  setValueStackTop(stashedValueStackTop());
   resetLocals(numLocals());
 }
 

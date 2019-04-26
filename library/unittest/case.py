@@ -627,19 +627,15 @@ class TestCase(object):
         try:
             self._outcome = outcome
 
-            # TODO(T42920305): generator object has no attribute throw
-            # with outcome.testPartExecutor(self):
-            #     self.setUp()
-            # if outcome.success:
-            #     outcome.expecting_failure = expecting_failure
-            #     with outcome.testPartExecutor(self, isTest=True):
-            #         testMethod()
-            #     outcome.expecting_failure = False
-            #     with outcome.testPartExecutor(self):
-            #         self.tearDown()
-            self.setUp()
-            testMethod()
-            self.tearDown()
+            with outcome.testPartExecutor(self):
+                self.setUp()
+            if outcome.success:
+                outcome.expecting_failure = expecting_failure
+                with outcome.testPartExecutor(self, isTest=True):
+                    testMethod()
+                outcome.expecting_failure = False
+                with outcome.testPartExecutor(self):
+                    self.tearDown()
 
             self.doCleanups()
             for test, reason in outcome.skipped:
