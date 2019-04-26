@@ -185,16 +185,16 @@ right = C()
   Object right(&scope, moduleAt(&runtime, main, "right"));
   Object c_class(&scope, moduleAt(&runtime, main, "C"));
 
-  RawObject result = Interpreter::binaryOperation(
-      thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result.isTuple());
-  ASSERT_EQ(RawTuple::cast(result).length(), 4);
-  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
-  ASSERT_TRUE(RawTuple::cast(result).at(1).isStr());
-  RawStr name = RawStr::cast(RawTuple::cast(result).at(1));
-  EXPECT_TRUE(name.equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
+  Object result_obj(
+      &scope, Interpreter::binaryOperation(
+                  thread, frame, Interpreter::BinaryOp::SUB, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), *c_class);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "__sub__"));
+  EXPECT_EQ(result.at(2), *left);
+  EXPECT_EQ(result.at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
@@ -220,16 +220,16 @@ right = C()
   Object right(&scope, moduleAt(&runtime, main, "right"));
   Object c_class(&scope, moduleAt(&runtime, main, "C"));
 
-  RawObject result = Interpreter::binaryOperation(
-      thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result.isTuple());
-  ASSERT_EQ(RawTuple::cast(result).length(), 4);
-  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
-  ASSERT_TRUE(RawTuple::cast(result).at(1).isStr());
-  RawStr name = RawStr::cast(RawTuple::cast(result).at(1));
-  EXPECT_TRUE(name.equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
+  Object result_obj(
+      &scope, Interpreter::binaryOperation(
+                  thread, frame, Interpreter::BinaryOp::SUB, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), *c_class);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "__sub__"));
+  EXPECT_EQ(result.at(2), *left);
+  EXPECT_EQ(result.at(3), *right);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
@@ -257,15 +257,16 @@ right = D()
   Object right(&scope, moduleAt(&runtime, main, "right"));
   Object d_class(&scope, moduleAt(&runtime, main, "D"));
 
-  RawObject result = Interpreter::binaryOperation(
-      thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result.isTuple());
-  ASSERT_EQ(RawTuple::cast(result).length(), 4);
-  EXPECT_EQ(RawTuple::cast(result).at(0), *d_class);
-  EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__rsub__"));
-  EXPECT_EQ(RawTuple::cast(result).at(2), *right);
-  EXPECT_EQ(RawTuple::cast(result).at(3), *left);
+  Object result_obj(
+      &scope, Interpreter::binaryOperation(
+                  thread, frame, Interpreter::BinaryOp::SUB, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), *d_class);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "__rsub__"));
+  EXPECT_EQ(result.at(2), *right);
+  EXPECT_EQ(result.at(3), *left);
 }
 
 TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
@@ -292,15 +293,16 @@ right = D()
   Object right(&scope, moduleAt(&runtime, main, "right"));
   Object d_class(&scope, moduleAt(&runtime, main, "D"));
 
-  RawObject result = Interpreter::binaryOperation(
-      thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result.isTuple());
-  ASSERT_EQ(RawTuple::cast(result).length(), 4);
-  EXPECT_EQ(RawTuple::cast(result).at(0), *d_class);
-  EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__rsub__"));
-  EXPECT_EQ(RawTuple::cast(result).at(2), *right);
-  EXPECT_EQ(RawTuple::cast(result).at(3), *left);
+  Object result_obj(
+      &scope, Interpreter::binaryOperation(
+                  thread, frame, Interpreter::BinaryOp::SUB, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), *d_class);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "__rsub__"));
+  EXPECT_EQ(result.at(2), *right);
+  EXPECT_EQ(result.at(3), *left);
 }
 
 TEST(InterpreterTest, BinaryOperationLookupPropagatesException) {
@@ -381,15 +383,16 @@ right = C()
   Object right(&scope, moduleAt(&runtime, main, "right"));
   Object c_class(&scope, moduleAt(&runtime, main, "C"));
 
-  RawObject result = Interpreter::inplaceOperation(
-      thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result.isTuple());
-  ASSERT_EQ(RawTuple::cast(result).length(), 4);
-  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
-  EXPECT_TRUE(
-      RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__isub__"));
-  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
+  Object result_obj(
+      &scope, Interpreter::inplaceOperation(
+                  thread, frame, Interpreter::BinaryOp::SUB, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), *c_class);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "__isub__"));
+  EXPECT_EQ(result.at(2), *left);
+  EXPECT_EQ(result.at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
@@ -413,14 +416,16 @@ right = C()
   Object right(&scope, moduleAt(&runtime, main, "right"));
   Object c_class(&scope, moduleAt(&runtime, main, "C"));
 
-  RawObject result = Interpreter::inplaceOperation(
-      thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result.isTuple());
-  ASSERT_EQ(RawTuple::cast(result).length(), 4);
-  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
-  EXPECT_TRUE(RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
+  Object result_obj(
+      &scope, Interpreter::inplaceOperation(
+                  thread, frame, Interpreter::BinaryOp::SUB, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), *c_class);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "__sub__"));
+  EXPECT_EQ(result.at(2), *left);
+  EXPECT_EQ(result.at(3), *right);
 }
 
 TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
@@ -446,14 +451,16 @@ right = C()
   Object right(&scope, moduleAt(&runtime, main, "right"));
   Object c_class(&scope, moduleAt(&runtime, main, "C"));
 
-  RawObject result = Interpreter::inplaceOperation(
-      thread, frame, Interpreter::BinaryOp::SUB, left, right);
-  ASSERT_TRUE(result.isTuple());
-  ASSERT_EQ(RawTuple::cast(result).length(), 4);
-  EXPECT_EQ(RawTuple::cast(result).at(0), *c_class);
-  EXPECT_TRUE(RawStr::cast(RawTuple::cast(result).at(1)).equalsCStr("__sub__"));
-  EXPECT_EQ(RawTuple::cast(result).at(2), *left);
-  EXPECT_EQ(RawTuple::cast(result).at(3), *right);
+  Object result_obj(
+      &scope, Interpreter::inplaceOperation(
+                  thread, frame, Interpreter::BinaryOp::SUB, left, right));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_EQ(result.at(0), *c_class);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(1), "__sub__"));
+  EXPECT_EQ(result.at(2), *left);
+  EXPECT_EQ(result.at(3), *right);
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the
@@ -483,12 +490,12 @@ c20 = C(20)
   Object left(&scope, moduleAt(&runtime, main, "c10"));
   Object right(&scope, moduleAt(&runtime, main, "c20"));
 
-  RawObject left_lt_right =
-      Interpreter::compareOperation(thread, frame, CompareOp::LT, left, right);
+  Object left_lt_right(&scope, Interpreter::compareOperation(
+                                   thread, frame, CompareOp::LT, left, right));
   EXPECT_EQ(left_lt_right, Bool::trueObj());
 
-  RawObject right_lt_left =
-      Interpreter::compareOperation(thread, frame, CompareOp::LT, right, left);
+  Object right_lt_left(&scope, Interpreter::compareOperation(
+                                   thread, frame, CompareOp::LT, right, left));
   EXPECT_EQ(right_lt_left, Bool::falseObj());
 }
 
@@ -514,18 +521,18 @@ c20 = C(20)
   Object left(&scope, moduleAt(&runtime, main, "c10"));
   Object right(&scope, moduleAt(&runtime, main, "c20"));
 
-  RawObject left_eq_right =
-      Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
+  Object left_eq_right(&scope, Interpreter::compareOperation(
+                                   thread, frame, CompareOp::EQ, left, right));
   EXPECT_EQ(left_eq_right, Bool::falseObj());
-  RawObject left_ne_right =
-      Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
+  Object left_ne_right(&scope, Interpreter::compareOperation(
+                                   thread, frame, CompareOp::NE, left, right));
   EXPECT_EQ(left_ne_right, Bool::trueObj());
 
-  RawObject right_eq_left =
-      Interpreter::compareOperation(thread, frame, CompareOp::EQ, left, right);
+  Object right_eq_left(&scope, Interpreter::compareOperation(
+                                   thread, frame, CompareOp::EQ, left, right));
   EXPECT_EQ(right_eq_left, Bool::falseObj());
-  RawObject right_ne_left =
-      Interpreter::compareOperation(thread, frame, CompareOp::NE, left, right);
+  Object right_ne_left(&scope, Interpreter::compareOperation(
+                                   thread, frame, CompareOp::NE, left, right));
   EXPECT_EQ(right_ne_left, Bool::trueObj());
 }
 
@@ -577,8 +584,8 @@ c = C()
   Object c(&scope, moduleAt(&runtime, main, "c"));
 
   // Comparisons where rhs is not a subtype of lhs try lhs.__eq__(rhs) first.
-  RawObject a_eq_b =
-      Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, b);
+  Object a_eq_b(&scope, Interpreter::compareOperation(thread, frame,
+                                                      CompareOp::EQ, a, b));
   EXPECT_EQ(a_eq_b, Bool::falseObj());
   Object called(&scope, moduleAt(&runtime, main, "called"));
   EXPECT_TRUE(isStrEqualsCStr(*called, "A"));
@@ -586,23 +593,23 @@ c = C()
   Str called_name(&scope, runtime.newStrFromCStr("called"));
   Object none(&scope, NoneType::object());
   runtime.moduleAtPut(main, called_name, none);
-  RawObject b_eq_a =
-      Interpreter::compareOperation(thread, frame, CompareOp::EQ, b, a);
+  Object b_eq_a(&scope, Interpreter::compareOperation(thread, frame,
+                                                      CompareOp::EQ, b, a));
   EXPECT_EQ(b_eq_a, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "B"));
 
   runtime.moduleAtPut(main, called_name, none);
-  RawObject c_eq_a =
-      Interpreter::compareOperation(thread, frame, CompareOp::EQ, c, a);
+  Object c_eq_a(&scope, Interpreter::compareOperation(thread, frame,
+                                                      CompareOp::EQ, c, a));
   EXPECT_EQ(c_eq_a, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 
   // When rhs is a subtype of lhs, only rhs.__eq__(rhs) is tried.
   runtime.moduleAtPut(main, called_name, none);
-  RawObject a_eq_c =
-      Interpreter::compareOperation(thread, frame, CompareOp::EQ, a, c);
+  Object a_eq_c(&scope, Interpreter::compareOperation(thread, frame,
+                                                      CompareOp::EQ, a, c));
   EXPECT_EQ(a_eq_c, Bool::trueObj());
   called = moduleAt(&runtime, main, "called");
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
@@ -627,10 +634,10 @@ c = 3
   Object container(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   Object c(&scope, moduleAt(&runtime, main, "c"));
-  RawObject contains_true =
-      Interpreter::sequenceContains(thread, frame, b, container);
-  RawObject contains_false =
-      Interpreter::sequenceContains(thread, frame, c, container);
+  Object contains_true(
+      &scope, Interpreter::sequenceContains(thread, frame, b, container));
+  Object contains_false(
+      &scope, Interpreter::sequenceContains(thread, frame, c, container));
   EXPECT_EQ(contains_true, Bool::trueObj());
   EXPECT_EQ(contains_false, Bool::falseObj());
 }
@@ -830,10 +837,8 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   frame->pushValue(*callee);
   frame->pushValue(SmallInt::fromWord(1));
 
-  RawObject result = Interpreter::call(thread, frame, 1);
-
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_TRUE(isIntEqualsWord(result, 42));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::call(thread, frame, 1), 42));
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -888,10 +893,8 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   frame->pushValue(*callee);
   frame->pushValue(*ex);
 
-  RawObject result = Interpreter::callEx(thread, frame, 0);
-
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_TRUE(isIntEqualsWord(result, 42));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callEx(thread, frame, 0), 42));
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -952,10 +955,8 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   frame->pushValue(SmallInt::fromWord(4));
   frame->pushValue(*arg_names);
 
-  RawObject result = Interpreter::callKw(thread, frame, 1);
-
   // Make sure we got the right result and stack is back where it should be
-  EXPECT_TRUE(isIntEqualsWord(result, 42));
+  EXPECT_TRUE(isIntEqualsWord(Interpreter::callKw(thread, frame, 1), 42));
   EXPECT_EQ(value_stack_start, frame->valueStackTop());
 }
 
@@ -1153,8 +1154,7 @@ sys.displayhook = my_displayhook
                            LOAD_CONST, 1, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  RawObject result = Thread::current()->run(code);
-  ASSERT_TRUE(result.isNoneType());
+  ASSERT_TRUE(thread->run(code).isNoneType());
 
   Module sys(&scope, findModule(&runtime, "sys"));
   Object displayhook(&scope, moduleAt(&runtime, sys, "displayhook"));
@@ -1280,8 +1280,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
       POP_BLOCK,  0, RETURN_VALUE, 0,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
-  RawObject result = Thread::current()->run(code);
-  EXPECT_EQ(result, SmallInt::fromWord(42));
+  EXPECT_EQ(thread->run(code), SmallInt::fromWord(42));
 }
 
 TEST(InterpreterTest, UnpackSequenceEx) {
@@ -2446,9 +2445,8 @@ TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
   Frame* frame = thread->currentFrame();
   Str not_a_func(&scope, Str::empty());
   frame->pushValue(*not_a_func);
-  RawObject result = Interpreter::call(thread, frame, 0);
-  EXPECT_TRUE(result.isError());
-  EXPECT_TRUE(thread->hasPendingException());
+  EXPECT_TRUE(
+      raised(Interpreter::call(thread, frame, 0), LayoutId::kTypeError));
 }
 
 TEST(InterpreterTest, DoDeleteNameOnDictSubclass) {
@@ -2700,8 +2698,7 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   code.setStacksize(1);
 
   // Execute the code and make sure to get the unwinded Error
-  RawObject result = Thread::current()->run(code);
-  ASSERT_TRUE(result.isError());
+  EXPECT_TRUE(thread->run(code).isError());
 }
 
 TEST(InterpreterTest, ExplodeCallAcceptsList) {
