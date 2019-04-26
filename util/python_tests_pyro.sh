@@ -7,15 +7,15 @@ function die {
 
 SOURCE_DIR="$(realpath "$(dirname "$0")/..")"
 
-if [[ -z $BUILD_DIR ]]; then
-  BUILD_DIR="$(dirname "$0")/../build"
+if [[ -z $PYRO_BUILD_DIR ]]; then
+  PYRO_BUILD_DIR="$(dirname "$0")/../build"
 fi
 
 if [[ -z $PYTHON_BIN ]]; then
-  PYTHON_BIN="$BUILD_DIR/python"
+  PYTHON_BIN="$PYRO_BUILD_DIR/python"
 fi
 
-BUILD_DIR="$(realpath "$BUILD_DIR")"
+PYRO_BUILD_DIR="$(realpath "$PYRO_BUILD_DIR")"
 SOURCE_DIR="$(realpath "$SOURCE_DIR")"
 PYTHON_BIN="$(realpath "$PYTHON_BIN")"
 
@@ -37,7 +37,7 @@ if [[ -n $1 ]]; then
   FIND_FILTER="$1"
 fi
 
-cd "$BUILD_DIR" || exit 1
+cd "$PYRO_BUILD_DIR" || exit 1
 rm -rf tests
 mkdir tests
 find "$SOURCE_DIR/library/" -name "$FIND_FILTER" -exec cp {} tests/ \;
@@ -48,4 +48,5 @@ else
     NUM_CPUS="$(python -c 'import multiprocessing; print(multiprocessing.cpu_count())')"
     TEST_RUNNER=(xargs -t -P "$NUM_CPUS")
 fi
-find "$BUILD_DIR/tests/" -name "$FIND_FILTER" -print0 | "${TEST_RUNNER[@]}" -0 -n1 "$PYTHON_BIN"
+find "$PYRO_BUILD_DIR/tests/" -name "$FIND_FILTER" -print0 |
+    "${TEST_RUNNER[@]}" -0 -n1 "$PYTHON_BIN"

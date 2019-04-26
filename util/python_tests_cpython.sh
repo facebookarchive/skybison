@@ -1,11 +1,11 @@
 #!/bin/bash
 
-if [[ -z $BUILD_DIR ]]; then
-  BUILD_DIR="$(dirname "$0")/../build"
+if [[ -z $PYRO_BUILD_DIR ]]; then
+  PYRO_BUILD_DIR="$(dirname "$0")/../build"
 fi
 
 # Add .exe for cpython's MacOS binary
-CPYTHON_BIN="$BUILD_DIR/third-party/cpython/python"
+CPYTHON_BIN="$PYRO_BUILD_DIR/third-party/cpython/python"
 if [[ "$(uname)" == "Darwin" ]]; then
   CPYTHON_BIN+=".exe"
 fi
@@ -15,5 +15,6 @@ if [[ ! -x "$CPYTHON_BIN" ]]; then
   exit 1
 fi
 
-BUILD_DIR="$BUILD_DIR" PYTHON_BIN="$CPYTHON_BIN" FIND_FILTER="[a-zA-Z]*_test.py" \
-  "$(dirname "$0")/python_tests_pyro.sh" "$@"
+PYRO_BUILD_DIR="$PYRO_BUILD_DIR" PYTHON_BIN="$CPYTHON_BIN" \
+    FIND_FILTER="[a-zA-Z]*_test.py" \
+    "$(dirname "$0")/python_tests_pyro.sh" "$@"

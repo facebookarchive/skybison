@@ -1,24 +1,22 @@
 #!/bin/bash
 
-if [[ -n $1 ]]; then
-  BUILD_DIR=$1
-else
-  BUILD_DIR="$(dirname "$0")/../build"
+if [[ -z $PYRO_BUILD_DIR ]]; then
+  PYRO_BUILD_DIR="$(dirname "$0")/../build"
 fi
 
-CPYTHON_TESTS=$BUILD_DIR/cpython-tests
+CPYTHON_TESTS=$PYRO_BUILD_DIR/cpython-tests
 if [[ ! -x $CPYTHON_TESTS ]]; then
   cat 1>&2 <<EOF
 $CPYTHON_TESTS does not exist or isn't executable. If you're seeing this on
-Sandcastle, our build scripts are broken. Otherwise, provide your build root as
-an argument to this script and make sure you've run a build.
+Sandcastle, our build scripts are broken. Otherwise, provide your build root
+in PYRO_BUILD_DIR and make sure you've run a build.
 EOF
   exit 1
 fi
 
-BINARY_LIBS=$(ls -d "$BUILD_DIR"/third-party/cpython/build/lib*)
+BINARY_LIBS=$(ls -d "$PYRO_BUILD_DIR"/third-party/cpython/build/lib*)
 export ASAN_OPTIONS=detect_leaks=0
-PYTHONPATH="$BUILD_DIR/third-party/cpython/Lib:$BINARY_LIBS"
+PYTHONPATH="$PYRO_BUILD_DIR/third-party/cpython/Lib:$BINARY_LIBS"
 COMMAND=("$CPYTHON_TESTS" "--gtest_filter=-*Pyro" "$@")
 if [[ -n $DEBUG_CPYTHON_TESTS ]]; then
     if ! command -v lldb >/dev/null; then
