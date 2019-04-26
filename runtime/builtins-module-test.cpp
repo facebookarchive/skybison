@@ -11,12 +11,13 @@ using namespace testing;
 
 TEST(BuiltinsModuleTest, BuiltinCallableOnTypeReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
 a = callable(Foo)
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -25,14 +26,15 @@ a = callable(Foo)
 
 TEST(BuiltinsModuleTest, BuiltinCallableOnMethodReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def bar():
     return None
 
 a = callable(Foo.bar)
 b = callable(Foo().bar)
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -43,10 +45,11 @@ b = callable(Foo().bar)
 
 TEST(BuiltinsModuleTest, BuiltinCallableOnNonCallableReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = callable(1)
 b = callable("hello")
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -57,14 +60,15 @@ b = callable("hello")
 
 TEST(BuiltinsModuleTest, BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __call__(self):
     pass
 
 f = Foo()
 a = callable(f)
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -74,7 +78,7 @@ a = callable(f)
 TEST(BuiltinsModuleTest,
      BuiltinCallableOnObjectWithInstanceCallButNoTypeCallReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
@@ -84,7 +88,8 @@ def fakecall():
 f = Foo()
 f.__call__ = fakecall
 a = callable(f)
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -266,7 +271,7 @@ TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {
 
 TEST(BuiltinsModuleTest, IssubclassWithSubclassReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
@@ -279,7 +284,8 @@ class Baz(type):
 a = issubclass(Foo, object)
 b = issubclass(Bar, Foo)
 c = issubclass(Baz, type)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -292,7 +298,7 @@ c = issubclass(Baz, type)
 
 TEST(BuiltinsModuleTest, IssubclassWithNonSubclassReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
@@ -302,7 +308,8 @@ class Bar(Foo):
 a = issubclass(Foo, Bar)
 b = issubclass(int, str)
 c = issubclass(dict, list)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -315,7 +322,7 @@ c = issubclass(dict, list)
 
 TEST(BuiltinsModuleTest, IssubclassWithOneSuperclassReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
@@ -324,7 +331,8 @@ class Bar(Foo):
 
 a = issubclass(Foo, (Bar, object))
 b = issubclass(Bar, (Foo))
-)");
+)")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -335,12 +343,13 @@ b = issubclass(Bar, (Foo))
 
 TEST(BuiltinsModuleTest, IssubclassWithNoSuperclassReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
 a = issubclass(Foo, (str, int))
-)");
+)")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Bool a(&scope, moduleAt(&runtime, main, "a"));
@@ -510,11 +519,12 @@ TEST(BuiltinsModuleTest, IntFromStrWithInvalidLiteralRaisesValueError) {
 TEST(ThreadTest, BuiltinLenGetLenFromDict) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 len0 = len({})
 len1 = len({'one': 1})
 len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -529,11 +539,12 @@ len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
 TEST(ThreadTest, BuiltinLenGetLenFromList) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 len0 = len([])
 len1 = len([1])
 len5 = len([1,2,3,4,5])
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -548,10 +559,11 @@ len5 = len([1,2,3,4,5])
 TEST(ThreadTest, BuiltinLenGetLenFromSet) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 len1 = len({1})
 len5 = len({1,2,3,4,5})
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -694,13 +706,14 @@ print(flush=True)
 
 TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __repr__(self):
     return "foo"
 
 a = repr(Foo())
-)");
+)")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
@@ -717,13 +730,14 @@ TEST(BuiltinsModuleTest, BuiltInReprOnClass) {
 
 TEST(BuiltinsModuleTest, BuiltInAsciiCallsDunderRepr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __repr__(self):
     return "foo"
 
 a = ascii(Foo())
-)");
+)")
+                   .isError());
   HandleScope scope;
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
@@ -926,7 +940,7 @@ result = C.foo
 TEST(BuiltinsModuleTest, DunderBuildClassPassesNameBasesAndKwargsToPrepare) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Meta(type):
   def __init__(metacls, name, bases, namespace, **kwargs):
     pass
@@ -940,7 +954,8 @@ class C(int, metaclass=Meta, answer=42):
 name = C.foo
 base = C.bar
 answer = C.baz
-)");
+)")
+                   .isError());
   Object name(&scope, moduleAt(&runtime, "__main__", "name"));
   Object base(&scope, moduleAt(&runtime, "__main__", "base"));
   Object answer(&scope, moduleAt(&runtime, "__main__", "answer"));
@@ -1249,10 +1264,11 @@ TEST(BuiltinsModuleTest, BuiltinCompile) {
 TEST(BuiltinsModuleTest, BuiltinCompileBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 data = b'a = 1; b = 2'
 code = compile(data, "<string>", "eval", dont_inherit=True)
-)");
+)")
+                   .isError());
   Code code(&scope, moduleAt(&runtime, "__main__", "code"));
   Object filename(&scope, code.filename());
   EXPECT_TRUE(isStrEqualsCStr(*filename, "<string>"));
@@ -1291,10 +1307,11 @@ TEST(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1337
 exec("a = 1338")
-  )");
+  )")
+                   .isError());
   // We can't use runBuiltin here because it does not set up the frame properly
   // for functions that need globals, implicitGlobals, etc
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
@@ -1309,10 +1326,11 @@ TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   Dict globals(&scope, main.dict());
   Str globals_name(&scope, runtime.newStrFromCStr("gl"));
   runtime.moduleDictAtPut(globals, globals_name, globals);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1337
 result = exec("a = 1338", gl)
-  )");
+  )")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result.isNoneType());
   Object a(&scope, moduleAt(&runtime, main, "a"));
@@ -1322,10 +1340,11 @@ result = exec("a = 1338", gl)
 TEST(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1337
 result = exec("a = 1338", {})
-  )");
+  )")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
   ASSERT_TRUE(result.isNoneType());
@@ -1346,9 +1365,10 @@ result = exec("a = 1338", 7)
 TEST(BuiltinsModuleTest, BuiltinExecExWithTupleCallsExec) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exec(*("a = 1338",))
-  )");
+  )")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
@@ -1356,9 +1376,10 @@ exec(*("a = 1338",))
 TEST(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exec(*["a = 1338"])
-  )");
+  )")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
@@ -1370,11 +1391,12 @@ TEST(BuiltinsModuleTest, CopyFunctionEntriesCopies) {
   Str qualname(&scope, runtime.symbols()->Chr());
   Function func(&scope,
                 runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def chr(self):
   "docstring"
   pass
-)");
+)")
+                   .isError());
   Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
   copyFunctionEntries(Thread::current(), func, python_func);
   Code base_code(&scope, func.code());
@@ -1392,10 +1414,11 @@ TEST(BuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {
   Str qualname(&scope, runtime.symbols()->Chr());
   Function func(&scope,
                 runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def chr(self):
   return 42
-)");
+)")
+                   .isError());
   Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
   ASSERT_DEATH(copyFunctionEntries(Thread::current(), func, python_func),
                "Redefinition of native code method 'chr' in managed code");
@@ -1441,9 +1464,10 @@ def not_a_function():
 
 TEST(BuiltinsModuleTest, AllOnListWithOnlyTrueReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = all([True, True])
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.value());
@@ -1451,9 +1475,10 @@ result = all([True, True])
 
 TEST(BuiltinsModuleTest, AllOnListWithFalseReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = all([True, False, True])
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_FALSE(result.value());
@@ -1461,9 +1486,10 @@ result = all([True, False, True])
 
 TEST(BuiltinsModuleTest, AnyOnListWithOnlyFalseReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = any([False, False])
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_FALSE(result.value());
@@ -1471,9 +1497,10 @@ result = any([False, False])
 
 TEST(BuiltinsModuleTest, AnyOnListWithTrueReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = any([False, True, False])
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.value());
@@ -1488,9 +1515,10 @@ TEST(BuiltinsModuleTest, RangeOnNonIntegerRaisesTypeError) {
 
 TEST(BuiltinsModuleTest, RangeWithOnlyStopDefaultsOtherArguments) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = range(5)
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Range result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(result.start(), 0);
@@ -1500,9 +1528,10 @@ result = range(5)
 
 TEST(BuiltinsModuleTest, RangeWithStartAndStopDefaultsStep) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = range(1, 5)
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Range result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(result.start(), 1);
@@ -1512,9 +1541,10 @@ result = range(1, 5)
 
 TEST(BuiltinsModuleTest, RangeWithAllArgsSetsAllArgs) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = range(1, 5, 7)
-  )");
+  )")
+                   .isError());
   HandleScope scope;
   Range result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(result.start(), 1);
@@ -1585,32 +1615,35 @@ TEST(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaisesTypeError) {
 
 TEST(BuiltinsModuleTest, FormatCallsDunderFormat) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __format__(self, fmt_spec):
     return "foobar"
 result = format(C(), 'hi')
-)");
+)")
+                   .isError());
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "foobar"));
 }
 
 TEST(BuiltinsModuleTest, FormatRaisesWhenDunderFormatReturnsNonStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __format__(self, fmt_spec):
     return 1
-)");
+)")
+                   .isError());
   EXPECT_TRUE(
       raised(runFromCStr(&runtime, "format(C(), 'hi')"), LayoutId::kTypeError));
 }
 
 TEST(BuiltinsModuleTest, IterWithIterableCallsDunderIter) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = list(iter([1, 2, 3]))
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object l(&scope, moduleAt(&runtime, "__main__", "l"));
   EXPECT_PYLIST_EQ(l, {1, 2, 3});
@@ -1638,7 +1671,7 @@ iter(C())
 
 TEST(BuiltinsModuleTest, IterWithCallableReturnsIterator) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __init__(self):
     self.x = 0
@@ -1649,7 +1682,8 @@ c = C()
 callable_iter = iter(c, 3)
 reduced = callable_iter.__reduce__()
 l = list(callable_iter)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object l(&scope, moduleAt(&runtime, "__main__", "l"));
   EXPECT_PYLIST_EQ(l, {1, 2});
@@ -2103,10 +2137,11 @@ except StopIteration:
 
 TEST(BuiltinsModuleTest, AbsReturnsAbsoluteValue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 res1 = abs(10)
 res2 = abs(-10)
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object res1(&scope, moduleAt(&runtime, "__main__", "res1"));

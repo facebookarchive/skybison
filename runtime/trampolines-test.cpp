@@ -13,13 +13,14 @@ using namespace testing;
 TEST(CallTest, CallBoundMethod) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def func(self):
   print(self)
 
 def test(callable):
   return callable()
-)");
+)")
+                   .isError());
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
@@ -42,13 +43,14 @@ def test(callable):
 TEST(CallTest, CallBoundMethodWithArgs) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def func(self, a, b):
   print(self, a, b)
 
 def test(callable):
   return callable(2222, 3333)
-)");
+)")
+                   .isError());
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
@@ -71,7 +73,7 @@ def test(callable):
 TEST(CallTest, CallBoundMethodKw) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -84,7 +86,8 @@ def func(self, a, b):
 
 def test(callable):
   return callable(a=2222, b=3333)
-)");
+)")
+                   .isError());
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
@@ -113,7 +116,7 @@ def test(callable):
 TEST(CallTest, CallBoundMethodExArgs) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -127,7 +130,8 @@ def func(self, a, b):
 def test(callable):
   args = (2222, 3333)
   return callable(*args)
-)");
+)")
+                   .isError());
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
@@ -156,7 +160,7 @@ def test(callable):
 TEST(CallTest, CallBoundMethodExKwargs) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -170,7 +174,8 @@ def func(self, a, b):
 def test(callable):
   kwargs = {'a': 2222, 'b': 3333}
   return callable(**kwargs)
-)");
+)")
+                   .isError());
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
@@ -199,7 +204,7 @@ def test(callable):
 TEST(CallTest, CallBoundMethodExArgsAndKwargs) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result_self = None
 result_a = None
 result_b = None
@@ -214,7 +219,8 @@ def test(callable):
   args = (2222,)
   kwargs = {'b': 3333}
   return callable(*args, **kwargs)
-)");
+)")
+                   .isError());
 
   Module module(&scope, findModule(&runtime, "__main__"));
   Object function(&scope, moduleAt(&runtime, module, "func"));
@@ -760,17 +766,19 @@ TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   // Create a function
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(bar): pass
-)");
+)")
+                   .isError());
   Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
   foo.setEntry(interpreterClosureTrampoline);
   foo.setCode(*code);
 
   // Run function
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = foo(1)
-)");
+)")
+                   .isError());
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
@@ -805,17 +813,19 @@ TEST(TrampolinesTest, InterpreterClosureUsesCellValue) {
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   // Create a function
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(bar): pass
-)");
+)")
+                   .isError());
   Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
   foo.setEntry(interpreterClosureTrampoline);
   foo.setCode(*code);
 
   // Run function
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = foo(1)
-)");
+)")
+                   .isError());
   Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
@@ -833,10 +843,11 @@ take_kwargs(**kwargs)
 
 TEST(TrampolinesTest, ExplodeCallWithZeroKeywords) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(a=10): return a
 result = foo(**{})
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(result, SmallInt::fromWord(10));

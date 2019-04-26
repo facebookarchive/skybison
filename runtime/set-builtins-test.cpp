@@ -21,11 +21,12 @@ s.pop()
 TEST(SetBuiltinsTest, SetPop) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = {1}
 a = s.pop()
 b = len(s)
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
@@ -35,9 +36,10 @@ b = len(s)
 TEST(SetBuiltinsTest, InitializeByTypeCall) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = set()
-)");
+)")
+                   .isError());
   Object s(&scope, moduleAt(&runtime, "__main__", "s"));
   EXPECT_TRUE(s.isSet());
   EXPECT_EQ(RawSet::cast(*s).numItems(), 0);
@@ -46,11 +48,12 @@ s = set()
 TEST(SetBuiltinsTest, SetAdd) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = set()
 s.add(1)
 s.add("Hello, World")
-)");
+)")
+                   .isError());
   Set s(&scope, moduleAt(&runtime, "__main__", "s"));
   Object one(&scope, runtime.newInt(1));
   Object hello_world(&scope, runtime.newStrFromCStr("Hello, World"));
@@ -440,7 +443,7 @@ TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
 
 TEST(SetBuiltinsTest, DunderEqWithSetSubclass) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Bar(set): pass
 
 a = set()
@@ -451,7 +454,8 @@ cmp1 = (a1 == b)
 cmp2 = (b == a)
 cmp3 = (b == a1)
 cmp4 = (b == b)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::falseObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::trueObj());
@@ -461,7 +465,7 @@ cmp4 = (b == b)
 
 TEST(SetBuiltinsTest, DunderNeWithSetSubclass) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Bar(set): pass
 
 a = set()
@@ -472,7 +476,8 @@ cmp1 = (a1 != b)
 cmp2 = (b != a)
 cmp3 = (b != a1)
 cmp4 = (b != b)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::falseObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::falseObj());
@@ -482,7 +487,7 @@ cmp4 = (b != b)
 
 TEST(SetBuiltinsTest, DunderGeWithSetSubclass) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Bar(set): pass
 
 a = set()
@@ -493,7 +498,8 @@ cmp1 = (a1 >= b)
 cmp2 = (b >= a)
 cmp3 = (b >= a1)
 cmp4 = (b >= b)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::trueObj());
@@ -503,7 +509,7 @@ cmp4 = (b >= b)
 
 TEST(SetBuiltinsTest, DunderGtWithSetSubclass) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Bar(set): pass
 
 a = set()
@@ -514,7 +520,8 @@ cmp1 = (a1 > b)
 cmp2 = (b > a)
 cmp3 = (b > a1)
 cmp4 = (b > b)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::falseObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::falseObj());
@@ -524,7 +531,7 @@ cmp4 = (b > b)
 
 TEST(SetBuiltinsTest, DunderLeWithSetSubclass) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Bar(set): pass
 
 a = set()
@@ -535,7 +542,8 @@ cmp1 = (a1 <= b)
 cmp2 = (b <= a)
 cmp3 = (b <= a1)
 cmp4 = (b <= b)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::falseObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::trueObj());
@@ -545,7 +553,7 @@ cmp4 = (b <= b)
 
 TEST(SetBuiltinsTest, DunderLtWithSetSubclass) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Bar(set): pass
 
 a = set()
@@ -556,7 +564,8 @@ cmp1 = (a1 < b)
 cmp2 = (b < a)
 cmp3 = (b < a1)
 cmp4 = (b < b)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::falseObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::falseObj());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::falseObj());
@@ -926,11 +935,12 @@ TEST(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {
 TEST(SetBuiltinsTest, DunderInitWithSetSubclassUpdatesSet) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Set(set): pass
 
 s = Set([0, 1, 2])
-)");
+)")
+                   .isError());
   Object s(&scope, moduleAt(&runtime, "__main__", "s"));
   ASSERT_TRUE(runtime.isInstanceOfSet(*s));
   Object key(&scope, SmallInt::fromWord(0));
@@ -945,11 +955,12 @@ s = Set([0, 1, 2])
 TEST(SetBuiltinsTest, DunderLenWithSetSubclassReturnsLen) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Set(set): pass
 
 s = Set([0, 1, 2])
-)");
+)")
+                   .isError());
   Object s(&scope, moduleAt(&runtime, "__main__", "s"));
   ASSERT_TRUE(runtime.isInstanceOfSet(*s));
 
@@ -968,11 +979,12 @@ TEST(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
 
 TEST(SetBuiltinsTest, SubclassOfFrozenSetDunderNewDoesNotReturnSingleton) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(frozenset):
     pass
 o = C()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object o(&scope, moduleAt(&runtime, "__main__", "o"));
   EXPECT_NE(*o, runtime.emptyFrozenSet());
@@ -1197,7 +1209,7 @@ TEST(SetBuiltinsTest, ReprReturnsElements) {
 
 TEST(SetBuiltinsTest, RecursiveSetPrintsNicely) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __init__(self, obj):
     self.val = obj
@@ -1210,7 +1222,8 @@ s = set()
 c = C(s)
 s.add(c)
 result = s.__repr__()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "{set(...)}"));
 }
@@ -1290,14 +1303,21 @@ TEST(FrozenSetBuiltinsTest, CopyFrozenSetReturnsSameObject) {
 
 TEST(FrozenSetBuiltinsTest, CopyFrozenSetSubsetReturnsNewObject) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(frozenset):
   pass
 sub = C()
-result = frozenset.copy(g)
-)");
-  EXPECT_NE(moduleAt(&runtime, "__main__", "sub"),
-            moduleAt(&runtime, "__main__", "result"));
+result = frozenset.copy(sub)
+)")
+                   .isError());
+  Object sub(&scope, moduleAt(&runtime, "__main__", "sub"));
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(runtime.isInstanceOfFrozenSet(*sub));
+  EXPECT_TRUE(runtime.isInstanceOfFrozenSet(*result));
+  EXPECT_FALSE(sub.isFrozenSet());
+  EXPECT_TRUE(result.isFrozenSet());
+  EXPECT_NE(sub, result);
 }
 
 TEST(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {

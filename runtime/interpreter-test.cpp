@@ -52,12 +52,13 @@ TEST(InterpreterTest, IsTrueWithDunderBoolRaisingPropagatesException) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __bool__(self):
     raise UserWarning('')
 value = Foo()
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Object result(&scope, Interpreter::isTrue(thread, frame, value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
@@ -68,12 +69,13 @@ TEST(InterpreterTest, IsTrueWithDunderLenRaisingPropagatesException) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __len__(self):
     raise UserWarning('')
 value = Foo()
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Object result(&scope, Interpreter::isTrue(thread, frame, value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
@@ -124,12 +126,13 @@ TEST(InterpreterTest, UnaryOperationWithCustomDunderInvertReturnsString) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __invert__(self):
     return "custom invert"
 c = C()
-)");
+)")
+                   .isError());
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Object result(
       &scope, Interpreter::unaryOperation(thread, c, SymbolId::kDunderInvert));
@@ -140,12 +143,13 @@ TEST(InterpreterTest, UnaryOperationWithCustomRaisingDunderNegPropagates) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __neg__(self):
     raise UserWarning('')
 c = C()
-)");
+)")
+                   .isError());
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Object result(&scope,
                 Interpreter::unaryOperation(thread, c, SymbolId::kDunderNeg));
@@ -169,14 +173,15 @@ TEST(InterpreterTest, BinaryOpInvokesSelfMethod) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
 
 left = C()
 right = C()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -202,7 +207,7 @@ TEST(InterpreterTest, BinaryOpInvokesSelfMethodIgnoresReflectedMethod) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
@@ -211,7 +216,8 @@ class C:
 
 left = C()
 right = C()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -237,7 +243,7 @@ TEST(InterpreterTest, BinaryOperationInvokesSubclassReflectedMethod) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
@@ -248,7 +254,8 @@ class D(C):
 
 left = C()
 right = D()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -274,7 +281,7 @@ TEST(InterpreterTest, BinaryOperationInvokesOtherReflectedMethod) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     pass
 
@@ -284,7 +291,8 @@ class D:
 
 left = C()
 right = D()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -367,14 +375,15 @@ TEST(InterpreterTest, InplaceOperationCallsInplaceMethod) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __isub__(self, other):
         return (C, '__isub__', self, other)
 
 left = C()
 right = C()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -400,14 +409,15 @@ TEST(InterpreterTest, InplaceOperationCallsBinaryMethod) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __sub__(self, other):
         return (C, '__sub__', self, other)
 
 left = C()
 right = C()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -433,7 +443,7 @@ TEST(InterpreterTest, InplaceOperationCallsBinaryMethodAfterNotImplemented) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __isub__(self, other):
         return NotImplemented
@@ -442,7 +452,8 @@ class C:
 
 left = C()
 right = C()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -470,7 +481,7 @@ TEST(InterpreterTest, CompareOpSameType) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __init__(self, value):
         self.value = value
@@ -480,7 +491,8 @@ class C:
 
 c10 = C(10)
 c20 = C(20)
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -504,14 +516,15 @@ TEST(InterpreterTest, CompareOpFallback) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __init__(self, value):
         self.value = value
 
 c10 = C(10)
 c20 = C(20)
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -541,7 +554,7 @@ TEST(InterpreterTest, CompareOpSubclass) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 called = None
 class A:
   def __eq__(self, other):
@@ -573,7 +586,8 @@ class C(A):
 a = A()
 b = B()
 c = C()
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
@@ -620,12 +634,13 @@ TEST(InterpreterTest, SequenceContains) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = {1, 2}
 
 b = 1
 c = 3
-)");
+)")
+                   .isError());
 
   Frame* frame = thread->currentFrame();
 
@@ -646,10 +661,11 @@ TEST(InterpreterTest, SequenceIterSearchWithNoDunderIterRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C: pass
 container = C()
-)");
+)")
+                   .isError());
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -663,11 +679,12 @@ TEST(InterpreterTest,
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   __iter__ = None
 container = C()
-)");
+)")
+                   .isError());
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -680,13 +697,14 @@ TEST(InterpreterTest, SequenceIterSearchWithNoDunderNextRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class D: pass
 class C:
   def __iter__(self):
     return D()
 container = C()
-)");
+)")
+                   .isError());
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -700,14 +718,15 @@ TEST(InterpreterTest,
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class D:
   __next__ = None
 class C:
   def __iter__(self):
     return D()
 container = C()
-)");
+)")
+                   .isError());
   Frame* frame = thread->currentFrame();
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, NoneType::object());
@@ -746,12 +765,13 @@ TEST(InterpreterTest, SequenceIterSearchWithIterThatRaisesPropagatesException) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __iter__(self):
     raise ZeroDivisionError("boom")
 container = C()
-)");
+)")
+                   .isError());
   Object container(&scope, moduleAt(&runtime, "__main__", "container"));
   Object val(&scope, SmallInt::fromWord(5));
   Frame* frame = thread->currentFrame();
@@ -964,7 +984,7 @@ TEST(InterpreterTest, LookupMethodInvokesDescriptor) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(): pass
 
 class D:
@@ -975,7 +995,8 @@ class C:
     __call__ = D()
 
 c = C()
-  )");
+  )")
+                   .isError());
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -1038,7 +1059,7 @@ TEST(InterpreterTest, LookupMethodLoopsOnCallBoundToDescriptor) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(args):
     return args
 
@@ -1058,7 +1079,8 @@ class C3:
 
 c = C3()
 result = c(42)
-  )");
+  )")
+                   .isError());
   Frame* frame = thread->currentFrame();
   ASSERT_TRUE(frame->isSentinelFrame());
   Module main(&scope, findModule(&runtime, "__main__"));
@@ -1092,10 +1114,11 @@ TEST(InterpreterTest, UnpackSequence) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = [1, 2, 3]
 a, b, c = l
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
@@ -1129,7 +1152,7 @@ TEST(InterpreterTest, PrintExprInvokesDisplayhook) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 
 MY_GLOBAL = 1234
@@ -1139,7 +1162,8 @@ def my_displayhook(value):
   MY_GLOBAL = value
 
 sys.displayhook = my_displayhook
-  )");
+  )")
+                   .isError());
 
   Object unique(&scope, runtime.newTuple(1));  // unique object
 
@@ -1170,13 +1194,14 @@ TEST(InterpreterTest, GetAiterCallsAiter) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class AsyncIterable:
   def __aiter__(self):
     return 42
 
 a = AsyncIterable()
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
@@ -1213,7 +1238,7 @@ TEST(InterpreterTest, BeforeAsyncWithCallsDunderAenter) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 enter = None
 exit = None
 
@@ -1227,7 +1252,8 @@ class M:
     exit = self
 
 manager = M()
-  )");
+  )")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
 
@@ -1287,10 +1313,11 @@ TEST(InterpreterTest, UnpackSequenceEx) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = [1, 2, 3, 4, 5, 6, 7]
 a, b, c, *d, e, f, g  = l
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
@@ -1317,10 +1344,11 @@ TEST(InterpreterTest, UnpackSequenceExWithNoElementsAfter) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = [1, 2, 3, 4]
 a, b, *c = l
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
@@ -1339,10 +1367,11 @@ TEST(InterpreterTest, UnpackSequenceExWithNoElementsBefore) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = [1, 2, 3, 4]
 *a, b, c = l
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
@@ -1361,9 +1390,10 @@ TEST(InterpreterTest, BuildMapUnpackWithDict) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -1393,7 +1423,7 @@ TEST(InterpreterTest, BuildMapUnpackWithListKeysMapping) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self):
         self.idx = 0
@@ -1409,7 +1439,8 @@ class Foo:
         raise KeyError()
 
 d = {**Foo(), 'd': 4}
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -1439,7 +1470,7 @@ TEST(InterpreterTest, BuildMapUnpackWithTupleKeysMapping) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self):
         self.idx = 0
@@ -1455,7 +1486,8 @@ class Foo:
         raise KeyError()
 
 d = {**Foo(), 'd': 4}
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -1485,7 +1517,7 @@ TEST(InterpreterTest, BuildMapUnpackWithIterableKeysMapping) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class KeysIter:
     def __init__(self, keys):
         self.idx = 0
@@ -1516,7 +1548,8 @@ class Foo:
         raise KeyError()
 
 d = {**Foo(), 'd': 4}
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -1635,12 +1668,13 @@ TEST(InterpreterTest, BuildTupleUnpackWithCall) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(*args):
     return args
 
 t = foo(*(1,2), *(3, 4))
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object t(&scope, moduleAt(&runtime, main, "t"));
@@ -1657,7 +1691,7 @@ TEST(InterpreterTest, FunctionDerefsVariable) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def outer():
     var = 1
     def inner():
@@ -1666,7 +1700,8 @@ def outer():
     return 0
 
 v = outer()
-	)");
+	)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object v(&scope, moduleAt(&runtime, main, "v"));
@@ -1709,11 +1744,12 @@ def public_symbol2():
       Runtime::compileFromCStr(module_src, "<test string>"));
   ASSERT_FALSE(runtime.importModuleFromBuffer(buffer.get(), name).isError());
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 from test_module import *
 a = public_symbol()
 b = public_symbol2()
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
@@ -1767,7 +1803,7 @@ TEST(InterpreterTest, GetAnextCallsAnextAndAwait) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 anext_called = None
 await_called = None
 
@@ -1783,7 +1819,8 @@ class AsyncIterator:
     return self
 
 a = AsyncIterator()
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
@@ -1823,13 +1860,14 @@ TEST(InterpreterTest, GetAnextWithInvalidAnext) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class AsyncIterator:
   def __anext__(self):
     return 42
 
 a = AsyncIterator()
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
@@ -1849,13 +1887,14 @@ TEST(InterpreterTest, GetAwaitableCallsAwait) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Awaitable:
   def __await__(self):
     return 42
 
 a = Awaitable()
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
@@ -1892,12 +1931,13 @@ TEST(InterpreterTest, BuildMapUnpackWithCallDict) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(**kwargs):
     return kwargs
 
 d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -1927,7 +1967,7 @@ TEST(InterpreterTest, BuildMapUnpackWithCallTupleKeys) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self, d):
         self.d = d
@@ -1942,7 +1982,8 @@ def foo(**kwargs):
     return kwargs
 
 d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -1972,7 +2013,7 @@ TEST(InterpreterTest, BuildMapUnpackWithCallListKeys) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self, d):
         self.d = d
@@ -1987,7 +2028,8 @@ def foo(**kwargs):
     return kwargs
 
 d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -2017,7 +2059,7 @@ TEST(InterpreterTest, BuildMapUnpackWithCallIteratorKeys) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Iter:
     def __init__(self, keys):
         self.idx = 0
@@ -2050,7 +2092,8 @@ def foo(**kwargs):
     return kwargs
 
 d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
-)");
+)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object d(&scope, moduleAt(&runtime, main, "d"));
@@ -2321,7 +2364,7 @@ TEST(InterpreterTest, YieldFromIterReturnsIter) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class FooIterator:
     pass
 
@@ -2330,7 +2373,8 @@ class Foo:
         return FooIterator()
 
 foo = Foo()
-	)");
+	)")
+                   .isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object foo(&scope, moduleAt(&runtime, main, "foo"));
@@ -2385,12 +2429,13 @@ def bar(): pass
                                                           "<test string>"));
   ASSERT_FALSE(
       runtime.importModuleFromBuffer(buffer.get(), module_name).isError());
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import foo
 def baz(): pass
 a = getattr(foo.bar, '__module__')
 b = getattr(baz, '__module__')
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isStr());
   EXPECT_TRUE(Str::cast(*a).equalsCStr("foo"));
@@ -2402,13 +2447,14 @@ b = getattr(baz, '__module__')
 TEST(InterpreterTest, MakeFunctionSetsDunderQualname) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo():
     def bar(): pass
 def baz(): pass
 a = getattr(Foo.bar, '__qualname__')
 b = getattr(baz, '__qualname__')
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isStr());
   EXPECT_TRUE(Str::cast(*a).equalsCStr("Foo.bar"));
@@ -2420,12 +2466,13 @@ b = getattr(baz, '__qualname__')
 TEST(InterpreterTest, MakeFunctionSetsDunderDoc) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo():
     """This is a docstring"""
     pass
 def bar(): pass
-)");
+)")
+                   .isError());
   Object foo(&scope, testing::moduleAt(&runtime, "__main__", "foo"));
   ASSERT_TRUE(foo.isFunction());
   Object foo_docstring(&scope, RawFunction::cast(*foo).doc());
@@ -2481,11 +2528,12 @@ class C(metaclass=Meta):
 
 TEST(InterpreterTest, StoreSubscr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = [0]
 for i in range(5):
     l[0] += i
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object l_obj(&scope, testing::moduleAt(&runtime, "__main__", "l"));
@@ -2500,7 +2548,7 @@ for i in range(5):
 // compiler optimizations or changes.
 TEST(InterpreterTest, ExceptCatchesException) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 n = 0
 try:
     raise RuntimeError("something went wrong")
@@ -2508,7 +2556,8 @@ try:
 except:
     if n == 0:
         n = 2
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
@@ -2517,7 +2566,7 @@ except:
 
 TEST(InterpreterTest, RaiseCrossesFunctions) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def sub():
   raise RuntimeError("from sub")
 
@@ -2531,7 +2580,8 @@ try:
 except:
   if n == 0:
     n = 2
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
@@ -2540,7 +2590,7 @@ except:
 
 TEST(InterpreterTest, RaiseFromSetsCause) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 try:
   try:
     raise RuntimeError
@@ -2548,7 +2598,8 @@ try:
     raise TypeError from e
 except Exception as e:
   exc = e
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object exc_obj(&scope, testing::moduleAt(&runtime, "__main__", "exc"));
@@ -2559,7 +2610,7 @@ except Exception as e:
 
 TEST(InterpreterTest, ExceptWithRightTypeCatches) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 n = 0
 try:
     raise RuntimeError("whoops")
@@ -2567,7 +2618,8 @@ try:
 except RuntimeError:
     if n == 0:
         n = 2
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
@@ -2576,7 +2628,7 @@ except RuntimeError:
 
 TEST(InterpreterTest, ExceptWithRightTupleTypeCatches) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 n = 0
 try:
     raise RuntimeError()
@@ -2584,7 +2636,8 @@ try:
 except (StopIteration, RuntimeError, ImportError):
     if n == 0:
         n = 2
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object n(&scope, testing::moduleAt(&runtime, "__main__", "n"));
@@ -2621,7 +2674,7 @@ TEST(InterpreterTest, RaiseTypeCreatesException) {
 
 TEST(InterpreterTest, BareRaiseReraises) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class MyError(Exception):
   pass
 
@@ -2635,7 +2688,8 @@ try:
     raise
 except Exception as exc:
   outer = exc
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object my_error(&scope, testing::moduleAt(&runtime, "__main__", "MyError"));
@@ -2705,13 +2759,14 @@ TEST(InterpreterTest, ExplodeCallAcceptsList) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(a, b):
   return [b, a]
 
 args = ['a', 'b']
 result = f(*args)
-)");
+)")
+                   .isError());
 
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {"b", "a"});
@@ -2736,12 +2791,13 @@ TEST(InterpreterTest, FormatValueCallsDunderStr) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __str__(self):
     return "foobar"
 result = f"{C()!s}"
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
@@ -2750,12 +2806,13 @@ TEST(InterpreterTest, FormatValueFallsBackToDunderRepr) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
     return "foobar"
 result = f"{C()!s}"
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
@@ -2764,12 +2821,13 @@ TEST(InterpreterTest, FormatValueCallsDunderRepr) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
     return "foobar"
 result = f"{C()!r}"
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
@@ -2778,12 +2836,13 @@ TEST(InterpreterTest, FormatValueAsciiCallsDunderRepr) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __repr__(self):
     return "foobar"
 result = f"{C()!a}"
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foobar"));
 }
@@ -2792,7 +2851,7 @@ TEST(InterpreterTest, BreakInTryBreaks) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = 0
 for i in range(5):
   try:
@@ -2800,7 +2859,8 @@ for i in range(5):
   except:
     pass
 result = 10
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
@@ -2809,7 +2869,7 @@ TEST(InterpreterTest, ContinueInExceptContinues) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = 0
 for i in range(5):
   try:
@@ -2819,7 +2879,8 @@ for i in range(5):
     result += i
     continue
   result -= i
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, -4));
 }
@@ -2828,7 +2889,7 @@ TEST(InterpreterTest, RaiseInLoopRaisesRuntimeError) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = 0
 try:
   for i in range(5):
@@ -2838,7 +2899,8 @@ try:
   result += 100
 except:
   result += 1000
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1003));
 }
@@ -2847,7 +2909,7 @@ TEST(InterpreterTest, ReturnInsideTryRunsFinally) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 ran_finally = False
 
 def f():
@@ -2858,7 +2920,8 @@ def f():
     ran_finally = True
 
 result = f()
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 56789));
 
@@ -2870,7 +2933,7 @@ TEST(InterpreterTest, ReturnInsideFinallyOverridesEarlierReturn) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f():
   try:
     return 123
@@ -2878,7 +2941,8 @@ def f():
     return 456
 
 result = f()
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 456));
 }
@@ -2887,7 +2951,7 @@ TEST(InterpreterTest, ReturnInsideWithRunsDunderExit) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 sequence = ""
 
 class Mgr:
@@ -2905,7 +2969,8 @@ def foo():
         return 1234
 
 result = foo()
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 

@@ -11,12 +11,13 @@ using namespace testing;
 
 TEST(ObjectBuiltinsTest, DunderReprReturnsTypeNameAndPointer) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
 a = object.__repr__(Foo())
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   // Storage for the class name. It must be shorter than the length of the whole
@@ -178,14 +179,15 @@ result = object.__ne__(Foo(), None)
 
 TEST(ObjectBuiltinsTest, DunderStrReturnsDunderRepr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
 f = Foo()
 a = object.__str__(f)
 b = object.__repr__(f)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -194,14 +196,15 @@ b = object.__repr__(f)
 
 TEST(ObjectBuiltinsTest, UserDefinedTypeInheritsDunderStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 
 f = Foo()
 a = object.__str__(f)
 b = f.__str__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -210,22 +213,24 @@ b = f.__str__()
 
 TEST(ObjectBuiltinsTest, DunderInitDoesNotRaiseIfNewIsDifferentButInitIsSame) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __new__(cls):
     return object.__new__(cls)
 
 Foo.__init__(Foo(), 1)
-)");
+)")
+                   .isError());
   // It doesn't matter what the output is, just that it doesn't throw a
   // TypeError.
 }
 
 TEST(ObjectBuiltinsTest, DunderInitWithNonInstanceIsOk) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 object.__init__(object)
-)");
+)")
+                   .isError());
   // It doesn't matter what the output is, just that it doesn't throw a
   // TypeError.
 }

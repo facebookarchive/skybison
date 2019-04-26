@@ -234,10 +234,11 @@ sys.exit(False)
 TEST(SysModuleTest, Platform) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 sysname = sys.platform
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object sysname(&scope, moduleAt(&runtime, main, "sysname"));
   ASSERT_TRUE(sysname.isStr());
@@ -257,10 +258,11 @@ sysname = sys.platform
 TEST(SysModuleTest, PathImporterCache) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 result = sys.path_importer_cache
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isDict());
 }
@@ -268,10 +270,11 @@ result = sys.path_importer_cache
 TEST(SysModuleTest, BuiltinModuleNames) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 builtin_names = sys.builtin_module_names
-)");
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object builtins(&scope, moduleAt(&runtime, main, "builtin_names"));
   ASSERT_TRUE(builtins.isTuple());
@@ -294,10 +297,11 @@ builtin_names = sys.builtin_module_names
 TEST(SysModuleTest, FlagsVerbose) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 result = sys.flags.verbose
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }

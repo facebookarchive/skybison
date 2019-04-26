@@ -287,7 +287,7 @@ x = c1.x
 TEST(DescriptorBuiltinsTest, PropertyWithCallableGetterReturnsValue) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Getter:
     def __call__(self, obj):
         return 123
@@ -296,7 +296,8 @@ class Foo:
   x = property(Getter())
 
 result = Foo().x
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
@@ -304,7 +305,7 @@ result = Foo().x
 TEST(DescriptorBuiltinsTest, PropertyWithCallableSetterSetsValue) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Setter:
     def __call__(self, obj, value):
         obj.y = value
@@ -315,7 +316,8 @@ class Foo:
 foo = Foo()
 foo.x = 123
 result = foo.y
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }

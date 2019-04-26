@@ -37,36 +37,39 @@ result = list.copy(l)
 
 TEST(ListBuiltinsTest, DunderEqReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = list.__eq__([1, 2, 3], [1, 2, 3])
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
 }
 
 TEST(ListBuiltinsTest, DunderEqWithSameListReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
     def __eq__(self, other):
         return False
 a = [1, 2, 3]
 result = list.__eq__(a, a)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
 }
 
 TEST(ListBuiltinsTest, DunderEqWithSameIdentityElementsReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 nan = float("nan")
 result = list.__eq__([nan], [nan])
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
 }
 
 TEST(ListBuiltinsTest, DunderEqWithEqualElementsReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
     def __init__(self, value):
         self.value = value
@@ -75,31 +78,35 @@ class Foo:
 a = Foo(1)
 b = Foo(1)
 result = list.__eq__([a], [b])
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::trueObj());
 }
 
 TEST(ListBuiltinsTest, DunderEqWithDifferentSizeReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = list.__eq__([1, 2, 3], [1, 2])
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::falseObj());
 }
 
 TEST(ListBuiltinsTest, DunderEqWithDifferentValuesReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = list.__eq__([1, 2, 3], [1, 2, 4])
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), RawBool::falseObj());
 }
 
 TEST(ListBuiltinsTest, DunderEqWithNonListRhsRaisesNotImplemented) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = list.__eq__([1, 2, 3], (1, 2, 3));
-)");
+)")
+                   .isError());
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplementedType());
 }
 
@@ -113,9 +120,10 @@ TEST(ListBuiltinsTest, DunderEqWithNonListLhsReturnsTypeError) {
 TEST(ListBuiltinsTest, DunderInitFromList) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = list([1, 2])
-)");
+)")
+                   .isError());
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_EQ(a.numItems(), 2);
@@ -126,10 +134,11 @@ a = list([1, 2])
 TEST(ListBuiltinsTest, NewListIsNotASingleton) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = list() is not list()
 b = list([1, 2]) is not list([1, 2])
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -141,11 +150,12 @@ TEST(ListBuiltinsTest, AddToNonEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = [1, 2]
 b = [3, 4, 5]
 c = a + b
-)");
+)")
+                   .isError());
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isList());
   List list(&scope, RawList::cast(*c));
@@ -160,11 +170,12 @@ TEST(ListBuiltinsTest, AddToEmptyList) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = []
 b = [1, 2, 3]
 c = a + b
-)");
+)")
+                   .isError());
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isList());
   List list(&scope, RawList::cast(*c));
@@ -242,13 +253,14 @@ TEST(ListBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
 TEST(ListBuiltinsTest, DunderContainsWithIdenticalObjectReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     return False
 value = Foo()
 list = [value]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
@@ -259,13 +271,14 @@ TEST(ListBuiltinsTest,
      DunderContainsWithNonIdenticalEqualKeyObjectReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     return True
 value = Foo()
 list = [None]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value),
@@ -276,7 +289,7 @@ TEST(ListBuiltinsTest,
      DunderContainsWithNonIdenticalEqualListObjectReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     return True
@@ -286,7 +299,8 @@ class Bar:
 value0 = Foo()
 value1 = Bar()
 list = [value0]
-)");
+)")
+                   .isError());
   Object value1(&scope, moduleAt(&runtime, "__main__", "value1"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value1),
@@ -296,13 +310,14 @@ list = [value0]
 TEST(ListBuiltinsTest, DunderContainsWithRaisingEqPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     raise UserWarning("")
 value = Foo()
 list = [None]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   Object result(&scope, runBuiltin(ListBuiltins::dunderContains, list, value));
@@ -312,7 +327,7 @@ list = [None]
 TEST(ListBuiltinsTest, DunderContainsWithRaisingDunderBoolPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __bool__(self):
     raise UserWarning("")
@@ -321,7 +336,8 @@ class Bar:
     return Foo()
 value = Bar()
 list = [None]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   EXPECT_TRUE(raised(runBuiltin(ListBuiltins::dunderContains, list, value),
@@ -472,13 +488,14 @@ TEST(ListBuiltinsTest, ListRemoveWithDuplicateItemsRemovesFirstMatchingItem) {
 TEST(ListBuiltinsTest, ListRemoveWithIdenticalObjectGetsRemoved) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __eq__(self, other):
     return False
 value = C()
 list = [value]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   EXPECT_EQ(list.numItems(), 1);
@@ -489,12 +506,13 @@ list = [value]
 TEST(ListBuiltinsTest, ListRemoveWithNonIdenticalEqualObjectInListGetsRemoved) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __eq__(self, other):
     return True
 list = [C()]
-)");
+)")
+                   .isError());
   Object value(&scope, NoneType::object());
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   EXPECT_EQ(list.numItems(), 1);
@@ -506,7 +524,7 @@ TEST(ListBuiltinsTest,
      ListRemoveWithNonIdenticalEqualObjectAsKeyRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __eq__(self, other):
     return True
@@ -515,7 +533,8 @@ class D:
     return False
 value = C()
 list = [D()]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
@@ -525,13 +544,14 @@ list = [D()]
 TEST(ListBuiltinsTest, ListRemoveWithRaisingDunderEqualPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     raise UserWarning('')
 value = Foo()
 list = [None]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
@@ -541,7 +561,7 @@ list = [None]
 TEST(ListBuiltinsTest, ListRemoveWithRaisingDunderBoolPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __bool__(self):
     raise UserWarning('')
@@ -550,7 +570,8 @@ class D:
     raise C()
 value = D()
 list = [None]
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   List list(&scope, moduleAt(&runtime, "__main__", "list"));
   Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
@@ -863,11 +884,12 @@ l[5] = 4
 TEST(ListBuiltinsTest, SetItemSliceBasic) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:5] = ['C', 'D', 'E']
 result = letters
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "f", "g"});
 }
@@ -875,11 +897,12 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceGrow) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:5] = ['C', 'D', 'E','X','Y','Z']
 result = letters
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "E", "X", "Y", "Z", "f", "g"});
 }
@@ -887,11 +910,12 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceShrink) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = ['C', 'D']
 result = letters
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "C", "D", "g"});
 }
@@ -899,11 +923,12 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceIterable) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = ('x', 'y', 12)
 result = letters
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {"a", "b", "x", "y", 12, "g"});
 }
@@ -911,11 +936,12 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceSelf) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:5] = letters
 result = letters
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result,
                    {"a", "b", "a", "b", "c", "d", "e", "f", "g", "f", "g"});
@@ -925,11 +951,12 @@ result = letters
 TEST(ListBuiltinsTest, SetItemSliceRevBounds) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = list(range(20))
 a[5:2] = ['a','b','c','d','e']
 result = a
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 1, 2,  3,  4,  "a", "b", "c", "d", "e", 5,  6, 7,
                             8, 9, 10, 11, 12, 13,  14,  15,  16,  17,  18, 19});
@@ -938,11 +965,12 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceStep) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = list(range(20))
 a[2:10:3] = ['a', 'b', 'c']
 result = a
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
                             10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
@@ -951,11 +979,12 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceStepNeg) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = list(range(20))
 a[10:2:-3] = ['a', 'b', 'c']
 result = a
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0,   1,  2,  3,  "c", 5,  6,  "b", 8,  9,
                             "a", 11, 12, 13, 14,  15, 16, 17,  18, 19});
@@ -984,11 +1013,12 @@ letters[2:6] = 5
 TEST(ListBuiltinsTest, SetItemSliceStepTuple) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = list(range(20))
 a[2:10:3] = ('a', 'b', 'c')
 result = a
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0,  1,  "a", 3,  4,  "b", 6,  7,  "c", 9,
                             10, 11, 12,  13, 14, 15,  16, 17, 18,  19});
@@ -1008,12 +1038,13 @@ a[:8:2] = b
 TEST(ListBuiltinsTest, SetItemSliceShortStop) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = [1,2,3,4,5,6,7,8,9,10]
 b = [0,0,0]
 a[:1] = b
 result = a
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 }
@@ -1021,12 +1052,13 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceLongStop) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = [1,1,1]
 b = [0,0,0,0,0]
 a[:1] = b
 result = a
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 0, 0, 0, 0, 1, 1});
 }
@@ -1034,12 +1066,13 @@ result = a
 TEST(ListBuiltinsTest, SetItemSliceShortStep) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = [1,2,3,4,5,6,7,8,9,10]
 b = [0,0,0]
 a[::1] = b
 result = a
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 0, 0});
 }
@@ -1151,7 +1184,7 @@ list.__new__(Foo)
 TEST(ListBuiltinsTest, SubclassList) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo():
   def __init__(self):
     self.a = "a"
@@ -1165,7 +1198,8 @@ a.pop()
 test5 = a[0]
 a.remove(2)
 test6 = len(a)
-)");
+)")
+                   .isError());
   Object test1(&scope, moduleAt(&runtime, "__main__", "test1"));
   Object test2(&scope, moduleAt(&runtime, "__main__", "test2"));
   Object test3(&scope, moduleAt(&runtime, "__main__", "test3"));
@@ -1183,13 +1217,14 @@ test6 = len(a)
 TEST(ListBuiltinsTest, DelItem) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = [42,'foo', 'bar']
 del a[2]
 del a[0]
 l = len(a)
 e = a[0]
-)");
+)")
+                   .isError());
   Object len(&scope, moduleAt(&runtime, "__main__", "l"));
   Object element(&scope, moduleAt(&runtime, "__main__", "e"));
   EXPECT_EQ(*len, SmallInt::fromWord(1));
@@ -1207,9 +1242,10 @@ TEST(ListBuiltinsTest, DunderIterReturnsListIter) {
 TEST(ListBuiltinsTest, DunderRepr) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = [1, 2, 'hello'].__repr__()
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "[1, 2, 'hello']"));
 }
@@ -1561,10 +1597,11 @@ TEST(ListBuiltinsTest, SortIsStable) {
 
 TEST(ListBuiltinsTest, ListExtendSelfDuplicatesElements) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = [1, 2, 3]
 a.extend(a)
-)");
+)")
+                   .isError());
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_EQ(a.numItems(), 6);
@@ -1573,13 +1610,14 @@ a.extend(a)
 
 TEST(ListBuiltinsTest, ListExtendListSubclassFallsBackToIter) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(list):
   def __iter__(self):
     return [4, 5, 6].__iter__()
 a = [1, 2, 3]
 a.extend(C([1,2,3]))
-)");
+)")
+                   .isError());
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_EQ(a.numItems(), 6);
@@ -1588,21 +1626,23 @@ a.extend(C([1,2,3]))
 
 TEST(ListBuiltinsTest, RecursiveListPrintsNicely) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 ls = []
 ls.append(ls)
 result = ls.__repr__()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "[[...]]"));
 }
 
 TEST(ListBuiltinsTest, ReverseEmptyListDoesNothing) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = []
 result.reverse()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isList());
@@ -1611,10 +1651,11 @@ result.reverse()
 
 TEST(ListBuiltinsTest, ReverseOneElementListDoesNothing) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = [2]
 result.reverse()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isList());
@@ -1624,10 +1665,11 @@ result.reverse()
 
 TEST(ListBuiltinsTest, ReverseOddManyElementListReversesList) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = [1, 2, 3]
 result.reverse()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {3, 2, 1});
@@ -1635,10 +1677,11 @@ result.reverse()
 
 TEST(ListBuiltinsTest, ReverseEvenManyElementListReversesList) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = [1, 2, 3, 4]
 result.reverse()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {4, 3, 2, 1});
@@ -1646,7 +1689,7 @@ result.reverse()
 
 TEST(ListBuiltinsTest, ReverseWithListSubclassDoesNotCallSubclassMethods) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(list):
     def __getitem__(self, key):
         raise Exception("hi")
@@ -1654,7 +1697,8 @@ class C(list):
         raise Exception("hi")
 result = C([1, 2, 3, 4])
 result.reverse()
-)");
+)")
+                   .isError());
   EXPECT_FALSE(Thread::current()->hasPendingException());
 }
 
@@ -1670,10 +1714,11 @@ list.sort(None)
 
 TEST(ListBuiltinsTest, SortWithMultiElementListSortsElements) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 ls = [3, 2, 1]
 ls.sort()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
   EXPECT_PYLIST_EQ(ls, {1, 2, 3});
@@ -1691,10 +1736,11 @@ ls.sort(key=5)
 
 TEST(ListBuiltinsTest, SortWithKeySortsAccordingToKey) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 ls = [2, 3, 1]
 ls.sort(key=lambda x: -x)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
   EXPECT_PYLIST_EQ(ls, {3, 2, 1});
@@ -1702,10 +1748,11 @@ ls.sort(key=lambda x: -x)
 
 TEST(ListBuiltinsTest, SortReverseReversesSortedList) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 ls = [2, 3, 1]
 ls.sort(reverse=True)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
   EXPECT_PYLIST_EQ(ls, {3, 2, 1});
@@ -1720,10 +1767,11 @@ TEST(ListBuiltinsTest, ClearWithNonListRaisesTypeError) {
 
 TEST(ListBuiltinsTest, ClearRemovesElements) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 ls = [2, 3, 1]
 list.clear(ls)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object ls(&scope, moduleAt(&runtime, "__main__", "ls"));
   EXPECT_PYLIST_EQ(ls, {});

@@ -145,11 +145,12 @@ TEST(FloatBuiltinsTest, BinaryAddDouble) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 2.0
 b = 1.5
 c = a + b
-)");
+)")
+                   .isError());
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
@@ -160,11 +161,12 @@ TEST(FloatBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 2.5
 b = 1
 c = a + b
-)");
+)")
+                   .isError());
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
@@ -322,11 +324,12 @@ TEST(FloatBuiltinsTest, BinarySubtractDouble) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 2.0
 b = 1.5
 c = a - b
-)");
+)")
+                   .isError());
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
@@ -337,11 +340,12 @@ TEST(FloatBuiltinsTest, BinarySubtractSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 2.5
 b = 1
 c = a - b
-)");
+)")
+                   .isError());
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isFloat());
@@ -352,9 +356,10 @@ TEST(FloatBuiltinsTest, DunderNewWithNoArgsReturnsZero) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = float.__new__(float)
-)");
+)")
+                   .isError());
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
@@ -365,9 +370,10 @@ TEST(FloatBuiltinsTest, DunderNewWithFloatArgReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = float.__new__(float, 1.0)
-)");
+)")
+                   .isError());
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
@@ -378,12 +384,13 @@ TEST(FloatBuiltinsTest, DunderNewWithUserDefinedTypeReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __float__(self):
     return 1.0
 a = float.__new__(float, Foo())
-)");
+)")
+                   .isError());
 
   Float a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(a.value(), 1.0);
@@ -393,9 +400,10 @@ TEST(FloatBuiltinsTest, DunderNewWithStringReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = float.__new__(float, "1.5")
-)");
+)")
+                   .isError());
 
   Float a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(a.value(), 1.5);
@@ -405,14 +413,15 @@ TEST(FloatBuiltinsTest, FloatSubclassReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class SubFloat(float):
   def __new__(self, value):
     self.foo = 3
     return super().__new__(self, value)
 subfloat = SubFloat(1.5)
 subfloat_foo = subfloat.foo
-)");
+)")
+                   .isError());
 
   // Check that it's a subtype of float
   Object subfloat(&scope, moduleAt(&runtime, "__main__", "subfloat"));
@@ -453,11 +462,12 @@ TEST(FloatBuiltinsTest, DunderNewWithStringOfHugeNumberReturnsInf) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = float.__new__(float, "1.18973e+4932")
 b = float.__new__(float, "-1.18973e+4932")
 
-)");
+)")
+                   .isError());
   Float a(&scope, moduleAt(&runtime, "__main__", "a"));
   Float b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_EQ(a.value(), std::numeric_limits<double>::infinity());
@@ -478,10 +488,11 @@ TEST(FloatBuiltinsTest, PowFloatAndFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 base = 2.0
 x = base ** 4.0
-)");
+)")
+                   .isError());
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
@@ -490,10 +501,11 @@ TEST(FloatBuiltinsTest, PowFloatAndInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 base = 2.0
 x = base ** 4
-)");
+)")
+                   .isError());
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
@@ -502,10 +514,11 @@ TEST(FloatBuiltinsTest, InplacePowFloatAndFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 x = 2.0
 x **= 4.0
-)");
+)")
+                   .isError());
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
@@ -514,10 +527,11 @@ TEST(FloatBuiltinsTest, InplacePowFloatAndInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 x = 2.0
 x **= 4
-)");
+)")
+                   .isError());
   Float result(&scope, moduleAt(&runtime, "__main__", "x"));
   EXPECT_EQ(result.value(), 16.0);
 }
@@ -575,12 +589,13 @@ TEST(FloatBuiltinsTest, DunderEqWithFloatsReturnsBool) {
 TEST(FloatBuiltinsTest, DunderEqWithIntSubclassReturnsBool) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 zero = C()
 one = C(1)
 two = C(2)
-)");
+)")
+                   .isError());
   Object self(&scope, runtime.newFloat(1.0));
   Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
   Object one(&scope, moduleAt(&runtime, "__main__", "one"));
@@ -708,10 +723,11 @@ TEST(FloatBuiltinsTest, DunderFloatWithFloatSubclassReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class FloatSub(float):
   pass
-a = FloatSub(1.0).__float__())");
+a = FloatSub(1.0).__float__())")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(RawFloat::cast(*a).value(), 1.0);
@@ -852,12 +868,13 @@ TEST(FloatBuiltinsTest, DunderGeWithLargeIntRoundingUpReturnsTrue) {
 TEST(FloatBuiltinsTest, DunderGeWithIntSubclassReturnsBool) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 zero = C()
 one = C(1)
 two = C(2)
-)");
+)")
+                   .isError());
   Object self(&scope, runtime.newFloat(1.0));
   Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
   Object one(&scope, moduleAt(&runtime, "__main__", "one"));
@@ -913,12 +930,13 @@ TEST(FloatBuiltinsTest, DunderGtWithSmallIntReturnsBool) {
 TEST(FloatBuiltinsTest, DunderGtWithIntSubclassReturnsBool) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 zero = C()
 one = C(1)
 two = C(2)
-)");
+)")
+                   .isError());
   Object self(&scope, runtime.newFloat(1.0));
   Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
   Object one(&scope, moduleAt(&runtime, "__main__", "one"));
@@ -1130,12 +1148,13 @@ TEST(FloatBuiltinsTest, DunderLeWithBoolReturnsBool) {
 TEST(FloatBuiltinsTest, DunderLeWithIntSubclassReturnsBool) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 zero = C()
 one = C(1)
 two = C(2)
-)");
+)")
+                   .isError());
   Object self(&scope, runtime.newFloat(1.0));
   Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
   Object one(&scope, moduleAt(&runtime, "__main__", "one"));
@@ -1270,12 +1289,13 @@ TEST(FloatBuiltinsTest, DunderLtWithLargeIntRoundingUpReturnsFalse) {
 TEST(FloatBuiltinsTest, DunderLtWithIntSubclassReturnsBool) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 zero = C()
 one = C(1)
 two = C(2)
-)");
+)")
+                   .isError());
   Object self(&scope, runtime.newFloat(1.0));
   Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
   Object one(&scope, moduleAt(&runtime, "__main__", "one"));

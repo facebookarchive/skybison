@@ -133,7 +133,7 @@ except:
 TEST(GeneratorTest, ReturnFromTrySkipsExcept) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = 0
 
 def gen():
@@ -151,7 +151,8 @@ try:
   g.__next__()
 except StopIteration:
   result = 1
-)");
+)")
+                   .isError());
 
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isSmallInt());

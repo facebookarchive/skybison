@@ -12,10 +12,11 @@ using namespace testing;
 TEST(ModuleBuiltinsTest, DunderName) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 a = sys.__name__
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(a.equalsCStr("sys"));
@@ -140,10 +141,11 @@ TEST(ModuleBuiltinsTest, DunderNewWithNonStrNameRaisesTypeError) {
 TEST(ModuleBuiltinsTest, DunderDict) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 result = sys.__dict__
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isDict());
@@ -182,10 +184,11 @@ TEST(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
 
 TEST(ModuleBuiltinsTest, BuiltinModuleDunderReprReturnsString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 result = sys.__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<module 'sys' (built-in)>"));

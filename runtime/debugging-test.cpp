@@ -204,11 +204,12 @@ TEST(DebuggingTests, FormatObjectWithBuiltinClass) {
 TEST(DebuggingTests, FormatObjectWithUserDefinedClass) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 foo = Foo()
-)");
+)")
+                   .isError());
   Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
   std::stringstream ss;
   ss << foo;
@@ -282,10 +283,11 @@ TEST(DebuggingTests, FormatTupleWithOneElement) {
 TEST(DebuggingTests, FormatType) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class MyClass:
   pass
-)");
+)")
+                   .isError());
   Object my_class(&scope, moduleAt(&runtime, "__main__", "MyClass"));
   std::stringstream ss;
   ss << my_class;
@@ -295,11 +297,12 @@ class MyClass:
 TEST(DebuggingTests, FormatFrame) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def func(arg0, arg1):
   hello = "world"
   return arg0 + arg1
-)");
+)")
+                   .isError());
   Function func(&scope, moduleAt(&runtime, "__main__", "func"));
 
   Thread* thread = Thread::current();

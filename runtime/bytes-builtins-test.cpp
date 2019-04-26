@@ -627,10 +627,11 @@ TEST(BytesBuiltinsTest, DunderMulWithIntSubclassReturnsRepeatedBytes) {
   HandleScope scope;
   const byte view[] = {'a', 'b', 'c'};
   Object self(&scope, runtime.newBytesWithAll(view));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 count = C(4)
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "abcabcabcabc"));
@@ -640,12 +641,13 @@ TEST(BytesBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newBytes(1, 'a'));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return 2
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "aa"));
@@ -655,12 +657,13 @@ TEST(BytesBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newBytes(1, 'a'));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return "foo"
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kTypeError,
@@ -671,12 +674,13 @@ TEST(BytesBuiltinsTest, DunderMulPropagatesDunderIndexError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newBytes(1, 'a'));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     raise ArithmeticError("called __index__")
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kArithmeticError, "called __index__"));
@@ -884,11 +888,12 @@ bytes(Foo())
 TEST(BytesBuiltinsTest, DunderNewWithDunderBytesReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __bytes__(self): return b'foo'
 result = bytes(Foo())
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "foo"));
 }
@@ -968,12 +973,13 @@ TEST(BytesBuiltinsTest, DunderNewWithGreaterThanByteRaisesValueError) {
 TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __iter__(self):
     return [1, 2, 3].__iter__()
 result = bytes(Foo())
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte expected[] = {1, 2, 3};
   EXPECT_TRUE(isBytesEqualsBytes(result, expected));
@@ -1153,12 +1159,13 @@ TEST(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
 
 TEST(BytesBuiltinsTest, JoinWithIterableReturnsBytes) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __iter__(self):
     return [b'ab', b'c', b'def'].__iter__()
 result = b' '.join(Foo())
-)");
+)")
+                   .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));

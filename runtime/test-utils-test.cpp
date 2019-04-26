@@ -82,10 +82,11 @@ TEST(TestUtils, PyListEqual) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = [None, False, 100, 200.5, 'hello']
 i = 123456
-)");
+)")
+                   .isError());
   Object list(&scope, moduleAt(&runtime, "__main__", "l"));
   Object not_list(&scope, moduleAt(&runtime, "__main__", "i"));
 

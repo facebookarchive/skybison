@@ -1470,11 +1470,12 @@ TEST(RuntimeTest, IsInstanceOf) {
   EXPECT_TRUE(runtime.isInstanceOfStr(*str));
   EXPECT_FALSE(str.isInt());
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class StopIterationSub(StopIteration):
   pass
 stop_iteration = StopIterationSub()
-  )");
+  )")
+                   .isError());
   Object stop_iteration(&scope,
                         moduleAt(&runtime, "__main__", "stop_iteration"));
   EXPECT_TRUE(runtime.isInstanceOfStopIteration(*stop_iteration));
@@ -2891,10 +2892,11 @@ TEST(ModuleTest, NewModuleSetsDictValues) {
 
 TEST(FunctionAttrTest, SetAttribute) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(): pass
 foo.x = 3
-)");
+)")
+                   .isError());
   HandleScope scope;
   Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
   Dict function_dict(&scope, function.dict());
@@ -3071,10 +3073,11 @@ TEST(RuntimeTest, NonSealedClassHasSpaceForOverflowAttrbutes) {
 // User-defined class attributes can be set on the fly.
 TEST(RuntimeTest, UserCanSetOverflowAttributeOnUserDefinedClass) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(): pass
 a = C()
-)");
+)")
+                   .isError());
   HandleScope scope;
   HeapObject a(&scope, moduleAt(&runtime, "__main__", "a"));
   Str attr(&scope, runtime.newStrFromCStr("attr"));
@@ -3108,12 +3111,13 @@ TEST(RuntimeTest, IsMappingReturnsTrueOnList) {
 
 TEST(RuntimeTest, IsMappingReturnsTrueOnCustomClassWithMethod) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C():
   def __getitem__(self, key):
     pass
 o = C()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
   EXPECT_TRUE(runtime.isMapping(Thread::current(), obj));
@@ -3121,11 +3125,12 @@ o = C()
 
 TEST(RuntimeTest, IsMappingWithClassAttrNotCallableReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C():
   __getitem__ = 4
 o = C()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
   EXPECT_TRUE(runtime.isMapping(Thread::current(), obj));
@@ -3133,11 +3138,12 @@ o = C()
 
 TEST(RuntimeTest, IsMappingReturnsFalseOnCustomClassWithoutMethod) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C():
   pass
 o = C()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
   EXPECT_FALSE(runtime.isMapping(Thread::current(), obj));
@@ -3145,12 +3151,13 @@ o = C()
 
 TEST(RuntimeTest, IsMappingWithInstanceAttrReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C():
   pass
 o = C()
 o.__getitem__ = 4
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object obj(&scope, moduleAt(&runtime, "__main__", "o"));
   EXPECT_FALSE(runtime.isMapping(Thread::current(), obj));

@@ -60,10 +60,11 @@ TEST(TypeBuiltinsTest, DunderCallType) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C: pass
 c = C()
-)");
+)")
+                   .isError());
 
   Type type(&scope, moduleAt(&runtime, "__main__", "C"));
   ASSERT_FALSE(type.isError());
@@ -79,7 +80,7 @@ TEST(TypeBuiltinsTest, DunderCallTypeWithInit) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __init__(self):
     global g
@@ -87,7 +88,8 @@ class C:
 
 g = 1
 C()
-)");
+)")
+                   .isError());
 
   Object global(&scope, moduleAt(&runtime, "__main__", "g"));
   ASSERT_FALSE(global.isError());
@@ -98,7 +100,7 @@ TEST(TypeBuiltinsTest, DunderCallTypeWithInitAndArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __init__(self, x):
     global g
@@ -106,7 +108,8 @@ class C:
 
 g = 1
 C(9)
-)");
+)")
+                   .isError());
 
   Object global(&scope, moduleAt(&runtime, "__main__", "g"));
   ASSERT_FALSE(global.isError());
@@ -123,14 +126,15 @@ TEST(TypeBuiltinsTest, DunderCallWithNonTypeRaisesTypeError) {
 TEST(TypeBuiltinsTest, DunderCallCallsDunderInit) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Callable:
   def __call__(self, obj):
     obj.x = 42
 class C:
   __init__ = Callable()
 c = C()
-)");
+)")
+                   .isError());
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Thread* thread = Thread::current();
   Object x(&scope, runtime.newStrFromCStr("x"));
@@ -142,14 +146,15 @@ TEST(TypeBuiltinsTest,
      DunderCallWithNonTypeDudnerNewResultReturnsWithoutCallingDunderInit) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __new__(self, *args):
     return 17
   def __init__(self, *args):
     raise Exception("should not happen")
 result = type.__call__(C, "C", (), {})
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 17));
 }
@@ -254,11 +259,12 @@ TEST(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
 
 TEST(TypeBuiltinsTest, DunderReprForUserDefinedTypeReturnsStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 result = type.__repr__(Foo)
-)");
+)")
+                   .isError());
   // TODO(T32810595): Once module names are supported, this should become
   // "<class '__main__.Foo'>".
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
@@ -268,10 +274,11 @@ result = type.__repr__(Foo)
 TEST(TypeBuiltinsTest, DunderNewWithOneArgReturnsTypeOfArg) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = type.__new__(type, 1);
 b = type.__new__(type, "hello");
-)");
+)")
+                   .isError());
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
   Type b(&scope, moduleAt(&runtime, "__main__", "b"));
 
@@ -282,11 +289,12 @@ b = type.__new__(type, "hello");
 TEST(TypeBuiltinsTest, DunderNewWithOneMetaclassArgReturnsType) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(type):
   pass
 a = type.__new__(type, Foo);
-)");
+)")
+                   .isError());
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kType);
 }
@@ -411,7 +419,7 @@ class A:
 
 TEST(TypeBuiltinsTest, DunderCallReceivesExArgs) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __init__(self, *args):
     self.args = args
@@ -420,7 +428,8 @@ class C:
     return len(self.args)
 
 result = C(*(1,2,3)).num_args()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
@@ -428,14 +437,15 @@ result = C(*(1,2,3)).num_args()
 
 TEST(TypeBuiltinsTest, ClassMethodDunderCallReceivesExArgs) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   @classmethod
   def foo(cls, *args):
     return len(args)
 
 result = Foo.foo(*(1,2,3))
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, RawSmallInt::fromWord(3));
@@ -443,10 +453,11 @@ result = Foo.foo(*(1,2,3))
 
 TEST(TypeBuiltinsTest, TypeNewReceivesExArgs) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 ty = type.__new__(type, *("foo", (object,), {'a': 1}))
 name = ty.__name__
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object name(&scope, moduleAt(&runtime, "__main__", "name"));
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
@@ -466,11 +477,12 @@ C()
 
 TEST(TypeBuiltinTest, MroReturnsList) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   pass
 result = C.mro()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object ctype(&scope, moduleAt(&runtime, "__main__", "C"));
   Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
@@ -648,36 +660,40 @@ TEST(TypeBuiltinsTest, TypeGetAttributeOnNoneTypeReturnsFunction) {
 
 TEST(TypeBuiltinTest, TypeofSmallStrReturnsStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = type('a')
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
             runtime.typeAt(LayoutId::kStr));
 }
 
 TEST(TypeBuiltinTest, TypeofLargeStrReturnsStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = type('aaaaaaaaaaaaaaaaaaaaaaa')
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
             runtime.typeAt(LayoutId::kStr));
 }
 
 TEST(TypeBuiltinTest, TypeofSmallIntReturnsInt) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = type(5)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
             runtime.typeAt(LayoutId::kInt));
 }
 
 TEST(TypeBuiltinTest, TypeofLargeIntReturnsInt) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = type(99999999999999999999999999999999999999999)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
             runtime.typeAt(LayoutId::kInt));
 }

@@ -11,10 +11,11 @@ using namespace testing;
 
 TEST(TupleBuiltinsTest, TupleSubclassIsInstanceOfTuple) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 a = Foo()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(runtime.isInstanceOfTuple(*a));
@@ -22,10 +23,11 @@ a = Foo()
 
 TEST(TupleBuiltinsTest, TupleSubclassHasTupleAttribute) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 a = Foo()
-)");
+)")
+                   .isError());
   HandleScope scope;
   UserTupleBase a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object obj(&scope, a.tupleValue());
@@ -46,11 +48,12 @@ TEST(TupleBuiltinsTest, SubscriptTupleSlice) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 t = (a, 2, 3, 4, 5)
 slice = t[1:3]
-)");
+)")
+                   .isError());
 
   Object slice(&scope, moduleAt(&runtime, "__main__", "slice"));
   ASSERT_TRUE(slice.isTuple());
@@ -63,11 +66,12 @@ slice = t[1:3]
 
 TEST(TupleBuiltinsTest, SubscriptWithTupleSubclassReturnsValue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 obj = Foo((0, 1))
 item = obj[0]
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object item(&scope, moduleAt(&runtime, "__main__", "item"));
   EXPECT_TRUE(isIntEqualsWord(*item, 0));
@@ -75,11 +79,12 @@ item = obj[0]
 
 TEST(TupleBuiltinsTest, SubscriptWithTupleSubclassReturnsSliceValue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 obj = Foo((0, 1, 2, 3, 4))
 slice = obj[1:3]
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object slice(&scope, moduleAt(&runtime, "__main__", "slice"));
   ASSERT_TRUE(slice.isTuple());
@@ -105,14 +110,15 @@ TEST(TupleBuiltinsTest, DunderLen) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = (1, 2, 3)
 a_len = tuple.__len__(a)
 a_len_implicit = a.__len__()
 b = ()
 b_len = tuple.__len__(b)
 b_len_implicit = b.__len__()
-)");
+)")
+                   .isError());
 
   Object a_len(&scope, moduleAt(&runtime, "__main__", "a_len"));
   Object a_len_implicit(&scope,
@@ -129,7 +135,7 @@ b_len_implicit = b.__len__()
 
 TEST(TupleBuiltinsTest, DunderLenWithTupleSubclassReturnsLen) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 a = Foo((1, 2, 3))
 a_len = tuple.__len__(a)
@@ -137,7 +143,8 @@ a_len_implicit = a.__len__()
 b = Foo(())
 b_len = tuple.__len__(b)
 b_len_implicit = b.__len__()
-)");
+)")
+                   .isError());
 
   HandleScope scope;
   Object a_len(&scope, moduleAt(&runtime, "__main__", "a_len"));
@@ -323,9 +330,10 @@ TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
 TEST(TupleBuiltinsTest, DunderNewWithIterableReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = tuple.__new__(tuple, [1, 2, 3])
-)");
+)")
+                   .isError());
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   ASSERT_EQ(a.length(), 3);
@@ -336,10 +344,11 @@ a = tuple.__new__(tuple, [1, 2, 3])
 
 TEST(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = (1, 2, 3).__repr__()
 b = ("hello", 2, "world", 4).__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -350,10 +359,11 @@ b = ("hello", 2, "world", 4).__repr__()
 
 TEST(TupleBuiltinsTest, DunderReprWithOnePrimitive) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = (1,).__repr__()
 b = ("foo",).__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -373,10 +383,11 @@ TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
 
 TEST(TupleBuiltinsTest, DunderReprWithTupleSubclassReturnsTupleRepr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 repr = Foo((1, 2, 3)).__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object repr(&scope, moduleAt(&runtime, "__main__", "repr"));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "(1, 2, 3)"));
@@ -430,10 +441,11 @@ TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
 
 TEST(TupleBuiltinsTest, DunderMulWithTupleSubclassReturnsTuple) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 a = Foo((1, 2, 3)) * 2
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(a.isTuple());
@@ -503,10 +515,11 @@ TEST(TupleBuiltinsTest, DunderAddWithManyElementsReturnsTuple) {
 
 TEST(TupleBuiltinsTest, DunderAddWithTupleSubclassReturnsTuple) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 a = Foo((1, 2)) + (3, 4)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a_obj.isTuple());
@@ -548,10 +561,11 @@ TEST(TupleBuiltinsTest, DunderEqWithTupleSubclassReturnsTrue) {
   Tuple left(&scope, runtime.newTuple(2));
   left.atPut(0, runtime.newInt(1));
   left.atPut(1, runtime.newInt(2));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 right = Foo((1, 2))
-)");
+)")
+                   .isError());
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
   ASSERT_FALSE(right.isTuple());
   ASSERT_TRUE(runtime.isInstanceOfTuple(*right));
@@ -591,10 +605,11 @@ TEST(TupleBuiltinsTest, DunderIterReturnsTupleIter) {
 
 TEST(TupleBuiltinsTest, DunderIterWithTupleSubclassReturnsTupleIter) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(tuple): pass
 a = Foo()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object iter(&scope, runBuiltin(TupleBuiltins::dunderIter, a));
@@ -660,7 +675,7 @@ TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
 
 TEST(TupleBuiltinsTest, RecursiveTuplePrintsNicely) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __init__(self):
     self.val = (self,)
@@ -668,7 +683,8 @@ class C:
     return self.val.__repr__()
 
 result = C().__repr__()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "((...),)"));
 }
@@ -710,13 +726,14 @@ TEST(TupleBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
 TEST(TupleBuiltinsTest, DunderContainsWithIdenticalObjectReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     return False
 value = Foo()
 t = (value,)
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
   EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
@@ -727,13 +744,14 @@ TEST(TupleBuiltinsTest,
      DunderContainsWithNonIdenticalEqualKeyObjectReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     return True
 value = Foo()
 t = (None,)
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
   EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
@@ -744,7 +762,7 @@ TEST(TupleBuiltinsTest,
      DunderContainsWithNonIdenticalEqualTupleObjectReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     return True
@@ -754,7 +772,8 @@ class Bar:
 value0 = Foo()
 value1 = Bar()
 t = (value0,)
-)");
+)")
+                   .isError());
   Object value1(&scope, moduleAt(&runtime, "__main__", "value1"));
   Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
   EXPECT_EQ(runBuiltin(TupleBuiltins::dunderContains, tuple, value1),
@@ -764,13 +783,14 @@ t = (value0,)
 TEST(TupleBuiltinsTest, DunderContainsWithRaisingEqPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __eq__(self, other):
     raise UserWarning("")
 value = Foo()
 t = (None,)
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
   EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
@@ -781,7 +801,7 @@ TEST(TupleBuiltinsTest,
      DunderContainsWithRaisingDunderBoolPropagatesException) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __bool__(self):
     raise UserWarning("")
@@ -790,7 +810,8 @@ class Bar:
     return Foo()
 value = Bar()
 t = (None,)
-)");
+)")
+                   .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
   Tuple tuple(&scope, moduleAt(&runtime, "__main__", "t"));
   EXPECT_TRUE(raised(runBuiltin(TupleBuiltins::dunderContains, tuple, value),
@@ -830,12 +851,13 @@ result = (C(), C(), C()).__hash__()
 
 TEST(TupleBuiltinsTest, DunderHashWithEquivalentTuplesReturnsSameHash) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t1 = (1, 2, 3)
 t2 = (1, 2, 3)
 result1 = t1.__hash__()
 result2 = t2.__hash__()
-)");
+)")
+                   .isError());
   Thread* thread = Thread::current();
   ASSERT_FALSE(thread->hasPendingException());
   HandleScope scope(thread);
@@ -862,11 +884,12 @@ TEST(TupleBuiltinsTest, DunderLtWithNonTupleOtherRaisesTypeError) {
 
 TEST(TupleBuiltinsTest, DunderLtComparesFirstNonEqualElement) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t1 = (1, 2, 3)
 t2 = (1, 2, 4)
 result = tuple.__lt__(t1, t2)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, Bool::trueObj());
@@ -874,11 +897,12 @@ result = tuple.__lt__(t1, t2)
 
 TEST(TupleBuiltinsTest, DunderLtWithTwoEqualTuplesReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t1 = (1, 2, 3)
 t2 = (1, 2, 3)
 result = tuple.__lt__(t1, t2)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, Bool::falseObj());
@@ -886,11 +910,12 @@ result = tuple.__lt__(t1, t2)
 
 TEST(TupleBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t1 = (1, 2, 3)
 t2 = (1, 2, 3, 4, 5, 6)
 result = tuple.__lt__(t1, t2)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, Bool::trueObj());
@@ -899,7 +924,7 @@ result = tuple.__lt__(t1, t2)
 TEST(TupleBuiltinsTest,
      DunderLtWithIdenticalElementsDoesNotCallCompareMethods) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __eq__(self, other):
     raise Exception("__eq__")
@@ -911,7 +936,8 @@ c = C()
 t1 = (c, 1)
 t2 = (c, 2)
 tuple.__lt__(t1, t2)
-)");
+)")
+                   .isError());
   EXPECT_FALSE(Thread::current()->hasPendingException());
 }
 

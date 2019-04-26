@@ -53,11 +53,12 @@ else:
 TEST(StrBuiltinsTest, RichCompareSingleCharLE) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a_le_b = 'a' <= 'b'
 b_le_a = 'a' >= 'b'
 a_le_a = 'a' <= 'a'
-)");
+)")
+                   .isError());
 
   HandleScope scope;
 
@@ -73,11 +74,12 @@ a_le_a = 'a' <= 'a'
 
 TEST(StrBuiltinsTest, LowerOnASCIILettersReturnsLowerCaseString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "HELLO".lower()
 b = "HeLLo".lower()
 c = "hellO".lower()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -89,9 +91,10 @@ c = "hellO".lower()
 
 TEST(StrBuiltinsTest, LowerOnLowercaseASCIILettersReturnsSameString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".lower()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
@@ -99,9 +102,10 @@ a = "hello".lower()
 
 TEST(StrBuiltinsTest, LowerOnNumbersReturnsSameString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "foo 123".lower()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo 123"));
@@ -109,12 +113,13 @@ a = "foo 123".lower()
 
 TEST(StrBuiltinsTest, DunderNewCallsDunderStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
     def __str__(self):
         return "foo"
 a = str.__new__(str, Foo())
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
@@ -122,13 +127,14 @@ a = str.__new__(str, Foo())
 
 TEST(StrBuiltinsTest, DunderNewCallsReprIfNoDunderStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   pass
 f = Foo()
 a = str.__new__(str, f)
 b = repr(f)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -137,9 +143,10 @@ b = repr(f)
 
 TEST(StrBuiltinsTest, DunderNewWithNoArgsExceptTypeReturnsEmptyString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = str.__new__(str)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, ""));
@@ -147,9 +154,10 @@ a = str.__new__(str)
 
 TEST(StrBuiltinsTest, DunderNewWithStrReturnsSameStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = str.__new__(str, "hello")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
@@ -220,12 +228,13 @@ TEST(StrBuiltinsTest, DunderAddWithRightEmptyAndReturnsRight) {
 
 TEST(StrBuiltinsTest, PlusOperatorOnStringsEqualsDunderAdd) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello"
 b = "world"
 c = a + b
 d = a.__add__(b)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   Object d(&scope, moduleAt(&runtime, "__main__", "d"));
@@ -250,11 +259,12 @@ TEST(StrBuiltinsTest, DunderBoolWithNonEmptyStringReturnsTrue) {
 
 TEST(StrBuiltinsTest, DunderLenReturnsLength) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l1 = len("aloha")
 l2 = str.__len__("aloha")
 l3 = "aloha".__len__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object l1(&scope, moduleAt(&runtime, "__main__", "l1"));
   Object l2(&scope, moduleAt(&runtime, "__main__", "l2"));
@@ -315,12 +325,13 @@ TEST(StrBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedStr) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newStrFromCStr("foo"));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return 2
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   Object result(&scope, runBuiltin(StrBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foofoo"));
@@ -330,12 +341,13 @@ TEST(StrBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newStrFromCStr("foo"));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return "foo"
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
                             LayoutId::kTypeError,
@@ -346,12 +358,13 @@ TEST(StrBuiltinsTest, DunderMulPropagatesDunderIndexError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newStrFromCStr("foo"));
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     raise ArithmeticError("called __index__")
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(StrBuiltins::dunderMul, self, count),
                             LayoutId::kArithmeticError, "called __index__"));
@@ -561,10 +574,11 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeTwoStep) {
 
 TEST(StrBuiltinsTest, StartsWithEmptyStringReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith("")
 b = "".startswith("")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -574,13 +588,14 @@ b = "".startswith("")
 
 TEST(StrBuiltinsTest, StartsWithStringReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith("h")
 b = "hello".startswith("he")
 c = "hello".startswith("hel")
 d = "hello".startswith("hell")
 e = "hello".startswith("hello")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -596,9 +611,10 @@ e = "hello".startswith("hello")
 
 TEST(StrBuiltinsTest, StartsWithTooLongPrefixReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith("hihello")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_FALSE(a.value());
@@ -606,9 +622,10 @@ a = "hello".startswith("hihello")
 
 TEST(StrBuiltinsTest, StartsWithUnrelatedPrefixReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith("bob")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_FALSE(a.value());
@@ -616,12 +633,13 @@ a = "hello".startswith("bob")
 
 TEST(StrBuiltinsTest, StartsWithStart) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith("e", 1)
 b = "hello".startswith("o", 5)
 c = "hello".startswith("ell", 1)
 d = "hello".startswith("llo", 3)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -635,12 +653,13 @@ d = "hello".startswith("llo", 3)
 
 TEST(StrBuiltinsTest, StartsWithStartAndEnd) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith("e", 1, 3)
 b = "hello".startswith("el", 1, 4)
 c = "hello".startswith("ll", 2, 5)
 d = "hello".startswith("ll", 1, 4)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -654,10 +673,11 @@ d = "hello".startswith("ll", 1, 4)
 
 TEST(StrBuiltinsTest, StartsWithStartAndEndNegatives) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith("h", 0, -1)
 b = "hello".startswith("ll", -3)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -667,10 +687,11 @@ b = "hello".startswith("ll", -3)
 
 TEST(StrBuiltinsTest, StartsWithTupleOfPrefixes) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".startswith(("h", "lo"))
 b = "hello".startswith(("asdf", "foo", "bar"))
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -680,10 +701,11 @@ b = "hello".startswith(("asdf", "foo", "bar"))
 
 TEST(StrBuiltinsTest, EndsWithEmptyStringReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith("")
 b = "".endswith("")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -693,13 +715,14 @@ b = "".endswith("")
 
 TEST(StrBuiltinsTest, EndsWithStringReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith("o")
 b = "hello".endswith("lo")
 c = "hello".endswith("llo")
 d = "hello".endswith("ello")
 e = "hello".endswith("hello")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -715,9 +738,10 @@ e = "hello".endswith("hello")
 
 TEST(StrBuiltinsTest, EndsWithTooLongSuffixReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith("hihello")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_FALSE(a.value());
@@ -725,9 +749,10 @@ a = "hello".endswith("hihello")
 
 TEST(StrBuiltinsTest, EndsWithUnrelatedSuffixReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith("bob")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_FALSE(a.value());
@@ -735,12 +760,13 @@ a = "hello".endswith("bob")
 
 TEST(StrBuiltinsTest, EndsWithStart) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith("o", 1)
 b = "hello".endswith("o", 5)
 c = "hello".endswith("llo", 1)
 d = "hello".endswith("llo", 3)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -754,12 +780,13 @@ d = "hello".endswith("llo", 3)
 
 TEST(StrBuiltinsTest, EndsWithStartAndEnd) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith("l", 1, 3)
 b = "hello".endswith("ll", 1, 4)
 c = "hello".endswith("lo", 2, 5)
 d = "hello".endswith("llo", 1, 4)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -773,10 +800,11 @@ d = "hello".endswith("llo", 1, 4)
 
 TEST(StrBuiltinsTest, EndsWithStartAndEndNegatives) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith("l", 0, -1)
 b = "hello".endswith("o", -1)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -786,10 +814,11 @@ b = "hello".endswith("o", -1)
 
 TEST(StrBuiltinsTest, EndsWithTupleOfSuffixes) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".endswith(("o", "llo"))
 b = "hello".endswith(("asdf", "foo", "bar"))
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool a(&scope, moduleAt(&runtime, "__main__", "a"));
   Bool b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -799,12 +828,13 @@ b = "hello".endswith(("asdf", "foo", "bar"))
 
 TEST(StrBuiltinsTest, StringFormat) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 n = 123
 f = 3.14
 s = "pyros"
 a = "hello %d %g %s" % (n, f, s)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -813,10 +843,11 @@ a = "hello %d %g %s" % (n, f, s)
 
 TEST(StrBuiltinsTest, StringFormatSingleString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "pyro"
 a = "%s" % s
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -825,10 +856,11 @@ a = "%s" % s
 
 TEST(StrBuiltinsTest, StringFormatTwoStrings) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "pyro"
 a = "%s%s" % (s, s)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -837,10 +869,11 @@ a = "%s%s" % (s, s)
 
 TEST(StrBuiltinsTest, StringFormatMixed) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "pyro"
 a = "1%s,2%s,3%s,4%s,5%s" % (s, s, s, s, s)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -849,10 +882,11 @@ a = "1%s,2%s,3%s,4%s,5%s" % (s, s, s, s, s)
 
 TEST(StrBuiltinsTest, StringFormatMixed2) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "pyro"
 a = "%d%s,%d%s,%d%s" % (1, s, 2, s, 3, s)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -879,9 +913,10 @@ a = "%d%s" % ("pyro",)
 
 TEST(StrBuiltinsTest, DunderReprOnASCIIStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -891,9 +926,10 @@ a = "hello".__repr__()
 TEST(StrBuiltinsTest, DunderReprOnASCIINonPrintable) {
   Runtime runtime;
   // 6 is the ACK character.
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "\x06".__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -902,9 +938,10 @@ a = "\x06".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithDoubleQuotes) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 'hello "world"'.__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -913,9 +950,10 @@ a = 'hello "world"'.__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithSingleQuotes) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello 'world'".__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -924,9 +962,10 @@ a = "hello 'world'".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithBothQuotes) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello 'world', I am your \"father\"".__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -935,9 +974,10 @@ a = "hello 'world', I am your \"father\"".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnStrWithNestedQuotes) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello 'world, \"I am 'your \"father\"'\"'".__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -947,9 +987,10 @@ a = "hello 'world, \"I am 'your \"father\"'\"'".__repr__()
 
 TEST(StrBuiltinsTest, DunderReprOnCommonEscapeSequences) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "\n \t \r \\".__repr__()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -969,9 +1010,10 @@ result = 'Hello, World!'.__str__()
 
 TEST(StrBuiltinsTest, JoinWithEmptyArray) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = ",".join([])
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, ""));
@@ -979,9 +1021,10 @@ a = ",".join([])
 
 TEST(StrBuiltinsTest, JoinWithOneElementArray) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = ",".join(["1"])
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "1"));
@@ -989,9 +1032,10 @@ a = ",".join(["1"])
 
 TEST(StrBuiltinsTest, JoinWithManyElementArray) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = ",".join(["1", "2", "3"])
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "1,2,3"));
@@ -999,9 +1043,10 @@ a = ",".join(["1", "2", "3"])
 
 TEST(StrBuiltinsTest, JoinWithManyElementArrayAndEmptySeparator) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "".join(["1", "2", "3"])
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "123"));
@@ -1009,9 +1054,10 @@ a = "".join(["1", "2", "3"])
 
 TEST(StrBuiltinsTest, JoinWithIterable) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = ",".join(("1", "2", "3"))
-)");
+)")
+                   .isError());
   HandleScope scope;
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "1,2,3"));
@@ -1038,9 +1084,10 @@ a = str.join(None, ["hello", 1])
 
 TEST(StrBuiltinsTest, PartitionOnSingleCharStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".partition("l")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -1052,9 +1099,10 @@ a = "hello".partition("l")
 
 TEST(StrBuiltinsTest, PartitionOnMultiCharStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".partition("ll")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -1066,10 +1114,11 @@ a = "hello".partition("ll")
 
 TEST(StrBuiltinsTest, PartitionOnSuffix) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".partition("lo")
 b = "hello".partition("lop")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
   Tuple b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -1087,10 +1136,11 @@ b = "hello".partition("lop")
 
 TEST(StrBuiltinsTest, PartitionOnPrefix) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".partition("he")
 b = "hello".partition("hex")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
   Tuple b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -1108,9 +1158,10 @@ b = "hello".partition("hex")
 
 TEST(StrBuiltinsTest, PartitionLargerStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".partition("abcdefghijk")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -1122,9 +1173,10 @@ a = "hello".partition("abcdefghijk")
 
 TEST(StrBuiltinsTest, PartitionEmptyStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "".partition("a")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -1136,10 +1188,11 @@ a = "".partition("a")
 
 TEST(StrBuiltinsTest, SplitWithOneCharSeparator) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".split("e")
 b = "hello".split("l")
-)");
+)")
+                   .isError());
   HandleScope scope;
 
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
@@ -1156,9 +1209,10 @@ b = "hello".split("l")
 
 TEST(StrBuiltinsTest, SplitWithEmptySelfReturnsSingleEmptyString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "".split("a")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_EQ(a.numItems(), 1);
@@ -1167,12 +1221,13 @@ a = "".split("a")
 
 TEST(StrBuiltinsTest, SplitWithMultiCharSeparator) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".split("el")
 b = "hello".split("ll")
 c = "hello".split("hello")
 d = "hellllo".split("ll")
-)");
+)")
+                   .isError());
   HandleScope scope;
 
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
@@ -1199,10 +1254,11 @@ d = "hellllo".split("ll")
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitZeroReturnsList) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".split("x", 0)
 b = "hello".split("l", 0)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b_obj(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -1218,10 +1274,11 @@ b = "hello".split("l", 0)
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".split("l", 1)
 b = "1,2,3,4".split(",", 2)
-)");
+)")
+                   .isError());
   HandleScope scope;
 
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
@@ -1238,10 +1295,11 @@ b = "1,2,3,4".split(",", 2)
 
 TEST(StrBuiltinsTest, SplitWithMaxSplitGreaterThanNumParts) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".split("l", 2)
 b = "1,2,3,4".split(",", 5)
-)");
+)")
+                   .isError());
   HandleScope scope;
   List a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_EQ(a.numItems(), 3);
@@ -1385,9 +1443,10 @@ result = "hello\u2028world".splitlines(keepends=True)
 
 TEST(StrBuiltinsTest, RpartitionOnSingleCharStrPartitionsCorrectly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "hello".rpartition("l")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1398,9 +1457,10 @@ t = "hello".rpartition("l")
 
 TEST(StrBuiltinsTest, RpartitionOnMultiCharStrPartitionsCorrectly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "hello".rpartition("ll")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1411,9 +1471,10 @@ t = "hello".rpartition("ll")
 
 TEST(StrBuiltinsTest, RpartitionOnSuffixPutsEmptyStrAtEndOfResult) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "hello".rpartition("lo")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1424,9 +1485,10 @@ t = "hello".rpartition("lo")
 
 TEST(StrBuiltinsTest, RpartitionOnNonExistentSuffixPutsStrAtEndOfResult) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "hello".rpartition("lop")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1437,9 +1499,10 @@ t = "hello".rpartition("lop")
 
 TEST(StrBuiltinsTest, RpartitionOnPrefixPutsEmptyStrAtBeginningOfResult) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "hello".rpartition("he")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1450,9 +1513,10 @@ t = "hello".rpartition("he")
 
 TEST(StrBuiltinsTest, RpartitionOnNonExistentPrefixPutsStrAtEndOfResult) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "hello".rpartition("hex")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1463,9 +1527,10 @@ t = "hello".rpartition("hex")
 
 TEST(StrBuiltinsTest, RpartitionLargerStrPutsStrAtEndOfResult) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "hello".rpartition("foobarbaz")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1476,9 +1541,10 @@ t = "hello".rpartition("foobarbaz")
 
 TEST(StrBuiltinsTest, RpartitionEmptyStrReturnsTupleOfEmptyStrings) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 t = "".rpartition("a")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Tuple result(&scope, moduleAt(&runtime, "__main__", "t"));
   ASSERT_EQ(result.length(), 3);
@@ -1489,9 +1555,10 @@ t = "".rpartition("a")
 
 TEST(StrBuiltinsTest, RsplitWithOneCharSeparatorSplitsCorrectly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hello".rsplit("e")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 2);
@@ -1501,9 +1568,10 @@ l = "hello".rsplit("e")
 
 TEST(StrBuiltinsTest, RsplitWithRepeatedOneCharSeparatorSplitsCorrectly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hello".rsplit("l")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 3);
@@ -1514,9 +1582,10 @@ l = "hello".rsplit("l")
 
 TEST(StrBuiltinsTest, RsplitWithEmptySelfReturnsSingleEmptyString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "".rsplit("a")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 1);
@@ -1525,9 +1594,10 @@ l = "".rsplit("a")
 
 TEST(StrBuiltinsTest, RsplitWithMultiCharSeparatorSplitsFromRight) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hello".rsplit("el")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 2);
@@ -1537,9 +1607,10 @@ l = "hello".rsplit("el")
 
 TEST(StrBuiltinsTest, RsplitWithRepeatedCharSeparatorSplitsFromRight) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hello".rsplit("ll")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 2);
@@ -1549,9 +1620,10 @@ l = "hello".rsplit("ll")
 
 TEST(StrBuiltinsTest, RsplitWithSeparatorSameAsInputSplitsIntoEmptyComponents) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hello".rsplit("hello")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 2);
@@ -1562,9 +1634,10 @@ l = "hello".rsplit("hello")
 TEST(StrBuiltinsTest,
      RsplitWithMultiCharSeparatorWithMultipleAppearancesSplitsCorrectly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hellllo".rsplit("ll")
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 3);
@@ -1575,10 +1648,11 @@ l = "hellllo".rsplit("ll")
 
 TEST(StrBuiltinsTest, RsplitWithMaxSplitZeroReturnsList) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".rsplit("x", 0)
 b = "hello".rsplit("l", 0)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b_obj(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -1595,9 +1669,10 @@ b = "hello".rsplit("l", 0)
 TEST(StrBuiltinsTest,
      RsplitWithRepeatedCharAndMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hello".rsplit("l", 1)
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 2);
@@ -1607,9 +1682,10 @@ l = "hello".rsplit("l", 1)
 
 TEST(StrBuiltinsTest, RsplitWithMaxSplitBelowNumPartsStopsEarly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "1,2,3,4".rsplit(",", 2)
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 3);
@@ -1621,9 +1697,10 @@ l = "1,2,3,4".rsplit(",", 2)
 TEST(StrBuiltinsTest,
      RsplitWithRepeatedCharAndMaxSplitGreaterThanNumPartsSplitsCorrectly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "hello".rsplit("l", 2)
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 3);
@@ -1634,9 +1711,10 @@ l = "hello".rsplit("l", 2)
 
 TEST(StrBuiltinsTest, RsplitWithMaxSplitGreaterThanNumPartsSplitsCorrectly) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = "1,2,3,4".rsplit(",", 5)
-)");
+)")
+                   .isError());
   HandleScope scope;
   List result(&scope, moduleAt(&runtime, "__main__", "l"));
   ASSERT_EQ(result.numItems(), 4);
@@ -1786,9 +1864,10 @@ TEST(StrBuiltinsTest, RStripWithCharsStripsCharsToRight) {
 
 TEST(StrBuiltinsTest, ReplaceWithDefaultCountReplacesAll) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "a1a1a1a".replace("a", "b")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isStr());
@@ -1797,9 +1876,10 @@ result = "a1a1a1a".replace("a", "b")
 
 TEST(StrBuiltinsTest, ReplaceWithCountReplacesCountedOccurrences) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "a1a1a1a".replace("a", "b", 2)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isStr());
@@ -1808,9 +1888,10 @@ result = "a1a1a1a".replace("a", "b", 2)
 
 TEST(StrBuiltinsTest, ReplaceWithCountOfIndexTypeReplacesCountedOccurrences) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "a1a1a1a".replace("a", "b", True)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isStr());
@@ -1819,10 +1900,11 @@ result = "a1a1a1a".replace("a", "b", True)
 
 TEST(StrBuiltinsTest, ReplaceWithNonMatchingReturnsSameObject) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "a"
 result = s is s.replace("z", "b")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, Bool::trueObj());
@@ -2175,141 +2257,156 @@ TEST(StrBuiltinsTest, StripRight) {
 
 TEST(StrBuiltinsTest, FindWithEmptyNeedleReturnsZero) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".find("")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
 }
 
 TEST(StrBuiltinsTest, FindWithEmptyNeedleReturnsNegativeOne) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".find("", 8)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
 }
 
 TEST(StrBuiltinsTest, FindWithEmptyNeedleAndSliceReturnsStart) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".find("", 3, 5)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
 }
 
 TEST(StrBuiltinsTest, FindWithEmptyNeedleAndEmptySliceReturnsStart) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".find("", 3, 3)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
 }
 
 TEST(StrBuiltinsTest, FindWithNegativeStartClipsToZero) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".find("h", -5, 1)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
 }
 
 TEST(StrBuiltinsTest, FindWithEndPastEndOfStringClipsToLength) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".find("h", 0, 100)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
 }
 
 TEST(StrBuiltinsTest, FindCallsDunderIndexOnStart) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return 4
 result = "bbbbbbbb".find("b", C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
 }
 
 TEST(StrBuiltinsTest, FindCallsDunderIndexOnEnd) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return 5
 result = "aaaabbbb".find("b", 0, C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
 }
 
 TEST(StrBuiltinsTest, FindClampsStartReturningBigNumber) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return 46116860184273879030
 result = "aaaabbbb".find("b", C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
 }
 
 TEST(StrBuiltinsTest, FindClampsEndReturningBigNumber) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return 46116860184273879030
 result = "aaaabbbb".find("b", 0, C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
 }
 
 TEST(StrBuiltinsTest, FindClampsEndReturningBigNegativeNumber) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return -46116860184273879030
 result = "aaaabbbb".find("b", 0, C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
 }
 
 TEST(StrBuiltinsTest, FindWithUnicodeReturnsCodePointIndex) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "Cr\u00e8me br\u00fbl\u00e9e"
 result = s.find("e")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
 }
 
 TEST(StrBuiltinsTest, FindWithStartAfterUnicodeCodePoint) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "\u20ac10 Cr\u00e8me br\u00fbl\u00e9e"
 result = s.find("e", 4)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 8));
 }
 
 TEST(StrBuiltinsTest, FindWithDifferentSizeCodePoints) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "Cr\u00e8me \u10348 \u29D98 br\u00fbl\u00e9e"
 result = s.find("\u29D98")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 9));
 }
 
 TEST(StrBuiltinsTest, FindWithOneCharStringFindsChar) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result1 = "hello".find("h")
 result2 = "hello".find("e")
 result3 = "hello".find("z")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result1"), 0));
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result2"), 1));
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result3"), -1));
@@ -2317,11 +2414,12 @@ result3 = "hello".find("z")
 
 TEST(StrBuiltinsTest, FindWithSlicePreservesIndices) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result1 = "hello".find("h", 1)
 result2 = "hello".find("e", 1)
 result3 = "hello".find("o", 0, 2)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result1"), -1));
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result2"), 1));
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result3"), -1));
@@ -2329,11 +2427,12 @@ result3 = "hello".find("o", 0, 2)
 
 TEST(StrBuiltinsTest, FindWithMultiCharStringFindsSubstring) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result1 = "hello".find("he")
 result2 = "hello".find("el")
 result3 = "hello".find("ze")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result1"), 0));
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result2"), 1));
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result3"), -1));
@@ -2341,145 +2440,161 @@ result3 = "hello".find("ze")
 
 TEST(StrBuiltinsTest, RfindWithOneCharStringFindsChar) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".rfind("l")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithUnicodeReturnsCodePointIndex) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "Cr\u00e8me br\u00fbl\u00e9e"
 result = s.rfind("e")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 11));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithStartAfterUnicodeCodePoint) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "\u20ac10 Cr\u00e8me br\u00fbl\u00e9e"
 result = s.rfind("e", 4)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 15));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithDifferentSizeCodePoints) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "Cr\u00e8me \u10348 \u29D98 br\u00fbl\u00e9e\u2070E\u29D98 "
 result = s.rfind("\u29D98")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 20));
 }
 
 TEST(StrBuiltinsTest, RfindWithMultiCharStringFindsSubstring) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "aabbaa".rfind("aa")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithNegativeStartClipsToZero) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".rfind("h", -5, 1)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithEndPastEndOfStringClipsToLength) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".rfind("h", 0, 100)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 0));
 }
 
 TEST(StrBuiltinsTest, RfindCallsDunderIndexOnEnd) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return 5
 result = "aaaabbbb".rfind("b", 0, C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 4));
 }
 
 TEST(StrBuiltinsTest, RfindClampsStartReturningBigNumber) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return 46116860184273879030
 result = "aaaabbbb".rfind("b", C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
 }
 
 TEST(StrBuiltinsTest, RfindClampsEndReturningBigNumber) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return 46116860184273879030
 result = "aaaabbbb".rfind("b", 0, C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 7));
 }
 
 TEST(StrBuiltinsTest, RfindClampsEndReturningBigNegativeNumber) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
     def __index__(self):
         return -46116860184273879030
 result = "aaaabbbb".rfind("b", 0, C())
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithEmptyNeedleReturnsLength) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".rfind("")
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithEmptyNeedleReturnsNegativeOne) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".rfind("", 8)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), -1));
 }
 
 TEST(StrBuiltinsTest, RfindCharWithEmptyNeedleAndSliceReturnsEnd) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".rfind("", 3, 5)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
 }
 
 TEST(StrBuiltinsTest, RfindWithEmptyNeedleAndEmptySliceReturnsEnd) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "hello".rfind("", 3, 3)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
 }
 
 TEST(StrBuiltinsTest, IndexWithPresentSubstringReturnsIndex) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = "\u20ac10 Cr\u00e8me br\u00fbl\u00e9e"
 result = s.index("e", 4)
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 8));
 }
 
@@ -2781,11 +2896,12 @@ TEST(StrBuiltinsTest, IslowerWithLowercaseLettersReturnsTrue) {
 
 TEST(StrBuiltinsTest, UpperOnASCIILettersReturnsUpperCaseString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "hello".upper()
 b = "HeLLo".upper()
 c = "hellO".upper()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -2797,9 +2913,10 @@ c = "hellO".upper()
 
 TEST(StrBuiltinsTest, UpperOnUppercaseASCIILettersReturnsSameString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "HELLO".upper()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "HELLO"));
@@ -2807,9 +2924,10 @@ a = "HELLO".upper()
 
 TEST(StrBuiltinsTest, UpperOnNumbersReturnsSameString) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = "foo 123".upper()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "FOO 123"));
@@ -2824,100 +2942,112 @@ TEST(StrBuiltinsTest, CapitalizeWithNonStrRaisesTypeError) {
 
 TEST(StrBuiltinsTest, CapitalizeReturnsCapitalizedStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "foo".capitalize()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "Foo"));
 }
 
 TEST(StrBuiltinsTest, CapitalizeUpperCaseReturnsUnmodifiedStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "Foo".capitalize()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "Foo"));
 }
 
 TEST(StrBuiltinsTest, CapitalizeAllUppercaseReturnsCapitalizedStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "FOO".capitalize()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "Foo"));
 }
 
 TEST(StrBuiltinsTest, CapitalizeWithEmptyStrReturnsEmptyStr) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "".capitalize()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), ""));
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithEmptyStringReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "".isidentifier()
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithNumberReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "9".isidentifier()
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithPeriodReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = ".".isidentifier()
 print(result)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithLowercaseLetterReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "a".isidentifier()
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithUppercaseLetterReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "A".isidentifier()
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithUnderscoreReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "_".isidentifier()
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithOnlyLettersReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "abc".isidentifier()
 print(result)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, IsidentifierWithLettersAndNumbersReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = "abc213".isidentifier()
 print(result)
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 

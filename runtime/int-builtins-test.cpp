@@ -34,13 +34,14 @@ TEST(IntBuiltinsTest, CompareSmallIntEq) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_eq_b = a == b
 a_eq_a = a == a
 b_eq_b = b == b
-)");
+)")
+                   .isError());
 
   Object a_eq_b(&scope, moduleAt(&runtime, "__main__", "a_eq_b"));
   EXPECT_EQ(*a_eq_b, Bool::falseObj());
@@ -54,14 +55,15 @@ TEST(IntBuiltinsTest, CompareSmallIntGe) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_ge_a = a >= a
 a_ge_b = a >= b
 b_ge_a = b >= a
 b_ge_b = b >= b
-)");
+)")
+                   .isError());
 
   Object a_ge_a(&scope, moduleAt(&runtime, "__main__", "a_ge_a"));
   EXPECT_EQ(*a_ge_a, Bool::trueObj());
@@ -77,14 +79,15 @@ TEST(IntBuiltinsTest, CompareSmallIntGt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_gt_a = a > a
 a_gt_b = a > b
 b_gt_a = b > a
 b_gt_b = b > b
-)");
+)")
+                   .isError());
 
   Object a_gt_a(&scope, moduleAt(&runtime, "__main__", "a_gt_a"));
   EXPECT_EQ(*a_gt_a, Bool::falseObj());
@@ -100,14 +103,15 @@ TEST(IntBuiltinsTest, CompareSmallIntLe) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_le_a = a <= a
 a_le_b = a <= b
 b_le_a = b <= a
 b_le_b = b <= b
-)");
+)")
+                   .isError());
 
   Object a_le_a(&scope, moduleAt(&runtime, "__main__", "a_le_a"));
   EXPECT_EQ(*a_le_a, Bool::trueObj());
@@ -123,14 +127,15 @@ TEST(IntBuiltinsTest, CompareSmallIntLt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_lt_a = a < a
 a_lt_b = a < b
 b_lt_a = b < a
 b_lt_b = b < b
-)");
+)")
+                   .isError());
 
   Object a_lt_a(&scope, moduleAt(&runtime, "__main__", "a_lt_a"));
   EXPECT_EQ(*a_lt_a, Bool::falseObj());
@@ -146,13 +151,14 @@ TEST(IntBuiltinsTest, CompareSmallIntNe) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 a_ne_b = a != b
 a_ne_a = a != a
 b_ne_b = b != b
-)");
+)")
+                   .isError());
 
   Object a_ne_b(&scope, moduleAt(&runtime, "__main__", "a_ne_b"));
   EXPECT_EQ(*a_ne_b, Bool::trueObj());
@@ -166,7 +172,7 @@ TEST(IntBuiltinsTest, CompareOpSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 c = 1
@@ -177,7 +183,8 @@ a_ge_b = a >= b
 a_gt_b = a > b
 a_is_c = a is c
 a_is_not_c = a is not c
-)");
+)")
+                   .isError());
 
   Object a_lt_b(&scope, moduleAt(&runtime, "__main__", "a_lt_b"));
   EXPECT_EQ(*a_lt_b, Bool::trueObj());
@@ -308,12 +315,13 @@ TEST(IntBuiltinsTest, InplaceAdd) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 a += 0
 b = a
 a += 2
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
@@ -324,12 +332,13 @@ TEST(IntBuiltinsTest, InplaceMultiply) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 5
 a *= 1
 b = a
 a *= 2
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 10));
@@ -340,12 +349,13 @@ TEST(IntBuiltinsTest, InplaceFloordiv) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 5
 a //= 1
 b = a
 a //= 2
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 2));
@@ -356,12 +366,13 @@ TEST(IntBuiltinsTest, InplaceModulo) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 10
 a %= 7
 b = a
 a %= 2
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
@@ -372,12 +383,13 @@ TEST(IntBuiltinsTest, InplaceSub) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 10
 a -= 0
 b = a
 a -= 7
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
@@ -388,12 +400,13 @@ TEST(IntBuiltinsTest, InplaceXor) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 0xFE
 a ^= 0
 b = a
 a ^= 0x03
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 0xFD));
@@ -441,12 +454,13 @@ TEST(IntBuiltinsTest, DunderAbsWithNegativeIntReturnsInt) {
 TEST(IntBuiltinsTest, DunderAbsWithIntSubclassReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 neg = X(-42)
 pos = X(42)
 zero = X()
-)");
+)")
+                   .isError());
   Object neg(&scope, moduleAt(&runtime, "__main__", "neg"));
   Object pos(&scope, moduleAt(&runtime, "__main__", "pos"));
   Object zero(&scope, moduleAt(&runtime, "__main__", "zero"));
@@ -559,11 +573,12 @@ TEST(IntBuiltinsTest, DunderAndWithInvalidArgumentLeftRaisesException) {
 TEST(IntBuiltinsTest, DunderAndWithIntSubclassReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 left = X(0b0011)
 right = X(0b0101)
-)");
+)")
+                   .isError());
   Object left(&scope, moduleAt(&runtime, "__main__", "left"));
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderAnd, left, right));
@@ -792,11 +807,12 @@ TEST(IntBuiltinsTest, DunderLshiftWithNonIntReturnsNotImplemented) {
 TEST(IntBuiltinsTest, DunderLshiftWithIntSubclassReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 left = X(0b1101)
 right = X(3)
-)");
+)")
+                   .isError());
   Object left(&scope, moduleAt(&runtime, "__main__", "left"));
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderLshift, left, right));
@@ -1022,11 +1038,12 @@ TEST(IntBuiltinsTest, DunderOrWithInvalidArgumentLeftRaisesException) {
 TEST(IntBuiltinsTest, DunderOrWithIntSubclassReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 left = X(0b0011)
 right = X(0b0101)
-)");
+)")
+                   .isError());
   Object left(&scope, moduleAt(&runtime, "__main__", "left"));
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderOr, left, right));
@@ -1037,11 +1054,12 @@ TEST(IntBuiltinsTest, BinaryAddSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 2
 b = 1
 c = a + b
-)");
+)")
+                   .isError());
 
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_TRUE(isIntEqualsWord(*c, 3));
@@ -1625,10 +1643,11 @@ TEST(IntBuiltinsTest, DunderIntReturnsSameValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = (7).__int__()
 b = int.__int__(7)
-)");
+)")
+                   .isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 7));
@@ -2457,12 +2476,13 @@ TEST(IntBuiltinsTest, FromBytesWithBigEndianReturnsSmallInt) {
 TEST(IntBuiltinsTest, FromBytesWithBytesConvertibleReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X:
   def __bytes__(self):
     return b'*'
 x = X()
-)");
+)")
+                   .isError());
   Object x(&scope, moduleAt(&runtime, "__main__", "x"));
   Str byteorder(&scope, runtime.newStrFromCStr("little"));
   Object result(&scope, runBuiltin(IntBuiltins::fromBytes, x, byteorder));
@@ -2525,10 +2545,11 @@ TEST(IntBuiltinsTest, FromBytesWithNegativeNumberReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = int.from_bytes(b'\xca\xfe\xba\xbe\x01\x23\x45\x67\x89\xab\xcd', 'big',
                         signed=True)
-)");
+)")
+                   .isError());
   Int result(&scope, moduleAt(&runtime, "__main__", "result"));
   const uword expected_digits[] = {0xbe0123456789abcd, 0xffffffffffcafeba};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -2538,9 +2559,10 @@ TEST(IntBuiltinsTest, FromBytesWithKwArgumentsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = int.from_bytes(byteorder='big', bytes=b'\xbe\xef')
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xbeef));
 }
@@ -2776,10 +2798,11 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntCarriesReturnsStr) {
 TEST(IntBuiltinsTest, DunderReprWithIntSubclassReturnsStr) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 num = X(0xdeadbeef)
-)");
+)")
+                   .isError());
   Object num(&scope, moduleAt(&runtime, "__main__", "num"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(isStrEqualsCStr(*result, "3735928559"));
@@ -2966,11 +2989,12 @@ TEST(IntBuiltinsTest, DunderRshiftWithNonIntReturnsNotImplemented) {
 TEST(IntBuiltinsTest, DunderRshiftWithIntSubclassReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 left = X(-1234)
 right = X(3)
-)");
+)")
+                   .isError());
   Object left(&scope, moduleAt(&runtime, "__main__", "left"));
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRshift, left, right));
@@ -3122,11 +3146,12 @@ TEST(IntBuiltinsTest, DunderXorWithInvalidArgumentLeftRaisesException) {
 TEST(IntBuiltinsTest, DunderXorWithIntSubclassReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 left = X(0b0011)
 right = X(0b0101)
-)");
+)")
+                   .isError());
   Object left(&scope, moduleAt(&runtime, "__main__", "left"));
   Object right(&scope, moduleAt(&runtime, "__main__", "right"));
   Object result(&scope, runBuiltin(IntBuiltins::dunderXor, left, right));
@@ -3151,11 +3176,12 @@ TEST(IntBuiltinsTest, ToBytesWithByteorderLittleEndianReturnsBytes) {
 TEST(IntBuiltinsTest, ToBytesWithIntSubclassReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class X(int): pass
 num = X(42)
 length = X(3)
-)");
+)")
+                   .isError());
   Object num(&scope, moduleAt(&runtime, "__main__", "num"));
   Object length(&scope, moduleAt(&runtime, "__main__", "length"));
   Object byteorder(&scope, runtime.newStrFromCStr("little"));
@@ -3184,7 +3210,7 @@ TEST(IntBuiltinsTest, ToBytesKwReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 x0 = (0x1234).to_bytes(2, 'little')
 x1 = (0x1234).to_bytes(2, 'little', signed=False)
 x2 = (0x1234).to_bytes(2, 'little', signed=True)
@@ -3192,7 +3218,8 @@ x3 = (0x1234).to_bytes(2, byteorder='little')
 x4 = (0x1234).to_bytes(length=2, byteorder='little')
 x5 = (0x1234).to_bytes(2, byteorder='little', signed=False)
 x6 = (0x1234).to_bytes(signed=False, byteorder='little', length=2)
-)");
+)")
+                   .isError());
   const byte bytes[] = {0x34, 0x12};
   for (const char* name : {"x0", "x1", "x2", "x3", "x4", "x5", "x6"}) {
     Object x(&scope, moduleAt(&runtime, "__main__", name));
@@ -3204,9 +3231,10 @@ TEST(IntBuiltinsTest, ToBytesKwWithNegativeNumberReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 x0 = (-777).to_bytes(4, 'little', signed=True)
-)");
+)")
+                   .isError());
   Object x(&scope, moduleAt(&runtime, "__main__", "x0"));
   const byte bytes[] = {0xf7, 0xfc, 0xff, 0xff};
   EXPECT_TRUE(isBytesEqualsBytes(x, bytes));
@@ -3279,31 +3307,35 @@ TEST(IntBuiltinsTest, ToBytesWithSignedTrueReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = (0x7fffffffffffffff).to_bytes(8, 'little', signed=True)
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte bytes[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result_n_128 = (-128).to_bytes(1, 'little', signed=True)
-)");
+)")
+                   .isError());
   Object result_n_128(&scope, moduleAt(&runtime, "__main__", "result_n_128"));
   const byte bytes2[] = {0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_128, bytes2));
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result_n_32768 = (-32768).to_bytes(2, 'little', signed=True)
-)");
+)")
+                   .isError());
   Object result_n_32768(&scope,
                         moduleAt(&runtime, "__main__", "result_n_32768"));
   const byte bytes3[] = {0, 0x80};
   EXPECT_TRUE(isBytesEqualsBytes(result_n_32768, bytes3));
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result_n_min_word = (-9223372036854775808).to_bytes(8, 'little', signed=True)
-)");
+)")
+                   .isError());
   Object result_n_min_word(&scope,
                            moduleAt(&runtime, "__main__", "result_n_min_word"));
   const byte bytes4[] = {0, 0, 0, 0, 0, 0, 0, 0x80};
@@ -3317,9 +3349,10 @@ TEST(IntBuiltinsTest,
 
   // test sign extension for negative number when buffer is larger than
   // necessary.
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = (-1024).to_bytes(7, 'big', signed=True)
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte bytes[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xfc, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -3544,7 +3577,7 @@ TEST(BoolBuiltinsTest, NewFromNoneIsFalse) {
 
 TEST(BoolBuiltinsTest, NewFromUserDefinedType) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __bool__(self):
     return True
@@ -3555,7 +3588,8 @@ class Bar:
 
 foo = Foo()
 bar = Bar()
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
   Object bar(&scope, moduleAt(&runtime, "__main__", "bar"));
@@ -3746,9 +3780,10 @@ TEST(IntBuiltinsTest, DunderPowWithMod) {
 
 TEST(IntBuiltinsTest, DunderPowWithNegativeBaseCallsFloatDunderPow) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = (int.__pow__(2, -1) - 0.5).__abs__() < 0.00001
-)");
+)")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 

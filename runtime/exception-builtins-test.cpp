@@ -11,9 +11,10 @@ TEST(ExceptionBuiltinsTest, BaseExceptionNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = BaseException()
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isBaseException());
@@ -28,9 +29,10 @@ TEST(ExceptionBuiltinsTest, BaseExceptionManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = BaseException(1,2,3)
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isBaseException());
@@ -48,9 +50,10 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = BaseException().__str__()
-)");
+)")
+                   .isError());
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, ""));
@@ -60,9 +63,10 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = BaseException("hello").__str__()
-)");
+)")
+                   .isError());
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
@@ -72,9 +76,10 @@ TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = BaseException("hello", "world").__str__()
-)");
+)")
+                   .isError());
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "('hello', 'world')"));
@@ -84,9 +89,10 @@ TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = Exception(1,2,3)
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isException());
@@ -104,12 +110,13 @@ TEST(ExceptionBuiltinsTest, SimpleExceptionTypesCanBeConstructed) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 attr_error = AttributeError()
 name_error = NameError()
 value_error = ValueError()
 rt_error = RuntimeError()
-)");
+)")
+                   .isError());
 
   BaseException attr_error(&scope,
                            moduleAt(&runtime, "__main__", "attr_error"));
@@ -133,11 +140,12 @@ TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesHaveCorrectHierarchy) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 lookup_is_exc = issubclass(LookupError, Exception)
 index_is_lookup = issubclass(IndexError, LookupError)
 key_is_lookup = issubclass(KeyError, LookupError)
-)");
+)")
+                   .isError());
 
   Bool lookup_is_exc(&scope, moduleAt(&runtime, "__main__", "lookup_is_exc"));
   Bool index_is_lookup(&scope,
@@ -153,11 +161,12 @@ TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesCanBeConstructed) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 l = LookupError()
 i = IndexError()
 k = KeyError()
-)");
+)")
+                   .isError());
 
   LookupError l(&scope, moduleAt(&runtime, "__main__", "l"));
   IndexError i(&scope, moduleAt(&runtime, "__main__", "i"));
@@ -172,9 +181,10 @@ TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = KeyError("key").__str__()
-)");
+)")
+                   .isError());
 
   Object s(&scope, moduleAt(&runtime, "__main__", "s"));
   EXPECT_TRUE(isStrEqualsCStr(*s, "'key'"));
@@ -185,10 +195,11 @@ TEST(ExceptionBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 s = KeyError("key", "key2").__str__()
 b = BaseException("key", "key2").__str__()
-)");
+)")
+                   .isError());
 
   Str s(&scope, moduleAt(&runtime, "__main__", "s"));
   Str b(&scope, moduleAt(&runtime, "__main__", "b"));
@@ -199,9 +210,10 @@ TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = TypeError()
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   BaseException exception(&scope, *exc);
@@ -216,9 +228,10 @@ TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = StopIteration()
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isStopIteration());
@@ -237,9 +250,10 @@ TEST(ExceptionBuiltinsTest, StopIterationOneArgument) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = StopIteration(1)
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isStopIteration());
@@ -259,9 +273,10 @@ TEST(ExceptionBuiltinsTest, StopIterationManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = StopIteration(4, 5, 6)
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isStopIteration());
@@ -283,10 +298,11 @@ TEST(ExceptionBuiltinsTest, NotImplementedErrorNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = NotImplementedError()
 exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
-)");
+)")
+                   .isError());
 
   NotImplementedError exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   Bool exc_is_rt_error(&scope,
@@ -301,9 +317,10 @@ TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = SystemExit()
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
@@ -322,9 +339,10 @@ TEST(ExceptionBuiltinsTest, SystemExitOneArgument) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = SystemExit(1)
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
@@ -344,9 +362,10 @@ TEST(ExceptionBuiltinsTest, SystemExitManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = SystemExit(4, 5, 6)
-)");
+)")
+                   .isError());
 
   Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
@@ -368,10 +387,11 @@ TEST(ExceptionBuiltinsTest, SystemExitGetValue) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = SystemExit(1111)
 result = exc.value
-)");
+)")
+                   .isError());
 
   // The value attribute should contain the first constructor argument.
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
@@ -437,9 +457,10 @@ TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 exc = ModuleNotFoundError(1111, name=2222, path=3333)
-)");
+)")
+                   .isError());
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isModuleNotFoundError());
@@ -453,9 +474,10 @@ exc = ModuleNotFoundError(1111, name=2222, path=3333)
 TEST(ExceptionBuiltinsTest, DunderReprWithNoArgsHasEmptyParens) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = NameError().__repr__()
-)");
+)")
+                   .isError());
 
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "NameError()"));
@@ -464,10 +486,11 @@ result = NameError().__repr__()
 TEST(ExceptionBuiltinsTest, DunderReprCallsTupleRepr) {
   Runtime runtime;
 
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 n = NameError().__class__.__name__
 result = NameError(1, 2).__repr__()
-)");
+)")
+                   .isError());
 
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "n"), "NameError"));
@@ -540,13 +563,14 @@ TEST(ExceptionBuiltinsTest, UnicodeDecodeErrorReturnsObjectWithFieldsSet) {
 TEST(ExceptionBuiltinsTest, UnicodeDecodeErrorWithIndexSubclassReturnsObject) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Ind():
     def __index__(self):
         return 1
 i = Ind()
 exc = UnicodeDecodeError('en', b'ob', i, i, 're')
-)");
+)")
+                   .isError());
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeDecodeError());
@@ -620,13 +644,14 @@ TEST(ExceptionBuiltinsTest, UnicodeEncodeErrorReturnsObjectWithFieldsSet) {
 TEST(ExceptionBuiltinsTest, UnicodeEncodeErrorWithIndexSubclassReturnsObject) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Ind():
     def __index__(self):
         return 1
 i = Ind()
 exc = UnicodeEncodeError('en', 'ob', i, i, 're')
-)");
+)")
+                   .isError());
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeEncodeError());
@@ -691,13 +716,14 @@ TEST(ExceptionBuiltinsTest,
      UnicodeTranslateErrorWithIndexSubclassReturnsObject) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Ind():
     def __index__(self):
         return 1
 i = Ind()
 exc = UnicodeTranslateError('en', i, i, 're')
-)");
+)")
+                   .isError());
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeTranslateError());

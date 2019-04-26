@@ -10,11 +10,12 @@ namespace testing {
 
 TEST(FunctionBuiltinsTest, ManagedFunctionObjectsExposeDunderCode) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(x):
   return x + 1
 code = foo.__code__
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object code(&scope, moduleAt(&runtime, "__main__", "code"));
   ASSERT_TRUE(code.isCode());
@@ -23,14 +24,15 @@ code = foo.__code__
 TEST(FunctionBuiltinsTest,
      ChangingCodeOfFunctionObjectChangesFunctionBehavior) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(x):
   return x + 1
 def bar(x):
   return x + 5
 foo.__code__ = bar.__code__
 a = foo(5)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 10));
@@ -125,10 +127,11 @@ TEST(FunctionBuiltinsTest,
 
 TEST(FunctionBuiltinsTest, ReprHandlesNormalFunctions) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(): pass
 result = repr(f)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isStr());
@@ -148,11 +151,12 @@ TEST(FunctionBuiltinsTest, ReprHandlesLambda) {
 
 TEST(FunctionBuiltinsTest, DunderCallCallsFunction) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(a):
   return a
 result = f.__call__(3)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
@@ -160,11 +164,12 @@ result = f.__call__(3)
 
 TEST(FunctionBuiltinsTest, DunderGlobalsIsDict) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(a):
   return a
 result = f.__globals__
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isDict());
@@ -172,11 +177,12 @@ result = f.__globals__
 
 TEST(FunctionBuiltinsTest, FunctionGlobalsIsEqualToModuleDict) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 function_globals = sys.exit.__globals__
 module_dict = sys.__dict__
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object function_globals(&scope,
                           moduleAt(&runtime, "__main__", "function_globals"));

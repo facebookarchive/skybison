@@ -81,21 +81,23 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
 
 TEST(DictBuiltinsTest, DunderContainsWithUnhashableTypeRaisesTypeError) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   __hash__ = None
 c = C()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(raised(runFromCStr(&runtime, "{}.__contains__(C())"),
                      LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithNonCallableDunderHashRaisesTypeError) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   __hash__ = 4
-)");
+)")
+                   .isError());
   EXPECT_TRUE(raised(runFromCStr(&runtime, "{}.__contains__(C())"),
                      LayoutId::kTypeError));
 }
@@ -103,21 +105,23 @@ class C:
 TEST(DictBuiltinsTest,
      DunderContainsWithTypeWithDunderHashReturningNonIntRaisesTypeError) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __hash__(self):
     return "boo"
-)");
+)")
+                   .isError());
   EXPECT_TRUE(raised(runFromCStr(&runtime, "{}.__contains__(C())"),
                      LayoutId::kTypeError));
 }
 
 TEST(DictBuiltinsTest, InWithExistingKeyReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {"foo": 1}
 foo_in_d = "foo" in d
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool foo_in_d(&scope, moduleAt(&runtime, "__main__", "foo_in_d"));
 
@@ -126,10 +130,11 @@ foo_in_d = "foo" in d
 
 TEST(DictBuiltinsTest, InWithNonexistentKeyReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {}
 foo_in_d = "foo" in d
-)");
+)")
+                   .isError());
   HandleScope scope;
   Bool foo_in_d(&scope, moduleAt(&runtime, "__main__", "foo_in_d"));
 
@@ -164,10 +169,11 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
 
 TEST(DictBuiltinsTest, DelOnExistingKeyDeletesKey) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {"foo": 1}
 del d["foo"]
-)");
+)")
+                   .isError());
   HandleScope scope;
   Dict d(&scope, moduleAt(&runtime, "__main__", "d"));
   Object foo(&scope, runtime.newStrFromCStr("foo"));
@@ -242,11 +248,12 @@ TEST(DictBuiltinsTest, DunderNewConstructsDict) {
 TEST(DictBuiltinsTest, DunderSetItemWithDictSubclassSetsItem) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class foo(dict):
   pass
 d = foo()
-)");
+)")
+                   .isError());
   Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
   Str key(&scope, runtime.newStrFromCStr("a"));
   Str value(&scope, runtime.newStrFromCStr("b"));
@@ -321,11 +328,12 @@ TEST(DictBuiltinsTest, UpdateWithNonMappingTypeRaisesTypeError) {
 
 TEST(DictBuiltinsTest, UpdateWithDictReturnsUpdatedDict) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 d1 = {"a": 1, "b": 2}
 d2 = {"c": 3, "d": 4}
 d3 = {"a": 123}
-)");
+)")
+                   .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict d1(&scope, moduleAt(&runtime, "__main__", "d1"));
@@ -637,11 +645,12 @@ TEST(DictBuiltinsTest, GetWithNonDictRaisesTypeError) {
 TEST(DictBuiltinsTest, GetWithUnhashableTypeRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   __hash__ = 2
 key = Foo()
-)");
+)")
+                   .isError());
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, moduleAt(&runtime, "__main__", "key"));
   Object default_obj(&scope, NoneType::object());
@@ -688,7 +697,7 @@ TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
 
 TEST(DictBuiltinsTest, RecursiveDictPrintsNicely) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __init__(self, obj):
     self.val = obj
@@ -701,17 +710,19 @@ d = dict()
 c = C(d)
 d['hello'] = c
 result = d.__repr__()
-)");
+)")
+                   .isError());
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
                               "{'hello': {...}}"));
 }
 
 TEST(DictBuiltinsTest, PopWithKeyPresentReturnsValue) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {"hello": "world"}
 result = d.pop("hello")
-)");
+)")
+                   .isError());
   HandleScope scope;
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
@@ -721,10 +732,11 @@ result = d.pop("hello")
 
 TEST(DictBuiltinsTest, PopWithMissingKeyAndDefaultReturnsDefault) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 d = {}
 result = d.pop("hello", "world")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
   EXPECT_EQ(dict.numItems(), 0);
@@ -740,13 +752,14 @@ TEST(DictBuiltinsTest, PopWithMisingKeyRaisesKeyError) {
 
 TEST(DictBuiltinsTest, PopWithSubclassDoesNotCallDunderDelItem) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(dict):
     def __delitem__(self, key):
         raise Exception(key)
 c = C({'hello': 'world'})
 result = c.pop('hello')
-)");
+)")
+                   .isError());
   Thread* thread = Thread::current();
   ASSERT_FALSE(thread->hasPendingException());
   HandleScope scope(thread);
@@ -758,11 +771,12 @@ result = c.pop('hello')
 
 TEST(DictBuiltinsTest, DictInitWithSubclassInitializesElements) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(dict):
     pass
 c = C({'hello': 'world'})
-)");
+)")
+                   .isError());
   HandleScope scope;
   Dict dict(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(dict.numItems(), 1);

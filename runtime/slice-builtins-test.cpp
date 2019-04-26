@@ -76,11 +76,12 @@ TEST(SliceBuiltinsTest, UnpackWithNonIndexStepRaisesTypeError) {
 
 TEST(SliceBuiltinsTest, UnpackWithMistypedDunderIndexRaisesTypeError) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __index__(self): return ""
 foo = Foo()
-)");
+)")
+                   .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Slice slice(&scope, runtime.newSlice());
@@ -93,7 +94,7 @@ foo = Foo()
 
 TEST(SliceBuiltinsTest, UnpackWithNonIntIndicesCallsDunderIndex) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __init__(self):
     self.count = 0
@@ -101,7 +102,8 @@ class Foo:
     self.count += 1
     return self.count
 foo = Foo()
-)");
+)")
+                   .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
@@ -330,7 +332,7 @@ TEST(SliceBuiltinsTest, IndicesWithNoneAndNegativeReturnsDefaults) {
 TEST(SliceBuiltinsTest, IndicesCallsDunderIndex) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Idx:
   def __init__(self):
     self.count = 0
@@ -339,7 +341,8 @@ class Idx:
     return self.count
 idx = Idx()
 result = slice(idx, idx, idx).indices(10)
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);

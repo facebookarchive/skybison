@@ -249,10 +249,11 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithIntSubclassReturnsRepeatedBytes) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, 'a');
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 count = C(5)
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aaaaa"));
@@ -264,12 +265,13 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithDunderIndexReturnsRepeatedBytes) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, 'a');
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return 2
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderImul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
@@ -279,12 +281,13 @@ TEST(ByteArrayBuiltinsTest, DunderImulWithBadDunderIndexRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newByteArray());
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return "foo"
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
@@ -295,12 +298,13 @@ TEST(ByteArrayBuiltinsTest, DunderImulPropagatesDunderIndexError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newByteArray());
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     raise ArithmeticError("called __index__")
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderImul, self, count),
@@ -390,10 +394,11 @@ TEST(ByteArrayBuiltinsTest, DunderInitNoArgsClearsArray) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 array = bytearray(b'123')
 result = array.__init__()
-)");
+)")
+                   .isError());
   Object array(&scope, moduleAt(&runtime, "__main__", "array"));
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isNoneType());
@@ -580,10 +585,11 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithIntSubclassReturnsRepeatedBytes) {
   const byte view[] = {'f', 'o', 'o'};
   ByteArray self(&scope, runtime.newByteArray());
   runtime.byteArrayExtend(thread, self, view);
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(int): pass
 count = C(3)
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "foofoofoo"));
@@ -595,12 +601,13 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
   HandleScope scope(thread);
   ByteArray self(&scope, runtime.newByteArray());
   byteArrayAdd(thread, &runtime, self, 'a');
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return 2
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "aa"));
@@ -610,12 +617,13 @@ TEST(ByteArrayBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newByteArray());
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     return "foo"
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
@@ -626,12 +634,13 @@ TEST(ByteArrayBuiltinsTest, DunderMulPropagatesDunderIndexError) {
   Runtime runtime;
   HandleScope scope;
   Object self(&scope, runtime.newByteArray());
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
   def __index__(self):
     raise ArithmeticError("called __index__")
 count = C()
-)");
+)")
+                   .isError());
   Object count(&scope, moduleAt(&runtime, "__main__", "count"));
   EXPECT_TRUE(
       raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderMul, self, count),
@@ -925,12 +934,13 @@ TEST(ByteArrayBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
 
 TEST(ByteArrayBuiltinsTest, JoinWithIterableReturnsByteArray) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __iter__(self):
     return [b'ab', b'c', b'def'].__iter__()
 result = bytearray(b' ').join(Foo())
-)");
+)")
+                   .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));

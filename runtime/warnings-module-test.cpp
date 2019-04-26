@@ -9,9 +9,10 @@ using namespace testing;
 
 TEST(WarningsModuleTest, ModuleImporting) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import _warnings
-  )");
+  )")
+                   .isError());
   RawObject warnings = moduleAt(&runtime, "__main__", "_warnings");
   EXPECT_TRUE(warnings.isModule());
 }
@@ -20,10 +21,11 @@ TEST(WarningsModuleTest, WarnDoesNothing) {
   // TODO(T39431178): _warnings.warn() should actually do things.
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import _warnings
 result = _warnings.warn("something went wrong")
-)");
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isNoneType());
 }

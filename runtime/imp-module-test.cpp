@@ -9,9 +9,10 @@ using namespace testing;
 
 TEST(ImpModuleTest, ModuleImporting) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import _imp
-  )");
+  )")
+                   .isError());
   RawObject imp = moduleAt(&runtime, "__main__", "_imp");
   EXPECT_TRUE(imp.isModule());
 }
@@ -57,14 +58,15 @@ _imp.create_builtin(spec)
 TEST(ImportBuiltinsTest, CreateBuiltinWithNonExistentModuleReturnsNone) {
   Runtime runtime;
   // Mock of importlib._bootstrap.ModuleSpec
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
     self.name = name
 spec = DummyModuleSpec("non_existent_module")
 result = _imp.create_builtin(spec)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isNoneType());
@@ -73,14 +75,15 @@ result = _imp.create_builtin(spec)
 TEST(ImportBuiltinsTest, CreateBuiltinReturnsModule) {
   Runtime runtime;
   // Mock of importlib._bootstrap.ModuleSpec
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
     self.name = name
 spec = DummyModuleSpec("errno")
 result = _imp.create_builtin(spec)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isModule());
@@ -90,14 +93,15 @@ result = _imp.create_builtin(spec)
 TEST(ImportBuiltinsTest, CreateBuiltinWithExArgsReturnsModule) {
   Runtime runtime;
   // Mock of importlib._bootstrap.ModuleSpec
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
     self.name = name
 spec = (DummyModuleSpec("errno"),)
 result = _imp.create_builtin(*spec)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isModule());
@@ -114,12 +118,13 @@ TEST(ImportBuiltins, ExecBuiltinWithNonModuleReturnsZero) {
 
 TEST(ImportBuiltins, ExecBuiltinWithModuleWithNoDefReturnsZero) {
   Runtime runtime;
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 class DummyModuleSpec():
   def __init__(self, name):
     self.name = name
 spec = DummyModuleSpec("errno")
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object spec(&scope, moduleAt(&runtime, "__main__", "spec"));
   Object module(&scope, runBuiltin(UnderImpModule::createBuiltin, spec));
@@ -264,7 +269,7 @@ TEST(ImportBuiltins, AcquireLockCheckRecursiveCallsWorks) {
 TEST(ImportBuiltins, CreateExistingBuiltinDoesNotOverride) {
   Runtime runtime;
   // Mock of importlib._bootstrap.ModuleSpec
-  runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import _imp
 class DummyModuleSpec:
   def __init__(self, name):
@@ -272,7 +277,8 @@ class DummyModuleSpec:
 spec = (DummyModuleSpec("errno"),)
 result1 = _imp.create_builtin(*spec)
 result2 = _imp.create_builtin(*spec)
-)");
+)")
+                   .isError());
   HandleScope scope;
   Object result1(&scope, moduleAt(&runtime, "__main__", "result1"));
   ASSERT_TRUE(result1.isModule());
