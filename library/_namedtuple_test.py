@@ -17,6 +17,14 @@ class NamedtupleTests(unittest.TestCase):
         result = namedtuple("Foo", ["a", "5", "_b", "1"], rename=True)._fields
         self.assertEqual(result, ("a", "_1", "_2", "_3"))
 
+    def test_repr_formats_fields(self):
+        Foo = namedtuple("Foo", "a b")
+        self.assertEqual(Foo(1, 2).__repr__(), "Foo(a=1, b=2)")
+
+    def test_repr_formats_fields_with_different_str_repr(self):
+        Foo = namedtuple("Foo", "a b")
+        self.assertEqual(Foo(1, "bar").__repr__(), "Foo(a=1, b='bar')")
+
 
 if __name__ == "__main__":
     unittest.main()

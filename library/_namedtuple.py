@@ -6,7 +6,6 @@ module."""
 # flake8 has no knowledge about these functions' definitions and will complain
 # without this gross circular helper here.
 _structseq_setattr = _structseq_setattr  # noqa: F821
-_structseq_repr = _structseq_repr  # noqa: F821
 _structseq_field = _structseq_field  # noqa: F821
 
 
@@ -145,8 +144,15 @@ def namedtuple(typename, field_names, *, verbose=False, rename=False, module=Non
     cls.n_sequence_fields = num_fields
     cls.n_unnamed_fields = 0
     cls.__new__ = _namedtuple_new
-    cls.__repr__ = _structseq_repr
     cls._structseq_field_names = field_names
+
+    def _repr(self):
+        fields = ", ".join(
+            [f"{field}={getattr(self,field)!r}" for field in self._fields]
+        )
+        return f"{typename}({fields})"
+
+    cls.__repr__ = _repr
 
     def _make(iterable, new=tuple.__new__, len=len):
         result = new(cls, iterable)
