@@ -52,7 +52,8 @@ TEST_F(GetArgsExtensionApiTest, ParseTupleUnicodeObject) {
 
 TEST_F(GetArgsExtensionApiTest, ParseTupleWithWrongType) {
   PyObjectPtr pytuple(PyTuple_New(1));
-  PyObjectPtr in(PyLong_FromLong(42));
+  PyObject* in = PyLong_FromLong(42);
+  ASSERT_NE(in, nullptr);
   ASSERT_NE(-1, PyTuple_SetItem(pytuple, 0, in));
 
   PyObject* out1 = nullptr;
