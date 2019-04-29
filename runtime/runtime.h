@@ -215,7 +215,6 @@ class Runtime {
   RawObject newWeakRef(Thread* thread, const Object& referent,
                        const Object& callback);
 
-  RawObject ellipsis() { return ellipsis_; }
   RawValueCell sysStderr() { return RawValueCell::cast(sys_stderr_); }
   RawValueCell sysStdout() { return RawValueCell::cast(sys_stdout_); }
 
@@ -944,7 +943,6 @@ class Runtime {
   RawObject build_class_;
   RawObject display_hook_;
   RawObject dunder_import_;
-  RawObject ellipsis_;
   RawObject empty_frozen_set_;
   RawObject empty_tuple_;
   RawObject sys_stderr_;

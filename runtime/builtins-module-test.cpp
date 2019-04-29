@@ -214,7 +214,7 @@ dir()
 
 TEST(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
   Runtime runtime;
-  EXPECT_EQ(moduleAt(&runtime, "builtins", "Ellipsis"), runtime.ellipsis());
+  EXPECT_EQ(moduleAt(&runtime, "builtins", "Ellipsis"), Ellipsis::object());
 }
 
 TEST(BuiltinsModuleTest, IsinstanceAcceptsTypeTuple) {

@@ -1611,7 +1611,6 @@ void Runtime::initializeThreads() {
 void Runtime::initializePrimitiveInstances() {
   empty_tuple_ = heap()->createTuple(0, NoneType::object());
   empty_frozen_set_ = newFrozenSet();
-  ellipsis_ = heap()->createEllipsis();
   callbacks_ = NoneType::object();
 }
 
@@ -1676,7 +1675,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&display_hook_);
   visitor->visitPointer(&dunder_import_);
-  visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&sys_stderr_);

@@ -130,7 +130,7 @@ RawObject Marshal::Reader::readObject() {
       break;
 
     case TYPE_ELLIPSIS:
-      result = runtime_->ellipsis();
+      result = Ellipsis::object();
       break;
 
     case TYPE_FALSE:

@@ -800,4 +800,11 @@ TEST_F(ObjectExtensionApiTest, NewVarReturnsAllocatedObject) {
   PyObject_Free(instance);
 }
 
+TEST_F(ObjectExtensionApiTest, PyEllipsisIdentityIsEqual) {
+  // Test Identitiy
+  PyObject* ellipsis1 = Py_Ellipsis;
+  PyObject* ellipsis2 = Py_Ellipsis;
+  EXPECT_EQ(ellipsis1, ellipsis2);
+}
+
 }  // namespace python

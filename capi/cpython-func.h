@@ -74,6 +74,7 @@ PyAPI_FUNC(PyObject*) PyExc_UserWarning_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_ValueError_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_Warning_Ptr();
 PyAPI_FUNC(PyObject*) PyExc_ZeroDivisionError_Ptr();
+PyAPI_FUNC(PyObject*) PyEllipsis_Ptr();
 PyAPI_FUNC(PyObject*) PyFalse_Ptr();
 PyAPI_FUNC(PyObject*) PyNone_Ptr();
 PyAPI_FUNC(PyObject*) PyTrue_Ptr();

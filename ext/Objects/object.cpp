@@ -9,6 +9,10 @@
 
 namespace python {
 
+PY_EXPORT PyObject* PyEllipsis_Ptr() {
+  return ApiHandle::borrowedReference(Thread::current(), Ellipsis::object());
+}
+
 PY_EXPORT PyObject* PyNone_Ptr() {
   return ApiHandle::borrowedReference(Thread::current(), NoneType::object());
 }
