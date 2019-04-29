@@ -144,3 +144,7 @@ def _getframe_lineno(depth=0) -> int:
 
 
 warnoptions = []
+
+
+ps1 = ">>> "
+ps2 = "... "
