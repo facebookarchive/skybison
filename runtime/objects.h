@@ -18,7 +18,6 @@ class Handle;
   V(SmallInt)                                                                  \
   V(SmallBytes)                                                                \
   V(SmallStr)                                                                  \
-  V(Ellipsis)                                                                  \
   V(Bool)                                                                      \
   V(NotImplementedType)                                                        \
   V(Unbound)                                                                   \
@@ -42,6 +41,7 @@ class Handle;
   V(DictKeys)                                                                  \
   V(DictValueIterator)                                                         \
   V(DictValues)                                                                \
+  V(Ellipsis)                                                                  \
   V(ExceptionState)                                                            \
   V(Float)                                                                     \
   V(FrozenSet)                                                                 \
@@ -174,7 +174,7 @@ enum class LayoutId : word {
   // as a placeholder.
   kError = 21,
   kUnbound = 23,
-  kEllipsis = 29,
+  // We have room for one more immediate object with LayoutId = 29
   kNoneType = 31,
 
 // clang-format off
@@ -242,7 +242,6 @@ class RawObject {
 
   // Immediate objects
   bool isBool() const;
-  bool isEllipsis() const;
   bool isError() const;
   bool isHeader() const;
   bool isNoneType() const;
@@ -271,6 +270,7 @@ class RawObject {
   bool isDictKeys() const;
   bool isDictValueIterator() const;
   bool isDictValues() const;
+  bool isEllipsis() const;
   bool isException() const;
   bool isExceptionState() const;
   bool isFloat() const;
@@ -2121,13 +2121,11 @@ class RawValueCell : public RawHeapObject {
 
 class RawEllipsis : public RawHeapObject {
  public:
-  // Singletons.
-  static RawEllipsis object();
-
   // Layout.
-  static const int kTag = 29;  // 0b11101
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
+  // kPaddingOffset is not used, but the GC expects the object to be
+  // at least one word.
+  static const int kPaddingOffset = RawHeapObject::kSize;
+  static const int kSize = kPaddingOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Ellipsis);
 };
@@ -2529,10 +2527,6 @@ inline bool RawObject::isBool() const {
   return (raw() & RawBool::kTagMask) == RawBool::kTag;
 }
 
-inline bool RawObject::isEllipsis() const {
-  return (raw() & RawEllipsis::kTagMask) == RawEllipsis::kTag;
-}
-
 inline bool RawObject::isError() const {
   return (raw() & RawError::kTagMask) == RawError::kTag;
 }
@@ -2638,6 +2632,10 @@ inline bool RawObject::isDictValueIterator() const {
 
 inline bool RawObject::isDictValues() const {
   return isHeapObjectWithLayout(LayoutId::kDictValues);
+}
+
+inline bool RawObject::isEllipsis() const {
+  return isHeapObjectWithLayout(LayoutId::kEllipsis);
 }
 
 inline bool RawObject::isException() const {
@@ -3146,12 +3144,6 @@ inline void RawSmallStr::copyTo(byte* dst, word length) const {
 
 inline RawError RawError::object() {
   return RawObject{kTag}.rawCast<RawError>();
-}
-
-// RawEllipsis
-
-inline RawEllipsis RawEllipsis::object() {
-  return RawObject{kTag}.rawCast<RawEllipsis>();
 }
 
 // RawBool
