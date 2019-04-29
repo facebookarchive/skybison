@@ -873,6 +873,10 @@ PyAPI_FUNC(int) PyByteArray_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyByteArray_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyBytes_Check_Func(PyObject*);
+PyAPI_FUNC(Py_ssize_t) PyCode_GetNumFree_Func(PyObject*);
+PyAPI_FUNC(PyObject*) PyCode_GetName_Func(PyObject*);
+PyAPI_FUNC(PyObject*) PyCode_GetFreevars_Func(PyObject*);
+PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject*);
 PyAPI_FUNC(int) PyComplex_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyComplex_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject*);
@@ -935,6 +939,9 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
   (PyByteArray_CheckExact_Func((PyObject*)(op)))
 #define PyBytes_Check(op) (PyBytes_Check_Func((PyObject*)(op)))
 #define PyBytes_CheckExact(op) (PyBytes_CheckExact_Func((PyObject*)(op)))
+#define PyCode_GetNumFree(op) PyCode_GetNumFree_Func((PyObject*)op)
+#define PyCode_GetName(op) PyCode_GetName_Func((PyObject*)op)
+#define PyCode_GetFreevars(op) PyCode_GetFreevars_Func((PyObject*)op)
 #define PyComplex_Check(op) (PyComplex_Check_Func((PyObject*)(op)))
 #define PyComplex_CheckExact(op) (PyComplex_CheckExact_Func((PyObject*)(op)))
 #define PyDict_Check(op) (PyDict_Check_Func((PyObject*)(op)))

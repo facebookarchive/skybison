@@ -874,6 +874,11 @@ PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
   return RawBool::cast(*result).value();
 }
 
+PY_EXPORT Py_ssize_t PyUnicode_CopyCharacters(PyObject*, Py_ssize_t, PyObject*,
+                                              Py_ssize_t, Py_ssize_t) {
+  UNIMPLEMENTED("PyUnicode_CopyCharacters");
+}
+
 PY_EXPORT Py_ssize_t PyUnicode_Count(PyObject* /* r */, PyObject* /* r */,
                                      Py_ssize_t /* t */, Py_ssize_t /* d */) {
   UNIMPLEMENTED("PyUnicode_Count");
