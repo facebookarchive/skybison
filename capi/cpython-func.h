@@ -878,6 +878,7 @@ PyAPI_FUNC(int) PyDict_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyDict_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyFloat_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyFloat_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyFrozenSet_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyIndex_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyIter_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyList_CheckExact_Func(PyObject*);
@@ -938,6 +939,8 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
 #define PyDict_CheckExact(op) (PyDict_CheckExact_Func((PyObject*)(op)))
 #define PyFloat_Check(op) (PyFloat_Check_Func((PyObject*)(op)))
 #define PyFloat_CheckExact(op) (PyFloat_CheckExact_Func((PyObject*)(op)))
+#define PyFrozenSet_CheckExact(op)                                             \
+  (PyFrozenSet_CheckExact_Func((PyObject*)(op)))
 #define PyIndex_Check(op) (PyIndex_Check_Func((PyObject*)(op)))
 #define PyIter_Check(op) (PyIter_Check_Func((PyObject*)(op)))
 #define PyList_Check(op) (PyList_Check_Func((PyObject*)(op)))
