@@ -2021,16 +2021,13 @@ TEST(StrBuiltinsTest, StripSpaceWithEmptyStrIsIdentity) {
   HandleScope scope;
   Str empty_str(&scope, Str::empty());
   Thread* thread = Thread::current();
-  Str lstripped_empty_str(
-      &scope, strStripSpace(thread, empty_str, StrStripDirection::Left));
+  Str lstripped_empty_str(&scope, strStripSpaceLeft(thread, empty_str));
   EXPECT_EQ(*empty_str, *lstripped_empty_str);
 
-  Str rstripped_empty_str(
-      &scope, strStripSpace(thread, empty_str, StrStripDirection::Right));
+  Str rstripped_empty_str(&scope, strStripSpaceRight(thread, empty_str));
   EXPECT_EQ(*empty_str, *rstripped_empty_str);
 
-  Str stripped_empty_str(
-      &scope, strStripSpace(thread, empty_str, StrStripDirection::Both));
+  Str stripped_empty_str(&scope, strStripSpace(thread, empty_str));
   EXPECT_EQ(*empty_str, *stripped_empty_str);
 }
 
@@ -2040,15 +2037,13 @@ TEST(StrBuiltinsTest, StripSpaceWithUnstrippableStrIsIdentity) {
   Str str(&scope, runtime.newStrFromCStr("Nothing to strip here"));
   ASSERT_TRUE(str.isLargeStr());
   Thread* thread = Thread::current();
-  Str lstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Left));
+  Str lstripped_str(&scope, strStripSpaceLeft(thread, str));
   EXPECT_EQ(*str, *lstripped_str);
 
-  Str rstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Right));
+  Str rstripped_str(&scope, strStripSpaceRight(thread, str));
   EXPECT_EQ(*str, *rstripped_str);
 
-  Str stripped_str(&scope, strStripSpace(thread, str, StrStripDirection::Both));
+  Str stripped_str(&scope, strStripSpace(thread, str));
   EXPECT_EQ(*str, *stripped_str);
 }
 
@@ -2058,15 +2053,13 @@ TEST(StrBuiltinsTest, StripSpaceWithUnstrippableSmallStrIsIdentity) {
   Str str(&scope, runtime.newStrFromCStr("nostrip"));
   ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::current();
-  Str lstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Left));
+  Str lstripped_str(&scope, strStripSpaceLeft(thread, str));
   EXPECT_EQ(*str, *lstripped_str);
 
-  Str rstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Right));
+  Str rstripped_str(&scope, strStripSpaceRight(thread, str));
   EXPECT_EQ(*str, *rstripped_str);
 
-  Str stripped_str(&scope, strStripSpace(thread, str, StrStripDirection::Both));
+  Str stripped_str(&scope, strStripSpace(thread, str));
   EXPECT_EQ(*str, *stripped_str);
 }
 
@@ -2075,15 +2068,13 @@ TEST(StrBuiltinsTest, StripSpaceWithFullyStrippableStrReturnsEmptyStr) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("\n\r\t\f         \n\t\r\f"));
   Thread* thread = Thread::current();
-  Str lstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Left));
+  Str lstripped_str(&scope, strStripSpaceLeft(thread, str));
   EXPECT_EQ(lstripped_str.length(), 0);
 
-  Str rstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Right));
+  Str rstripped_str(&scope, strStripSpaceRight(thread, str));
   EXPECT_EQ(rstripped_str.length(), 0);
 
-  Str stripped_str(&scope, strStripSpace(thread, str, StrStripDirection::Both));
+  Str stripped_str(&scope, strStripSpace(thread, str));
   EXPECT_EQ(stripped_str.length(), 0);
 }
 
@@ -2093,21 +2084,18 @@ TEST(StrBuiltinsTest, StripSpaceLeft) {
   Str str(&scope, runtime.newStrFromCStr(" strp "));
   ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::current();
-  Str lstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Left));
+  Str lstripped_str(&scope, strStripSpaceLeft(thread, str));
   ASSERT_TRUE(lstripped_str.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str, "strp "));
 
   Str str1(&scope, runtime.newStrFromCStr("   \n \n\tLot of leading space  "));
   ASSERT_TRUE(str1.isLargeStr());
-  Str lstripped_str1(&scope,
-                     strStripSpace(thread, str1, StrStripDirection::Left));
+  Str lstripped_str1(&scope, strStripSpaceLeft(thread, str1));
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str1, "Lot of leading space  "));
 
   Str str2(&scope, runtime.newStrFromCStr("\n\n\n              \ntest"));
   ASSERT_TRUE(str2.isLargeStr());
-  Str lstripped_str2(&scope,
-                     strStripSpace(thread, str2, StrStripDirection::Left));
+  Str lstripped_str2(&scope, strStripSpaceLeft(thread, str2));
   ASSERT_TRUE(lstripped_str2.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str2, "test"));
 }
@@ -2118,22 +2106,19 @@ TEST(StrBuiltinsTest, StripSpaceRight) {
   Str str(&scope, runtime.newStrFromCStr(" strp "));
   ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::current();
-  Str rstripped_str(&scope,
-                    strStripSpace(thread, str, StrStripDirection::Right));
+  Str rstripped_str(&scope, strStripSpaceRight(thread, str));
   ASSERT_TRUE(rstripped_str.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str, " strp"));
 
   Str str1(&scope,
            runtime.newStrFromCStr("  Lot of trailing space\t\n \n    "));
   ASSERT_TRUE(str1.isLargeStr());
-  Str rstripped_str1(&scope,
-                     strStripSpace(thread, str1, StrStripDirection::Right));
+  Str rstripped_str1(&scope, strStripSpaceRight(thread, str1));
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str1, "  Lot of trailing space"));
 
   Str str2(&scope, runtime.newStrFromCStr("test\n      \n\n\n"));
   ASSERT_TRUE(str2.isLargeStr());
-  Str rstripped_str2(&scope,
-                     strStripSpace(thread, str2, StrStripDirection::Right));
+  Str rstripped_str2(&scope, strStripSpaceRight(thread, str2));
   ASSERT_TRUE(rstripped_str2.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str2, "test"));
 }
@@ -2144,7 +2129,7 @@ TEST(StrBuiltinsTest, StripSpaceBoth) {
   Str str(&scope, runtime.newStrFromCStr(" strp "));
   ASSERT_TRUE(str.isSmallStr());
   Thread* thread = Thread::current();
-  Str stripped_str(&scope, strStripSpace(thread, str, StrStripDirection::Both));
+  Str stripped_str(&scope, strStripSpace(thread, str));
   ASSERT_TRUE(stripped_str.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*stripped_str, "strp"));
 
@@ -2152,15 +2137,13 @@ TEST(StrBuiltinsTest, StripSpaceBoth) {
            runtime.newStrFromCStr(
                "\n \n    \n\tLot of leading and trailing space\n \n    "));
   ASSERT_TRUE(str1.isLargeStr());
-  Str stripped_str1(&scope,
-                    strStripSpace(thread, str1, StrStripDirection::Both));
+  Str stripped_str1(&scope, strStripSpace(thread, str1));
   EXPECT_TRUE(
       isStrEqualsCStr(*stripped_str1, "Lot of leading and trailing space"));
 
   Str str2(&scope, runtime.newStrFromCStr("\n\ttest\t      \n\n\n"));
   ASSERT_TRUE(str2.isLargeStr());
-  Str stripped_str2(&scope,
-                    strStripSpace(thread, str2, StrStripDirection::Both));
+  Str stripped_str2(&scope, strStripSpace(thread, str2));
   ASSERT_TRUE(stripped_str2.isSmallStr());
   EXPECT_TRUE(isStrEqualsCStr(*stripped_str2, "test"));
 }
@@ -2171,16 +2154,13 @@ TEST(StrBuiltinsTest, StripWithEmptyStrIsIdentity) {
   Str empty_str(&scope, Str::empty());
   Str chars(&scope, runtime.newStrFromCStr("abc"));
   Thread* thread = Thread::current();
-  Str lstripped_empty_str(
-      &scope, strStrip(thread, empty_str, chars, StrStripDirection::Left));
+  Str lstripped_empty_str(&scope, strStripLeft(thread, empty_str, chars));
   EXPECT_EQ(*empty_str, *lstripped_empty_str);
 
-  Str rstripped_empty_str(
-      &scope, strStrip(thread, empty_str, chars, StrStripDirection::Right));
+  Str rstripped_empty_str(&scope, strStripRight(thread, empty_str, chars));
   EXPECT_EQ(*empty_str, *rstripped_empty_str);
 
-  Str stripped_empty_str(
-      &scope, strStrip(thread, empty_str, chars, StrStripDirection::Both));
+  Str stripped_empty_str(&scope, strStrip(thread, empty_str, chars));
   EXPECT_EQ(*empty_str, *stripped_empty_str);
 }
 
@@ -2190,16 +2170,13 @@ TEST(StrBuiltinsTest, StripWithFullyStrippableStrReturnsEmptyStr) {
   Str str(&scope, runtime.newStrFromCStr("bbbbaaaaccccdddd"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
   Thread* thread = Thread::current();
-  Str lstripped_str(&scope,
-                    strStrip(thread, str, chars, StrStripDirection::Left));
+  Str lstripped_str(&scope, strStripLeft(thread, str, chars));
   EXPECT_EQ(lstripped_str.length(), 0);
 
-  Str rstripped_str(&scope,
-                    strStrip(thread, str, chars, StrStripDirection::Right));
+  Str rstripped_str(&scope, strStripRight(thread, str, chars));
   EXPECT_EQ(rstripped_str.length(), 0);
 
-  Str stripped_str(&scope,
-                   strStrip(thread, str, chars, StrStripDirection::Both));
+  Str stripped_str(&scope, strStrip(thread, str, chars));
   EXPECT_EQ(stripped_str.length(), 0);
 }
 
@@ -2209,16 +2186,13 @@ TEST(StrBuiltinsTest, StripWithEmptyCharsIsIdentity) {
   Str str(&scope, runtime.newStrFromCStr(" Just another string "));
   Str chars(&scope, Str::empty());
   Thread* thread = Thread::current();
-  Str lstripped_str(&scope,
-                    strStrip(thread, str, chars, StrStripDirection::Left));
+  Str lstripped_str(&scope, strStripLeft(thread, str, chars));
   EXPECT_EQ(*str, *lstripped_str);
 
-  Str rstripped_str(&scope,
-                    strStrip(thread, str, chars, StrStripDirection::Right));
+  Str rstripped_str(&scope, strStripRight(thread, str, chars));
   EXPECT_EQ(*str, *rstripped_str);
 
-  Str stripped_str(&scope,
-                   strStrip(thread, str, chars, StrStripDirection::Both));
+  Str stripped_str(&scope, strStrip(thread, str, chars));
   EXPECT_EQ(*str, *stripped_str);
 }
 
@@ -2228,8 +2202,7 @@ TEST(StrBuiltinsTest, StripBoth) {
   Str str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
   Thread* thread = Thread::current();
-  Str stripped_str(&scope,
-                   strStrip(thread, str, chars, StrStripDirection::Both));
+  Str stripped_str(&scope, strStrip(thread, str, chars));
   EXPECT_TRUE(isStrEqualsCStr(*stripped_str, "Hello Worl"));
 }
 
@@ -2239,8 +2212,7 @@ TEST(StrBuiltinsTest, StripLeft) {
   Str str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
   Thread* thread = Thread::current();
-  Str lstripped_str(&scope,
-                    strStrip(thread, str, chars, StrStripDirection::Left));
+  Str lstripped_str(&scope, strStripLeft(thread, str, chars));
   EXPECT_TRUE(isStrEqualsCStr(*lstripped_str, "Hello Worldcab"));
 }
 
@@ -2250,8 +2222,7 @@ TEST(StrBuiltinsTest, StripRight) {
   Str str(&scope, runtime.newStrFromCStr("bcdHello Worldcab"));
   Str chars(&scope, runtime.newStrFromCStr("abcd"));
   Thread* thread = Thread::current();
-  Str rstripped_str(&scope,
-                    strStrip(thread, str, chars, StrStripDirection::Right));
+  Str rstripped_str(&scope, strStripRight(thread, str, chars));
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str, "bcdHello Worl"));
 }
 

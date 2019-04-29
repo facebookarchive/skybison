@@ -129,13 +129,13 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
   return *result;
 }
 
+// TODO(T43723300): Handle unicode
 static bool isAsciiSpace(byte ch) {
   return ((ch >= 0x09) && (ch <= 0x0D)) || ((ch >= 0x1C) && (ch <= 0x1F)) ||
          ch == 0x20;
 }
 
-RawObject strStripSpace(Thread* thread, const Str& src,
-                        const StrStripDirection direction) {
+RawObject strStripSpace(Thread* thread, const Str& src) {
   word length = src.length();
   if (length == 0) {
     return *src;
@@ -143,46 +143,76 @@ RawObject strStripSpace(Thread* thread, const Str& src,
   if (length == 1 && isAsciiSpace(src.charAt(0))) {
     return Str::empty();
   }
-
   word first = 0;
-  if (direction == StrStripDirection::Left ||
-      direction == StrStripDirection::Both) {
-    while (first < length && isAsciiSpace(src.charAt(first))) {
-      ++first;
-    }
+  while (first < length && isAsciiSpace(src.charAt(first))) {
+    ++first;
   }
-
   word last = 0;
-  if (direction == StrStripDirection::Right ||
-      direction == StrStripDirection::Both) {
-    for (word i = length - 1; i >= first && isAsciiSpace(src.charAt(i)); i--) {
-      last++;
-    }
+  for (word i = length - 1; i >= first && isAsciiSpace(src.charAt(i)); i--) {
+    last++;
   }
   return thread->runtime()->strSubstr(thread, src, first,
                                       length - first - last);
 }
 
-RawObject strStrip(Thread* thread, const Str& src, const Str& str,
-                   StrStripDirection direction) {
+RawObject strStripSpaceLeft(Thread* thread, const Str& src) {
+  word length = src.length();
+  if (length == 0) {
+    return *src;
+  }
+  if (length == 1 && isAsciiSpace(src.charAt(0))) {
+    return Str::empty();
+  }
+  word first = 0;
+  while (first < length && isAsciiSpace(src.charAt(first))) {
+    ++first;
+  }
+  return thread->runtime()->strSubstr(thread, src, first, length - first);
+}
+
+RawObject strStripSpaceRight(Thread* thread, const Str& src) {
+  word length = src.length();
+  if (length == 0) {
+    return *src;
+  }
+  if (length == 1 && isAsciiSpace(src.charAt(0))) {
+    return Str::empty();
+  }
+  word last = 0;
+  for (word i = length - 1; i >= 0 && isAsciiSpace(src.charAt(i)); i--) {
+    last++;
+  }
+  return thread->runtime()->strSubstr(thread, src, 0, length - last);
+}
+
+RawObject strStrip(Thread* thread, const Str& src, const Str& str) {
+  word length = src.length();
+  if (length == 0 || str.length() == 0) {
+    return *src;
+  }
+  word first = strSpan(src, str);
+  word last = strRSpan(src, str, first);
+  return thread->runtime()->strSubstr(thread, src, first,
+                                      length - first - last);
+}
+
+RawObject strStripLeft(Thread* thread, const Str& src, const Str& str) {
+  word length = src.length();
+  if (length == 0 || str.length() == 0) {
+    return *src;
+  }
+  word first = strSpan(src, str);
+  return thread->runtime()->strSubstr(thread, src, first, length - first);
+}
+
+RawObject strStripRight(Thread* thread, const Str& src, const Str& str) {
   word length = src.length();
   if (length == 0 || str.length() == 0) {
     return *src;
   }
   word first = 0;
-  word last = 0;
-  // TODO(jeethu): Use set lookup if chars is a LargeStr
-  if (direction == StrStripDirection::Left ||
-      direction == StrStripDirection::Both) {
-    first = strSpan(src, str);
-  }
-
-  if (direction == StrStripDirection::Right ||
-      direction == StrStripDirection::Both) {
-    last = strRSpan(src, str, first);
-  }
-  return thread->runtime()->strSubstr(thread, src, first,
-                                      length - first - last);
+  word last = strRSpan(src, str, first);
+  return thread->runtime()->strSubstr(thread, src, 0, length - last);
 }
 
 RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
@@ -922,7 +952,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   Str str(&scope, *self);
   Object other(&scope, args.get(1));
   if (other.isNoneType()) {
-    return strStripSpace(thread, str, StrStripDirection::Left);
+    return strStripSpaceLeft(thread, str);
   }
   if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
@@ -932,7 +962,7 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str chars(&scope, *other);
-  return strStrip(thread, str, chars, StrStripDirection::Left);
+  return strStripLeft(thread, str, chars);
 }
 
 RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
@@ -949,7 +979,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   Str str(&scope, *self);
   Object other(&scope, args.get(1));
   if (other.isNoneType()) {
-    return strStripSpace(thread, str, StrStripDirection::Right);
+    return strStripSpaceRight(thread, str);
   }
   if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
@@ -959,7 +989,7 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str chars(&scope, *other);
-  return strStrip(thread, str, chars, StrStripDirection::Right);
+  return strStripRight(thread, str, chars);
 }
 
 RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
@@ -976,7 +1006,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   Str str(&scope, *self);
   Object other(&scope, args.get(1));
   if (other.isNoneType()) {
-    return strStripSpace(thread, str, StrStripDirection::Both);
+    return strStripSpace(thread, str);
   }
   if (!runtime->isInstanceOfStr(*other)) {
     return thread->raiseTypeErrorWithCStr(
@@ -986,7 +1016,7 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Strict subclass of string");
   }
   Str chars(&scope, *other);
-  return strStrip(thread, str, chars, StrStripDirection::Both);
+  return strStrip(thread, str, chars);
 }
 
 const BuiltinMethod StrIteratorBuiltins::kBuiltinMethods[] = {

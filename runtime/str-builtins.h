@@ -8,9 +8,6 @@
 
 namespace python {
 
-// TODO(T38930404): Make this part of the interface instead of an ugly enum
-enum class StrStripDirection { Left, Right, Both };
-
 RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
 // Look for needle in haystack in the range [start, end]. Return the first
 // index found in that range, or -1 if needle was not found.
@@ -19,10 +16,15 @@ RawObject strFind(const Str& haystack, const Str& needle, word start, word end);
 // index found in that range, or -1 if needle was not found.
 RawObject strRFind(const Str& haystack, const Str& needle, word start,
                    word end);
-RawObject strStripSpace(Thread* thread, const Str& src,
-                        const StrStripDirection direction);
-RawObject strStrip(Thread* thread, const Str& src, const Str& str,
-                   StrStripDirection direction);
+
+RawObject strStrip(Thread* thread, const Str& src, const Str& str);
+RawObject strStripLeft(Thread* thread, const Str& src, const Str& str);
+RawObject strStripRight(Thread* thread, const Str& src, const Str& str);
+
+RawObject strStripSpace(Thread* thread, const Str& src);
+RawObject strStripSpaceLeft(Thread* thread, const Str& src);
+RawObject strStripSpaceRight(Thread* thread, const Str& src);
+
 // Split the string into logical lines using \r, \n, and other end-of-line
 // markers. keepends == true keeps the newline characters, keepends == false
 // does not.
