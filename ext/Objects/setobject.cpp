@@ -4,6 +4,12 @@
 
 namespace python {
 
+PY_EXPORT int PyFrozenSet_Check_Func(PyObject* obj) {
+  DCHECK(obj != nullptr, "obj must not be nullptr");
+  return Thread::current()->runtime()->isInstanceOfFrozenSet(
+      ApiHandle::fromPyObject(obj)->asObject());
+}
+
 PY_EXPORT int PyFrozenSet_CheckExact_Func(PyObject* obj) {
   DCHECK(obj != nullptr, "obj must not be nullptr");
   return ApiHandle::fromPyObject(obj)->asObject().isFrozenSet();

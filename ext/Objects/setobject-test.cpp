@@ -19,6 +19,26 @@ TEST_F(SetExtensionApiTest, AddWithNonSetReturnsNegative) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+TEST_F(SetExtensionApiTest, FrozenSetCheckWithSetReturnsFalse) {
+  PyObjectPtr set(PySet_New(nullptr));
+  EXPECT_FALSE(PyFrozenSet_Check(set));
+}
+
+TEST_F(SetExtensionApiTest, FrozenSetCheckWithFrozenSetSubclassReturnsTrue) {
+  PyRun_SimpleString(R"(
+class C(frozenset):
+  pass
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_TRUE(PyFrozenSet_Check(c));
+}
+
+TEST_F(SetExtensionApiTest, FrozenSetCheckWithFrozenSetReturnsTrue) {
+  PyObjectPtr set(PyFrozenSet_New(nullptr));
+  EXPECT_TRUE(PyFrozenSet_Check(set));
+}
+
 TEST_F(SetExtensionApiTest, FrozenSetCheckExactWithSetReturnsFalse) {
   PyObjectPtr set(PySet_New(nullptr));
   EXPECT_FALSE(PyFrozenSet_CheckExact(set));
