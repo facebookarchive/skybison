@@ -837,10 +837,13 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Function callee(&scope, runtime.newFunction());
-  callee.setCode(*code);
-  callee.setEntry(interpreterTrampoline);
-  callee.setGlobals(runtime.newDict());
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function callee(&scope,
+                  Interpreter::makeFunction(thread, qualname, code, none, none,
+                                            none, none, globals, builtins));
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -891,10 +894,13 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Function callee(&scope, runtime.newFunction());
-  callee.setCode(*code);
-  callee.setEntryEx(interpreterTrampolineEx);
-  callee.setGlobals(runtime.newDict());
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function callee(&scope,
+                  Interpreter::makeFunction(thread, qualname, code, none, none,
+                                            none, none, globals, builtins));
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -952,10 +958,13 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Function callee(&scope, runtime.newFunction());
-  callee.setCode(*code);
-  callee.setEntryKw(interpreterTrampolineKw);
-  callee.setGlobals(runtime.newDict());
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function callee(&scope,
+                  Interpreter::makeFunction(thread, qualname, code, none, none,
+                                            none, none, globals, builtins));
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));

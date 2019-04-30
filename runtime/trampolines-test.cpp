@@ -747,7 +747,8 @@ TEST(TrampolinesTest, BuiltinTrampolineKwWithInvalidArgRaisesTypeError) {
 
 TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Create code object
   word nlocals = 1;
@@ -767,22 +768,20 @@ TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
                             empty_str, 0, empty_bytes));
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
-  // Create a function
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
-def foo(bar): pass
-)")
-                   .isError());
-  Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
-  foo.setEntry(interpreterClosureTrampoline);
-  foo.setCode(*code);
+  Object qualname(&scope, runtime.newStrFromCStr("foo"));
+  Tuple closure_tuple(&scope, runtime.newTuple(1));
+  closure_tuple.atPut(0, runtime.newInt(99));
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function foo(&scope,
+               Interpreter::makeFunction(thread, qualname, code, closure_tuple,
+                                         none, none, none, globals, builtins));
 
-  // Run function
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
-result = foo(1)
-)")
-                   .isError());
-  Object result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+  Object argument(&scope, runtime.newInt(3));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread, thread->currentFrame(), foo, argument),
+      3));
 }
 
 TEST(TrampolinesTest, InterpreterClosureUsesCellValue) {

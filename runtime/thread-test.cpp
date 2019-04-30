@@ -402,10 +402,13 @@ TEST(ThreadTest, CallFunction) {
   callee_code.setCode(runtime.newBytesWithAll(callee_bytecode));
 
   // Create the function object and bind it to the code object
-  Function callee(&scope, runtime.newFunction());
-  callee.setCode(*callee_code);
-  callee.setEntry(interpreterTrampoline);
-  callee.setGlobals(runtime.newDict());
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function callee(
+      &scope, Interpreter::makeFunction(thread, qualname, callee_code, none,
+                                        none, none, none, globals, builtins));
 
   // Build a code object to call the function defined above
   Code caller_code(&scope, runtime.newEmptyCode(name));
@@ -2848,13 +2851,16 @@ TEST(TrampolinesTest, PushCallFrameWithSameGlobalsPropagatesBuiltins) {
   code.setCode(Bytes::empty());
   code.setNames(runtime.newTuple(0));
 
-  Function function(&scope, runtime.newFunction());
-  function.setCode(*code);
+  Object qualname(&scope, runtime.newStrFromCStr("<anonymous>"));
+  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  function.setGlobals(*globals);
+  Dict builtins(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
+                                        none, none, globals, builtins));
+
   Frame* frame = thread->currentFrame();
   frame->setGlobals(*globals);
-  Dict builtins(&scope, runtime.newDict());
   frame->setBuiltins(*builtins);
 
   Frame* new_frame = thread->pushCallFrame(function);
@@ -2872,10 +2878,13 @@ TEST(TrampolinesTest, PushCallFrameWithGlobalsWithoutBuiltinsSetsMinimalDict) {
   code.setCode(Bytes::empty());
   code.setNames(runtime.newTuple(0));
 
-  Function function(&scope, runtime.newFunction());
-  function.setCode(*code);
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  function.setGlobals(*globals);
+  Dict builtins(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
+                                        none, none, globals, builtins));
 
   Object prev_globals(&scope, thread->currentFrame()->globals());
   Object prev_builtins(&scope, thread->currentFrame()->builtins());

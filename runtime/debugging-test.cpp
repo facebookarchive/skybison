@@ -59,24 +59,35 @@ TEST(DebuggingTests, DumpExtendedFunction) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Function func(&scope, runtime.newFunction());
-  func.setAnnotations(runtime.newDict());
-  func.setClosure(runtime.newTuple(0));
-  func.setDefaults(runtime.newTuple(0));
-  func.setKwDefaults(runtime.newDict());
+  Object qualname(&scope, runtime.newStrFromCStr("footype.baz"));
+  Code code(&scope, makeTestCode(thread));
+  Object closure(&scope, runtime.newTuple(0));
+  Dict annotations(&scope, runtime.newDict());
+  Object return_name(&scope, runtime.newStrFromCStr("return"));
+  Object int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  runtime.dictAtPut(annotations, return_name, int_type);
+  Dict kw_defaults(&scope, runtime.newDict());
+  Object name0(&scope, runtime.newStrFromCStr("name0"));
+  Object none(&scope, NoneType::object());
+  runtime.dictAtPut(kw_defaults, name0, none);
+  Tuple defaults(&scope, runtime.newTuple(1));
+  defaults.atPut(0, runtime.newInt(-9));
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function func(&scope, Interpreter::makeFunction(
+                            thread, qualname, code, closure, annotations,
+                            kw_defaults, defaults, globals, builtins));
   func.setModule(runtime.newStrFromCStr("barmodule"));
   func.setName(runtime.newStrFromCStr("baz"));
-  func.setQualname(runtime.newStrFromCStr("footype.baz"));
-  func.setCode(makeTestCode(thread));
   std::stringstream ss;
   dumpExtended(ss, *func);
   EXPECT_EQ(ss.str(), R"(name: "baz"
 qualname: "footype.baz"
 module: "barmodule"
-annotations: {}
+annotations: {"return": <type "int">}
 closure: ()
-defaults: ()
-kwdefaults: {}
+defaults: (-9,)
+kwdefaults: {"name0": None}
 code: name: "name0" argcount: 1 kwonlyargcount: 0 nlocals: 0 stacksize: 1
 filename: "filename0"
 consts: ("const0",)

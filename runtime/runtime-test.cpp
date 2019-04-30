@@ -14,6 +14,25 @@
 namespace python {
 using namespace testing;
 
+RawObject makeTestFunction() {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object name(&scope, runtime->newStrFromCStr("foo"));
+  Code code(&scope, runtime->newEmptyCode(name));
+  const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
+  code.setCode(runtime->newBytesWithAll(bytecode));
+  Tuple consts(&scope, runtime->newTuple(1));
+  consts.atPut(0, NoneType::object());
+  code.setConsts(*consts);
+  Object qualname(&scope, runtime->newStrFromCStr("foo"));
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime->newDict());
+  Dict builtins(&scope, runtime->newDict());
+  return Interpreter::makeFunction(thread, qualname, code, none, none, none,
+                                   none, globals, builtins);
+}
+
 TEST(RuntimeTest, CollectGarbage) {
   Runtime runtime;
   ASSERT_TRUE(runtime.heap()->verify());
@@ -1208,7 +1227,7 @@ TEST(RuntimeTest, GetTypeConstructor) {
   EXPECT_EQ(runtime.classConstructor(type), NoneType::object());
 
   Object init(&scope, runtime.symbols()->DunderInit());
-  Object func(&scope, runtime.newFunction());
+  Object func(&scope, makeTestFunction());
   runtime.dictAtPutInValueCell(type_dict, init, func);
 
   EXPECT_EQ(runtime.classConstructor(type), *func);
@@ -2917,7 +2936,7 @@ foo.x = 3
 TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
   Runtime runtime;
   HandleScope scope;
-  Function function(&scope, runtime.newFunction());
+  Function function(&scope, makeTestFunction());
   ASSERT_TRUE(function.dict().isNoneType());
 
   Object key(&scope, runtime.newStrFromCStr("bar"));
@@ -2928,7 +2947,7 @@ TEST(RuntimeTest, LazyInitializationOfFunctionDictWithAttribute) {
 TEST(RuntimeTest, LazyInitializationOfFunctionDict) {
   Runtime runtime;
   HandleScope scope;
-  Function function(&scope, runtime.newFunction());
+  Function function(&scope, makeTestFunction());
   ASSERT_TRUE(function.dict().isNoneType());
 
   Object key(&scope, runtime.newStrFromCStr("__dict__"));
@@ -2939,7 +2958,7 @@ TEST(RuntimeTest, LazyInitializationOfFunctionDict) {
 TEST(RuntimeTest, SetFunctionDict) {
   Runtime runtime;
   HandleScope scope;
-  Function function(&scope, runtime.newFunction());
+  Function function(&scope, makeTestFunction());
   ASSERT_TRUE(function.dict().isNoneType());
 
   Object dict_name(&scope, runtime.newStrFromCStr("__dict__"));
