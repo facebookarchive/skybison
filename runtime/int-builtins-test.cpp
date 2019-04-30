@@ -213,7 +213,7 @@ neg = -123
 plus_neg = +neg
 )";
 
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Object plus_pos(&scope, moduleAt(&runtime, "__main__", "plus_pos"));
   EXPECT_TRUE(isIntEqualsWord(*plus_pos, 123));
@@ -233,7 +233,7 @@ neg = -123
 minus_neg = -neg
 )";
 
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Object minus_pos(&scope, moduleAt(&runtime, "__main__", "minus_pos"));
   EXPECT_TRUE(isIntEqualsWord(*minus_pos, -123));
@@ -2535,8 +2535,10 @@ TEST(IntBuiltinsTest, FromBytesWithNegativeNumberReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime,
-              "result = int.from_bytes(b'\\xff', 'little', signed=True)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime,
+                  "result = int.from_bytes(b'\\xff', 'little', signed=True)")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
@@ -2660,7 +2662,8 @@ TEST(IntBuiltinsTest, FromBytesKwInvalidKeywordRaisesTypeError) {
 TEST(IntBuiltinsTest, DunderRaddWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__radd__(True, 41)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__radd__(True, 41)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
@@ -2668,7 +2671,9 @@ TEST(IntBuiltinsTest, DunderRaddWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderRandWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rand__(0x123456789, 0x987654321)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__rand__(0x123456789, 0x987654321)")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x103454301));
 }
@@ -2811,7 +2816,8 @@ num = X(0xdeadbeef)
 TEST(IntBuiltinsTest, DunderRdivmodWithSmallIntsReturnsTuple) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rdivmod__(3, 11)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__rdivmod__(3, 11)").isError());
   Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
@@ -2823,7 +2829,8 @@ TEST(IntBuiltinsTest, DunderRdivmodWithSmallIntsReturnsTuple) {
 TEST(IntBuiltinsTest, DunderRfloordivWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rfloordiv__(3, 11)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__rfloordiv__(3, 11)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
@@ -2831,7 +2838,8 @@ TEST(IntBuiltinsTest, DunderRfloordivWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderRlshiftWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rlshift__(3, -7)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__rlshift__(3, -7)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, -56));
 }
@@ -2839,7 +2847,7 @@ TEST(IntBuiltinsTest, DunderRlshiftWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderRmodWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rmod__(3, 11)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = int.__rmod__(3, 11)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
@@ -2847,7 +2855,8 @@ TEST(IntBuiltinsTest, DunderRmodWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderRmulWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rmul__(-321, 123)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__rmul__(-321, 123)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, -39483));
 }
@@ -2855,7 +2864,9 @@ TEST(IntBuiltinsTest, DunderRmulWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderRorWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__ror__(0x123456789, 0x987654321)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__ror__(0x123456789, 0x987654321)")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0x9a76567a9));
 }
@@ -2863,7 +2874,7 @@ TEST(IntBuiltinsTest, DunderRorWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderRpowWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rpow__(8, 2)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = int.__rpow__(8, 2)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 256));
 }
@@ -2871,7 +2882,8 @@ TEST(IntBuiltinsTest, DunderRpowWithSmallIntsReturnsSmallInt) {
 TEST(IntBuiltinsTest, DunderRrshiftWithSmallIntsReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__rrshift__(16, 0xf00ddead)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = int.__rrshift__(16, 0xf00ddead)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xf00d));
 }
@@ -3691,7 +3703,7 @@ TEST(IntBuiltinsTest, ConjugateAliasesDunderInt) {
 TEST(IntBuiltinsTest, DenominatorReturnsOne) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = (44).denominator");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = (44).denominator").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
@@ -3699,7 +3711,7 @@ TEST(IntBuiltinsTest, DenominatorReturnsOne) {
 TEST(IntBuiltinsTest, ImagReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = (44).imag");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = (44).imag").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
@@ -3707,7 +3719,7 @@ TEST(IntBuiltinsTest, ImagReturnsZero) {
 TEST(IntBuiltinsTest, NumeratorReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = (44).numerator");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = (44).numerator").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 44));
 }
@@ -3715,14 +3727,14 @@ TEST(IntBuiltinsTest, NumeratorReturnsInt) {
 TEST(IntBuiltinsTest, RealReturnsInt) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = (44).real");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = (44).real").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 44));
 }
 
 TEST(IntBuiltinsTest, CompareWithBigNegativeNumber) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = -46116860184273879030000");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = -46116860184273879030000").isError());
   HandleScope scope;
   Int a(&scope, moduleAt(&runtime, "__main__", "a"));
   Int b(&scope, SmallInt::fromWord(SmallInt::kMinValue));
@@ -3733,7 +3745,7 @@ TEST(IntBuiltinsTest, CompareWithBigNegativeNumber) {
 TEST(IntBuiltinsTest, DunderPowWithZeroReturnsOne) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__pow__(4, 0)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = int.__pow__(4, 0)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
@@ -3741,7 +3753,7 @@ TEST(IntBuiltinsTest, DunderPowWithZeroReturnsOne) {
 TEST(IntBuiltinsTest, DunderPowWithOneReturnsSelf) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__pow__(4, 1)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = int.__pow__(4, 1)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 4));
 }
@@ -3749,7 +3761,7 @@ TEST(IntBuiltinsTest, DunderPowWithOneReturnsSelf) {
 TEST(IntBuiltinsTest, DunderPowWithTwoSquaresNumber) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__pow__(4, 2)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = int.__pow__(4, 2)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 16));
 }
@@ -3757,7 +3769,8 @@ TEST(IntBuiltinsTest, DunderPowWithTwoSquaresNumber) {
 TEST(IntBuiltinsTest, DunderPowWithModEqualsOneReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__pow__(4, 2, 1)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__pow__(4, 2, 1)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
@@ -3773,7 +3786,8 @@ TEST(IntBuiltinsTest, DunderPowWithNegativePowerAndModRaisesValueError) {
 TEST(IntBuiltinsTest, DunderPowWithMod) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = int.__pow__(4, 8, 10)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__pow__(4, 8, 10)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 6));
 }
@@ -3797,7 +3811,8 @@ TEST(IntBuiltinsTest, DunderPowWithNonIntSelfRaisesTypeError) {
 
 TEST(IntBuiltinsTest, DunderPowWithNonIntPowerReturnsNotImplemented) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = int.__pow__(1, None)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = int.__pow__(1, None)").isError());
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplementedType());
 }
 

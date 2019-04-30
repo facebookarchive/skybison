@@ -167,14 +167,14 @@ TEST(ImportlibTest, ImportFindsDefaultModules) {
 }
 
 TEST(ImportlibTest, SysMetaPathIsList) {
-  const char* src = R"(
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 import sys
 
 meta_path = sys.meta_path
-)";
-  Runtime runtime;
-  HandleScope scope;
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object meta_path(&scope, moduleAt(&runtime, main, "meta_path"));
   ASSERT_TRUE(meta_path.isList());

@@ -98,19 +98,22 @@ TEST(FloatBuiltinsTest, DunderMulWithNonFloatOtherReturnsNotImplemented) {
 
 TEST(FloatBuiltinsTest, DunderNeWithInequalFloatsReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = float.__ne__(12.2, 2.12)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = float.__ne__(12.2, 2.12)").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(FloatBuiltinsTest, DunderNeWithEqualFloatIntReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = float.__ne__(34.0, 34)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = float.__ne__(34.0, 34)").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(FloatBuiltinsTest, DunderNeWithStringReturnsNotImplemented) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = float.__ne__(5.5, '')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = float.__ne__(5.5, '')").isError());
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNotImplementedType());
 }
 
@@ -444,7 +447,7 @@ class Test(float):
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "Test"));
   ASSERT_TRUE(value.isType());
 
@@ -703,7 +706,7 @@ TEST(FloatBuiltinsTest, DunderFloatWithFloatLiteralReturnsSameObject) {
   Runtime runtime;
   HandleScope scope;
 
-  runFromCStr(&runtime, "a = (7.0).__float__()");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = (7.0).__float__()").isError());
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   ASSERT_TRUE(a.isFloat());
   EXPECT_EQ(RawFloat::cast(*a).value(), 7.0);

@@ -28,7 +28,9 @@ result = [i for i in fib(7)]
 }
 
 TEST(GeneratorTest, InitialSend) {
-  const char* src = R"(
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def gen():
   global value
   value = 3
@@ -38,11 +40,8 @@ def gen():
 g = gen()
 g.send(None)
 g.send(7)
-)";
-
-  Runtime runtime;
-  HandleScope scope;
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "value"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
@@ -60,7 +59,9 @@ gen().send(1)
 }
 
 TEST(GeneratorTest, YieldFrom) {
-  const char* src = R"(
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 result = []
 def log(obj):
   global result
@@ -91,11 +92,8 @@ log(g.send('second'))
 log(g.send(None))
 for i in g:
   log(i)
-)";
-
-  Runtime runtime;
-  HandleScope scope;
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_PYLIST_EQ(
       result,
@@ -202,15 +200,14 @@ g.__next__()
 }
 
 TEST(CoroutineTest, Basic) {
-  const char* src = R"(
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 async def coro():
   return 24
 c = coro()
-)";
-
-  Runtime runtime;
-  HandleScope scope;
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_TRUE(result.isCoroutine());
 }

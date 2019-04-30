@@ -153,7 +153,7 @@ RawObject runBuiltinImpl(NativeMethodType method,
 RawObject runBuiltin(NativeMethodType method);
 
 // Helper to compile and run a snippet of Python code.
-RawObject runFromCStr(Runtime* runtime, const char* c_str);
+NODISCARD RawObject runFromCStr(Runtime* runtime, const char* c_str);
 
 template <typename... Args>
 RawObject runBuiltin(NativeMethodType method, const Args&... args) {

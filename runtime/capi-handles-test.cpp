@@ -239,10 +239,10 @@ TEST(CApiHandlesDeathTest, CleanupApiHandlesOnExit) {
   HandleScope scope;
   Object obj(&scope, runtime.newStrFromCStr("hello"));
   ApiHandle::newReference(thread, *obj);
-  ASSERT_EXIT(runFromCStr(&runtime, R"(
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, R"(
 import sys
 sys.exit()
-)"),
+)")),
               ::testing::ExitedWithCode(0), "");
 }
 

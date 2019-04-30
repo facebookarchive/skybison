@@ -401,7 +401,7 @@ result = exc.value
 TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "x = ImportError()");
+  ASSERT_FALSE(runFromCStr(&runtime, "x = ImportError()").isError());
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data.isImportError());
 
@@ -423,7 +423,7 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "x = ImportError(1111)");
+  ASSERT_FALSE(runFromCStr(&runtime, "x = ImportError(1111)").isError());
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data.isImportError());
 
@@ -436,7 +436,9 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
 TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "x = ImportError(1111, name=2222, path=3333)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "x = ImportError(1111, name=2222, path=3333)")
+          .isError());
   Object data(&scope, moduleAt(&runtime, "__main__", "x"));
   ASSERT_TRUE(data.isImportError());
 
@@ -546,7 +548,9 @@ TEST(ExceptionBuiltinsTest,
 TEST(ExceptionBuiltinsTest, UnicodeDecodeErrorReturnsObjectWithFieldsSet) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "exc = UnicodeDecodeError('en', b'ob', 1, 2, 're')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "exc = UnicodeDecodeError('en', b'ob', 1, 2, 're')")
+          .isError());
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeDecodeError());
@@ -628,7 +632,9 @@ TEST(ExceptionBuiltinsTest,
 TEST(ExceptionBuiltinsTest, UnicodeEncodeErrorReturnsObjectWithFieldsSet) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "exc = UnicodeEncodeError('en', 'ob', 1, 2, 're')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "exc = UnicodeEncodeError('en', 'ob', 1, 2, 're')")
+          .isError());
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeEncodeError());
@@ -700,7 +706,9 @@ TEST(ExceptionBuiltinsTest,
 TEST(ExceptionBuiltinsTest, UnicodeTranslateErrorReturnsObjectWithFieldsSet) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "exc = UnicodeTranslateError('obj', 1, 2, 're')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "exc = UnicodeTranslateError('obj', 1, 2, 're')")
+          .isError());
 
   Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeTranslateError());

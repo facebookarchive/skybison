@@ -220,7 +220,7 @@ TEST(SliceBuiltinsTest, DunderNewWithNonSliceTypeRaisesTypeError) {
 TEST(SliceBuiltinsTest, DunderNewWithOneArgSetsStop) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = slice(0)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = slice(0)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
@@ -232,7 +232,7 @@ TEST(SliceBuiltinsTest, DunderNewWithOneArgSetsStop) {
 TEST(SliceBuiltinsTest, DunderNewWithTwoArgsSetsStartAndStop) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = slice(0, 1)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = slice(0, 1)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
@@ -244,7 +244,7 @@ TEST(SliceBuiltinsTest, DunderNewWithTwoArgsSetsStartAndStop) {
 TEST(SliceBuiltinsTest, DunderNewWithThreeArgsSetsAllIndices) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = slice(0, 1, 2)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = slice(0, 1, 2)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isSlice());
   Slice slice(&scope, *result);
@@ -306,7 +306,8 @@ TEST(SliceBuiltinsTest, IndicesWithNonIntStepRaisesTypeError) {
 TEST(SliceBuiltinsTest, IndicesWithNoneReturnsDefaults) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = slice(None).indices(10)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = slice(None).indices(10)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
@@ -319,7 +320,9 @@ TEST(SliceBuiltinsTest, IndicesWithNoneReturnsDefaults) {
 TEST(SliceBuiltinsTest, IndicesWithNoneAndNegativeReturnsDefaults) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = slice(None, None, -1).indices(10)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = slice(None, None, -1).indices(10)")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);
@@ -355,7 +358,8 @@ result = slice(idx, idx, idx).indices(10)
 TEST(SliceBuiltinsTest, IndicesTruncatesToLength) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = slice(-4, 10, 2).indices(5)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = slice(-4, 10, 2).indices(5)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isTuple());
   Tuple indices(&scope, *result);

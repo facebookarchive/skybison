@@ -119,7 +119,7 @@ TEST(ScavengerTest, BaseCallback) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 def f(ref):
@@ -128,8 +128,8 @@ def f(ref):
 def g(ref, c=4):
   global b
   b = c
-)";
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object none(&scope, NoneType::object());
   Object ref1(&scope, *none);
@@ -170,7 +170,7 @@ TEST(ScavengerTest, MixCallback) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 def f(ref):
@@ -179,8 +179,8 @@ def f(ref):
 def g(ref, c=4):
   global b
   b = c
-)";
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Tuple array1(&scope, runtime.newTuple(10));
@@ -223,13 +223,13 @@ TEST(ScavengerTest, CallbackInvokeGC) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 def g(ref, b=2):
   global a
   a = b
-)";
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object ref1(&scope, NoneType::object());
   Object ref2(&scope, NoneType::object());
@@ -267,7 +267,7 @@ TEST(ScavengerTest, IgnoreCallbackException) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1
 b = 2
 callback_ran = False
@@ -281,8 +281,8 @@ def f(ref):
 def g(ref, c=4):
   global b
   b = c
-)";
-  runFromCStr(&runtime, src);
+)")
+                   .isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object ref1(&scope, NoneType::object());
   Object ref2(&scope, NoneType::object());

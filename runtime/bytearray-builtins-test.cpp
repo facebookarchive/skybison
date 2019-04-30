@@ -751,7 +751,8 @@ TEST(ByteArrayBuiltinsTest, NewByteArray) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, "obj = bytearray(b'Hello world!')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "obj = bytearray(b'Hello world!')").isError());
   ByteArray self(&scope, moduleAt(&runtime, "__main__", "obj"));
   EXPECT_TRUE(isByteArrayEqualsCStr(self, "Hello world!"));
 }
@@ -842,7 +843,8 @@ TEST(ByteArrayBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
 TEST(ByteArrayBuiltinsTest, DunderRmulCallsDunderMul) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = 3 * bytearray(b'123')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = 3 * bytearray(b'123')").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "123123123"));
 }
@@ -971,7 +973,9 @@ TEST(ByteArrayBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {
 TEST(ByteArrayBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytearray.maketrans(bytearray(), b'')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = bytearray.maketrans(bytearray(), b'')")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   byte expected[256];
   for (word i = 0; i < 256; i++) {
@@ -983,8 +987,10 @@ TEST(ByteArrayBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
 TEST(ByteArrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime,
-              "result = bytearray.maketrans(bytearray(b'abc'), b'123')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime,
+                  "result = bytearray.maketrans(bytearray(b'abc'), b'123')")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isBytes());
   Bytes actual(&scope, *result);

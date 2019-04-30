@@ -141,7 +141,7 @@ result = repr(f)
 
 TEST(FunctionBuiltinsTest, ReprHandlesLambda) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = repr(lambda x: x)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = repr(lambda x: x)").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isStr());

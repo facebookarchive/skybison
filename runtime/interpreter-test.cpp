@@ -800,7 +800,7 @@ with Foo():
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
@@ -2776,14 +2776,14 @@ TEST(InterpreterDeathTest, ExplodeWithIterableDies) {
   Runtime runtime;
   // TODO(bsimmers): Change this to inspect result once sequenceAsTuple() is
   // fixed.
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
 def f():
   pass
 def gen():
   yield 1
   yield 2
 result = f(*gen())
-)"),
+)")),
                "unimplemented: arbitrary iterables in sequenceAsTuple");
 }
 

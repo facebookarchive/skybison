@@ -322,7 +322,8 @@ TEST(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
 TEST(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = tuple.__new__(tuple)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = tuple.__new__(tuple)").isError());
   Tuple ret(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(ret.length(), 0);
 }
@@ -374,7 +375,7 @@ b = ("foo",).__repr__()
 
 TEST(TupleBuiltinsTest, DunderReprWithNoElements) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = ().__repr__()");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = ().__repr__()").isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -395,7 +396,7 @@ repr = Foo((1, 2, 3)).__repr__()
 
 TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = (1,) * 4");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = (1,) * 4").isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -408,7 +409,7 @@ TEST(TupleBuiltinsTest, DunderMulWithOneElement) {
 
 TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = (1,2,3) * 2");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = (1,2,3) * 2").isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -423,7 +424,7 @@ TEST(TupleBuiltinsTest, DunderMulWithManyElements) {
 
 TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = () * 5");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = () * 5").isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -432,7 +433,7 @@ TEST(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
 
 TEST(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = (1,2,3) * -2");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = (1,2,3) * -2").isError());
   HandleScope scope;
   Tuple a(&scope, moduleAt(&runtime, "__main__", "a"));
 
@@ -828,7 +829,8 @@ TEST(TupleBuiltinsTest, DunderContainsWithNonTupleSelfRaisesTypeError) {
 
 TEST(TupleBuiltinsTest, DunderHashReturnsSmallInt) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = (1, 2, 3).__hash__()");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = (1, 2, 3).__hash__()").isError());
   EXPECT_FALSE(Thread::current()->hasPendingException());
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isSmallInt());
 }

@@ -291,7 +291,7 @@ TEST(NoneBuiltinsTest, NewWithExtraArgsRaisesTypeError) {
 
 TEST(NoneBuiltinsTest, DunderReprIsBoundMethod) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = None.__repr__");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = None.__repr__").isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(a.isBoundMethod());
@@ -299,7 +299,7 @@ TEST(NoneBuiltinsTest, DunderReprIsBoundMethod) {
 
 TEST(NoneBuiltinsTest, DunderReprReturnsNone) {
   Runtime runtime;
-  runFromCStr(&runtime, "a = None.__repr__()");
+  ASSERT_FALSE(runFromCStr(&runtime, "a = None.__repr__()").isError());
   HandleScope scope;
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "None"));

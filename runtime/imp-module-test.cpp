@@ -170,10 +170,10 @@ TEST(ImportBuiltins, ExecBuiltinWithSingleSlotExecutesCorrectly) {
 
 TEST(ImportBuiltinsDeathTest, ExecDynamic) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
 import _imp
 _imp.exec_dynamic("foo")
-  )"),
+  )")),
                "unimplemented: exec_dynamic");
 }
 
@@ -187,21 +187,21 @@ TEST(ImportBuiltinsTest, ExtensionSuffixesReturnsList) {
 
 TEST(ImportBuiltinsDeathTest, FixCoFilename) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
 import _imp
 code = None
 source_path = None
 _imp._fix_co_filename(code, source_path)
-  )"),
+  )")),
                "unimplemented: _fix_co_filename");
 }
 
 TEST(ImportBuiltinsDeathTest, GetFrozenObject) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
 import _imp
 _imp.get_frozen_object("foo")
-  )"),
+  )")),
                "unimplemented: get_frozen_object");
 }
 
@@ -240,10 +240,10 @@ TEST(ImportBuiltinsTest, IsFrozenReturnsFalse) {
 
 TEST(ImportBuiltinsDeathTest, IsFrozenPackage) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
 import _imp
 _imp.is_frozen_package("foo")
-  )"),
+  )")),
                "unimplemented: is_frozen_package");
 }
 

@@ -63,7 +63,8 @@ result = dict.copy(d)
 
 TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = {'foo': 0}.__contains__('foo')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = {'foo': 0}.__contains__('foo')")
+                   .isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isBool());
@@ -72,7 +73,8 @@ TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
 
 TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = {}.__contains__('foo')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = {}.__contains__('foo')").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isBool());
@@ -660,13 +662,13 @@ key = Foo()
 
 TEST(DictBuiltinsTest, GetReturnsDefaultValue) {
   Runtime runtime;
-  runFromCStr(&runtime, "res = {}.get(123, 456)");
+  ASSERT_FALSE(runFromCStr(&runtime, "res = {}.get(123, 456)").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "res"), RawSmallInt::fromWord(456));
 }
 
 TEST(DictBuiltinsTest, GetReturnsNone) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = {}.get(123)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = {}.get(123)").isError());
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNoneType());
 }
 

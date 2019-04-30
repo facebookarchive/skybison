@@ -276,7 +276,7 @@ l3 = "aloha".__len__()
 
 TEST(StrBuiltinsTest, StringLenWithEmptyString) {
   Runtime runtime;
-  runFromCStr(&runtime, "l = len('')");
+  ASSERT_FALSE(runFromCStr(&runtime, "l = len('')").isError());
   HandleScope scope;
   Object length(&scope, moduleAt(&runtime, "__main__", "l"));
   EXPECT_TRUE(isIntEqualsWord(*length, 0));
@@ -284,7 +284,7 @@ TEST(StrBuiltinsTest, StringLenWithEmptyString) {
 
 TEST(StrBuiltinsTest, DunderLenWithNonAsciiReturnsCodePointLength) {
   Runtime runtime;
-  runFromCStr(&runtime, "l = len('\xc3\xa9')");
+  ASSERT_FALSE(runFromCStr(&runtime, "l = len('\xc3\xa9')").isError());
   HandleScope scope;
   SmallInt length(&scope, moduleAt(&runtime, "__main__", "l"));
   EXPECT_TRUE(isIntEqualsWord(*length, 1));
@@ -457,7 +457,7 @@ TEST(StrBuiltinsTest, DunderMulWithLargeStrReturnsRepeatedLargeStr) {
 TEST(StrBuiltinsTest, DunderRmulCallsDunderMul) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = 3 * 'foo'");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = 3 * 'foo'").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "foofoofoo"));
 }
@@ -1003,7 +1003,7 @@ result = 'Hello, World!'.__str__()
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello, World!"));
 }
@@ -2669,7 +2669,8 @@ TEST(StrBuiltinsTest, DunderContainsWithNonStrOtherRaisesTypeError) {
 
 TEST(StrBuiltinsTest, DunderContainsWithPresentSubstrReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.__contains__('foo', 'f')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = str.__contains__('foo', 'f')").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, Bool::trueObj());
@@ -2677,7 +2678,8 @@ TEST(StrBuiltinsTest, DunderContainsWithPresentSubstrReturnsTrue) {
 
 TEST(StrBuiltinsTest, DunderContainsWithNotPresentSubstrReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.__contains__('foo', 'q')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = str.__contains__('foo', 'q')").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(*result, Bool::falseObj());
@@ -2692,65 +2694,70 @@ TEST(StrBuiltinsTest, IsalnumWithNonStrRaisesTypeError) {
 
 TEST(StrBuiltinsTest, IsalnumWithEmptyStringReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isalnum('')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isalnum('')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithCharacterBelowZeroReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isalnum('/')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isalnum('/')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithCharacterAboveNineReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isalnum(':')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isalnum(':')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithNumbersReturnsTrue) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = all([str.isalnum(x) for x in '0123456789'])");
+  ASSERT_FALSE(
+      runFromCStr(&runtime,
+                  "result = all([str.isalnum(x) for x in '0123456789'])")
+          .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithCharacterBelowLowerAReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isalnum('`')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isalnum('`')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithCharacterAboveLowerZReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isalnum('{')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isalnum('{')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithLowercaseLettersReturnsTrue) {
   Runtime runtime;
-  runFromCStr(
-      &runtime,
-      "result = all([str.isalnum(x) for x in 'abcdefghijklmnopqrstuvwxyz'])");
+  ASSERT_FALSE(runFromCStr(&runtime,
+                           "result = all([str.isalnum(x) for x in "
+                           "'abcdefghijklmnopqrstuvwxyz'])")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithCharacterBelowUpperAReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isalnum('@')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isalnum('@')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithCharacterAboveUpperZReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isalnum('[')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isalnum('[')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsalnumWithUppercaseLettersReturnsTrue) {
   Runtime runtime;
-  runFromCStr(
-      &runtime,
-      "result = all([str.isalnum(x) for x in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])");
+  ASSERT_FALSE(runFromCStr(&runtime,
+                           "result = all([str.isalnum(x) for x in "
+                           "'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
@@ -2808,27 +2815,28 @@ TEST(StrBuiltinsTest, IsupperWithNonStrRaisesTypeError) {
 
 TEST(StrBuiltinsTest, IsupperWithEmptyStringReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isupper('')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isupper('')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsupperWithCharacterBelowUpperAReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isupper('@')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isupper('@')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsupperWithCharacterAboveUpperZReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.isupper('[')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.isupper('[')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IsupperWithUppercaseLettersReturnsTrue) {
   Runtime runtime;
-  runFromCStr(
-      &runtime,
-      "result = all([str.isupper(x) for x in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])");
+  ASSERT_FALSE(runFromCStr(&runtime,
+                           "result = all([str.isupper(x) for x in "
+                           "'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 
@@ -2841,27 +2849,28 @@ TEST(StrBuiltinsTest, IslowerWithNonStrRaisesTypeError) {
 
 TEST(StrBuiltinsTest, IslowerWithEmptyStringReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.islower('')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.islower('')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IslowerWithCharacterBelowLowerAReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.islower('`')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.islower('`')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IslowerWithCharacterAboveLowerZReturnsFalse) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = str.islower('{')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = str.islower('{')").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::falseObj());
 }
 
 TEST(StrBuiltinsTest, IslowerWithLowercaseLettersReturnsTrue) {
   Runtime runtime;
-  runFromCStr(
-      &runtime,
-      "result = all([str.islower(x) for x in 'abcdefghijklmnopqrstuvwxyz'])");
+  ASSERT_FALSE(runFromCStr(&runtime,
+                           "result = all([str.islower(x) for x in "
+                           "'abcdefghijklmnopqrstuvwxyz'])")
+                   .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
 }
 

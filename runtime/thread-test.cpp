@@ -87,7 +87,7 @@ c = C(10, 2)
 g = c(3)
 )";
 
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object global(&scope, moduleAt(&runtime, main, "g"));
@@ -115,7 +115,7 @@ class Stage0:
 c = Stage0()
 c(1111)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1111));
@@ -136,7 +136,7 @@ class C:
 c = C()
 result = c(y=3)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
@@ -156,7 +156,7 @@ c = C()
 args = (3,)
 result = c(*args)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
@@ -176,7 +176,7 @@ c = C()
 kwargs = {'y': 3}
 result = c(**kwargs)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result(&scope, moduleAt(&runtime, main, "result"));
@@ -202,7 +202,7 @@ args = (1,)
 kwargs = {'y': 3}
 c(*args, **kwargs)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Module main(&scope, findModule(&runtime, "__main__"));
   Object result_x(&scope, moduleAt(&runtime, main, "result_x"));
@@ -724,7 +724,8 @@ TEST_P(GlobalsTest, FastGlobal) {
   Runtime runtime;
   TestData data = GetParam();
   if (data.death) {
-    EXPECT_DEATH(runFromCStr(&runtime, data.src), data.expected_output);
+    EXPECT_DEATH(static_cast<void>(runFromCStr(&runtime, data.src)),
+                 data.expected_output);
   } else {
     std::string output = compileAndRunToString(&runtime, data.src);
     EXPECT_EQ(output, data.expected_output);
@@ -1491,7 +1492,7 @@ static RawObject getMro(Runtime* runtime, const char* src,
                         const char* desired_class) {
   HandleScope scope;
 
-  runFromCStr(runtime, src);
+  static_cast<void>(runFromCStr(runtime, src).isError());
 
   Dict mod_dict(&scope, getMainModuleDict(runtime));
   Object class_name(&scope, runtime->newStrFromCStr(desired_class));
@@ -1725,7 +1726,7 @@ TEST(ThreadTest, InheritFromObject) {
 class Foo(object):
   pass
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   // Look up the class Foo
   Object main_obj(&scope, findModule(&runtime, "__main__"));
@@ -1994,7 +1995,7 @@ TEST(TestThread, BuildTupleUnpack) {
 t = (*[0], *[1, 2], *[], *[3, 4, 5])
 t1 = (*(0,), *(1, 2), *(), *(3, 4, 5))
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object t(&scope, moduleAt(&runtime, main, "t"));
@@ -2024,7 +2025,7 @@ TEST(TestThread, BuildListUnpack) {
   const char* src = R"(
 l = [*[0], *[1, 2], *[], *[3, 4, 5]]
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object l(&scope, moduleAt(&runtime, main, "l"));
@@ -2046,7 +2047,7 @@ TEST(TestThread, BuildSetUnpack) {
   const char* src = R"(
 s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object s(&scope, moduleAt(&runtime, main, "s"));
@@ -2184,7 +2185,7 @@ TEST(ThreadTest, SetAdd) {
 a = [1, 2, 3]
 b = {x for x in a}
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   ASSERT_TRUE(b.isSet());
@@ -2200,7 +2201,7 @@ TEST(TestThread, MapAdd) {
 a = ['a', 'b', 'c']
 b = {x:x for x in a}
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(b.isDict(), true);
@@ -2285,7 +2286,7 @@ s = 0
 for el in l:
     s += el
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
@@ -2314,7 +2315,7 @@ l.insert(100, 5)
 l.insert(400, 6)
 l.insert(-100, 0)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object l(&scope, moduleAt(&runtime, main, "l"));
   List list_l(&scope, *l);
@@ -2336,7 +2337,7 @@ l = [0, 2, 4]
 l.insert(-2, 1)
 l.insert(-1, 3)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object l(&scope, moduleAt(&runtime, main, "l"));
   List list_l(&scope, *l);
@@ -2535,7 +2536,7 @@ for x in range(4):
             pass
     l.append(x)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object l(&scope, moduleAt(&runtime, main, "l"));
   EXPECT_TRUE(l.isList());
@@ -2775,7 +2776,7 @@ class Foo(metaclass=type):
   pass
 a = Foo()
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object foo(&scope, moduleAt(&runtime, main, "Foo"));
   EXPECT_TRUE(foo.isType());
@@ -2800,7 +2801,7 @@ b = Bar.lalala
 a = Bar()
 c = a.hahaha
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object bar(&scope, moduleAt(&runtime, main, "Bar"));
   EXPECT_TRUE(runtime.isInstanceOfType(*bar));
@@ -2827,7 +2828,7 @@ class C:
     PIPI = PI * 2
     b = PIPI
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 3));
@@ -2848,7 +2849,7 @@ class C:
   var = 2
   two = var
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object one(&scope, moduleAt(&runtime, main, "one"));
   EXPECT_TRUE(isIntEqualsWord(*one, 1));
@@ -2864,7 +2865,7 @@ TEST(ThreadTest, ExecuteDeleteName) {
 var = 1
 del var
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object var(&scope, moduleAt(&runtime, main, "var"));
   EXPECT_TRUE(var.isError());
@@ -2881,7 +2882,7 @@ try:
 finally:
   x = 2
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object x(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(2));
@@ -2897,7 +2898,7 @@ class Foo:
   bar: int = 2
 class_anno_dict = Foo.__annotations__
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Dict module_anno_dict(&scope, moduleAt(&runtime, main, "__annotations__"));
   Object m_key(&scope, runtime.newStrFromCStr("x"));
@@ -2933,7 +2934,7 @@ def foo(a, b, c):
   return b
 x = foo(1, 2, 3)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object x(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(2));
@@ -2957,7 +2958,7 @@ class Foo:
 
 foo = Foo(1111, b=2222, c=3333)
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
 
   Object result_a(&scope, moduleAt(&runtime, main, "result_a"));
@@ -2982,7 +2983,7 @@ def foo():
   return Foo.b
 x = foo()
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object x(&scope, moduleAt(&runtime, main, "x"));
   EXPECT_EQ(*x, SmallInt::fromWord(1));

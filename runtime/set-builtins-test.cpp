@@ -970,7 +970,8 @@ s = Set([0, 1, 2])
 
 TEST(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = frozenset.__new__(frozenset)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = frozenset.__new__(frozenset)").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result.isFrozenSet());
@@ -1192,7 +1193,8 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
 
 TEST(SetBuiltinsTest, ReprReturnsElements) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = set([3, 2, 1]).__repr__()");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = set([3, 2, 1]).__repr__()").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isStr());
@@ -1409,21 +1411,24 @@ result.update([5, 6])
 
 TEST(SetBuiltinsTest, DunderOrWithNonSetBaseSelfReturnsNotImplemented) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = set.__or__(None, set())");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = set.__or__(None, set())").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
             NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderOrWithNonSetBaseOtherReturnsNotImplemented) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = set.__or__(set(), None)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = set.__or__(set(), None)").isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
             NotImplementedType::object());
 }
 
 TEST(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = set.__or__({1, 2}, {2, 3})");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = set.__or__({1, 2}, {2, 3})").isError());
   HandleScope scope;
   Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(result_obj.isSet());

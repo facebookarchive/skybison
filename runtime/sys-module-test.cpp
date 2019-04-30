@@ -201,7 +201,8 @@ import sys
 sys.exit()
 )";
   Runtime runtime;
-  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(0), "");
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+              ::testing::ExitedWithCode(0), "");
 }
 
 TEST(SysModuleTest, SysExitCode) {  // pystone dependency
@@ -210,7 +211,8 @@ import sys
 sys.exit(100)
 )";
   Runtime runtime;
-  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(100), "");
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+              ::testing::ExitedWithCode(100), "");
 }
 
 TEST(SysModuleTest, SysExitWithNonCodeReturnsOne) {  // pystone dependency
@@ -219,7 +221,8 @@ import sys
 sys.exit("barf")
 )";
   Runtime runtime;
-  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(1), "barf");
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+              ::testing::ExitedWithCode(1), "barf");
 }
 
 TEST(SysModuleTest, SysExitWithFalseReturnsZero) {
@@ -228,7 +231,8 @@ import sys
 sys.exit(False)
 )";
   Runtime runtime;
-  ASSERT_EXIT(runFromCStr(&runtime, src), ::testing::ExitedWithCode(0), "");
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+              ::testing::ExitedWithCode(0), "");
 }
 
 TEST(SysModuleTest, Platform) {

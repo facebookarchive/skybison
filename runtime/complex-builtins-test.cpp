@@ -13,7 +13,8 @@ using namespace testing;
 TEST(ComplexBuiltinsTest, NewWithNoArgsReturnsZero) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = complex.__new__(complex)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = complex.__new__(complex)").isError());
   Complex cmplx(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(cmplx.real(), 0);
   EXPECT_EQ(cmplx.imag(), 0);
@@ -22,7 +23,8 @@ TEST(ComplexBuiltinsTest, NewWithNoArgsReturnsZero) {
 TEST(ComplexBuiltinsTest, NewWithOneNumberArgReturnsComplexWithReal) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = complex.__new__(complex, 1)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = complex.__new__(complex, 1)").isError());
   Complex cmplx(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(cmplx.real(), 1.0);
   EXPECT_EQ(cmplx.imag(), 0);
@@ -43,7 +45,10 @@ TEST(ComplexBuiltinsTest, NewWithTwoNumberArgReturnsComplexWithReal) {
 TEST(ComplexBuiltinsTest, NewWithComplexArgReturnsSameComplex) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = complex.__new__(complex, complex(1.0, 2.0))");
+  ASSERT_FALSE(
+      runFromCStr(&runtime,
+                  "result = complex.__new__(complex, complex(1.0, 2.0))")
+          .isError());
   Complex cmplx(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_EQ(cmplx.real(), 1.0);
   EXPECT_EQ(cmplx.imag(), 2.0);
@@ -51,7 +56,7 @@ TEST(ComplexBuiltinsTest, NewWithComplexArgReturnsSameComplex) {
 
 TEST(ComplexBuiltinsTest, DunderReprHasRealAndImag) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = repr(complex(1, 2))");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = repr(complex(1, 2))").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "(1+2j)"));

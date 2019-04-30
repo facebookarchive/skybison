@@ -245,7 +245,7 @@ TEST(BytesBuiltinsTest,
 TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = b'hello'[-5]");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = b'hello'[-5]").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
@@ -253,7 +253,7 @@ TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
 TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = b'hello'[0]");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = b'hello'[0]").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
@@ -261,7 +261,7 @@ TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = b'hello world'[:3]");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = b'hello world'[:3]").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "hel"));
 }
@@ -269,7 +269,8 @@ TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
 TEST(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = b'hello world'[1:6:2]");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = b'hello world'[1:6:2]").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "el "));
 }
@@ -835,7 +836,7 @@ TEST(BytesBuiltinsTest, DunderNewWithoutSourceWithErrorsRaisesTypeError) {
 TEST(BytesBuiltinsTest, DunderNewWithoutArgsReturnsEmptyBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "obj = bytes()");
+  ASSERT_FALSE(runFromCStr(&runtime, "obj = bytes()").isError());
   Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
   EXPECT_TRUE(isBytesEqualsCStr(obj, ""));
 }
@@ -914,7 +915,7 @@ TEST(BytesBuiltinsTest, DunderNewWithLargeIntegerSourceRaisesOverflowError) {
 TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsZeroFilledBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytes(10)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes(10)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte bytes[10] = {};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -923,7 +924,7 @@ TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsZeroFilledBytes) {
 TEST(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytes(b'123')");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes(b'123')").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte bytes[] = {'1', '2', '3'};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -932,7 +933,8 @@ TEST(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
 TEST(BytesBuiltinsTest, DunderNewWithByteArrayReturnsBytesCopy) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytes(bytearray(b'123'))");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = bytes(bytearray(b'123'))").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte bytes[] = {'1', '2', '3'};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -941,7 +943,7 @@ TEST(BytesBuiltinsTest, DunderNewWithByteArrayReturnsBytesCopy) {
 TEST(BytesBuiltinsTest, DunderNewWithListReturnsNewBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytes([6, 28])");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes([6, 28])").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte bytes[] = {6, 28};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -950,7 +952,7 @@ TEST(BytesBuiltinsTest, DunderNewWithListReturnsNewBytes) {
 TEST(BytesBuiltinsTest, DunderNewWithTupleReturnsNewBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytes((6, 28))");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes((6, 28))").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   const byte bytes[] = {6, 28};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
@@ -1057,7 +1059,7 @@ TEST(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
 TEST(BytesBuiltinsTest, DunderRmulCallsDunderMul) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = 3 * b'1'");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = 3 * b'1'").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "111"));
 }
@@ -1065,14 +1067,15 @@ TEST(BytesBuiltinsTest, DunderRmulCallsDunderMul) {
 TEST(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = b'hello'.decode('ascii')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = b'hello'.decode('ascii')").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 }
 
 TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
   Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "b'hello'.decode('unknown')"),
+  EXPECT_DEATH(runFromCStr(&runtime, "b'hello'.decode('unknown')").isNoneType(),
                ".*'_unimplemented' called in function 'decode'");
 }
 
@@ -1196,7 +1199,9 @@ TEST(BytesBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {
 TEST(BytesBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytes.maketrans(bytearray(), b'')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = bytes.maketrans(bytearray(), b'')")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   byte expected[256];
   for (word i = 0; i < 256; i++) {
@@ -1208,7 +1213,10 @@ TEST(BytesBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
 TEST(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = bytes.maketrans(bytearray(b'abc'), b'123')");
+  ASSERT_FALSE(
+      runFromCStr(&runtime,
+                  "result = bytes.maketrans(bytearray(b'abc'), b'123')")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isBytes());
   Bytes actual(&scope, *result);

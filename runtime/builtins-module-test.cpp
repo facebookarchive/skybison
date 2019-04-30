@@ -130,7 +130,7 @@ class D(C, B): pass
 def test(a, b):
   print(isinstance(a, b))
 )";
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   // We can move these tests into the python code above once we can
   // call classes.
@@ -206,9 +206,9 @@ d = dir(c)
 TEST(BuiltinsModuleDeathTest, DirWithoutObjectCallsLocals) {
   Runtime runtime;
   // locals() is not implemented yet, so we will die here.
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
 dir()
-)"),
+)")),
                "locals()");
 }
 
@@ -740,7 +740,7 @@ a = repr(Foo())
 
 TEST(BuiltinsModuleTest, BuiltInReprOnClass) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = repr(int)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = repr(int)").isError());
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<class 'int'>"));
@@ -999,7 +999,7 @@ obj = getattr(Foo, 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object obj(&scope, moduleAt(&runtime, main, "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(1));
@@ -1013,7 +1013,7 @@ obj = getattr(Foo(), 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object obj(&scope, moduleAt(&runtime, main, "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(1));
@@ -1026,7 +1026,7 @@ obj = getattr(Foo(), 'bar', 2)
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object obj(&scope, moduleAt(&runtime, main, "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(2));
@@ -1072,7 +1072,7 @@ obj = hasattr(Foo, 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object obj(&scope, moduleAt(&runtime, main, "obj"));
   EXPECT_EQ(*obj, Bool::falseObj());
@@ -1086,7 +1086,7 @@ obj = hasattr(Foo, 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object obj(&scope, moduleAt(&runtime, main, "obj"));
   EXPECT_EQ(*obj, Bool::trueObj());
@@ -1110,7 +1110,7 @@ obj = hasattr(Foo(), 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object obj(&scope, moduleAt(&runtime, main, "obj"));
   EXPECT_EQ(*obj, Bool::falseObj());
@@ -1124,7 +1124,7 @@ obj = hasattr(Foo(), 'bar')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object obj(&scope, moduleAt(&runtime, main, "obj"));
   EXPECT_EQ(*obj, Bool::trueObj());
@@ -1192,7 +1192,7 @@ b = Foo.foo
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
   Object b(&scope, moduleAt(&runtime, main, "b"));
@@ -1221,7 +1221,7 @@ d = getattr(list, '__module__')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(*a, Bool::trueObj());
@@ -1246,7 +1246,7 @@ d = getattr(list, '__qualname__')
 )";
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, src);
+  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
 
   Object a(&scope, moduleAt(&runtime, "__main__", "a"));
   EXPECT_EQ(*a, Bool::trueObj());
@@ -1264,9 +1264,11 @@ d = getattr(list, '__qualname__')
 TEST(BuiltinsModuleTest, BuiltinCompile) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(
-      &runtime,
-      R"(code = compile("a = 1\nb = 2", "<string>", "eval", dont_inherit=True))");
+  ASSERT_FALSE(
+      runFromCStr(
+          &runtime,
+          R"(code = compile("a = 1\nb = 2", "<string>", "eval", dont_inherit=True))")
+          .isError());
   Str filename(&scope, runtime.newStrFromCStr("<string>"));
   Code code(&scope, moduleAt(&runtime, "__main__", "code"));
   ASSERT_TRUE(code.filename().isStr());
@@ -1339,7 +1341,7 @@ exec("a = 1338")
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "");
+  ASSERT_FALSE(runFromCStr(&runtime, "").isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Dict globals(&scope, main.dict());
   Str globals_name(&scope, runtime.newStrFromCStr("gl"));
@@ -1444,17 +1446,17 @@ def chr(self):
 
 TEST(BuiltinsModuleDeathTest, UnderUnimplementedAbortsProgram) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, "_unimplemented()"),
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, "_unimplemented()")),
                ".*'_unimplemented' called.");
 }
 
 TEST(BuiltinsModuleDeathTest, UnderUnimplementedPrintsFunctionName) {
   Runtime runtime;
-  ASSERT_DEATH(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
 def foobar():
   _unimplemented()
 foobar()
-)"),
+)")),
                ".*'_unimplemented' called in function 'foobar'.");
 }
 

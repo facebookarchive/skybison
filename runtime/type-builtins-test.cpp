@@ -252,7 +252,8 @@ class C:
 
 TEST(TypeBuiltinsTest, DunderReprForBuiltinReturnsStr) {
   Runtime runtime;
-  runFromCStr(&runtime, "result = type.__repr__(object)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = type.__repr__(object)").isError());
   EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
                               "<class 'object'>"));
 }
@@ -302,7 +303,8 @@ a = type.__new__(type, Foo);
 TEST(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = str.__class__.__mro__");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = str.__class__.__mro__").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isTuple());
 }
@@ -310,7 +312,8 @@ TEST(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
 TEST(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = str.__class__.__name__");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = str.__class__.__name__").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isStr());
   EXPECT_TRUE(isStrEqualsCStr(RawStr::cast(*result), "type"));
@@ -319,7 +322,8 @@ TEST(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
 TEST(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = str.__class__.__flags__");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = str.__class__.__flags__").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isInt());
 }
@@ -327,7 +331,8 @@ TEST(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {
 TEST(TypeBuiltinsTest, TypeHasDunderDictAttribute) {
   Runtime runtime;
   HandleScope scope;
-  runFromCStr(&runtime, "result = str.__class__.__dict__");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = str.__class__.__dict__").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isDict());
 }

@@ -57,6 +57,13 @@ const int kNanosecondsPerMicrosecond = 1000;
 const int kNanosecondsPerSecond =
     kMicrosecondsPerSecond * kNanosecondsPerMicrosecond;
 
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+#ifndef __has_cpp_atttribute
+#define __has_cpp_atttribute(x) 0
+#endif
+
 #if __GNUG__ && __GNUC__ < 5
 #define IS_TRIVIALLY_COPYABLE(T) __has_trivial_copy(T)
 #else
@@ -102,15 +109,16 @@ inline D bit_cast(const S& src) {
 #define LIKELY(x) __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 
-// Placeholders for [[nodiscard]] until we move to C++17
+#if __has_cpp_atttribute(nodiscard) ||                                         \
+    (__GNUC__ >= 5 || __GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#define NODISCARD [[nodiscard]]
+#else
 #define NODISCARD __attribute__((warn_unused_result))
+#endif
+
 #define WARN_UNUSED __attribute__((warn_unused))
 
 #define ALIGN_16 __attribute__((aligned(16)))
-
-#ifndef __has_builtin
-#define __has_builtin(x) 0
-#endif
 
 // Endian enum (as proposed in the C++20 draft).
 enum class endian {

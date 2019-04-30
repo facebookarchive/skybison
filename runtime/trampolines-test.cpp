@@ -715,22 +715,24 @@ static RawObject builtinReturnSecondArg(Thread* /* thread */, Frame* frame,
 static void createAndPatchBuiltinReturnSecondArg(Runtime* runtime) {
   HandleScope scope;
   // Ensure we have a __main__ module.
-  runFromCStr(runtime, "");
+  ASSERT_FALSE(runFromCStr(runtime, "").isError());
   Module main(&scope, findModule(runtime, "__main__"));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy,
                                     builtinReturnSecondArg);
-  runFromCStr(runtime, R"(
+  ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(first, second):
   pass
-)");
+)")
+                   .isError());
 }
 
 TEST(TrampolinesTest, BuiltinTrampolineKwPassesKwargs) {
   Runtime runtime;
   HandleScope scope;
   createAndPatchBuiltinReturnSecondArg(&runtime);
-  runFromCStr(&runtime, "result = dummy(second=12345, first=None)");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = dummy(second=12345, first=None)")
+                   .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 12345));
 }
@@ -1942,22 +1944,23 @@ static RawObject numArgs(Thread*, Frame*, word nargs) {
 
 static void createAndPatchBuiltinNumArgs(Runtime* runtime) {
   // Ensure we have a __main__ module.
-  runFromCStr(runtime, "");
+  ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findModule(runtime, "__main__"));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
-  runFromCStr(runtime, R"(
+  ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(first, second):
   pass
-)");
+)")
+                   .isError());
 }
 
 TEST(TrampolinesTest, BuiltinTrampolineExReceivesExArgs) {
   Runtime runtime;
   createAndPatchBuiltinNumArgs(&runtime);
   HandleScope scope;
-  runFromCStr(&runtime, "result = dummy(*(1,2))");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = dummy(*(1,2))").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
@@ -1966,22 +1969,23 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesMixOfPositionalAndExArgs1) {
   Runtime runtime;
   createAndPatchBuiltinNumArgs(&runtime);
   HandleScope scope;
-  runFromCStr(&runtime, "result = dummy(1, *(2,))");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = dummy(1, *(2,))").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
 static void createAndPatchBuiltinNumArgsVariadic(Runtime* runtime) {
   // Ensure we have a __main__ module.
-  runFromCStr(runtime, "");
+  ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findModule(runtime, "__main__"));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
-  runFromCStr(runtime, R"(
+  ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(*args):
   pass
-)");
+)")
+                   .isError());
 }
 
 TEST(TrampolinesTest,
@@ -1989,22 +1993,23 @@ TEST(TrampolinesTest,
   Runtime runtime;
   createAndPatchBuiltinNumArgsVariadic(&runtime);
   HandleScope scope;
-  runFromCStr(&runtime, "result = dummy(1, *(2, 3))");
+  ASSERT_FALSE(runFromCStr(&runtime, "result = dummy(1, *(2, 3))").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
 static void createAndPatchBuiltinNumArgsArgsKwargs(Runtime* runtime) {
   // Ensure we have a __main__ module.
-  runFromCStr(runtime, "");
+  ASSERT_FALSE(runFromCStr(runtime, "").isError());
   HandleScope scope;
   Module main(&scope, findModule(runtime, "__main__"));
   runtime->moduleAddBuiltinFunction(main, SymbolId::kDummy, numArgs);
-  runFromCStr(runtime, R"(
+  ASSERT_FALSE(runFromCStr(runtime, R"(
 @_patch
 def dummy(*args, **kwargs):
   pass
-)");
+)")
+                   .isError());
 }
 
 TEST(TrampolinesTest,
@@ -2012,7 +2017,10 @@ TEST(TrampolinesTest,
   Runtime runtime;
   createAndPatchBuiltinNumArgsArgsKwargs(&runtime);
   HandleScope scope;
-  runFromCStr(&runtime, "result = dummy(1, 2, *(3,), **{'foo': 1, 'bar': 2})");
+  ASSERT_FALSE(
+      runFromCStr(&runtime,
+                  "result = dummy(1, 2, *(3,), **{'foo': 1, 'bar': 2})")
+          .isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
@@ -2021,7 +2029,8 @@ TEST(TrampolinesTest, BuiltinTrampolineExReceivesVarArgs) {
   Runtime runtime;
   createAndPatchBuiltinNumArgs(&runtime);
   HandleScope scope;
-  runFromCStr(&runtime, "result = dummy(*(1,), second=5)");
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "result = dummy(*(1,), second=5)").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
