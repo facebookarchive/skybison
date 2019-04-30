@@ -2,7 +2,10 @@
 
 namespace python {
 
-PY_EXPORT int PyErr_CheckSignals() { UNIMPLEMENTED("PyErr_CheckSignals"); }
+PY_EXPORT int PyErr_CheckSignals() {
+  // TODO(T43363720): Check thread for pending signal
+  return 0;
+}
 
 PY_EXPORT void PyErr_SetInterrupt() { UNIMPLEMENTED("PyErr_SetInterrupt"); }
 

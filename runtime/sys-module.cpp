@@ -11,6 +11,7 @@
 #include "frozen-modules.h"
 #include "globals.h"
 #include "handles.h"
+#include "int-builtins.h"
 #include "objects.h"
 #include "os.h"
 #include "runtime.h"
@@ -231,7 +232,6 @@ class UserVisibleFrameVisitor : public FrameVisitor {
 };
 
 static Frame* frameAtDepth(Thread* thread, word depth) {
-  DCHECK(depth >= 0, "depth must be nonnegative");
   UserVisibleFrameVisitor visitor(depth + 1);
   thread->visitFrames(&visitor);
   return visitor.target();
@@ -240,9 +240,14 @@ static Frame* frameAtDepth(Thread* thread, word depth) {
 RawObject SysModule::underGetframeCode(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
-  DCHECK(args.get(0).isSmallInt(), "depth must be smallint");
-  word depth = SmallInt::cast(args.get(0)).value();
-  frame = frameAtDepth(thread, depth);
+  HandleScope scope(thread);
+  Object depth_obj(&scope, args.get(0));
+  DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
+  Int depth(&scope, intUnderlying(thread, depth_obj));
+  if (depth.isNegative()) {
+    return thread->raiseValueErrorWithCStr("negative stack level");
+  }
+  frame = frameAtDepth(thread, depth.asWordSaturated());
   if (frame == nullptr) {
     return thread->raiseValueErrorWithCStr("call stack is not deep enough");
   }
@@ -255,9 +260,14 @@ RawObject SysModule::underGetframeCode(Thread* thread, Frame* frame,
 RawObject SysModule::underGetframeGlobals(Thread* thread, Frame* frame,
                                           word nargs) {
   Arguments args(frame, nargs);
-  DCHECK(args.get(0).isSmallInt(), "depth must be smallint");
-  word depth = SmallInt::cast(args.get(0)).value();
-  frame = frameAtDepth(thread, depth);
+  HandleScope scope(thread);
+  Object depth_obj(&scope, args.get(0));
+  DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
+  Int depth(&scope, intUnderlying(thread, depth_obj));
+  if (depth.isNegative()) {
+    return thread->raiseValueErrorWithCStr("negative stack level");
+  }
+  frame = frameAtDepth(thread, depth.asWordSaturated());
   if (frame == nullptr) {
     return thread->raiseValueErrorWithCStr("call stack is not deep enough");
   }
@@ -267,16 +277,21 @@ RawObject SysModule::underGetframeGlobals(Thread* thread, Frame* frame,
 RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
-  DCHECK(args.get(0).isSmallInt(), "depth must be smallint");
-  word depth = SmallInt::cast(args.get(0)).value();
-  frame = frameAtDepth(thread, depth);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object depth_obj(&scope, args.get(0));
+  DCHECK(runtime->isInstanceOfInt(*depth_obj), "depth must be int");
+  Int depth(&scope, intUnderlying(thread, depth_obj));
+  if (depth.isNegative()) {
+    return thread->raiseValueErrorWithCStr("negative stack level");
+  }
+  frame = frameAtDepth(thread, depth.asWordSaturated());
   if (frame == nullptr) {
     return thread->raiseValueErrorWithCStr("call stack is not deep enough");
   }
   if (frame->isNativeFrame()) {
     return SmallInt::fromWord(-1);
   }
-  HandleScope scope(thread);
   Code code(&scope, frame->code());
   word pc = frame->virtualPC();
   word lineno = thread->runtime()->codeOffsetToLineNum(thread, code, pc);

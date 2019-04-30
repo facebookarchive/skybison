@@ -17,4 +17,9 @@ class UnderWarningsModule
   static const char* const kFrozenData;
 };
 
+class WarningsModule : public ModuleBase<WarningsModule, SymbolId::kWarnings> {
+ public:
+  static const char* const kFrozenData;
+};
+
 }  // namespace python

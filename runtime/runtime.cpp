@@ -1790,6 +1790,7 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
     {SymbolId::kItertools, &ItertoolsModule::initialize},
     {SymbolId::kOperator, &OperatorModule::initialize},
+    {SymbolId::kWarnings, &WarningsModule::initialize},
     {SymbolId::kSentinelId, nullptr},
 };
 

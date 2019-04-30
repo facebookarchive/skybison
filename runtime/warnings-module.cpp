@@ -40,6 +40,8 @@ const BuiltinMethod UnderWarningsModule::kBuiltinMethods[] = {
 
 const char* const UnderWarningsModule::kFrozenData = kUnderWarningsModuleData;
 
+const char* const WarningsModule::kFrozenData = kWarningsModuleData;
+
 RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

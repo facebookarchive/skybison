@@ -65,6 +65,13 @@ class SysTests(unittest.TestCase):
         self.assertIs(type(result), int)
         self.assertEqual(result, 42)
 
+    def test_getframe_code_with_int_subclass(self):
+        class C(int):
+            pass
+
+        code = sys._getframe_code(C(0))
+        self.assertEqual(code.co_name, "test_getframe_code_with_int_subclass")
+
     def test_getframe_code_returns_self(self):
         code = sys._getframe_code(0)
         self.assertEqual(code.co_name, "test_getframe_code_returns_self")
@@ -72,6 +79,12 @@ class SysTests(unittest.TestCase):
     def test_getframe_code_returns_class_run(self):
         code = sys._getframe_code(1)
         self.assertEqual(code.co_name, "run")
+
+    def test_getframe_globals_with_int_subclass(self):
+        class C(int):
+            pass
+
+        self.assertIsInstance(sys._getframe_globals(C(0)), dict)
 
     def test_getframe_globals_returns_dict(self):
         self.assertIsInstance(sys._getframe_globals(0), dict)

@@ -157,9 +157,9 @@ def filterwarnings(
     assert isinstance(lineno, int) and lineno >= 0, "lineno must be an int >= 0"
     _add_filter(
         action,
-        re.compile(message, re.I),
+        message,  # TODO(T43452449): Replace with re.compile(message, re.I),
         category,
-        re.compile(module),
+        module,  # TODO(T43452449): Replace with re.compile(module),
         lineno,
         append=append,
     )
@@ -318,19 +318,23 @@ def warn(message, category=None, stacklevel=1, source=None):
         category = UserWarning
     if not (isinstance(category, type) and issubclass(category, Warning)):
         raise TypeError(
-            "category must be a Warning subclass, "
-            "not '{:s}'".format(type(category).__name__)
+            f"category must be a Warning subclass, " f"not '{type(category).__name__}'"
         )
     # Get context information
-    stacklevel = _next_external_frame(stacklevel)
-    globals = sys._getframe_globals(stacklevel)
-    lineno = sys._getframe_lineno(stacklevel)
+    try:
+        stacklevel = _next_external_frame(stacklevel)
+        globals = sys._getframe_globals(stacklevel)
+        lineno = sys._getframe_lineno(stacklevel)
+        code = sys._getframe_code(stacklevel)
+        filename = code.co_filename
+    except ValueError:
+        globals = {"__name__": "sys"}
+        lineno = 1
+        filename = "sys"
     if "__name__" in globals:
         module = globals["__name__"]
     else:
         module = "<string>"
-    code = sys._getframe_code(stacklevel)
-    filename = code.co_filename
     if filename:
         fnl = filename.lower()
         if fnl.endswith(".pyc"):
@@ -384,9 +388,11 @@ def warn_explicit(  # noqa: C901
     for item in filters:
         action, msg, cat, mod, ln = item
         if (
-            (msg is None or msg.match(text))
+            # TODO(T43452449): Replace msg == text with msg.match(text)
+            (msg is None or msg == text)
             and issubclass(category, cat)
-            and (mod is None or mod.match(module))
+            # TODO(T43452449): Replace mod == module with mod.match(module)
+            and (mod is None or mod == module)
             and (ln == 0 or lineno == ln)
         ):
             break

@@ -503,6 +503,7 @@ class Runtime;
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
   V(Warning, "Warning")                                                        \
+  V(Warnings, "warnings")                                                      \
   V(Write, "write")                                                            \
   V(Xmlcharrefreplace, "xmlcharrefreplace")                                    \
   V(Xor, "xor")                                                                \

@@ -169,7 +169,8 @@ set(
   library/marshal.py
   library/operator.py
   library/sys.py
-  library/time.py)
+  library/time.py
+  library/warnings.py)
 set(
   FROZEN_MODULE_OUTPUT_DIR
   ${CMAKE_BINARY_DIR}/bootstrap)
@@ -512,6 +513,7 @@ set(
   ext/Python/random-test.cpp
   ext/Python/sysmodule-test.cpp
   ext/Python/thread-test.cpp
+  ext/Python/_warnings-test.cpp
   ext/test/capi-fixture.h
   ext/test/capi-testing-test.cpp
   ext/test/capi-testing.cpp
