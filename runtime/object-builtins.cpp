@@ -189,6 +189,10 @@ const BuiltinMethod NoneBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
+void NoneBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  new_type.setBuiltinBase(LayoutId::kNoneType);
+}
+
 RawObject NoneBuiltins::dunderNew(Thread*, Frame*, word) {
   return NoneType::object();
 }

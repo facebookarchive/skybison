@@ -70,6 +70,8 @@ class LargeStrBuiltins : public Builtins<LargeStrBuiltins, SymbolId::kLargeStr,
 class StrBuiltins
     : public Builtins<StrBuiltins, SymbolId::kStr, LayoutId::kStr> {
  public:
+  static void postInitialize(Runtime*, const Type& new_type);
+
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBool(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);

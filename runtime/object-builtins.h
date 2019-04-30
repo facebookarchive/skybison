@@ -29,6 +29,8 @@ class ObjectBuiltins {
 class NoneBuiltins
     : public Builtins<NoneBuiltins, SymbolId::kNoneType, LayoutId::kNoneType> {
  public:
+  static void postInitialize(Runtime*, const Type& new_type);
+
   static RawObject dunderNew(Thread*, Frame*, word);
   static RawObject dunderRepr(Thread*, Frame*, word);
 

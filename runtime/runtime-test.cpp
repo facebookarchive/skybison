@@ -3307,4 +3307,37 @@ TEST(RuntimeStrTest, StrReplaceWithPostfixReplacesEnd) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "11*"));
 }
 
+TEST(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
+  Runtime runtime;
+  HandleScope scope;
+
+  BuiltinAttribute attrs[] = {
+      {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
+      {SymbolId::kSentinelId, -1},
+  };
+  BuiltinMethod builtins[] = {
+      {SymbolId::kSentinelId, nullptr},
+  };
+  LayoutId layout_id = runtime.reserveLayoutId();
+  Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
+                                           LayoutId::kObject, attrs, builtins));
+  EXPECT_EQ(type.builtinBase(), layout_id);
+}
+
+TEST(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
+  Runtime runtime;
+  HandleScope scope;
+
+  BuiltinAttribute attrs[] = {
+      {SymbolId::kSentinelId, -1},
+  };
+  BuiltinMethod builtins[] = {
+      {SymbolId::kSentinelId, nullptr},
+  };
+  LayoutId layout_id = runtime.reserveLayoutId();
+  Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
+                                           LayoutId::kObject, attrs, builtins));
+  EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
+}
+
 }  // namespace python

@@ -12,6 +12,10 @@ const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
+void ComplexBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  new_type.setBuiltinBase(LayoutId::kComplex);
+}
+
 RawObject complexGetImag(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

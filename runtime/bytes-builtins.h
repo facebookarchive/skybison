@@ -42,6 +42,8 @@ class LargeBytesBuiltins
 class BytesBuiltins
     : public Builtins<BytesBuiltins, SymbolId::kBytes, LayoutId::kBytes> {
  public:
+  static void postInitialize(Runtime*, const Type& new_type);
+
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);

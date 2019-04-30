@@ -305,6 +305,13 @@ TEST(NoneBuiltinsTest, DunderReprReturnsNone) {
   EXPECT_TRUE(isStrEqualsCStr(*a, "None"));
 }
 
+TEST(NoneBuiltinsTest, BuiltinBaseIsNone) {
+  Runtime runtime;
+  HandleScope scope;
+  Type none_type(&scope, runtime.typeAt(LayoutId::kNoneType));
+  EXPECT_EQ(none_type.builtinBase(), LayoutId::kNoneType);
+}
+
 TEST(ObjectBuiltinsTest, ObjectGetAttributeReturnsInstanceValue) {
   Runtime runtime;
   Thread* thread = Thread::current();

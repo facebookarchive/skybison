@@ -889,7 +889,8 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   };
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
@@ -909,18 +910,15 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
-  ASSERT_TRUE(result.isError());
-  Thread* thread = Thread::current();
-  ASSERT_TRUE(thread->hasPendingException());
-  Type exception_type(&scope, thread->pendingExceptionType());
-  EXPECT_EQ(exception_type.builtinBase(), LayoutId::kTypeError);
+  EXPECT_TRUE(raisedWithStr(thread->run(code), LayoutId::kTypeError,
+                            "function takes no arguments"));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
 
   Runtime runtime;
+  Thread* thread = Thread::current();
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
@@ -939,12 +937,8 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
-  ASSERT_TRUE(result.isError());
-  Thread* thread = Thread::current();
-  ASSERT_TRUE(thread->hasPendingException());
-  Type exception_type(&scope, thread->pendingExceptionType());
-  EXPECT_EQ(exception_type.builtinBase(), LayoutId::kSystemError);
+  EXPECT_TRUE(raisedWithStr(thread->run(code), LayoutId::kSystemError,
+                            "NULL return without exception set"));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
@@ -1431,6 +1425,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
 
   Runtime runtime;
+  Thread* thread = Thread::current();
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
@@ -1449,12 +1444,8 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
-  ASSERT_TRUE(result.isError());
-  Thread* thread = Thread::current();
-  ASSERT_TRUE(thread->hasPendingException());
-  Type exception_type(&scope, thread->pendingExceptionType());
-  EXPECT_EQ(exception_type.builtinBase(), LayoutId::kSystemError);
+  EXPECT_TRUE(raisedWithStr(thread->run(code), LayoutId::kSystemError,
+                            "NULL return without exception set"));
 }
 
 TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {

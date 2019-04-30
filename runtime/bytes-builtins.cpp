@@ -97,6 +97,10 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
 };
 // clang-format on
 
+void BytesBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  new_type.setBuiltinBase(LayoutId::kBytes);
+}
+
 RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

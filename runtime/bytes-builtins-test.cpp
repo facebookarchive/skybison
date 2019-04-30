@@ -1225,4 +1225,11 @@ TEST(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('c'), '3');
 }
 
+TEST(BytesBuiltinsTest, BuiltinBaseIsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Type bytes_type(&scope, runtime.typeAt(LayoutId::kBytes));
+  EXPECT_EQ(bytes_type.builtinBase(), LayoutId::kBytes);
+}
+
 }  // namespace python

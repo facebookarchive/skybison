@@ -10,6 +10,8 @@ RawObject complexGetReal(Thread* thread, Frame* frame, word nargs);
 class ComplexBuiltins
     : public Builtins<ComplexBuiltins, SymbolId::kComplex, LayoutId::kComplex> {
  public:
+  static void postInitialize(Runtime*, const Type& new_type);
+
   static RawObject dunderNew(Thread*, Frame*, word);
 
   static const BuiltinMethod kBuiltinMethods[];

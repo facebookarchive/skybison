@@ -253,6 +253,10 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
+void StrBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  new_type.setBuiltinBase(LayoutId::kStr);
+}
+
 RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

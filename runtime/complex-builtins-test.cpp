@@ -62,4 +62,11 @@ TEST(ComplexBuiltinsTest, DunderReprHasRealAndImag) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "(1+2j)"));
 }
 
+TEST(ComplexBuiltinsTest, BuiltinBaseIsComplex) {
+  Runtime runtime;
+  HandleScope scope;
+  Type complex_type(&scope, runtime.typeAt(LayoutId::kComplex));
+  EXPECT_EQ(complex_type.builtinBase(), LayoutId::kComplex);
+}
+
 }  // namespace python
