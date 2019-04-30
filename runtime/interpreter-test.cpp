@@ -1254,38 +1254,31 @@ class M:
 manager = M()
   )")
                    .isError());
-
-  Module main(&scope, findModule(&runtime, "__main__"));
+  Object manager(&scope, moduleAt(&runtime, "__main__", "manager"));
+  Object main_obj(&scope, findModule(&runtime, "__main__"));
+  ASSERT_TRUE(main_obj.isModule());
+  Module main(&scope, *main_obj);
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
   code.setNlocals(0);
-
-  Tuple consts(&scope, runtime.newTuple(1));
+  Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(42));
+  consts.atPut(1, *manager);
   code.setConsts(*consts);
-
   Tuple names(&scope, runtime.newTuple(1));
   names.atPut(0, runtime.newStrFromCStr("manager"));
   code.setNames(*names);
-
-  const byte bytecode[] = {LOAD_GLOBAL, 0, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
-                           LOAD_CONST,  0, RETURN_VALUE,      0};
+  const byte bytecode[] = {LOAD_CONST, 1, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
+                           LOAD_CONST, 0, RETURN_VALUE,      0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, main.dict());
-  Dict builtins(&scope, runtime.newDict());
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-  ASSERT_EQ(*result, SmallInt::fromWord(42));
-
-  Object manager(&scope, moduleAt(&runtime, main, "manager"));
-  Object enter(&scope, moduleAt(&runtime, main, "enter"));
+  Dict locals(&scope, runtime.newDict());
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 42));
+  Object enter(&scope, moduleAt(&runtime, "__main__", "enter"));
   EXPECT_EQ(*enter, *manager);
-
-  Object exit(&scope, moduleAt(&runtime, main, "exit"));
+  Object exit(&scope, moduleAt(&runtime, "__main__", "exit"));
   EXPECT_EQ(*exit, NoneType::object());
 }
 
