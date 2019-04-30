@@ -54,6 +54,28 @@ PY_EXPORT int PySet_Add(PyObject* anyset, PyObject* key) {
   return 0;
 }
 
+PY_EXPORT int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
+                               PyObject** pkey, Py_hash_t* phash) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object set_obj(&scope, ApiHandle::fromPyObject(pyset)->asObject());
+  if (!thread->runtime()->isInstanceOfSetBase(*set_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  SetBase set(&scope, *set_obj);
+  Tuple set_data(&scope, set.data());
+  if (!SetBase::Bucket::nextItem(*set_data, ppos)) {
+    return false;
+  }
+  DCHECK(pkey != nullptr, "pkey must not be null");
+  DCHECK(phash != nullptr, "phash must not be null");
+  *pkey = ApiHandle::borrowedReference(thread,
+                                       SetBase::Bucket::key(*set_data, *ppos));
+  *phash = SmallInt::cast(SetBase::Bucket::hash(*set_data, *ppos)).value();
+  return true;
+}
+
 PY_EXPORT int PySet_Clear(PyObject* anyset) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();

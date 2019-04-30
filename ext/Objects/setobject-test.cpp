@@ -151,6 +151,49 @@ TEST_F(SetExtensionApiTest, NewWithNullReturnsEmpty) {
   EXPECT_EQ(PySet_Size(set), 0);
 }
 
+TEST_F(SetExtensionApiTest, NextEntryWithNonSetRaisesSystemError) {
+  PyObject* key = nullptr;
+  Py_hash_t hash = 0;
+  Py_ssize_t pos = 0;
+  PyObjectPtr nonset(PyDict_New());
+  EXPECT_EQ(_PySet_NextEntry(nonset, &pos, &key, &hash), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(SetExtensionApiTest, NextEntryWithEmptySetReturnsFalse) {
+  PyObject* key = nullptr;
+  Py_hash_t hash = 0;
+  Py_ssize_t pos = 0;
+  PyObjectPtr set(PySet_New(nullptr));
+  EXPECT_EQ(_PySet_NextEntry(set, &pos, &key, &hash), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(SetExtensionApiTest, NextEntryWithNonEmptySetReturnsKeysAndHashes) {
+  PyObjectPtr set(PySet_New(nullptr));
+  PyObjectPtr one(PyLong_FromLong(1));
+  ASSERT_EQ(PySet_Add(set, one), 0);
+  PyObjectPtr two(PyLong_FromLong(2));
+  ASSERT_EQ(PySet_Add(set, two), 0);
+
+  Py_ssize_t pos = 0;
+  PyObject* key = nullptr;
+  Py_hash_t hash = -1;
+  ASSERT_EQ(_PySet_NextEntry(set, &pos, &key, &hash), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(key, one);
+  EXPECT_EQ(hash, PyObject_Hash(one));
+
+  ASSERT_EQ(_PySet_NextEntry(set, &pos, &key, &hash), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(key, two);
+  EXPECT_EQ(hash, PyObject_Hash(two));
+
+  ASSERT_EQ(_PySet_NextEntry(set, &pos, &key, &hash), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(SetExtensionApiTest, SizeIncreasesAfterAdd) {
   PyObjectPtr set(PySet_New(nullptr));
   PyObjectPtr one(PyLong_FromLong(1));

@@ -862,6 +862,8 @@ PyAPI_FUNC(PyObject*)
 PyAPI_FUNC(int) _PyLong_Sign(PyObject*);
 PyAPI_FUNC(int) _PyOS_URandom(void*, Py_ssize_t);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void*, Py_ssize_t);
+PyAPI_FUNC(int) _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
+                                 PyObject** pkey, Py_hash_t* phash);
 PyAPI_FUNC(int) _Py_normalize_encoding(const char*, char*, size_t);
 PyAPI_FUNC(void) _PyImport_AcquireLock();
 PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
