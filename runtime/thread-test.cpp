@@ -1145,75 +1145,36 @@ static RawObject inspect_block(Thread*, Frame* frame, word) ALIGN_16;
 // trampolines become mandatory in the future, this function should inspect
 // frame->callerFrame instead of directly inspecting the frame.
 static RawObject inspect_block(Thread*, Frame* frame, word) {
-  // SETUP_LOOP should have pushed an entry onto the block stack with a
-  // stack depth of 3
-  TryBlock block = frame->blockStack()->pop();
+  // SETUP_LOOP should have pushed an entry onto the block stack.
+  TryBlock block = frame->blockStack()->peek();
   EXPECT_EQ(block.kind(), TryBlock::kLoop);
-  EXPECT_EQ(block.handler(), 102);
-  EXPECT_EQ(block.level(), 3);
+  EXPECT_EQ(block.handler(), 4 + 6);  // offset after SETUP_LOOP + loop size
+  EXPECT_EQ(block.level(), 1);
   return NoneType::object();
 }
 
-TEST(ThreadTest, SetupLoop) {
+TEST(ThreadTest, SetupLoopAndPopBlock) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Tuple consts(&scope, runtime.newTuple(1));
+  Tuple consts(&scope, runtime.newTuple(2));
   // inspect_block is meant to be called raw, without any trampoline.
   Str dummy(&scope, runtime.symbols()->Dummy());
   consts.atPut(0, runtime.newNativeFunction(
                       SymbolId::kDummy, dummy, inspect_block,
                       unimplementedTrampoline, unimplementedTrampoline));
-  const byte bytecode[] = {SETUP_LOOP, 100, LOAD_CONST,   0, CALL_FUNCTION, 0,
-                           POP_TOP,    0,   RETURN_VALUE, 0};
+  consts.atPut(1, runtime.newInt(-55));
+  const byte bytecode[] = {LOAD_CONST,    1, SETUP_LOOP, 6, LOAD_CONST, 0,
+                           CALL_FUNCTION, 0, POP_TOP,    0, POP_BLOCK,  0,
+                           RETURN_VALUE,  0};
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
   code.setCode(runtime.newBytesWithAll(bytecode));
   code.setConsts(*consts);
   code.setStacksize(4);
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
 
-  // Create a frame with three items on the stack
-  auto frame = thread->pushFrame(code, globals, builtins);
-  RawObject* sp = frame->valueStackTop();
-  *--sp = SmallInt::fromWord(1111);
-  *--sp = SmallInt::fromWord(2222);
-  *--sp = SmallInt::fromWord(3333);
-  frame->setValueStackTop(sp);
-
-  EXPECT_NO_FATAL_FAILURE(Interpreter::execute(thread, frame));
-}
-
-TEST(ThreadTest, PopBlock) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  const byte bytecode[] = {POP_BLOCK, 0, RETURN_VALUE, 0};
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
-  code.setCode(runtime.newBytesWithAll(bytecode));
-  code.setStacksize(3);
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
-
-  // Create a frame with three items on the stack
-  auto frame = thread->pushFrame(code, globals, builtins);
-  RawObject* sp = frame->valueStackTop();
-  *--sp = SmallInt::fromWord(1111);
-  *--sp = SmallInt::fromWord(2222);
-  *--sp = SmallInt::fromWord(3333);
-  frame->setValueStackTop(sp);
-
-  // Push an entry onto the block stack. When popped, this should set the stack
-  // pointer to point to the bottom most element on the stack.
-  frame->blockStack()->push(TryBlock(TryBlock::kLoop, 0, 1));
-
-  // The RETURN_VALUE instruction should return bottom most item from the stack,
-  // assuming that POP_BLOCK worked correctly.
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::execute(thread, frame), 1111));
+  EXPECT_TRUE(isIntEqualsWord(thread->run(code), -55));
 }
 
 TEST(ThreadTest, PopJumpIfFalse) {
