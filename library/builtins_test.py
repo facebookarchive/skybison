@@ -392,5 +392,25 @@ class SumTests(unittest.TestCase):
         self.assertEqual(result, 0)
 
 
+class RangeTests(unittest.TestCase):
+    def test_range_attrs_are_set(self):
+        obj = range(0, 1, 2)
+        self.assertEqual(obj.start, 0)
+        self.assertEqual(obj.stop, 1)
+        self.assertEqual(obj.step, 2)
+
+    def test_range_start_is_readonly(self):
+        with self.assertRaises(AttributeError):
+            range(0, 1, 2).start = 2
+
+    def test_range_step_is_readonly(self):
+        with self.assertRaises(AttributeError):
+            range(0, 1, 2).step = 2
+
+    def test_range_stop_is_readonly(self):
+        with self.assertRaises(AttributeError):
+            range(0, 1, 2).stop = 2
+
+
 if __name__ == "__main__":
     unittest.main()

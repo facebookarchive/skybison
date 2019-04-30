@@ -7,6 +7,13 @@
 
 namespace python {
 
+const BuiltinAttribute RangeBuiltins::kAttributes[] = {
+    {SymbolId::kStart, Range::kStartOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kStep, Range::kStepOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kStop, Range::kStopOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, -1},
+};
+
 const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderIter, dunderIter},
