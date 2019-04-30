@@ -172,6 +172,17 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
   return intobj.digitAt(0);
 }
 
+PY_EXPORT size_t _PyLong_NumBits(PyObject* pylong) {
+  DCHECK(pylong != nullptr, "argument to _PyLong_NumBits must not be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
+  DCHECK(thread->runtime()->isInstanceOfInt(*long_obj),
+         "argument to _PyLong_NumBits must be an int");
+  Int obj(&scope, intUnderlying(thread, long_obj));
+  return obj.bitLength();
+}
+
 // Converting to signed ints.
 
 PY_EXPORT int _PyLong_AsInt(PyObject* pylong) {

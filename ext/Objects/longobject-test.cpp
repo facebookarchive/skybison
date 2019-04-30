@@ -258,6 +258,73 @@ static PyObject* lshift(long num, long shift) {
   return result;
 }
 
+TEST_F(LongExtensionApiTest, NumBitsWithZeroReturnsZero) {
+  PyObjectPtr num(PyLong_FromLong(0));
+  EXPECT_EQ(_PyLong_NumBits(num), 0);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithOneReturnsOne) {
+  PyObjectPtr num(PyLong_FromLong(1));
+  EXPECT_EQ(_PyLong_NumBits(num), 1);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithNegativeOneReturnsOne) {
+  PyObjectPtr num(PyLong_FromLong(-1));
+  EXPECT_EQ(_PyLong_NumBits(num), 1);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithTwoReturnsTwo) {
+  PyObjectPtr num(PyLong_FromLong(2));
+  EXPECT_EQ(_PyLong_NumBits(num), 2);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithNegativeTwoReturnsTwo) {
+  PyObjectPtr num(PyLong_FromLong(-2));
+  EXPECT_EQ(_PyLong_NumBits(num), 2);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithThreeReturnsTwo) {
+  PyObjectPtr num(PyLong_FromLong(3));
+  EXPECT_EQ(_PyLong_NumBits(num), 2);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithNegativeThreeReturnsTwo) {
+  PyObjectPtr num(PyLong_FromLong(-3));
+  EXPECT_EQ(_PyLong_NumBits(num), 2);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithFourReturnsThree) {
+  PyObjectPtr num(PyLong_FromLong(4));
+  EXPECT_EQ(_PyLong_NumBits(num), 3);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsWithNegativeFourReturnsThree) {
+  PyObjectPtr num(PyLong_FromLong(-4));
+  EXPECT_EQ(_PyLong_NumBits(num), 3);
+}
+
+TEST_F(LongExtensionApiTest, NumBitsCpythonTests) {
+  PyObjectPtr i0(PyLong_FromLong(0x7fffL));
+  EXPECT_EQ(_PyLong_NumBits(i0), 15);
+  PyObjectPtr negative_i0(PyLong_FromLong(-0x7fffL));
+  EXPECT_EQ(_PyLong_NumBits(negative_i0), 15);
+
+  PyObjectPtr i1(PyLong_FromLong(0xffffL));
+  EXPECT_EQ(_PyLong_NumBits(i1), 16);
+  PyObjectPtr negative_i1(PyLong_FromLong(-0xffffL));
+  EXPECT_EQ(_PyLong_NumBits(negative_i1), 16);
+
+  PyObjectPtr i2(PyLong_FromLong(0xfffffffL));
+  EXPECT_EQ(_PyLong_NumBits(i2), 28);
+  PyObjectPtr negative_i2(PyLong_FromLong(-0xfffffffL));
+  EXPECT_EQ(_PyLong_NumBits(negative_i2), 28);
+
+  PyObjectPtr i3(PyLong_FromLong(PY_SSIZE_T_MAX));
+  EXPECT_EQ(_PyLong_NumBits(i3), 63);
+  PyObjectPtr negative_i3(PyLong_FromLong(PY_SSIZE_T_MIN));
+  EXPECT_EQ(_PyLong_NumBits(negative_i3), 64);
+}
+
 TEST_F(LongExtensionApiTest, Overflow) {
   PyObjectPtr pylong(lshift(1, 100));
 

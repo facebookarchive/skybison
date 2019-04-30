@@ -859,6 +859,7 @@ PyAPI_FUNC(int)
 PyAPI_FUNC(int) _PyLong_AsInt(PyObject*);
 PyAPI_FUNC(PyObject*)
     _PyLong_FromByteArray(const unsigned char*, size_t, int, int);
+PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject*);
 PyAPI_FUNC(int) _PyLong_Sign(PyObject*);
 PyAPI_FUNC(int) _PyOS_URandom(void*, Py_ssize_t);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void*, Py_ssize_t);
