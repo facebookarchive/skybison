@@ -14,6 +14,7 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value);
 std::ostream& operator<<(std::ostream& os, CastError value);
 
 std::ostream& operator<<(std::ostream& os, RawBool value);
+std::ostream& operator<<(std::ostream& os, RawBoundMethod value);
 std::ostream& operator<<(std::ostream& os, RawBytes value);
 std::ostream& operator<<(std::ostream& os, RawCode value);
 std::ostream& operator<<(std::ostream& os, RawDict value);

@@ -93,6 +93,12 @@ std::ostream& operator<<(std::ostream& os, RawBool value) {
   return os << (value.value() ? "True" : "False");
 }
 
+std::ostream& operator<<(std::ostream& os, RawBoundMethod value) {
+  return os << "<bound_method "
+            << RawFunction::cast(value.function()).qualname() << ", "
+            << value.self() << '>';
+}
+
 std::ostream& operator<<(std::ostream& os, RawBytes value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -212,6 +218,8 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
   switch (layout) {
     case LayoutId::kBool:
       return os << RawBool::cast(value);
+    case LayoutId::kBoundMethod:
+      return os << RawBoundMethod::cast(value);
     case LayoutId::kCode:
       return os << RawCode::cast(value);
     case LayoutId::kDict:

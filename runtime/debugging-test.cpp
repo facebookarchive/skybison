@@ -96,6 +96,24 @@ TEST(DebuggingTests, FormatBool) {
   EXPECT_EQ(ss.str(), "True;False");
 }
 
+TEST(DebuggingTests, FormatBoundMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def foo():
+    pass
+bound_method = C().foo
+)")
+                   .isError());
+  Object bound_method(&scope, moduleAt(&runtime, "__main__", "bound_method"));
+  ASSERT_TRUE(bound_method.isBoundMethod());
+  std::stringstream ss;
+  ss << bound_method;
+  EXPECT_EQ(ss.str(), "<bound_method \"C.foo\", <\"C\" object>>");
+}
+
 TEST(DebuggingTests, FormatCode) {
   Runtime runtime;
   HandleScope scope;
