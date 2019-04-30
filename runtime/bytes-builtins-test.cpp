@@ -7,6 +7,13 @@ namespace python {
 
 using namespace testing;
 
+TEST(BytesBuiltinsTest, BuiltinBaseIsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Type bytes_type(&scope, runtime.typeAt(LayoutId::kBytes));
+  EXPECT_EQ(bytes_type.builtinBase(), LayoutId::kBytes);
+}
+
 TEST(BytesBuiltinsTest, DunderAddWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
@@ -1223,13 +1230,6 @@ TEST(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('a'), '1');
   EXPECT_EQ(actual.byteAt('b'), '2');
   EXPECT_EQ(actual.byteAt('c'), '3');
-}
-
-TEST(BytesBuiltinsTest, BuiltinBaseIsBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  Type bytes_type(&scope, runtime.typeAt(LayoutId::kBytes));
-  EXPECT_EQ(bytes_type.builtinBase(), LayoutId::kBytes);
 }
 
 }  // namespace python
