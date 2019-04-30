@@ -579,6 +579,7 @@ class RawHeader : public RawObject {
 
   // Constants
   static const word kMaxLayoutId = (1L << (kLayoutIdSize + 1)) - 1;
+  static const word kUninitializedHash = 0;
 
   RAW_OBJECT_COMMON(Header);
 };

@@ -1239,9 +1239,9 @@ bool Runtime::untrackObject(ListEntry* entry) {
 RawObject Runtime::identityHash(RawObject object) {
   RawHeapObject src = RawHeapObject::cast(object);
   word code = src.header().hashCode();
-  if (code == 0) {
+  if (code == RawHeader::kUninitializedHash) {
     code = random() & RawHeader::kHashCodeMask;
-    code = (code == 0) ? 1 : code;
+    code = (code == RawHeader::kUninitializedHash) ? code + 1 : code;
     src.setHeader(src.header().withHashCode(code));
   }
   return SmallInt::fromWord(code);
@@ -1259,11 +1259,11 @@ RawObject Runtime::valueHash(RawObject object) {
   RawHeapObject src = RawHeapObject::cast(object);
   RawHeader header = src.header();
   word code = header.hashCode();
-  if (code == 0) {
+  if (code == RawHeader::kUninitializedHash) {
     word size = src.headerCountOrOverflow();
     code = siphash24(View<byte>(reinterpret_cast<byte*>(src.address()), size));
     code &= RawHeader::kHashCodeMask;
-    code = (code == 0) ? 1 : code;
+    code = (code == RawHeader::kUninitializedHash) ? code + 1 : code;
     src.setHeader(header.withHashCode(code));
     DCHECK(code == src.header().hashCode(), "hash failure");
   }

@@ -324,7 +324,7 @@ void RawTuple::copyTo(RawObject array) const {
 }
 
 void RawTuple::fill(RawObject value) const {
-  DCHECK(header().hashCode() == 0,
+  DCHECK(header().hashCode() == RawHeader::kUninitializedHash,
          "tuple has been hashed and cannot be modified");
   for (word i = 0; i < length(); i++) {
     atPut(i, value);
