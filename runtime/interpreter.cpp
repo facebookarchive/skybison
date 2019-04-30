@@ -654,6 +654,64 @@ RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
   return Bool::trueObj();
 }
 
+RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
+                                    const Code& code,
+                                    const Object& closure_tuple,
+                                    const Object& annotations_dict,
+                                    const Object& kw_defaults_dict,
+                                    const Object& defaults_tuple,
+                                    const Dict& globals, const Dict& builtins) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Function::Entry entry;
+  Function::Entry entry_kw;
+  Function::Entry entry_ex;
+  if (code.hasCoroutineOrGenerator()) {
+    if (code.hasFreevarsOrCellvars()) {
+      entry = generatorClosureTrampoline;
+      entry_kw = generatorClosureTrampolineKw;
+      entry_ex = generatorClosureTrampolineEx;
+    } else {
+      entry = generatorTrampoline;
+      entry_kw = generatorTrampolineKw;
+      entry_ex = generatorTrampolineEx;
+    }
+  } else {
+    if (code.hasFreevarsOrCellvars()) {
+      entry = interpreterClosureTrampoline;
+      entry_kw = interpreterClosureTrampolineKw;
+      entry_ex = interpreterClosureTrampolineEx;
+    } else {
+      entry = interpreterTrampoline;
+      entry_kw = interpreterTrampolineKw;
+      entry_ex = interpreterTrampolineEx;
+    }
+  }
+  Object name(&scope, code.name());
+  Function function(
+      &scope, runtime->newInterpreterFunction(
+                  thread, name, qualname_str, code, closure_tuple,
+                  annotations_dict, kw_defaults_dict, defaults_tuple, globals,
+                  entry, entry_kw, entry_ex));
+
+  Object dunder_name(&scope, runtime->symbols()->at(SymbolId::kDunderName));
+  Object value_cell(&scope, runtime->dictAt(globals, dunder_name));
+  if (value_cell.isValueCell()) {
+    DCHECK(!RawValueCell::cast(*value_cell).isUnbound(), "unbound globals");
+    function.setModule(RawValueCell::cast(*value_cell).value());
+  }
+  Object consts_obj(&scope, code.consts());
+  if (consts_obj.isTuple() && RawTuple::cast(*consts_obj).length() >= 1) {
+    Tuple consts(&scope, *consts_obj);
+    if (consts.at(0).isStr()) {
+      function.setDoc(consts.at(0));
+    }
+  }
+  function.setFastGlobals(runtime->computeFastGlobals(code, globals, builtins));
+  return *function;
+}
+
 void Interpreter::raise(Context* ctx, RawObject raw_exc, RawObject raw_cause) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -2210,67 +2268,20 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope;
-  Runtime* runtime = thread->runtime();
-  Function function(&scope, runtime->newFunction());
-  function.setQualname(frame->popValue());
-  function.setCode(frame->popValue());
-  function.setName(RawCode::cast(function.code()).name());
+  Object qualname(&scope, frame->popValue());
+  Code code(&scope, frame->popValue());
+  Object closure(&scope, NoneType::object());
+  Object annotations(&scope, NoneType::object());
+  Object kw_defaults(&scope, NoneType::object());
+  Object defaults(&scope, NoneType::object());
+  if (arg & MakeFunctionFlag::CLOSURE) closure = frame->popValue();
+  if (arg & MakeFunctionFlag::ANNOTATION_DICT) annotations = frame->popValue();
+  if (arg & MakeFunctionFlag::DEFAULT_KW) kw_defaults = frame->popValue();
+  if (arg & MakeFunctionFlag::DEFAULT) defaults = frame->popValue();
   Dict globals(&scope, frame->globals());
-  function.setGlobals(*globals);
-  Object name_key(&scope, runtime->symbols()->at(SymbolId::kDunderName));
-  Object value_cell(&scope, runtime->dictAt(globals, name_key));
-  if (value_cell.isValueCell()) {
-    DCHECK(!RawValueCell::cast(*value_cell).isUnbound(), "unbound globals");
-    function.setModule(RawValueCell::cast(*value_cell).value());
-  }
   Dict builtins(&scope, frame->builtins());
-  Code code(&scope, function.code());
-  Object consts_obj(&scope, code.consts());
-  if (consts_obj.isTuple() && RawTuple::cast(*consts_obj).length() >= 1) {
-    Tuple consts(&scope, *consts_obj);
-    if (consts.at(0).isStr()) {
-      function.setDoc(consts.at(0));
-    }
-  }
-  function.setFastGlobals(runtime->computeFastGlobals(code, globals, builtins));
-  if (code.hasCoroutineOrGenerator()) {
-    if (code.hasFreevarsOrCellvars()) {
-      function.setEntry(generatorClosureTrampoline);
-      function.setEntryKw(generatorClosureTrampolineKw);
-      function.setEntryEx(generatorClosureTrampolineEx);
-    } else {
-      function.setEntry(generatorTrampoline);
-      function.setEntryKw(generatorTrampolineKw);
-      function.setEntryEx(generatorTrampolineEx);
-    }
-  } else {
-    if (code.hasFreevarsOrCellvars()) {
-      function.setEntry(interpreterClosureTrampoline);
-      function.setEntryKw(interpreterClosureTrampolineKw);
-      function.setEntryEx(interpreterClosureTrampolineEx);
-    } else {
-      function.setEntry(interpreterTrampoline);
-      function.setEntryKw(interpreterTrampolineKw);
-      function.setEntryEx(interpreterTrampolineEx);
-    }
-  }
-  if (arg & MakeFunctionFlag::CLOSURE) {
-    DCHECK((frame->topValue()).isTuple(), "Closure expects tuple");
-    function.setClosure(frame->popValue());
-  }
-  if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
-    DCHECK((frame->topValue()).isDict(), "Parameter annotations expect dict");
-    function.setAnnotations(frame->popValue());
-  }
-  if (arg & MakeFunctionFlag::DEFAULT_KW) {
-    DCHECK((frame->topValue()).isDict(), "Keyword arguments expect dict");
-    function.setKwDefaults(frame->popValue());
-  }
-  if (arg & MakeFunctionFlag::DEFAULT) {
-    DCHECK((frame->topValue()).isTuple(), "Default arguments expect tuple");
-    function.setDefaults(frame->popValue());
-  }
-  frame->pushValue(*function);
+  frame->pushValue(makeFunction(thread, qualname, code, closure, annotations,
+                                kw_defaults, defaults, globals, builtins));
 }
 
 // opcode 133

@@ -116,6 +116,13 @@ class Interpreter {
                                     const Object& value,
                                     const Object& container);
 
+  static RawObject makeFunction(Thread* thread, const Object& qualname_str,
+                                const Code& code, const Object& closure_tuple,
+                                const Object& annotations_dict,
+                                const Object& kw_defaults_dict,
+                                const Object& defaults_tuple,
+                                const Dict& globals, const Dict& builtins);
+
   struct Context {
     Thread* thread;
     Frame* frame;

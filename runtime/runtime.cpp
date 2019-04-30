@@ -666,6 +666,27 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
   return *function;
 }
 
+RawObject Runtime::newInterpreterFunction(
+    Thread* thread, const Object& name, const Object& qualname,
+    const Code& code, const Object& closure, const Object& annotations,
+    const Object& kw_defaults, const Object& defaults, const Dict& globals,
+    Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex) {
+  HandleScope scope(thread);
+  Function function(&scope, heap()->create<RawFunction>());
+  function.setName(*name);
+  function.setQualname(*qualname);
+  function.setCode(*code);
+  function.setGlobals(*globals);
+  function.setClosure(*closure);
+  function.setAnnotations(*annotations);
+  function.setKwDefaults(*kw_defaults);
+  function.setDefaults(*defaults);
+  function.setEntry(entry);
+  function.setEntryKw(entry_kw);
+  function.setEntryEx(entry_ex);
+  return *function;
+}
+
 RawObject Runtime::newExceptionState() {
   return heap()->create<RawExceptionState>();
 }
