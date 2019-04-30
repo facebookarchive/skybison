@@ -995,6 +995,18 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
           dst_idx += value.length();
         }
       } break;
+      case 'F': {
+        Object obj(&scope, **va_arg(args, Object*));
+        Function function(&scope, *obj);
+        Str value(&scope, function.qualname());
+        if (dst == nullptr) {
+          len--;
+          len += value.length();
+        } else {
+          value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value.length());
+          dst_idx += value.length();
+        }
+      } break;
       case 'T': {
         Object obj(&scope, **va_arg(args, Object*));
         Type type(&scope, userVisibleTypeOf(thread, obj));

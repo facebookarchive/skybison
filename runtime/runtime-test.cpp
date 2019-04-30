@@ -725,6 +725,15 @@ TEST(RuntimeTest, NewStrFromFmtWithStrArg) {
   EXPECT_EQ(*result, str);
 }
 
+TEST(StrBuiltinsTest, NewStrFromFmtFormatsFunctionName) {
+  Runtime runtime;
+  HandleScope scope;
+  Function function(&scope, runtime.newFunction());
+  function.setQualname(runtime.newStrFromCStr("foo"));
+  Object str(&scope, runtime.newStrFromFmt("hello %F", &function));
+  EXPECT_TRUE(isStrEqualsCStr(*str, "hello foo"));
+}
+
 TEST(StrBuiltinsTest, NewStrFromFmtFormatsTypeName) {
   Runtime runtime;
   HandleScope scope;

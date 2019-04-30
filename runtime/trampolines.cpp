@@ -75,10 +75,9 @@ static RawObject processDefaultArguments(Thread* thread,
     // Add default positional args
     Tuple default_args(&scope, function.defaults());
     if (default_args.length() < (code.argcount() - new_argc)) {
-      Str fn_name_str(&scope, function.qualname());
       return thread->raiseTypeError(runtime->newStrFromFmt(
-          "TypeError: '%S' takes min %w positional arguments but %w given",
-          &fn_name_str, code.argcount() - default_args.length(), argc));
+          "TypeError: '%F' takes min %w positional arguments but %w given",
+          &function, code.argcount() - default_args.length(), argc));
     }
     const word positional_only = code.argcount() - default_args.length();
     for (; new_argc < code.argcount(); new_argc++) {
@@ -98,10 +97,9 @@ static RawObject processDefaultArguments(Thread* thread,
       }
       tmp_varargs = *varargs;
     } else {
-      Str fn_name_str(&scope, function.qualname());
       return thread->raiseTypeError(runtime->newStrFromFmt(
-          "TypeError: '%S' takes max %w positional arguments but %w given",
-          &fn_name_str, code.argcount(), argc));
+          "TypeError: '%F' takes max %w positional arguments but %w given",
+          &function, code.argcount(), argc));
     }
   }
 
@@ -146,11 +144,9 @@ static RawObject processDefaultArguments(Thread* thread,
   // At this point, we should have the correct number of arguments.  Throw if
   // not.
   if (new_argc != code.totalArgs()) {
-    Str fn_name_str(&scope, function.qualname());
     return thread->raiseTypeError(runtime->newStrFromFmt(
-        "TypeError: '%S' takes %w positional arguments but %w given",
-        &fn_name_str, code.argcount(),
-        new_argc - code.hasVarargs() - code.hasVarkeyargs()));
+        "TypeError: '%F' takes %w positional arguments but %w given", &function,
+        code.argcount(), new_argc - code.hasVarargs() - code.hasVarkeyargs()));
   }
   return NoneType::object();  // value not significant, it's just not an error
 }
