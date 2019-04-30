@@ -601,8 +601,6 @@ TEST(ThreadTest, LoadGlobal) {
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names.atPut(0, *key);
@@ -611,17 +609,11 @@ TEST(ThreadTest, LoadGlobal) {
   const byte bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Frame* frame = thread->pushFrame(code, globals, builtins);
+  Dict globals(&scope, runtime.newDict());
+  Object value(&scope, runtime.newInt(1234));
+  runtime.moduleDictAtPut(globals, key, value);
 
-  ValueCell value_cell(&scope, runtime.newValueCell());
-  value_cell.setValue(SmallInt::fromWord(1234));
-  Object value(&scope, *value_cell);
-  runtime.dictAtPut(globals, key, value);
-  frame->setGlobals(*globals);
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-  EXPECT_EQ(*result, value_cell.value());
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, globals), 1234));
 }
 
 struct TestData {
@@ -742,8 +734,6 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -754,20 +744,13 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   names.atPut(0, *key);
   code.setNames(*names);
 
-  const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
-                           LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
+                           LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-
-  frame->setGlobals(*globals);
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-
-  Object value(&scope, runtime.dictAt(globals, key));
-  ASSERT_TRUE(value.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*value).value());
+  Dict globals(&scope, runtime.newDict());
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, globals), 42));
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(globals, key), 42));
 }
 
 TEST(ThreadTest, StoreGlobalReuseValueCell) {
@@ -777,8 +760,6 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -789,26 +770,15 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   names.atPut(0, *key);
   code.setNames(*names);
 
-  const byte bytecode[] = {LOAD_CONST,  0, STORE_GLOBAL, 0,
-                           LOAD_GLOBAL, 0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
+                           LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-
-  ValueCell value_cell1(&scope, runtime.newValueCell());
-  value_cell1.setValue(SmallInt::fromWord(99));
-
-  Object value(&scope, *value_cell1);
-  runtime.dictAtPut(globals, key, value);
-  frame->setGlobals(*globals);
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-
-  Interpreter::execute(thread, frame);
-
-  Object value_cell2(&scope, runtime.dictAt(globals, key));
-  ASSERT_TRUE(value_cell2.isValueCell());
-  EXPECT_EQ(*value_cell2, *value_cell1);
-  EXPECT_EQ(SmallInt::fromWord(42), value_cell1.value());
+  Dict globals(&scope, runtime.newDict());
+  Object value(&scope, runtime.newInt(99));
+  runtime.moduleDictAtPut(globals, key, value);
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, globals), 42));
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(globals, key), 42));
 }
 
 TEST(ThreadTest, StoreNameCreateValueCell) {
@@ -818,8 +788,6 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
 
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -831,21 +799,13 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
-                           LOAD_NAME,  0, RETURN_VALUE, 0};
+                           LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-
-  Dict implicit_globals(&scope, runtime.newDict());
-  frame->setImplicitGlobals(*implicit_globals);
-  frame->setFastGlobals(
-      runtime.computeFastGlobals(code, implicit_globals, builtins));
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-
-  Object value(&scope, runtime.dictAt(implicit_globals, key));
-  ASSERT_TRUE(value.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*value).value());
+  Dict globals(&scope, runtime.newDict());
+  Dict locals(&scope, runtime.newDict());
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 42));
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(locals, key), 42));
 }
 
 TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
@@ -865,23 +825,17 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
-  Object builtins_value(&scope, runtime.newInt(123));
-  runtime.dictAtPutInValueCell(builtins, key, builtins_value);
-
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-  // This should be a no-op because there are no loads or stores to globals.
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-  frame->setImplicitGlobals(*globals);  // simulate module body
-
-  Interpreter::execute(thread, frame);
-
-  Object value_cell(&scope, runtime.dictAt(builtins, key));
-  ASSERT_TRUE(value_cell.isValueCell());
-  EXPECT_EQ(*builtins_value, RawValueCell::cast(*value_cell).value());
+  Object module_name(&scope, runtime.symbols()->Builtins());
+  Module builtins(&scope, runtime.newModule(module_name));
+  Object dunder_builtins_name(&scope, runtime.symbols()->DunderBuiltins());
+  runtime.moduleDictAtPut(globals, dunder_builtins_name, builtins);
+  Object value(&scope, runtime.newInt(123));
+  runtime.moduleAtPut(builtins, key, value);
+  Dict locals(&scope, runtime.newDict());
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 123));
 }
 
-TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
+TEST(ThreadTest, LoadNameFromGlobals) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -889,36 +843,22 @@ TEST(ThreadTest, LoadNameInModuleBodyFromGlobals) {
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
 
-  Tuple consts(&scope, runtime.newTuple(1));
-  consts.atPut(0, SmallInt::fromWord(42));
-  code.setConsts(*consts);
-
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names.atPut(0, *key);
   code.setNames(*names);
 
-  const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
-                           LOAD_NAME,  0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
-
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-  frame->setImplicitGlobals(*globals);  // simulate module body
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-
-  Object val0(&scope, runtime.dictAt(globals, key));  // 2-level indirection
-  ASSERT_TRUE(val0.isValueCell());
-  Object val1(&scope, RawValueCell::cast(*val0));
-  ASSERT_TRUE(val1.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*val1).value());
+  Object value(&scope, runtime.newInt(321));
+  runtime.typeDictAtPut(globals, key, value);
+  Dict locals(&scope, runtime.newDict());
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 321));
 }
 
-TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
+TEST(ThreadTest, LoadNameFromLocals) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -926,72 +866,21 @@ TEST(ThreadTest, LoadNameInTypeBodyFromGlobal) {
   Object name(&scope, Str::empty());
   Code code(&scope, runtime.newEmptyCode(name));
 
-  Tuple consts(&scope, runtime.newTuple(1));
-  consts.atPut(0, SmallInt::fromWord(42));
-  code.setConsts(*consts);
-
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names.atPut(0, *key);
   code.setNames(*names);
 
-  const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
-                           LOAD_NAME,  0, RETURN_VALUE, 0};
+  const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
-
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-
-  Dict implicit_globals(&scope, runtime.newDict());
-  frame->setImplicitGlobals(*implicit_globals);  // simulate cls body
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-
-  Object val0(&scope, runtime.dictAt(globals, key));  // 2-level indirection
-  ASSERT_TRUE(val0.isValueCell());
-  Object val1(&scope, RawValueCell::cast(*val0));
-  ASSERT_TRUE(val1.isValueCell());
-  EXPECT_EQ(*result, RawValueCell::cast(*val1).value());
-}
-
-TEST(ThreadTest, LoadNameInTypeBodyFromImplicitGlobals) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
-
-  Tuple consts(&scope, runtime.newTuple(1));
-  consts.atPut(0, SmallInt::fromWord(42));
-  code.setConsts(*consts);
-
-  Tuple names(&scope, runtime.newTuple(1));
-  Object key(&scope, runtime.newStrFromCStr("foo"));
-  names.atPut(0, *key);
-  code.setNames(*names);
-
-  const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
-                           LOAD_NAME,  0, RETURN_VALUE, 0};
-  code.setCode(runtime.newBytesWithAll(bytecode));
-
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
-
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-  frame->setFastGlobals(runtime.computeFastGlobals(code, globals, builtins));
-
-  Dict implicit_globals(&scope, runtime.newDict());
-  frame->setImplicitGlobals(*implicit_globals);  // simulate cls body
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-
-  Object val(&scope, runtime.dictAt(implicit_globals, key));
-  ASSERT_TRUE(val.isValueCell());  // 1-level indirection
-  EXPECT_EQ(*result, RawValueCell::cast(*val).value());
+  Object globals_value(&scope, runtime.newInt(456));
+  runtime.typeDictAtPut(globals, key, globals_value);
+  Dict locals(&scope, runtime.newDict());
+  Object locals_value(&scope, runtime.newInt(654));
+  runtime.typeDictAtPut(globals, key, locals_value);
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 654));
 }
 
 TEST(ThreadTest, MakeFunction) {
@@ -999,44 +888,38 @@ TEST(ThreadTest, MakeFunction) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code module(&scope, runtime.newEmptyCode(name));
+  Object name(&scope, runtime.newStrFromCStr("hello"));
+  Code func_code(&scope, runtime.newEmptyCode(name));
+  func_code.setCode(runtime.newBytes(0, 0));
+  func_code.setFlags(Code::Flags::NOFREE);
+
+  Object empty_str(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(empty_str));
 
   Tuple consts(&scope, runtime.newTuple(3));
-  Code code(&scope, runtime.newEmptyCode(name));
-  consts.atPut(0, *code);
-  Object key(&scope, runtime.newStrFromCStr("hello"));
-  consts.atPut(1, *key);
+  consts.atPut(0, *func_code);
+  consts.atPut(1, runtime.newStrFromCStr("hello_qualname"));
   consts.atPut(2, NoneType::object());
-  module.setConsts(*consts);
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
+  code.setConsts(*consts);
 
   Tuple names(&scope, runtime.newTuple(1));
   names.atPut(0, runtime.newStrFromCStr("hello"));
-  module.setNames(*names);
+  code.setNames(*names);
 
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST, 1, MAKE_FUNCTION, 0,
                            STORE_NAME, 0, LOAD_CONST, 2, RETURN_VALUE,  0};
-  module.setCode(runtime.newBytesWithAll(bytecode));
   code.setCode(runtime.newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::NOFREE);
-  code.setNames(*names);
 
-  Frame* frame = thread->pushFrame(module, globals, builtins);
+  Dict globals(&scope, runtime.newDict());
+  Dict locals(&scope, runtime.newDict());
+  ASSERT_TRUE(thread->exec(code, globals, locals).isNoneType());
 
-  Dict implicit_globals(&scope, runtime.newDict());
-  frame->setImplicitGlobals(*implicit_globals);
-
-  Interpreter::execute(thread, frame);
-
-  Object value(&scope, runtime.dictAt(implicit_globals, key));
-  ASSERT_TRUE(value.isValueCell());
-  ASSERT_TRUE(RawValueCell::cast(*value).value().isFunction());
-
-  Function function(&scope, RawValueCell::cast(*value).value());
-  EXPECT_EQ(function.code(), consts.at(0));
-  EXPECT_EQ(function.qualname(), consts.at(1));
+  Object function_obj(&scope, runtime.moduleDictAt(locals, name));
+  ASSERT_TRUE(function_obj.isFunction());
+  Function function(&scope, *function_obj);
+  EXPECT_EQ(function.code(), func_code);
+  EXPECT_TRUE(isStrEqualsCStr(function.name(), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(function.qualname(), "hello_qualname"));
   EXPECT_EQ(function.entry(), &interpreterTrampoline);
 }
 
@@ -2437,8 +2320,6 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   Object key(&scope, runtime.newStrFromCStr("a"));
   names.atPut(0, *key);
   code.setNames(*names);
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
 
   // see python code in BreakLoop.whileLoop (sans print)
   const byte bytecode[] = {LOAD_CONST,        0,                  // 0
@@ -2455,16 +2336,10 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
                            RETURN_VALUE,      0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-
-  Dict implicit_globals(&scope, runtime.newDict());
-
-  frame->setImplicitGlobals(*implicit_globals);
-  frame->setFastGlobals(
-      runtime.computeFastGlobals(code, implicit_globals, builtins));
-
-  Interpreter::execute(thread, frame);
-  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(implicit_globals, key), 3));
+  Dict globals(&scope, runtime.newDict());
+  Dict locals(&scope, runtime.newDict());
+  ASSERT_TRUE(thread->exec(code, globals, locals).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(locals, key), 3));
 }
 
 TEST(ThreadTest, BreakLoopRangeLoop) {
@@ -2531,8 +2406,6 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   names.atPut(0, *key0);
   names.atPut(1, *key1);
   code.setNames(*names);
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
 
   //  # python code:
   //  cnt = 0
@@ -2575,16 +2448,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
 
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-
-  Dict implicit_globals(&scope, runtime.newDict());
-
-  frame->setImplicitGlobals(*implicit_globals);
-  frame->setFastGlobals(
-      runtime.computeFastGlobals(code, implicit_globals, builtins));
-
-  Object result(&scope, Interpreter::execute(thread, frame));
-  EXPECT_TRUE(isIntEqualsWord(*result, 7));
+  EXPECT_TRUE(isIntEqualsWord(thread->run(code), 7));
 }
 
 TEST(ThreadTest, Func2TestPyStone) {  // mimic pystone.py Func2
@@ -2969,13 +2833,10 @@ TEST(ThreadTest, LoadTypeDerefFromLocal) {
                            LOAD_CLASSDEREF, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
   code.setStacksize(2);
+
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
-  Frame* frame = thread->pushFrame(code, globals, builtins);
-  frame->setCode(*code);
-  Dict implicit_global(&scope, runtime.newDict());
-  frame->setImplicitGlobals(*implicit_global);
-  EXPECT_TRUE(isIntEqualsWord(Interpreter::execute(thread, frame), 1111));
+  Dict locals(&scope, runtime.newDict());
+  EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 1111));
 }
 
 TEST(TrampolinesTest, PushCallFrameWithSameGlobalsPropagatesBuiltins) {
