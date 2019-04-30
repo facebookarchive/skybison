@@ -998,6 +998,7 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
 
 #define PyUnicode_GET_LENGTH(op) PyUnicode_GetLength((PyObject*)op)
 #define PyUnicode_GET_SIZE(op) PyUnicode_GetSize((PyObject*)op)
+#define PyUnicode_IS_READY(op) 1
 #define PyUnicode_KIND(op) PyUnicode_KIND_Func((PyObject*)op)
 #define PyUnicode_DATA(op) PyUnicode_DATA_Func((PyObject*)op)
 #define PyUnicode_READ(kind, data, index)                                      \
