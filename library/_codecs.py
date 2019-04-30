@@ -97,6 +97,104 @@ def ascii_decode(data: bytes, errors: str = "strict"):
 
 
 @_patch
+def _ascii_encode(data: str, errors: str, index: int, out: bytearray):
+    """Tries to encode `data`, starting from `index`, into the `out` bytearray.
+    If it encounters any codepoints above 127, it tries using the `errors`
+    error handler to fix it internally, but returns the a tuple of the first
+    and last index of the error on failure.
+    If it finishes encoding, it returns a tuple of the final bytes and length.
+    """
+    pass
+
+
+def ascii_encode(data: str, errors: str = "strict"):
+    if not isinstance(data, str):
+        raise TypeError(
+            f"ascii_encode() argument 1 must be str, not {type(data).__name__}"
+        )
+    if not isinstance(errors, str):
+        raise TypeError(
+            "ascii_encode() argument 2 must be str or None, not "
+            f"{type(errors).__name__}"
+        )
+    result = bytearray()
+    i = 0
+    encoded = b""
+    length = len(data)
+    while i < length:
+        encoded, i = _ascii_encode(data, errors, i, result)
+        if isinstance(encoded, int):
+            unicode, pos = _call_encode_errorhandler(
+                errors, data, "ordinal not in range(128)", "ascii", encoded, i
+            )
+            if isinstance(unicode, bytes):
+                result += unicode
+                i = pos
+                continue
+            for char in unicode:
+                if char > "\x7F":
+                    raise UnicodeEncodeError(
+                        "ascii", unicode, encoded, i, "ordinal not in range(128)"
+                    )
+            _bytearray_string_append(result, unicode)
+            i = pos
+    if isinstance(encoded, bytes):
+        return encoded, i
+    # _ascii_encode encountered an error and _call_encode_errorhandler was the
+    # last function to write to `result`.
+    return bytes(result), i
+
+
+@_patch
+def _latin_1_encode(data: str, errors: str, index: int, out: bytearray):
+    """Tries to encode `data`, starting from `index`, into the `out` bytearray.
+    If it encounters any codepoints above 255, it tries using the `errors`
+    error handler to fix it internally, but returns the a tuple of the first
+    and last index of the error on failure.
+    If it finishes encoding, it returns a tuple of the final bytes and length.
+    """
+    pass
+
+
+def latin_1_encode(data: str, errors: str = "strict"):
+    if not isinstance(data, str):
+        raise TypeError(
+            f"latin_1_encode() argument 1 must be str, not {type(data).__name__}"
+        )
+    if not isinstance(errors, str):
+        raise TypeError(
+            "latin_1_encode() argument 2 must be str or None, not "
+            f"{type(errors).__name__}"
+        )
+    result = bytearray()
+    i = 0
+    encoded = b""
+    length = len(data)
+    while i < length:
+        encoded, i = _latin_1_encode(data, errors, i, result)
+        if isinstance(encoded, int):
+            unicode, pos = _call_encode_errorhandler(
+                errors, data, "ordinal not in range(256)", "latin-1", encoded, i
+            )
+            if isinstance(unicode, bytes):
+                result += unicode
+                i = pos
+                continue
+            for char in unicode:
+                if char > "\xFF":
+                    raise UnicodeEncodeError(
+                        "latin-1", unicode, encoded, i, "ordinal not in range(256)"
+                    )
+            result += latin_1_encode(unicode, errors)[0]
+            i = pos
+    if isinstance(encoded, bytes):
+        return encoded, i
+    # _latin_1_encode encountered an error and _call_encode_errorhandler was the
+    # last function to write to `result`.
+    return bytes(result), i
+
+
+@_patch
 def _utf_8_encode(data: str, errors: str, index: int, out: bytearray):
     """Tries to encode `data`, starting from `index`, into the `out` bytearray.
     If it encounters an error, it tries using the `errors` error handler to
@@ -147,6 +245,12 @@ def utf_8_encode(data: str, errors: str = "strict"):
 _codec_decode_table = {"ascii": ascii_decode, "us_ascii": ascii_decode}
 
 _codec_encode_table = {
+    "ascii": ascii_encode,
+    "us_ascii": ascii_encode,
+    "latin_1": latin_1_encode,
+    "latin-1": latin_1_encode,
+    "iso-8859-1": latin_1_encode,
+    "iso_8859_1": latin_1_encode,
     "utf_8": utf_8_encode,
     "utf-8": utf_8_encode,
     "utf8": utf_8_encode,

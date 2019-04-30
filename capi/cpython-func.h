@@ -681,6 +681,7 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetStart(PyObject*, Py_ssize_t);
 PyAPI_FUNC(void) PyUnicode_Append(PyObject**, PyObject*);
 PyAPI_FUNC(void) PyUnicode_AppendAndDel(PyObject**, PyObject*);
 PyAPI_FUNC(PyObject*) PyUnicode_AsASCIIString(PyObject*);
+PyAPI_FUNC(PyObject*) _PyUnicode_AsASCIIString(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyUnicode_AsCharmapString(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*)
     PyUnicode_AsDecodedObject(PyObject*, const char*, const char*);
@@ -692,6 +693,7 @@ PyAPI_FUNC(PyObject*)
     PyUnicode_AsEncodedString(PyObject*, const char*, const char*);
 PyAPI_FUNC(PyObject*)
     PyUnicode_AsEncodedUnicode(PyObject*, const char*, const char*);
+PyAPI_FUNC(PyObject*) _PyUnicode_AsLatin1String(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyUnicode_AsLatin1String(PyObject*);
 PyAPI_FUNC(PyObject*) PyUnicode_AsMBCSString(PyObject*);
 PyAPI_FUNC(PyObject*) PyUnicode_AsRawUnicodeEscapeString(PyObject*);

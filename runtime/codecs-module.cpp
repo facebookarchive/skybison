@@ -7,6 +7,9 @@
 
 namespace python {
 
+const int32_t kLowSurrogateStart = 0xDC00;
+const char kASCIIReplacement = '?';
+
 static SymbolId lookupSymbolForErrorHandler(const Str& error) {
   if (error.equalsCStr("strict")) {
     return SymbolId::kStrict;
@@ -68,8 +71,10 @@ static int asciiDecode(Thread* thread, const ByteArray& dst, const Bytes& src,
 }
 
 const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
+    {SymbolId::kUnderAsciiEncode, underAsciiEncode},
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
     {SymbolId::kUnderUtf8Encode, underUtf8Encode},
+    {SymbolId::kUnderLatin1Encode, underLatin1Encode},
     {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
     {SymbolId::kUnderByteArrayToString, underByteArrayToString},
     {SymbolId::kSentinelId, nullptr},
@@ -147,6 +152,138 @@ static bool isSurrogate(int32_t codepoint) {
 // to recover the original codepoints from those decodable surrogate points.
 static bool isEscapedLatin1Surrogate(int32_t codepoint) {
   return 0xDC80 <= codepoint && codepoint <= 0xDCFF;
+}
+
+RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object data_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
+  DCHECK(runtime->isInstanceOfStr(*data_obj),
+         "First arg to _ascii_encode must be str");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _ascii_encode must be str");
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _ascii_encode must be int");
+  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+         "Fourth arg to _ascii_encode must be bytearray");
+  // TODO(T43357729): Have proper subclass handling
+  Str data(&scope, *data_obj);
+  Str errors(&scope, *errors_obj);
+  Int index_int(&scope, *index_obj);
+  ByteArray output(&scope, *output_obj);
+
+  Tuple result(&scope, runtime->newTuple(2));
+  SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
+  word i = index_int.asWord();
+  // TODO(T43252439): Optimize this by first checking whether the entire string
+  // is ASCII, and just memcpy into a string if so
+  for (word byte_offset = data.offsetByCodePoints(0, i);
+       byte_offset < data.length(); i++) {
+    word num_bytes;
+    int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
+    byte_offset += num_bytes;
+    if (codepoint <= kMaxASCII) {
+      byteArrayAdd(thread, runtime, output, codepoint);
+    } else {
+      switch (error_symbol) {
+        case SymbolId::kIgnore:
+          continue;
+        case SymbolId::kReplace:
+          byteArrayAdd(thread, runtime, output, kASCIIReplacement);
+          continue;
+        case SymbolId::kSurrogateescape:
+          if (isEscapedLatin1Surrogate(codepoint)) {
+            byteArrayAdd(thread, runtime, output,
+                         codepoint - kLowSurrogateStart);
+            continue;
+          }
+          break;
+        default:
+          break;
+      }
+      result.atPut(0, runtime->newInt(i));
+      while (byte_offset < data.length() &&
+             data.codePointAt(byte_offset, &num_bytes) > kMaxASCII) {
+        byte_offset += num_bytes;
+        i++;
+      }
+      result.atPut(1, runtime->newInt(i + 1));
+      return *result;
+    }
+  }
+  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(1, runtime->newInt(i));
+  return *result;
+}
+
+RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object data_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
+  DCHECK(runtime->isInstanceOfStr(*data_obj),
+         "First arg to _latin_1_encode must be str");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _latin_1_encode must be str");
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _latin_1_encode must be int");
+  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+         "Fourth arg to _latin_1_encode must be bytearray");
+  // TODO(T43357729): Have proper subclass handling
+  Str data(&scope, *data_obj);
+  Str errors(&scope, *errors_obj);
+  Int index_int(&scope, *index_obj);
+  ByteArray output(&scope, *output_obj);
+
+  Tuple result(&scope, runtime->newTuple(2));
+  SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
+  word i = index_int.asWord();
+  for (word byte_offset = data.offsetByCodePoints(0, i);
+       byte_offset < data.length(); i++) {
+    word num_bytes;
+    int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
+    byte_offset += num_bytes;
+    if (codepoint <= kMaxByte) {
+      byteArrayAdd(thread, runtime, output, codepoint);
+    } else {
+      switch (error_symbol) {
+        case SymbolId::kIgnore:
+          continue;
+        case SymbolId::kReplace:
+          byteArrayAdd(thread, runtime, output, kASCIIReplacement);
+          continue;
+        case SymbolId::kSurrogateescape:
+          if (isEscapedLatin1Surrogate(codepoint)) {
+            byteArrayAdd(thread, runtime, output,
+                         codepoint - kLowSurrogateStart);
+            continue;
+          }
+          break;
+        default:
+          break;
+      }
+      result.atPut(0, runtime->newInt(i));
+      while (byte_offset < data.length() &&
+             data.codePointAt(byte_offset, &num_bytes) > kMaxByte) {
+        byte_offset += num_bytes;
+        i++;
+      }
+      result.atPut(1, runtime->newInt(i + 1));
+      return *result;
+    }
+  }
+  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(1, runtime->newInt(i));
+  return *result;
 }
 
 RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,

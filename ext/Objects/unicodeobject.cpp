@@ -668,8 +668,30 @@ PY_EXPORT void PyUnicode_AppendAndDel(PyObject** p_left, PyObject* right) {
   Py_XDECREF(right);
 }
 
-PY_EXPORT PyObject* PyUnicode_AsASCIIString(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_AsASCIIString");
+PY_EXPORT PyObject* _PyUnicode_AsASCIIString(PyObject* unicode,
+                                             const char* errors) {
+  DCHECK(unicode != nullptr, "unicode cannot be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  if (!runtime->isInstanceOfStr(*str)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object tuple_obj(
+      &scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
+                                      SymbolId::kAsciiEncode, str, errors_obj));
+  if (tuple_obj.isError()) {
+    return nullptr;
+  }
+  Tuple tuple(&scope, *tuple_obj);
+  return ApiHandle::newReference(thread, tuple.at(0));
+}
+
+PY_EXPORT PyObject* PyUnicode_AsASCIIString(PyObject* unicode) {
+  return _PyUnicode_AsASCIIString(unicode, "strict");
 }
 
 PY_EXPORT PyObject* PyUnicode_AsCharmapString(PyObject* /* e */,
@@ -707,8 +729,30 @@ PY_EXPORT PyObject* PyUnicode_AsEncodedUnicode(PyObject* /* e */,
   UNIMPLEMENTED("PyUnicode_AsEncodedUnicode");
 }
 
-PY_EXPORT PyObject* PyUnicode_AsLatin1String(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_AsLatin1String");
+PY_EXPORT PyObject* _PyUnicode_AsLatin1String(PyObject* unicode,
+                                              const char* errors) {
+  DCHECK(unicode != nullptr, "unicode cannot be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  if (!runtime->isInstanceOfStr(*str)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object tuple_obj(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
+                                                   SymbolId::kLatin1Encode, str,
+                                                   errors_obj));
+  if (tuple_obj.isError()) {
+    return nullptr;
+  }
+  Tuple tuple(&scope, *tuple_obj);
+  return ApiHandle::newReference(thread, tuple.at(0));
+}
+
+PY_EXPORT PyObject* PyUnicode_AsLatin1String(PyObject* unicode) {
+  return _PyUnicode_AsLatin1String(unicode, "strict");
 }
 
 PY_EXPORT PyObject* PyUnicode_AsMBCSString(PyObject* /* e */) {

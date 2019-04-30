@@ -131,6 +131,98 @@ class DecodeASCIITests(unittest.TestCase):
         self.assertEqual(consumed, 4)
 
 
+class EncodeASCIITests(unittest.TestCase):
+    def test_encode_ascii_with_non_str_first_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.ascii_encode([])
+
+    def test_encode_ascii_with_non_str_second_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.ascii_encode("", [])
+
+    def test_encode_ascii_with_zero_length_returns_empty_bytes(self):
+        encoded, consumed = _codecs.ascii_encode("")
+        self.assertEqual(encoded, b"")
+        self.assertEqual(consumed, 0)
+
+    def test_encode_ascii_with_well_formed_ascii_returns_bytes(self):
+        encoded, consumed = _codecs.ascii_encode("hello")
+        self.assertEqual(encoded, b"hello")
+        self.assertEqual(consumed, 5)
+
+    def test_encode_ascii_with_well_formed_latin_1_raises_encode_error(self):
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs.ascii_encode("hell\xe5")
+
+    def test_encode_ascii_with_custom_error_handler_mid_bytes_error_returns_bytes(self):
+        _codecs.register_error("test", lambda x: (b"-testing-", x.end))
+        encoded, consumed = _codecs.ascii_encode("ab\udc80c", "test")
+        self.assertEqual(encoded, b"ab-testing-c")
+        self.assertEqual(consumed, 4)
+
+    def test_encode_ascii_with_custom_error_handler_end_bytes_error_returns_bytes(self):
+        _codecs.register_error("test", lambda x: (b"-testing-", x.end))
+        encoded, consumed = _codecs.ascii_encode("ab\x80", "test")
+        self.assertEqual(encoded, b"ab-testing-")
+        self.assertEqual(consumed, 3)
+
+    def test_encode_ascii_with_non_ascii_error_handler_raises_decode_error(self):
+        _codecs.register_error("test", lambda x: ("\x80", x.end))
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs.ascii_encode("ab\x80", "test")
+
+
+class EncodeLatin1Tests(unittest.TestCase):
+    def test_encode_latin_1_with_non_str_first_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.latin_1_encode([])
+
+    def test_encode_latin_1_with_non_str_second_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.latin_1_encode("", [])
+
+    def test_encode_latin_1_with_zero_length_returns_empty_bytes(self):
+        encoded, consumed = _codecs.latin_1_encode("")
+        self.assertEqual(encoded, b"")
+        self.assertEqual(consumed, 0)
+
+    def test_encode_latin_1_with_well_formed_latin_1_returns_bytes(self):
+        encoded, consumed = _codecs.latin_1_encode("hell\xe5")
+        self.assertEqual(encoded, b"hell\xe5")
+        self.assertEqual(consumed, 5)
+
+    def test_encode_ascii_with_well_formed_non_latin_1_raises_encode_error(self):
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs.ascii_encode("hell\u01ff")
+
+    def test_encode_latin_1_with_custom_error_handler_mid_bytes_error_returns_bytes(
+        self
+    ):
+        _codecs.register_error("test", lambda x: (b"-testing-", x.end))
+        encoded, consumed = _codecs.latin_1_encode("ab\udc80c", "test")
+        self.assertEqual(encoded, b"ab-testing-c")
+        self.assertEqual(consumed, 4)
+
+    def test_encode_latin_1_with_custom_error_handler_end_bytes_error_returns_bytes(
+        self
+    ):
+        _codecs.register_error("test", lambda x: (b"-testing-", x.end))
+        encoded, consumed = _codecs.latin_1_encode("ab\u0180", "test")
+        self.assertEqual(encoded, b"ab-testing-")
+        self.assertEqual(consumed, 3)
+
+    def test_encode_latin_1_with_non_ascii_error_handler_returns_bytes(self):
+        _codecs.register_error("test", lambda x: ("\x80", x.end))
+        encoded, consumed = _codecs.latin_1_encode("ab\u0180", "test")
+        self.assertEqual(encoded, b"ab\x80")
+        self.assertEqual(consumed, 3)
+
+    def test_encode_latin_1_with_non_latin_1_error_handler_raises_decode_error(self):
+        _codecs.register_error("test", lambda x: ("\u0180", x.end))
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs.latin_1_encode("ab\u0f80", "test")
+
+
 class EncodeUTF8Tests(unittest.TestCase):
     def test_encode_utf_8_with_non_str_first_argument_raises_type_error(self):
         with self.assertRaises(TypeError):

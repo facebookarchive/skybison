@@ -137,8 +137,10 @@ class Runtime;
   V(Args, "args")                                                              \
   V(Argv, "argv")                                                              \
   V(ArithmeticError, "ArithmeticError")                                        \
+  V(UnderAsciiEncode, "_ascii_encode")                                         \
   V(Ascii, "ascii")                                                            \
   V(AsciiDecode, "ascii_decode")                                               \
+  V(AsciiEncode, "ascii_encode")                                               \
   V(AssertionError, "AssertionError")                                          \
   V(AttributeError, "AttributeError")                                          \
   V(Backslashreplace, "backslashreplace")                                      \
@@ -290,6 +292,8 @@ class Runtime;
   V(KeyError, "KeyError")                                                      \
   V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
   V(Keys, "keys")                                                              \
+  V(UnderLatin1Encode, "_latin_1_encode")                                      \
+  V(Latin1Encode, "latin_1_encode")                                            \
   V(Len, "len")                                                                \
   V(Length, "length")                                                          \
   V(LStrip, "lstrip")                                                          \

@@ -1453,4 +1453,84 @@ TEST_F(UnicodeExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeDecodeError));
 }
 
+TEST_F(UnicodeExtensionApiTest, AsASCIIStringWithNonStringReturnsNull) {
+  PyObjectPtr bytes(_PyUnicode_AsASCIIString(Py_None, nullptr));
+  ASSERT_EQ(bytes, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsASCIIStringReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  PyObjectPtr bytes(_PyUnicode_AsASCIIString(unicode, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 3);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsASCIIStringWithInvalidCodepointRaisesEncodeError) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo\u00EF"));
+  PyObjectPtr bytes(_PyUnicode_AsASCIIString(unicode, nullptr));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeEncodeError));
+  EXPECT_EQ(bytes, nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsASCIIStringWithReplaceErrorsReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo\u00EF"));
+  PyObjectPtr bytes(_PyUnicode_AsASCIIString(unicode, "replace"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 4);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo?");
+}
+
+TEST_F(UnicodeExtensionApiTest, AsLatin1StringWithNonStringReturnsNull) {
+  PyObjectPtr bytes(_PyUnicode_AsLatin1String(Py_None, nullptr));
+  ASSERT_EQ(bytes, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsLatin1StringReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  PyObjectPtr bytes(_PyUnicode_AsLatin1String(unicode, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 3);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo");
+}
+
+TEST_F(UnicodeExtensionApiTest, AsLatin1StringWithLatin1ReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo\u00E4"));
+  PyObjectPtr bytes(_PyUnicode_AsLatin1String(unicode, "replace"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 4);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo\xE4");
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsLatin1StringWithInvalidCodepointRaisesEncodeError) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo\u01EF"));
+  PyObjectPtr bytes(_PyUnicode_AsLatin1String(unicode, nullptr));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeEncodeError));
+  EXPECT_EQ(bytes, nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsLatin1StringWithReplaceErrorsReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo\u0AE4"));
+  PyObjectPtr bytes(_PyUnicode_AsLatin1String(unicode, "replace"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 4);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "foo?");
+}
+
 }  // namespace python
