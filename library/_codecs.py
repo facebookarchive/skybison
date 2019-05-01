@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-# This is the patch decorator, injected by our boot process. flake8 has no
-# knowledge about its definition and will complain without this gross circular
-# helper here.
+# These values are injected by our boot process. flake8 has no knowledge about
+# their definitions and will complain without this gross circular helper here.
+_index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
@@ -376,18 +376,6 @@ def _call_encode_errorhandler(
         raise IndexError(f"position {pos} from error handler out of bounds")
 
     return unicode, pos
-
-
-def _index(num):
-    if not isinstance(num, int):
-        try:
-            # TODO(T41077650): Truncate the result of __index__ to Py_ssize_t
-            return num.__index__()
-        except AttributeError:
-            raise TypeError(
-                f"'{type(num).__name__}' object cannot be interpreted as" " an integer"
-            )
-    return num
 
 
 _codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
