@@ -39,6 +39,7 @@ class BuiltinsModule {
   static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
+  static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntFromByteArray(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underIntFromBytes(Thread* thread, Frame* frame, word nargs);

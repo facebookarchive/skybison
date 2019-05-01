@@ -358,11 +358,11 @@ def _complex_real(c):
 
 def _index(obj) -> int:
     # equivalent to PyNumber_Index
-    if isinstance(obj, int):
+    if _int_check(obj):
         return obj
     try:
         result = obj.__index__()
-        if isinstance(result, int):
+        if _int_check(result):
             return result
         raise TypeError(f"__index__ returned non-int (type {type(result).__name__})")
     except AttributeError:
@@ -383,6 +383,11 @@ def _int(obj) -> int:
     if result_type is int:
         return result
     raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
+
+
+@_patch
+def _int_check(obj) -> bool:
+    pass
 
 
 @_patch
@@ -864,7 +869,7 @@ class bytes(bootstrap=True):
                 "'__getitem__' requires a 'bytes' object but received a "
                 f"'{type(self).__name__}'"
             )
-        if isinstance(key, int):
+        if _int_check(key):
             return _bytes_getitem(self, key)
         if isinstance(key, slice):
             return _bytes_getitem_slice(self, *key.indices(len(self)))
@@ -934,7 +939,7 @@ class bytes(bootstrap=True):
             return result
         if isinstance(source, str):
             raise TypeError("string argument without an encoding")
-        if isinstance(source, int) or hasattr(source, "__index__"):
+        if _int_check(source) or hasattr(source, "__index__"):
             # TODO(T36619847): implement bytes subclasses
             return _bytes_repeat(b"\x00", _index(source))
         # TODO(T36619847): implement bytes subclasses
@@ -1393,7 +1398,7 @@ class float(bootstrap=True):
                 f"'__ne__' requires a 'float' object "
                 f"but received a '{self.__class__.__name__}'"
             )
-        if not isinstance(n, float) and not isinstance(n, int):
+        if not isinstance(n, float) and not _int_check(n):
             return NotImplemented
         return not float.__eq__(self, n)  # noqa: T484
 
@@ -1529,7 +1534,7 @@ def hash(obj):
         result = dunder_hash(obj)
     except TypeError:
         raise TypeError(f"unhashable type: '{type(obj).__name__}'")
-    if not isinstance(result, int):
+    if not _int_check(result):
         raise TypeError("__hash__ method should return an integer")
     # TODO(djang): This needs to be cast to the exact int type.
     return result
@@ -1676,13 +1681,13 @@ class int(bootstrap=True):
 
     def __pow__(self, power, mod=None) -> int:
         # TODO(T42359066): Re-write this in C++ if we need a speed boost.
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError(
                 f"'__pow__' requires an 'int' object but got '{type(self).__name__}'"
             )
-        if not isinstance(power, int):
+        if not _int_check(power):
             return NotImplemented
-        if mod is not None and not isinstance(mod, int):
+        if mod is not None and not _int_check(mod):
             return NotImplemented
         if power < 0:
             if mod is not None:
@@ -1704,23 +1709,23 @@ class int(bootstrap=True):
         return result
 
     def __radd__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__radd__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__add__(n, self)
 
     def __rand__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rand__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__and__(n, self)
 
     def __rdivmod__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rdivmod__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__divmod__(n, self)  # noqa: T484
 
@@ -1728,37 +1733,37 @@ class int(bootstrap=True):
         pass
 
     def __rfloordiv__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rfloordiv__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__floordiv__(n, self)  # noqa: T484
 
     def __rlshift__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rlshift__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__lshift__(n, self)
 
     def __rmod__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rmod__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__mod__(n, self)  # noqa: T484
 
     def __rmul__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rmul__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__mul__(n, self)
 
     def __ror__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__ror__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__or__(n, self)
 
@@ -1766,16 +1771,16 @@ class int(bootstrap=True):
         pass
 
     def __rpow__(self, n: int, *, mod=None):
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rpow__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__pow__(n, self, mod=mod)  # noqa: T484
 
     def __rrshift__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rrshift__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__rshift__(n, self)
 
@@ -1783,23 +1788,23 @@ class int(bootstrap=True):
         pass
 
     def __rsub__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rsub__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__sub__(n, self)
 
     def __rtruediv__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rtruediv__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__truediv__(n, self)  # noqa: T484
 
     def __rxor__(self, n: int) -> int:
-        if not isinstance(self, int):
+        if not _int_check(self):
             raise TypeError("'__rxor__' requires a 'int' object")
-        if not isinstance(n, int):
+        if not _int_check(n):
             return NotImplemented
         return int.__xor__(n, self)
 
@@ -2913,7 +2918,7 @@ class str(bootstrap=True):
             )
         if isinstance(keepends, float):
             raise TypeError("integer argument expected, got float")
-        if not isinstance(keepends, (bool, int)):
+        if not _int_check(keepends):
             keepends = int(keepends)
         return _str_splitlines(self, keepends)
 

@@ -453,6 +453,7 @@ class Runtime;
   V(UnderGetframeLineno, "_getframe_lineno")                                   \
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
+  V(UnderIntCheck, "_int_check")                                               \
   V(UnderIntFromByteArray, "_int_from_bytearray")                              \
   V(UnderIntFromBytes, "_int_from_bytes")                                      \
   V(UnderIntFromInt, "_int_from_int")                                          \

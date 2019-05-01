@@ -91,6 +91,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
+    {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntFromByteArray, underIntFromByteArray},
     {SymbolId::kUnderIntFromInt, underIntFromInt},
@@ -826,6 +827,12 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
     return thread->raiseValueErrorWithCStr("negative count");
   }
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
+}
+
+RawObject BuiltinsModule::underIntCheck(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfInt(args.get(0)));
 }
 
 static RawObject intOrUserSubclass(Thread* thread, const Type& type,

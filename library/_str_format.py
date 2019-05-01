@@ -2,6 +2,7 @@
 """This is an internal module that contains functions used for str.format().
 The entry point is format()."""
 
+_int_check = _int_check  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
@@ -115,7 +116,7 @@ def str_format(s, pos_tuple, keyword_dict):
         field_cnt += 1
         # TODO(djang): A field should be an object that
         # performs formattting itself.
-        if isinstance(field_key, int):
+        if _int_check(field_key):
             field_value = pos_tuple[field_key]
         else:
             field_value = keyword_dict[field_key]

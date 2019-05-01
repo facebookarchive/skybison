@@ -2,6 +2,7 @@
 
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions and will complain without this gross circular helper here.
+_int_check = _int_check  # noqa: F821
 _index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
@@ -86,7 +87,7 @@ def ascii_decode(data: bytes, errors: str = "strict"):
     encoded = ""
     while i < len(data):
         encoded, i = _ascii_decode(data, errors, i, result)
-        if isinstance(encoded, int):
+        if _int_check(encoded):
             data, i = _call_decode_errorhandler(
                 errors, data, result, "ordinal not in range(128)", "ascii", encoded, i
             )
@@ -123,7 +124,7 @@ def ascii_encode(data: str, errors: str = "strict"):
     length = len(data)
     while i < length:
         encoded, i = _ascii_encode(data, errors, i, result)
-        if isinstance(encoded, int):
+        if _int_check(encoded):
             unicode, pos = _call_encode_errorhandler(
                 errors, data, "ordinal not in range(128)", "ascii", encoded, i
             )
@@ -172,7 +173,7 @@ def latin_1_encode(data: str, errors: str = "strict"):
     length = len(data)
     while i < length:
         encoded, i = _latin_1_encode(data, errors, i, result)
-        if isinstance(encoded, int):
+        if _int_check(encoded):
             unicode, pos = _call_encode_errorhandler(
                 errors, data, "ordinal not in range(256)", "latin-1", encoded, i
             )
@@ -220,7 +221,7 @@ def utf_8_encode(data: str, errors: str = "strict"):
     encoded = bytes()
     while i < len(data):
         encoded, i = _utf_8_encode(data, errors, i, result)
-        if isinstance(encoded, int):
+        if _int_check(encoded):
             unicode, pos = _call_encode_errorhandler(
                 errors, data, "surrogates not allowed", "utf-8", encoded, i
             )
