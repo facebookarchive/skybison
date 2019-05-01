@@ -1,5 +1,6 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
+#include "int-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -56,30 +57,31 @@ PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!object.isInt()) {
-    Object result(&scope, thread->invokeMethod1(object, SymbolId::kFileno));
-    if (result.isError()) {
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*object)) {
+    object = thread->invokeMethod1(object, SymbolId::kFileno);
+    if (object.isError()) {
       if (!thread->hasPendingException()) {
         thread->raiseTypeErrorWithCStr(
-            "argument must be an int or have a fileno() method.");
+            "argument must be an int, or have a fileno() method.");
       }
       return -1;
     }
-    if (!result.isInt()) {
-      thread->raiseTypeErrorWithCStr("fileno() returned non-int");
+    if (!runtime->isInstanceOfInt(*object)) {
+      thread->raiseTypeErrorWithCStr("fileno() returned a non-integer");
       return -1;
     }
-    object = *result;
   }
-  auto const optint = RawInt::cast(*object).asInt<int>();
-  if (optint.error == CastError::Overflow) {
+  Int result(&scope, intUnderlying(thread, object));
+  auto const optint = result.asInt<int>();
+  if (optint.error != CastError::None) {
     thread->raiseOverflowErrorWithCStr(
-        "integer too big to convert to file descriptor");
+        "Python int too big to convert to C int");
     return -1;
   }
   int fd = optint.value;
   if (fd < 0) {
-    thread->raiseValueError(thread->runtime()->newStrFromFmt(
+    thread->raiseValueError(runtime->newStrFromFmt(
         "file descriptor cannot be a negative integer (%d)", fd));
     return -1;
   }

@@ -16,6 +16,16 @@ TEST_F(FileObjectExtensionApiTest, AsFileDescriptorWithSmallIntReturnsInt) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(FileObjectExtensionApiTest, AsFileDescriptorWithIntSubclassReturnsInt) {
+  PyRun_SimpleString(R"(
+class Subclass(int): pass
+obj = Subclass(5)
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_AsFileDescriptor(obj), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(FileObjectExtensionApiTest,
        AsFileDescriptorWithLargeIntRaisesOverflowError) {
   PyRun_SimpleString(R"(
@@ -72,6 +82,20 @@ c = C()
   EXPECT_EQ(PyObject_AsFileDescriptor(c), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(FileObjectExtensionApiTest,
+       AsFileDescriptorWithIntSubclassFilenoReturnsInt) {
+  PyRun_SimpleString(R"(
+class Subclass(int): pass
+class C:
+  def fileno(self):
+    return Subclass(5)
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyObject_AsFileDescriptor(c), 5);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(FileObjectExtensionApiTest, WriteObjectWritesRepr) {
