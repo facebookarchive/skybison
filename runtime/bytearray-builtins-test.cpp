@@ -999,6 +999,111 @@ TEST(ByteArrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('c'), '3');
 }
 
+TEST(ByteArrayBuiltinsTest, TranslateWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray.translate(b'', None)"),
+      LayoutId::kTypeError,
+      "'translate' requires a 'bytearray' object but got 'bytes'"));
+}
+
+TEST(ByteArrayBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray().translate(42)"),
+                            LayoutId::kTypeError,
+                            "a bytes-like object is required, not 'int'"));
+}
+
+TEST(ByteArrayBuiltinsTest, TranslateWithNonBytesLikeDeleteRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytearray().translate(None, 42)"),
+      LayoutId::kTypeError, "a bytes-like object is required, not 'int'"));
+}
+
+TEST(ByteArrayBuiltinsTest, TranslateWithShortTableRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray().translate(b'')"),
+                            LayoutId::kValueError,
+                            "translation table must be 256 characters long"));
+}
+
+TEST(ByteArrayBuiltinsTest, TranslateWithEmptyByteArrayReturnsNewByteArray) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object table(&scope, NoneType::object());
+  Object del(&scope, runtime.newByteArray());
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+  EXPECT_NE(result, self);
+}
+
+TEST(ByteArrayBuiltinsTest, TranslateWithNonEmptySecondArgDeletesBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
+  const byte abc[] = {'a', 'b', 'c'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, alabama);
+  Object table(&scope, NoneType::object());
+  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "Alm"));
+}
+
+TEST(ByteArrayBuiltinsTest, TranslateWithTableTranslatesBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "table = bytes.maketrans(b'Aa', b'12')").isError());
+  const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, alabama);
+  Object table(&scope, moduleAt(&runtime, "__main__", "table"));
+  Object del(&scope, runtime.newByteArray());
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "1l2b2m2"));
+}
+
+TEST(ByteArrayBuiltinsTest,
+     TranslateWithTableAndDeleteTranslatesAndDeletesBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "table = bytes.maketrans(b'Aa', b'12')").isError());
+  const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
+  const byte abc[] = {'a', 'b', 'c'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, alabama);
+  Object table(&scope, moduleAt(&runtime, "__main__", "table"));
+  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "1lm"));
+}
+
+TEST(ByteArrayBuiltinsTest, TranslateDeletesAllBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte alabama[] = {'b', 'a', 'c', 'a', 'a', 'c', 'a'};
+  const byte abc[] = {'a', 'b', 'c'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, alabama);
+  Object table(&scope, NoneType::object());
+  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderIterReturnsByteArrayIterator) {
   Runtime runtime;
   ASSERT_FALSE(

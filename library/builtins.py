@@ -835,7 +835,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def translate(self, table, delete=b""):
-        _unimplemented()
+        pass
 
     def upper(self):
         _unimplemented()
@@ -1090,7 +1090,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def translate(self, table, delete=b""):
-        _unimplemented()
+        pass
 
     def upper(self):
         _unimplemented()

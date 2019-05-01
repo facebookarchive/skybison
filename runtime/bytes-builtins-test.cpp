@@ -1232,4 +1232,94 @@ TEST(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('c'), '3');
 }
 
+TEST(BytesBuiltinsTest, TranslateWithNonBytesSelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "bytes.translate(bytearray(), None)"),
+      LayoutId::kTypeError,
+      "'translate' requires a 'bytes' object but got 'bytearray'"));
+}
+
+TEST(BytesBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.translate(42)"),
+                            LayoutId::kTypeError,
+                            "a bytes-like object is required, not 'int'"));
+}
+
+TEST(BytesBuiltinsTest, TranslateWithNonBytesLikeDeleteRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.translate(None, 42)"),
+                            LayoutId::kTypeError,
+                            "a bytes-like object is required, not 'int'"));
+}
+
+TEST(BytesBuiltinsTest, TranslateWithShortTableRaisesValueError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.translate(b'')"),
+                            LayoutId::kValueError,
+                            "translation table must be 256 characters long"));
+}
+
+TEST(BytesBuiltinsTest, TranslateWithEmptyBytesReturnsEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, Bytes::empty());
+  Object table(&scope, NoneType::object());
+  Object del(&scope, runtime.newByteArray());
+  Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
+  EXPECT_EQ(result, Bytes::empty());
+}
+
+TEST(BytesBuiltinsTest, TranslateWithNonEmptySecondArgDeletesBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
+  const byte abc[] = {'a', 'b', 'c'};
+  Object self(&scope, runtime.newBytesWithAll(alabama));
+  Object table(&scope, NoneType::object());
+  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "Alm"));
+}
+
+TEST(BytesBuiltinsTest, TranslateWithTableTranslatesBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "table = bytes.maketrans(b'Aa', b'12')").isError());
+  const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
+  Object self(&scope, runtime.newBytesWithAll(alabama));
+  Object table(&scope, moduleAt(&runtime, "__main__", "table"));
+  Object del(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "1l2b2m2"));
+}
+
+TEST(BytesBuiltinsTest, TranslateWithTableAndDeleteTranslatesAndDeletesBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(
+      runFromCStr(&runtime, "table = bytes.maketrans(b'Aa', b'12')").isError());
+  const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
+  const byte abc[] = {'a', 'b', 'c'};
+  Object self(&scope, runtime.newBytesWithAll(alabama));
+  Object table(&scope, moduleAt(&runtime, "__main__", "table"));
+  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "1lm"));
+}
+
+TEST(BytesBuiltinsTest, TranslateDeletesAllBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  const byte alabama[] = {'b', 'a', 'c', 'a', 'a', 'c', 'a'};
+  const byte abc[] = {'a', 'b', 'c'};
+  Object self(&scope, runtime.newBytesWithAll(alabama));
+  Object table(&scope, NoneType::object());
+  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
+  EXPECT_EQ(result, Bytes::empty());
+}
+
 }  // namespace python

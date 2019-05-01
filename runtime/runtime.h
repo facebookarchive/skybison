@@ -402,6 +402,11 @@ class Runtime {
   RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,
                         word length);
 
+  // Returns a new Bytes containing a copy of `self` with all of the bytes in
+  // `del` removed, where the remaining bytes are mapped using `table`.
+  RawObject bytesTranslate(Thread* thread, const Bytes& self, word length,
+                           const Bytes& table, const Bytes& del, word del_len);
+
   // Ensures that the list has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
   void listEnsureCapacity(const List& list, word min_capacity);

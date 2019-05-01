@@ -417,6 +417,7 @@ class Runtime;
   V(TimeoutError, "TimeoutError")                                              \
   V(ToBytes, "to_bytes")                                                       \
   V(Traceback, "traceback")                                                    \
+  V(Translate, "translate")                                                    \
   V(Truediv, "truediv")                                                        \
   V(Tuple, "tuple")                                                            \
   V(TupleIterator, "tuple_iterator")                                           \

@@ -38,6 +38,7 @@ const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
+    {SymbolId::kTranslate, translate},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -454,6 +455,66 @@ RawObject ByteArrayBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   } else {
     result.setBytes(*joined);
     result.setNumItems(Bytes::cast(*joined).length());
+  }
+  return *result;
+}
+
+RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
+                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Bytes self_bytes(&scope, self.bytes());
+  Object table_obj(&scope, args.get(1));
+  word table_length;
+  if (table_obj.isNoneType()) {
+    table_length = BytesBuiltins::kTranslationTableLength;
+    table_obj = Bytes::empty();
+  } else if (runtime->isInstanceOfBytes(*table_obj)) {
+    Bytes bytes(&scope, *table_obj);
+    table_length = bytes.length();
+  } else if (runtime->isInstanceOfByteArray(*table_obj)) {
+    ByteArray array(&scope, *table_obj);
+    table_length = array.numItems();
+    table_obj = array.bytes();
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return thread->raiseTypeError(runtime->newStrFromFmt(
+        "a bytes-like object is required, not '%T'", &table_obj));
+  }
+  if (table_length != BytesBuiltins::kTranslationTableLength) {
+    return thread->raiseValueError(
+        runtime->newStrFromFmt("translation table must be %w characters long",
+                               BytesBuiltins::kTranslationTableLength));
+  }
+  Bytes table(&scope, *table_obj);
+  Object del(&scope, args.get(2));
+  Bytes translated(&scope, Bytes::empty());
+  if (runtime->isInstanceOfBytes(*del)) {
+    Bytes bytes(&scope, *del);
+    translated = runtime->bytesTranslate(thread, self_bytes, self.numItems(),
+                                         table, bytes, bytes.length());
+  } else if (runtime->isInstanceOfByteArray(*del)) {
+    ByteArray array(&scope, *del);
+    Bytes bytes(&scope, array.bytes());
+    translated = runtime->bytesTranslate(thread, self_bytes, self.numItems(),
+                                         table, bytes, array.numItems());
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return thread->raiseTypeError(runtime->newStrFromFmt(
+        "a bytes-like object is required, not '%T'", &del));
+  }
+  ByteArray result(&scope, runtime->newByteArray());
+  if (translated.isSmallBytes()) {
+    runtime->byteArrayIadd(thread, result, translated, translated.length());
+  } else {
+    result.setBytes(*translated);
+    result.setNumItems(translated.length());
   }
   return *result;
 }

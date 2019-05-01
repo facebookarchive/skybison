@@ -93,6 +93,7 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
+    {SymbolId::kTranslate, translate},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
@@ -318,6 +319,55 @@ RawObject BytesBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   }
   // Slow path: collect items into list in Python and call again
   return NoneType::object();
+}
+
+RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+  }
+  Bytes self(&scope, *self_obj);
+  Object table_obj(&scope, args.get(1));
+  word table_length;
+  if (table_obj.isNoneType()) {
+    table_length = kTranslationTableLength;
+    table_obj = Bytes::empty();
+  } else if (runtime->isInstanceOfBytes(*table_obj)) {
+    Bytes bytes(&scope, *table_obj);
+    table_length = bytes.length();
+  } else if (runtime->isInstanceOfByteArray(*table_obj)) {
+    ByteArray array(&scope, *table_obj);
+    table_length = array.numItems();
+    table_obj = array.bytes();
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return thread->raiseTypeError(runtime->newStrFromFmt(
+        "a bytes-like object is required, not '%T'", &table_obj));
+  }
+  if (table_length != kTranslationTableLength) {
+    return thread->raiseValueError(
+        runtime->newStrFromFmt("translation table must be %w characters long",
+                               kTranslationTableLength));
+  }
+  Bytes table(&scope, *table_obj);
+  Object del(&scope, args.get(2));
+  if (runtime->isInstanceOfBytes(*del)) {
+    Bytes bytes(&scope, *del);
+    return runtime->bytesTranslate(thread, self, self.length(), table, bytes,
+                                   bytes.length());
+  }
+  if (runtime->isInstanceOfByteArray(*del)) {
+    ByteArray array(&scope, *del);
+    Bytes bytes(&scope, array.bytes());
+    return runtime->bytesTranslate(thread, self, self.length(), table, bytes,
+                                   array.numItems());
+  }
+  // TODO(T38246066): allow any bytes-like object
+  return thread->raiseTypeError(runtime->newStrFromFmt(
+      "a bytes-like object is required, not '%T'", &del));
 }
 
 }  // namespace python

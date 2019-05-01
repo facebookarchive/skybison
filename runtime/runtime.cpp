@@ -2416,6 +2416,59 @@ RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
   return *copy;
 }
 
+RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
+                                  word length, const Bytes& table,
+                                  const Bytes& del, word del_len) {
+  DCHECK_BOUND(length, self.length());
+  DCHECK_BOUND(del_len, del.length());
+  // calculate mapping table
+  byte new_byte[BytesBuiltins::kTranslationTableLength];
+  if (table == Bytes::empty()) {
+    for (word i = 0; i < BytesBuiltins::kTranslationTableLength; i++) {
+      new_byte[i] = i;
+    }
+  } else {
+    DCHECK(table.length() >= BytesBuiltins::kTranslationTableLength,
+           "translation table must map every possible byte value");
+    for (word i = 0; i < BytesBuiltins::kTranslationTableLength; i++) {
+      new_byte[i] = table.byteAt(i);
+    }
+  }
+  // make initial pass to calculate length
+  bool delete_byte[BytesBuiltins::kTranslationTableLength] = {};
+  for (word i = 0; i < del_len; i++) {
+    delete_byte[del.byteAt(i)] = true;
+  }
+  word new_length = length;
+  for (word i = 0; i < length; i++) {
+    if (delete_byte[self.byteAt(i)]) {
+      new_length--;
+    }
+  }
+  // replace or delete each byte
+  if (new_length <= SmallBytes::kMaxLength) {
+    byte buffer[SmallBytes::kMaxLength];
+    for (word i = 0, j = 0; j < new_length; i++) {
+      DCHECK(i < length, "reached end of self before finishing translation");
+      byte current = self.byteAt(i);
+      if (!delete_byte[current]) {
+        buffer[j++] = new_byte[current];
+      }
+    }
+    return SmallBytes::fromBytes({buffer, new_length});
+  }
+  HandleScope scope(thread);
+  LargeBytes result(&scope, heap()->createLargeBytes(new_length));
+  for (word i = 0, j = 0; j < new_length; i++) {
+    DCHECK(i < length, "reached end of self before finishing translation");
+    byte current = self.byteAt(i);
+    if (!delete_byte[current]) {
+      result.byteAtPut(j++, new_byte[current]);
+    }
+  }
+  return *result;
+}
+
 // List
 
 void Runtime::listEnsureCapacity(const List& list, word min_capacity) {

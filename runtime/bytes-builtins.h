@@ -59,6 +59,7 @@ class BytesBuiltins
 
   static RawObject hex(Thread* thread, Frame* frame, word nargs);
   static RawObject join(Thread* thread, Frame* frame, word nargs);
+  static RawObject translate(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const word kTranslationTableLength = 1 << kBitsPerByte;
