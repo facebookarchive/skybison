@@ -8,6 +8,7 @@
 namespace python {
 
 const int32_t kLowSurrogateStart = 0xDC00;
+const int32_t kHighSurrogateStart = 0xD800;
 const char kASCIIReplacement = '?';
 
 static SymbolId lookupSymbolForErrorHandler(const Str& error) {
@@ -73,8 +74,9 @@ static int asciiDecode(Thread* thread, const ByteArray& dst, const Bytes& src,
 const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAsciiEncode, underAsciiEncode},
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
-    {SymbolId::kUnderUtf8Encode, underUtf8Encode},
     {SymbolId::kUnderLatin1Encode, underLatin1Encode},
+    {SymbolId::kUnderUtf16Encode, underUtf16Encode},
+    {SymbolId::kUnderUtf8Encode, underUtf8Encode},
     {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
     {SymbolId::kUnderByteArrayToString, underByteArrayToString},
     {SymbolId::kSentinelId, nullptr},
@@ -341,6 +343,104 @@ RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
   }
   result.atPut(0, byteArrayAsBytes(thread, runtime, output));
   result.atPut(1, runtime->newInt(index));
+  return *result;
+}
+
+static void appendUtf16ToByteArray(Thread* thread, Runtime* runtime,
+                                   const ByteArray& writer, int32_t codepoint,
+                                   int byteorder) {
+  if (byteorder <= 0) {
+    byteArrayAdd(thread, runtime, writer, codepoint & 0x00FF);
+    byteArrayAdd(thread, runtime, writer, codepoint >> 8);
+  } else {
+    byteArrayAdd(thread, runtime, writer, codepoint >> 8);
+    byteArrayAdd(thread, runtime, writer, codepoint & 0x00FF);
+  }
+}
+
+static int32_t highSurrogate(int32_t codepoint) {
+  return kHighSurrogateStart - (0x10000 >> 10) + (codepoint >> 10);
+}
+
+static int32_t lowSurrogate(int32_t codepoint) {
+  return kLowSurrogateStart + (codepoint & 0x3FF);
+}
+
+RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object data_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
+  Object byteorder_obj(&scope, args.get(4));
+  DCHECK(runtime->isInstanceOfStr(*data_obj),
+         "First arg to _utf_16_encode must be str");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _utf_16_encode must be str");
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _utf_16_encode must be int");
+  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+         "Fourth arg to _utf_16_encode must be bytearray");
+  DCHECK(runtime->isInstanceOfInt(*byteorder_obj),
+         "Fifth arg to _utf_16_encode must be int");
+  // TODO(T43357729): Have proper subclass handling
+  Str data(&scope, *data_obj);
+  Str errors(&scope, *errors_obj);
+  Int index_int(&scope, *index_obj);
+  ByteArray output(&scope, *output_obj);
+  Int byteorder(&scope, *byteorder_obj);
+
+  Tuple result(&scope, runtime->newTuple(2));
+  SymbolId error_id = lookupSymbolForErrorHandler(errors);
+  word i = index_int.asWord();
+  for (word byte_offset = data.offsetByCodePoints(0, i);
+       byte_offset < data.length(); i++) {
+    word bo = byteorder.asWord();
+    word num_bytes;
+    int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
+    byte_offset += num_bytes;
+    if (!isSurrogate(codepoint)) {
+      if (codepoint < kHighSurrogateStart) {
+        appendUtf16ToByteArray(thread, runtime, output, codepoint, bo);
+      } else {
+        appendUtf16ToByteArray(thread, runtime, output,
+                               highSurrogate(codepoint), bo);
+        appendUtf16ToByteArray(thread, runtime, output, lowSurrogate(codepoint),
+                               bo);
+      }
+    } else {
+      switch (error_id) {
+        case SymbolId::kIgnore:
+          continue;
+        case SymbolId::kReplace:
+          appendUtf16ToByteArray(thread, runtime, output, kASCIIReplacement,
+                                 bo);
+          continue;
+        case SymbolId::kSurrogateescape:
+          if (isEscapedLatin1Surrogate(codepoint)) {
+            appendUtf16ToByteArray(thread, runtime, output,
+                                   codepoint - kLowSurrogateStart, bo);
+            continue;
+          }
+          break;
+        default:
+          break;
+      }
+      result.atPut(0, runtime->newInt(i));
+      while (byte_offset < data.length() &&
+             isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
+        byte_offset += num_bytes;
+        i++;
+      }
+      result.atPut(1, runtime->newInt(i + 1));
+      return *result;
+    }
+  }
+  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(1, runtime->newInt(i));
   return *result;
 }
 

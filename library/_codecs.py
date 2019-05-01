@@ -244,6 +244,75 @@ def utf_8_encode(data: str, errors: str = "strict"):
     return bytes(result), i
 
 
+@_patch
+def _utf_16_encode(data: str, errors: str, index: int, out: bytearray, byteorder: int):
+    pass
+
+
+def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noqa: C901
+    if byteorder < 0:
+        h_encoding = "utf-16-le"
+        u_encoding = "utf_16_le"
+    elif byteorder < 0:
+        h_encoding = "utf-16-be"
+        u_encoding = "utf_16_be"
+    else:
+        h_encoding = "utf-16"
+        u_encoding = "utf_16"
+    if not isinstance(data, str):
+        raise TypeError(
+            f"{u_encoding}_encode() argument 1 must be str, not {type(data).__name__}"
+        )
+    if not isinstance(errors, str):
+        raise TypeError(
+            f"{u_encoding}_encode() argument 2 must be str or None, not "
+            f"{type(errors).__name__}"
+        )
+    result = bytearray()
+    if byteorder == 0:
+        result += b"\xFF"
+        result += b"\xFE"
+    i = 0
+    length = len(data)
+    encoded = bytes(result)
+    while i < length:
+        encoded, i = _utf_16_encode(data, errors, i, result, byteorder)
+        if _int_check(encoded):
+            unicode, pos = _call_encode_errorhandler(
+                errors, data, "surrogates not allowed", h_encoding, encoded, i
+            )
+            if _bytes_check(unicode):
+                if len(unicode) & 1:
+                    raise UnicodeEncodeError(
+                        h_encoding, data, encoded, i, "surrogates not allowed"
+                    )
+                result += unicode
+                i = pos
+                continue
+            for char in unicode:
+                if char > "\x7F":
+                    raise UnicodeEncodeError(
+                        h_encoding, data, encoded, i, "surrogates not allowed"
+                    )
+            result += utf_16_encode(
+                unicode, errors, -1 if byteorder == 0 else byteorder
+            )[0]
+            i = pos
+    if isinstance(encoded, bytes):
+        return encoded, i
+    # _utf_16_encode encountered an error and _call_encode_errorhandler was the
+    # last function to write to `result`.
+    return bytes(result), i
+
+
+def utf_16_le_encode(data: str, errors: str = "strict"):
+    return utf_16_encode(data, errors, -1)
+
+
+def utf_16_be_encode(data: str, errors: str = "strict"):
+    return utf_16_encode(data, errors, 1)
+
+
 _codec_decode_table = {"ascii": ascii_decode, "us_ascii": ascii_decode}
 
 _codec_encode_table = {
@@ -256,6 +325,13 @@ _codec_encode_table = {
     "utf_8": utf_8_encode,
     "utf-8": utf_8_encode,
     "utf8": utf_8_encode,
+    "utf_16": utf_16_encode,
+    "utf-16": utf_16_encode,
+    "utf16": utf_16_encode,
+    "utf_16_le": utf_16_le_encode,
+    "utf-16-le": utf_16_le_encode,
+    "utf_16_be": utf_16_be_encode,
+    "utf-16-be": utf_16_be_encode,
 }
 
 

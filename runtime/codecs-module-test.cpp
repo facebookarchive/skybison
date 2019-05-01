@@ -321,4 +321,144 @@ TEST(CodecsModuleTest, EncodeUTF8WithUnknownErrorHandlerReturnsSurrogateRange) {
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
 }
 
+TEST(CodecsModuleTest, EncodeUTF16WithWellFormedASCIIReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("hi"));
+  Object errors(&scope, runtime.newStrFromCStr("unknown"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  byte expected[] = {'h', 0x00, 'i', 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF16WithIgnoreErrorHandlerReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\xed\xb2\x80i"));
+  Object errors(&scope, runtime.newStrFromCStr("ignore"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h', 0x00, 'i', 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF16WithReplaceErrorHandlerReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("hi\xed\xb2\x80"));
+  Object errors(&scope, runtime.newStrFromCStr("replace"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 6);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h', 0x00, 'i', 0x00, '?', 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF16WithSurroogateescapeErrorHandlerReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\xed\xb2\x80i"));
+  Object errors(&scope, runtime.newStrFromCStr("surrogateescape"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 6);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h', 0x00, 0x80, 0x00, 'i', 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF16WithSupplementaryStringReturnsUTF16Bytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\U0001d1f0i"));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 8);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h', 0x00, '4', 0xd8, 0xf0, 0xdd, 'i', 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF16LeWithSupplementaryStringReturnsUTF16Bytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\U0001d1f0i"));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(-1));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 8);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h', 0x00, '4', 0xd8, 0xf0, 0xdd, 'i', 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF16BeWithSupplementaryStringReturnsUTF16Bytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\U0001d1f0i"));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(1));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 8);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {0x00, 'h', 0xd8, '4', 0xdd, 0xf0, 0x00, 'i'};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
 }  // namespace python

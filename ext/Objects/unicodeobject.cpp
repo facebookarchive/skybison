@@ -811,8 +811,8 @@ PY_EXPORT Py_UCS4* PyUnicode_AsUCS4Copy(PyObject* str) {
   return PyUnicode_AsUCS4(str, result, len, 1);
 }
 
-PY_EXPORT PyObject* PyUnicode_AsUTF16String(PyObject* /* e */) {
-  UNIMPLEMENTED("PyUnicode_AsUTF16String");
+PY_EXPORT PyObject* PyUnicode_AsUTF16String(PyObject* unicode) {
+  return _PyUnicode_EncodeUTF16(unicode, nullptr, 0);
 }
 
 PY_EXPORT PyObject* PyUnicode_AsUTF32String(PyObject* /* e */) {
@@ -1176,6 +1176,39 @@ PY_EXPORT PyObject* PyUnicode_EncodeCodePage(int /* e */, PyObject* /* e */,
 PY_EXPORT PyObject* PyUnicode_EncodeLocale(PyObject* /* e */,
                                            const char* /* s */) {
   UNIMPLEMENTED("PyUnicode_EncodeLocale");
+}
+
+PY_EXPORT PyObject* _PyUnicode_EncodeUTF16(PyObject* unicode,
+                                           const char* errors, int byteorder) {
+  DCHECK(unicode != nullptr, "unicode cannot be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  if (!runtime->isInstanceOfStr(*str)) {
+    thread->raiseBadArgument();
+    return nullptr;
+  }
+  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object byteorder_obj(&scope, runtime->newInt(byteorder));
+  Object tuple_obj(&scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
+                                                   SymbolId::kUtf16Encode, str,
+                                                   errors_obj, byteorder_obj));
+  if (tuple_obj.isError()) {
+    return nullptr;
+  }
+  Tuple tuple(&scope, *tuple_obj);
+  return ApiHandle::newReference(thread, tuple.at(0));
+}
+
+PY_EXPORT PyObject* PyUnicode_EncodeUTF16(const Py_UNICODE* unicode,
+                                          Py_ssize_t size, const char* errors,
+                                          int byteorder) {
+  PyObject* str = PyUnicode_FromUnicode(unicode, size);
+  if (str == nullptr) return nullptr;
+  PyObject* result = _PyUnicode_EncodeUTF16(str, errors, byteorder);
+  Py_DECREF(str);
+  return result;
 }
 
 PY_EXPORT int PyUnicode_FSConverter(PyObject* arg, void* addr) {
