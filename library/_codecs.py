@@ -2,6 +2,7 @@
 
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions and will complain without this gross circular helper here.
+_bytes_check = _bytes_check  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -75,7 +76,7 @@ def _ascii_decode(data: str, errors: str, index: int, out: bytearray):
 
 
 def ascii_decode(data: bytes, errors: str = "strict"):
-    if not isinstance(data, bytes):
+    if not _bytes_check(data):
         raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
     if not isinstance(errors, str):
         raise TypeError(
@@ -128,7 +129,7 @@ def ascii_encode(data: str, errors: str = "strict"):
             unicode, pos = _call_encode_errorhandler(
                 errors, data, "ordinal not in range(128)", "ascii", encoded, i
             )
-            if isinstance(unicode, bytes):
+            if _bytes_check(unicode):
                 result += unicode
                 i = pos
                 continue
@@ -139,7 +140,7 @@ def ascii_encode(data: str, errors: str = "strict"):
                     )
             _bytearray_string_append(result, unicode)
             i = pos
-    if isinstance(encoded, bytes):
+    if _bytes_check(encoded):
         return encoded, i
     # _ascii_encode encountered an error and _call_encode_errorhandler was the
     # last function to write to `result`.
@@ -177,7 +178,7 @@ def latin_1_encode(data: str, errors: str = "strict"):
             unicode, pos = _call_encode_errorhandler(
                 errors, data, "ordinal not in range(256)", "latin-1", encoded, i
             )
-            if isinstance(unicode, bytes):
+            if _bytes_check(unicode):
                 result += unicode
                 i = pos
                 continue
@@ -188,7 +189,7 @@ def latin_1_encode(data: str, errors: str = "strict"):
                     )
             result += latin_1_encode(unicode, errors)[0]
             i = pos
-    if isinstance(encoded, bytes):
+    if _bytes_check(encoded):
         return encoded, i
     # _latin_1_encode encountered an error and _call_encode_errorhandler was the
     # last function to write to `result`.
@@ -225,7 +226,7 @@ def utf_8_encode(data: str, errors: str = "strict"):
             unicode, pos = _call_encode_errorhandler(
                 errors, data, "surrogates not allowed", "utf-8", encoded, i
             )
-            if isinstance(unicode, bytes):
+            if _bytes_check(unicode):
                 result += unicode
                 i = pos
                 continue
@@ -236,7 +237,7 @@ def utf_8_encode(data: str, errors: str = "strict"):
                     )
             _bytearray_string_append(result, unicode)
             i = pos
-    if isinstance(encoded, bytes):
+    if _bytes_check(encoded):
         return encoded, i
     # _utf_8_encode encountered an error and _call_encode_errorhandler was the
     # last function to write to `result`.
@@ -333,7 +334,7 @@ def _call_decode_errorhandler(
     replacement = result[0]
     pos = _index(result[1])
     input = exception.object
-    if not isinstance(input, bytes):
+    if not _bytes_check(input):
         raise TypeError("exception attribute object must be bytes")
     if pos < 0:
         pos += len(input)

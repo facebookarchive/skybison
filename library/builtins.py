@@ -302,6 +302,11 @@ def _bytearray_join(self: bytearray, iterable) -> bytearray:
 
 
 @_patch
+def _bytes_check(obj) -> bool:
+    pass
+
+
+@_patch
 def _bytes_from_ints(source) -> bytes:
     pass
 
@@ -864,7 +869,7 @@ class bytes(bootstrap=True):
         pass
 
     def __getitem__(self, key):
-        if not isinstance(self, bytes):
+        if not _bytes_check(self):
             raise TypeError(
                 "'__getitem__' requires a 'bytes' object but received a "
                 f"'{type(self).__name__}'"
@@ -932,7 +937,7 @@ class bytes(bootstrap=True):
             raise TypeError("errors without a string argument")
         if hasattr(source, "__bytes__"):
             result = source.__bytes__()
-            if not isinstance(result, bytes):
+            if not _bytes_check(result):
                 raise TypeError(
                     f"__bytes__ returned non-bytes (type {type(result).__name__})"
                 )
@@ -952,7 +957,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def __rmul__(self, n: int) -> bytes:
-        if not isinstance(self, bytes):
+        if not _bytes_check(self):
             raise TypeError("'__rmul__' requires a 'bytes' instance")
         return bytes.__mul__(self, n)
 
@@ -1011,7 +1016,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def join(self, iterable) -> bytes:
-        if not isinstance(self, bytes):
+        if not _bytes_check(self):
             raise TypeError("'join' requires a 'bytes' object")
         result = _bytes_join(self, iterable)
         if result is not None:
@@ -1030,11 +1035,11 @@ class bytes(bootstrap=True):
 
     @staticmethod
     def maketrans(frm, to) -> bytes:
-        if not isinstance(frm, bytes) and not isinstance(frm, bytearray):
+        if not _bytes_check(frm) and not isinstance(frm, bytearray):
             raise TypeError(
                 f"a bytes-like object is required, not '{type(frm).__name__}'"
             )
-        if not isinstance(to, bytes) and not isinstance(to, bytearray):
+        if not _bytes_check(to) and not isinstance(to, bytearray):
             raise TypeError(
                 f"a bytes-like object is required, not '{type(to).__name__}'"
             )
@@ -1654,7 +1659,7 @@ class int(bootstrap=True):
                 return _int_from_int(cls, _int(trunc_result))
             if isinstance(x, str):
                 return _int_from_str(cls, x, 10)
-            if isinstance(x, bytes):
+            if _bytes_check(x):
                 return _int_from_bytes(cls, x, 10)
             if isinstance(x, bytearray):
                 return _int_from_bytearray(cls, x, 10)
@@ -1667,7 +1672,7 @@ class int(bootstrap=True):
             raise ValueError("int() base must be >= 2 and <= 36")
         if isinstance(x, str):
             return _int_from_str(cls, x, base)
-        if isinstance(x, bytes):
+        if _bytes_check(x):
             return _int_from_bytes(cls, x, base)
         if isinstance(x, bytearray):
             return _int_from_bytearray(cls, x, base)
@@ -3001,7 +3006,7 @@ class str_iterator(bootstrap=True):
 def sum(iterable, start=0):
     if isinstance(start, str):
         raise TypeError("sum() can't sum strings [use ''.join(seq) instead]")
-    if isinstance(start, bytes):
+    if _bytes_check(start):
         raise TypeError("sum() can't sum bytes [use b''.join(seq) instead]")
     if isinstance(start, bytearray):
         raise TypeError("sum() can't sum bytearray [use b''.join(seq) instead]")

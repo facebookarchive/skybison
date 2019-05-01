@@ -82,6 +82,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kSetattr, setattr},
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderByteArrayJoin, ByteArrayBuiltins::join},
+    {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
     {SymbolId::kUnderBytesGetitemSlice, underBytesGetItemSlice},
@@ -700,6 +701,12 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
   return thread->invokeFunction5(SymbolId::kUnderFrozenImportlib,
                                  SymbolId::kDunderImport, name, globals, locals,
                                  fromlist, level);
+}
+
+RawObject BuiltinsModule::underBytesCheck(Thread* thread, Frame* frame,
+                                          word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfBytes(args.get(0)));
 }
 
 RawObject BuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
