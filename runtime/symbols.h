@@ -444,12 +444,14 @@ class Runtime;
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
+  V(UnderDictCheck, "_dict_check")                                             \
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
   V(UnderFdFlush, "_fd_flush")                                                 \
   V(UnderFdWrite, "_fd_write")                                                 \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
+  V(UnderFrozenSetCheck, "_frozenset_check")                                   \
   V(UnderFunctools, "_functools")                                              \
   V(UnderGetframeCode, "_getframe_code")                                       \
   V(UnderGetframeGlobals, "_getframe_globals")                                 \
@@ -462,6 +464,7 @@ class Runtime;
   V(UnderIntFromInt, "_int_from_int")                                          \
   V(UnderIntFromStr, "_int_from_str")                                          \
   V(UnderIo, "_io")                                                            \
+  V(UnderListCheck, "_list_check")                                             \
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderModuleRepr, "_module_repr")                                           \
@@ -471,6 +474,7 @@ class Runtime;
   V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
+  V(UnderSetCheck, "_set_check")                                               \
   V(UnderSliceIndex, "_slice_index")                                           \
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdout, "_stdout")                                                    \
@@ -489,6 +493,7 @@ class Runtime;
   V(UnderStructseqRepr, "_structseq_repr")                                     \
   V(UnderStructseqSetAttr, "_structseq_setattr")                               \
   V(UnderThread, "_thread")                                                    \
+  V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnimplemented, "_unimplemented")                                      \
   V(UnderWarnings, "_warnings")                                                \

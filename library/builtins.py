@@ -210,7 +210,7 @@ class ImportError(bootstrap=True):
 
 class KeyError(bootstrap=True):
     def __str__(self):
-        if isinstance(self.args, tuple) and len(self.args) == 1:
+        if _tuple_check(self.args) and len(self.args) == 1:
             return repr(self.args[0])
         return super(KeyError, self).__str__()
 
@@ -366,6 +366,16 @@ def _complex_real(c):
     pass
 
 
+@_patch
+def _dict_check(obj) -> bool:
+    pass
+
+
+@_patch
+def _frozenset_check(obj) -> bool:
+    pass
+
+
 def _index(obj) -> int:
     # equivalent to PyNumber_Index
     if _int_check(obj):
@@ -421,6 +431,11 @@ def _int_from_str(cls: type, x: str, base: int) -> int:
 
 
 @_patch
+def _list_check(obj) -> bool:
+    pass
+
+
+@_patch
 def _list_sort(list):
     pass
 
@@ -432,6 +447,11 @@ def _repr_enter(obj: object) -> bool:
 
 @_patch
 def _repr_leave(obj: object) -> None:
+    pass
+
+
+@_patch
+def _set_check(obj) -> bool:
     pass
 
 
@@ -580,6 +600,11 @@ def _structseq_repr(self):
 
 @_patch
 def _structseq_setattr(obj, name, value):
+    pass
+
+
+@_patch
+def _tuple_check(obj) -> bool:
     pass
 
 
@@ -1203,7 +1228,7 @@ class dict(bootstrap=True):
         pass
 
     def copy(self):
-        if not isinstance(self, dict):
+        if not _dict_check(self):
             raise TypeError(f"expected 'dict' instance but got {type(self).__name__}")
         return dict(self)
 
@@ -1225,7 +1250,7 @@ class dict(bootstrap=True):
         return value
 
     def setdefault(self, key, default=None):
-        if not isinstance(self, dict):
+        if not _dict_check(self):
             raise TypeError("setdefault expected 'dict' but got {type(self).__name__}")
         value = dict.get(self, key, _Unbound)
         if value is _Unbound:
@@ -1234,7 +1259,7 @@ class dict(bootstrap=True):
         return value
 
     def update(self, seq=_Unbound):
-        if not isinstance(self, dict):
+        if not _dict_check(self):
             raise TypeError("update expected 'dict' but got {type(self).__name__}")
         if seq is _Unbound:
             return
@@ -1911,11 +1936,11 @@ class list(bootstrap=True):
         pass
 
     def __eq__(self, other):
-        if not isinstance(self, list):
+        if not _list_check(self):
             raise TypeError(
                 f"'__eq__' requires 'list' but received a '{type(self).__name__}'"
             )
-        if not isinstance(other, list):
+        if not _list_check(other):
             return NotImplemented
 
         if self is other:
@@ -1967,7 +1992,7 @@ class list(bootstrap=True):
         pass
 
     def copy(self):
-        if not isinstance(self, list):
+        if not _list_check(self):
             raise TypeError(f"expected 'list' instance but got {type(self).__name__}")
         return list(self)
 
@@ -1997,7 +2022,7 @@ class list(bootstrap=True):
             right -= 1
 
     def sort(self, key=None, reverse=False):
-        if not isinstance(self, list):
+        if not _list_check(self):
             raise TypeError(f"sort expected 'list' but got {type(self).__name__}")
         if reverse:
             list.reverse(self)
@@ -2350,9 +2375,9 @@ class set(bootstrap=True):
         pass
 
     def __or__(self, other):
-        if not isinstance(self, set) and not isinstance(self, frozenset):
+        if not _set_check(self) and not _frozenset_check(self):
             return NotImplemented
-        if not isinstance(other, set) and not isinstance(other, frozenset):
+        if not _set_check(other) and not _frozenset_check(other):
             return NotImplemented
         result = set.copy(self)
         if self is other:
@@ -2635,7 +2660,7 @@ class str(bootstrap=True):
 
         str_len = len(self)
         start, end = real_bounds_from_slice_bounds(start, end, str_len)
-        if not isinstance(suffix, tuple):
+        if not _tuple_check(suffix):
             return suffix_match(self, suffix, start, end)
 
         for suf in suffix:
@@ -2970,7 +2995,7 @@ class str(bootstrap=True):
 
         str_len = len(self)
         start, end = real_bounds_from_slice_bounds(start, end, str_len)
-        if not isinstance(prefix, tuple):
+        if not _tuple_check(prefix):
             return prefix_match(self, prefix, start, end)
 
         for pref in prefix:
@@ -3056,9 +3081,9 @@ class tuple(bootstrap=True):
         pass
 
     def __lt__(self, other):
-        if not isinstance(self, tuple):
+        if not _tuple_check(self):
             raise TypeError(f"__lt__ expected 'tuple' but got {type(self).__name__}")
-        if not isinstance(other, tuple):
+        if not _tuple_check(other):
             raise TypeError(f"__lt__ expected 'tuple' but got {type(other).__name__}")
         len_self = tuple.__len__(self)
         len_other = tuple.__len__(other)

@@ -92,15 +92,19 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
+    {SymbolId::kUnderDictCheck, underDictCheck},
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
+    {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntFromByteArray, underIntFromByteArray},
     {SymbolId::kUnderIntFromInt, underIntFromInt},
     {SymbolId::kUnderIntFromStr, underIntFromStr},
+    {SymbolId::kUnderListCheck, underListCheck},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
+    {SymbolId::kUnderSetCheck, underSetCheck},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
@@ -109,6 +113,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
     {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
+    {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -843,6 +848,18 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
 
+RawObject BuiltinsModule::underDictCheck(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfDict(args.get(0)));
+}
+
+RawObject BuiltinsModule::underFrozenSetCheck(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfFrozenSet(args.get(0)));
+}
+
 RawObject BuiltinsModule::underIntCheck(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);
@@ -979,6 +996,12 @@ RawObject BuiltinsModule::underIntFromStr(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, result);
 }
 
+RawObject BuiltinsModule::underListCheck(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfList(args.get(0)));
+}
+
 RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,
                                         word nargs) {
   Arguments args(frame_frame, nargs);
@@ -1074,6 +1097,12 @@ RawObject BuiltinsModule::underReprLeave(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject BuiltinsModule::underSetCheck(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfSet(args.get(0)));
+}
+
 RawObject BuiltinsModule::underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
@@ -1166,6 +1195,12 @@ RawObject BuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
   Int keepends_int(&scope, intUnderlying(thread, keepends_obj));
   bool keepends = !keepends_int.isZero();
   return strSplitlines(thread, self, keepends);
+}
+
+RawObject BuiltinsModule::underTupleCheck(Thread* thread, Frame* frame,
+                                          word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfTuple(args.get(0)));
 }
 
 RawObject BuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,

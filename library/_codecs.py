@@ -6,6 +6,7 @@ _bytes_check = _bytes_check  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
+_tuple_check = _tuple_check  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
 
@@ -30,7 +31,7 @@ def lookup(encoding):
         result = search_func(encoding)
         if result is None:
             continue
-        if not isinstance(result, tuple) or not len(result) == 4:
+        if not _tuple_check(result) or not len(result) == 4:
             raise TypeError("codec search functions must return 4-tuples")
         break
     if result is None:
@@ -401,7 +402,7 @@ def _call_decode_errorhandler(
     exception = UnicodeDecodeError(encoding, input, start, end, reason)
     result = lookup_error(errors)(exception)
     if (
-        not isinstance(result, tuple)
+        not _tuple_check(result)
         or len(result) != 2
         or not isinstance(result[0], str)
         or not hasattr(result[1], "__index__")
@@ -440,7 +441,7 @@ def _call_encode_errorhandler(
     exception = UnicodeEncodeError(encoding, input, start, end, reason)
     result = lookup_error(errors)(exception)
     if (
-        not isinstance(result, tuple)
+        not _tuple_check(result)
         or len(result) != 2
         or not isinstance(result[0], (str, bytes))
         or not hasattr(result[1], "__index__")
