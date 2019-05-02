@@ -534,7 +534,7 @@ RawObject wrapDelitem(Thread* thread, Frame* frame, word argc) {
 
 // Convert obj into a word-sized int or raise an OverflowError, in the style of
 // PyNumber_AsSsize_t().
-RawObject makeIndex(Thread* thread, const Object& obj) {
+static RawObject makeIndex(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Object converted(&scope, intFromIndex(thread, obj));
   if (converted.isError()) return *converted;
@@ -557,25 +557,26 @@ RawObject wrapIndexargfunc(Thread* thread, Frame* frame, word argc) {
   arg = makeIndex(thread, arg);
   if (arg.isError()) return *arg;
   return ApiHandle::stealReference(thread,
-                                   func(self, RawInt::cast(*arg).asWord()));
+                                   func(self, Int::cast(*arg).asWord()));
 }
 
 // First, convert arg to a word-sized int using makeIndex(). Then, if the result
 // is negative, add len(self) to normalize it.
-RawObject normalizeIndex(Thread* thread, const Object& self,
-                         const Object& arg) {
+static RawObject normalizeIndex(Thread* thread, const Object& self,
+                                const Object& arg) {
   HandleScope scope(thread);
   Object index(&scope, makeIndex(thread, arg));
   if (index.isError()) return *index;
   word i = Int::cast(*index).asWord();
-  if (i < 0) {
-    Object len(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
-                                               SymbolId::kLen, self));
-    if (len.isError()) return *len;
-    len = makeIndex(thread, len);
-    if (len.isError()) return *len;
-    i += RawInt::cast(*len).asWord();
+  if (i >= 0) {
+    return *index;
   }
+  Object len(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                             SymbolId::kLen, self));
+  if (len.isError()) return *len;
+  len = makeIndex(thread, len);
+  if (len.isError()) return *len;
+  i += Int::cast(*len).asWord();
   return thread->runtime()->newInt(i);
 }
 
@@ -591,7 +592,7 @@ RawObject wrapSqItem(Thread* thread, Frame* frame, word argc) {
   if (arg.isError()) return *arg;
   PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
   return ApiHandle::stealReference(thread,
-                                   func(py_self, RawInt::cast(*arg).asWord()));
+                                   func(py_self, Int::cast(*arg).asWord()));
 }
 
 RawObject wrapSqSetitem(Thread* thread, Frame* frame, word argc) {
@@ -606,7 +607,7 @@ RawObject wrapSqSetitem(Thread* thread, Frame* frame, word argc) {
   if (arg.isError()) return *arg;
   PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
   PyObject* py_value = ApiHandle::borrowedReference(thread, args.get(2));
-  int result = func(py_self, RawInt::cast(*arg).asWord(), py_value);
+  int result = func(py_self, Int::cast(*arg).asWord(), py_value);
   if (result == -1 && thread->hasPendingException()) return Error::object();
   return NoneType::object();
 }
@@ -622,7 +623,7 @@ RawObject wrapSqDelitem(Thread* thread, Frame* frame, word argc) {
   arg = normalizeIndex(thread, self, arg);
   if (arg.isError()) return *arg;
   PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
-  int result = func(py_self, RawInt::cast(*arg).asWord(), nullptr);
+  int result = func(py_self, Int::cast(*arg).asWord(), nullptr);
   if (result == -1 && thread->hasPendingException()) return Error::object();
   return NoneType::object();
 }
@@ -877,7 +878,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // When given PyObject_HashNotImplemented, put None in the type dict
     // rather than a wrapper. CPython does this regardless of which slot it
     // was given for, so we do too.
-    if (RawInt::cast(*slot_value).asCPtr() ==
+    if (Int::cast(*slot_value).asCPtr() ==
         bit_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
       runtime->typeDictAtPut(dict, slot_name, none);

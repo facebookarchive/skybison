@@ -1034,7 +1034,7 @@ PY_EXPORT Py_ssize_t PySequence_Count(PyObject* seq, PyObject* obj) {
   if (result.isError()) {
     return -1;
   }
-  return RawSmallInt::cast(*result).value();
+  return SmallInt::cast(*result).value();
 }
 
 PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
@@ -1156,7 +1156,7 @@ PY_EXPORT Py_ssize_t PySequence_Index(PyObject* seq, PyObject* obj) {
   if (result.isError()) {
     return -1;
   }
-  return RawSmallInt::cast(*result).value();
+  return SmallInt::cast(*result).value();
 }
 
 PY_EXPORT PyObject* PySequence_InPlaceConcat(PyObject* left, PyObject* right) {
