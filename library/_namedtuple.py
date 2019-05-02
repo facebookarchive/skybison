@@ -5,6 +5,7 @@ module."""
 
 # flake8 has no knowledge about these functions' definitions and will complain
 # without this gross circular helper here.
+_str_check = _str_check  # noqa: F821
 _structseq_setattr = _structseq_setattr  # noqa: F821
 _structseq_field = _structseq_field  # noqa: F821
 
@@ -72,7 +73,7 @@ def _namedtuple_new(cls, *sequence, **kwargs):  # noqa B006
 def validate_field_names(typename, field_names, rename):
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
-    if isinstance(field_names, str):
+    if _str_check(field_names):
         field_names = field_names.replace(",", " ").split()
     field_names = list(map(str, field_names))
     typename = str(typename)

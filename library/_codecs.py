@@ -6,6 +6,7 @@ _bytes_check = _bytes_check  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
+_str_check = _str_check  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
@@ -79,7 +80,7 @@ def _ascii_decode(data: str, errors: str, index: int, out: bytearray):
 def ascii_decode(data: bytes, errors: str = "strict"):
     if not _bytes_check(data):
         raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
-    if not isinstance(errors, str):
+    if not _str_check(errors):
         raise TypeError(
             "ascii_decode() argument 2 must be str or None, not "
             f"'{type(errors).__name__}'"
@@ -93,7 +94,7 @@ def ascii_decode(data: bytes, errors: str = "strict"):
             data, i = _call_decode_errorhandler(
                 errors, data, result, "ordinal not in range(128)", "ascii", encoded, i
             )
-    if isinstance(encoded, str):
+    if _str_check(encoded):
         return encoded, i
     # The error handler was the last to write to the result
     return _bytearray_to_string(result), i
@@ -111,11 +112,11 @@ def _ascii_encode(data: str, errors: str, index: int, out: bytearray):
 
 
 def ascii_encode(data: str, errors: str = "strict"):
-    if not isinstance(data, str):
+    if not _str_check(data):
         raise TypeError(
             f"ascii_encode() argument 1 must be str, not {type(data).__name__}"
         )
-    if not isinstance(errors, str):
+    if not _str_check(errors):
         raise TypeError(
             "ascii_encode() argument 2 must be str or None, not "
             f"{type(errors).__name__}"
@@ -160,11 +161,11 @@ def _latin_1_encode(data: str, errors: str, index: int, out: bytearray):
 
 
 def latin_1_encode(data: str, errors: str = "strict"):
-    if not isinstance(data, str):
+    if not _str_check(data):
         raise TypeError(
             f"latin_1_encode() argument 1 must be str, not {type(data).__name__}"
         )
-    if not isinstance(errors, str):
+    if not _str_check(errors):
         raise TypeError(
             "latin_1_encode() argument 2 must be str or None, not "
             f"{type(errors).__name__}"
@@ -209,11 +210,11 @@ def _utf_8_encode(data: str, errors: str, index: int, out: bytearray):
 
 
 def utf_8_encode(data: str, errors: str = "strict"):
-    if not isinstance(data, str):
+    if not _str_check(data):
         raise TypeError(
             f"utf_8_encode() argument 1 must be str, not {type(data).__name__}"
         )
-    if not isinstance(errors, str):
+    if not _str_check(errors):
         raise TypeError(
             "utf_8_encode() argument 2 must be str or None, not "
             f"{type(errors).__name__}"
@@ -260,11 +261,11 @@ def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
     else:
         h_encoding = "utf-16"
         u_encoding = "utf_16"
-    if not isinstance(data, str):
+    if not _str_check(data):
         raise TypeError(
             f"{u_encoding}_encode() argument 1 must be str, not {type(data).__name__}"
         )
-    if not isinstance(errors, str):
+    if not _str_check(errors):
         raise TypeError(
             f"{u_encoding}_encode() argument 2 must be str or None, not "
             f"{type(errors).__name__}"
@@ -351,7 +352,7 @@ def ignore_errors(error):
 
 
 def lookup_error(error: str):
-    if not isinstance(error, str):
+    if not _str_check(error):
         raise TypeError(
             f"lookup_error() argument must be str, not {type(error).__name__}"
         )
@@ -362,7 +363,7 @@ def lookup_error(error: str):
 
 
 def register_error(name: str, error_func):
-    if not isinstance(name, str):
+    if not _str_check(name):
         raise TypeError(
             f"register_error() argument 1 must be str, not {type(name).__name__}"
         )
@@ -404,7 +405,7 @@ def _call_decode_errorhandler(
     if (
         not _tuple_check(result)
         or len(result) != 2
-        or not isinstance(result[0], str)
+        or not _str_check(result[0])
         or not hasattr(result[1], "__index__")
     ):
         raise TypeError("decoding error handler must return (str, int) tuple")

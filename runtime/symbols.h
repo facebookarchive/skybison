@@ -479,6 +479,7 @@ class Runtime;
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStdoutFd, "_stdout_fd")                                               \
+  V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
   V(UnderStrFromStr, "_str_from_str")                                          \

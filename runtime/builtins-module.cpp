@@ -105,6 +105,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
     {SymbolId::kUnderSetCheck, underSetCheck},
+    {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
@@ -1101,6 +1102,12 @@ RawObject BuiltinsModule::underSetCheck(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfSet(args.get(0)));
+}
+
+RawObject BuiltinsModule::underStrCheck(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(thread->runtime()->isInstanceOfStr(args.get(0)));
 }
 
 RawObject BuiltinsModule::underStrEscapeNonAscii(Thread* thread, Frame* frame,

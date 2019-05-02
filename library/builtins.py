@@ -236,12 +236,12 @@ class SystemExit(bootstrap=True):
 class UnicodeDecodeError(UnicodeError, bootstrap=True):
     def __init__(self, encoding, obj, start, end, reason):
         super(UnicodeDecodeError, self).__init__(encoding, obj, start, end, reason)
-        if not isinstance(encoding, str):
+        if not _str_check(encoding):
             raise TypeError(f"argument 1 must be str, not {type(encoding).__name__}")
         self.encoding = encoding
         self.start = _index(start)
         self.end = _index(end)
-        if not isinstance(reason, str):
+        if not _str_check(reason):
             raise TypeError(f"argument 5 must be str, not {type(reason).__name__}")
         self.reason = reason
         # TODO(T38246066): Replace with a check for the buffer protocol
@@ -255,15 +255,15 @@ class UnicodeDecodeError(UnicodeError, bootstrap=True):
 class UnicodeEncodeError(UnicodeError, bootstrap=True):
     def __init__(self, encoding, obj, start, end, reason):
         super(UnicodeEncodeError, self).__init__(encoding, obj, start, end, reason)
-        if not isinstance(encoding, str):
+        if not _str_check(encoding):
             raise TypeError(f"argument 1 must be str, not {type(encoding).__name__}")
         self.encoding = encoding
-        if not isinstance(obj, str):
+        if not _str_check(obj):
             raise TypeError(f"argument 2 must be str, not '{type(obj).__name__}'")
         self.object = obj
         self.start = _index(start)
         self.end = _index(end)
-        if not isinstance(reason, str):
+        if not _str_check(reason):
             raise TypeError(f"argument 5 must be str, not {type(reason).__name__}")
         self.reason = reason
 
@@ -276,12 +276,12 @@ class UnicodeError(bootstrap=True):  # noqa: B903
 class UnicodeTranslateError(UnicodeError, bootstrap=True):
     def __init__(self, obj, start, end, reason):
         super(UnicodeTranslateError, self).__init__(obj, start, end, reason)
-        if not isinstance(obj, str):
+        if not _str_check(obj):
             raise TypeError(f"argument 1 must be str, not {type(obj).__name__}")
         self.object = obj
         self.start = _index(start)
         self.end = _index(end)
-        if not isinstance(reason, str):
+        if not _str_check(reason):
             raise TypeError(f"argument 4 must be str, not {type(reason).__name__}")
         self.reason = reason
 
@@ -461,6 +461,11 @@ def _slice_index(num) -> int:
     raise TypeError(
         "slice indices must be integers or None or have an __index__ method"
     )
+
+
+@_patch
+def _str_check(obj) -> bool:
+    pass
 
 
 @_patch
@@ -958,11 +963,11 @@ class bytes(bootstrap=True):
                 return b""
             raise TypeError("encoding or errors without sequence argument")
         if encoding is not _Unbound:
-            if not isinstance(source, str):
+            if not _str_check(source):
                 raise TypeError("encoding without a string argument")
             _unimplemented()
         if errors is not _Unbound:
-            if isinstance(source, str):
+            if _str_check(source):
                 raise TypeError("string argument without an encoding")
             raise TypeError("errors without a string argument")
         if hasattr(source, "__bytes__"):
@@ -972,7 +977,7 @@ class bytes(bootstrap=True):
                     f"__bytes__ returned non-bytes (type {type(result).__name__})"
                 )
             return result
-        if isinstance(source, str):
+        if _str_check(source):
             raise TypeError("string argument without an encoding")
         if _int_check(source) or hasattr(source, "__index__"):
             # TODO(T36619847): implement bytes subclasses
@@ -1476,12 +1481,12 @@ class float(bootstrap=True):
 
 
 def format(obj, fmt_spec):
-    if not isinstance(fmt_spec, str):
+    if not _str_check(fmt_spec):
         raise TypeError(
             f"fmt_spec must be str instance, not '{type(fmt_spec).__name__}'"
         )
     result = obj.__format__(fmt_spec)
-    if not isinstance(result, str):
+    if not _str_check(result):
         raise TypeError(
             f"__format__ must return str instance, not '{type(result).__name__}'"
         )
@@ -1687,7 +1692,7 @@ class int(bootstrap=True):
                         f"(type {result_type.__name__})"
                     )
                 return _int_from_int(cls, _int(trunc_result))
-            if isinstance(x, str):
+            if _str_check(x):
                 return _int_from_str(cls, x, 10)
             if _bytes_check(x):
                 return _int_from_bytes(cls, x, 10)
@@ -1700,7 +1705,7 @@ class int(bootstrap=True):
         base = _index(base)
         if base > 36 or (base < 2 and base != 0):
             raise ValueError("int() base must be >= 2 and <= 36")
-        if isinstance(x, str):
+        if _str_check(x):
             return _int_from_str(cls, x, base)
         if _bytes_check(x):
             return _int_from_bytes(cls, x, base)
@@ -2292,7 +2297,7 @@ class range_iterator(bootstrap=True):
 
 def repr(obj):
     result = type(obj).__repr__(obj)
-    if not isinstance(result, str):
+    if not _str_check(result):
         raise TypeError("__repr__ returned non-string")
     return result
 
@@ -2505,9 +2510,9 @@ class str(bootstrap=True):
         pass
 
     def __contains__(self, other):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(f"expected a 'str' instance but got {type(self).__name__}")
-        if not isinstance(other, str):
+        if not _str_check(other):
             raise TypeError(f"expected a 'str' instance but got {type(other).__name__}")
         return str.find(self, other) != -1
 
@@ -2559,14 +2564,14 @@ class str(bootstrap=True):
                 return _str_from_str(cls, obj)
             try:
                 result = type(obj).__str__(obj)
-                if not isinstance(result, str):
+                if not _str_check(result):
                     raise TypeError(
                         "__str__ returned non-string '{type(obj).__name__}'"
                     )
                 return _str_from_str(cls, result)
             except AttributeError:
                 return _str_from_str(cls, type(obj).__repr__(obj))
-        if isinstance(obj, str):
+        if _str_check(obj):
             raise TypeError("decoding str is not supported")
         # TODO(T38246066): Replace with a check for the buffer protocol
         if not isinstance(obj, (bytes, bytearray)):
@@ -2589,7 +2594,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def __rmul__(self, n: int) -> str:
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError("'__rmul__' requires a 'str' instance")
         return str.__mul__(self, n)
 
@@ -2597,7 +2602,7 @@ class str(bootstrap=True):
         return self
 
     def capitalize(self):
-        if not isinstance(self, str):
+        if not _str_check(self):
             self_type = type(self).__name__
             raise TypeError(
                 f"'capitalize' requires a 'str' instance but got '{self_type}'"
@@ -2640,7 +2645,7 @@ class str(bootstrap=True):
             return start, end
 
         def suffix_match(cmp, sfx, start, end):
-            if not isinstance(sfx, str):
+            if not _str_check(sfx):
                 raise TypeError("endswith suffix must be a str")
             sfx_len = len(sfx)
             # If the suffix is longer than the string its comparing against, it
@@ -2672,11 +2677,11 @@ class str(bootstrap=True):
         _unimplemented()
 
     def find(self, sub, start=None, end=None):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(
                 f"find requires a 'str' instance but got {type(self).__name__}"
             )
-        if not isinstance(sub, str):
+        if not _str_check(sub):
             raise TypeError(
                 f"find requires a 'str' instance but got {type(sub).__name__}"
             )
@@ -2702,7 +2707,7 @@ class str(bootstrap=True):
 
     def isalnum(self):
         # TODO(T41626152): Support non-ASCII
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(f"isalnum expected 'str' but got {type(self).__name__}")
         if self is "":  # noqa: P202
             return False
@@ -2727,7 +2732,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def isidentifier(self):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(
                 f"'isidentifier' expected 'str' but got '{type(self).__name__}'"
             )
@@ -2748,7 +2753,7 @@ class str(bootstrap=True):
 
     def islower(self):
         # TODO(T42050373): Support non-ASCII
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(f"islower expected 'str' but got {type(self).__name__}")
         if self is "":  # noqa: P202
             return False
@@ -2768,7 +2773,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def isspace(self):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(f"expected 'str' but got {type(self).__name__}")
         if not self:
             return False
@@ -2788,7 +2793,7 @@ class str(bootstrap=True):
 
     def isupper(self):
         # TODO(T41626183): Support non-ASCII
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(f"isupper expected 'str' but got {type(self).__name__}")
         if self is "":  # noqa: P202
             return False
@@ -2818,12 +2823,12 @@ class str(bootstrap=True):
         _unimplemented()
 
     def partition(self, sep):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(
                 f"descriptor 'partition' requires a 'str' object "
                 f"but received a {type(self).__name__}"
             )
-        if not isinstance(sep, str):
+        if not _str_check(sep):
             raise TypeError(f"must be str, not {type(sep).__name__}")
         sep_len = len(sep)
         if not sep_len:
@@ -2844,15 +2849,15 @@ class str(bootstrap=True):
         return (self, "", "")
 
     def replace(self, old, new, count=None):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(
                 f"replace requires a 'str' instance but got {type(self).__name__}"
             )
-        if not isinstance(old, str):
+        if not _str_check(old):
             raise TypeError(
                 f"replace requires a 'str' instance but got {type(old).__name__}"
             )
-        if not isinstance(new, str):
+        if not _str_check(new):
             raise TypeError(
                 f"replace requires a 'str' instance but got {type(new).__name__}"
             )
@@ -2864,11 +2869,11 @@ class str(bootstrap=True):
         return str(result) if self is result else result
 
     def rfind(self, sub, start=None, end=None):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(
                 f"rfind requires a 'str' instance but got {type(self).__name__}"
             )
-        if not isinstance(sub, str):
+        if not _str_check(sub):
             raise TypeError(
                 f"rfind requires a 'str' instance but got {type(sub).__name__}"
             )
@@ -2897,14 +2902,14 @@ class str(bootstrap=True):
         pass
 
     def split(self, sep=None, maxsplit=-1):  # noqa: C901
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(f"expected a 'str' instance but got {type(self).__name__}")
         # If the separator is not specified, split on all whitespace characters.
         if sep is None:
             return _str_split_whitespace(self, maxsplit)
         if maxsplit == 0:
             return [self]
-        if not isinstance(sep, str):
+        if not _str_check(sep):
             raise TypeError("must be str or None")
         sep_len = len(sep)
         if sep_len == 0:
@@ -2947,7 +2952,7 @@ class str(bootstrap=True):
         return parts
 
     def splitlines(self, keepends=False):
-        if not isinstance(self, str):
+        if not _str_check(self):
             raise TypeError(
                 f"'splitlines' requires a 'str' but got '{type(self).__name__}'"
             )
@@ -2975,7 +2980,7 @@ class str(bootstrap=True):
             return start, end
 
         def prefix_match(cmp, prefix, start, end):
-            if not isinstance(prefix, str):
+            if not _str_check(prefix):
                 raise TypeError("startswith prefix must be a str")
             prefix_len = len(prefix)
             # If the prefix is longer than the string its comparing against, it
@@ -3034,7 +3039,7 @@ class str_iterator(bootstrap=True):
 
 
 def sum(iterable, start=0):
-    if isinstance(start, str):
+    if _str_check(start):
         raise TypeError("sum() can't sum strings [use ''.join(seq) instead]")
     if _bytes_check(start):
         raise TypeError("sum() can't sum bytes [use b''.join(seq) instead]")
