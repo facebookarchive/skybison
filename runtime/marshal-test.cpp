@@ -57,7 +57,7 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
   // Read an ascii string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
                              "\x61\xf6\xff\xff\xfftesting123");
-  EXPECT_EQ(neg_reader.readObject(), Error::object());
+  EXPECT_TRUE(neg_reader.readObject().isError());
 }
 
 TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
@@ -90,7 +90,7 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   // Read an ascii string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
                              "\x41\xf6\xff\xff\xfftesting123");
-  EXPECT_EQ(neg_reader.readObject(), Error::object());
+  EXPECT_TRUE(neg_reader.readObject().isError());
 }
 
 TEST(MarshalReaderTest, ReadTypeUnicode) {
@@ -123,7 +123,7 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
   // Read an unicode string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
                              "\x75\xf6\xff\xff\xfftesting123");
-  EXPECT_EQ(neg_reader.readObject(), Error::object());
+  EXPECT_TRUE(neg_reader.readObject().isError());
 }
 
 TEST(MarshalReaderTest, ReadTypeInterned) {
@@ -156,7 +156,7 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
   // Read an interned string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
                              "\x74\xf6\xff\xff\xfftesting123");
-  EXPECT_EQ(neg_reader.readObject(), Error::object());
+  EXPECT_TRUE(neg_reader.readObject().isError());
 }
 
 TEST(MarshalReaderTest, ReadTypeShortAsciiInterned) {

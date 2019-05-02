@@ -112,7 +112,7 @@ TEST(LayoutTest, DeleteNonExistentAttribute) {
   Layout layout(&scope, runtime.layoutCreateEmpty(thread));
   Object attr(&scope, runtime.newStrFromCStr("myattr"));
   RawObject result = runtime.layoutDeleteAttribute(thread, layout, attr);
-  EXPECT_EQ(result, Error::object());
+  EXPECT_TRUE(result.isError());
 }
 
 TEST(LayoutTest, DeleteInObjectAttribute) {

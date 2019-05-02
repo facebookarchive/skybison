@@ -665,6 +665,13 @@ class RawError : public RawObject {
   RAW_OBJECT_COMMON(Error);
 };
 
+// Force client code to use RawObject::isError() rather than obj ==
+// Error::object(), since RawError will not be a singleton forever.
+bool operator==(const RawError&, const RawObject&) = delete;
+bool operator==(const RawObject&, const RawError&) = delete;
+bool operator!=(const RawError&, const RawObject&) = delete;
+bool operator!=(const RawObject&, const RawError&) = delete;
+
 class RawBool : public RawObject {
  public:
   // Getters and setters.

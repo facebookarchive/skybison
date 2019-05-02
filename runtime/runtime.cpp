@@ -1121,7 +1121,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
     return SmallStr::fromBytes(View<byte>(dst, size));
   }
   RawObject result = heap()->createLargeStr(size);
-  DCHECK(result != Error::object(), "failed to create large string");
+  DCHECK(!result.isError(), "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result).address());
   if (code_units.length() == size) {
     // ASCII fastpath
@@ -1145,7 +1145,7 @@ RawObject Runtime::newStrWithAll(View<byte> code_units) {
     return SmallStr::fromBytes(code_units);
   }
   RawObject result = heap()->createLargeStr(length);
-  DCHECK(result != Error::object(), "failed to create large string");
+  DCHECK(!result.isError(), "failed to create large string");
   byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result).address());
   const byte* src = code_units.data();
   memcpy(dst, src, length);

@@ -2347,8 +2347,7 @@ def test(module):
 
   Object attr(&scope, runtime.newStrFromCStr("foo"));
   Object module(&scope, *main);
-  EXPECT_EQ(runtime.attributeAt(Thread::current(), module, attr),
-            Error::object());
+  EXPECT_TRUE(runtime.attributeAt(Thread::current(), module, attr).isError());
 }
 
 TEST(RuntimeIntTest, NewSmallIntWithDigits) {
@@ -2608,8 +2607,7 @@ class Foo:
   Layout layout(&scope, type.instanceLayout());
   HeapObject instance(&scope, runtime.newInstance(layout));
   Object attr(&scope, runtime.newStrFromCStr("unknown"));
-  EXPECT_EQ(runtime.instanceDel(Thread::current(), instance, attr),
-            Error::object());
+  EXPECT_TRUE(runtime.instanceDel(Thread::current(), instance, attr).isError());
 }
 
 TEST(InstanceDelTest, DeleteInObjectAttribute) {

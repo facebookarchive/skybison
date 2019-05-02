@@ -208,7 +208,7 @@ TEST(CApiHandlesTest, Cache) {
   Object key(&scope, handle1->asObject());
   handle1->dispose();
   Dict caches(&scope, runtime.apiCaches());
-  EXPECT_EQ(runtime.dictAt(caches, key), Error::object());
+  EXPECT_TRUE(runtime.dictAt(caches, key).isError());
   EXPECT_EQ(handle2->cache(), buffer1);
 }
 

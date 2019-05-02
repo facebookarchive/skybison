@@ -15,12 +15,12 @@ TEST(HeapTest, AllocateObjects) {
 
   // Allocate the first half of the heap.
   RawObject raw1 = heap.allocate(size / 2, 0);
-  ASSERT_NE(raw1, Error::object());
+  ASSERT_FALSE(raw1.isError());
   EXPECT_TRUE(heap.contains(raw1));
 
   // Allocate the second half of the heap.
   RawObject raw2 = heap.allocate(size / 2, 0);
-  ASSERT_NE(raw2, Error::object());
+  ASSERT_FALSE(raw2.isError());
   EXPECT_TRUE(heap.contains(raw2));
 }
 
@@ -34,17 +34,17 @@ TEST(HeapTest, AllocateFails) {
   word first_half = Utils::roundUp(free_space / 2, kPointerSize * 2);
   Object object1(&scope, heap->createLargeStr(first_half));
   RawObject raw1 = *object1;
-  ASSERT_NE(raw1, Error::object());
+  ASSERT_FALSE(raw1.isError());
   EXPECT_TRUE(heap->contains(raw1));
 
   // Try over allocating.
   RawObject raw2 = heap->allocate(free_space, 0);
-  ASSERT_EQ(raw2, Error::object());
+  ASSERT_TRUE(raw2.isError());
 
   // Allocate the second half of the heap.
   word second_half = heap->space()->end() - heap->space()->fill();
   RawObject raw3 = heap->allocate(second_half, 0);
-  ASSERT_NE(raw3, Error::object());
+  ASSERT_FALSE(raw3.isError());
   EXPECT_TRUE(heap->contains(raw3));
 
   ASSERT_EQ(heap->space()->end(), heap->space()->fill());

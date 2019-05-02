@@ -2142,7 +2142,7 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
     value = RawValueCell::cast(value).value();
   }
   ctx->frame->pushValue(value);
-  DCHECK(ctx->frame->topValue() != Error::object(), "unexpected error object");
+  DCHECK(!ctx->frame->topValue().isError(), "unexpected error object");
 }
 
 // opcode 119
@@ -2206,7 +2206,7 @@ void Interpreter::doStoreFast(Context* ctx, word arg) {
 void Interpreter::doDeleteFast(Context* ctx, word arg) {
   // TODO(T32821785): use another immediate value than Error to signal unbound
   // local
-  if (ctx->frame->local(arg) == Error::object()) {
+  if (ctx->frame->local(arg).isError()) {
     RawObject name =
         RawTuple::cast(RawCode::cast(ctx->frame->code()).varnames()).at(arg);
     UNIMPLEMENTED("unbound local %s", RawStr::cast(name).toCStr());
