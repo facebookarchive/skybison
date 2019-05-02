@@ -1782,6 +1782,7 @@ class RawByteArray : public RawHeapObject {
   // Getters and setters
   byte byteAt(word index) const;
   void byteAtPut(word index, byte value) const;
+  void copyTo(byte* dst, word length) const;
   RawObject bytes() const;
   void setBytes(RawObject new_bytes) const;
   word numItems() const;
@@ -4065,6 +4066,11 @@ inline byte RawByteArray::byteAt(word index) const {
 inline void RawByteArray::byteAtPut(word index, byte value) const {
   DCHECK_INDEX(index, numItems());
   RawLargeBytes::cast(bytes()).byteAtPut(index, value);
+}
+
+inline void RawByteArray::copyTo(byte* dst, word length) const {
+  DCHECK_BOUND(length, numItems());
+  RawBytes::cast(bytes()).copyTo(dst, length);
 }
 
 inline word RawByteArray::numItems() const {

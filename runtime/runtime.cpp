@@ -933,13 +933,13 @@ RawObject Runtime::newStrFromByteArray(const ByteArray& array) {
   word length = array.numItems();
   if (length <= SmallStr::kMaxLength) {
     byte buffer[SmallStr::kMaxLength];
-    Bytes::cast(array.bytes()).copyTo(buffer, length);
+    array.copyTo(buffer, length);
     return SmallStr::fromBytes({buffer, length});
   }
   HandleScope scope;
   LargeStr result(&scope, heap()->createLargeStr(length));
   byte* dst = reinterpret_cast<byte*>(result.address());
-  Bytes::cast(array.bytes()).copyTo(dst, length);
+  array.copyTo(dst, length);
   return *result;
 }
 

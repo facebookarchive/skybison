@@ -16,7 +16,7 @@ PY_EXPORT char* PyByteArray_AsString(PyObject* pyobj) {
   ByteArray array(&scope, *obj);
   word len = array.numItems();
   auto buffer = static_cast<byte*>(std::malloc(len + 1));
-  RawBytes::cast(array.bytes()).copyTo(buffer, len);
+  array.copyTo(buffer, len);
   buffer[len] = '\0';
   handle->setCache(buffer);
   return reinterpret_cast<char*>(buffer);
