@@ -32,6 +32,8 @@ class BuiltinsModule {
   static RawObject printKw(Thread* thread, Frame* frame, word nargs);
   static RawObject setattr(Thread* thread, Frame* frame, word nargs);
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
+  static RawObject underByteArrayCheck(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGetItem(Thread* thread, Frame* frame, word nargs);

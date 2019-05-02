@@ -429,6 +429,7 @@ class Runtime;
   V(UnderBases, "_bases")                                                      \
   V(UnderBaseDir, "_base_dir")                                                 \
   V(UnderBootstrap, "_bootstrap")                                              \
+  V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
   V(UnderByteArrayToString, "_bytearray_to_string")                            \

@@ -297,6 +297,11 @@ def _address(c):
 
 
 @_patch
+def _bytearray_check(obj) -> bool:
+    pass
+
+
+@_patch
 def _bytearray_join(self: bytearray, iterable) -> bytearray:
     pass
 
@@ -685,7 +690,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def __rmul__(self, n: int) -> bytearray:
-        if not isinstance(self, bytearray):
+        if not _bytearray_check(self):
             raise TypeError("'__rmul__' requires a 'bytearray' instance")
         return bytearray.__mul__(self, n)
 
@@ -762,7 +767,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def join(self, iterable) -> bytearray:
-        if not isinstance(self, bytearray):
+        if not _bytearray_check(self):
             raise TypeError("'join' requires a 'bytearray' object")
         result = _bytearray_join(self, iterable)
         if result is not None:
@@ -1035,11 +1040,11 @@ class bytes(bootstrap=True):
 
     @staticmethod
     def maketrans(frm, to) -> bytes:
-        if not _bytes_check(frm) and not isinstance(frm, bytearray):
+        if not _bytes_check(frm) and not _bytearray_check(frm):
             raise TypeError(
                 f"a bytes-like object is required, not '{type(frm).__name__}'"
             )
-        if not _bytes_check(to) and not isinstance(to, bytearray):
+        if not _bytes_check(to) and not _bytearray_check(to):
             raise TypeError(
                 f"a bytes-like object is required, not '{type(to).__name__}'"
             )
@@ -1661,7 +1666,7 @@ class int(bootstrap=True):
                 return _int_from_str(cls, x, 10)
             if _bytes_check(x):
                 return _int_from_bytes(cls, x, 10)
-            if isinstance(x, bytearray):
+            if _bytearray_check(x):
                 return _int_from_bytearray(cls, x, 10)
             raise TypeError(
                 f"int() argument must be a string, a bytes-like object "
@@ -1674,7 +1679,7 @@ class int(bootstrap=True):
             return _int_from_str(cls, x, base)
         if _bytes_check(x):
             return _int_from_bytes(cls, x, base)
-        if isinstance(x, bytearray):
+        if _bytearray_check(x):
             return _int_from_bytearray(cls, x, base)
         raise TypeError("int() can't convert non-string with explicit base")
 
@@ -3008,7 +3013,7 @@ def sum(iterable, start=0):
         raise TypeError("sum() can't sum strings [use ''.join(seq) instead]")
     if _bytes_check(start):
         raise TypeError("sum() can't sum bytes [use b''.join(seq) instead]")
-    if isinstance(start, bytearray):
+    if _bytearray_check(start):
         raise TypeError("sum() can't sum bytearray [use b''.join(seq) instead]")
 
     result = start
