@@ -206,7 +206,7 @@ RawObject dictItemIteratorNext(Thread* thread, const DictItemIterator& iter) {
 
   // We hit the end.
   iter.setIndex(i);
-  return Error::object();
+  return Error::noMoreItems();
 }
 
 RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter) {
@@ -224,7 +224,7 @@ RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter) {
 
   // We hit the end.
   iter.setIndex(i);
-  return Error::object();
+  return Error::noMoreItems();
 }
 
 RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
@@ -242,7 +242,7 @@ RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
 
   // We hit the end.
   iter.setIndex(i);
-  return Error::object();
+  return Error::noMoreItems();
 }
 
 const BuiltinAttribute DictBuiltins::kAttributes[] = {

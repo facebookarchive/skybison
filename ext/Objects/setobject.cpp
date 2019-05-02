@@ -157,9 +157,7 @@ PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {
   }
   Set set(&scope, *set_obj);
   Object result(&scope, setPop(thread, set));
-  if (thread->hasPendingException()) {
-    return nullptr;
-  }
+  if (result.isErrorException()) return nullptr;
   return ApiHandle::newReference(thread, *result);
 }
 

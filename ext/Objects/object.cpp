@@ -77,11 +77,12 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
 
   Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderBytes));
   if (result.isError()) {
-    if (thread->hasPendingException()) return nullptr;
+    if (result.isErrorException()) return nullptr;
     // Attribute lookup failed
     result = thread->invokeFunction1(SymbolId::kBuiltins,
                                      SymbolId::kUnderBytesNew, obj);
-    if (result.isError()) return nullptr;
+    if (result.isErrorException()) return nullptr;
+    DCHECK(!result.isError(), "Couldn't call builtins._bytes_new");
   } else if (!runtime->isInstanceOfBytes(*result)) {
     thread->raiseTypeError(runtime->newStrFromFmt(
         "__bytes__ returned non-bytes (type %T)", &result));
@@ -172,7 +173,7 @@ PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderHash));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("unhashable type");
     }
     return -1;

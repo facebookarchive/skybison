@@ -100,72 +100,50 @@ class Thread {
 
   void setRuntime(Runtime* runtime) { runtime_ = runtime; }
 
-  // Calls out to the interpreter to lookup and call a method on the receiver.
-  RawObject invokeMethod1(const Handle<RawObject>& receiver, SymbolId selector);
-
   // Calls out to the interpreter to lookup and call a method on the receiver
-  // with one argument.
+  // with the given argument(s). Returns Error<NotFound> if the method can't be
+  // found, or the result of the call otheriwse (which may be Error<Exception>).
+  RawObject invokeMethod1(const Handle<RawObject>& receiver, SymbolId selector);
   RawObject invokeMethod2(const Handle<RawObject>& receiver, SymbolId selector,
                           const Handle<RawObject>& arg1);
-
-  // Calls out to the interpreter to lookup and call a method on the receiver
-  // with two arguments.
   RawObject invokeMethod3(const Handle<RawObject>& receiver, SymbolId selector,
                           const Handle<RawObject>& arg1,
                           const Handle<RawObject>& arg2);
 
   // Looks up a method on a type and invokes it with the given receiver and
-  // argument
-  // ex: str.foo(receiver, arg1)
+  // argument(s). Returns Error<NotFound> if the method can't be found, or the
+  // result of the call otheriwse (which may be Error<Exception>).
+  // ex: str.foo(receiver, arg1, ...)
   RawObject invokeMethodStatic2(LayoutId type, SymbolId method_name,
                                 const Handle<RawObject>& receiver,
                                 const Handle<RawObject>& arg1);
-
-  // Looks up a method on a type and invokes it with the given receiver and
-  // arguments
-  // ex: str.foo(receiver, arg1, arg2)
   RawObject invokeMethodStatic3(LayoutId type, SymbolId method_name,
                                 const Handle<RawObject>& receiver,
                                 const Handle<RawObject>& arg1,
                                 const Handle<RawObject>& arg2);
-
-  // Looks up a method on a type and invokes it with the given receiver and
-  // arguments
-  // ex: str.foo(receiver, arg1, arg2, arg3)
   RawObject invokeMethodStatic4(LayoutId type, SymbolId method_name,
                                 const Handle<RawObject>& receiver,
                                 const Handle<RawObject>& arg1,
                                 const Handle<RawObject>& arg2,
                                 const Handle<RawObject>& arg3);
 
-  // Calls out to the interpreter to lookup and call a function with one
-  // argument
+  // Calls out to the interpreter to lookup and call a function with the given
+  // argument(s). Returns Error<NotFound> if the function can't be found, or the
+  // result of the call otherwise (which may be Error<Exception>).
   RawObject invokeFunction1(SymbolId module, SymbolId name,
                             const Handle<RawObject>& arg1);
-
-  // Calls out to the interpreter to lookup and call a function with two
-  // arguments
   RawObject invokeFunction2(SymbolId module, SymbolId name,
                             const Handle<RawObject>& arg1,
                             const Handle<RawObject>& arg2);
-
-  // Calls out to the interpreter to lookup and call a function with three
-  // arguments
   RawObject invokeFunction3(SymbolId module, SymbolId name,
                             const Handle<RawObject>& arg1,
                             const Handle<RawObject>& arg2,
                             const Handle<RawObject>& arg3);
-
-  // Calls out to the interpreter to lookup and call a function with four
-  // arguments
   RawObject invokeFunction4(SymbolId module, SymbolId name,
                             const Handle<RawObject>& arg1,
                             const Handle<RawObject>& arg2,
                             const Handle<RawObject>& arg3,
                             const Handle<RawObject>& arg4);
-
-  // Calls out to the interpreter to lookup and call a function with five
-  // arguments
   RawObject invokeFunction5(SymbolId module, SymbolId name,
                             const Handle<RawObject>& arg1,
                             const Handle<RawObject>& arg2,
@@ -327,6 +305,11 @@ class Thread {
   // Gets or sets the current caught ExceptionState.
   RawObject caughtExceptionState();
   void setCaughtExceptionState(RawObject state);
+
+  // Returns true if and only if obj is not an Error and there is no pending
+  // exception, or obj is an Error<Exception> and there is a pending exception.
+  // Mostly used in assertions around call boundaries.
+  bool isErrorValueOk(RawObject obj);
 
   // Walk all the frames on the stack starting with the top-most frame
   void visitFrames(FrameVisitor* visitor);

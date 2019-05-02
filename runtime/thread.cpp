@@ -373,7 +373,7 @@ RawObject Thread::raise(LayoutId type, RawObject value) {
   setPendingExceptionType(runtime()->typeAt(type));
   setPendingExceptionValue(value);
   setPendingExceptionTraceback(NoneType::object());
-  return Error::object();
+  return Error::exception();
 }
 
 RawObject Thread::raiseWithCStr(LayoutId type, const char* message) {
@@ -606,6 +606,11 @@ RawObject Thread::caughtExceptionState() { return caught_exc_stack_; }
 
 void Thread::setCaughtExceptionState(RawObject state) {
   caught_exc_stack_ = state;
+}
+
+bool Thread::isErrorValueOk(RawObject obj) {
+  return (!obj.isError() && !hasPendingException()) ||
+         (obj.isErrorException() && hasPendingException());
 }
 
 void Thread::visitFrames(FrameVisitor* visitor) {

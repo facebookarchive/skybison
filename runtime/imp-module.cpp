@@ -69,8 +69,8 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
   Object spec(&scope, args.get(0));
   Object key(&scope, runtime->symbols()->Name());
   Object name_obj(&scope, getAttribute(thread, spec, key));
+  DCHECK(thread->isErrorValueOk(*name_obj), "error/exception mismatch");
   if (name_obj.isError()) {
-    DCHECK(thread->hasPendingException(), "expected exception");
     thread->clearPendingException();
     return thread->raiseTypeErrorWithCStr("spec has no attribute 'name'");
   }
@@ -88,7 +88,7 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
     if (name.equalsCStr(_PyImport_Inittab[i].name)) {
       PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();
       if (pymodule == nullptr) {
-        if (thread->hasPendingException()) return Error::object();
+        if (thread->hasPendingException()) return Error::exception();
         return thread->raiseSystemErrorWithCStr(
             "NULL return without exception set");
       };

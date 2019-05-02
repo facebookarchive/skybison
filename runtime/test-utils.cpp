@@ -254,7 +254,7 @@ RawObject moduleAt(Runtime* runtime, const char* module_name,
   HandleScope scope;
   Object mod_obj(&scope, findModule(runtime, module_name));
   if (mod_obj.isNoneType()) {
-    return Error::object();
+    return Error::notFound();
   }
   Module module(&scope, *mod_obj);
   return moduleAt(runtime, module, name);
@@ -339,7 +339,8 @@ RawObject runFromCStr(Runtime* runtime, const char* c_str) {
 
   // Barebones emulation of the top-level SystemExit handling, to allow for
   // testing of handleSystemExit().
-  if (result.isError() && thread->hasPendingException()) {
+  DCHECK(thread->isErrorValueOk(*result), "error/exception mismatch");
+  if (result.isError()) {
     Type type(&scope, thread->pendingExceptionType());
     if (type.builtinBase() == LayoutId::kSystemExit) handleSystemExit(thread);
   }
@@ -365,13 +366,13 @@ RawObject listFromRange(word start, word stop) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (result.isError()) {
-    if (thread->hasPendingException()) {
+    if (result.isErrorException()) {
       Type type(&scope, thread->pendingExceptionType());
       unique_c_ptr<char> name(Str::cast(type.name()).toCStr());
       return ::testing::AssertionFailure()
              << "pending '" << name.get() << "' exception";
     }
-    return ::testing::AssertionFailure() << "is an Error";
+    return ::testing::AssertionFailure() << "is an " << result;
   }
   if (!runtime->isInstanceOfByteArray(*result)) {
     return ::testing::AssertionFailure()
@@ -401,13 +402,13 @@ RawObject listFromRange(word start, word stop) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (result.isError()) {
-    if (thread->hasPendingException()) {
+    if (result.isErrorException()) {
       Type type(&scope, thread->pendingExceptionType());
       unique_c_ptr<char> name(Str::cast(type.name()).toCStr());
       return ::testing::AssertionFailure()
              << "pending '" << name.get() << "' exception";
     }
-    return ::testing::AssertionFailure() << "is an Error";
+    return ::testing::AssertionFailure() << "is an " << result;
   }
   if (!runtime->isInstanceOfBytes(*result)) {
     return ::testing::AssertionFailure()
@@ -474,13 +475,13 @@ RawObject listFromRange(word start, word stop) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (obj.isError()) {
-    if (thread->hasPendingException()) {
+    if (obj.isErrorException()) {
       Type type(&scope, thread->pendingExceptionType());
       Str type_name(&scope, type.name());
       return ::testing::AssertionFailure()
              << "pending " << type_name << " exception";
     }
-    return ::testing::AssertionFailure() << "is an Error";
+    return ::testing::AssertionFailure() << "is an " << obj;
   }
   if (!runtime->isInstanceOfInt(obj)) {
     return ::testing::AssertionFailure()
@@ -501,13 +502,13 @@ RawObject listFromRange(word start, word stop) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (obj.isError()) {
-    if (thread->hasPendingException()) {
+    if (obj.isErrorException()) {
       Type type(&scope, thread->pendingExceptionType());
       Str type_name(&scope, type.name());
       return ::testing::AssertionFailure()
              << "pending " << type_name << " exception";
     }
-    return ::testing::AssertionFailure() << "is an Error";
+    return ::testing::AssertionFailure() << "is an " << obj;
   }
   // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(obj)) {

@@ -360,8 +360,8 @@ static RawObject processKeywordArguments(Thread* thread, Frame* caller,
     }
     // Fill in missing spots w/ Error code
     for (word i = num_keyword_args; i < name_tuple_size; i++) {
-      caller->pushValue(Error::object());
-      padded_keywords.atPut(i, Error::object());
+      caller->pushValue(Error::error());
+      padded_keywords.atPut(i, Error::error());
     }
     keywords = *padded_keywords;
   }
@@ -664,7 +664,7 @@ static RawObject callMethNoArgs(Thread* thread, const Function& function,
   PyObject* self_obj = ApiHandle::borrowedReference(thread, *self);
   PyObject* result = (*method)(self_obj, nullptr);
   if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::object();
+  if (thread->hasPendingException()) return Error::exception();
   return thread->raiseSystemErrorWithCStr("NULL return without exception set");
 }
 
@@ -720,7 +720,7 @@ static RawObject callMethOneArg(Thread* thread, const Function& function,
   PyObject* arg_obj = ApiHandle::borrowedReference(thread, *arg);
   PyObject* result = (*method)(self_obj, arg_obj);
   if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::object();
+  if (thread->hasPendingException()) return Error::exception();
   return thread->raiseSystemErrorWithCStr("NULL return without exception set");
 }
 
@@ -786,7 +786,7 @@ static RawObject callMethVarArgs(Thread* thread, const Function& function,
   PyObject* varargs_obj = ApiHandle::borrowedReference(thread, *varargs);
   PyObject* result = (*method)(self_obj, varargs_obj);
   if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::object();
+  if (thread->hasPendingException()) return Error::exception();
   return thread->raiseSystemErrorWithCStr("NULL return without exception set");
 }
 
@@ -856,7 +856,7 @@ static RawObject callMethKeywords(Thread* thread, const Function& function,
   }
   PyObject* result = (*method)(self_obj, args_obj, kwargs_obj);
   if (result != nullptr) return ApiHandle::fromPyObject(result)->asObject();
-  if (thread->hasPendingException()) return Error::object();
+  if (thread->hasPendingException()) return Error::exception();
   return thread->raiseSystemErrorWithCStr("NULL return without exception set");
 }
 
@@ -1124,8 +1124,7 @@ static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller, word argc,
   void* entry = RawSmallInt::cast(code.code()).asCPtr();
   Frame* frame = thread->pushNativeFrame(entry, argc);
   result = bit_cast<Function::Entry>(entry)(thread, frame, argc);
-  DCHECK(result.isError() == thread->hasPendingException(),
-         "error/exception mismatch");
+  DCHECK(thread->isErrorValueOk(*result), "error/exception mismatch");
   thread->popFrame();
   return *result;
 }

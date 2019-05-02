@@ -55,7 +55,7 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Object len_index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
   if (len_index.isError()) {
-    if (!thread->hasPendingException()) {
+    if (len_index.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("object has no len()");
     }
     return -1;
@@ -158,7 +158,7 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
   }
   if (next.isError()) {
     // Method lookup or call failed
-    if (!thread->hasPendingException()) {
+    if (next.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("failed to call __next__ on iterable");
     }
     return nullptr;
@@ -180,7 +180,7 @@ static PyObject* getItem(Thread* thread, const Object& obj, const Object& key) {
   Object result(&scope,
                 thread->invokeMethod2(obj, SymbolId::kDunderGetitem, key));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("object is not subscriptable");
     }
     return nullptr;
@@ -227,13 +227,11 @@ static RawObject getIter(Thread* thread, const Object& obj) {
   if (iter.isError()) {
     // If the object is a sequence, make a new sequence iterator. It doesn't
     // need to have __iter__.
-    if (runtime->isSequence(thread, obj)) {
-      return runtime->newSeqIterator(obj);
+    if (iter.isErrorNotFound()) {
+      if (runtime->isSequence(thread, obj)) return runtime->newSeqIterator(obj);
+      return thread->raiseTypeErrorWithCStr("object is not iterable");
     }
-    if (!thread->hasPendingException()) {
-      thread->raiseTypeErrorWithCStr("object is not iterable");
-    }
-    return Error::object();
+    return *iter;
   }
   // If the object has __iter__, ensure that the resulting object has __next__.
   Type type(&scope, runtime->typeOf(*iter));
@@ -258,14 +256,11 @@ static RawObject sequenceFast(Thread* thread, const Object& seq,
     if (givenExceptionMatches(thread, given, exc)) {
       thread->setPendingExceptionValue(*msg);
     }
-    return Error::object();
+    return Error::exception();
   }
   // TODO(T40274012): Re-write this function in terms of builtins.list
   List result(&scope, runtime->newList());
-  if (listExtend(thread, result, seq).isError()) {
-    return Error::object();
-  }
-  return *result;
+  return listExtend(thread, result, seq);
 }
 
 // TODO(T40432322): Delete
@@ -275,7 +270,7 @@ static PyObject* callMappingMethod(Thread* thread, const Object& map,
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod1(map, method));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseAttributeError(
           runtime->newStrFromFmt("could not call %s", method_name));
     }
@@ -954,7 +949,7 @@ PY_EXPORT int PyObject_SetItem(PyObject* obj, PyObject* key, PyObject* value) {
   Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetitem,
                                               key_obj, value_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("object does not support item assignment");
     }
     return -1;
@@ -1075,7 +1070,7 @@ PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
   Object result(
       &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, slice));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("object does not support slice deletion");
     }
     return -1;
@@ -1109,7 +1104,7 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
   Object result(&scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem,
                                               idx_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call __getitem__");
     }
     return nullptr;
@@ -1129,7 +1124,7 @@ PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
   Object result(
       &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem, slice));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call __getitem__");
     }
     return nullptr;
@@ -1245,7 +1240,7 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
                                    object);
   }
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("object is not subscriptable");
     }
     return -1;
@@ -1272,7 +1267,7 @@ PY_EXPORT int PySequence_SetSlice(PyObject* seq, Py_ssize_t low,
         thread->invokeMethod3(seq_obj, SymbolId::kDunderSetitem, slice, object);
   }
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr(
           "object does not support slice assignment");
     }

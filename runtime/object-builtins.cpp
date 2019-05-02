@@ -49,7 +49,7 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
     return *type_attr;
   }
 
-  return Error::object();
+  return Error::notFound();
 }
 
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
@@ -108,7 +108,7 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   Object result(&scope, objectGetAttribute(thread, self, name));
-  if (result.isError() && !thread->hasPendingException()) {
+  if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "'%T' object has no attribute '%S'", &self,
                                 &name);

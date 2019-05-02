@@ -297,7 +297,7 @@ RawObject wrapIntegralfunc(Thread* thread, Frame* frame, word argc,
   Arguments args(frame, argc);
   PyObject* o = ApiHandle::borrowedReference(thread, args.get(0));
   auto result = func(o);
-  if (result == -1 && thread->hasPendingException()) return Error::object();
+  if (result == -1 && thread->hasPendingException()) return Error::exception();
   return ret(result);
 }
 
@@ -387,7 +387,7 @@ RawObject wrapSetattr(Thread* thread, Frame* frame, word argc) {
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* name = ApiHandle::borrowedReference(thread, args.get(1));
   PyObject* value = ApiHandle::borrowedReference(thread, args.get(2));
-  if (func(self, name, value) < 0) return Error::object();
+  if (func(self, name, value) < 0) return Error::exception();
   return NoneType::object();
 }
 
@@ -398,7 +398,7 @@ RawObject wrapDelattr(Thread* thread, Frame* frame, word argc) {
   Arguments args(frame, argc);
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* name = ApiHandle::borrowedReference(thread, args.get(1));
-  if (func(self, name, nullptr) < 0) return Error::object();
+  if (func(self, name, nullptr) < 0) return Error::exception();
   return NoneType::object();
 }
 
@@ -455,7 +455,7 @@ RawObject wrapDescrSet(Thread* thread, Frame* frame, word argc) {
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* obj = ApiHandle::borrowedReference(thread, args.get(1));
   PyObject* value = ApiHandle::borrowedReference(thread, args.get(2));
-  if (func(self, obj, value) < 0) return Error::object();
+  if (func(self, obj, value) < 0) return Error::exception();
   return NoneType::object();
 }
 
@@ -466,7 +466,7 @@ RawObject wrapDescrDelete(Thread* thread, Frame* frame, word argc) {
   Arguments args(frame, argc);
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* obj = ApiHandle::borrowedReference(thread, args.get(1));
-  if (func(self, obj, nullptr) < 0) return Error::object();
+  if (func(self, obj, nullptr) < 0) return Error::exception();
   return NoneType::object();
 }
 
@@ -481,7 +481,7 @@ RawObject wrapInit(Thread* thread, Frame* frame, word argc) {
   if (!args.get(2).isNoneType()) {
     kwargs = ApiHandle::borrowedReference(thread, args.get(2));
   }
-  if (func(self, varargs, kwargs) < 0) return Error::object();
+  if (func(self, varargs, kwargs) < 0) return Error::exception();
   return NoneType::object();
 }
 
@@ -504,7 +504,7 @@ RawObject wrapObjobjargproc(Thread* thread, Frame* frame, word argc) {
   PyObject* key = ApiHandle::borrowedReference(thread, args.get(1));
   PyObject* value = ApiHandle::borrowedReference(thread, args.get(2));
   int res = func(self, key, value);
-  if (res == -1 && thread->hasPendingException()) return Error::object();
+  if (res == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
 }
 
@@ -516,7 +516,7 @@ RawObject wrapObjobjproc(Thread* thread, Frame* frame, word argc) {
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* value = ApiHandle::borrowedReference(thread, args.get(1));
   int res = func(self, value);
-  if (res == -1 && thread->hasPendingException()) return Error::object();
+  if (res == -1 && thread->hasPendingException()) return Error::exception();
   return Bool::fromBool(res);
 }
 
@@ -528,7 +528,7 @@ RawObject wrapDelitem(Thread* thread, Frame* frame, word argc) {
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* key = ApiHandle::borrowedReference(thread, args.get(1));
   int res = func(self, key, nullptr);
-  if (res == -1 && thread->hasPendingException()) return Error::object();
+  if (res == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
 }
 
@@ -608,7 +608,7 @@ RawObject wrapSqSetitem(Thread* thread, Frame* frame, word argc) {
   PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
   PyObject* py_value = ApiHandle::borrowedReference(thread, args.get(2));
   int result = func(py_self, Int::cast(*arg).asWord(), py_value);
-  if (result == -1 && thread->hasPendingException()) return Error::object();
+  if (result == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
 }
 
@@ -624,7 +624,7 @@ RawObject wrapSqDelitem(Thread* thread, Frame* frame, word argc) {
   if (arg.isError()) return *arg;
   PyObject* py_self = ApiHandle::borrowedReference(thread, *self);
   int result = func(py_self, Int::cast(*arg).asWord(), nullptr);
-  if (result == -1 && thread->hasPendingException()) return Error::object();
+  if (result == -1 && thread->hasPendingException()) return Error::exception();
   return NoneType::object();
 }
 

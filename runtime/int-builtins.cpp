@@ -410,7 +410,7 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   if (!runtime->isInstanceOfBytes(*maybe_bytes)) {
     maybe_bytes = thread->invokeMethod1(bytes_obj, SymbolId::kDunderBytes);
     if (maybe_bytes.isError()) {
-      if (thread->hasPendingException()) return *maybe_bytes;
+      if (maybe_bytes.isErrorException()) return *maybe_bytes;
       // Attribute lookup failed
       maybe_bytes = thread->invokeFunction1(
           SymbolId::kBuiltins, SymbolId::kUnderBytesNew, bytes_obj);
@@ -953,7 +953,7 @@ RawObject intFromIndex(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       return thread->raiseTypeError(runtime->newStrFromFmt(
           "'%T' object cannot be interpreted as an integer", &obj));
     }

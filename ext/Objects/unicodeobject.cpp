@@ -909,7 +909,7 @@ PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
                                                     SymbolId::kDunderContains,
                                                     str_obj, substr_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call str.__contains__");
     }
     return -1;
@@ -945,7 +945,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
                                                     SymbolId::kAsciiDecode,
                                                     bytes, errors_obj));
   if (result_obj.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result_obj.isErrorNotFound()) {
       thread->raiseSystemErrorWithCStr("could not call _codecs.ascii_decode");
     }
     return nullptr;
@@ -1490,7 +1490,7 @@ PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
   Object result(&scope, thread->invokeMethodStatic2(
                             LayoutId::kStr, SymbolId::kJoin, sep_obj, seq_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call str.join");
     }
     return nullptr;
@@ -1509,7 +1509,7 @@ PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
       &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kPartition,
                                           str_obj, sep_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call str.partition");
     }
     return nullptr;
@@ -1528,7 +1528,7 @@ PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
       &scope, thread->invokeMethodStatic2(LayoutId::kStr, SymbolId::kRPartition,
                                           str_obj, sep_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call str.rpartition");
     }
     return nullptr;
@@ -1549,7 +1549,7 @@ PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
                 thread->invokeMethodStatic3(LayoutId::kStr, SymbolId::kRSplit,
                                             str_obj, sep_obj, maxsplit_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call str.rsplit");
     }
     return nullptr;
@@ -1622,7 +1622,7 @@ PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
                 thread->invokeMethodStatic3(LayoutId::kStr, SymbolId::kSplit,
                                             str_obj, sep_obj, maxsplit_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseTypeErrorWithCStr("could not call str.split");
     }
     return nullptr;

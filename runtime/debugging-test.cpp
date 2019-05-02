@@ -154,8 +154,28 @@ TEST(DebuggingTests, FormatDict) {
 TEST(DebuggingTests, FormatError) {
   Runtime runtime;
   std::stringstream ss;
-  ss << Error::object();
+  ss << Error::error();
   EXPECT_EQ(ss.str(), "Error");
+
+  ss.str("");
+  ss << Error::exception();
+  EXPECT_EQ(ss.str(), "Error<Exception>");
+
+  ss.str("");
+  ss << Error::notFound();
+  EXPECT_EQ(ss.str(), "Error<NotFound>");
+
+  ss.str("");
+  ss << Error::noMoreItems();
+  EXPECT_EQ(ss.str(), "Error<NoMoreItems>");
+
+  ss.str("");
+  ss << Error::outOfMemory();
+  EXPECT_EQ(ss.str(), "Error<OutOfMemory>");
+
+  ss.str("");
+  ss << Error::outOfBounds();
+  EXPECT_EQ(ss.str(), "Error<OutOfBounds>");
 }
 
 TEST(DebuggingTests, FormatFloat) {

@@ -75,7 +75,7 @@ RawObject SuperBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   Object result(&scope, superGetAttribute(thread, self, name));
-  if (result.isError() && !thread->hasPendingException()) {
+  if (result.isErrorNotFound()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "super object has no attribute '%S'", &name);
   }
@@ -119,7 +119,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseRuntimeErrorWithCStr("super(): no arguments");
     }
     Tuple free_vars(&scope, code.freevars());
-    RawObject cell = Error::object();
+    RawObject cell = Error::notFound();
     for (word i = 0; i < free_vars.length(); i++) {
       if (RawStr::cast(free_vars.at(i))
               .equals(runtime->symbols()->DunderClass())) {

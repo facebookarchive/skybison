@@ -220,7 +220,7 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   word byte_offset = iter.index();
   Str underlying(&scope, iter.iterable());
   if (byte_offset >= underlying.length()) {
-    return Error::object();
+    return Error::noMoreItems();
   }
   word num_bytes = 0;
   word code_point = underlying.codePointAt(byte_offset, &num_bytes);

@@ -128,7 +128,7 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
   if (throw_obj.isError()) {
     // If the call failed with an AttributeError, ignore it and proceed with
     // the throw. Otherwise, forward the exception.
-    if (!thread->hasPendingException() ||
+    if (throw_obj.isErrorNotFound() ||
         thread->pendingExceptionMatches(LayoutId::kAttributeError)) {
       thread->clearPendingException();
       return genThrowDoRaise(thread, gen, exc, value, tb);

@@ -14,8 +14,7 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   Runtime* runtime = thread->runtime();
   RawObject result =
       runtime->run(Runtime::compileFromCStr(str, "<string>").get());
-  DCHECK(result.isError() == thread->hasPendingException(),
-         "Error/pending exception mismatch");
+  DCHECK(thread->isErrorValueOk(result), "Error/pending exception mismatch");
   if (!result.isError()) return 0;
   printPendingExceptionWithSysLastVars(thread);
   return -1;

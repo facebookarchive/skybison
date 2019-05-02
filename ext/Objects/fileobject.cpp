@@ -61,7 +61,7 @@ PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
   if (!runtime->isInstanceOfInt(*object)) {
     object = thread->invokeMethod1(object, SymbolId::kFileno);
     if (object.isError()) {
-      if (!thread->hasPendingException()) {
+      if (object.isErrorNotFound()) {
         thread->raiseTypeErrorWithCStr(
             "argument must be an int, or have a fileno() method.");
       }

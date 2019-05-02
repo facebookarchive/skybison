@@ -365,7 +365,7 @@ PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
                     SymbolId::kBuiltins, SymbolId::kUnicodeDecodeError,
                     encoding_obj, object_obj, start_obj, end_obj, reason_obj));
   if (result.isError()) {
-    if (!thread->hasPendingException()) {
+    if (result.isErrorNotFound()) {
       thread->raiseRuntimeErrorWithCStr("could not call UnicodeDecodeError()");
     }
     return nullptr;

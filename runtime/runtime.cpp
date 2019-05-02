@@ -1591,7 +1591,7 @@ RawObject Runtime::run(const char* buffer) {
   }
   Module main_module(&scope, *main);
   Object result(&scope, executeModule(buffer, main_module));
-  DCHECK(!result.isError() || Thread::current()->hasPendingException(),
+  DCHECK(Thread::current()->isErrorValueOk(*result),
          "error/exception mismatch");
   return *result;
 }
@@ -1780,7 +1780,7 @@ RawObject Runtime::moduleDictAt(const Dict& dict, const Object& key) {
   HandleScope scope;
   Object value_cell(&scope, dictAt(dict, key));
   if (value_cell.isError()) {
-    return Error::object();
+    return Error::notFound();
   }
   CHECK(value_cell.isValueCell(),
         "dict in moduleDictAt should return ValueCell");
@@ -1855,7 +1855,7 @@ RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
   HandleScope scope;
   Object value_cell(&scope, dictAt(dict, key));
   if (value_cell.isError()) {
-    return Error::object();
+    return Error::notFound();
   }
   CHECK(value_cell.isValueCell(), "dict in typeDictAt should return ValueCell");
   return RawValueCell::cast(*value_cell).value();
@@ -2642,7 +2642,7 @@ RawObject Runtime::dictAtWithHash(const Dict& dict, const Object& key,
     DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
   }
-  return Error::object();
+  return Error::notFound();
 }
 
 RawObject Runtime::dictAt(const Dict& dict, const Object& key) {
@@ -2710,7 +2710,7 @@ RawObject Runtime::dictRemoveWithHash(const Dict& dict, const Object& key,
   HandleScope scope;
   Tuple data(&scope, dict.data());
   word index = -1;
-  Object result(&scope, Error::object());
+  Object result(&scope, Error::notFound());
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (found) {
     DCHECK(index != -1, "unexpected index %ld", index);
@@ -3325,11 +3325,11 @@ RawObject Runtime::attributeAt(Thread* thread, const Object& object,
   Object exception_traceback(&scope, thread->pendingExceptionTraceback());
   thread->clearPendingException();
   result = thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
-  if (result.isError() && !thread->hasPendingException()) {
+  if (result.isErrorNotFound()) {
     thread->setPendingExceptionType(*exception_type);
     thread->setPendingExceptionValue(*exception_value);
     thread->setPendingExceptionTraceback(*exception_traceback);
-    return Error::object();
+    return Error::exception();
   }
   return *result;
 }
@@ -3688,7 +3688,7 @@ RawObject Runtime::instanceAt(Thread* thread, const HeapObject& instance,
     }
     return *obj;
   }
-  return Error::object();
+  return Error::notFound();
 }
 
 RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,
@@ -3744,9 +3744,7 @@ RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
   // Make the attribute invisible
   Layout old_layout(&scope, layoutAt(instance.layoutId()));
   Object result(&scope, layoutDeleteAttribute(thread, old_layout, name));
-  if (result.isError()) {
-    return Error::object();
-  }
+  if (result.isError()) return *result;
   LayoutId new_layout_id = RawLayout::cast(*result).id();
   instance.setHeader(instance.header().withLayoutId(new_layout_id));
 
@@ -3779,7 +3777,7 @@ RawObject Runtime::layoutFollowEdge(const List& edges, const Object& label) {
       return edges.at(i + 1);
     }
   }
-  return Error::object();
+  return Error::notFound();
 }
 
 void Runtime::layoutAddEdge(const List& edges, const Object& label,
@@ -3901,7 +3899,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   // See if the attribute exists
   AttributeInfo info;
   if (!layoutFindAttribute(thread, layout, name, &info)) {
-    return Error::object();
+    return Error::notFound();
   }
 
   // Check if an edge exists for removing the attribute

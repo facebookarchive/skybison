@@ -85,7 +85,7 @@ RawObject FunctionBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   Object result(&scope, functionGetAttribute(thread, self, name));
-  if (result.isError() && !thread->hasPendingException()) {
+  if (result.isErrorNotFound()) {
     Object function_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "function '%S' has no attribute '%S'",

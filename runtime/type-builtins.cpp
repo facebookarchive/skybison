@@ -24,7 +24,7 @@ RawObject typeLookupNameInMro(Thread* thread, const Type& type,
       return *value;
     }
   }
-  return Error::object();
+  return Error::notFound();
 }
 
 RawObject typeLookupSymbolInMro(Thread* thread, const Type& type,
@@ -103,7 +103,7 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
     return *meta_attr;
   }
 
-  return Error::object();
+  return Error::notFound();
 }
 
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
@@ -270,7 +270,7 @@ RawObject TypeBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   Object result(&scope, typeGetAttribute(thread, self, name));
-  if (result.isError() && !thread->hasPendingException()) {
+  if (result.isErrorNotFound()) {
     Object type_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "type object '%S' has no attribute '%S'",

@@ -389,7 +389,7 @@ static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
 RawObject Interpreter::unaryOperation(Thread* thread, const Object& self,
                                       SymbolId selector) {
   RawObject result = thread->invokeMethod1(self, selector);
-  if (result.isError() && !thread->hasPendingException()) {
+  if (result.isErrorNotFound()) {
     return raiseUnaryOpTypeError(thread, self, selector);
   }
   return result;
@@ -416,7 +416,7 @@ static RawObject binaryOperationSwapped(Thread* thread, Frame* frame,
       &scope,
       Interpreter::lookupMethod(thread, frame, other, swapped_selector));
   if (other_reversed_method.isError()) {
-    if (thread->hasPendingException()) return *other_reversed_method;
+    if (other_reversed_method.isErrorException()) return *other_reversed_method;
     return NotImplementedType::object();
   }
 
@@ -425,7 +425,7 @@ static RawObject binaryOperationSwapped(Thread* thread, Frame* frame,
   // close to this behavior.
   Object self_reversed_method(
       &scope, Interpreter::lookupMethod(thread, frame, self, swapped_selector));
-  if (self_reversed_method.isError() && thread->hasPendingException()) {
+  if (self_reversed_method.isErrorException()) {
     return *self_reversed_method;
   }
   if (self_reversed_method == other_reversed_method) {
@@ -449,7 +449,7 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
   bool try_reversed = self_type != other_type;
 
   if (self_method.isError()) {
-    if (thread->hasPendingException()) return *self_method;
+    if (self_method.isErrorException()) return *self_method;
   } else {
     if (try_reversed && runtime->isSubclass(other_type, self_type)) {
       Object result(&scope,
@@ -912,7 +912,7 @@ bool Interpreter::unwind(Context* ctx) {
   }
 
   finishCurrentGenerator(ctx);
-  frame->pushValue(Error::object());
+  frame->pushValue(Error::exception());
   return true;
 }
 
@@ -2211,7 +2211,7 @@ void Interpreter::doDeleteFast(Context* ctx, word arg) {
         RawTuple::cast(RawCode::cast(ctx->frame->code()).varnames()).at(arg);
     UNIMPLEMENTED("unbound local %s", RawStr::cast(name).toCStr());
   }
-  ctx->frame->setLocal(arg, Error::object());
+  ctx->frame->setLocal(arg, Error::notFound());
 }
 
 // opcode 127
@@ -2247,7 +2247,7 @@ bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
     }
   } else {
     Frame* frame = ctx->frame;
-    RawObject cause = (arg >= 2) ? frame->popValue() : Error::object();
+    RawObject cause = (arg >= 2) ? frame->popValue() : Error::notFound();
     RawObject exn = (arg >= 1) ? frame->popValue() : NoneType::object();
     raise(ctx, exn, cause);
   }
@@ -2375,7 +2375,7 @@ bool Interpreter::doSetupWith(Context* ctx, word arg) {
   Object enter(&scope,
                lookupMethod(thread, frame, mgr, SymbolId::kDunderEnter));
   if (enter.isError()) {
-    if (!thread->hasPendingException()) {
+    if (enter.isErrorNotFound()) {
       thread->raiseAttributeError(
           runtime->symbols()->at(SymbolId::kDunderEnter));
     }
@@ -2383,7 +2383,7 @@ bool Interpreter::doSetupWith(Context* ctx, word arg) {
   }
   Object exit(&scope, lookupMethod(thread, frame, mgr, SymbolId::kDunderExit));
   if (exit.isError()) {
-    if (!thread->hasPendingException()) {
+    if (exit.isErrorNotFound()) {
       thread->raiseAttributeError(
           runtime->symbols()->at(SymbolId::kDunderExit));
     }

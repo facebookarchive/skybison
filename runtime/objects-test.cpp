@@ -980,4 +980,32 @@ TEST(TupleTest, NoneFillTupleFillsTupleWithNone) {
   EXPECT_TRUE(tuple.at(2).isNoneType());
 }
 
+TEST(ErrorTest, ErrorIsError) {
+  EXPECT_TRUE(Error::error().isError());
+
+  EXPECT_TRUE(Error::exception().isError());
+  EXPECT_TRUE(Error::exception().isErrorException());
+
+  EXPECT_TRUE(Error::notFound().isError());
+  EXPECT_TRUE(Error::notFound().isErrorNotFound());
+
+  EXPECT_TRUE(Error::noMoreItems().isError());
+  EXPECT_TRUE(Error::noMoreItems().isErrorNoMoreItems());
+
+  EXPECT_TRUE(Error::outOfMemory().isError());
+  EXPECT_TRUE(Error::outOfMemory().isErrorOutOfMemory());
+
+  EXPECT_TRUE(Error::outOfBounds().isError());
+  EXPECT_TRUE(Error::outOfBounds().isErrorOutOfBounds());
+}
+
+TEST(ErrorTest, ErrorHasCorrectKind) {
+  EXPECT_EQ(Error::error().kind(), ErrorKind::kNone);
+  EXPECT_EQ(Error::exception().kind(), ErrorKind::kException);
+  EXPECT_EQ(Error::notFound().kind(), ErrorKind::kNotFound);
+  EXPECT_EQ(Error::noMoreItems().kind(), ErrorKind::kNoMoreItems);
+  EXPECT_EQ(Error::outOfMemory().kind(), ErrorKind::kOutOfMemory);
+  EXPECT_EQ(Error::outOfBounds().kind(), ErrorKind::kOutOfBounds);
+}
+
 }  // namespace python

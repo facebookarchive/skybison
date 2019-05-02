@@ -381,8 +381,7 @@ RawObject RawRangeIterator::next() const {
   // has to support arbitrary precision anyway, there's no point in checking
   // for overflow.
   if (isOutOfRange(cur, stop, step)) {
-    // TODO(bsimmers): Use RawStopIteration for control flow.
-    return RawError::object();
+    return RawError::noMoreItems();
   }
 
   instanceVariableAtPut(kCurValueOffset, RawSmallInt::fromWord(cur + step));

@@ -887,8 +887,8 @@ TEST(RuntimeTest, HashSingletonImmediates) {
   RawSmallInt hash_none = RawSmallInt::cast(runtime.hash(NoneType::object()));
   EXPECT_EQ(hash_none.value(), none_value);
 
-  word error_value = Error::object().raw();
-  RawSmallInt hash_error = RawSmallInt::cast(runtime.hash(Error::object()));
+  word error_value = Error::error().raw();
+  RawSmallInt hash_error = RawSmallInt::cast(runtime.hash(Error::error()));
   EXPECT_EQ(hash_error.value(), error_value);
 }
 

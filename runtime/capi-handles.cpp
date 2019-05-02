@@ -39,7 +39,7 @@ RawObject ApiHandle::dictAtIdentityEquals(Thread* thread, const Dict& dict,
     DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
   }
-  return Error::object();
+  return Error::notFound();
 }
 
 RawTuple ApiHandle::dictGrowIdentityEqual(Thread* thread, const Tuple& data) {
@@ -92,7 +92,7 @@ RawObject ApiHandle::dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
   HandleScope scope;
   Tuple data(&scope, dict.data());
   word index = -1;
-  Object result(&scope, Error::object());
+  Object result(&scope, Error::notFound());
   bool found =
       thread->runtime()->dictLookup(data, key, key_hash, &index, identityEqual);
   if (found) {
@@ -143,7 +143,7 @@ ApiHandle* ApiHandle::borrowedReference(Thread* thread, RawObject obj) {
 }
 
 RawObject ApiHandle::stealReference(Thread* thread, PyObject* py_obj) {
-  if (py_obj == nullptr) return Error::object();
+  if (py_obj == nullptr) return Error::exception();
 
   HandleScope scope(thread);
   // Using ApiHandle::fromPyObject() here is sketchy since the provenance of
@@ -184,7 +184,7 @@ ApiHandle* ApiHandle::castFromObject(RawObject value) {
 RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  if (!obj.isInstance()) return Error::object();
+  if (!obj.isInstance()) return Error::notFound();
 
   HeapObject instance(&scope, *obj);
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());

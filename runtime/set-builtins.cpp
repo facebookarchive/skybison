@@ -488,7 +488,7 @@ RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
   Tuple data(&scope, underlying.data());
   // Find the next non empty bucket
   if (!SetBase::Bucket::nextItem(*data, &idx)) {
-    return Error::object();
+    return Error::noMoreItems();
   }
   iter.setConsumedCount(iter.consumedCount() + 1);
   iter.setIndex(idx);
@@ -505,10 +505,8 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, *self);
 
-  if (setAdd(thread, set, key).isError()) {
-    return Error::object();
-  }
-
+  Object result(&scope, setAdd(thread, set, key));
+  if (result.isError()) return *result;
   return NoneType::object();
 }
 

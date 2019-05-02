@@ -169,7 +169,7 @@ RawObject listIteratorNext(Thread* thread, const ListIterator& iter) {
   word idx = iter.index();
   List underlying(&scope, iter.iterable());
   if (idx >= underlying.numItems()) {
-    return RawError::object();
+    return Error::outOfBounds();
   }
   RawObject item = underlying.at(idx);
   iter.setIndex(idx + 1);

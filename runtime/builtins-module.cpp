@@ -54,7 +54,7 @@ RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
     return Bool::falseObj();
   }
 
-  return Error::object();
+  return Error::notFound();
 }
 
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
@@ -885,7 +885,7 @@ static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
   DCHECK_BOUND(length, bytes.length());
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
   if (length == 0) {
-    return Error::object();
+    return Error::error();
   }
   unique_c_ptr<char[]> str(reinterpret_cast<char*>(std::malloc(length + 1)));
   bytes.copyTo(reinterpret_cast<byte*>(str.get()), length);
@@ -895,7 +895,7 @@ static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
   const word result = std::strtoll(str.get(), &end, base);
   const int saved_errno = errno;
   if (end != str.get() + length || saved_errno == EINVAL) {
-    return Error::object();
+    return Error::error();
   }
   if (SmallInt::isValid(result) && saved_errno != ERANGE) {
     return SmallInt::fromWord(result);
@@ -961,7 +961,7 @@ RawObject BuiltinsModule::underIntFromInt(Thread* thread, Frame* frame,
 static RawObject intFromStr(Thread* /* t */, const Str& str, word base) {
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
   if (str.length() == 0) {
-    return Error::object();
+    return Error::error();
   }
   unique_c_ptr<char> c_str(str.toCStr());  // for strtol()
   char* end_ptr;
@@ -970,7 +970,7 @@ static RawObject intFromStr(Thread* /* t */, const Str& str, word base) {
   int saved_errno = errno;
   bool is_complete = (*end_ptr == '\0');
   if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
-    return Error::object();
+    return Error::error();
   }
   if (SmallInt::isValid(res) && saved_errno != ERANGE) {
     return SmallInt::fromWord(res);

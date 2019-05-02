@@ -30,7 +30,7 @@ TEST(TestUtils, IsByteArrayEquals) {
   const char* ne_msg = "bytearray(b'foo') is not equal to bytearray(b'bar')";
   EXPECT_STREQ(not_equal.message(), ne_msg);
 
-  Object err(&scope, Error::object());
+  Object err(&scope, Error::error());
   auto const error = isByteArrayEqualsCStr(err, "");
   EXPECT_FALSE(error);
   const char* error_msg = "is an Error";
@@ -64,7 +64,7 @@ TEST(TestUtils, IsBytesEquals) {
   const char* type_msg = "is a 'smallstr'";
   EXPECT_STREQ(type_err.message(), type_msg);
 
-  Object err(&scope, Error::object());
+  Object err(&scope, Error::error());
   auto const error = isBytesEqualsCStr(err, "");
   EXPECT_FALSE(error);
   const char* error_msg = "is an Error";

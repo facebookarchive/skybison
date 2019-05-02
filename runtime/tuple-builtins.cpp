@@ -55,7 +55,7 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
   word idx = iter.index();
   if (idx == iter.tupleLength()) {
-    return RawError::object();
+    return Error::noMoreItems();
   }
   HandleScope scope(thread);
   Tuple underlying(&scope, iter.iterable());

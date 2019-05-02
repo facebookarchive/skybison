@@ -34,7 +34,7 @@ RawObject Heap::allocate(word size, word offset) {
       Thread::current()->runtime()->collectGarbage();
     }
   }
-  return Error::object();
+  return Error::outOfMemory();
 }
 
 bool Heap::contains(RawObject address) {

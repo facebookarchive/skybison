@@ -115,7 +115,7 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
         LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
   }
   Object result(&scope, moduleGetAttribute(thread, self, name));
-  if (result.isError() && !thread->hasPendingException()) {
+  if (result.isErrorNotFound()) {
     Object module_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "module '%S' has no attribute '%S'",

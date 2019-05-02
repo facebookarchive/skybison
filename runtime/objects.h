@@ -243,6 +243,11 @@ class RawObject {
   // Immediate objects
   bool isBool() const;
   bool isError() const;
+  bool isErrorException() const;
+  bool isErrorNoMoreItems() const;
+  bool isErrorNotFound() const;
+  bool isErrorOutOfBounds() const;
+  bool isErrorOutOfMemory() const;
   bool isHeader() const;
   bool isNoneType() const;
   bool isNotImplementedType() const;
@@ -649,24 +654,72 @@ class RawSmallStr : public RawObject {
   friend class Runtime;
 };
 
+// An ErrorKind is in every RawError to give some high-level detail about what
+// went wrong.
+//
+// Note that the only ErrorKind that implies a raised exception is Exception.
+// All others are used either in situations where an exception wouldn't be
+// appropriate, or where the error could be intercepted by runtime code before
+// it has to be materialized into an actual exception, to avoid memory traffic
+// on the Thread.
+enum class ErrorKind : byte {
+  // Generic RawError: when none of the other kinds fit. Should be avoided if
+  // possible.
+  kNone,
+
+  // An exception was raised, and Thread::current()->hasPendingException() is
+  // true.
+  kException,
+
+  // The attribute/function/dict entry/other named entity requested by the
+  // caller was not found.
+  kNotFound,
+
+  // The given index was out of bounds for the container being searched.
+  kOutOfBounds,
+
+  // An allocation failed due to insufficient memory.
+  kOutOfMemory,
+
+  // An iterator hit the end of its container.
+  kNoMoreItems,
+
+  // If the largest ErrorKind is ever > 7, the immediate objects won't fit in
+  // one byte, which may have performance implications.
+};
+
 // RawError is a special object type, internal to the runtime. It is used to
 // signal that an error has occurred inside the runtime or native code, e.g. an
-// exception has been thrown.
+// exception has been raised or a value wasn't found during a lookup.
 class RawError : public RawObject {
  public:
-  // Singletons.
-  static RawError object();
+  // Singletons. See the documentation for ErrorKind for what each one means.
+  static RawError error();
+  static RawError exception();
+  static RawError noMoreItems();
+  static RawError notFound();
+  static RawError outOfBounds();
+  static RawError outOfMemory();
+
+  // Kind.
+  ErrorKind kind() const;
 
   // Tagging.
   static const int kTag = 21;  // 0b10101
   static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
+  static const uword kTagMask = (1U << kTagSize) - 1;
+  static const int kKindOffset = kTagSize;
+  static const int kKindSize = 3;
+  static const uword kKindMask = (1U << kKindSize) - 1;
 
   RAW_OBJECT_COMMON(Error);
+
+ private:
+  RawError(ErrorKind kind);
 };
 
-// Force client code to use RawObject::isError() rather than obj ==
-// Error::object(), since RawError will not be a singleton forever.
+// Force users to call RawObject::isError*() rather than
+// obj == Error::error(), since there isn't one unique RawError.
 bool operator==(const RawError&, const RawObject&) = delete;
 bool operator==(const RawObject&, const RawError&) = delete;
 bool operator!=(const RawError&, const RawObject&) = delete;
@@ -1886,7 +1939,7 @@ class RawDict::Bucket {
   }
 
   static void setTombstone(RawTuple data, word index) {
-    set(data, index, RawNoneType::object(), RawError::object(),
+    set(data, index, RawNoneType::object(), RawError::notFound(),
         RawNoneType::object());
   }
 
@@ -2053,7 +2106,7 @@ class RawSetBase::Bucket {
   }
 
   static void setTombstone(RawTuple data, word index) {
-    set(data, index, RawNoneType::object(), RawError::object());
+    set(data, index, RawNoneType::object(), RawError::notFound());
   }
 
   static bool nextItem(RawTuple data, word* idx) {
@@ -2538,6 +2591,26 @@ inline bool RawObject::isBool() const {
 
 inline bool RawObject::isError() const {
   return (raw() & RawError::kTagMask) == RawError::kTag;
+}
+
+inline bool RawObject::isErrorException() const {
+  return raw() == RawError::exception().raw();
+}
+
+inline bool RawObject::isErrorNotFound() const {
+  return raw() == RawError::notFound().raw();
+}
+
+inline bool RawObject::isErrorOutOfBounds() const {
+  return raw() == RawError::outOfBounds().raw();
+}
+
+inline bool RawObject::isErrorOutOfMemory() const {
+  return raw() == RawError::outOfMemory().raw();
+}
+
+inline bool RawObject::isErrorNoMoreItems() const {
+  return raw() == RawError::noMoreItems().raw();
 }
 
 inline bool RawObject::isHeader() const {
@@ -3151,8 +3224,31 @@ inline void RawSmallStr::copyTo(byte* dst, word length) const {
 
 // RawError
 
-inline RawError RawError::object() {
-  return RawObject{kTag}.rawCast<RawError>();
+inline RawError::RawError(ErrorKind kind)
+    : RawObject{(static_cast<uword>(kind) << kKindOffset) | kTag} {}
+
+inline RawError RawError::error() { return RawError{ErrorKind::kNone}; }
+
+inline RawError RawError::exception() {
+  return RawError{ErrorKind::kException};
+}
+
+inline RawError RawError::notFound() { return RawError{ErrorKind::kNotFound}; }
+
+inline RawError RawError::noMoreItems() {
+  return RawError{ErrorKind::kNoMoreItems};
+}
+
+inline RawError RawError::outOfMemory() {
+  return RawError{ErrorKind::kOutOfMemory};
+}
+
+inline RawError RawError::outOfBounds() {
+  return RawError{ErrorKind::kOutOfBounds};
+}
+
+inline ErrorKind RawError::kind() const {
+  return static_cast<ErrorKind>((raw() >> kKindOffset) & kKindMask);
 }
 
 // RawBool

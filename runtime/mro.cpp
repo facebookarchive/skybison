@@ -58,7 +58,7 @@ static RawObject findNext(const Tuple& merge_lists,
       }
       Tuple other_mro(&scope, merge_lists.at(j));
       if (tailContains(other_mro, candidate_head, merge_list_indices[j])) {
-        candidate_head = Error::object();
+        candidate_head = Error::notFound();
         break;
       }
     }
@@ -66,7 +66,7 @@ static RawObject findNext(const Tuple& merge_lists,
       return *candidate_head;
     }
   }
-  return Error::object();
+  return Error::notFound();
 }
 
 RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
@@ -103,7 +103,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   // all matching heads. This is O(n^2) as implemented, but so is
   // CPython's implementation, so we can rest assured no real program
   // is going to cause a major problem here.
-  RawObject next_head = Error::object();
+  RawObject next_head = Error::notFound();
   while (!(next_head = findNext(merge_lists, merge_list_indices)).isError()) {
     Type next_head_cls(&scope, next_head);
     for (word i = 0; i < merge_list_indices.size(); i++) {

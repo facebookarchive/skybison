@@ -131,7 +131,24 @@ std::ostream& operator<<(std::ostream& os, RawDict value) {
   return os << '}';
 }
 
-std::ostream& operator<<(std::ostream& os, RawError) { return os << "Error"; }
+std::ostream& operator<<(std::ostream& os, RawError value) {
+  os << "Error";
+  switch (value.kind()) {
+    case ErrorKind::kNone:
+      return os;
+    case ErrorKind::kException:
+      return os << "<Exception>";
+    case ErrorKind::kNotFound:
+      return os << "<NotFound>";
+    case ErrorKind::kOutOfBounds:
+      return os << "<OutOfBounds>";
+    case ErrorKind::kOutOfMemory:
+      return os << "<OutOfMemory>";
+    case ErrorKind::kNoMoreItems:
+      return os << "<NoMoreItems>";
+  }
+  return os << "<Invalid>";
+}
 
 std::ostream& operator<<(std::ostream& os, RawFloat value) {
   std::ios_base::fmtflags saved = os.flags();
