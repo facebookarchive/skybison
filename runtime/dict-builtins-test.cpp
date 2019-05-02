@@ -697,7 +697,7 @@ TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
   ASSERT_FALSE(Dict::Bucket::nextItem(*data, &i));
 }
 
-TEST(DictBuiltinsTest, RecursiveDictPrintsNicely) {
+TEST(DictBuiltinsTest, RecursiveDictPrintsEllipsis) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:

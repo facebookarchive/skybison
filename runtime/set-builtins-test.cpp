@@ -1209,7 +1209,7 @@ TEST(SetBuiltinsTest, ReprReturnsElements) {
   EXPECT_EQ(elts[2], 3);
 }
 
-TEST(SetBuiltinsTest, RecursiveSetPrintsNicely) {
+TEST(SetBuiltinsTest, RecursiveSetPrintsEllipsis) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:

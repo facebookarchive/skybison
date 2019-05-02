@@ -1624,7 +1624,7 @@ a.extend(C([1,2,3]))
   EXPECT_PYLIST_EQ(a, {1, 2, 3, 4, 5, 6});
 }
 
-TEST(ListBuiltinsTest, RecursiveListPrintsNicely) {
+TEST(ListBuiltinsTest, RecursiveListPrintsEllipsis) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 ls = []

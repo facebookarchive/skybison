@@ -674,7 +674,7 @@ TEST(TupleIteratorBuiltinsTest, DunderLengthHintOnConsumedTupleIterator) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
-TEST(TupleBuiltinsTest, RecursiveTuplePrintsNicely) {
+TEST(TupleBuiltinsTest, RecursiveTuplePrintsEllipsis) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C:
