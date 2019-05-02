@@ -234,6 +234,18 @@ exc = UnicodeDecodeError("utf8", b"object", 2, 4, "reason")
   EXPECT_EQ(start, 2);
 }
 
+TEST_F(ExceptionsExtensionApiTest, UnicodeDecodeErrorGetStartReturnsStartInt) {
+  PyRun_SimpleString(R"(
+class C(int): pass
+exc = UnicodeDecodeError("utf8", b"object", C(2), 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  Py_ssize_t start = 0;
+  ASSERT_EQ(PyUnicodeDecodeError_GetStart(exc, &start), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(start, 2);
+}
+
 TEST_F(ExceptionsExtensionApiTest,
        UnicodeDecodeErrorGetStartWithNonBytesObjectRaisesTypeError) {
   PyRun_SimpleString(R"(
@@ -276,6 +288,18 @@ exc.start = 10
 TEST_F(ExceptionsExtensionApiTest, UnicodeDecodeErrorGetEndReturnsEndAttr) {
   PyRun_SimpleString(R"(
 exc = UnicodeDecodeError("utf8", b"object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeDecodeError_GetEnd(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 4);
+}
+
+TEST_F(ExceptionsExtensionApiTest, UnicodeDecodeErrorGetEndReturnsEndInt) {
+  PyRun_SimpleString(R"(
+class C(int): pass
+exc = UnicodeDecodeError("utf8", b"object", 2, C(4), "reason")
 )");
   PyObjectPtr exc(moduleGet("__main__", "exc"));
   Py_ssize_t end = 0;
@@ -445,6 +469,18 @@ exc = UnicodeEncodeError("utf8", "object", 2, 4, "reason")
   EXPECT_EQ(start, 2);
 }
 
+TEST_F(ExceptionsExtensionApiTest, UnicodeEncodeErrorGetStartReturnsStartInt) {
+  PyRun_SimpleString(R"(
+class C(int): pass
+exc = UnicodeEncodeError("utf8", "object", C(2), 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  Py_ssize_t start = 0;
+  ASSERT_EQ(PyUnicodeEncodeError_GetStart(exc, &start), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(start, 2);
+}
+
 TEST_F(ExceptionsExtensionApiTest,
        UnicodeEncodeErrorGetStartWithNonStrObjectRaisesTypeError) {
   PyRun_SimpleString(R"(
@@ -487,6 +523,18 @@ exc.start = 10
 TEST_F(ExceptionsExtensionApiTest, UnicodeEncodeErrorGetEndReturnsEndAttr) {
   PyRun_SimpleString(R"(
 exc = UnicodeEncodeError("utf8", "object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeEncodeError_GetEnd(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 4);
+}
+
+TEST_F(ExceptionsExtensionApiTest, UnicodeEncodeErrorGetEndReturnsEndInt) {
+  PyRun_SimpleString(R"(
+class C(int): pass
+exc = UnicodeEncodeError("utf8", "object", 2, C(4), "reason")
 )");
   PyObjectPtr exc(moduleGet("__main__", "exc"));
   Py_ssize_t end = 0;

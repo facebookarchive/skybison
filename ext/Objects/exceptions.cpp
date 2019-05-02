@@ -1,5 +1,6 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
+#include "int-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -356,8 +357,8 @@ PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
   Str encoding_obj(&scope, runtime->newStrFromCStr(encoding));
   Bytes object_obj(&scope, runtime->newBytesWithAll(View<byte>(
                                reinterpret_cast<const byte*>(object), length)));
-  Int start_obj(&scope, RawSmallInt::fromWord(start));
-  Int end_obj(&scope, RawSmallInt::fromWord(end));
+  Int start_obj(&scope, SmallInt::fromWord(start));
+  Int end_obj(&scope, SmallInt::fromWord(end));
   Str reason_obj(&scope, runtime->newStrFromCStr(reason));
   Object result(&scope,
                 thread->invokeFunction5(
@@ -402,7 +403,7 @@ PY_EXPORT int PyUnicodeDecodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
   Bytes object(&scope, *object_attr);
   Object end_attr(&scope, exc_err.end());
   DCHECK(runtime->isInstanceOfInt(*end_attr), "end must be instance of int");
-  Int end_int(&scope, *end_attr);
+  Int end_int(&scope, intUnderlying(thread, end_attr));
   *end = end_int.asWord();
   if (*end < 1) {
     *end = 1;
@@ -459,7 +460,7 @@ PY_EXPORT int PyUnicodeDecodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
   Object start_attr(&scope, exc_err.start());
   DCHECK(runtime->isInstanceOfInt(*start_attr),
          "start must be instance of int");
-  Int start_int(&scope, *start_attr);
+  Int start_int(&scope, intUnderlying(thread, start_attr));
   *start = start_int.asWord();
   if (*start < 0) {
     *start = 0;
@@ -536,7 +537,7 @@ PY_EXPORT int PyUnicodeEncodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
   Str object(&scope, *object_attr);
   Object end_attr(&scope, exc_err.end());
   DCHECK(runtime->isInstanceOfInt(*end_attr), "end must be instance of int");
-  Int end_int(&scope, *end_attr);
+  Int end_int(&scope, intUnderlying(thread, end_attr));
   *end = end_int.asWord();
   if (*end < 1) {
     *end = 1;
@@ -583,7 +584,7 @@ PY_EXPORT int PyUnicodeEncodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
   Object start_attr(&scope, exc_err.start());
   DCHECK(runtime->isInstanceOfInt(*start_attr),
          "start must be instance of int");
-  Int start_int(&scope, *start_attr);
+  Int start_int(&scope, intUnderlying(thread, start_attr));
   *start = start_int.asWord();
   if (*start < 0) {
     *start = 0;
