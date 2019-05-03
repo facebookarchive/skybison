@@ -443,15 +443,25 @@ RawObject BuiltinsModule::callable(Thread* thread, Frame* frame, word nargs) {
   return Bool::fromBool(thread->runtime()->isCallable(thread, arg));
 }
 
-RawObject BuiltinsModule::chr(Thread* thread, Frame* frame_frame, word nargs) {
-  Arguments args(frame_frame, nargs);
-  RawObject arg = args.get(0);
-  if (!arg.isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'chr'");
+RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object arg(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfInt(*arg)) {
+    return thread->raiseTypeError(
+        runtime->newStrFromFmt("an integer is required (got type %T)", &arg));
   }
-  word w = RawSmallInt::cast(arg).value();
-  const char s[2]{static_cast<char>(w), 0};
-  return SmallStr::fromCStr(s);
+  Int num(&scope, intUnderlying(thread, arg));
+  if (!num.isSmallInt()) {
+    return thread->raiseOverflowErrorWithCStr(
+        "Python int too large to convert to C long");
+  }
+  word code_point = num.asWord();
+  if (code_point < 0 || code_point > kMaxUnicode) {
+    return thread->raiseValueErrorWithCStr("chr() arg not in range(0x110000)");
+  }
+  return SmallStr::fromCodePoint(static_cast<int32_t>(code_point));
 }
 
 static RawObject compileToBytecode(Thread* thread, const char* source,

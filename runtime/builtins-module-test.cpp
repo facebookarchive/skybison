@@ -96,13 +96,67 @@ a = callable(f)
   EXPECT_FALSE(a.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinChr) {
+TEST(BuiltinsModuleTest, BuiltinChrWithNonIntRaisesTypeError) {
   Runtime runtime;
-  std::string result = compileAndRunToString(&runtime, "print(chr(65))");
-  EXPECT_EQ(result, "A\n");
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(chr('A'))"),
+  HandleScope scope;
+  Object i(&scope, NoneType::object());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
                             LayoutId::kTypeError,
-                            "Unsupported type in builtin 'chr'"));
+                            "an integer is required (got type NoneType)"));
+}
+
+TEST(BuiltinsModuleTest, BuiltinChrWithLargeIntRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object i(&scope, runtime.newInt(kMaxWord));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
+                            LayoutId::kOverflowError,
+                            "Python int too large to convert to C long"));
+}
+
+TEST(BuiltinsModuleTest, BuiltinChrWithNegativeIntRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object i(&scope, SmallInt::fromWord(-1));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
+                            LayoutId::kValueError,
+                            "chr() arg not in range(0x110000)"));
+}
+
+TEST(BuiltinsModuleTest, BuiltinChrWithNonUnicodeIntRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object i(&scope, SmallInt::fromWord(kMaxUnicode + 1));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
+                            LayoutId::kValueError,
+                            "chr() arg not in range(0x110000)"));
+}
+
+TEST(BuiltinsModuleTest, BuiltinChrWithMaxUnicodeReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  Object i(&scope, SmallInt::fromWord(kMaxUnicode));
+  EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i),
+            SmallStr::fromCodePoint(kMaxUnicode));
+}
+
+TEST(BuiltinsModuleTest, BuiltinChrWithASCIIReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  Object i(&scope, SmallInt::fromWord('*'));
+  EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i), SmallStr::fromCStr("*"));
+}
+
+TEST(BuiltinsModuleTest, BuiltinChrWithIntSubclassReturnsString) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C(int): pass
+i = C(42)
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i), SmallStr::fromCStr("*"));
 }
 
 TEST(BuiltinsModuleTest, BuiltinIsinstance) {
