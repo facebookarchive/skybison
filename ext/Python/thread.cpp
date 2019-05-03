@@ -1,4 +1,6 @@
-#include "Python.h"
+#include "cpython-func.h"
+#include "cpython-types.h"
+
 #include "pythread.h"
 
 #include "globals.h"
