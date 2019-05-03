@@ -233,6 +233,10 @@ class Runtime {
 
   RawObject internStr(const Object& str);
   RawObject internStrFromCStr(const char* c_str);
+  // This function should only be used for `CHECK()`/`DCHECK()`. It is as slow
+  // as the whole `internStr()` operation and will always return true for small
+  // strings, even when the user did not explicitly intern them.
+  bool isInternedStr(const Object& str);
 
   void collectGarbage();
 

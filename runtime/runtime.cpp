@@ -1170,6 +1170,22 @@ RawObject Runtime::internStr(const Object& str) {
   return setAddWithHash(set, str, key_hash);
 }
 
+bool Runtime::isInternedStr(const Object& str) {
+  if (str.isSmallStr()) {
+    return true;
+  }
+  DCHECK(str.isLargeStr(), "expected small or large str");
+  HandleScope scope;
+  Set set(&scope, interned());
+  Tuple data(&scope, set.data());
+  Object str_hash(&scope, hash(*str));
+  word index = setLookup<SetLookupType::Lookup>(data, str, str_hash);
+  if (index < 0) {
+    return false;
+  }
+  return SetBase::Bucket::key(*data, index) == str;
+}
+
 RawObject Runtime::hash(RawObject object) {
   if (!object.isHeapObject()) {
     return immediateHash(object);

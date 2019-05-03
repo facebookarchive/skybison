@@ -1035,6 +1035,7 @@ TEST(RuntimeTest, InternLargeStr) {
   ASSERT_TRUE(str1.isLargeStr());
   EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_FALSE(runtime.setIncludes(interned, str1));
+  EXPECT_FALSE(runtime.isInternedStr(str1));
 
   // Interning the string should add it to the intern table and increase the
   // size of the intern table by one.
@@ -1043,6 +1044,7 @@ TEST(RuntimeTest, InternLargeStr) {
   EXPECT_TRUE(runtime.setIncludes(interned, str1));
   EXPECT_EQ(*sym1, *str1);
   EXPECT_EQ(num_interned + 1, interned.numItems());
+  EXPECT_TRUE(runtime.isInternedStr(str1));
 
   Object str2(&scope, runtime.newStrFromCStr("goodbye, world"));
   ASSERT_TRUE(str2.isLargeStr());
@@ -1062,6 +1064,7 @@ TEST(RuntimeTest, InternLargeStr) {
   ASSERT_TRUE(str3.isLargeStr());
   EXPECT_NE(*str1, *str3);
   EXPECT_TRUE(runtime.setIncludes(interned, str3));
+  EXPECT_FALSE(runtime.isInternedStr(str3));
 
   // Interning a duplicate string should not affecct the intern table.
   num_interned = interned.numItems();
@@ -1090,6 +1093,7 @@ TEST(RuntimeTest, InternSmallStr) {
   EXPECT_FALSE(runtime.setIncludes(interned, str));
   EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_EQ(*sym, *str);
+  EXPECT_TRUE(runtime.isInternedStr(str));
 }
 
 TEST(RuntimeTest, InternCStr) {
@@ -1103,6 +1107,21 @@ TEST(RuntimeTest, InternCStr) {
   EXPECT_TRUE(sym.isStr());
   EXPECT_TRUE(runtime.setIncludes(interned, sym));
   EXPECT_EQ(num_interned + 1, interned.numItems());
+  EXPECT_TRUE(runtime.isInternedStr(sym));
+}
+
+TEST(RuntimeTest, IsInternWithInternedStrReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.internStrFromCStr("hello world"));
+  EXPECT_TRUE(runtime.isInternedStr(str));
+}
+
+TEST(RuntimeTest, IsInternWithStrReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("hello world"));
+  EXPECT_FALSE(runtime.isInternedStr(str));
 }
 
 TEST(RuntimeTest, CollectAttributes) {
@@ -1280,13 +1299,17 @@ class MyTypeWithAttributes():
 
 TEST(RuntimeTest, VerifySymbols) {
   Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Symbols* symbols = runtime.symbols();
+  Object value(&scope, NoneType::object());
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
-    RawObject value = symbols->at(id);
+    value = symbols->at(id);
     ASSERT_TRUE(value.isStr());
     const char* expected = symbols->literalAt(id);
-    EXPECT_TRUE(RawStr::cast(value).equalsCStr(expected))
+    EXPECT_TRUE(runtime.isInternedStr(value)) << "at symbol " << expected;
+    EXPECT_TRUE(RawStr::cast(*value).equalsCStr(expected))
         << "Incorrect symbol value for " << expected;
   }
 }
