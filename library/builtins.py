@@ -381,6 +381,11 @@ def _dict_check(obj) -> bool:
 
 
 @_patch
+def _float_check(obj) -> bool:
+    pass
+
+
+@_patch
 def _frozenset_check(obj) -> bool:
     pass
 
@@ -461,6 +466,11 @@ def _repr_leave(obj: object) -> None:
 
 @_patch
 def _set_check(obj) -> bool:
+    pass
+
+
+@_patch
+def _slice_check(obj) -> bool:
     pass
 
 
@@ -619,6 +629,11 @@ def _structseq_setattr(obj, name, value):
 
 @_patch
 def _tuple_check(obj) -> bool:
+    pass
+
+
+@_patch
+def _type_check(obj) -> bool:
     pass
 
 
@@ -920,7 +935,7 @@ class bytes(bootstrap=True):
             )
         if _int_check(key):
             return _bytes_getitem(self, key)
-        if isinstance(key, slice):
+        if _slice_check(key):
             return _bytes_getitem_slice(self, *key.indices(len(self)))
         try:
             return _bytes_getitem(self, _index(key))
@@ -957,7 +972,7 @@ class bytes(bootstrap=True):
         pass
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
-        if not isinstance(cls, type):
+        if not _type_check(cls):
             raise TypeError(
                 f"bytes.__new__(X): X is not a type object ({type(cls).__name__})"
             )
@@ -1442,12 +1457,12 @@ class float(bootstrap=True):
         pass
 
     def __ne__(self, n: float) -> float:  # noqa: T484
-        if not isinstance(self, float):
+        if not _float_check(self):
             raise TypeError(
                 f"'__ne__' requires a 'float' object "
                 f"but received a '{self.__class__.__name__}'"
             )
-        if not isinstance(n, float) and not _int_check(n):
+        if not _float_check(n) and not _int_check(n):
             return NotImplemented
         return not float.__eq__(self, n)  # noqa: T484
 
@@ -1673,7 +1688,7 @@ class int(bootstrap=True):
         pass
 
     def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
-        if not isinstance(cls, type):
+        if not _type_check(cls):
             raise TypeError(
                 f"int.__new__(X): X is not a type object ({type(cls).__name__})"
             )
@@ -2458,7 +2473,7 @@ class slice(bootstrap=True):
         pass
 
     def indices(self, length) -> tuple:  # noqa: C901
-        if not isinstance(self, slice):
+        if not _slice_check(self):
             raise TypeError(
                 "'indices' requires a 'slice' object but received a "
                 f"'{type(self).__name__}'"
@@ -2565,7 +2580,7 @@ class str(bootstrap=True):
         pass
 
     def __new__(cls, obj=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
-        if not isinstance(cls, type):
+        if not _type_check(cls):
             raise TypeError("cls is not a type object")
         if not issubclass(cls, str):
             raise TypeError("cls is not a subtype of str")
@@ -2968,7 +2983,7 @@ class str(bootstrap=True):
             raise TypeError(
                 f"'splitlines' requires a 'str' but got '{type(self).__name__}'"
             )
-        if isinstance(keepends, float):
+        if _float_check(keepends):
             raise TypeError("integer argument expected, got float")
         if not _int_check(keepends):
             keepends = int(keepends)

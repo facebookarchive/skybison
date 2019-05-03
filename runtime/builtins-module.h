@@ -43,6 +43,7 @@ class BuiltinsModule {
                                        word nargs);
   static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underFrozenSetCheck(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
@@ -57,6 +58,7 @@ class BuiltinsModule {
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprLeave(Thread* thread, Frame* frame, word nargs);
   static RawObject underSetCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);
@@ -66,6 +68,7 @@ class BuiltinsModule {
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];

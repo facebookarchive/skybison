@@ -300,7 +300,7 @@ def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
                 unicode, errors, -1 if byteorder == 0 else byteorder
             )[0]
             i = pos
-    if isinstance(encoded, bytes):
+    if _bytes_check(encoded):
         return encoded, i
     # _utf_16_encode encountered an error and _call_encode_errorhandler was the
     # last function to write to `result`.

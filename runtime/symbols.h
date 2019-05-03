@@ -449,6 +449,7 @@ class Runtime;
   V(UnderFdFlush, "_fd_flush")                                                 \
   V(UnderFdWrite, "_fd_write")                                                 \
   V(UnderFindAndLoad, "_find_and_load")                                        \
+  V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
@@ -475,6 +476,7 @@ class Runtime;
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderSetCheck, "_set_check")                                               \
+  V(UnderSliceCheck, "_slice_check")                                           \
   V(UnderSliceIndex, "_slice_index")                                           \
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdout, "_stdout")                                                    \
@@ -495,6 +497,7 @@ class Runtime;
   V(UnderStructseqSetAttr, "_structseq_setattr")                               \
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
+  V(UnderTypeCheck, "_type_check")                                             \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnimplemented, "_unimplemented")                                      \
   V(UnderWarnings, "_warnings")                                                \
