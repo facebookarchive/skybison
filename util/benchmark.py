@@ -48,6 +48,7 @@ def compile_pyro(pyro_source, pyro_build_dir):
         print("Build failed:", file=sys.stderr)
         print(proc.stdout)
         sys.exit(1)
+    return os.path.join(pyro_build_dir, "python")
 
 
 def compile_benchmark(build_dir, benchmark):
@@ -66,7 +67,7 @@ def compile_benchmark(build_dir, benchmark):
     return benchmark_pyc
 
 
-def run_benchmark(build_dir, python_bin, benchmark_pyc, measure_flags):
+def run_benchmark(python_bin, benchmark_pyc, measure_flags):
     env = dict(os.environ)
     env["PYTHONHASHSEED"] = "0"
 
@@ -76,7 +77,9 @@ def run_benchmark(build_dir, python_bin, benchmark_pyc, measure_flags):
     if logging.root.level <= logging.DEBUG:
         command += ["-v"]
     command += ["--", python_bin, benchmark_pyc]
-    completed_process = run(command, cwd=build_dir, stdout=subprocess.PIPE, env=env)
+    completed_process = run(
+        command, cwd=os.path.dirname(benchmark_pyc), stdout=subprocess.PIPE, env=env
+    )
     completed_process.check_returncode()
     return json.loads(completed_process.stdout)
 
@@ -95,16 +98,35 @@ def describe_revision(pyro_source):
         return "n/a"
 
 
-def make_sample(benchmark, interpreter, revision, results):
-    sample = dict(results)
-    sample.update(
-        {
-            "benchmark_name": os.path.basename(benchmark),
-            "interpreter_name": interpreter,
-            "revision": revision,
-        }
-    )
-    return sample
+class Interpreter:
+    pass
+
+
+def prepare_interpreters(interpreter_args, tempdir, pyro_source):
+    interpreters = []
+    for name in interpreter_args:
+        interpreter = Interpreter()
+        interpreters.append(interpreter)
+        interpreter.name = name
+        interpreter.version = "n/a"
+        if name == "pyro":
+            pyro_build_dir = os.path.join(tempdir, "pyro")
+            interpreter.executable = compile_pyro(pyro_source, pyro_build_dir)
+            interpreter.version = describe_revision(pyro_source)
+        elif name == "cpython":
+            interpreter.executable = CPYTHON
+        else:
+            interpreter.executable = os.path.abspath(name)
+
+        if interpreter.version == "n/a":
+            try:
+                output = subprocess.check_output([interpreter.executable, "--version"])
+                output = output.strip()
+                output = output.decode("utf-8", errors="replace")
+                interpreter.version = output
+            except subprocess.CalledProcessError:
+                pass
+    return interpreters
 
 
 def main(argv):
@@ -122,6 +144,14 @@ def main(argv):
         "--pyro-source", default=PYRO_PATH, help="Pyro source directory"
     )
     parser.add_argument(
+        "--interpreter",
+        "-i",
+        dest="interpreters",
+        default=[],
+        help="Specify interpreter(s) to use (pyro, cpython, <executable>)",
+        action="append",
+    )
+    parser.add_argument(
         "--time",
         help="Measure time",
         dest="measure_flags",
@@ -136,7 +166,6 @@ def main(argv):
         action="append_const",
         const="--callgrind",
     )
-    parser.add_argument("--pyro-build", help="Use an already-built Pyro.")
     args = parser.parse_args(argv)
 
     if args.verbose:
@@ -144,42 +173,32 @@ def main(argv):
 
     if args.benchmarks == []:
         args.benchmarks = [f"{PYRO_PATH}/benchmarks/richards.py"]
+    if args.benchmarks == []:
+        args.interpreters = ["pyro", "cpython"]
 
     build_root = tempfile.mkdtemp()
-
     try:
-        if args.pyro_build:
-            pyro_build = os.path.realpath(args.pyro_build)
-            do_build = False
-            if not os.path.isfile(os.path.join(pyro_build, "python")):
-                raise RuntimeError(
-                    f"Given build dir of {pyro_build} doesn't exist or doesn't"
-                    " have python in it"
-                )
-        else:
-            pyro_build = os.path.join(build_root, "pyro")
-            do_build = True
+        interpreters = prepare_interpreters(
+            args.interpreters, build_root, args.pyro_source
+        )
 
         samples = []
-        revision = describe_revision(args.pyro_source)
-        if do_build:
-            compile_pyro(args.pyro_source, pyro_build)
         for benchmark in args.benchmarks:
             benchmark_pyc = compile_benchmark(build_root, benchmark)
-            results = run_benchmark(
-                build_root,
-                os.path.join(pyro_build, "python"),
-                benchmark_pyc,
-                args.measure_flags,
-            )
-            samples.append(make_sample(benchmark, "Pyro", revision, results))
-            results = run_benchmark(
-                build_root, CPYTHON, benchmark_pyc, args.measure_flags
-            )
-            samples.append(make_sample(benchmark, "CPython", revision, results))
+            for interpreter in interpreters:
+                results = run_benchmark(
+                    interpreter.executable, benchmark_pyc, args.measure_flags
+                )
+                results.update(
+                    {
+                        "benchmark_name": os.path.basename(benchmark),
+                        "interpreter_name": interpreter.name,
+                        "version": interpreter.version,
+                    }
+                )
+                samples.append(results)
         for sample in samples:
             print(json.dumps(sample, indent=2, sort_keys=True))
-            # TODO(matthiasb): Log to scuba?
     finally:
         if not args.keep:
             shutil.rmtree(build_root)
