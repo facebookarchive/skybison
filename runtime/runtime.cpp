@@ -335,37 +335,6 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   return *result;
 }
 
-RawObject Runtime::classSetAttr(Thread* thread, const Object& receiver,
-                                const Object& name, const Object& value) {
-  DCHECK(name.isStr(), "Name is not a string");
-  HandleScope scope(thread);
-  Type type(&scope, *receiver);
-  if (type.isBuiltin()) {
-    // TODO(T25140871): Refactor this into something that includes the type name
-    // like:
-    //     thread->throwImmutableTypeManipulationError(type)
-    return thread->raiseTypeErrorWithCStr(
-        "can't set attributes of built-in/extension type");
-  }
-
-  // Check for a data descriptor
-  Type metatype(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, typeLookupNameInMro(thread, metatype, name));
-  if (!meta_attr.isError()) {
-    Type meta_attr_type(&scope, typeOf(*meta_attr));
-    if (typeIsDataDescriptor(thread, meta_attr_type)) {
-      // TODO(T25692531): Call __set__ from meta_attr
-      UNIMPLEMENTED("custom descriptors are unsupported");
-    }
-  }
-
-  // No data descriptor found, store the attribute in the type dict
-  Dict type_dict(&scope, type.dict());
-  dictAtPutInValueCell(type_dict, name, value);
-
-  return NoneType::object();
-}
-
 RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
                                 const Object& name) {
   if (!name.isStr()) {
@@ -406,26 +375,6 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   return NoneType::object();
 }
 
-RawObject Runtime::instanceSetAttr(Thread* thread, const Object& receiver,
-                                   const Object& name, const Object& value) {
-  DCHECK(name.isStr(), "Name is not a string");
-  // Check for a data descriptor
-  HandleScope scope(thread);
-  Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupNameInMro(thread, type, name));
-  if (!type_attr.isError()) {
-    Type type_attr_type(&scope, typeOf(*type_attr));
-    if (typeIsDataDescriptor(thread, type_attr_type)) {
-      return Interpreter::callDescriptorSet(thread, thread->currentFrame(),
-                                            type_attr, receiver, value);
-    }
-  }
-
-  // No data descriptor found, store on the instance
-  HeapObject instance(&scope, *receiver);
-  return instanceAtPut(thread, instance, name, value);
-}
-
 RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
                                    const Object& name) {
   if (!name.isStr()) {
@@ -455,37 +404,6 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   }
 
   return *result;
-}
-
-RawObject Runtime::functionSetAttr(Thread* thread, const Object& receiver,
-                                   const Object& name, const Object& value) {
-  DCHECK(name.isStr(), "Name is not a string");
-
-  // Initialize Dict if non-existent
-  HandleScope scope(thread);
-  Function func(&scope, *receiver);
-  if (func.dict().isNoneType()) {
-    func.setDict(newDict());
-  }
-
-  AttributeInfo info;
-  Layout layout(&scope, layoutAt(receiver.layoutId()));
-  if (layoutFindAttribute(thread, layout, name, &info)) {
-    // TODO(eelizondo): Handle __dict__ with descriptor
-    return instanceSetAttr(thread, receiver, name, value);
-  }
-  Dict function_dict(&scope, func.dict());
-  dictAtPut(function_dict, name, value);
-  return NoneType::object();
-}
-
-RawObject Runtime::moduleSetAttr(Thread* thread, const Object& receiver,
-                                 const Object& name, const Object& value) {
-  DCHECK(name.isStr(), "Name is not a string");
-  HandleScope scope(thread);
-  Module mod(&scope, *receiver);
-  moduleAtPut(mod, name, value);
-  return NoneType::object();
 }
 
 RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
@@ -3375,14 +3293,16 @@ RawObject Runtime::attributeAtPut(Thread* thread, const Object& receiver,
   // A minimal implementation of setattr needed to get richards running.
   RawObject result;
   if (isInstanceOfType(*receiver)) {
-    result = classSetAttr(thread, receiver, interned_name, value);
+    Type type(&scope, *receiver);
+    result = typeSetAttr(thread, type, interned_name, value);
   } else if (receiver.isModule()) {
-    result = moduleSetAttr(thread, receiver, interned_name, value);
+    Module module(&scope, *receiver);
+    result = moduleSetAttr(thread, module, interned_name, value);
   } else if (receiver.isFunction()) {
-    result = functionSetAttr(thread, receiver, interned_name, value);
+    Function function(&scope, *receiver);
+    result = functionSetAttr(thread, function, interned_name, value);
   } else {
-    // everything else should fallback to instance
-    result = instanceSetAttr(thread, receiver, interned_name, value);
+    result = objectSetAttr(thread, receiver, interned_name, value);
   }
   return result;
 }

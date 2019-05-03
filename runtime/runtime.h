@@ -853,33 +853,17 @@ class Runtime {
 
   RawTuple setGrow(const Tuple& data);
 
-  // Generic attribute setting code used for class objects
-  RawObject classSetAttr(Thread* thread, const Object& receiver,
-                         const Object& name, const Object& value);
-
   // Generic attribute deletion code used for class objects
   RawObject classDelAttr(Thread* thread, const Object& receiver,
                          const Object& name);
-
-  // Generic attribute setting code used for instance objects
-  RawObject instanceSetAttr(Thread* thread, const Object& receiver,
-                            const Object& name, const Object& value);
 
   // Generic attribute deletion code used for instance objects
   RawObject instanceDelAttr(Thread* thread, const Object& receiver,
                             const Object& name);
 
-  // Generic attribute setting code used for module objects
-  RawObject moduleSetAttr(Thread* thread, const Object& receiver,
-                          const Object& name, const Object& value);
-
   // Generic attribute deletion code used for module objects
   RawObject moduleDelAttr(Thread* thread, const Object& receiver,
                           const Object& name);
-
-  // Generic attribute setting code used for function objects
-  RawObject functionSetAttr(Thread* thread, const Object& receiver,
-                            const Object& name, const Object& value);
 
   // helper function add builtin types
   void moduleAddBuiltinType(const Module& module, SymbolId name,

@@ -1918,9 +1918,13 @@ TEST_P(IntrinsicTypeSetAttrTest, SetAttr) {
 
   EXPECT_TRUE(result.isError());
   ASSERT_TRUE(thread->pendingExceptionValue().isStr());
-  EXPECT_TRUE(
-      isStrEqualsCStr(thread->pendingExceptionValue(),
-                      "can't set attributes of built-in/extension type"));
+  unique_c_ptr<char> type_name(
+      RawStr::cast(RawType::cast(*type).name()).toCStr());
+  char expected[128];
+  std::snprintf(expected, sizeof(expected),
+                "can't set attributes of built-in/extension type '%s'",
+                type_name.get());
+  EXPECT_TRUE(isStrEqualsCStr(thread->pendingExceptionValue(), expected));
 }
 
 INSTANTIATE_TEST_CASE_P(IntrinsicTypes, IntrinsicTypeSetAttrTest,

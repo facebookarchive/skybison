@@ -21,6 +21,29 @@ RawObject functionGetAttribute(Thread* thread, const Function& function,
   return objectGetAttribute(thread, function, name_str);
 }
 
+RawObject functionSetAttr(Thread* thread, const Function& function,
+                          const Object& name_interned_str,
+                          const Object& value) {
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInternedStr(name_interned_str),
+         "name must be an interned string");
+  // Initialize Dict if non-existent
+  HandleScope scope(thread);
+  if (function.dict().isNoneType()) {
+    function.setDict(runtime->newDict());
+  }
+
+  AttributeInfo info;
+  Layout layout(&scope, runtime->layoutAt(function.layoutId()));
+  if (runtime->layoutFindAttribute(thread, layout, name_interned_str, &info)) {
+    // TODO(eelizondo): Handle __dict__ with descriptor
+    return objectSetAttr(thread, function, name_interned_str, value);
+  }
+  Dict function_dict(&scope, function.dict());
+  runtime->dictAtPut(function_dict, name_interned_str, value);
+  return NoneType::object();
+}
+
 const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGet, dunderGet},
     {SymbolId::kDunderGetattribute, dunderGetattribute},

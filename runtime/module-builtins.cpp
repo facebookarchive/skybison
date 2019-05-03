@@ -25,6 +25,14 @@ RawObject moduleGetAttribute(Thread* thread, const Module& module,
   return objectGetAttribute(thread, module, name_str);
 }
 
+RawObject moduleSetAttr(Thread* thread, const Module& module,
+                        const Object& name_str, const Object& value) {
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfStr(*name_str), "name must be a string");
+  thread->runtime()->moduleAtPut(module, name_str, value);
+  return NoneType::object();
+}
+
 int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);

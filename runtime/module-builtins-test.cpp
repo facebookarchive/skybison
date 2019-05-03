@@ -172,6 +172,18 @@ TEST(ModuleBuiltinsTest, ModuleGetAttributeWithNonExistentNameReturnsError) {
   EXPECT_FALSE(thread->hasPendingException());
 }
 
+TEST(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object module_name(&scope, runtime.newStrFromCStr("foo"));
+  Module module(&scope, runtime.newModule(module_name));
+  Object name(&scope, runtime.internStrFromCStr("bar"));
+  Object value(&scope, runtime.newInt(-543));
+  EXPECT_TRUE(moduleSetAttr(thread, module, name, value).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleAt(module, name), -543));
+}
+
 TEST(ModuleBuiltinsTest, NewModuleDunderReprReturnsString) {
   Runtime runtime;
   HandleScope scope;

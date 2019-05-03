@@ -52,6 +52,41 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
   return Error::notFound();
 }
 
+RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
+                                    const Object& name_str) {
+  return thread->raiseWithFmt(LayoutId::kAttributeError,
+                              "'%T' object has no attribute '%S'", &object,
+                              &name_str);
+}
+
+RawObject objectSetAttr(Thread* thread, const Object& object,
+                        const Object& name_interned_str, const Object& value) {
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInternedStr(name_interned_str), "name must be interned");
+  // Check for a data descriptor
+  HandleScope scope(thread);
+  Type type(&scope, runtime->typeOf(*object));
+  Object type_attr(&scope,
+                   typeLookupNameInMro(thread, type, name_interned_str));
+  if (!type_attr.isError()) {
+    Type type_attr_type(&scope, runtime->typeOf(*type_attr));
+    if (typeIsDataDescriptor(thread, type_attr_type)) {
+      Object set_result(
+          &scope, Interpreter::callDescriptorSet(thread, thread->currentFrame(),
+                                                 type_attr, object, value));
+      if (set_result.isError()) return *set_result;
+      return NoneType::object();
+    }
+  }
+
+  // No data descriptor found, store on the instance
+  if (object.isHeapObject()) {
+    HeapObject instance(&scope, *object);
+    return runtime->instanceAtPut(thread, instance, name_interned_str, value);
+  }
+  return objectRaiseAttributeError(thread, object, name_interned_str);
+}
+
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderHash, dunderHash},
@@ -109,9 +144,7 @@ RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
   }
   Object result(&scope, objectGetAttribute(thread, self, name));
   if (result.isErrorNotFound()) {
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "'%T' object has no attribute '%S'", &self,
-                                &name);
+    return objectRaiseAttributeError(thread, self, name);
   }
   return *result;
 }

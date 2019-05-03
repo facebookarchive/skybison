@@ -461,4 +461,83 @@ TEST(ObjectBuiltinsTest,
   EXPECT_TRUE(objectGetAttribute(thread, none, attr_name).isBoundMethod());
 }
 
+TEST(ObjectBuiltinsTest, ObjectSetAttrSetsInstanceValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(47));
+  EXPECT_TRUE(objectSetAttr(thread, i, name, value).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, i, name), 47));
+}
+
+TEST(ObjectBuiltinsTest, ObjectSetAttrOnDataDescriptorCallsDunderSet) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value):
+    global set_args
+    set_args = (self, instance, value)
+    return "ignored result"
+  def __get__(self, instance, owner): pass
+foo_descr = D()
+class C:
+  foo = foo_descr
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object foo_descr(&scope, moduleAt(&runtime, "__main__", "foo_descr"));
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(47));
+  EXPECT_TRUE(objectSetAttr(thread, i, name, value).isNoneType());
+  Object set_args_obj(&scope, moduleAt(&runtime, "__main__", "set_args"));
+  ASSERT_TRUE(set_args_obj.isTuple());
+  Tuple dunder_set_args(&scope, *set_args_obj);
+  ASSERT_EQ(dunder_set_args.length(), 3);
+  EXPECT_EQ(dunder_set_args.at(0), foo_descr);
+  EXPECT_EQ(dunder_set_args.at(1), i);
+  EXPECT_TRUE(isIntEqualsWord(dunder_set_args.at(2), 47));
+}
+
+TEST(ObjectBuiltinsTest, ObjectSetAttrPropagatesErrorsInDunderSet) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __set__(self, instance, value): raise UserWarning()
+  def __get__(self, instance, owner): pass
+class C:
+  foo = D()
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(1));
+  EXPECT_TRUE(
+      raised(objectSetAttr(thread, i, name, value), LayoutId::kUserWarning));
+}
+
+TEST(ObjectBuiltinsTest, ObjectSetAttrOnNonHeapObjectRaisesAttributeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, runtime.newInt(42));
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(1));
+  EXPECT_TRUE(raisedWithStr(objectSetAttr(thread, object, name, value),
+                            LayoutId::kAttributeError,
+                            "'int' object has no attribute 'foo'"));
+}
+
 }  // namespace python

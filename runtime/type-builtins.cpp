@@ -157,6 +157,37 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   return *type;
 }
 
+RawObject typeSetAttr(Thread* thread, const Type& type,
+                      const Object& name_interned_str, const Object& value) {
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInternedStr(name_interned_str),
+         "name must be an interned string");
+  HandleScope scope(thread);
+  if (type.isBuiltin()) {
+    Object type_name(&scope, type.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "can't set attributes of built-in/extension type '%S'", &type_name);
+  }
+
+  // Check for a data descriptor
+  Type metatype(&scope, runtime->typeOf(*type));
+  Object meta_attr(&scope,
+                   typeLookupNameInMro(thread, metatype, name_interned_str));
+  if (!meta_attr.isError()) {
+    Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
+    if (typeIsDataDescriptor(thread, meta_attr_type)) {
+      // TODO(T25692531): Call __set__ from meta_attr
+      UNIMPLEMENTED("custom descriptors are unsupported");
+    }
+  }
+
+  // No data descriptor found, store the attribute in the type dict
+  Dict type_dict(&scope, type.dict());
+  runtime->typeDictAtPut(type_dict, name_interned_str, value);
+  return NoneType::object();
+}
+
 const BuiltinAttribute TypeBuiltins::kAttributes[] = {
     {SymbolId::kDunderBases, RawType::kBasesOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderDict, RawType::kDictOffset, AttributeFlags::kReadOnly},

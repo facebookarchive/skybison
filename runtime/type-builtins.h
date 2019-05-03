@@ -29,6 +29,10 @@ RawObject typeLookupSymbolInMro(Thread* thread, const Type& type,
 
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict);
+
+RawObject typeSetAttr(Thread* thread, const Type& type,
+                      const Object& name_interned_str, const Object& value);
+
 // Returns the "user-visible" type of an object. This hides the smallint,
 // smallstr, largeint, largestr types and pretends the object is of type
 // str/int instead.

@@ -11,6 +11,9 @@ namespace python {
 RawObject functionGetAttribute(Thread* thread, const Function& function,
                                const Object& name_str);
 
+RawObject functionSetAttr(Thread* thread, const Function& function,
+                          const Object& name_interned_str, const Object& value);
+
 class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
                                          LayoutId::kFunction> {
  public:

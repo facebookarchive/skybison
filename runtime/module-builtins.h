@@ -9,7 +9,10 @@
 namespace python {
 
 RawObject moduleGetAttribute(Thread* thread, const Module& module,
-                             const Object& name);
+                             const Object& name_str);
+
+RawObject moduleSetAttr(Thread* thread, const Module& module,
+                        const Object& name_str, const Object& value);
 
 // Runs the executable functions found in the PyModuleDef
 int execDef(Thread* thread, const Module& module, PyModuleDef* def);

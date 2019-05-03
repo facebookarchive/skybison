@@ -190,5 +190,21 @@ module_dict = sys.__dict__
   EXPECT_EQ(*function_globals, *module_dict);
 }
 
+TEST(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, "def foo(): pass").isError());
+  Object foo_obj(&scope, moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(foo_obj.isFunction());
+  Function foo(&scope, *foo_obj);
+  Object name(&scope, runtime.internStrFromCStr("bar"));
+  Object value(&scope, runtime.newInt(6789));
+  EXPECT_TRUE(functionSetAttr(thread, foo, name, value).isNoneType());
+  ASSERT_TRUE(foo.dict().isDict());
+  Dict function_dict(&scope, foo.dict());
+  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(function_dict, name), 6789));
+}
+
 }  // namespace testing
 }  // namespace python

@@ -663,6 +663,33 @@ TEST(TypeBuiltinsTest, TypeGetAttributeOnNoneTypeReturnsFunction) {
   EXPECT_TRUE(typeGetAttribute(thread, none_type, name).isFunction());
 }
 
+TEST(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, "class C: pass").isError());
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*c_obj));
+  Type c(&scope, *c_obj);
+  Object name(&scope, runtime.internStrFromCStr("foobarbaz"));
+  Object value(&scope, runtime.newInt(-444));
+  EXPECT_TRUE(typeSetAttr(thread, c, name, value).isNoneType());
+  Dict type_dict(&scope, c.dict());
+  EXPECT_TRUE(isIntEqualsWord(runtime.typeDictAt(type_dict, name), -444));
+}
+
+TEST(TypeBuiltinsTest, TypeSetAttrOnBuiltinTypeRaisesTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object value(&scope, NoneType::object());
+  EXPECT_TRUE(raisedWithStr(
+      typeSetAttr(thread, type, name, value), LayoutId::kTypeError,
+      "can't set attributes of built-in/extension type 'int'"));
+}
+
 TEST(TypeBuiltinTest, TypeofSmallStrReturnsStr) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(

@@ -8,6 +8,12 @@ namespace python {
 RawObject objectGetAttribute(Thread* thread, const Object& object,
                              const Object& name_str);
 
+RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
+                                    const Object& name_str);
+
+RawObject objectSetAttr(Thread* thread, const Object& object,
+                        const Object& name_interned_str, const Object& value);
+
 class ObjectBuiltins {
  public:
   static void initialize(Runtime* runtime);
