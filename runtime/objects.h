@@ -1852,6 +1852,11 @@ class RawByteArray : public RawHeapObject {
   // The size of the underlying bytes
   word capacity() const;
 
+  // Compares the bytes in this to the bytes in that. Returns a negative value
+  // if this is less than that, positive if this is greater than that, and zero
+  // if they have the same bytes. Does not guarantee to return -1, 0, or 1.
+  word compare(RawBytes that, word that_len);
+
   // Layout
   static const int kBytesOffset = RawHeapObject::kSize;
   static const int kNumItemsOffset = kBytesOffset + kPointerSize;

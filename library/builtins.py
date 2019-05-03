@@ -678,16 +678,16 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def __eq__(self, value):
-        _unimplemented()
+        pass
 
     def __ge__(self, value):
-        _unimplemented()
+        pass
 
     def __getitem__(self, key):  # -> Union[int, bytearray]
         pass
 
     def __gt__(self, value):
-        _unimplemented()
+        pass
 
     def __iadd__(self, other) -> bytearray:
         pass
@@ -701,14 +701,14 @@ class bytearray(bootstrap=True):
     def __iter__(self):
         pass
 
-    def __le__(self):
-        _unimplemented()
+    def __le__(self, value):
+        pass
 
     def __len__(self) -> int:
         pass
 
-    def __lt__(self):
-        _unimplemented()
+    def __lt__(self, value):
+        pass
 
     def __mod__(self, value):
         _unimplemented()
@@ -717,7 +717,7 @@ class bytearray(bootstrap=True):
         pass
 
     def __ne__(self, value):
-        _unimplemented()
+        pass
 
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):
         pass

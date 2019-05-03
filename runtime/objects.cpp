@@ -101,6 +101,17 @@ const word RawSmallInt::kMaxValue;
 
 // RawByteArray
 
+word RawByteArray::compare(RawBytes that, word that_len) {
+  DCHECK_BOUND(that_len, that.length());
+  word this_len = this->numItems();
+  word len = Utils::minimum(this_len, that_len);
+  for (word i = 0; i < len; i++) {
+    word diff = this->byteAt(i) - that.byteAt(i);
+    if (diff != 0) return diff;
+  }
+  return this_len - that_len;
+}
+
 void RawByteArray::downsize(word new_length) const {
   word original_length = numItems();
   DCHECK_BOUND(new_length, original_length);

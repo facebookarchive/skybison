@@ -90,6 +90,183 @@ TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "food"));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderEqWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytearray.__eq__(b'', bytearray())"),
+                    LayoutId::kTypeError,
+                    "'__eq__' requires a 'bytearray' object but got 'bytes'"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderEq, self, other));
+  EXPECT_TRUE(result.isNotImplementedType());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderEqWithEmptyByteArraysReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, runtime.newByteArray());
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderEqWithEqualByteArrayReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, {bytes, 2});
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'f'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderEq, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytearray.__ge__(b'', bytearray())"),
+                    LayoutId::kTypeError,
+                    "'__ge__' requires a 'bytearray' object but got 'bytes'"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderGe, self, other));
+  EXPECT_TRUE(result.isNotImplementedType());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithEmptyByteArraysReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, runtime.newByteArray());
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeithEqualBytesReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithEqualByteArrayReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {bytes, 2});
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, {bytes, 2});
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithEarlierOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'f'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGeWithLaterOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'o', 'o', 'f'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'o'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGe, self, other),
+            Bool::falseObj());
+}
+
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
@@ -180,6 +357,107 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithSliceStepReturnsByteArray) {
   Object result(&scope,
                 runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "rwo"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytearray.__gt__(b'', bytearray())"),
+                    LayoutId::kTypeError,
+                    "'__gt__' requires a 'bytearray' object but got 'bytes'"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderGt, self, other));
+  EXPECT_TRUE(result.isNotImplementedType());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithEmptyByteArraysReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, runtime.newByteArray());
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtithEqualBytesReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithEqualByteArrayReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {bytes, 2});
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, {bytes, 2});
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithEarlierOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'f'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGtWithLaterOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'o', 'o', 'f'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'o'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderGt, self, other),
+            Bool::falseObj());
 }
 
 TEST(ByteArrayBuiltinsTest, DunderIaddWithNonByteArraySelfRaisesTypeError) {
@@ -529,6 +807,107 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderLeWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytearray.__le__(b'', bytearray())"),
+                    LayoutId::kTypeError,
+                    "'__le__' requires a 'bytearray' object but got 'bytes'"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLe, self, other));
+  EXPECT_TRUE(result.isNotImplementedType());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeWithEmptyByteArraysReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, runtime.newByteArray());
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeithEqualBytesReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeWithEqualByteArrayReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {bytes, 2});
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, {bytes, 2});
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeWithEarlierOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'f'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLeWithLaterOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'o', 'o', 'f'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'o'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLe, self, other),
+            Bool::trueObj());
+}
+
 TEST(ByteArrayBuiltinsTest, DunderLenWithNonByteArrayRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
@@ -558,6 +937,107 @@ TEST(ByteArrayBuiltinsTest, DunderLenWithNonEmptyByteArrayReturnsPositive) {
   runtime.byteArrayExtend(thread, self, bytes2);
   result = runBuiltin(ByteArrayBuiltins::dunderLen, self);
   EXPECT_TRUE(isIntEqualsWord(*result, 7));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytearray.__lt__(b'', bytearray())"),
+                    LayoutId::kTypeError,
+                    "'__lt__' requires a 'bytearray' object but got 'bytes'"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderLt, self, other));
+  EXPECT_TRUE(result.isNotImplementedType());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithEmptyByteArraysReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, runtime.newByteArray());
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtithEqualBytesReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithEqualByteArrayReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, {bytes, 2});
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, {bytes, 2});
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithEarlierOtherReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'f'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderLtWithLaterOtherReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'o', 'o', 'f'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'o'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderLt, self, other),
+            Bool::trueObj());
 }
 
 TEST(ByteArrayBuiltinsTest, DunderMulWithNonByteArrayRaisesTypeError) {
@@ -724,6 +1204,82 @@ TEST(ByteArrayBuiltinsTest, DunderMulReturnsRepeatedByteArray) {
   Object count(&scope, SmallInt::fromWord(3));
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "ababab"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderNeWithNonByteArraySelfRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(
+      raisedWithStr(runFromCStr(&runtime, "bytearray.__ne__(b'', bytearray())"),
+                    LayoutId::kTypeError,
+                    "'__ne__' requires a 'bytearray' object but got 'bytes'"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderNe, self, other));
+  EXPECT_TRUE(result.isNotImplementedType());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderNeWithEmptyByteArraysReturnsFalse) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object other(&scope, runtime.newByteArray());
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytesWithAll(bytes));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderNeWithEqualByteArrayReturnsFalse) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, bytes);
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
+            Bool::falseObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  ByteArray other(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  runtime.byteArrayExtend(thread, other, {bytes, 2});
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
+            Bool::trueObj());
+}
+
+TEST(ByteArrayBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte bytes[] = {'f', 'o', 'o'};
+  ByteArray self(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object other(&scope, runtime.newBytes(3, 'f'));
+  EXPECT_EQ(runBuiltin(ByteArrayBuiltins::dunderNe, self, other),
+            Bool::trueObj());
 }
 
 TEST(ByteArrayBuiltinsTest, DunderNewWithNonTypeRaisesTypeError) {

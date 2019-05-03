@@ -28,13 +28,19 @@ const BuiltinAttribute ByteArrayBuiltins::kAttributes[] = {
 
 const BuiltinMethod ByteArrayBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
+    {SymbolId::kDunderEq, dunderEq},
+    {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGetitem, dunderGetItem},
+    {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderIadd, dunderIadd},
     {SymbolId::kDunderImul, dunderImul},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
+    {SymbolId::kDunderLt, dunderLt},
     {SymbolId::kDunderMul, dunderMul},
+    {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderRepr, dunderRepr},
     {SymbolId::kHex, hex},
@@ -74,6 +80,58 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
   runtime->byteArrayIadd(thread, result, self_bytes, self_len);
   runtime->byteArrayIadd(thread, result, other_bytes, other_len);
   return *result;
+}
+
+RawObject ByteArrayBuiltins::dunderEq(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  word comparison;
+  if (runtime->isInstanceOfBytes(*other_obj)) {
+    Bytes other(&scope, *other_obj);
+    comparison = self.compare(*other, other.length());
+  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, other.bytes());
+    comparison = self.compare(*other_bytes, other.numItems());
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return NotImplementedType::object();
+  }
+  return Bool::fromBool(comparison == 0);
+}
+
+RawObject ByteArrayBuiltins::dunderGe(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  word comparison;
+  if (runtime->isInstanceOfBytes(*other_obj)) {
+    Bytes other(&scope, *other_obj);
+    comparison = self.compare(*other, other.length());
+  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, other.bytes());
+    comparison = self.compare(*other_bytes, other.numItems());
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return NotImplementedType::object();
+  }
+  return Bool::fromBool(comparison >= 0);
 }
 
 RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
@@ -120,6 +178,32 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   }
   return thread->raiseTypeErrorWithCStr(
       "bytearray indices must either be slice or provide '__index__'");
+}
+
+RawObject ByteArrayBuiltins::dunderGt(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  word comparison;
+  if (runtime->isInstanceOfBytes(*other_obj)) {
+    Bytes other(&scope, *other_obj);
+    comparison = self.compare(*other, other.length());
+  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, other.bytes());
+    comparison = self.compare(*other_bytes, other.numItems());
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return NotImplementedType::object();
+  }
+  return Bool::fromBool(comparison > 0);
 }
 
 RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
@@ -277,6 +361,32 @@ RawObject ByteArrayBuiltins::dunderIter(Thread* thread, Frame* frame,
   return runtime->newByteArrayIterator(thread, self);
 }
 
+RawObject ByteArrayBuiltins::dunderLe(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  word comparison;
+  if (runtime->isInstanceOfBytes(*other_obj)) {
+    Bytes other(&scope, *other_obj);
+    comparison = self.compare(*other, other.length());
+  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, other.bytes());
+    comparison = self.compare(*other_bytes, other.numItems());
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return NotImplementedType::object();
+  }
+  return Bool::fromBool(comparison <= 0);
+}
+
 RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);
@@ -287,6 +397,32 @@ RawObject ByteArrayBuiltins::dunderLen(Thread* thread, Frame* frame,
   }
   ByteArray self(&scope, *self_obj);
   return SmallInt::fromWord(self.numItems());
+}
+
+RawObject ByteArrayBuiltins::dunderLt(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  word comparison;
+  if (runtime->isInstanceOfBytes(*other_obj)) {
+    Bytes other(&scope, *other_obj);
+    comparison = self.compare(*other, other.length());
+  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, other.bytes());
+    comparison = self.compare(*other_bytes, other.numItems());
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return NotImplementedType::object();
+  }
+  return Bool::fromBool(comparison < 0);
 }
 
 RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
@@ -328,6 +464,32 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
     result.setNumItems(new_length);
   }
   return *result;
+}
+
+RawObject ByteArrayBuiltins::dunderNe(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfByteArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
+  }
+  ByteArray self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  word comparison;
+  if (runtime->isInstanceOfBytes(*other_obj)) {
+    Bytes other(&scope, *other_obj);
+    comparison = self.compare(*other, other.length());
+  } else if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, other.bytes());
+    comparison = self.compare(*other_bytes, other.numItems());
+  } else {
+    // TODO(T38246066): allow any bytes-like object
+    return NotImplementedType::object();
+  }
+  return Bool::fromBool(comparison != 0);
 }
 
 RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,

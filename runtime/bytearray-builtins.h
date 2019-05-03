@@ -22,13 +22,19 @@ class ByteArrayBuiltins
                       LayoutId::kByteArray> {
  public:
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderEq(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderImul(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderRepr(Thread* thread, Frame* frame, word nargs);
 
