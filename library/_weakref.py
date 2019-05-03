@@ -67,7 +67,7 @@ class weakcallableproxy:
     __hash__ = None
 
     def __init__(self, ref_obj):
-        self.ref_obj = ref_obj
+        object.__setattr__(self, "ref_obj", ref_obj)
 
     def __abs__(self):
         return abs(_proxy_unwrap(self))
@@ -207,7 +207,7 @@ class weakproxy:
     __hash__ = None
 
     def __init__(self, ref_obj):
-        self.ref_obj = ref_obj
+        object.__setattr__(self, "ref_obj", ref_obj)
 
     def __abs__(self):
         return abs(_proxy_unwrap(self))

@@ -1,5 +1,6 @@
 // moduleobject.c implementation
 
+#include "builtins-module.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "handles.h"
@@ -77,7 +78,7 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
               "supported!");
       }
       function.setModule(*module);
-      runtime->attributeAtPut(thread, module, function_name, function);
+      runtime->moduleAtPut(module, function_name, function);
     }
   }
 

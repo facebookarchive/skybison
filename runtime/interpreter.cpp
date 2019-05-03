@@ -1783,8 +1783,7 @@ bool Interpreter::doStoreAttr(Context* ctx, word arg) {
   auto names = RawCode::cast(ctx->frame->code()).names();
   Object name(&scope, RawTuple::cast(names).at(arg));
   Object value(&scope, ctx->frame->popValue());
-  if (thread->runtime()
-          ->attributeAtPut(thread, receiver, name, value)
+  if (thread->invokeMethod3(receiver, SymbolId::kDunderSetattr, name, value)
           .isError()) {
     return unwind(ctx);
   }

@@ -1870,86 +1870,6 @@ TEST(RuntimeSetTest, IntersectWithNonIterable) {
 
 // Attribute tests
 
-static RawObject createType(Runtime* runtime) {
-  HandleScope scope;
-  Type type(&scope, runtime->newType());
-  Thread* thread = Thread::current();
-  Layout layout(&scope, runtime->layoutCreateEmpty(thread));
-  layout.setDescribedType(*type);
-  type.setInstanceLayout(*layout);
-  Tuple mro(&scope, runtime->newTuple(1));
-  mro.atPut(0, *type);
-  type.setMro(*mro);
-  layout.setId(runtime->reserveLayoutId());
-  runtime->layoutAtPut(layout.id(), *layout);
-  return *type;
-}
-
-struct IntrinsicTypeSetAttrTestData {
-  LayoutId layout_id;
-  const char* name;
-};
-
-IntrinsicTypeSetAttrTestData kIntrinsicTypeSetAttrTests[] = {
-// clang-format off
-#define DEFINE_TEST(class_name) {LayoutId::k##class_name, #class_name},
-  CLASS_NAMES(DEFINE_TEST)
-#undef DEFINE_TEST
-    // clang-format on
-};
-
-static std::string intrinsicTypeName(
-    ::testing::TestParamInfo<IntrinsicTypeSetAttrTestData> info) {
-  return info.param.name;
-}
-
-class IntrinsicTypeSetAttrTest
-    : public ::testing::TestWithParam<IntrinsicTypeSetAttrTestData> {};
-
-TEST_P(IntrinsicTypeSetAttrTest, SetAttr) {
-  Runtime runtime;
-  HandleScope scope;
-  Object type(&scope, runtime.typeAt(GetParam().layout_id));
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Object value(&scope, SmallInt::fromWord(100));
-  Thread* thread = Thread::current();
-
-  RawObject result = runtime.attributeAtPut(thread, type, attr, value);
-
-  EXPECT_TRUE(result.isError());
-  ASSERT_TRUE(thread->pendingExceptionValue().isStr());
-  unique_c_ptr<char> type_name(
-      RawStr::cast(RawType::cast(*type).name()).toCStr());
-  char expected[128];
-  std::snprintf(expected, sizeof(expected),
-                "can't set attributes of built-in/extension type '%s'",
-                type_name.get());
-  EXPECT_TRUE(isStrEqualsCStr(thread->pendingExceptionValue(), expected));
-}
-
-INSTANTIATE_TEST_CASE_P(IntrinsicTypes, IntrinsicTypeSetAttrTest,
-                        ::testing::ValuesIn(kIntrinsicTypeSetAttrTests),
-                        intrinsicTypeName);
-
-// Set an attribute directly on the class
-TEST(TypeAttributeTest, SetAttrOnType) {
-  Runtime runtime;
-  HandleScope scope;
-
-  Object type(&scope, createType(&runtime));
-  Object attr(&scope, runtime.newStrFromCStr("test"));
-  Object value(&scope, SmallInt::fromWord(100));
-
-  RawObject result =
-      runtime.attributeAtPut(Thread::current(), type, attr, value);
-  ASSERT_FALSE(result.isError());
-
-  Dict type_dict(&scope, RawType::cast(*type).dict());
-  Object value_cell(&scope, runtime.dictAt(type_dict, attr));
-  ASSERT_TRUE(value_cell.isValueCell());
-  EXPECT_EQ(RawValueCell::cast(*value_cell).value(), SmallInt::fromWord(100));
-}
-
 // Set an attribute defined in __init__
 TEST(InstanceAttributeTest, SetInstanceAttribute) {
   Runtime runtime;
@@ -2978,22 +2898,6 @@ TEST(RuntimeTest, LazyInitializationOfFunctionDict) {
   Object key(&scope, runtime.newStrFromCStr("__dict__"));
   runtime.attributeAt(Thread::current(), function, key);
   EXPECT_TRUE(function.dict().isDict());
-}
-
-TEST(RuntimeTest, SetFunctionDict) {
-  Runtime runtime;
-  HandleScope scope;
-  Function function(&scope, makeTestFunction());
-  ASSERT_TRUE(function.dict().isNoneType());
-
-  Object dict_name(&scope, runtime.newStrFromCStr("__dict__"));
-  Object dict(&scope, runtime.newDict());
-  runtime.attributeAtPut(Thread::current(), function, dict_name, dict);
-
-  Object result(&scope,
-                runtime.attributeAt(Thread::current(), function, dict_name));
-  EXPECT_TRUE(result.isDict());
-  EXPECT_EQ(*dict, *result);
 }
 
 TEST(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {

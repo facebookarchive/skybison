@@ -64,7 +64,11 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
     return thread->raiseTypeErrorWithCStr(
         "setattr(): attribute name must be string");
   }
-  return runtime->attributeAtPut(thread, self, name, value);
+  HandleScope scope(thread);
+  Object result(&scope, thread->invokeMethod3(self, SymbolId::kDunderSetattr,
+                                              name, value));
+  if (result.isError()) return *result;
+  return NoneType::object();
 }
 
 const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {

@@ -3282,31 +3282,6 @@ RawObject Runtime::attributeAtWithCStr(Thread* thread, const Object& receiver,
   return attributeAt(thread, receiver, name_str);
 }
 
-RawObject Runtime::attributeAtPut(Thread* thread, const Object& receiver,
-                                  const Object& name, const Object& value) {
-  if (!name.isStr()) {
-    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
-  }
-
-  HandleScope scope(thread);
-  Object interned_name(&scope, internStr(name));
-  // A minimal implementation of setattr needed to get richards running.
-  RawObject result;
-  if (isInstanceOfType(*receiver)) {
-    Type type(&scope, *receiver);
-    result = typeSetAttr(thread, type, interned_name, value);
-  } else if (receiver.isModule()) {
-    Module module(&scope, *receiver);
-    result = moduleSetAttr(thread, module, interned_name, value);
-  } else if (receiver.isFunction()) {
-    Function function(&scope, *receiver);
-    result = functionSetAttr(thread, function, interned_name, value);
-  } else {
-    result = objectSetAttr(thread, receiver, interned_name, value);
-  }
-  return result;
-}
-
 RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
                                 const Object& name) {
   HandleScope scope(thread);

@@ -549,10 +549,6 @@ class Runtime {
   RawObject attributeAtWithCStr(Thread* thread, const Object& receiver,
                                 const char* name);
 
-  // Implements `receiver.name = value`
-  RawObject attributeAtPut(Thread* thread, const Object& receiver,
-                           const Object& name, const Object& value);
-
   // Implements `del receiver.name`
   RawObject attributeDel(Thread* thread, const Object& receiver,
                          const Object& name);
