@@ -32,6 +32,9 @@ class function(bootstrap=True):
         # implemented
         return f"<function {self.__name__} at 0x{_address(self)}>"
 
+    def __setattr__(self, name, value):
+        pass
+
 
 class classmethod(bootstrap=True):
     def __get__(self, instance, owner):
@@ -105,6 +108,9 @@ class type(bootstrap=True):
     def __repr__(self):
         return f"<class '{self.__name__}'>"
 
+    def __setattr__(self, name, value):
+        pass
+
     def _merge_class_dict_keys(self, result):
         result.update(self.__dict__.keys())
         for base in self.__bases__:
@@ -159,6 +165,9 @@ class object(bootstrap=True):  # noqa: E999
         # TODO(T32655200): Replace with #x when formatting language is
         # implemented
         return f"<{type(self).__name__} object at {_address(self)}>"
+
+    def __setattr__(self, name, value):
+        pass
 
     def __sizeof__(self):
         pass
@@ -2206,6 +2215,9 @@ class module(bootstrap=True):
         import _frozen_importlib
 
         return _frozen_importlib._module_repr(self)
+
+    def __setattr__(self, name, value):
+        pass
 
 
 def next(iterator, default=_Unbound):

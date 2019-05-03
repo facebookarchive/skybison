@@ -21,6 +21,7 @@ class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
 
   static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinAttribute kAttributes[];

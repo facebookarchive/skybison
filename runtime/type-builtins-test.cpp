@@ -300,6 +300,37 @@ a = type.__new__(type, Foo);
   EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kType);
 }
 
+TEST(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, "class C: pass").isError());
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  ASSERT_TRUE(c_obj.isType());
+  Type c(&scope, *c_obj);
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(-7331));
+  EXPECT_TRUE(
+      runBuiltin(TypeBuiltins::dunderSetattr, c, name, value).isNoneType());
+  Dict type_dict(&scope, c.dict());
+  EXPECT_TRUE(isIntEqualsWord(runtime.typeDictAt(type_dict, name), -7331));
+}
+
+TEST(TypeBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, "class C: pass").isError());
+  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  ASSERT_TRUE(c_obj.isType());
+  Type c(&scope, *c_obj);
+  Object name(&scope, NoneType::object());
+  Object value(&scope, runtime.newInt(1));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(TypeBuiltins::dunderSetattr, c, name, value),
+      LayoutId::kTypeError, "attribute name must be string, not 'NoneType'"));
+}
+
 TEST(TypeBuiltinsTest, TypeHasDunderMroAttribute) {
   Runtime runtime;
   HandleScope scope;

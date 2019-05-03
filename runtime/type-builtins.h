@@ -46,6 +46,7 @@ class TypeBuiltins
   static RawObject dunderCall(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGetattribute(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderSetattr(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];

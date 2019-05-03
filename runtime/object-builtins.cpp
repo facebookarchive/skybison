@@ -92,6 +92,7 @@ const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderSetattr, dunderSetattr},
     {SymbolId::kDunderSizeof, dunderSizeof},
     // no sentinel needed because the iteration below is manual
 };
@@ -202,6 +203,25 @@ RawObject ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame,
   // to __new__.
   KwArguments args(frame, nargs);
   return dunderNew(thread, frame, nargs - args.numKeywords() - 1);
+}
+
+RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
+                                        word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
+  }
+  if (!name.isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  name = runtime->internStr(name);
+  Object value(&scope, args.get(2));
+  return objectSetAttr(thread, self, name, value);
 }
 
 RawObject ObjectBuiltins::dunderSizeof(Thread* thread, Frame* frame,

@@ -93,6 +93,49 @@ TEST(ObjectBuiltinsTest,
       LayoutId::kAttributeError, "'NoneType' object has no attribute 'xxx'"));
 }
 
+TEST(ObjectBuiltinsTest, DunderSetattrSetsValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(42));
+  EXPECT_TRUE(
+      runBuiltin(ObjectBuiltins::dunderSetattr, i, name, value).isNoneType());
+  ASSERT_TRUE(i.isHeapObject());
+  HeapObject i_heap_object(&scope, *i);
+  EXPECT_TRUE(
+      isIntEqualsWord(runtime.instanceAt(thread, i_heap_object, name), 42));
+}
+
+TEST(ObjectBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object object(&scope, NoneType::object());
+  Object name(&scope, runtime.newInt(0));
+  Object value(&scope, runtime.newInt(1));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ObjectBuiltins::dunderSetattr, object, name, value),
+      LayoutId::kTypeError, "attribute name must be string, not 'int'"));
+}
+
+TEST(ObjectBuiltinsTest, DunderSetattrOnBuiltinTypeRaisesAttributeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, NoneType::object());
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(1));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ObjectBuiltins::dunderSetattr, object, name, value),
+      LayoutId::kAttributeError, "'NoneType' object has no attribute 'foo'"));
+}
+
 TEST(ObjectBuiltinsTest, DunderSizeofWithNonHeapObjectReturnsSizeofRawObject) {
   Runtime runtime;
   HandleScope scope;

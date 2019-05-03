@@ -138,6 +138,32 @@ TEST(ModuleBuiltinsTest, DunderNewWithNonStrNameRaisesTypeError) {
   EXPECT_TRUE(raised(*module, LayoutId::kTypeError));
 }
 
+TEST(ModuleBuiltinsTest, DunderSetattrSetsAttribute) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object module_name(&scope, runtime.newStrFromCStr("foo"));
+  Module module(&scope, runtime.newModule(module_name));
+  Object name(&scope, runtime.newStrFromCStr("foobarbaz"));
+  Object value(&scope, runtime.newInt(0xf00d));
+  EXPECT_TRUE(runBuiltin(ModuleBuiltins::dunderSetattr, module, name, value)
+                  .isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleAt(module, name), 0xf00d));
+}
+
+TEST(ModuleBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object module_name(&scope, runtime.newStrFromCStr("foo"));
+  Object module(&scope, runtime.newModule(module_name));
+  Object name(&scope, runtime.newFloat(4.4));
+  Object value(&scope, runtime.newInt(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(ModuleBuiltins::dunderSetattr, module, name, value),
+      LayoutId::kTypeError, "attribute name must be string, not 'float'"));
+}
+
 TEST(ModuleBuiltinsTest, DunderDict) {
   Runtime runtime;
 

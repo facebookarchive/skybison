@@ -47,6 +47,7 @@ RawObject functionSetAttr(Thread* thread, const Function& function,
 const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGet, dunderGet},
     {SymbolId::kDunderGetattribute, dunderGetattribute},
+    {SymbolId::kDunderSetattr, dunderSetattr},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -115,6 +116,29 @@ RawObject FunctionBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
                                 &function_name, &name);
   }
   return *result;
+}
+
+RawObject FunctionBuiltins::dunderSetattr(Thread* thread, Frame* frame,
+                                          word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!self_obj.isFunction()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kFunction);
+  }
+  Function self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
+  }
+  if (!name.isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  name = runtime->internStr(name);
+  Object value(&scope, args.get(2));
+  return functionSetAttr(thread, self, name, value);
 }
 
 }  // namespace python

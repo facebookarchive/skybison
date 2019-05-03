@@ -202,6 +202,7 @@ const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderCall, dunderCall},
     {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderNew, dunderNew},
+    {SymbolId::kDunderSetattr, dunderSetattr},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -327,6 +328,29 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Tuple bases(&scope, args.get(2));
   Dict dict(&scope, args.get(3));
   return typeNew(thread, metaclass_id, name, bases, dict);
+}
+
+RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
+                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kType);
+  }
+  Type self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*name)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "attribute name must be string, not '%T'", &name);
+  }
+  if (!name.isStr()) {
+    UNIMPLEMENTED("Strict subclass of string");
+  }
+  name = runtime->internStr(name);
+  Object value(&scope, args.get(2));
+  return typeSetAttr(thread, self, name, value);
 }
 
 }  // namespace python
