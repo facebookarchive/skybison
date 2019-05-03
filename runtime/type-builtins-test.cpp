@@ -709,6 +709,63 @@ TEST(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {
   EXPECT_TRUE(isIntEqualsWord(runtime.typeDictAt(type_dict, name), -444));
 }
 
+TEST(TypeBuiltinsTest, TypeSetAttrCallsDunderSetOnDataDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __get__(self, instance, owner): pass
+  def __set__(self, instance, value):
+    global set_args
+    set_args = (self, instance, value)
+    return "ignored result"
+foo = D()
+class M(type):
+  foo = foo
+class A(metaclass=M):
+  foo = "hidden by data descriptor"
+)")
+                   .isError());
+  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(77));
+  EXPECT_TRUE(typeSetAttr(thread, a, name, value).isNoneType());
+  Object set_args_obj(&scope, moduleAt(&runtime, "__main__", "set_args"));
+  ASSERT_TRUE(set_args_obj.isTuple());
+  Tuple set_args(&scope, *set_args_obj);
+  ASSERT_EQ(set_args.length(), 3);
+  EXPECT_EQ(set_args.at(0), foo);
+  EXPECT_EQ(set_args.at(1), a);
+  EXPECT_TRUE(isIntEqualsWord(set_args.at(2), 77));
+}
+
+TEST(TypeBuiltinsTest, TypeSetAttrPropagatesDunderSetException) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class D:
+  def __get__(self, instance, owner): pass
+  def __set__(self, instance, value): raise UserWarning()
+class M(type):
+  foo = D()
+class A(metaclass=M):
+  pass
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
+  ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
+  Type a(&scope, *a_obj);
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object value(&scope, runtime.newInt(1));
+  EXPECT_TRUE(
+      raised(typeSetAttr(thread, a, name, value), LayoutId::kUserWarning));
+}
+
 TEST(TypeBuiltinsTest, TypeSetAttrOnBuiltinTypeRaisesTypeError) {
   Runtime runtime;
   Thread* thread = Thread::current();

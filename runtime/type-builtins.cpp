@@ -177,8 +177,11 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
   if (!meta_attr.isError()) {
     Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
     if (typeIsDataDescriptor(thread, meta_attr_type)) {
-      // TODO(T25692531): Call __set__ from meta_attr
-      UNIMPLEMENTED("custom descriptors are unsupported");
+      Object set_result(
+          &scope, Interpreter::callDescriptorSet(thread, thread->currentFrame(),
+                                                 meta_attr, type, value));
+      if (set_result.isError()) return *set_result;
+      return NoneType::object();
     }
   }
 
