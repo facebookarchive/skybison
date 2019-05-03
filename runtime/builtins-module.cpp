@@ -702,10 +702,13 @@ RawObject BuiltinsModule::dunderImport(Thread* thread, Frame* frame,
   Object level(&scope, args.get(4));
 
   Runtime* runtime = thread->runtime();
-  if (level.isInt() && RawInt::cast(*level).isZero()) {
-    Object cached_module(&scope, runtime->findModule(name));
-    if (!cached_module.isNoneType()) {
-      return *cached_module;
+  if (runtime->isInstanceOfInt(*level)) {
+    Int level_int(&scope, intUnderlying(thread, level));
+    if (level_int.isZero()) {
+      Object cached_module(&scope, runtime->findModule(name));
+      if (!cached_module.isNoneType()) {
+        return *cached_module;
+      }
     }
   }
 
@@ -1161,10 +1164,16 @@ RawObject BuiltinsModule::underStrFind(Thread* thread, Frame* frame,
   Str needle(&scope, args.get(1));
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
-  word start =
-      start_obj.isNoneType() ? 0 : RawInt::cast(*start_obj).asWordSaturated();
-  word end = end_obj.isNoneType() ? kMaxWord
-                                  : RawInt::cast(*end_obj).asWordSaturated();
+  word start = 0;
+  if (!start_obj.isNoneType()) {
+    Int start_int(&scope, intUnderlying(thread, start_obj));
+    start = start_int.asWordSaturated();
+  }
+  word end = kMaxWord;
+  if (!end_obj.isNoneType()) {
+    Int end_int(&scope, intUnderlying(thread, end_obj));
+    end = end_int.asWordSaturated();
+  }
   return strFind(haystack, needle, start, end);
 }
 
@@ -1209,10 +1218,16 @@ RawObject BuiltinsModule::underStrRFind(Thread* thread, Frame* frame,
   Str needle(&scope, args.get(1));
   Object start_obj(&scope, args.get(2));
   Object end_obj(&scope, args.get(3));
-  word start =
-      start_obj.isNoneType() ? 0 : RawInt::cast(*start_obj).asWordSaturated();
-  word end = end_obj.isNoneType() ? kMaxWord
-                                  : RawInt::cast(*end_obj).asWordSaturated();
+  word start = 0;
+  if (!start_obj.isNoneType()) {
+    Int start_int(&scope, intUnderlying(thread, start_obj));
+    start = start_int.asWordSaturated();
+  }
+  word end = kMaxWord;
+  if (!end_obj.isNoneType()) {
+    Int end_int(&scope, intUnderlying(thread, end_obj));
+    end = end_int.asWordSaturated();
+  }
   return strRFind(haystack, needle, start, end);
 }
 

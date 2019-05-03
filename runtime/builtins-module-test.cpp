@@ -2219,11 +2219,9 @@ res2 = abs(-10)
 
   HandleScope scope;
   Object res1(&scope, moduleAt(&runtime, "__main__", "res1"));
-  ASSERT_TRUE(res1.isInt());
-  EXPECT_EQ(RawInt::cast(*res1).asWord(), 10);
+  EXPECT_TRUE(isIntEqualsWord(*res1, 10));
   Object res2(&scope, moduleAt(&runtime, "__main__", "res2"));
-  ASSERT_TRUE(res2.isInt());
-  EXPECT_EQ(RawInt::cast(*res2).asWord(), 10);
+  EXPECT_TRUE(isIntEqualsWord(*res2, 10));
 }
 
 TEST(BuiltinsModuleTest, AbsWithoutDunderAbsRaisesTypeError) {
