@@ -163,7 +163,8 @@ PY_EXPORT int _PyUnicodeWriter_WriteStr(_PyUnicodeWriter* writer,
                                         PyObject* str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Str src(&scope, strUnderlying(thread, obj));
   Py_ssize_t len = src.length();
   if (_PyUnicodeWriter_Prepare(writer, len, kMaxUnicode) == -1) return -1;
   for (Py_ssize_t i = 0; i < len; ++i, writer->pos++) {
@@ -182,7 +183,8 @@ PY_EXPORT int _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter* writer,
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str src(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Object obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  Str src(&scope, strUnderlying(thread, obj));
   for (Py_ssize_t i = start; i < end; ++i, writer->pos++) {
     PyUnicode_WRITE(PyUnicode_4BYTE_KIND, writer->data, writer->pos,
                     src.charAt(i));
@@ -523,17 +525,20 @@ PY_EXPORT int _PyUnicode_EqualToASCIIString(PyObject* unicode,
                                             const char* c_str) {
   DCHECK(unicode, "nullptr argument");
   DCHECK(c_str, "nullptr argument");
-
-  HandleScope scope;
-  Str str(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(unicode)->asObject());
+  Str str(&scope, strUnderlying(thread, obj));
   return str.equalsCStr(c_str);
 }
 
 PY_EXPORT int _PyUnicode_EQ(PyObject* aa, PyObject* bb) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str lhs(&scope, ApiHandle::fromPyObject(aa)->asObject());
-  Str rhs(&scope, ApiHandle::fromPyObject(bb)->asObject());
+  Object obj_aa(&scope, ApiHandle::fromPyObject(aa)->asObject());
+  Object obj_bb(&scope, ApiHandle::fromPyObject(bb)->asObject());
+  Str lhs(&scope, strUnderlying(thread, obj_aa));
+  Str rhs(&scope, strUnderlying(thread, obj_bb));
   word diff = lhs.compare(*rhs);
   return diff == 0 ? 1 : 0;
 }
@@ -574,15 +579,12 @@ PY_EXPORT char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode, Py_ssize_t* size) {
 
   auto handle = ApiHandle::fromPyObject(pyunicode);
   Object obj(&scope, handle->asObject());
-  if (!obj.isStr()) {
-    if (thread->runtime()->isInstanceOfStr(*obj)) {
-      UNIMPLEMENTED("RawStr subclass");
-    }
+  if (!thread->runtime()->isInstanceOfStr(*obj)) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
 
-  Str str(&scope, *obj);
+  Str str(&scope, strUnderlying(thread, obj));
   word length = str.length();
   if (size) *size = length;
   if (void* cache = handle->cache()) return static_cast<char*>(cache);
@@ -776,11 +778,8 @@ PY_EXPORT Py_UCS4* PyUnicode_AsUCS4(PyObject* u, Py_UCS4* buffer,
   if (!thread->runtime()->isInstanceOfStr(*obj)) {
     thread->raiseBadArgument();
   }
-  if (!obj.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str str(&scope, *obj);
 
+  Str str(&scope, strUnderlying(thread, obj));
   word num_codepoints = str.codePointLength();
   word target_buflen = copy_null ? num_codepoints + 1 : num_codepoints;
   if (buflen < target_buflen) {
@@ -856,18 +855,20 @@ PY_EXPORT int PyUnicode_Compare(PyObject* left, PyObject* right) {
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
   if (runtime->isInstanceOfStr(*left_obj) &&
       runtime->isInstanceOfStr(*right_obj)) {
-    Str left_str(&scope, *left_obj);
-    return left_str.compare(*right_obj);
+    Str left_str(&scope, strUnderlying(thread, left_obj));
+    Str right_str(&scope, strUnderlying(thread, right_obj));
+    return left_str.compare(*right_str);
   }
-  thread->raiseTypeError(
-      runtime->newStrFromFmt("Can't compare %T and %T", &left_obj, &right_obj));
+  thread->raiseWithFmt(LayoutId::kTypeError, "Can't compare %T and %T",
+                       &left_obj, &right_obj);
   return -1;
 }
 
 PY_EXPORT int PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str str_obj(&scope, ApiHandle::fromPyObject(uni)->asObject());
+  Object obj(&scope, ApiHandle::fromPyObject(uni)->asObject());
+  Str str_obj(&scope, strUnderlying(thread, obj));
   // TODO(atalaba): Allow for proper comparison against Latin-1 strings. For
   // example, in CPython: "\xC3\xA9" (UTF-8) == "\xE9" (Latin-1), and
   // "\xE9 longer" > "\xC3\xA9".
@@ -886,9 +887,8 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
     thread->raiseTypeErrorWithCStr("can only concatenate str to str");
     return nullptr;
   }
-  // TODO(T36619828): Implement Str subclass support
-  Str left_str(&scope, *left_obj);
-  Str right_str(&scope, *right_obj);
+  Str left_str(&scope, strUnderlying(thread, left_obj));
+  Str right_str(&scope, strUnderlying(thread, right_obj));
   word dummy;
   if (__builtin_add_overflow(left_str.length(), right_str.length(), &dummy)) {
     thread->raiseOverflowErrorWithCStr("strings are too large to concat");
@@ -1266,12 +1266,12 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
     thread->raiseTypeErrorWithCStr("PyUnicode_Find requires a 'str' instance");
     return -2;
   }
-  Str str_str(&scope, *str_obj);
+  Str str_str(&scope, strUnderlying(thread, str_obj));
   if (!runtime->isInstanceOfStr(*substr_obj)) {
     thread->raiseTypeErrorWithCStr("PyUnicode_Find requires a 'str' instance");
     return -2;
   }
-  Str substr_str(&scope, *substr_obj);
+  Str substr_str(&scope, strUnderlying(thread, substr_obj));
   auto fn = (direction == 1) ? strFind : strRFind;
   Int result(&scope, (*fn)(str_str, substr_str, start, end));
   OptInt<Py_ssize_t> maybe_int = result.asInt<Py_ssize_t>();
@@ -1297,7 +1297,7 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfStr(*str_obj),
          "PyUnicode_FindChar requires a 'str' instance");
-  Str str_str(&scope, *str_obj);
+  Str str_str(&scope, strUnderlying(thread, str_obj));
   Str substr(&scope, SmallStr::fromCodePoint(ch));
   auto fn = (direction == 1) ? strFind : strRFind;
   Int result(&scope, (*fn)(str_str, substr, start, end));
@@ -1428,10 +1428,7 @@ PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* pyobj) {
     thread->raiseBadArgument();
     return -1;
   }
-  if (!obj.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str str(&scope, *obj);
+  Str str(&scope, strUnderlying(thread, obj));
   return str.codePointLength();
 }
 
@@ -1574,25 +1571,22 @@ PY_EXPORT PyObject* PyUnicode_Replace(PyObject* str, PyObject* substr,
     thread->raiseTypeErrorWithCStr("str must be str");
     return nullptr;
   }
-  if (!str_obj.isStr()) UNIMPLEMENTED("str subclass");
 
   Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
   if (!runtime->isInstanceOfStr(*substr_obj)) {
     thread->raiseTypeErrorWithCStr("substr must be str");
     return nullptr;
   }
-  if (!substr_obj.isStr()) UNIMPLEMENTED("str subclass");
 
   Object replstr_obj(&scope, ApiHandle::fromPyObject(replstr)->asObject());
   if (!runtime->isInstanceOfStr(*replstr_obj)) {
     thread->raiseTypeErrorWithCStr("replstr must be str");
     return nullptr;
   }
-  if (!replstr_obj.isStr()) UNIMPLEMENTED("str subclass");
 
-  Str str_str(&scope, *str_obj);
-  Str substr_str(&scope, *substr_obj);
-  Str replstr_str(&scope, *replstr_obj);
+  Str str_str(&scope, strUnderlying(thread, str_obj));
+  Str substr_str(&scope, strUnderlying(thread, substr_obj));
+  Str replstr_str(&scope, strUnderlying(thread, replstr_obj));
   // TODO(T42259916): Make sure the return value is of 'str' type once str
   // subclass is supported.
   Object result(&scope, runtime->strReplace(thread, str_str, substr_str,
@@ -1639,7 +1633,7 @@ PY_EXPORT PyObject* PyUnicode_Splitlines(PyObject* str, int keepends) {
                          &str_obj);
     return nullptr;
   }
-  Str str_str(&scope, *str_obj);
+  Str str_str(&scope, strUnderlying(thread, str_obj));
   return ApiHandle::newReference(thread,
                                  strSplitlines(thread, str_str, keepends));
 }
@@ -1658,7 +1652,7 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfStr(*obj),
          "PyUnicode_Substring requires a 'str' instance");
-  Str self(&scope, *obj);
+  Str self(&scope, strUnderlying(thread, obj));
   word len = self.length();
   word start_index = self.offsetByCodePoints(0, start);
   if (start_index == len || end <= start) {

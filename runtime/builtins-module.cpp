@@ -1182,10 +1182,14 @@ RawObject BuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
-  Str value(&scope, args.get(1));
   DCHECK(type.builtinBase() == LayoutId::kStr, "type must subclass str");
+  Object value_obj(&scope, args.get(1));
+  Str value(&scope, strUnderlying(thread, value_obj));
   if (type.isBuiltin()) return *value;
-  UNIMPLEMENTED("subclass of str");  // TODO(T36619828)
+  Layout type_layout(&scope, type.instanceLayout());
+  UserStrBase instance(&scope, thread->runtime()->newInstance(type_layout));
+  instance.setValue(*value);
+  return *instance;
 }
 
 RawObject BuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
@@ -1193,12 +1197,12 @@ RawObject BuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  if (!args.get(0).isStr()) UNIMPLEMENTED("str subclass");
-  if (!args.get(1).isStr()) UNIMPLEMENTED("str subclass");
-  if (!args.get(2).isStr()) UNIMPLEMENTED("str subclass");
-  Str self(&scope, args.get(0));
-  Str oldstr(&scope, args.get(1));
-  Str newstr(&scope, args.get(2));
+  Object self_obj(&scope, args.get(0));
+  Object oldstr_obj(&scope, args.get(1));
+  Object newstr_obj(&scope, args.get(2));
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str oldstr(&scope, strUnderlying(thread, oldstr_obj));
+  Str newstr(&scope, strUnderlying(thread, newstr_obj));
   Object count_obj(&scope, args.get(3));
   Int count(&scope, intUnderlying(thread, count_obj));
   return runtime->strReplace(thread, self, oldstr, newstr,

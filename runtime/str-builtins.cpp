@@ -228,6 +228,20 @@ RawObject strIteratorNext(Thread* thread, const StrIterator& iter) {
   return RawSmallStr::fromCodePoint(code_point);
 }
 
+RawObject strUnderlying(Thread* thread, const Object& obj) {
+  if (obj.isStr()) return *obj;
+  DCHECK(thread->runtime()->isInstanceOfStr(*obj),
+         "cannot get a base str value from a non-str");
+  HandleScope scope(thread);
+  UserStrBase user_str(&scope, *obj);
+  return user_str.value();
+}
+
+const BuiltinAttribute StrBuiltins::kAttributes[] = {
+    {SymbolId::kInvalid, UserStrBase::kValueOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
 const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderBool, dunderBool},
@@ -261,72 +275,76 @@ RawObject StrBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!runtime->isInstanceOfStr(*other)) {
-    return thread->raiseRequiresType(other, SymbolId::kStr);
+  if (!runtime->isInstanceOfStr(*other_obj)) {
+    return thread->raiseRequiresType(other_obj, SymbolId::kStr);
   }
-  if (!self.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  if (!other.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str self_str(&scope, *self);
-  Str other_str(&scope, *other);
-  return runtime->strConcat(thread, self_str, other_str);
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  return runtime->strConcat(thread, self, other);
 }
 
 RawObject StrBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
-  if (self_obj.isStr()) {
-    return Bool::fromBool(*self_obj != Str::empty());
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (thread->runtime()->isInstanceOfStr(*self_obj)) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  return thread->raiseRequiresType(self_obj, SymbolId::kStr);
+  Str self(&scope, strUnderlying(thread, self_obj));
+  return Bool::fromBool(*self != Str::empty());
 }
 
 RawObject StrBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self).compare(*other) == 0);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  // TODO(cshapiro): handle user-defined subtypes of string.
-  return NotImplementedType::object();
+  if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  return Bool::fromBool(self.compare(*other) == 0);
 }
 
 RawObject StrBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self).compare(*other) >= 0);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  // TODO(cshapiro): handle user-defined subtypes of string.
-  return NotImplementedType::object();
+  if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  return Bool::fromBool(self.compare(*other) >= 0);
 }
 
 RawObject StrBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self).compare(*other) > 0);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  // TODO(cshapiro): handle user-defined subtypes of string.
-  return NotImplementedType::object();
+  if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  return Bool::fromBool(self.compare(*other) > 0);
 }
 
 RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
@@ -490,24 +508,28 @@ RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
 RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self).compare(*other) <= 0);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  // TODO(cshapiro): handle user-defined subtypes of string.
-  return NotImplementedType::object();
+  if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  return Bool::fromBool(self.compare(*other) <= 0);
 }
 
 RawObject StrBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  Str str(&scope, *self);
-  return SmallInt::fromWord(str.codePointLength());
+  Str self(&scope, strUnderlying(thread, self_obj));
+  return SmallInt::fromWord(self.codePointLength());
 }
 
 RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
@@ -518,10 +540,7 @@ RawObject StrBuiltins::lower(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfStr(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!self_obj.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str self(&scope, *self_obj);
+  Str self(&scope, strUnderlying(thread, self_obj));
   std::unique_ptr<byte[]> buf(new byte[self.length()]);
   byte* bufp = buf.get();
   for (word i = 0; i < self.length(); i++) {
@@ -547,10 +566,7 @@ RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfStr(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!self_obj.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str self(&scope, *self_obj);
+  Str self(&scope, strUnderlying(thread, self_obj));
   std::unique_ptr<byte[]> buf(new byte[self.length()]);
   byte* bufp = buf.get();
   for (word i = 0; i < self.length(); i++) {
@@ -571,13 +587,17 @@ RawObject StrBuiltins::upper(Thread* thread, Frame* frame, word nargs) {
 RawObject StrBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self).compare(*other) < 0);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  // TODO(cshapiro): handle user-defined subtypes of string.
-  return NotImplementedType::object();
+  if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  return Bool::fromBool(self.compare(*other) < 0);
 }
 
 RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
@@ -740,13 +760,17 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
 RawObject StrBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  if (self.isStr() && other.isStr()) {
-    return Bool::fromBool(RawStr::cast(*self).compare(*other) != 0);
+  Object self_obj(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  if (!thread->runtime()->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  // TODO(cshapiro): handle user-defined subtypes of string.
-  return NotImplementedType::object();
+  if (!thread->runtime()->isInstanceOfStr(*other_obj)) {
+    return NotImplementedType::object();
+  }
+  Str self(&scope, strUnderlying(thread, self_obj));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  return Bool::fromBool(self.compare(*other) != 0);
 }
 
 RawObject StrBuiltins::slice(Thread* thread, const Str& str,
@@ -772,20 +796,15 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfStr(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kStr);
   }
-
-  // TODO(T36619828): strict subclass of str
-  Str string(&scope, *self);
-  Object index(&scope, args.get(1));
-  if (runtime->isInstanceOfInt(*index)) {
-    // TODO(T38780562): Handle Int subclasses
-    if (!index.isInt()) {
-      UNIMPLEMENTED("int subclassing");
-    }
+  Str string(&scope, strUnderlying(thread, self));
+  Object index_obj(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*index_obj)) {
+    Int index(&scope, intUnderlying(thread, index_obj));
     if (!index.isSmallInt()) {
       return thread->raiseIndexErrorWithCStr(
           "cannot fit index into an index-sized integer");
     }
-    word idx = RawSmallInt::cast(*index).value();
+    word idx = index.asWord();
     if (idx < 0) {
       idx += string.length();
     }
@@ -795,8 +814,8 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
     byte c = string.charAt(idx);
     return SmallStr::fromBytes(View<byte>(&c, 1));
   }
-  if (index.isSlice()) {
-    Slice str_slice(&scope, *index);
+  if (index_obj.isSlice()) {
+    Slice str_slice(&scope, *index_obj);
     return slice(thread, string, str_slice);
   }
   // TODO(T27897506): use __index__ to get index
@@ -807,14 +826,12 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
 RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Object self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!self.isStr()) {
-    UNIMPLEMENTED("str.__iter__(<subtype of str>)");
-  }
+  Str self(&scope, strUnderlying(thread, self_obj));
   return runtime->newStrIterator(self);
 }
 
@@ -837,10 +854,7 @@ RawObject StrBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfStr(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!self_obj.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str self(&scope, *self_obj);
+  Str self(&scope, strUnderlying(thread, self_obj));
   const word self_len = self.length();
   word output_size = 0;
   word squote = 0;
@@ -946,26 +960,20 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!self.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str str(&scope, *self);
-  Object other(&scope, args.get(1));
-  if (other.isNoneType()) {
+  Str str(&scope, strUnderlying(thread, self_obj));
+  Object other_obj(&scope, args.get(1));
+  if (other_obj.isNoneType()) {
     return strStripSpaceLeft(thread, str);
   }
-  if (!runtime->isInstanceOfStr(*other)) {
+  if (!runtime->isInstanceOfStr(*other_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "str.lstrip() arg must be None or str");
   }
-  if (!other.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str chars(&scope, *other);
+  Str chars(&scope, strUnderlying(thread, other_obj));
   return strStripLeft(thread, str, chars);
 }
 
@@ -973,26 +981,20 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!self.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str str(&scope, *self);
-  Object other(&scope, args.get(1));
-  if (other.isNoneType()) {
+  Str str(&scope, strUnderlying(thread, self_obj));
+  Object other_obj(&scope, args.get(1));
+  if (other_obj.isNoneType()) {
     return strStripSpaceRight(thread, str);
   }
-  if (!runtime->isInstanceOfStr(*other)) {
+  if (!runtime->isInstanceOfStr(*other_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "str.rstrip() arg must be None or str");
   }
-  if (!other.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str chars(&scope, *other);
+  Str chars(&scope, strUnderlying(thread, other_obj));
   return strStripRight(thread, str, chars);
 }
 
@@ -1000,26 +1002,20 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kStr);
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfStr(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kStr);
   }
-  if (!self.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str str(&scope, *self);
-  Object other(&scope, args.get(1));
-  if (other.isNoneType()) {
+  Str str(&scope, strUnderlying(thread, self_obj));
+  Object other_obj(&scope, args.get(1));
+  if (other_obj.isNoneType()) {
     return strStripSpace(thread, str);
   }
-  if (!runtime->isInstanceOfStr(*other)) {
+  if (!runtime->isInstanceOfStr(*other_obj)) {
     return thread->raiseTypeErrorWithCStr(
         "str.strip() arg must be None or str");
   }
-  if (!other.isStr()) {
-    UNIMPLEMENTED("Strict subclass of string");
-  }
-  Str chars(&scope, *other);
+  Str chars(&scope, strUnderlying(thread, other_obj));
   return strStrip(thread, str, chars);
 }
 

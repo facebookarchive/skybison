@@ -4,6 +4,7 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "runtime.h"
+#include "str-builtins.h"
 
 namespace python {
 
@@ -291,18 +292,21 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
 RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
                                              word nargs) {
   HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Arguments args(frame, nargs);
-  DCHECK(args.get(0).isStr(), "First arg to _utf_8_encode must be str");
-  Str data(&scope, args.get(0));
-  DCHECK(args.get(1).isStr(), "Second arg to _utf_8_encode must be str");
-  Str errors(&scope, args.get(1));
+  Object data_obj(&scope, args.get(0));
+  DCHECK(runtime->isInstanceOfStr(*data_obj),
+         "First arg to _utf_8_encode must be str");
+  Str data(&scope, strUnderlying(thread, data_obj));
+  Object errors_obj(&scope, args.get(1));
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _utf_8_encode must be str");
+  Str errors(&scope, strUnderlying(thread, errors_obj));
   DCHECK(args.get(2).isInt(), "Third arg to _utf_8_encode must be int");
   Int index_obj(&scope, args.get(2));
   DCHECK(args.get(3).isByteArray(),
          "Fourth arg to _utf_8_encode must be bytearray");
   ByteArray output(&scope, args.get(3));
-
-  Runtime* runtime = thread->runtime();
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
   word index = index_obj.asWord();

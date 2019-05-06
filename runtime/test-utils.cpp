@@ -19,6 +19,7 @@
 #include "int-builtins.h"
 #include "os.h"
 #include "runtime.h"
+#include "str-builtins.h"
 #include "sys-module.h"
 #include "thread.h"
 #include "utils.h"
@@ -461,7 +462,7 @@ RawObject listFromRange(word start, word stop) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *str_obj) << "'";
   }
-  Str str(&scope, *str_obj);
+  Str str(&scope, strUnderlying(thread, str_obj));
   if (!str.equalsCStr(c_str)) {
     unique_c_ptr<char> str_ptr(str.toCStr());
     return ::testing::AssertionFailure()

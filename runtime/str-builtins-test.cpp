@@ -24,7 +24,7 @@ TEST(StrBuiltinsTest, BuiltinBase) {
   EXPECT_EQ(str.builtinBase(), LayoutId::kStr);
 }
 
-TEST(StrBuiltinsTest, RichCompareStringEQ) {  // pystone dependency
+TEST(StrBuiltinsTest, RichCompareStringEQ) {
   const char* src = R"(
 a = "__main__"
 if (a == "__main__"):
@@ -37,17 +37,43 @@ else:
   EXPECT_EQ(output, "foo\n");
 }
 
-TEST(StrBuiltinsTest, RichCompareStringNE) {  // pystone dependency
+TEST(StrBuiltinsTest, RichCompareStringEQWithSubClass) {
   const char* src = R"(
-a = "__main__"
-if (a != "__main__"):
+class SubStr(str): pass
+a = SubStr("__main__")
+if (a == "__main__"):
   print("foo")
 else:
   print("bar")
 )";
   Runtime runtime;
   std::string output = compileAndRunToString(&runtime, src);
-  EXPECT_EQ(output, "bar\n");
+  EXPECT_EQ(output, "foo\n");
+}
+
+TEST(StrBuiltinsTest, RichCompareStringNE) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+a = "__main__"
+result = "bar"
+if (a != "__main__"):
+  result = "foo"
+)")
+                   .isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "bar"));
+}
+
+TEST(StrBuiltinsTest, RichCompareStringNEWithSubClass) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+a = SubStr("apple")
+result = "bar"
+if (a != "apple"):
+  result = "foo"
+)")
+                   .isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "bar"));
 }
 
 TEST(StrBuiltinsTest, RichCompareSingleCharLE) {
@@ -72,6 +98,22 @@ a_le_a = 'a' <= 'a'
   EXPECT_EQ(*a_le_a, Bool::trueObj());
 }
 
+TEST(StrBuiltinsTest, RichCompareSingleCharLEWithSubClass) {
+  Runtime runtime;
+
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class S(str): pass
+a_le_b = S('a') <= S('b')
+b_le_a = S('a') >= S('b')
+a_le_a = S('a') <= S('a')
+)")
+                   .isError());
+
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "a_le_b"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "b_le_a"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime, "__main__", "a_le_a"), Bool::trueObj());
+}
+
 TEST(StrBuiltinsTest, LowerOnASCIILettersReturnsLowerCaseString) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -87,6 +129,20 @@ c = "hellO".lower()
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
   EXPECT_TRUE(isStrEqualsCStr(*b, "hello"));
   EXPECT_TRUE(isStrEqualsCStr(*c, "hello"));
+}
+
+TEST(StrBuiltinsTest, LowerOnASCIILettersWithSubClassReturnsLowerCaseString) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+a = SubStr("HELLO").lower()
+b = SubStr("HeLLo").lower()
+c = SubStr("hellO").lower()
+)")
+                   .isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "a"), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "b"), "hello"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "c"), "hello"));
 }
 
 TEST(StrBuiltinsTest, LowerOnLowercaseASCIILettersReturnsSameString) {
@@ -208,6 +264,22 @@ TEST(StrBuiltinsTest, DunderAddWithTwoStringsReturnsConcatenatedString) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "helloworld"));
 }
 
+TEST(StrBuiltinsTest,
+     DunderAddWithTwoStringsOfSubClassReturnsConcatenatedString) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+str1 = SubStr("hello")
+str2 = SubStr("world")
+)")
+                   .isError());
+  Object str1(&scope, moduleAt(&runtime, "__main__", "str1"));
+  Object str2(&scope, moduleAt(&runtime, "__main__", "str2"));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderAdd, str1, str2));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "helloworld"));
+}
+
 TEST(StrBuiltinsTest, DunderAddWithLeftEmptyAndReturnsRight) {
   Runtime runtime;
   HandleScope scope;
@@ -255,6 +327,18 @@ TEST(StrBuiltinsTest, DunderBoolWithNonEmptyStringReturnsTrue) {
   HandleScope scope;
   Str str(&scope, runtime.newStrFromCStr("hello"));
   EXPECT_EQ(runBuiltin(StrBuiltins::dunderBool, str), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, DunderBoolWithNonEmptyStringOfSubClassReturnsTrue) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr("hello")
+)")
+                   .isError());
+  Object substr(&scope, moduleAt(&runtime, "__main__", "substr"));
+  EXPECT_EQ(runBuiltin(StrBuiltins::dunderBool, substr), Bool::trueObj());
 }
 
 TEST(StrBuiltinsTest, DunderLenReturnsLength) {
@@ -493,6 +577,20 @@ TEST(StrBuiltinsTest, IndexWithNonNegativeIntIndexesFromBeginning) {
   Runtime runtime;
   HandleScope scope;
   Str hello(&scope, runtime.newStrFromCStr("hello"));
+  Int index(&scope, RawSmallInt::fromWord(4));
+  Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "o"));
+}
+
+TEST(StrBuiltinsTest, IndexWithSubClassAndNonNegativeIntIndexesFromBeginning) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr("hello")
+)")
+                   .isError());
+  Object hello(&scope, moduleAt(&runtime, "__main__", "substr"));
   Int index(&scope, RawSmallInt::fromWord(4));
   Object result(&scope, runBuiltin(StrBuiltins::dunderGetItem, hello, index));
   EXPECT_TRUE(isStrEqualsCStr(*result, "o"));
@@ -921,6 +1019,17 @@ a = "hello".__repr__()
   Str a(&scope, moduleAt(&runtime, "__main__", "a"));
 
   EXPECT_TRUE(isStrEqualsCStr(*a, "'hello'"));
+}
+
+TEST(StrBuiltinsTest, DunderReprOnASCIIStrOfSubClass) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr("hello")
+a = substr.__repr__()
+  )")
+                   .isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "a"), "'hello'"));
 }
 
 TEST(StrBuiltinsTest, DunderReprOnASCIINonPrintable) {
@@ -1799,6 +1908,20 @@ TEST(StrBuiltinsTest, LStripWithNoneArgStripsLeft) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World "));
 }
 
+TEST(StrBuiltinsTest, LStripWithSubClassAndNonArgStripsLeft) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr(" Hello World ")
+)")
+                   .isError());
+  Object str(&scope, moduleAt(&runtime, "__main__", "substr"));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(StrBuiltins::lstrip, str, none));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World "));
+}
+
 TEST(StrBuiltinsTest, RStripWithNoneArgStripsRight) {
   Runtime runtime;
   HandleScope scope;
@@ -1808,10 +1931,38 @@ TEST(StrBuiltinsTest, RStripWithNoneArgStripsRight) {
   EXPECT_TRUE(isStrEqualsCStr(*result, " Hello World"));
 }
 
+TEST(StrBuiltinsTest, RStripWithSubClassAndNoneArgStripsRight) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr(" Hello World ")
+)")
+                   .isError());
+  Object str(&scope, moduleAt(&runtime, "__main__", "substr"));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(StrBuiltins::rstrip, str, none));
+  EXPECT_TRUE(isStrEqualsCStr(*result, " Hello World"));
+}
+
 TEST(StrBuiltinsTest, StripWithoutArgsStripsBoth) {
   Runtime runtime;
   HandleScope scope;
   Object str(&scope, runtime.newStrFromCStr(" \n\tHello World\n\t "));
+  Object none(&scope, NoneType::object());
+  Object result(&scope, runBuiltin(StrBuiltins::strip, str, none));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World"));
+}
+
+TEST(StrBuiltinsTest, StripWithSubClassAndWithoutArgsStripsBoth) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr(" \n\tHello World\n\t ")
+)")
+                   .isError());
+  Object str(&scope, moduleAt(&runtime, "__main__", "substr"));
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(StrBuiltins::strip, str, none));
   EXPECT_TRUE(isStrEqualsCStr(*result, "Hello World"));
@@ -1931,6 +2082,19 @@ TEST(StrBuiltinsTest, DunderIterReturnsStrIter) {
   Str empty_str(&scope, Str::empty());
   Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
   ASSERT_TRUE(iter.isStrIterator());
+}
+
+TEST(StrBuiltinsTest, DunderIterWithSubClassReturnsStrIterator) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr("")
+)")
+                   .isError());
+  Object empty_str(&scope, moduleAt(&runtime, "__main__", "substr"));
+  Object iter(&scope, runBuiltin(StrBuiltins::dunderIter, empty_str));
+  EXPECT_TRUE(iter.isStrIterator());
 }
 
 TEST(StrIteratorBuiltinsTest, CallDunderNextReadsAsciiCharactersSequentially) {
@@ -2891,6 +3055,20 @@ c = "hellO".upper()
   EXPECT_TRUE(isStrEqualsCStr(*c, "HELLO"));
 }
 
+TEST(StrBuiltinsTest, UpperOnASCIILettersOfSubClassReturnsUpperCaseString) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+a = SubStr("hello").upper()
+b = SubStr("HeLLo").upper()
+c = SubStr("hellO").upper()
+)")
+                   .isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "a"), "HELLO"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "b"), "HELLO"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "c"), "HELLO"));
+}
+
 TEST(StrBuiltinsTest, UpperOnUppercaseASCIILettersReturnsSameString) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -3029,6 +3207,30 @@ print(result)
 )")
                    .isError());
   EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+}
+
+TEST(StrBuiltinsTest, StrUnderlyingWithStrReturnsSameStr) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Str str(&scope, runtime.newStrFromCStr("hello"));
+  Object underlying(&scope, strUnderlying(thread, str));
+  EXPECT_EQ(*str, *underlying);
+}
+
+TEST(StrBuiltinsTest, StrUnderlyingWithSubClassReturnsUnderlyingStr) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubStr(str): pass
+substr = SubStr("some string")
+)")
+                   .isError());
+  Object substr(&scope, moduleAt(&runtime, "__main__", "substr"));
+  ASSERT_FALSE(substr.isStr());
+  Object underlying(&scope, strUnderlying(thread, substr));
+  EXPECT_TRUE(isStrEqualsCStr(*underlying, "some string"));
 }
 
 }  // namespace python

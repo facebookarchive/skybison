@@ -1536,6 +1536,33 @@ def not_a_function():
                             "_patch can only patch functions"));
 }
 
+TEST(StrBuiltinsTest, UnderStrFromStrWithStrTypeReturnsValueOfStrType) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+result = _str_from_str(str, 'value')
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(runtime.isInstanceOfStr(*result));
+  EXPECT_TRUE(result.isStr());
+}
+
+TEST(StrBuiltinsTest,
+     UnderStrFromStrWithSubClassTypeReturnsValueOfSubClassType) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Sub(str): pass
+result = _str_from_str(Sub, 'value')
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object sub(&scope, moduleAt(&runtime, "__main__", "Sub"));
+  EXPECT_EQ(runtime.typeOf(*result), sub);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "value"));
+}
+
 TEST(BuiltinsModuleTest, AllOnListWithOnlyTrueReturnsTrue) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(

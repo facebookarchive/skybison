@@ -1349,6 +1349,19 @@ class RawUserIntBase : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(UserIntBase);
 };
 
+class RawUserStrBase : public RawHeapObject {
+ public:
+  // Getters and setters.
+  RawObject value() const;
+  void setValue(RawObject value) const;
+
+  // RawLayout.
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UserStrBase);
+};
+
 class RawComplex : public RawHeapObject {
  public:
   // Getters
@@ -4065,6 +4078,17 @@ inline RawObject RawUserIntBase::value() const {
 inline void RawUserIntBase::setValue(RawObject value) const {
   DCHECK(value.isSmallInt() || value.isLargeInt(),
          "Only int types, not bool, are permitted as a value.");
+  instanceVariableAtPut(kValueOffset, value);
+}
+
+// RawUserStrBase
+
+inline RawObject RawUserStrBase::value() const {
+  return instanceVariableAt(kValueOffset);
+}
+
+inline void RawUserStrBase::setValue(RawObject value) const {
+  DCHECK(value.isStr(), "Only str type is permitted as a value.");
   instanceVariableAtPut(kValueOffset, value);
 }
 
