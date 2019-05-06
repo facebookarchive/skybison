@@ -1,10 +1,10 @@
+#include <pthread.h>
+
 #include "cpython-func.h"
 #include "cpython-types.h"
-
-#include "pythread.h"
-
 #include "globals.h"
 #include "mutex.h"
+#include "pythread.h"
 #include "utils.h"
 
 namespace python {
@@ -29,6 +29,10 @@ PY_EXPORT int PyThread_acquire_lock(PyThread_type_lock lock, int waitflag) {
 
 PY_EXPORT void PyThread_release_lock(PyThread_type_lock lock) {
   static_cast<Mutex*>(lock)->unlock();
+}
+
+PY_EXPORT long PyThread_get_thread_ident() {
+  return bit_cast<long>(pthread_self());
 }
 
 }  // namespace python

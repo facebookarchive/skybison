@@ -12,6 +12,10 @@ using namespace testing;
 
 using ThreadExtensionApiTest = ExtensionApi;
 
+TEST_F(ThreadExtensionApiTest, GetThreadIdentReturnsSameValue) {
+  EXPECT_EQ(PyThread_get_thread_ident(), PyThread_get_thread_ident());
+}
+
 TEST_F(ThreadExtensionApiTest, TryLockWithBusyLockReturnsFailure) {
   PyThread_type_lock lock = PyThread_allocate_lock();
   ASSERT_NE(lock, nullptr);
