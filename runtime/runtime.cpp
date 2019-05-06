@@ -2205,7 +2205,7 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
       // escape into slow path
       return NoneType::object();
     }
-    Int index(&scope, *item);
+    Int index(&scope, intUnderlying(thread, item));
     OptInt<byte> current_byte = index.asInt<byte>();
     if (current_byte.error == CastError::None) {
       dst[idx] = current_byte.value;

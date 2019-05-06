@@ -276,6 +276,25 @@ TEST(RuntimeBytesTest, FromTupleWithBigIntRaisesValueError) {
                             "bytes must be in range(0, 256)"));
 }
 
+TEST(RuntimeBytesTest, FromTupleWithIntSubclassReturnsBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C(int): pass
+a = C(97)
+b = C(98)
+c = C(99)
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime.newTuple(3));
+  tuple.atPut(0, moduleAt(&runtime, "__main__", "a"));
+  tuple.atPut(1, moduleAt(&runtime, "__main__", "b"));
+  tuple.atPut(2, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope, runtime.bytesFromTuple(thread, tuple, 3));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "abc"));
+}
+
 TEST(RuntimeBytesTest, Subseq) {
   Runtime runtime;
   Thread* thread = Thread::current();
