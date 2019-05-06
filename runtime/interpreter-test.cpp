@@ -81,6 +81,28 @@ value = Foo()
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
+TEST(InterpreterTest, IsTrueWithIntSubclassDunderLenUsesBaseInt) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(int): pass
+class Bar:
+  def __init__(self, length):
+    self.length = Foo(length)
+  def __len__(self):
+    return self.length
+true_value = Bar(10)
+false_value = Bar(0)
+)")
+                   .isError());
+  Object true_value(&scope, moduleAt(&runtime, "__main__", "true_value"));
+  Object false_value(&scope, moduleAt(&runtime, "__main__", "false_value"));
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, true_value), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, frame, false_value), Bool::falseObj());
+}
+
 TEST(InterpreterTest, IsTrueDunderLen) {
   Runtime runtime;
   Thread* thread = Thread::current();

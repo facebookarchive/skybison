@@ -7,6 +7,7 @@
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
+#include "int-builtins.h"
 #include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
@@ -642,8 +643,8 @@ RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
   if (!method.isError()) {
     Object result(&scope, callMethod1(thread, caller, method, self));
     if (result.isError()) return *result;
-    if (result.isInt()) {
-      Int integer(&scope, *result);
+    if (thread->runtime()->isInstanceOfInt(*result)) {
+      Int integer(&scope, intUnderlying(thread, result));
       if (integer.isPositive()) return Bool::trueObj();
       if (integer.isZero()) return Bool::falseObj();
       return thread->raiseValueErrorWithCStr("__len__() should return >= 0");
@@ -795,7 +796,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
 
   TryBlock block = frame->blockStack()->peek();
   if (block.kind() == TryBlock::kLoop && why == TryBlock::Why::kContinue) {
-    ctx->pc = RawSmallInt::cast(*value).value();
+    ctx->pc = SmallInt::cast(*value).value();
     return true;
   }
 
@@ -824,7 +825,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
   if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
     frame->pushValue(*value);
   }
-  frame->pushValue(RawSmallInt::fromWord(static_cast<int>(why)));
+  frame->pushValue(SmallInt::fromWord(static_cast<word>(why)));
   ctx->pc = block.handler();
   return true;
 }
@@ -1424,7 +1425,7 @@ bool Interpreter::doWithCleanupStart(Context* ctx, word) {
   } else if (exc.isSmallInt()) {
     // The with block exited for a return, continue, or break. __exit__ will be
     // below 'why' and an optional return value (depending on 'why').
-    auto why = static_cast<TryBlock::Why>(RawSmallInt::cast(*exc).value());
+    auto why = static_cast<TryBlock::Why>(SmallInt::cast(*exc).value());
     if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
       exit = frame->peek(1);
       frame->setValueAt(frame->peek(0), 1);
