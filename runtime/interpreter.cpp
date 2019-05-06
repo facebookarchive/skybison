@@ -7,6 +7,7 @@
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
+#include "ic.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
 #include "objects.h"
@@ -710,6 +711,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
     }
   }
   function.setFastGlobals(runtime->computeFastGlobals(code, globals, builtins));
+  icRewriteBytecode(thread, function);
   return *function;
 }
 
@@ -1966,6 +1968,12 @@ bool Interpreter::doLoadAttr(Context* ctx, word arg) {
   return false;
 }
 
+bool Interpreter::doLoadAttrCached(Context* ctx, word arg) {
+  // TODO(matthiasb): Actual caching will be added next.
+  word name_index = icOriginalArg(*ctx->function, arg);
+  return doLoadAttr(ctx, name_index);
+}
+
 static RawObject excMatch(Interpreter::Context* ctx, const Object& left,
                           const Object& right) {
   Runtime* runtime = ctx->thread->runtime();
@@ -2704,24 +2712,12 @@ bool wrapHandler(Interpreter::Context* ctx, word arg) {
   return op(ctx, arg);
 }
 
-const BoolOp kOpTable[] = {
-#define HANDLER(name, value, handler) wrapHandler<Interpreter::handler>,
-    FOREACH_BYTECODE(HANDLER)
-#undef HANDLER
-};
-
-RawObject Interpreter::execute(Thread* thread, Frame* frame) {
-  HandleScope scope(thread);
-  Code code(&scope, frame->code());
-  Bytes byte_array(&scope, code.code());
-  Context ctx;
-  ctx.pc = frame->virtualPC();
-  ctx.thread = thread;
-  ctx.frame = frame;
-
-  auto do_return = [&ctx] {
-    RawObject return_val = ctx.frame->popValue();
-    ctx.thread->popFrame();
+static inline RawObject executeWithBytecode(Interpreter::Context* ctx,
+                                            const Bytes& byte_array,
+                                            const BoolOp* optable) {
+  auto do_return = [ctx] {
+    RawObject return_val = ctx->frame->popValue();
+    ctx->thread->popFrame();
     return return_val;
   };
 
@@ -2731,24 +2727,67 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
   // down, we should restructure it to take advantage of this fact, likely by
   // adding an alternate entry point that always throws (and asserts that an
   // exception is pending).
-  if (thread->hasPendingException()) {
-    DCHECK(code.hasCoroutineOrGenerator(),
+  if (ctx->thread->hasPendingException()) {
+    DCHECK(RawCode::cast(ctx->frame->code()).hasCoroutineOrGenerator(),
            "Entered dispatch loop with a pending exception outside of "
            "generator/coroutine");
-    if (unwind(&ctx)) return do_return();
+    if (Interpreter::unwind(ctx)) return do_return();
   }
 
   for (;;) {
-    frame->setVirtualPC(ctx.pc);
-    Bytecode bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
-    int32_t arg = byte_array.byteAt(ctx.pc++);
+    ctx->frame->setVirtualPC(ctx->pc);
+    Bytecode bc = static_cast<Bytecode>(byte_array.byteAt(ctx->pc++));
+    int32_t arg = byte_array.byteAt(ctx->pc++);
     while (bc == Bytecode::EXTENDED_ARG) {
-      bc = static_cast<Bytecode>(byte_array.byteAt(ctx.pc++));
-      arg = (arg << 8) | byte_array.byteAt(ctx.pc++);
+      bc = static_cast<Bytecode>(byte_array.byteAt(ctx->pc++));
+      arg = (arg << 8) | byte_array.byteAt(ctx->pc++);
     }
 
-    if (kOpTable[bc](&ctx, arg)) return do_return();
+    if (optable[bc](ctx, arg)) return do_return();
   }
+}
+
+RawObject Interpreter::execute(Thread* thread, Frame* frame) {
+  HandleScope scope(thread);
+  Code code(&scope, frame->code());
+  Bytes byte_array(&scope, code.code());
+  Context ctx;
+  ctx.thread = thread;
+  ctx.frame = frame;
+  ctx.function = nullptr;
+  ctx.caches = nullptr;
+  ctx.pc = frame->virtualPC();
+
+  static const BoolOp op_table[] = {
+#define HANDLER(name, value, handler) wrapHandler<Interpreter::handler>,
+      FOREACH_BYTECODE(HANDLER)
+#undef HANDLER
+  };
+  return executeWithBytecode(&ctx, byte_array, op_table);
+}
+
+RawObject Interpreter::executeWithCaching(Thread* thread, Frame* frame,
+                                          const Function& function) {
+  HandleScope scope(thread);
+  DCHECK(frame->code() == function.code(), "function should match code");
+  Bytes byte_array(&scope, function.rewrittenBytecode());
+  Tuple caches(&scope, function.caches());
+  Context ctx;
+  ctx.thread = thread;
+  ctx.frame = frame;
+  ctx.function = &function;
+  ctx.caches = &caches;
+  ctx.pc = frame->virtualPC();
+
+  static const BoolOp op_table[] = {
+#define HANDLER(name, value, handler) wrapHandler<Interpreter::handler>,
+#define CACHING_HANDLER(name, value, handler)                                  \
+  wrapHandler<Interpreter::handler##Cached>,
+      FOREACH_BYTECODE_CACHING(HANDLER, CACHING_HANDLER)
+#undef CACHING_HANDLER
+#undef HANDLER
+  };
+  return executeWithBytecode(&ctx, byte_array, op_table);
 }
 
 }  // namespace python

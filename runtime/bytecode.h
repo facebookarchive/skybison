@@ -2,13 +2,15 @@
 
 namespace python {
 
-// Define the set of bytes codes
-// The first macro parameter, V, is for primary names of byte codes
-// and the second ALIAS is used to capture a value or position in the
-// enumeration as a secondary name.  The third parameter is the
-// handler for the bytecode.
+// Define the set of bytes codes.
+// `FOREACH_BYTECODE_CACHING` expects two macros as arguments: `V` for opcodes
+// that do not need a slot in the inline cache, and `C` for opcodes that do. For
+// each opcode `V` or `C` will be called with 3 arguments:
+//   1. The opcode's name
+//   2. The opcode's numeric value
+//   3. The opcode handler's name.
 
-#define FOREACH_BYTECODE(V)                                                    \
+#define FOREACH_BYTECODE_CACHING(V, C)                                         \
   V(UNUSED_BYTECODE_0, 0, doInvalidBytecode)                                   \
   V(POP_TOP, 1, doPopTop)                                                      \
   V(ROT_TWO, 2, doRotTwo)                                                      \
@@ -115,7 +117,7 @@ namespace python {
   V(BUILD_LIST, 103, doBuildList)                                              \
   V(BUILD_SET, 104, doBuildSet)                                                \
   V(BUILD_MAP, 105, doBuildMap)                                                \
-  V(LOAD_ATTR, 106, doLoadAttr)                                                \
+  C(LOAD_ATTR, 106, doLoadAttr)                                                \
   V(COMPARE_OP, 107, doCompareOp)                                              \
   V(IMPORT_NAME, 108, doImportName)                                            \
   V(IMPORT_FROM, 109, doImportFrom)                                            \
@@ -267,6 +269,10 @@ namespace python {
   V(UNUSED_BYTECODE_255, 255, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_256, 256, doInvalidBytecode)                               \
   V(EXCEPT_HANDLER, 257, doInvalidBytecode)
+
+// Convenience version of `FOREACH_BYTECODE_CACHING` that does not differentiate
+// between byte codes needing or not needing an inline cache slot.
+#define FOREACH_BYTECODE(V) FOREACH_BYTECODE_CACHING(V, V)
 
 enum Bytecode {
 #define ENUM(name, value, handler) name = value,

@@ -7,7 +7,19 @@
 
 namespace python {
 
-static bool needsCache(Bytecode bc) { return bc == Bytecode::LOAD_ATTR; }
+static bool needsCache(Bytecode bc) {
+  switch (bc) {
+#define NOP(name, value, handler)
+#define CACHING_CASE(name, value, handler)                                     \
+  case name:                                                                   \
+    return true;
+    FOREACH_BYTECODE_CACHING(NOP, CACHING_CASE)
+#undef CACHING_CASE
+#undef NOP
+    default:
+      return false;
+  }
+}
 
 void icRewriteBytecode(Thread* thread, const Function& function) {
   HandleScope scope(thread);

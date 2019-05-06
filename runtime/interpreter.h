@@ -32,6 +32,8 @@ class Interpreter {
   };
 
   static RawObject execute(Thread* thread, Frame* frame);
+  static RawObject executeWithCaching(Thread* thread, Frame* frame,
+                                      const Function& function);
 
   static RawObject call(Thread* thread, Frame* frame, word nargs);
   static RawObject callKw(Thread* thread, Frame* frame, word nargs);
@@ -126,6 +128,8 @@ class Interpreter {
   struct Context {
     Thread* thread;
     Frame* frame;
+    const Function* function;
+    const Tuple* caches;
     word pc;
   };
 
@@ -259,6 +263,7 @@ class Interpreter {
   static void doBuildSet(Context* ctx, word arg);
   static void doBuildMap(Context* ctx, word arg);
   static bool doLoadAttr(Context* ctx, word arg);
+  static bool doLoadAttrCached(Context* ctx, word arg);
   static bool doCompareOp(Context* ctx, word arg);
   static bool doImportName(Context* ctx, word arg);
   static bool doImportFrom(Context* ctx, word arg);
