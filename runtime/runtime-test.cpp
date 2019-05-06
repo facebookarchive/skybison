@@ -2483,78 +2483,82 @@ TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
 
 TEST(RuntimeIntTest, NormalizeLargeIntToSmallInt) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   const uword digits[] = {42};
   LargeInt lint_42(&scope, newLargeIntWithDigits(digits));
-  Object norm_42(&scope, runtime.normalizeLargeInt(lint_42));
+  Object norm_42(&scope, runtime.normalizeLargeInt(thread, lint_42));
   EXPECT_TRUE(isIntEqualsWord(*norm_42, 42));
 
   const uword digits2[] = {uword(-1)};
   LargeInt lint_neg1(&scope, newLargeIntWithDigits(digits2));
-  Object norm_neg1(&scope, runtime.normalizeLargeInt(lint_neg1));
+  Object norm_neg1(&scope, runtime.normalizeLargeInt(thread, lint_neg1));
   EXPECT_TRUE(isIntEqualsWord(*norm_neg1, -1));
 
   const uword digits3[] = {uword(RawSmallInt::kMinValue)};
   LargeInt lint_min(&scope, newLargeIntWithDigits(digits3));
-  Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
+  Object norm_min(&scope, runtime.normalizeLargeInt(thread, lint_min));
   EXPECT_TRUE(isIntEqualsWord(*norm_min, RawSmallInt::kMinValue));
 
   const uword digits4[] = {RawSmallInt::kMaxValue};
   LargeInt lint_max(&scope, newLargeIntWithDigits(digits4));
-  Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
+  Object norm_max(&scope, runtime.normalizeLargeInt(thread, lint_max));
   EXPECT_TRUE(isIntEqualsWord(*norm_max, RawSmallInt::kMaxValue));
 
   const uword digits5[] = {uword(-4), kMaxUword};
   LargeInt lint_sext_neg_4(&scope, newLargeIntWithDigits(digits5));
-  Object norm_neg_4(&scope, runtime.normalizeLargeInt(lint_sext_neg_4));
+  Object norm_neg_4(&scope, runtime.normalizeLargeInt(thread, lint_sext_neg_4));
   EXPECT_TRUE(isIntEqualsWord(*norm_neg_4, -4));
 
   const uword digits6[] = {uword(-13), kMaxUword, kMaxUword, kMaxUword};
   LargeInt lint_sext_neg_13(&scope, newLargeIntWithDigits(digits6));
-  Object norm_neg_13(&scope, runtime.normalizeLargeInt(lint_sext_neg_13));
+  Object norm_neg_13(&scope,
+                     runtime.normalizeLargeInt(thread, lint_sext_neg_13));
   EXPECT_TRUE(isIntEqualsWord(*norm_neg_13, -13));
 
   const uword digits7[] = {66, 0};
   LargeInt lint_zext_66(&scope, newLargeIntWithDigits(digits7));
-  Object norm_66(&scope, runtime.normalizeLargeInt(lint_zext_66));
+  Object norm_66(&scope, runtime.normalizeLargeInt(thread, lint_zext_66));
   EXPECT_TRUE(isIntEqualsWord(*norm_66, 66));
 }
 
 TEST(RuntimeIntTest, NormalizeLargeIntToLargeInt) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   const uword digits[] = {kMaxWord};
   LargeInt lint_max(&scope, newLargeIntWithDigits(digits));
-  Object norm_max(&scope, runtime.normalizeLargeInt(lint_max));
+  Object norm_max(&scope, runtime.normalizeLargeInt(thread, lint_max));
   EXPECT_TRUE(isIntEqualsWord(*norm_max, kMaxWord));
 
   const uword digits2[] = {uword(kMinWord)};
   LargeInt lint_min(&scope, newLargeIntWithDigits(digits2));
-  Object norm_min(&scope, runtime.normalizeLargeInt(lint_min));
+  Object norm_min(&scope, runtime.normalizeLargeInt(thread, lint_min));
   EXPECT_TRUE(isIntEqualsWord(*norm_min, kMinWord));
 
   const uword digits3[] = {kMaxWord - 7, 0, 0};
   LargeInt lint_max_sub_7_zext(&scope, newLargeIntWithDigits(digits3));
-  Object norm_max_sub_7(&scope, runtime.normalizeLargeInt(lint_max_sub_7_zext));
+  Object norm_max_sub_7(&scope,
+                        runtime.normalizeLargeInt(thread, lint_max_sub_7_zext));
   EXPECT_TRUE(isIntEqualsWord(*norm_max_sub_7, kMaxWord - 7));
 
   const uword digits4[] = {uword(kMinWord) + 9, kMaxUword};
   LargeInt lint_min_plus_9_sext(&scope, newLargeIntWithDigits(digits4));
-  Object norm_min_plus_9(&scope,
-                         runtime.normalizeLargeInt(lint_min_plus_9_sext));
+  Object norm_min_plus_9(
+      &scope, runtime.normalizeLargeInt(thread, lint_min_plus_9_sext));
   EXPECT_TRUE(isIntEqualsWord(*norm_min_plus_9, kMinWord + 9));
 
   const uword digits5[] = {0, kMaxUword};
   LargeInt lint_no_sext(&scope, newLargeIntWithDigits(digits5));
-  Object norm_no_sext(&scope, runtime.normalizeLargeInt(lint_no_sext));
+  Object norm_no_sext(&scope, runtime.normalizeLargeInt(thread, lint_no_sext));
   const uword expected_digits1[] = {0, kMaxUword};
   EXPECT_TRUE(isIntEqualsDigits(*norm_no_sext, expected_digits1));
 
   const uword digits6[] = {kMaxUword, 0};
   LargeInt lint_no_zext(&scope, newLargeIntWithDigits(digits6));
-  Object norm_no_zext(&scope, runtime.normalizeLargeInt(lint_no_zext));
+  Object norm_no_zext(&scope, runtime.normalizeLargeInt(thread, lint_no_zext));
   const uword expected_digits2[] = {kMaxUword, 0};
   EXPECT_TRUE(isIntEqualsDigits(*norm_no_zext, expected_digits2));
 }

@@ -793,7 +793,7 @@ class Runtime {
 
   // Given a possibly invalid LargeInt remove redundant sign- and
   // zero-extension and convert to a SmallInt when possible.
-  RawObject normalizeLargeInt(const LargeInt& large_int);
+  RawObject normalizeLargeInt(Thread* thread, const LargeInt& large_int);
 
   // Replace the occurences of oldstr get replaced for newstr in src up
   // to maxcount. If no replacement happens, returns src itself, unmodified.

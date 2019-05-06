@@ -993,9 +993,9 @@ RawObject Runtime::newStrFromFmtV(Thread* thread, const char* fmt,
   va_copy(args_copy, args);
   HandleScope scope(thread);
   Str fmt_str(&scope, newStrFromCStr(fmt));
-  RawObject out_len = strFormat(thread, nullptr, 0, fmt_str, args);
-  if (out_len.isError()) return out_len;
-  word len = RawSmallInt::cast(out_len).value();
+  Object out_len(&scope, strFormat(thread, nullptr, 0, fmt_str, args));
+  if (out_len.isError()) return *out_len;
+  word len = SmallInt::cast(*out_len).value();
   unique_c_ptr<char> dst(static_cast<char*>(std::malloc(len + 1)));
   CHECK(dst != nullptr, "Buffer allocation failure");
   strFormat(thread, dst.get(), len, fmt_str, args_copy);
@@ -3564,7 +3564,7 @@ RawObject Runtime::layoutGetOverflowDict(Thread* thread,
                                          const Layout& layout) {
   DCHECK(layout.overflowAttributes().isSmallInt(),
          "layout must have dict overflow");
-  word offset = RawSmallInt::cast(layout.overflowAttributes()).value();
+  word offset = SmallInt::cast(layout.overflowAttributes()).value();
   HandleScope scope(thread);
   if (instance.instanceVariableAt(offset).isNoneType()) {
     // Lazily initialize the dict
@@ -3879,10 +3879,10 @@ void Runtime::freeApiHandles() {
   while (Dict::Bucket::nextItem(*buckets, &i)) {
     Object key(&scope, Dict::Bucket::key(*buckets, i));
     Object value(&scope, Dict::Bucket::value(*buckets, i));
-    auto handle = static_cast<ApiHandle*>(RawInt::cast(*value).asCPtr());
+    auto handle = static_cast<ApiHandle*>(Int::cast(*value).asCPtr());
     if (key.isModule()) {
       auto def = reinterpret_cast<PyModuleDef*>(
-          RawInt::cast(RawModule::cast(*key).def()).asCPtr());
+          Int::cast(Module::cast(*key).def()).asCPtr());
       if (def && def->m_free != nullptr) def->m_free(handle);
     }
   }
@@ -3891,7 +3891,7 @@ void Runtime::freeApiHandles() {
   i = Dict::Bucket::kFirst;
   while (Dict::Bucket::nextItem(*buckets, &i)) {
     Object value(&scope, Dict::Bucket::value(*buckets, i));
-    auto handle = static_cast<ApiHandle*>(RawInt::cast(*value).asCPtr());
+    auto handle = static_cast<ApiHandle*>(Int::cast(*value).asCPtr());
     std::free(handle->cache());
     std::free(handle);
     Dict::Bucket::setTombstone(*buckets, i);
@@ -3954,10 +3954,11 @@ RawObject Runtime::bytesToInt(Thread* thread, const Bytes& bytes,
       result.digitAtPut(d, digit);
     }
   }
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
-RawObject Runtime::normalizeLargeInt(const LargeInt& large_int) {
+RawObject Runtime::normalizeLargeInt(Thread* thread,
+                                     const LargeInt& large_int) {
   word shrink_to_digits = large_int.numDigits();
   for (word digit = large_int.digitAt(shrink_to_digits - 1), next_digit;
        shrink_to_digits > 1; --shrink_to_digits, digit = next_digit) {
@@ -3968,20 +3969,20 @@ RawObject Runtime::normalizeLargeInt(const LargeInt& large_int) {
       break;
     }
   }
-  if (shrink_to_digits == 1 && RawSmallInt::isValid(large_int.digitAt(0))) {
-    return RawSmallInt::fromWord(large_int.digitAt(0));
+  if (shrink_to_digits == 1 && SmallInt::isValid(large_int.digitAt(0))) {
+    return SmallInt::fromWord(large_int.digitAt(0));
   }
   if (shrink_to_digits == large_int.numDigits()) {
     return *large_int;
   }
 
   // Shrink.  Future Optimization: Shrink in-place instead of copying.
-  RawLargeInt result =
-      RawLargeInt::cast(heap()->createLargeInt(shrink_to_digits));
+  HandleScope scope(thread);
+  LargeInt result(&scope, heap()->createLargeInt(shrink_to_digits));
   for (word i = 0; i < shrink_to_digits; ++i) {
     result.digitAtPut(i, large_int.digitAt(i));
   }
-  return result;
+  return *result;
 }
 
 static uword addWithCarry(uword x, uword y, uword carry_in, uword* carry_out) {
@@ -3996,8 +3997,8 @@ static uword addWithCarry(uword x, uword y, uword carry_in, uword* carry_out) {
 RawObject Runtime::intAdd(Thread* thread, const Int& left, const Int& right) {
   if (left.isSmallInt() && right.isSmallInt()) {
     // Take a shortcut because we know the result fits in a word.
-    word left_digit = RawSmallInt::cast(*left).value();
-    word right_digit = RawSmallInt::cast(*right).value();
+    word left_digit = SmallInt::cast(*left).value();
+    word right_digit = SmallInt::cast(*right).value();
     return newInt(left_digit + right_digit);
   }
 
@@ -4026,7 +4027,7 @@ RawObject Runtime::intAdd(Thread* thread, const Int& left, const Int& right) {
   uword longer_sign_extension = longer.isNegative() ? kMaxUword : 0;
   uword high_digit = longer_sign_extension + shorter_sign_extension + carry;
   result.digitAtPut(result_digits - 1, high_digit);
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
 RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
@@ -4055,7 +4056,7 @@ RawObject Runtime::intBinaryAnd(Thread* thread, const Int& left,
       result.digitAtPut(i, 0);
     }
   }
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
 RawObject Runtime::intInvert(Thread* thread, const Int& value) {
@@ -4109,7 +4110,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
       result.digitAtPut(i, large_int.digitAt(i));
     }
     result.digitAtPut(num_digits, 0);
-    DCHECK(result.isValid(), "Invalid RawLargeInt");
+    DCHECK(result.isValid(), "Invalid LargeInt");
     return *result;
   }
   // The result of negating a number like `digits == {0, 0, ..., 0x800000.., 0}`
@@ -4121,7 +4122,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
     for (word i = 0; i < num_digits - 1; i++) {
       result.digitAtPut(i, large_int.digitAt(i));
     }
-    DCHECK(result.isValid(), "Invalid RawLargeInt");
+    DCHECK(result.isValid(), "Invalid LargeInt");
     return *result;
   }
 
@@ -4134,7 +4135,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
     result.digitAtPut(i, digit);
   }
   DCHECK(carry == 0, "Carry should be zero");
-  DCHECK(result.isValid(), "Invalid RawLargeInt");
+  DCHECK(result.isValid(), "Invalid LargeInt");
   return *result;
 }
 
@@ -4260,7 +4261,7 @@ static RawObject largeIntFromHalves(Thread* thread, const halfuword* halves,
         halves[i * 2] | (uword{halves[i * 2 + 1]} << kBitsPerHalfWord);
     result.digitAtPut(i, digit);
   }
-  return runtime->normalizeLargeInt(result);
+  return runtime->normalizeLargeInt(thread, result);
 }
 
 // Compute quotient and modulo of dividing a large integer through a divisor
@@ -4389,13 +4390,13 @@ static void divideWithBiggerDivisor(Thread* thread, const Int& dividend,
                                     const Int& divisor, Object* quotient,
                                     Object* modulo) {
   if (dividend.isZero()) {
-    if (quotient != nullptr) *quotient = RawSmallInt::fromWord(0);
-    if (modulo != nullptr) *modulo = RawSmallInt::fromWord(0);
+    if (quotient != nullptr) *quotient = SmallInt::fromWord(0);
+    if (modulo != nullptr) *modulo = SmallInt::fromWord(0);
     return;
   }
   bool same_sign = dividend.isNegative() == divisor.isNegative();
   if (quotient != nullptr) {
-    *quotient = RawSmallInt::fromWord(same_sign ? 0 : -1);
+    *quotient = SmallInt::fromWord(same_sign ? 0 : -1);
   }
   if (modulo != nullptr) {
     if (!same_sign) {
@@ -4439,7 +4440,7 @@ bool Runtime::intDivideModulo(Thread* thread, const Int& dividend,
     // produces a result that is bigger than the input.
     if (divisor_word == -1) {
       if (quotient != nullptr) *quotient = intNegate(thread, dividend);
-      if (modulo != nullptr) *modulo = RawSmallInt::fromWord(0);
+      if (modulo != nullptr) *modulo = SmallInt::fromWord(0);
       return true;
     }
     if (dividend_digits == 1) {
@@ -4660,7 +4661,7 @@ RawObject Runtime::intMultiply(Thread* thread, const Int& left,
     }
   }
 
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
 RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
@@ -4688,7 +4689,7 @@ RawObject Runtime::intBinaryOr(Thread* thread, const Int& left,
       result.digitAtPut(i, longer.digitAt(i));
     }
   }
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
 RawObject Runtime::intBinaryRshift(Thread* thread, const Int& num,
@@ -4747,7 +4748,7 @@ RawObject Runtime::intBinaryRshift(Thread* thread, const Int& num,
       prev = digit;
     }
   }
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
 RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
@@ -4755,7 +4756,7 @@ RawObject Runtime::intBinaryLshift(Thread* thread, const Int& num,
   DCHECK(!amount.isNegative(), "shift amount must be non-negative");
 
   word num_digits = num.numDigits();
-  if (num_digits == 1 && num.asWord() == 0) return RawSmallInt::fromWord(0);
+  if (num_digits == 1 && num.asWord() == 0) return SmallInt::fromWord(0);
   CHECK(amount.numDigits() == 1, "lshift result is too large");
 
   word amount_word = amount.asWord();
@@ -4839,15 +4840,15 @@ RawObject Runtime::intBinaryXor(Thread* thread, const Int& left,
       result.digitAtPut(i, longer.digitAt(i));
     }
   }
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
 RawObject Runtime::intSubtract(Thread* thread, const Int& left,
                                const Int& right) {
   if (left.isSmallInt() && right.isSmallInt()) {
     // Take a shortcut because we know the result fits in a word.
-    word left_digit = RawSmallInt::cast(*left).value();
-    word right_digit = RawSmallInt::cast(*right).value();
+    word left_digit = SmallInt::cast(*left).value();
+    word right_digit = SmallInt::cast(*right).value();
     return newInt(left_digit - right_digit);
   }
 
@@ -4882,7 +4883,7 @@ RawObject Runtime::intSubtract(Thread* thread, const Int& left,
   }
   uword high_digit = left_sign_extension - right_sign_extension - borrow;
   result.digitAtPut(result_digits - 1, high_digit);
-  return normalizeLargeInt(result);
+  return normalizeLargeInt(thread, result);
 }
 
 RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
