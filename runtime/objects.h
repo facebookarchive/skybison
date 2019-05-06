@@ -1759,6 +1759,18 @@ class RawFunction : public RawHeapObject {
   RawObject fastGlobals() const;
   void setFastGlobals(RawObject fast_globals) const;
 
+  // Bytecode rewritten to a variant that uses inline caching.
+  RawObject rewrittenBytecode() const;
+  void setRewrittenBytecode(RawObject rewritten_bytecode) const;
+
+  // Tuple with values of the inline caches. See `ic.h`.
+  RawObject caches() const;
+  void setCaches(RawObject cache) const;
+
+  // Original arguments for bytecode operations using the inline cache.
+  RawObject originalArguments() const;
+  void setOriginalArguments(RawObject originall_arguments) const;
+
   // The function's dictionary
   RawObject dict() const;
   void setDict(RawObject dict) const;
@@ -1778,7 +1790,10 @@ class RawFunction : public RawHeapObject {
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
   static const int kEntryExOffset = kEntryKwOffset + kPointerSize;
   static const int kFastGlobalsOffset = kEntryExOffset + kPointerSize;
-  static const int kDictOffset = kFastGlobalsOffset + kPointerSize;
+  static const int kRewrittenBytecodeOffset = kFastGlobalsOffset + kPointerSize;
+  static const int kCachesOffset = kRewrittenBytecodeOffset + kPointerSize;
+  static const int kOriginalArgumentsOffset = kCachesOffset + kPointerSize;
+  static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
   static const int kSize = kDictOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Function);
@@ -4391,6 +4406,32 @@ inline RawObject RawFunction::fastGlobals() const {
 
 inline void RawFunction::setFastGlobals(RawObject fast_globals) const {
   instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
+}
+
+inline RawObject RawFunction::rewrittenBytecode() const {
+  return instanceVariableAt(kRewrittenBytecodeOffset);
+}
+
+inline void RawFunction::setRewrittenBytecode(
+    RawObject rewritten_bytecode) const {
+  instanceVariableAtPut(kRewrittenBytecodeOffset, rewritten_bytecode);
+}
+
+inline RawObject RawFunction::caches() const {
+  return instanceVariableAt(kCachesOffset);
+}
+
+inline void RawFunction::setCaches(RawObject cache) const {
+  instanceVariableAtPut(kCachesOffset, cache);
+}
+
+inline RawObject RawFunction::originalArguments() const {
+  return instanceVariableAt(kOriginalArgumentsOffset);
+}
+
+inline void RawFunction::setOriginalArguments(
+    RawObject original_arguments) const {
+  instanceVariableAtPut(kOriginalArgumentsOffset, original_arguments);
 }
 
 inline RawObject RawFunction::dict() const {

@@ -251,6 +251,8 @@ add_library(
   runtime/handles.h
   runtime/heap.cpp
   runtime/heap.h
+  runtime/ic.cpp
+  runtime/ic.h
   runtime/imp-module.cpp
   runtime/imp-module.h
   runtime/int-builtins.cpp
@@ -417,6 +419,7 @@ add_library(
   runtime/generator-test.cpp
   runtime/handles-test.cpp
   runtime/heap-test.cpp
+  runtime/ic-test.cpp
   runtime/imp-module-test.cpp
   runtime/importlib-test.cpp
   runtime/int-builtins-test.cpp
