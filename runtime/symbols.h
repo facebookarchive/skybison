@@ -285,7 +285,6 @@ class Runtime;
   V(IsFrozen, "is_frozen")                                                     \
   V(IsFrozenPackage, "is_frozen_package")                                      \
   V(IsInstance, "isinstance")                                                  \
-  V(IsSubclass, "issubclass")                                                  \
   V(Items, "items")                                                            \
   V(Itertools, "itertools")                                                    \
   V(Join, "join")                                                              \
@@ -498,6 +497,8 @@ class Runtime;
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderTypeCheck, "_type_check")                                             \
+  V(UnderTypeCheckExact, "_type_check_exact")                                  \
+  V(UnderTypeIsSubclass, "_type_issubclass")                                   \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnimplemented, "_unimplemented")                                      \
   V(UnderWarnings, "_warnings")                                                \

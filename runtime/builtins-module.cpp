@@ -81,7 +81,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kGetattr, getattr},
     {SymbolId::kHasattr, hasattr},
     {SymbolId::kIsInstance, isinstance},
-    {SymbolId::kIsSubclass, issubclass},
     {SymbolId::kOrd, ord},
     {SymbolId::kSetattr, setattr},
     {SymbolId::kUnderAddress, underAddress},
@@ -122,6 +121,8 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
+    {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
+    {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -637,42 +638,6 @@ RawObject BuiltinsModule::isinstance(Thread* thread, Frame* frame, word nargs) {
   Object obj(&scope, args.get(0));
   Object type(&scope, args.get(1));
   return isinstanceImpl(thread, obj, type);
-}
-
-RawObject BuiltinsModule::issubclass(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object type_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr("issubclass() arg 1 must be a class");
-  }
-  Type type(&scope, *type_obj);
-  Object classinfo(&scope, args.get(1));
-  if (runtime->isInstanceOfType(*classinfo)) {
-    Type possible_superclass(&scope, *classinfo);
-    return Bool::fromBool(runtime->isSubclass(type, possible_superclass));
-  }
-  // If classinfo is not a tuple, then throw a TypeError.
-  if (!classinfo.isTuple()) {
-    return thread->raiseTypeErrorWithCStr(
-        "issubclass() arg 2 must be a class of tuple of classes");
-  }
-  // If classinfo is a tuple, try each of the values, and return
-  // True if the first argument is a subclass of any of them.
-  Tuple tuple_of_types(&scope, *classinfo);
-  for (word i = 0; i < tuple_of_types.length(); i++) {
-    // If any argument is not a type, then throw TypeError.
-    if (!runtime->isInstanceOfType(tuple_of_types.at(i))) {
-      return thread->raiseTypeErrorWithCStr(
-          "issubclass() arg 2 must be a class of tuple of classes");
-    }
-    Type possible_superclass(&scope, tuple_of_types.at(i));
-    // If any of the types are a superclass, return true.
-    if (runtime->isSubclass(type, possible_superclass)) return Bool::trueObj();
-  }
-  // None of the types in the tuple were a superclass, so return false.
-  return Bool::falseObj();
 }
 
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
@@ -1261,6 +1226,21 @@ RawObject BuiltinsModule::underTypeCheck(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfType(args.get(0)));
+}
+
+RawObject BuiltinsModule::underTypeCheckExact(Thread*, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isType());
+}
+
+RawObject BuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
+                                              word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type subclass(&scope, args.get(0));
+  Type superclass(&scope, args.get(1));
+  return Bool::fromBool(thread->runtime()->isSubclass(subclass, superclass));
 }
 
 RawObject BuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,

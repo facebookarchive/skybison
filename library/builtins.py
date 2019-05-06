@@ -111,6 +111,9 @@ class type(bootstrap=True):
     def __setattr__(self, name, value):
         pass
 
+    def __subclasscheck__(self, subclass) -> bool:
+        return _issubclass(subclass, self)
+
     def _merge_class_dict_keys(self, result):
         result.update(self.__dict__.keys())
         for base in self.__bases__:
@@ -444,6 +447,36 @@ def _int_from_str(cls: type, x: str, base: int) -> int:
     pass
 
 
+def _issubclass(subclass, superclass) -> bool:
+    if _type_check(subclass) and _type_check(superclass):
+        return _type_issubclass(subclass, superclass)
+    try:
+        bases = subclass.__bases__
+        if not _tuple_check(bases):
+            raise AttributeError()
+    except AttributeError:
+        raise TypeError("issubclass() arg 1 must be a class")
+    try:
+        bases = superclass.__bases__
+        if not _tuple_check(bases):
+            raise AttributeError()
+    except AttributeError:
+        raise TypeError("issubclass() arg 2 must be a class or tuple of classes")
+    return _issubclass_recursive(subclass, superclass)
+
+
+def _issubclass_recursive(subclass, superclass) -> bool:
+    if subclass is superclass:
+        return True
+    bases = subclass.__bases__
+    if not _tuple_check(bases):
+        return False
+    for base in bases:
+        if _issubclass_recursive(base, superclass):
+            return True
+    return False
+
+
 @_patch
 def _list_check(obj) -> bool:
     pass
@@ -634,6 +667,16 @@ def _tuple_check(obj) -> bool:
 
 @_patch
 def _type_check(obj) -> bool:
+    pass
+
+
+@_patch
+def _type_check_exact(obj) -> bool:
+    pass
+
+
+@_patch
+def _type_issubclass(subclass: type, superclass: type) -> bool:
     pass
 
 
@@ -1914,9 +1957,18 @@ def isinstance(obj, ty):
     pass
 
 
-@_patch
-def issubclass(obj, ty):
-    pass
+def issubclass(cls, type_or_tuple) -> bool:
+    if _type_check_exact(type_or_tuple):
+        if _type_check(cls):
+            return _type_issubclass(cls, type_or_tuple)
+        return _issubclass(cls, type_or_tuple)
+    if _tuple_check(type_or_tuple):
+        for item in type_or_tuple:
+            if issubclass(cls, item):
+                return True
+        return False
+    # TODO(wmeehan): missing features for ABCMeta.__subclasscheck__
+    return _issubclass(cls, type_or_tuple)
 
 
 def iter(obj, sentinel=None):

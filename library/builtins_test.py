@@ -153,6 +153,52 @@ class IntTests(unittest.TestCase):
         self.assertIs(int(), 0)
 
 
+class IsSubclassTests(unittest.TestCase):
+    def test_issubclass_with_same_types_returns_true(self):
+        self.assertIs(issubclass(int, int), True)
+
+    def test_issubclass_with_subclass_returns_true(self):
+        self.assertIs(issubclass(bool, int), True)
+
+    def test_issubclass_with_superclass_returns_false(self):
+        self.assertIs(issubclass(int, bool), False)
+
+    def test_issubclass_with_unrelated_types_returns_false(self):
+        self.assertIs(issubclass(int, (dict, bytes, str)), False)
+
+    def test_issubclass_with_superclass_tuple_returns_true(self):
+        self.assertIs(issubclass(bool, (int, "bad - not a type")), True)
+
+    def test_issubclass_with_non_type_subclass_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            issubclass("bad - not a type", str)
+            self.assertEqual(
+                str(context.exception), "issubclass() arg 1 must be a class"
+            )
+
+    def test_issubclass_with_non_type_superclass_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            issubclass(int, "bad - not a type")
+            self.assertEqual(
+                str(context.exception),
+                "issubclass() arg 2 must be a class or tuple of classes",
+            )
+
+    def test_issubclass_with_non_type_in_tuple_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            issubclass(bool, ("bad - not a type", int))
+            self.assertEqual(
+                str(context.exception),
+                "issubclass() arg 2 must be a class or tuple of classes",
+            )
+
+    def test_issubclass_with_non_type_subclass_uses_bases(self):
+        class A:
+            __bases__ = (list,)
+
+        self.assertIs(issubclass(A(), list), True)
+
+
 class ReversedTests(unittest.TestCase):
     def test_reversed_iterates_backwards_over_iterable(self):
         it = reversed([1, 2, 3])

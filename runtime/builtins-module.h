@@ -26,7 +26,6 @@ class BuiltinsModule {
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);
   static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
   static RawObject isinstance(Thread* thread, Frame* frame, word nargs);
-  static RawObject issubclass(Thread* thread, Frame* frame, word nargs);
   static RawObject ord(Thread* thread, Frame* frame, word nargs);
   static RawObject print(Thread* thread, Frame* frame, word nargs);
   static RawObject printKw(Thread* thread, Frame* frame, word nargs);
@@ -69,6 +68,10 @@ class BuiltinsModule {
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underTypeIsSubclass(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
