@@ -7,7 +7,8 @@
 
 namespace python {
 
-std::ostream& dumpExtendedCode(std::ostream& os, RawCode value);
+std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
+                               const char* indent);
 std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value);
 std::ostream& dumpExtended(std::ostream& os, RawObject value);
 

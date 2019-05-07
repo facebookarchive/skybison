@@ -41,17 +41,20 @@ TEST(DebuggingTests, DumpExtendedCode) {
 
   std::stringstream ss;
   dumpExtended(ss, *code);
-  EXPECT_EQ(
-      ss.str(),
-      R"(name: "name0" argcount: 1 kwonlyargcount: 0 nlocals: 0 stacksize: 1
-filename: "filename0"
-consts: ("const0",)
-names: ("name0",)
-cellvars: ("cellvar0",)
-freevars: ("freevar0",)
-varnames: ("variable0",)
-   0 LOAD_CONST 0
-   2 RETURN_VALUE 0
+  EXPECT_EQ(ss.str(),
+            R"(code "name0":
+  argcount: 1
+  kwonlyargcount: 0
+  nlocals: 0
+  stacksize: 1
+  filename: "filename0"
+  consts: ("const0",)
+  names: ("name0",)
+  cellvars: ("cellvar0",)
+  freevars: ("freevar0",)
+  varnames: ("variable0",)
+     0 LOAD_CONST 0
+     2 RETURN_VALUE 0
 )");
 }
 
@@ -81,22 +84,26 @@ TEST(DebuggingTests, DumpExtendedFunction) {
   func.setName(runtime.newStrFromCStr("baz"));
   std::stringstream ss;
   dumpExtended(ss, *func);
-  EXPECT_EQ(ss.str(), R"(name: "baz"
-qualname: "footype.baz"
-module: "barmodule"
-annotations: {"return": <type "int">}
-closure: ()
-defaults: (-9,)
-kwdefaults: {"name0": None}
-code: name: "name0" argcount: 1 kwonlyargcount: 0 nlocals: 0 stacksize: 1
-filename: "filename0"
-consts: ("const0",)
-names: ("name0",)
-cellvars: ("cellvar0",)
-freevars: ("freevar0",)
-varnames: ("variable0",)
-   0 LOAD_CONST 0
-   2 RETURN_VALUE 0
+  EXPECT_EQ(ss.str(), R"(function "baz":
+  qualname: "footype.baz"
+  module: "barmodule"
+  annotations: {"return": <type "int">}
+  closure: ()
+  defaults: (-9,)
+  kwdefaults: {"name0": None}
+  code: code "name0":
+    argcount: 1
+    kwonlyargcount: 0
+    nlocals: 0
+    stacksize: 1
+    filename: "filename0"
+    consts: ("const0",)
+    names: ("name0",)
+    cellvars: ("cellvar0",)
+    freevars: ("freevar0",)
+    varnames: ("variable0",)
+       0 LOAD_CONST 0
+       2 RETURN_VALUE 0
 )");
 }
 

@@ -17,19 +17,21 @@ static const char* kOpNames[] = {
 #define OPNAME(name, num, handler) #name,
     FOREACH_BYTECODE(OPNAME)};
 
-std::ostream& dumpExtendedCode(std::ostream& os, RawCode value) {
+std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
+                               const char* indent) {
   HandleScope scope;
   Code code(&scope, value);
-  os << "name: " << code.name() << " argcount: " << code.argcount()
-     << " kwonlyargcount: " << code.kwonlyargcount()
-     << " nlocals: " << code.nlocals() << " stacksize: " << code.stacksize()
-     << '\n'
-     << "filename: " << code.filename() << '\n'
-     << "consts: " << code.consts() << '\n'
-     << "names: " << code.names() << '\n'
-     << "cellvars: " << code.cellvars() << '\n'
-     << "freevars: " << code.freevars() << '\n'
-     << "varnames: " << code.varnames() << '\n';
+  os << "code " << code.name() << ":\n"
+     << indent << "  argcount: " << code.argcount() << '\n'
+     << indent << "  kwonlyargcount: " << code.kwonlyargcount() << '\n'
+     << indent << "  nlocals: " << code.nlocals() << '\n'
+     << indent << "  stacksize: " << code.stacksize() << '\n'
+     << indent << "  filename: " << code.filename() << '\n'
+     << indent << "  consts: " << code.consts() << '\n'
+     << indent << "  names: " << code.names() << '\n'
+     << indent << "  cellvars: " << code.cellvars() << '\n'
+     << indent << "  freevars: " << code.freevars() << '\n'
+     << indent << "  varnames: " << code.varnames() << '\n';
   Object bytecode_obj(&scope, code.code());
   if (bytecode_obj.isBytes()) {
     Bytes bytecode(&scope, *bytecode_obj);
@@ -37,7 +39,7 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value) {
       byte op = bytecode.byteAt(i);
       byte arg = bytecode.byteAt(i + 1);
       std::ios_base::fmtflags saved_flags = os.flags();
-      os << std::setw(4) << std::hex << i << ' ';
+      os << indent << "  " << std::setw(4) << std::hex << i << ' ';
       os.flags(saved_flags);
       os << kOpNames[op] << " " << static_cast<unsigned>(arg) << '\n';
     }
@@ -49,16 +51,16 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value) {
 std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
   HandleScope scope;
   Function function(&scope, value);
-  os << "name: " << function.name() << '\n'
-     << "qualname: " << function.qualname() << '\n'
-     << "module: " << function.module() << '\n'
-     << "annotations: " << function.annotations() << '\n'
-     << "closure: " << function.closure() << '\n'
-     << "defaults: " << function.defaults() << '\n'
-     << "kwdefaults: " << function.kwDefaults() << '\n'
-     << "code: ";
+  os << "function " << function.name() << ":\n"
+     << "  qualname: " << function.qualname() << '\n'
+     << "  module: " << function.module() << '\n'
+     << "  annotations: " << function.annotations() << '\n'
+     << "  closure: " << function.closure() << '\n'
+     << "  defaults: " << function.defaults() << '\n'
+     << "  kwdefaults: " << function.kwDefaults() << '\n'
+     << "  code: ";
   if (function.code().isCode()) {
-    dumpExtendedCode(os, RawCode::cast(function.code()));
+    dumpExtendedCode(os, RawCode::cast(function.code()), "  ");
   } else {
     os << function.code() << '\n';
   }
@@ -69,7 +71,7 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
   LayoutId layout = value.layoutId();
   switch (layout) {
     case LayoutId::kCode:
-      return dumpExtendedCode(os, RawCode::cast(value));
+      return dumpExtendedCode(os, RawCode::cast(value), "");
     case LayoutId::kFunction:
       return dumpExtendedFunction(os, RawFunction::cast(value));
     default:
