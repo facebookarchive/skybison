@@ -469,11 +469,10 @@ def _issubclass_recursive(subclass, superclass) -> bool:
     if subclass is superclass:
         return True
     bases = subclass.__bases__
-    if not _tuple_check(bases):
-        return False
-    for base in bases:
-        if _issubclass_recursive(base, superclass):
-            return True
+    if _tuple_check(bases):
+        for base in bases:
+            if _issubclass_recursive(base, superclass):
+                return True
     return False
 
 
