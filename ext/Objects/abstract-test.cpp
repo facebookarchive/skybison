@@ -1968,6 +1968,14 @@ TEST_F(AbstractExtensionApiTest, PyObjectTypeReturnsType) {
   EXPECT_TRUE(PyType_Check(type));
 }
 
+TEST_F(AbstractExtensionApiTest, PyObjectTypeReturnsSameTypeForSmallAndLarge) {
+  PyObjectPtr str1(PyUnicode_FromString("short"));
+  PyObjectPtr str2(PyUnicode_FromString("This is a longer string."));
+  PyObjectPtr type1(PyObject_Type(str1));
+  PyObjectPtr type2(PyObject_Type(str2));
+  EXPECT_EQ(type1, type2);
+}
+
 // Sequence Protocol
 
 TEST_F(AbstractExtensionApiTest, PySequenceCheckWithoutGetItemReturnsFalse) {

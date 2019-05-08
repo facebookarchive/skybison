@@ -969,10 +969,7 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
 
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-
-  Runtime* runtime = thread->runtime();
-  Type type(&scope, runtime->typeOf(*obj));
-  return ApiHandle::newReference(thread, *type);
+  return ApiHandle::newReference(thread, userVisibleTypeOf(thread, obj));
 }
 
 // Sequence Protocol
