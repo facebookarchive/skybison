@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "interpreter.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "slice-builtins.h"
@@ -14,12 +15,11 @@ namespace python {
 
 RawObject underStructseqGetAttr(Thread* thread, Frame* frame, word nargs) {
   // TODO(T40703284): Prevent structseq.__dict__["foo"] access
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   HeapObject structseq(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  return runtime->instanceAt(thread, structseq, name);
+  return instanceGetAttribute(thread, structseq, name);
 }
 
 RawObject underStructseqSetAttr(Thread* thread, Frame* frame, word nargs) {

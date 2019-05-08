@@ -6,6 +6,7 @@
 #include "bytecode.h"
 #include "frame.h"
 #include "layout.h"
+#include "object-builtins.h"
 #include "runtime.h"
 #include "symbols.h"
 #include "test-utils.h"
@@ -3053,19 +3054,19 @@ TEST(RuntimeTest, NonSealedClassHasSpaceForOverflowAttrbutes) {
 // User-defined class attributes can be set on the fly.
 TEST(RuntimeTest, UserCanSetOverflowAttributeOnUserDefinedClass) {
   Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class C(): pass
 a = C()
 )")
                    .isError());
-  HandleScope scope;
   HeapObject a(&scope, moduleAt(&runtime, "__main__", "a"));
   Str attr(&scope, runtime.newStrFromCStr("attr"));
   Str value(&scope, runtime.newStrFromCStr("value"));
-  Object result(&scope,
-                runtime.instanceAtPut(Thread::current(), a, attr, value));
+  Object result(&scope, runtime.instanceAtPut(thread, a, attr, value));
   ASSERT_FALSE(result.isError());
-  EXPECT_EQ(runtime.instanceAt(Thread::current(), a, attr), *value);
+  EXPECT_EQ(instanceGetAttribute(thread, a, attr), *value);
 }
 
 TEST(RuntimeTest, IsMappingReturnsFalseOnSet) {

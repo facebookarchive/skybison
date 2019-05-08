@@ -12,6 +12,11 @@ int main(int argc, const char** argv) {
     return EXIT_FAILURE;
   }
   python::Runtime runtime;
+  // TODO(T43657667) Add code that can decide what we can cache and remove this.
+  const char* enable_cache = std::getenv("PYRO_ENABLE_CACHE");
+  if (enable_cache != nullptr && enable_cache[0] != '\0') {
+    runtime.enableCache();
+  }
   runtime.setArgv(argc, argv);
   const char* file_name = argv[1];
   word file_len;

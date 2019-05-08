@@ -5,6 +5,7 @@
 #include "bytecode.h"
 #include "frame.h"
 #include "handles.h"
+#include "ic.h"
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
@@ -2755,6 +2756,72 @@ TEST(InterpreterTest, RaiseWithNoActiveExceptionRaisesRuntimeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "raise\n"),
                             LayoutId::kRuntimeError,
                             "No active exception to reraise"));
+}
+
+TEST(InterpreterTest, LoadAttrSetLocationSetsLocation) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 42
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrSetLocation(thread, i, name, &to_cache), 42));
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrWithLocation(thread, *i, *to_cache), 42));
+}
+
+TEST(InterpreterTest, LoadAttrSetLocationWithCustomGetAttributeSetsNoLocation) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __getattribute__(self, name):
+    return 11
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrSetLocation(thread, i, name, &to_cache), 11));
+  EXPECT_TRUE(to_cache.isNoneType());
+}
+
+TEST(InterpreterTest, LoadAttrSetLocationCallsDunderGetattr) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 42
+  def __getattr__(self, name):
+    return 5
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+
+  Object name(&scope, runtime.newStrFromCStr("bar"));
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrSetLocation(thread, i, name, &to_cache), 5));
+  EXPECT_TRUE(to_cache.isNoneType());
 }
 
 TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {

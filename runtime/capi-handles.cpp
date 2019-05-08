@@ -2,6 +2,7 @@
 
 #include "cpython-func.h"
 #include "cpython-types.h"
+#include "object-builtins.h"
 #include "runtime.h"
 #include "visitor.h"
 
@@ -188,7 +189,7 @@ RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
 
   HeapObject instance(&scope, *obj);
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  return runtime->instanceAt(thread, instance, attr_name);
+  return instanceGetAttribute(thread, instance, attr_name);
 }
 
 RawObject ApiHandle::asInstance(RawObject obj) {

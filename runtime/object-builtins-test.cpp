@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "frame.h"
+#include "ic.h"
 #include "object-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
@@ -110,7 +111,7 @@ i = C()
   ASSERT_TRUE(i.isHeapObject());
   HeapObject i_heap_object(&scope, *i);
   EXPECT_TRUE(
-      isIntEqualsWord(runtime.instanceAt(thread, i_heap_object, name), 42));
+      isIntEqualsWord(instanceGetAttribute(thread, i_heap_object, name), 42));
 }
 
 TEST(ObjectBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
@@ -502,6 +503,119 @@ TEST(ObjectBuiltinsTest,
   Object none(&scope, NoneType::object());
   Object attr_name(&scope, runtime.newStrFromCStr("__repr__"));
   EXPECT_TRUE(objectGetAttribute(thread, none, attr_name).isBoundMethod());
+}
+
+TEST(ObjectBuiltinsTest,
+     ObjectGetAttributeSetLocationReturnsBoundMethodAndCachesFunction) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def foo():
+    pass
+foo = C.foo
+i = C()
+)")
+                   .isError());
+  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  Object to_cache(&scope, NoneType::object());
+  Object result_obj(&scope,
+                    objectGetAttributeSetLocation(thread, i, name, &to_cache));
+  ASSERT_TRUE(result_obj.isBoundMethod());
+  BoundMethod result(&scope, *result_obj);
+  EXPECT_EQ(result.function(), foo);
+  EXPECT_EQ(result.self(), i);
+  EXPECT_EQ(to_cache, foo);
+
+  Object load_cached_result_obj(
+      &scope, Interpreter::loadAttrWithLocation(thread, *i, *to_cache));
+  ASSERT_TRUE(load_cached_result_obj.isBoundMethod());
+  BoundMethod load_cached_result(&scope, *load_cached_result_obj);
+  EXPECT_EQ(load_cached_result.function(), foo);
+  EXPECT_EQ(load_cached_result.self(), i);
+}
+
+TEST(ObjectBuiltinsTest,
+     ObjectGetAttributeSetLocationReturnsInstanceVariableAndCachesOffset) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 42
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+
+  Layout layout(&scope, runtime.layoutAt(i.layoutId()));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, name, &info));
+  ASSERT_TRUE(info.isInObject());
+
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(
+      objectGetAttributeSetLocation(thread, i, name, &to_cache), 42));
+  EXPECT_TRUE(isIntEqualsWord(*to_cache, info.offset()));
+
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrWithLocation(thread, *i, *to_cache), 42));
+}
+
+TEST(
+    ObjectBuiltinsTest,
+    ObjectGetAttributeSetLocationReturnsInstanceVariableAndCachesNegativeOffset) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  pass
+i = C()
+i.foo = 17
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+
+  Layout layout(&scope, runtime.layoutAt(i.layoutId()));
+  Object name(&scope, runtime.newStrFromCStr("foo"));
+  AttributeInfo info;
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, name, &info));
+  ASSERT_TRUE(info.isOverflow());
+
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(
+      objectGetAttributeSetLocation(thread, i, name, &to_cache), 17));
+  EXPECT_TRUE(isIntEqualsWord(*to_cache, -info.offset() - 1));
+
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::loadAttrWithLocation(thread, *i, *to_cache), 17));
+}
+
+TEST(ObjectBuiltinsTest,
+     ObjectGetAttributeSetLocationRaisesAttributeErrorAndDoesNotSetLocation) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  pass
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+
+  Object name(&scope, runtime.newStrFromCStr("xxx"));
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(
+      objectGetAttributeSetLocation(thread, i, name, &to_cache).isError());
+  EXPECT_TRUE(to_cache.isNoneType());
 }
 
 TEST(ObjectBuiltinsTest, ObjectSetAttrSetsInstanceValue) {

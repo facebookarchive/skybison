@@ -5,11 +5,18 @@
 
 namespace python {
 
+RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
+                               const Object& name_str);
+
 RawObject objectGetAttribute(Thread* thread, const Object& object,
                              const Object& name_str);
 
-RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
-                                    const Object& name_str);
+// Same as `objectGetAttribute()` but stores a value into `location_out` that is
+// used by the inline cache and interpreted by
+// `Interpreter::loadAttrWithLocation()`.
+RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
+                                        const Object& name_str,
+                                        Object* location_out);
 
 RawObject objectSetAttr(Thread* thread, const Object& object,
                         const Object& name_interned_str, const Object& value);

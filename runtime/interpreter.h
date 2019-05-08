@@ -133,6 +133,12 @@ class Interpreter {
     word pc;
   };
 
+  static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
+                                        RawObject location);
+  static RawObject loadAttrSetLocation(Thread* thread, const Object& object,
+                                       const Object& name_str,
+                                       Object* location_out);
+
   // Process the operands to the RAISE_VARARGS bytecode into a pending exception
   // on ctx->thread.
   static void raise(Context* ctx, RawObject exc, RawObject cause);
@@ -264,6 +270,7 @@ class Interpreter {
   static void doBuildMap(Context* ctx, word arg);
   static bool doLoadAttr(Context* ctx, word arg);
   static bool doLoadAttrCached(Context* ctx, word arg);
+  static bool doLoadAttrUpdateCache(Context* ctx, word arg);
   static bool doCompareOp(Context* ctx, word arg);
   static bool doImportName(Context* ctx, word arg);
   static bool doImportFrom(Context* ctx, word arg);

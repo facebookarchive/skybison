@@ -4,6 +4,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "mro.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -86,7 +87,7 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   }
 
   // No data descriptor found on the meta class, look on the type
-  Object result(&scope, runtime->instanceAt(thread, type, name_str));
+  Object result(&scope, instanceGetAttribute(thread, type, name_str));
   if (!result.isError()) {
     return *result;
   }

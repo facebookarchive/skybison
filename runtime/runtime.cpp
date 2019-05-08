@@ -1647,6 +1647,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_tuple_);
+  visitor->visitPointer(&object_dunder_getattribute_);
   visitor->visitPointer(&sys_stderr_);
   visitor->visitPointer(&sys_stdout_);
 
@@ -1947,8 +1948,14 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   Object module_name(&scope, symbols()->Module());
   dictRemove(module_dict, module_name);
 
-  Object dunder_import_name(&scope, symbols()->at(SymbolId::kDunderImport));
+  Object dunder_import_name(&scope, symbols()->DunderImport());
   dunder_import_ = dictAt(module_dict, dunder_import_name);
+
+  Type object(&scope, typeAt(LayoutId::kObject));
+  Dict object_dict(&scope, object.dict());
+  Object dunder_getattribute_name(&scope, symbols()->DunderGetattribute());
+  object_dunder_getattribute_ =
+      typeDictAt(object_dict, dunder_getattribute_name);
 }
 
 void Runtime::createImportlibModule(Thread* thread) {
@@ -3573,33 +3580,6 @@ RawObject Runtime::layoutGetOverflowDict(Thread* thread,
   Object overflow(&scope, instance.instanceVariableAt(offset));
   DCHECK(overflow.isDict(), "layout dict overflow must be dict");
   return *overflow;
-}
-
-RawObject Runtime::instanceAt(Thread* thread, const HeapObject& instance,
-                              const Object& name) {
-  HandleScope scope(thread);
-
-  // Figure out where the attribute lives in the instance
-  Layout layout(&scope, layoutAt(instance.layoutId()));
-  AttributeInfo info;
-  if (layoutFindAttribute(thread, layout, name, &info)) {
-    // Retrieve the attribute
-    if (info.isInObject()) {
-      return instance.instanceVariableAt(info.offset());
-    }
-    Tuple overflow(&scope,
-                   instance.instanceVariableAt(layout.overflowOffset()));
-    return overflow.at(info.offset());
-  }
-  if (layoutHasDictOverflow(layout)) {
-    Dict overflow(&scope, layoutGetOverflowDict(thread, instance, layout));
-    Object obj(&scope, dictAt(overflow, name));
-    if (obj.isValueCell()) {
-      return RawValueCell::cast(*obj).value();
-    }
-    return *obj;
-  }
-  return Error::notFound();
 }
 
 RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,

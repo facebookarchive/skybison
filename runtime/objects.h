@@ -812,6 +812,10 @@ class RawHeapObject : public RawObject {
   RawObject forward() const;
   void forwardTo(RawObject object) const;
 
+  // This is only public for the inline-cache to use. All other cases should
+  // use more specific getter methods in the subclasses.
+  RawObject instanceVariableAt(word offset) const;
+
   // Tags.
   static const int kTag = 1;
   static const int kTagSize = 3;
@@ -829,7 +833,6 @@ class RawHeapObject : public RawObject {
   RAW_OBJECT_COMMON(HeapObject);
 
  protected:
-  RawObject instanceVariableAt(word offset) const;
   void instanceVariableAtPut(word offset, RawObject value) const;
 
  private:

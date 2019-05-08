@@ -4,6 +4,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "ic.h"
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
@@ -12,8 +13,54 @@
 
 namespace python {
 
-RawObject objectGetAttribute(Thread* thread, const Object& object,
-                             const Object& name_str) {
+static RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
+                                           const Object& name_str) {
+  return thread->raiseWithFmt(LayoutId::kAttributeError,
+                              "'%T' object has no attribute '%S'", &object,
+                              &name_str);
+}
+
+static RawObject instanceGetAttributeSetLocation(Thread* thread,
+                                                 const HeapObject& object,
+                                                 const Object& name_str,
+                                                 Object* location_out) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Layout layout(&scope, runtime->layoutAt(object.layoutId()));
+  AttributeInfo info;
+  if (runtime->layoutFindAttribute(thread, layout, name_str, &info)) {
+    if (info.isInObject()) {
+      if (location_out != nullptr) {
+        *location_out = RawSmallInt::fromWord(info.offset());
+      }
+      return object.instanceVariableAt(info.offset());
+    }
+    Tuple overflow(&scope, object.instanceVariableAt(layout.overflowOffset()));
+    if (location_out != nullptr) {
+      *location_out = RawSmallInt::fromWord(-info.offset() - 1);
+    }
+    return overflow.at(info.offset());
+  }
+  if (runtime->layoutHasDictOverflow(layout)) {
+    Dict overflow(&scope,
+                  runtime->layoutGetOverflowDict(thread, object, layout));
+    Object obj(&scope, runtime->dictAt(overflow, name_str));
+    if (obj.isValueCell()) {
+      obj = RawValueCell::cast(*obj).value();
+    }
+    return *obj;
+  }
+  return Error::notFound();
+}
+
+RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
+                               const Object& name_str) {
+  return instanceGetAttributeSetLocation(thread, object, name_str, nullptr);
+}
+
+RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
+                                        const Object& name_str,
+                                        Object* location_out) {
   // Look for the attribute in the class
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -30,7 +77,8 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
   // No data descriptor found on the class, look at the instance.
   if (object.isHeapObject()) {
     HeapObject instance(&scope, *object);
-    Object result(&scope, runtime->instanceAt(thread, instance, name_str));
+    Object result(&scope, instanceGetAttributeSetLocation(
+                              thread, instance, name_str, location_out));
     if (!result.isError()) {
       return *result;
     }
@@ -39,6 +87,11 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
   // Nothing found in the instance, if we found a non-data descriptor via the
   // class search, use it.
   if (!type_attr.isError()) {
+    if (type_attr.isFunction()) {
+      if (location_out != nullptr) *location_out = *type_attr;
+      return runtime->newBoundMethod(type_attr, object);
+    }
+
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsNonDataDescriptor(thread, type_attr_type)) {
       return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
@@ -52,11 +105,9 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
   return Error::notFound();
 }
 
-RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
-                                    const Object& name_str) {
-  return thread->raiseWithFmt(LayoutId::kAttributeError,
-                              "'%T' object has no attribute '%S'", &object,
-                              &name_str);
+RawObject objectGetAttribute(Thread* thread, const Object& object,
+                             const Object& name_str) {
+  return objectGetAttributeSetLocation(thread, object, name_str, nullptr);
 }
 
 RawObject objectSetAttr(Thread* thread, const Object& object,

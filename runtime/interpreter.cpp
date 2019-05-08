@@ -10,6 +10,7 @@
 #include "ic.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -1968,10 +1969,88 @@ bool Interpreter::doLoadAttr(Context* ctx, word arg) {
   return false;
 }
 
+RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
+                                           const Object& name_str,
+                                           Object* to_cache_out) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (runtime->isCacheEnabled()) {
+    Type type(&scope, runtime->typeOf(*object));
+    Object dunder_getattribute(
+        &scope,
+        typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetattribute));
+    if (dunder_getattribute == runtime->objectDunderGetattribute()) {
+      Object result(&scope, objectGetAttributeSetLocation(
+                                thread, object, name_str, to_cache_out));
+      if (result.isErrorNotFound()) {
+        result =
+            thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
+      }
+      return *result;
+    }
+  }
+
+  return thread->runtime()->attributeAt(thread, object, name_str);
+}
+
+bool Interpreter::doLoadAttrUpdateCache(Context* ctx, word arg) {
+  word original_arg = icOriginalArg(*ctx->function, arg);
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Frame* frame = ctx->frame;
+  Object receiver(&scope, frame->topValue());
+  Object name(
+      &scope,
+      RawTuple::cast(RawCode::cast(frame->code()).names()).at(original_arg));
+
+  Object location(&scope, NoneType::object());
+  Object result(&scope, loadAttrSetLocation(thread, receiver, name, &location));
+  if (result.isError()) return unwind(ctx);
+  if (!location.isNoneType()) {
+    LayoutId layout_id = receiver.layoutId();
+    word cache_entry_offset = icFind(*ctx->caches, arg, layout_id);
+    icUpdate(*ctx->caches, cache_entry_offset, layout_id, *location);
+  }
+  frame->setTopValue(*result);
+  return false;
+}
+
+RawObject Interpreter::loadAttrWithLocation(Thread* thread, RawObject receiver,
+                                            RawObject location) {
+  if (location.isFunction()) {
+    HandleScope scope(thread);
+    Object self(&scope, receiver);
+    Object function(&scope, location);
+    return thread->runtime()->newBoundMethod(function, self);
+  }
+
+  word offset = SmallInt::cast(location).value();
+
+  DCHECK(receiver.isHeapObject(), "expected heap object");
+  RawHeapObject heap_object = RawHeapObject::cast(receiver);
+  if (offset >= 0) {
+    return heap_object.instanceVariableAt(offset);
+  }
+
+  RawLayout layout =
+      RawLayout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
+  RawTuple overflow =
+      RawTuple::cast(heap_object.instanceVariableAt(layout.overflowOffset()));
+  return overflow.at(-offset - 1);
+}
+
 bool Interpreter::doLoadAttrCached(Context* ctx, word arg) {
-  // TODO(matthiasb): Actual caching will be added next.
-  word name_index = icOriginalArg(*ctx->function, arg);
-  return doLoadAttr(ctx, name_index);
+  Frame* frame = ctx->frame;
+  RawObject receiver_raw = frame->topValue();
+  LayoutId layout_id = receiver_raw.layoutId();
+  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
+  if (cached.isErrorNotFound()) {
+    return doLoadAttrUpdateCache(ctx, arg);
+  }
+
+  RawObject result = loadAttrWithLocation(ctx->thread, receiver_raw, cached);
+  frame->setTopValue(result);
+  return false;
 }
 
 static RawObject excMatch(Interpreter::Context* ctx, const Object& left,

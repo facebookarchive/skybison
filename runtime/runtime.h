@@ -224,6 +224,7 @@ class Runtime {
                        const Object& callback);
 
   RawObject ellipsis() { return ellipsis_; }
+  RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
   RawValueCell sysStderr() { return RawValueCell::cast(sys_stderr_); }
   RawValueCell sysStdout() { return RawValueCell::cast(sys_stdout_); }
 
@@ -359,6 +360,9 @@ class Runtime {
   }
 
   Symbols* symbols() { return symbols_; }
+
+  bool isCacheEnabled() { return cache_enabled_; }
+  void enableCache() { cache_enabled_ = true; }
 
   // Provides a growth strategy for mutable sequences. Grows by a factor of 1.5,
   // scaling up to the requested capacity if the initial factor is insufficient.
@@ -552,14 +556,6 @@ class Runtime {
   // Implements `del receiver.name`
   RawObject attributeDel(Thread* thread, const Object& receiver,
                          const Object& name);
-
-  // Attribute lookup primitive for instances.
-  //
-  // This operates directly on the instance and does not respect Python
-  // semantics for attribute lookup. Returns Error::object() if the attribute
-  // isn't found.
-  RawObject instanceAt(Thread* thread, const HeapObject& instance,
-                       const Object& name);
 
   // Attribute setting primitive for instances.
   //
@@ -809,6 +805,17 @@ class Runtime {
 
   NODISCARD RawObject executeModule(const char* buffer, const Module& module);
 
+  // Check if the layout's overflow attributes point to a dict offset
+  //
+  // This is a useful common case for types like function, type, etc, that all
+  // overflow their custom attributes to a __dict__ on the instance. The
+  // layout's OverflowAttrbutesOffset is expected to be a SmallInt.
+  bool layoutHasDictOverflow(const Layout& layout);
+
+  // Get the overflow dict from the overflow attribute pointer
+  RawObject layoutGetOverflowDict(Thread* thread, const HeapObject& instance,
+                                  const Layout& layout);
+
  private:
   void initializeApiData();
   void initializeExceptionTypes();
@@ -878,16 +885,6 @@ class Runtime {
   void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
                                const Tuple& dst, word index);
 
-  // Check if the layout's overflow attributes point to a dict offset
-  //
-  // This is a useful common case for types like function, type, etc, that all
-  // overflow their custom attributes to a __dict__ on the instance. The
-  // layout's OverflowAttrbutesOffset is expected to be a SmallInt.
-  bool layoutHasDictOverflow(const Layout& layout);
-
-  // Get the overflow dict from the overflow attribute pointer
-  RawObject layoutGetOverflowDict(Thread* thread, const HeapObject& instance,
-                                  const Layout& layout);
   // Appends the edge to the list of edges.
   //
   // edges is expected to be a list of edges (label, layout pairs) corresponding
@@ -945,6 +942,7 @@ class Runtime {
   RawObject ellipsis_;
   RawObject empty_frozen_set_;
   RawObject empty_tuple_;
+  RawObject object_dunder_getattribute_;
   RawObject sys_stderr_;
   RawObject sys_stdout_;
 
@@ -975,6 +973,8 @@ class Runtime {
   Symbols* symbols_;
 
   word max_module_index_ = 0;
+
+  bool cache_enabled_ = false;
 
   // atexit C Function
   AtExitFn at_exit_ = nullptr;
