@@ -177,6 +177,34 @@ TEST_F(ListExtensionApiTest, SetItemWithListSetsItemAtIndex) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(ListExtensionApiTest, SetSliceOnNonListRaisesSystemError) {
+  PyObjectPtr rhs(PyList_New(0));
+  ASSERT_EQ(PyList_SetSlice(Py_None, 0, 0, rhs), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(ListExtensionApiTest, SetSliceWithNegativeOutOfBoundsLowStartsAtZero) {
+  PyObjectPtr lhs(PyList_New(0));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyList_Append(lhs, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(lhs, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(lhs, two);
+
+  PyObjectPtr rhs(PyList_New(0));
+  PyObjectPtr five(PyLong_FromLong(5));
+  PyList_Append(rhs, five);
+
+  ASSERT_EQ(PyList_SetSlice(lhs, -5, 1, rhs), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_Size(lhs), 3);
+  EXPECT_EQ(PyList_GetItem(lhs, 0), five);
+  EXPECT_EQ(PyList_GetItem(lhs, 1), one);
+  EXPECT_EQ(PyList_GetItem(lhs, 2), two);
+}
+
 TEST_F(ListExtensionApiTest, GetSliceOnNonListRaisesSystemError) {
   ASSERT_EQ(PyList_GetSlice(Py_None, 0, 0), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);

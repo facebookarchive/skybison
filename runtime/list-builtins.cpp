@@ -695,7 +695,7 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
     listPop(list, idx);
     return NoneType::object();
   }
-  // TODO(T31826482): Add support for slices
+  // TODO(T44021459): Add support for slices
   return thread->raiseTypeErrorWithCStr(
       "list indices must be integers or slices");
 }

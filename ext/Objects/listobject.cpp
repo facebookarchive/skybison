@@ -186,9 +186,32 @@ PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,
   return 0;
 }
 
-PY_EXPORT int PyList_SetSlice(PyObject* /* a */, Py_ssize_t /* w */,
-                              Py_ssize_t /* h */, PyObject* /* v */) {
-  UNIMPLEMENTED("PyList_SetSlice");
+PY_EXPORT int PyList_SetSlice(PyObject* list, Py_ssize_t low, Py_ssize_t high,
+                              PyObject* items) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object list_obj(&scope, ApiHandle::fromPyObject(list)->asObject());
+  if (!runtime->isInstanceOfList(*list_obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  // TODO(T44021663): Don't create a slice; instead, pass the ints directly to
+  // the relevant non-slice functions
+  Slice slice(&scope, runtime->newSlice());
+  slice.setStart(runtime->newInt(low));
+  slice.setStop(runtime->newInt(high));
+  Object result(&scope, NoneType::object());
+  if (items == nullptr) {
+    // Equivalent to deleting slice
+    result = thread->invokeMethodStatic2(
+        LayoutId::kList, SymbolId::kDunderDelitem, list_obj, slice);
+  } else {
+    Object items_obj(&scope, ApiHandle::fromPyObject(items)->asObject());
+    result = thread->invokeMethodStatic3(
+        LayoutId::kList, SymbolId::kDunderSetitem, list_obj, slice, items_obj);
+  }
+  return result.isError() ? -1 : 0;
 }
 
 PY_EXPORT Py_ssize_t PyList_Size(PyObject* p) {
