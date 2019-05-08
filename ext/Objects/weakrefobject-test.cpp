@@ -10,7 +10,43 @@ using namespace testing;
 
 using WeakRefExtensionApiTest = ExtensionApi;
 
-TEST_F(WeakRefExtensionApiTest, NewWeakRefWithCallableReturnsWeakRef) {
+TEST_F(WeakRefExtensionApiTest, NewProxyWithCallbackReturnsProxy) {
+  PyRun_SimpleString(R"(
+class C:
+  def bar(self):
+    return "C.bar"
+
+def foo():
+  pass
+
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr proxy(PyWeakref_NewProxy(obj, foo));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(PyObject_CallMethod(proxy, "bar", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "C.bar"));
+}
+
+TEST_F(WeakRefExtensionApiTest, NewProxyWithNullCallbackReturnsProxy) {
+  PyRun_SimpleString(R"(
+class C:
+  def bar(self):
+    return "C.bar"
+
+obj = C()
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr proxy(PyWeakref_NewProxy(obj, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObjectPtr result(PyObject_CallMethod(proxy, "bar", nullptr));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "C.bar"));
+}
+
+TEST_F(WeakRefExtensionApiTest, NewWeakRefWithCallbackReturnsWeakRef) {
   PyRun_SimpleString(R"(
 class C:
   pass

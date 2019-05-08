@@ -357,6 +357,7 @@ class Runtime;
   V(PrintFileAndLine, "print_file_and_line")                                   \
   V(ProcessLookupError, "ProcessLookupError")                                  \
   V(Property, "property")                                                      \
+  V(Proxy, "proxy")                                                            \
   V(Range, "range")                                                            \
   V(RangeIterator, "range_iterator")                                           \
   V(Reason, "reason")                                                          \

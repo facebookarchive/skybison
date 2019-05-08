@@ -40,8 +40,21 @@ PY_EXPORT PyObject* PyWeakref_GetObject(PyObject* ref) {
   return getObject(thread, obj);
 }
 
-PY_EXPORT PyObject* PyWeakref_NewProxy(PyObject* /* b */, PyObject* /* k */) {
-  UNIMPLEMENTED("PyWeakref_NewProxy");
+PY_EXPORT PyObject* PyWeakref_NewProxy(PyObject* ob, PyObject* callback) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object referent(&scope, ApiHandle::fromPyObject(ob)->asObject());
+  Object callback_obj(&scope, NoneType::object());
+  if (callback != nullptr) {
+    callback_obj = ApiHandle::fromPyObject(callback)->asObject();
+  }
+  Object result_obj(
+      &scope, thread->invokeFunction2(SymbolId::kUnderWeakRef, SymbolId::kProxy,
+                                      referent, callback_obj));
+  if (result_obj.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result_obj);
 }
 
 PY_EXPORT PyObject* PyWeakref_NewRef(PyObject* obj, PyObject* callback) {
