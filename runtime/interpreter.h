@@ -98,6 +98,18 @@ class Interpreter {
                                const Object& arg1, const Object& arg2,
                                const Object& arg3);
 
+  // Re-arrange the stack so that it is in "normal" form.
+  //
+  // This is used when the target of a call or keyword call is not a concrete
+  // Function object. It extracts the concrete function object from the
+  // callable and re-arranges the stack so that the function is followed by its
+  // arguments.
+  //
+  // Returns the concrete function that should be called. Updates nargs with the
+  // number of items added to the stack.
+  static RawObject prepareCallableCall(Thread* thread, Frame* frame,
+                                       word callable_idx, word* nargs);
+
   static RawObject unaryOperation(Thread* thread, const Object& receiver,
                                   SymbolId selector);
 
@@ -325,18 +337,6 @@ class Interpreter {
   static bool doDeleteAttr(Context* ctx, word arg);
 
  private:
-  // Re-arrange the stack so that it is in "normal" form.
-  //
-  // This is used when the target of a call or keyword call is not a concrete
-  // Function object. It extracts the concrete function object from the
-  // callable and re-arranges the stack so that the function is followed by its
-  // arguments.
-  //
-  // Returns the concrete function that should be called. Updates nargs with the
-  // number of items added to the stack.
-  static RawObject prepareCallableCall(Thread* thread, Frame* frame,
-                                       word callable_idx, word* nargs);
-
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations
   static bool doBinaryOperation(BinaryOp op, Context* ctx);

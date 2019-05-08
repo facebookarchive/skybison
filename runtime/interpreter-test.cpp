@@ -1039,6 +1039,35 @@ c = C()
   EXPECT_EQ(*f, *method);
 }
 
+TEST(InterpreterTest, PrepareCallableCallUnpacksBoundMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def foo():
+    pass
+meth = C().foo
+)")
+                   .isError());
+  Object meth_obj(&scope, moduleAt(&runtime, "__main__", "meth"));
+  ASSERT_TRUE(meth_obj.isBoundMethod());
+
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(*meth_obj);
+  frame->pushValue(SmallInt::fromWord(1234));
+  ASSERT_EQ(frame->valueStackSize(), 2);
+  word nargs = 1;
+  Object callable(
+      &scope, Interpreter::prepareCallableCall(thread, frame, nargs, &nargs));
+  ASSERT_TRUE(callable.isFunction());
+  ASSERT_EQ(nargs, 2);
+  ASSERT_EQ(frame->valueStackSize(), 3);
+  EXPECT_TRUE(isIntEqualsWord(frame->peek(0), 1234));
+  EXPECT_TRUE(frame->peek(1).isInstance());
+  EXPECT_EQ(frame->peek(2), *callable);
+}
+
 TEST(InterpreterTest, CallingUncallableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "(1)()"),

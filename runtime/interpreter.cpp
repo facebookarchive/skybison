@@ -27,7 +27,6 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
   Object callable(&scope, frame->peek(callable_idx));
   DCHECK(!callable.isFunction(),
          "prepareCallableCall should only be called on non-function types");
-  bool is_bound;
   if (callable.isBoundMethod()) {
     // Shift all arguments on the stack down by 1 and unpack the BoundMethod.
     //
@@ -47,47 +46,42 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
     // Our contention is that uses of this pattern are not performance
     // sensitive.
     BoundMethod method(&scope, *callable);
-    frame->insertValueAt(method.self(), callable_idx);
-    is_bound = false;
     callable = method.function();
-  } else {
-    Runtime* runtime = thread->runtime();
-    for (;;) {
-      // This does not use Runtime::isCallable because that would involve two
-      // loads.
-      Type type(&scope, runtime->typeOf(*callable));
-      Object attr(&scope,
-                  typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall));
-      if (!attr.isError()) {
-        if (attr.isFunction()) {
-          // Do not create a short-lived bound method object.
-          is_bound = false;
-          callable = *attr;
-          break;
-        }
-        Type attr_type(&scope, runtime->typeOf(*attr));
-        if (typeIsNonDataDescriptor(thread, attr_type)) {
-          Object owner(&scope, *type);
-          callable = callDescriptorGet(thread, frame, attr, callable, owner);
-          if (callable.isFunction()) {
-            // Descriptors do not return unbound methods.
-            is_bound = true;
-            break;
-          }
-          // Retry the lookup using the object returned by the descriptor.
-          continue;
-        }
-      }
-      return thread->raiseTypeErrorWithCStr("object is not callable");
-    }
-  }
-  if (is_bound) {
-    frame->setValueAt(*callable, callable_idx);
-  } else {
+    frame->setValueAt(method.self(), callable_idx);
     frame->insertValueAt(*callable, callable_idx + 1);
     *nargs += 1;
+    return *callable;
   }
-  return *callable;
+
+  Runtime* runtime = thread->runtime();
+  for (;;) {
+    // This does not use Runtime::isCallable because that would involve two
+    // loads.
+    Type type(&scope, runtime->typeOf(*callable));
+    Object attr(&scope,
+                typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall));
+    if (!attr.isError()) {
+      if (attr.isFunction()) {
+        // Avoid creating a short-lived BoundMethod object. Instead, insert the
+        // Function object in front of the callable, leaving the stack in the
+        // same state as if a BoundMethod had been created and called.
+        frame->insertValueAt(*attr, callable_idx + 1);
+        *nargs += 1;
+        return *attr;
+      }
+      Type attr_type(&scope, runtime->typeOf(*attr));
+      if (typeIsNonDataDescriptor(thread, attr_type)) {
+        callable = callDescriptorGet(thread, frame, attr, callable, attr_type);
+        if (callable.isFunction()) {
+          frame->setValueAt(*callable, callable_idx);
+          return *callable;
+        }
+        // Retry the lookup using the object returned by the descriptor.
+        continue;
+      }
+    }
+    return thread->raiseTypeErrorWithCStr("object is not callable");
+  }
 }
 
 RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
