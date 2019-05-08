@@ -2,6 +2,7 @@
 
 #include "capi-handles.h"
 
+#include "object-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
 
@@ -131,7 +132,7 @@ TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   PyObject* type_handle = ApiHandle::newReference(thread, *type);
   PyObject pyobj = {nullptr, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
   Object object_ptr(&scope, runtime.newIntFromCPtr(static_cast<void*>(&pyobj)));
-  runtime.instanceAtPut(thread, instance, attr_name, object_ptr);
+  instanceSetAttr(thread, instance, attr_name, object_ptr);
 
   PyObject* result = ApiHandle::newReference(thread, *instance);
   EXPECT_TRUE(result);

@@ -143,6 +143,13 @@ class Interpreter {
   // on ctx->thread.
   static void raise(Context* ctx, RawObject exc, RawObject cause);
 
+  static RawObject storeAttrSetLocation(Thread* thread, const Object& object,
+                                        const Object& name_str,
+                                        const Object& value,
+                                        Object* location_out);
+  static void storeAttrWithLocation(Thread* thread, RawObject receiver,
+                                    RawObject location, RawObject value);
+
   // Unwind the stack for a pending exception. Intended to be tail-called by a
   // bytecode handler that is raising an exception.
   //
@@ -260,6 +267,8 @@ class Interpreter {
   static bool doForIter(Context* ctx, word arg);
   static bool doUnpackEx(Context* ctx, word arg);
   static bool doStoreAttr(Context* ctx, word arg);
+  static bool doStoreAttrCached(Context* ctx, word arg);
+  static bool doStoreAttrUpdateCache(Context* ctx, word arg);
   static void doStoreGlobal(Context* ctx, word arg);
   static void doDeleteGlobal(Context* ctx, word arg);
   static void doLoadConst(Context* ctx, word arg);

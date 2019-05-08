@@ -58,6 +58,69 @@ RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
   return instanceGetAttributeSetLocation(thread, object, name_str, nullptr);
 }
 
+static RawObject instanceSetAttrSetLocation(Thread* thread,
+                                            const HeapObject& instance,
+                                            const Object& name_interned,
+                                            const Object& value,
+                                            Object* location_out) {
+  HandleScope scope(thread);
+
+  // If the attribute doesn't exist we'll need to transition the layout
+  bool has_new_layout_id = false;
+  Runtime* runtime = thread->runtime();
+  Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
+  AttributeInfo info;
+  if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
+    if (layout.overflowAttributes().isNoneType()) {
+      return thread->raiseAttributeErrorWithCStr(
+          "Cannot set attribute on sealed class");
+    }
+    // Transition the layout
+    layout = runtime->layoutAddAttribute(thread, layout, name_interned, 0);
+    has_new_layout_id = true;
+
+    bool found =
+        runtime->layoutFindAttribute(thread, layout, name_interned, &info);
+    CHECK(found, "couldn't find attribute on new layout");
+  }
+
+  if (info.isReadOnly()) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "'%S' attribute is read-only", &name_interned);
+  }
+
+  // Store the attribute
+  if (info.isInObject()) {
+    instance.instanceVariableAtPut(info.offset(), *value);
+    if (location_out != nullptr) {
+      *location_out = SmallInt::fromWord(info.offset());
+    }
+  } else {
+    // Build the new overflow array
+    Tuple overflow(&scope,
+                   instance.instanceVariableAt(layout.overflowOffset()));
+    Tuple new_overflow(&scope, runtime->newTuple(overflow.length() + 1));
+    overflow.copyTo(*new_overflow);
+    new_overflow.atPut(info.offset(), *value);
+    instance.instanceVariableAtPut(layout.overflowOffset(), *new_overflow);
+    if (location_out != nullptr) {
+      *location_out = SmallInt::fromWord(-info.offset() - 1);
+    }
+  }
+
+  if (has_new_layout_id) {
+    instance.setHeader(instance.header().withLayoutId(layout.id()));
+  }
+
+  return NoneType::object();
+}
+
+RawObject instanceSetAttr(Thread* thread, const HeapObject& instance,
+                          const Object& name_interned, const Object& value) {
+  return instanceSetAttrSetLocation(thread, instance, name_interned, value,
+                                    nullptr);
+}
+
 RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
                                         const Object& name_str,
                                         Object* location_out) {
@@ -110,8 +173,9 @@ RawObject objectGetAttribute(Thread* thread, const Object& object,
   return objectGetAttributeSetLocation(thread, object, name_str, nullptr);
 }
 
-RawObject objectSetAttr(Thread* thread, const Object& object,
-                        const Object& name_interned_str, const Object& value) {
+RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
+                                   const Object& name_interned_str,
+                                   const Object& value, Object* location_out) {
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInternedStr(name_interned_str), "name must be interned");
   // Check for a data descriptor
@@ -133,9 +197,16 @@ RawObject objectSetAttr(Thread* thread, const Object& object,
   // No data descriptor found, store on the instance
   if (object.isHeapObject()) {
     HeapObject instance(&scope, *object);
-    return runtime->instanceAtPut(thread, instance, name_interned_str, value);
+    return instanceSetAttrSetLocation(thread, instance, name_interned_str,
+                                      value, location_out);
   }
   return objectRaiseAttributeError(thread, object, name_interned_str);
+}
+
+RawObject objectSetAttr(Thread* thread, const Object& object,
+                        const Object& name_interned_str, const Object& value) {
+  return objectSetAttrSetLocation(thread, object, name_interned_str, value,
+                                  nullptr);
 }
 
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {

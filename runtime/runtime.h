@@ -225,6 +225,7 @@ class Runtime {
 
   RawObject ellipsis() { return ellipsis_; }
   RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
+  RawObject objectDunderSetattr() { return object_dunder_setattr_; }
   RawValueCell sysStderr() { return RawValueCell::cast(sys_stderr_); }
   RawValueCell sysStdout() { return RawValueCell::cast(sys_stdout_); }
 
@@ -556,14 +557,6 @@ class Runtime {
   // Implements `del receiver.name`
   RawObject attributeDel(Thread* thread, const Object& receiver,
                          const Object& name);
-
-  // Attribute setting primitive for instances.
-  //
-  // This operates directly on the instance and does not respect Python
-  // semantics for attribute storage. This handles mutating the instance's
-  // layout if the attribute does not already exist on the instance.
-  RawObject instanceAtPut(Thread* thread, const HeapObject& instance,
-                          const Object& name, const Object& value);
 
   // Attribute deletion primitive for instances.
   //
@@ -943,6 +936,7 @@ class Runtime {
   RawObject empty_frozen_set_;
   RawObject empty_tuple_;
   RawObject object_dunder_getattribute_;
+  RawObject object_dunder_setattr_;
   RawObject sys_stderr_;
   RawObject sys_stdout_;
 

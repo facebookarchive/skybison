@@ -697,4 +697,74 @@ TEST(ObjectBuiltinsTest, ObjectSetAttrOnNonHeapObjectRaisesAttributeError) {
                             "'int' object has no attribute 'foo'"));
 }
 
+TEST(ObjectBuiltinsTest, ObjectSetAttrSetLocationSetsValueCachesOffset) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 0
+i = C()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+
+  AttributeInfo info;
+  Layout layout(&scope, runtime.layoutAt(i.layoutId()));
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, name, &info));
+  ASSERT_TRUE(info.isInObject());
+
+  Object value(&scope, runtime.newInt(7));
+  Object value2(&scope, runtime.newInt(99));
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(
+      objectSetAttrSetLocation(thread, i, name, value, &to_cache).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(*to_cache, info.offset()));
+  ASSERT_TRUE(i.isHeapObject());
+  HeapObject heap_object(&scope, *i);
+  EXPECT_TRUE(
+      isIntEqualsWord(heap_object.instanceVariableAt(info.offset()), 7));
+
+  Interpreter::storeAttrWithLocation(thread, *i, *to_cache, *value2);
+  EXPECT_TRUE(
+      isIntEqualsWord(heap_object.instanceVariableAt(info.offset()), 99));
+}
+
+TEST(ObjectBuiltinsTest,
+     ObjectSetAttrSetLocationSetsOverflowValueCachesOffset) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+i = C()
+i.foo = 0
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object name(&scope, runtime.internStrFromCStr("foo"));
+
+  AttributeInfo info;
+  Layout layout(&scope, runtime.layoutAt(i.layoutId()));
+  ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, name, &info));
+  ASSERT_TRUE(info.isOverflow());
+
+  Object value(&scope, runtime.newInt(-8));
+  Object value2(&scope, runtime.newInt(11));
+  Object to_cache(&scope, NoneType::object());
+  EXPECT_TRUE(
+      objectSetAttrSetLocation(thread, i, name, value, &to_cache).isNoneType());
+  EXPECT_TRUE(isIntEqualsWord(*to_cache, -info.offset() - 1));
+  ASSERT_TRUE(i.isHeapObject());
+  HeapObject heap_object(&scope, *i);
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread, heap_object, name), -8));
+
+  Interpreter::storeAttrWithLocation(thread, *i, *to_cache, *value2);
+  EXPECT_TRUE(
+      isIntEqualsWord(instanceGetAttribute(thread, heap_object, name), 11));
+}
+
 }  // namespace python

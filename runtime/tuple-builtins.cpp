@@ -24,13 +24,12 @@ RawObject underStructseqGetAttr(Thread* thread, Frame* frame, word nargs) {
 
 RawObject underStructseqSetAttr(Thread* thread, Frame* frame, word nargs) {
   // TODO(T40703284): Prevent structseq.__dict__["foo"] access
-  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   HeapObject structseq(&scope, args.get(0));
   Object name(&scope, args.get(1));
   Object value(&scope, args.get(2));
-  return runtime->instanceAtPut(thread, structseq, name, value);
+  return instanceSetAttr(thread, structseq, name, value);
 }
 
 RawObject sequenceAsTuple(Thread* thread, const Object& seq) {

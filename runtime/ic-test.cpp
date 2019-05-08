@@ -16,7 +16,7 @@ TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
   byte bytecode[] = {
       NOP,          99,        EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
       NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
-      EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
+      EXTENDED_ARG, 3,         STORE_ATTR,   4,    LOAD_ATTR,    77,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
@@ -31,7 +31,7 @@ TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
   byte expected[] = {
       NOP,          99,        EXTENDED_ARG, 0, LOAD_ATTR,    0,
       NOP,          LOAD_ATTR, EXTENDED_ARG, 0, EXTENDED_ARG, 0,
-      EXTENDED_ARG, 0,         LOAD_ATTR,    1, LOAD_ATTR,    2,
+      EXTENDED_ARG, 0,         STORE_ATTR,   1, LOAD_ATTR,    2,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));

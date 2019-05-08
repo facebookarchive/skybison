@@ -203,7 +203,7 @@ RawObject ApiHandle::asInstance(RawObject obj) {
   HeapObject instance(&scope, runtime->newInstance(layout));
   Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
-  runtime->instanceAtPut(thread, instance, attr_name, object_ptr);
+  instanceSetAttr(thread, instance, attr_name, object_ptr);
   // TODO(T42827325): incref this before returning to represent the reference
   // stored in ___extension___.
 

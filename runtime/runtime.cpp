@@ -1648,6 +1648,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&object_dunder_getattribute_);
+  visitor->visitPointer(&object_dunder_setattr_);
   visitor->visitPointer(&sys_stderr_);
   visitor->visitPointer(&sys_stdout_);
 
@@ -1956,6 +1957,8 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   Object dunder_getattribute_name(&scope, symbols()->DunderGetattribute());
   object_dunder_getattribute_ =
       typeDictAt(object_dict, dunder_getattribute_name);
+  Object dunder_setattr_name(&scope, symbols()->DunderSetattr());
+  object_dunder_setattr_ = typeDictAt(object_dict, dunder_setattr_name);
 }
 
 void Runtime::createImportlibModule(Thread* thread) {
@@ -3580,52 +3583,6 @@ RawObject Runtime::layoutGetOverflowDict(Thread* thread,
   Object overflow(&scope, instance.instanceVariableAt(offset));
   DCHECK(overflow.isDict(), "layout dict overflow must be dict");
   return *overflow;
-}
-
-RawObject Runtime::instanceAtPut(Thread* thread, const HeapObject& instance,
-                                 const Object& name, const Object& value) {
-  HandleScope scope(thread);
-
-  // If the attribute doesn't exist we'll need to transition the layout
-  bool has_new_layout_id = false;
-  Layout layout(&scope, layoutAt(instance.layoutId()));
-  AttributeInfo info;
-  if (!layoutFindAttribute(thread, layout, name, &info)) {
-    if (layout.overflowAttributes().isNoneType()) {
-      return thread->raiseAttributeErrorWithCStr(
-          "Cannot set attribute on sealed class");
-    }
-    // Transition the layout
-    layout = layoutAddAttribute(thread, layout, name, 0);
-    has_new_layout_id = true;
-
-    bool found = layoutFindAttribute(thread, layout, name, &info);
-    CHECK(found, "couldn't find attribute on new layout");
-  }
-
-  if (info.isReadOnly()) {
-    return thread->raiseAttributeError(
-        newStrFromFmt("'%S' attribute is read-only", &name));
-  }
-
-  // Store the attribute
-  if (info.isInObject()) {
-    instance.instanceVariableAtPut(info.offset(), *value);
-  } else {
-    // Build the new overflow array
-    Tuple overflow(&scope,
-                   instance.instanceVariableAt(layout.overflowOffset()));
-    Tuple new_overflow(&scope, newTuple(overflow.length() + 1));
-    overflow.copyTo(*new_overflow);
-    new_overflow.atPut(info.offset(), *value);
-    instance.instanceVariableAtPut(layout.overflowOffset(), *new_overflow);
-  }
-
-  if (has_new_layout_id) {
-    instance.setHeader(instance.header().withLayoutId(layout.id()));
-  }
-
-  return NoneType::object();
 }
 
 RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,

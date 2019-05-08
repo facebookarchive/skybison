@@ -815,6 +815,7 @@ class RawHeapObject : public RawObject {
   // This is only public for the inline-cache to use. All other cases should
   // use more specific getter methods in the subclasses.
   RawObject instanceVariableAt(word offset) const;
+  void instanceVariableAtPut(word offset, RawObject value) const;
 
   // Tags.
   static const int kTag = 1;
@@ -831,9 +832,6 @@ class RawHeapObject : public RawObject {
   static const word kMinimumSize = kPointerSize * 2;
 
   RAW_OBJECT_COMMON(HeapObject);
-
- protected:
-  void instanceVariableAtPut(word offset, RawObject value) const;
 
  private:
   // Instance initialization should only done by the Heap.

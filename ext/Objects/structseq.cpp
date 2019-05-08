@@ -2,6 +2,7 @@
 
 #include "builtins-module.h"
 #include "cpython-func.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "trampolines-inl.h"
@@ -67,7 +68,7 @@ PY_EXPORT void PyStructSequence_SetItem(PyObject* structseq, Py_ssize_t pos,
 
   // Bypass the immutability of structseq_field.__set__
   HeapObject structseq_heap(&scope, *structseq_obj);
-  runtime->instanceAtPut(thread, structseq_heap, field_name, value_obj);
+  instanceSetAttr(thread, structseq_heap, field_name, value_obj);
   value_handle->decref();  // steal reference
 }
 

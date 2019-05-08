@@ -8,6 +8,9 @@ namespace python {
 RawObject instanceGetAttribute(Thread* thread, const HeapObject& object,
                                const Object& name_str);
 
+RawObject instanceSetAttr(Thread* thread, const HeapObject& instance,
+                          const Object& name_interned, const Object& value);
+
 RawObject objectGetAttribute(Thread* thread, const Object& object,
                              const Object& name_str);
 
@@ -20,6 +23,10 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
 
 RawObject objectSetAttr(Thread* thread, const Object& object,
                         const Object& name_interned_str, const Object& value);
+
+RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
+                                   const Object& name_interned_str,
+                                   const Object& value, Object* location_out);
 
 class ObjectBuiltins {
  public:

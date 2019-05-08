@@ -1780,9 +1780,84 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
 }
 
 // opcode 95
+
+void Interpreter::storeAttrWithLocation(Thread* thread, RawObject receiver,
+                                        RawObject location, RawObject value) {
+  word offset = RawSmallInt::cast(location).value();
+  RawHeapObject heap_object = RawHeapObject::cast(receiver);
+  if (offset >= 0) {
+    heap_object.instanceVariableAtPut(offset, value);
+    return;
+  }
+
+  RawLayout layout =
+      RawLayout::cast(thread->runtime()->layoutAt(receiver.layoutId()));
+  RawTuple overflow =
+      RawTuple::cast(heap_object.instanceVariableAt(layout.overflowOffset()));
+  overflow.atPut(-offset - 1, value);
+}
+
+RawObject Interpreter::storeAttrSetLocation(Thread* thread,
+                                            const Object& object,
+                                            const Object& name_str,
+                                            const Object& value,
+                                            Object* location_out) {
+  Runtime* runtime = thread->runtime();
+  if (runtime->isCacheEnabled()) {
+    HandleScope scope(thread);
+    Type type(&scope, runtime->typeOf(*object));
+    Object dunder_setattr(
+        &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderSetattr));
+    if (dunder_setattr == runtime->objectDunderSetattr()) {
+      return objectSetAttrSetLocation(thread, object, name_str, value,
+                                      location_out);
+    }
+  }
+  return thread->invokeMethod3(object, SymbolId::kDunderSetattr, name_str,
+                               value);
+}
+
+bool Interpreter::doStoreAttrUpdateCache(Context* ctx, word arg) {
+  word original_arg = icOriginalArg(*ctx->function, arg);
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  Object receiver(&scope, frame->popValue());
+  Object name(
+      &scope,
+      RawTuple::cast(RawCode::cast(frame->code()).names()).at(original_arg));
+  Object value(&scope, frame->popValue());
+
+  Object location(&scope, NoneType::object());
+  Object result(&scope,
+                storeAttrSetLocation(thread, receiver, name, value, &location));
+  if (result.isError()) return unwind(ctx);
+  if (!location.isNoneType()) {
+    LayoutId layout_id = receiver.layoutId();
+    word cache_entry_offset = icFind(*ctx->caches, arg, layout_id);
+    icUpdate(*ctx->caches, cache_entry_offset, layout_id, *location);
+  }
+  return false;
+}
+
+bool Interpreter::doStoreAttrCached(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  RawObject receiver_raw = frame->topValue();
+  LayoutId layout_id = receiver_raw.layoutId();
+  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
+  if (cached.isError()) {
+    return doStoreAttrUpdateCache(ctx, arg);
+  }
+
+  RawObject value_raw = frame->peek(1);
+  frame->dropValues(2);
+  storeAttrWithLocation(ctx->thread, receiver_raw, cached, value_raw);
+  return false;
+}
+
 bool Interpreter::doStoreAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Object receiver(&scope, ctx->frame->popValue());
   auto names = RawCode::cast(ctx->frame->code()).names();
   Object name(&scope, RawTuple::cast(names).at(arg));

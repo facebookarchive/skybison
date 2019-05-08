@@ -106,7 +106,7 @@ namespace python {
   V(UNPACK_SEQUENCE, 92, doUnpackSequence)                                     \
   V(FOR_ITER, 93, doForIter)                                                   \
   V(UNPACK_EX, 94, doUnpackEx)                                                 \
-  V(STORE_ATTR, 95, doStoreAttr)                                               \
+  C(STORE_ATTR, 95, doStoreAttr)                                               \
   V(DELETE_ATTR, 96, doDeleteAttr)                                             \
   V(STORE_GLOBAL, 97, doStoreGlobal)                                           \
   V(DELETE_GLOBAL, 98, doDeleteGlobal)                                         \

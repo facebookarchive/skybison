@@ -3012,7 +3012,7 @@ TEST(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
   Str attr(&scope, runtime.newStrFromCStr("attr"));
   Str value(&scope, runtime.newStrFromCStr("value"));
   Thread* thread = Thread::current();
-  Object result(&scope, runtime.instanceAtPut(thread, set, attr, value));
+  Object result(&scope, instanceSetAttr(thread, set, attr, value));
   EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
 }
 
@@ -3037,7 +3037,7 @@ TEST(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   Object attribute_name(&scope, runtime.newStrFromCStr("__globals__"));
   Object value(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
-      runtime.instanceAtPut(thread, instance, attribute_name, value),
+      instanceSetAttr(thread, instance, attribute_name, value),
       LayoutId::kAttributeError, "'__globals__' attribute is read-only"));
 }
 
@@ -3064,7 +3064,7 @@ a = C()
   HeapObject a(&scope, moduleAt(&runtime, "__main__", "a"));
   Str attr(&scope, runtime.newStrFromCStr("attr"));
   Str value(&scope, runtime.newStrFromCStr("value"));
-  Object result(&scope, runtime.instanceAtPut(thread, a, attr, value));
+  Object result(&scope, instanceSetAttr(thread, a, attr, value));
   ASSERT_FALSE(result.isError());
   EXPECT_EQ(instanceGetAttribute(thread, a, attr), *value);
 }
