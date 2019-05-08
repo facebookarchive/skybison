@@ -16,6 +16,7 @@ class UnderCodecsModule
   static RawObject underAsciiEncode(Thread* thread, Frame* frame, word nargs);
   static RawObject underLatin1Encode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf16Encode(Thread* thread, Frame* frame, word nargs);
+  static RawObject underUtf32Encode(Thread* thread, Frame* frame, word nargs);
   static RawObject underUtf8Encode(Thread* thread, Frame* frame, word nargs);
   static RawObject underByteArrayAsBytes(Thread* thread, Frame* frame,
                                          word nargs);

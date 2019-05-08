@@ -77,6 +77,7 @@ const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
     {SymbolId::kUnderLatin1Encode, underLatin1Encode},
     {SymbolId::kUnderUtf16Encode, underUtf16Encode},
+    {SymbolId::kUnderUtf32Encode, underUtf32Encode},
     {SymbolId::kUnderUtf8Encode, underUtf8Encode},
     {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
     {SymbolId::kUnderByteArrayToString, underByteArrayToString},
@@ -427,6 +428,93 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
           if (isEscapedLatin1Surrogate(codepoint)) {
             appendUtf16ToByteArray(thread, runtime, output,
                                    codepoint - kLowSurrogateStart, bo);
+            continue;
+          }
+          break;
+        default:
+          break;
+      }
+      result.atPut(0, runtime->newInt(i));
+      while (byte_offset < data.length() &&
+             isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
+        byte_offset += num_bytes;
+        i++;
+      }
+      result.atPut(1, runtime->newInt(i + 1));
+      return *result;
+    }
+  }
+  result.atPut(0, byteArrayAsBytes(thread, runtime, output));
+  result.atPut(1, runtime->newInt(i));
+  return *result;
+}
+
+static void appendUtf32ToByteArray(Thread* thread, Runtime* runtime,
+                                   const ByteArray& writer, int32_t codepoint,
+                                   endian endianness) {
+  if (endianness == endian::little) {
+    byteArrayAdd(thread, runtime, writer, codepoint);
+    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte));
+    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 2));
+    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 3));
+  } else {
+    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 3));
+    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte * 2));
+    byteArrayAdd(thread, runtime, writer, codepoint >> (kBitsPerByte));
+    byteArrayAdd(thread, runtime, writer, codepoint);
+  }
+}
+
+RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object data_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
+  Object byteorder_obj(&scope, args.get(4));
+  DCHECK(runtime->isInstanceOfStr(*data_obj),
+         "First arg to _utf_32_encode must be str");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _utf_32_encode must be str");
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _utf_32_encode must be int");
+  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
+         "Fourth arg to _utf_32_encode must be bytearray");
+  DCHECK(runtime->isInstanceOfInt(*byteorder_obj),
+         "Fifth arg to _utf_32_encode must be int");
+  // TODO(T43357729): Have proper subclass handling
+  Str data(&scope, *data_obj);
+  Str errors(&scope, *errors_obj);
+  Int index_int(&scope, *index_obj);
+  ByteArray output(&scope, *output_obj);
+  Int byteorder(&scope, *byteorder_obj);
+
+  Tuple result(&scope, runtime->newTuple(2));
+  SymbolId error_id = lookupSymbolForErrorHandler(errors);
+  word i = index_int.asWord();
+  for (word byte_offset = data.offsetByCodePoints(0, i);
+       byte_offset < data.length(); i++) {
+    endian endianness = byteorder.asWord() <= 0 ? endian::little : endian::big;
+    word num_bytes;
+    int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
+    byte_offset += num_bytes;
+    if (!isSurrogate(codepoint)) {
+      appendUtf32ToByteArray(thread, runtime, output, codepoint, endianness);
+    } else {
+      switch (error_id) {
+        case SymbolId::kIgnore:
+          continue;
+        case SymbolId::kReplace:
+          appendUtf32ToByteArray(thread, runtime, output, kASCIIReplacement,
+                                 endianness);
+          continue;
+        case SymbolId::kSurrogateescape:
+          if (isEscapedLatin1Surrogate(codepoint)) {
+            appendUtf32ToByteArray(thread, runtime, output,
+                                   codepoint - kLowSurrogateStart, endianness);
             continue;
           }
           break;

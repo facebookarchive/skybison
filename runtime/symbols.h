@@ -516,6 +516,8 @@ class Runtime;
   V(Utf8Encode, "utf_8_encode")                                                \
   V(UnderUtf16Encode, "_utf_16_encode")                                        \
   V(Utf16Encode, "utf_16_encode")                                              \
+  V(UnderUtf32Encode, "_utf_32_encode")                                        \
+  V(Utf32Encode, "utf_32_encode")                                              \
   V(Value, "value")                                                            \
   V(Values, "values")                                                          \
   V(ValueCell, "valuecell")                                                    \

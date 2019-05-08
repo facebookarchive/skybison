@@ -295,6 +295,84 @@ class EncodeUTF16Tests(unittest.TestCase):
             _codecs.utf_16_encode("ab\udc80", "test")
 
 
+class EncodeUTF32Tests(unittest.TestCase):
+    def test_encode_utf_32_with_non_str_first_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.utf_32_encode([])
+
+    def test_encode_utf_32_with_non_str_second_argument_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.utf_32_encode("", [])
+
+    def test_encode_utf_32_with_zero_length_returns_bom(self):
+        encoded, consumed = _codecs.utf_32_encode("")
+        self.assertEqual(encoded, b"\xff\xfe\x00\x00")
+        self.assertEqual(consumed, 0)
+
+    def test_encode_utf_32_with_ascii_returns_bytes(self):
+        encoded, consumed = _codecs.utf_32_encode("hi")
+        self.assertEqual(encoded, b"\xff\xfe\x00\x00h\x00\x00\x00i\x00\x00\x00")
+        self.assertEqual(consumed, 2)
+
+    def test_encode_utf_32_with_latin_1_returns_bytes(self):
+        encoded, consumed = _codecs.utf_32_encode("h\xe5")
+        self.assertEqual(encoded, b"\xff\xfe\x00\x00h\x00\x00\x00\xe5\x00\x00\x00")
+        self.assertEqual(consumed, 2)
+
+    def test_encode_utf_32_with_bmp_returns_bytes(self):
+        encoded, consumed = _codecs.utf_32_encode("h\u1005")
+        self.assertEqual(encoded, b"\xff\xfe\x00\x00h\x00\x00\x00\x05\x10\x00\x00")
+        self.assertEqual(consumed, 2)
+
+    def test_encode_utf_32_with_supplementary_plane_returns_bytes(self):
+        encoded, consumed = _codecs.utf_32_encode("h\U0001d1f0i")
+        self.assertEqual(
+            encoded, b"\xff\xfe\x00\x00h\x00\x00\x00\xf0\xd1\x01\x00i\x00\x00\x00"
+        )
+        self.assertEqual(consumed, 3)
+
+    def test_encode_utf_32_le_with_supplementary_plane_returns_bytes(self):
+        encoded, consumed = _codecs.utf_32_le_encode("h\U0001d1f0i")
+        self.assertEqual(encoded, b"h\x00\x00\x00\xf0\xd1\x01\x00i\x00\x00\x00")
+        self.assertEqual(consumed, 3)
+
+    def test_encode_utf_32_be_with_supplementary_plane_returns_bytes(self):
+        encoded, consumed = _codecs.utf_32_be_encode("h\U0001d1f0i")
+        self.assertEqual(encoded, b"\x00\x00\x00h\x00\x01\xd1\xf0\x00\x00\x00i")
+        self.assertEqual(consumed, 3)
+
+    def test_encode_utf_32_with_custom_error_handler_mid_bytes_error_returns_bytes(
+        self
+    ):
+        _codecs.register_error("test", lambda x: (b"----", x.end))
+        encoded, consumed = _codecs.utf_32_encode("ab\udc80c", "test")
+        self.assertEqual(
+            encoded, b"\xff\xfe\x00\x00a\x00\x00\x00b\x00\x00\x00----c\x00\x00\x00"
+        )
+        self.assertEqual(consumed, 4)
+
+    def test_encode_utf_32_with_custom_error_handler_end_bytes_error_returns_bytes(
+        self
+    ):
+        _codecs.register_error("test", lambda x: (b"----", x.end))
+        encoded, consumed = _codecs.utf_32_encode("ab\udc80", "test")
+        self.assertEqual(encoded, b"\xff\xfe\x00\x00a\x00\x00\x00b\x00\x00\x00----")
+        self.assertEqual(consumed, 3)
+
+    def test_encode_utf_32_with_string_returning_error_handler_returns_bytes(self):
+        _codecs.register_error("test", lambda x: ("h", x.end))
+        encoded, consumed = _codecs.utf_32_encode("ab\udc80", "test")
+        self.assertEqual(
+            encoded, b"\xff\xfe\x00\x00a\x00\x00\x00b\x00\x00\x00h\x00\x00\x00"
+        )
+        self.assertEqual(consumed, 3)
+
+    def test_encode_utf_32_with_non_ascii_error_handler_raises_encode_error(self):
+        _codecs.register_error("test", lambda x: ("\x80", x.end))
+        with self.assertRaises(UnicodeEncodeError):
+            _codecs.utf_32_encode("ab\udc80", "test")
+
+
 class EncodeUTF8Tests(unittest.TestCase):
     def test_encode_utf_8_with_non_str_first_argument_raises_type_error(self):
         with self.assertRaises(TypeError):

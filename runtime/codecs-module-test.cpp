@@ -461,4 +461,149 @@ TEST(CodecsModuleTest, EncodeUTF16BeWithSupplementaryStringReturnsUTF16Bytes) {
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
 }
 
+TEST(CodecsModuleTest, EncodeUTF32WithWellFormedASCIIReturnsBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("hi"));
+  Object errors(&scope, runtime.newStrFromCStr("unknown"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 8);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  byte expected[] = {'h', 0x00, 0x00, 0x00, 'i', 0x00, 0x00, 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF32WithIgnoreErrorHandlerReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\xed\xb2\x80i"));
+  Object errors(&scope, runtime.newStrFromCStr("ignore"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 8);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h', 0x00, 0x00, 0x00, 'i', 0x00, 0x00, 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF32WithReplaceErrorHandlerReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("hi\xed\xb2\x80"));
+  Object errors(&scope, runtime.newStrFromCStr("replace"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 12);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h',  0x00, 0x00, 0x00, 'i',  0x00,
+                     0x00, 0x00, '?',  0x00, 0x00, 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF32WithSurroogateescapeErrorHandlerReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\xed\xb2\x80i"));
+  Object errors(&scope, runtime.newStrFromCStr("surrogateescape"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 12);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h',  0x00, 0x00, 0x00, 0x80, 0x00,
+                     0x00, 0x00, 'i',  0x00, 0x00, 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF32WithSupplementaryStringReturnsUTF32Bytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\U0001d1f0i"));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(0));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 12);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h',  0x00, 0x00, 0x00, 0xf0, 0xd1,
+                     0x01, 0x00, 'i',  0x00, 0x00, 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF32LeWithSupplementaryStringReturnsUTF32Bytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\U0001d1f0i"));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(-1));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 12);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {'h',  0x00, 0x00, 0x00, 0xf0, 0xd1,
+                     0x01, 0x00, 'i',  0x00, 0x00, 0x00};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF32BeWithSupplementaryStringReturnsUTF32Bytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("h\U0001d1f0i"));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(1));
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Bytes bytes(&scope, result.at(0));
+  EXPECT_EQ(bytes.length(), 12);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 3));
+  byte expected[] = {0x00, 0x00, 0x00, 'h',  0x00, 0x01,
+                     0xd1, 0xf0, 0x00, 0x00, 0x00, 'i'};
+  EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
 }  // namespace python

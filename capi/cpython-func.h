@@ -766,6 +766,9 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(PyObject*, const char*);
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF16(PyObject*, const char*, int);
 PyAPI_FUNC(PyObject*)
     PyUnicode_EncodeUTF16(const Py_UNICODE*, Py_ssize_t, const char*, int);
+PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF32(PyObject*, const char*, int);
+PyAPI_FUNC(PyObject*)
+    PyUnicode_EncodeUTF32(const Py_UNICODE*, Py_ssize_t, const char*, int);
 PyAPI_FUNC(int) _PyUnicode_EqualToASCIIString(PyObject*, const char*);
 PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 PyAPI_FUNC(int) PyUnicode_FSDecoder(PyObject*, void*);

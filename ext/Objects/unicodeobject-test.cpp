@@ -1889,4 +1889,111 @@ TEST_F(UnicodeExtensionApiTest, EncodeUTF16WithReplaceReturnsBytes) {
             0);
 }
 
+TEST_F(UnicodeExtensionApiTest, AsUTF32StringWithNonStringReturnsNull) {
+  PyObjectPtr bytes(PyUnicode_AsUTF32String(Py_None));
+  ASSERT_EQ(bytes, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUTF32StringReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("hi"));
+  PyObjectPtr bytes(PyUnicode_AsUTF32String(unicode));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 12);
+  EXPECT_EQ(std::memcmp(PyBytes_AsString(bytes),
+                        "\xff\xfe\x00\x00h\x00\x00\x00i\x00\x00\x00", 12),
+            0);
+}
+
+TEST_F(UnicodeExtensionApiTest,
+       AsUTF32StringWithInvalidCodepointRaisesEncodeError) {
+  PyObjectPtr unicode(PyUnicode_DecodeASCII("h\x80i", 3, "surrogateescape"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_TRUE(PyUnicode_CheckExact(unicode));
+  PyObjectPtr bytes(PyUnicode_AsUTF32String(unicode));
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UnicodeEncodeError));
+  EXPECT_EQ(bytes, nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, AsUTF32StringWithUTF32ReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("h\U0001d1f0i"));
+  PyObjectPtr bytes(PyUnicode_AsUTF32String(unicode));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 16);
+  EXPECT_EQ(
+      std::memcmp(PyBytes_AsString(bytes),
+                  "\xff\xfe\x00\x00h\x00\x00\x00\xf0\xd1\x01\x00i\x00\x00\x00",
+                  16),
+      0);
+}
+
+TEST_F(UnicodeExtensionApiTest, UnderEncodeUTF32WithUTF32ReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("h\U0001d1f0i"));
+  PyObjectPtr bytes(_PyUnicode_EncodeUTF32(unicode, "replace", 0));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 16);
+  EXPECT_EQ(
+      std::memcmp(PyBytes_AsString(bytes),
+                  "\xff\xfe\x00\x00h\x00\x00\x00\xf0\xd1\x01\x00i\x00\x00\x00",
+                  16),
+      0);
+}
+
+TEST_F(UnicodeExtensionApiTest, UnderEncodeUTF32LeWithUTF32ReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("h\U0001d1f0i"));
+  PyObjectPtr bytes(_PyUnicode_EncodeUTF32(unicode, "replace", -1));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 12);
+  EXPECT_EQ(std::memcmp(PyBytes_AsString(bytes),
+                        "h\x00\x00\x00\xf0\xd1\x01\x00i\x00\x00\x00", 12),
+            0);
+}
+
+TEST_F(UnicodeExtensionApiTest, UnderEncodeUTF32BeWithUTF32ReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromString("h\U0001d1f0i"));
+  PyObjectPtr bytes(_PyUnicode_EncodeUTF32(unicode, "replace", 1));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 12);
+  EXPECT_EQ(std::memcmp(PyBytes_AsString(bytes),
+                        "\x00\x00\x00h\x00\x01\xd1\xf0\x00\x00\x00i", 12),
+            0);
+}
+
+TEST_F(UnicodeExtensionApiTest, UnderEncodeUTF32WithReplaceReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_DecodeASCII("h\x80i", 3, "surrogateescape"));
+  PyObjectPtr bytes(_PyUnicode_EncodeUTF32(unicode, "replace", 0));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 16);
+  EXPECT_EQ(std::memcmp(
+                PyBytes_AsString(bytes),
+                "\xff\xfe\x00\x00h\x00\x00\x00?\x00\x00\x00i\x00\x00\x00", 16),
+            0);
+}
+
+TEST_F(UnicodeExtensionApiTest, EncodeUTF32WithReplaceReturnsBytes) {
+  PyObjectPtr unicode(PyUnicode_FromWideChar(L"h\xDC80i", 3));
+  PyObjectPtr bytes(_PyUnicode_EncodeUTF32(unicode, "replace", 0));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  ASSERT_TRUE(PyBytes_Check(bytes));
+  EXPECT_EQ(PyBytes_Size(bytes), 16);
+  EXPECT_EQ(std::memcmp(
+                PyBytes_AsString(bytes),
+                "\xff\xfe\x00\x00h\x00\x00\x00?\x00\x00\x00i\x00\x00\x00", 16),
+            0);
+}
+
 }  // namespace python
