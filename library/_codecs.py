@@ -9,6 +9,7 @@ _patch = _patch  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
+_Unbound = _Unbound  # noqa: F821
 
 
 codec_search_path = []
@@ -56,20 +57,44 @@ def _lookup_text(encoding, alternate_command):
     return codec
 
 
-def decode(data, encoding: str = "utf-8", errors: str = "strict") -> str:
+def decode(data, encoding: str = "utf-8", errors: str = _Unbound) -> str:
     try:
-        return _codec_decode_table[encoding.lower()](data, errors)[0]
+        return _codec_decode_table[encoding.lower()](
+            data, "strict" if errors is _Unbound else errors
+        )[0]
     except KeyError:
-        # TODO(T39917465): Call the encoding search function
-        _unimplemented()
+        try:
+            decoder = lookup(encoding)[1]
+        except LookupError:
+            raise LookupError(f"unknown encoding: {encoding}")
+        if errors is _Unbound:
+            result = decoder(data)
+        else:
+            result = decoder(data, errors)
+        if _tuple_check(result) and len(result) == 2:
+            return result[0]
+        # CPython does not check to make sure that the second element is an int
+        raise TypeError("decoder must return a tuple (object, integer)")
 
 
-def encode(data, encoding: str = "utf-8", errors: str = "strict") -> bytes:
+def encode(data, encoding: str = "utf-8", errors: str = _Unbound) -> bytes:
     try:
-        return _codec_encode_table[encoding.lower()](data, errors)[0]
+        return _codec_encode_table[encoding.lower()](
+            data, "strict" if errors is _Unbound else errors
+        )[0]
     except KeyError:
-        # TODO(T39917465): Call the encodings search function
-        _unimplemented()
+        try:
+            encoder = lookup(encoding)[0]
+        except LookupError:
+            raise LookupError(f"unknown encoding: {encoding}")
+        if errors is _Unbound:
+            result = encoder(data)
+        else:
+            result = encoder(data, errors)
+        if _tuple_check(result) and len(result) == 2:
+            return result[0]
+        # CPython does not check to make sure that the second element is an int
+        raise TypeError("encoder must return a tuple (object, integer)")
 
 
 @_patch

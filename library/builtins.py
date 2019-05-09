@@ -811,7 +811,7 @@ class bytearray(bootstrap=True):
     def count(self, sub, start=_Unbound, end=_Unbound):
         _unimplemented()
 
-    def decode(self, encoding="utf-8", errors="strict"):
+    def decode(self, encoding="utf-8", errors=_Unbound):
         import _codecs
 
         return _codecs.decode(self, encoding, errors)
@@ -2703,7 +2703,7 @@ class str(bootstrap=True):
     def count(self, sub, start=_Unbound, end=_Unbound):
         _unimplemented()
 
-    def encode(self, encoding="utf-8", errors="strict") -> bytes:
+    def encode(self, encoding="utf-8", errors=_Unbound) -> bytes:
         import _codecs
 
         return _codecs.encode(self, encoding, errors)

@@ -1080,12 +1080,6 @@ TEST(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 }
 
-TEST(BytesBuiltinsTest, DecodeWithUnknownCodecReturnsNotImplemented) {
-  Runtime runtime;
-  EXPECT_DEATH(runFromCStr(&runtime, "b'hello'.decode('unknown')").isNoneType(),
-               ".*'_unimplemented' called in function 'decode'");
-}
-
 TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"),

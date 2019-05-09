@@ -104,6 +104,116 @@ class CodecsTests(unittest.TestCase):
         _codecs.register(lookup_function)
         self.assertEqual(_codecs.lookup("normalized string"), (0, 0, 0, 0))
 
+    def test_decode_with_unknown_codec_raises_lookup_error(self):
+        with self.assertRaises(LookupError) as context:
+            _codecs.decode(b"bytes", "not-a-codec")
+        self.assertEqual(str(context.exception), "unknown encoding: not-a-codec")
+
+    def test_decode_with_function_with_int_codec_raises_type_error(self):
+        def lookup_function(encoding):
+            if encoding == "decode-with-function-with-int-codec":
+                return 0, 0, 0, 0
+
+        _codecs.register(lookup_function)
+        with self.assertRaises(TypeError) as context:
+            _codecs.decode(b"bytes", "decode-with-function-with-int-codec")
+        self.assertEqual(str(context.exception), "object is not callable")
+
+    def test_decode_with_function_with_non_tuple_return_raises_type_error(self):
+        def lookup_function(encoding):
+            if encoding == "decode-with-function-with-faulty-codec":
+                return 0, (lambda uni: 0), 0, 0
+
+        _codecs.register(lookup_function)
+        with self.assertRaises(TypeError) as context:
+            _codecs.decode(b"bytes", "decode-with-function-with-faulty-codec")
+        self.assertEqual(
+            str(context.exception), "decoder must return a tuple (object, integer)"
+        )
+
+    def test_decode_with_function_with_tuple_return_returns_first_element(self):
+        def decoder(s):
+            return ("one", "two")
+
+        def lookup_function(encoding):
+            if encoding == "decode-with-function-with-two-tuple-codec":
+                return 0, decoder, 0, 0
+
+        _codecs.register(lookup_function)
+        self.assertEqual(
+            _codecs.decode(b"bytes", "decode-with-function-with-two-tuple-codec"), "one"
+        )
+
+    def test_decode_with_errors_passes_multiple_arguments(self):
+        def decoder(s, err):
+            return (s, err)
+
+        def lookup_function(encoding):
+            if encoding == "decode-with-function-with-two-arguments":
+                return 0, decoder, 0, 0
+
+        _codecs.register(lookup_function)
+        self.assertEqual(
+            _codecs.decode(
+                b"bytes", "decode-with-function-with-two-arguments", "error"
+            ),
+            b"bytes",
+        )
+
+    def test_encode_with_unknown_codec_raises_lookup_error(self):
+        with self.assertRaises(LookupError) as context:
+            _codecs.encode("str", "not-a-codec")
+        self.assertEqual(str(context.exception), "unknown encoding: not-a-codec")
+
+    def test_encode_with_function_with_int_codec_raises_type_error(self):
+        def lookup_function(encoding):
+            if encoding == "encode-with-function-with-int-codec":
+                return 0, 0, 0, 0
+
+        _codecs.register(lookup_function)
+        with self.assertRaises(TypeError) as context:
+            _codecs.encode("str", "encode-with-function-with-int-codec")
+        self.assertEqual(str(context.exception), "object is not callable")
+
+    def test_encode_with_function_with_non_tuple_return_raises_type_error(self):
+        def lookup_function(encoding):
+            if encoding == "encode-with-function-with-faulty-codec":
+                return (lambda uni: 0), 0, 0, 0
+
+        _codecs.register(lookup_function)
+        with self.assertRaises(TypeError) as context:
+            _codecs.encode("str", "encode-with-function-with-faulty-codec")
+        self.assertEqual(
+            str(context.exception), "encoder must return a tuple (object, integer)"
+        )
+
+    def test_encode_with_function_with_tuple_return_returns_first_element(self):
+        def encoder(s):
+            return ("one", "two")
+
+        def lookup_function(encoding):
+            if encoding == "encode-with-function-with-two-tuple-codec":
+                return encoder, 0, 0, 0
+
+        _codecs.register(lookup_function)
+        self.assertEqual(
+            _codecs.encode("str", "encode-with-function-with-two-tuple-codec"), "one"
+        )
+
+    def test_encode_with_errors_passes_multiple_arguments(self):
+        def encoder(s, err):
+            return (s, err)
+
+        def lookup_function(encoding):
+            if encoding == "encode-with-function-with-two-arguments":
+                return encoder, 0, 0, 0
+
+        _codecs.register(lookup_function)
+        self.assertEqual(
+            _codecs.encode("str", "encode-with-function-with-two-arguments", "error"),
+            "str",
+        )
+
 
 class DecodeASCIITests(unittest.TestCase):
     def test_decode_ascii_with_non_bytes_first_raises_type_error(self):
