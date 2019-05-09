@@ -2332,14 +2332,7 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
 
 RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
                               word stop, word step) {
-  word length = 0;
-  if (step < 0) {
-    if (stop < start) {
-      length = (start - stop - 1) / (-step) + 1;
-    }
-  } else if (start < stop) {
-    length = (stop - start - 1) / step + 1;
-  }
+  word length = Slice::length(start, stop, step);
   if (length <= SmallBytes::kMaxLength) {
     byte buffer[SmallBytes::kMaxLength];
     for (word i = 0, j = start; i < length; i++, j += step) {

@@ -438,6 +438,17 @@ void RawSlice::unpack(word* start, word* stop, word* step) const {
   }
 }
 
+word RawSlice::length(word start, word stop, word step) {
+  if (step < 0) {
+    if (stop < start) {
+      return (start - stop - 1) / (-step) + 1;
+    }
+  } else if (start < stop) {
+    return (stop - start - 1) / step + 1;
+  }
+  return 0;
+}
+
 word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
   DCHECK(step != 0, "Step should be non zero");
 
@@ -459,16 +470,7 @@ word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
     *stop = (step < 0) ? length - 1 : length;
   }
 
-  if (step < 0) {
-    if (*stop < *start) {
-      return (*start - *stop - 1) / (-step) + 1;
-    }
-  } else {
-    if (*start < *stop) {
-      return (*stop - *start - 1) / step + 1;
-    }
-  }
-  return 0;
+  return RawSlice::length(*start, *stop, step);
 }
 
 // RawStr

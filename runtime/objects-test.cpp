@@ -415,6 +415,30 @@ TEST(SliceTest, adjustIndicesOutOfBounds) {
   ASSERT_EQ(stop, 4);
 }
 
+TEST(SliceTest, LengthWithNegativeStepAndStopLessThanStartReturnsLength) {
+  EXPECT_EQ(Slice::length(5, 2, -1), 3);
+}
+
+TEST(SliceTest, LengthWithNegativeStepAndStartLessThanStopReturnsZero) {
+  EXPECT_EQ(Slice::length(2, 5, -1), 0);
+}
+
+TEST(SliceTest, LengthWithNegativeStepAndStartEqualsStopReturnsZero) {
+  EXPECT_EQ(Slice::length(2, 2, -1), 0);
+}
+
+TEST(SliceTest, LengthWithPositiveStepAndStartLessThanStopReturnsLength) {
+  EXPECT_EQ(Slice::length(2, 5, 1), 3);
+}
+
+TEST(SliceTest, LengthWithPositiveStepAndStopLessThanStartReturnsZero) {
+  EXPECT_EQ(Slice::length(5, 2, 1), 0);
+}
+
+TEST(SliceTest, LengthWithPositiveStepAndStartEqualsStopReturnsZero) {
+  EXPECT_EQ(Slice::length(2, 2, 1), 0);
+}
+
 TEST(LargeStrTest, CopyTo) {
   Runtime runtime;
 

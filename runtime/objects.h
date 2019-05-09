@@ -1465,6 +1465,9 @@ class RawSlice : public RawHeapObject {
   // Returns the correct start, stop, and step word values from this slice
   void unpack(word* start, word* stop, word* step) const;
 
+  // Calculate the number of items that a slice addresses
+  static word length(word start, word stop, word step);
+
   // Takes in the length of a list and the start, stop, and step values
   // Returns the length of the new list and the corrected start and stop values
   static word adjustIndices(word length, word* start, word* stop, word step);
