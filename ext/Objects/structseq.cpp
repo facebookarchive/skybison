@@ -108,7 +108,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   Dict dict(&scope, runtime->newDict());
   Object n_sequence_key(&scope, runtime->symbols()->NSequenceFields());
   Object n_sequence(&scope, runtime->newInt(desc->n_in_sequence));
-  runtime->typeDictAtPut(dict, n_sequence_key, n_sequence);
+  runtime->typeDictAtPut(thread, dict, n_sequence_key, n_sequence);
 
   // Add n_fields
   word num_fields = 0;
@@ -119,26 +119,26 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   }
   Object n_fields_key(&scope, runtime->symbols()->NFields());
   Object n_fields(&scope, runtime->newInt(num_fields));
-  runtime->typeDictAtPut(dict, n_fields_key, n_fields);
+  runtime->typeDictAtPut(thread, dict, n_fields_key, n_fields);
 
   // unnamed fields are banned. This is done to support _structseq_getitem(),
   // which accesses hidden fields by name.
   Object unnamed_fields_key(&scope, runtime->symbols()->NUnnamedFields());
   Object unnamed_fields(&scope, runtime->newInt(0));
-  runtime->typeDictAtPut(dict, unnamed_fields_key, unnamed_fields);
+  runtime->typeDictAtPut(thread, dict, unnamed_fields_key, unnamed_fields);
 
   // Add __new__
   Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
   Function structseq_new(
       &scope, runtime->moduleAtById(builtins, SymbolId::kUnderStructseqNew));
   Str dunder_new_name(&scope, runtime->symbols()->DunderNew());
-  runtime->typeDictAtPut(dict, dunder_new_name, structseq_new);
+  runtime->typeDictAtPut(thread, dict, dunder_new_name, structseq_new);
 
   // Add __repr__
   Function structseq_repr(
       &scope, runtime->moduleAtById(builtins, SymbolId::kUnderStructseqRepr));
   Str dunder_repr_name(&scope, runtime->symbols()->DunderRepr());
-  runtime->typeDictAtPut(dict, dunder_repr_name, structseq_repr);
+  runtime->typeDictAtPut(thread, dict, dunder_repr_name, structseq_repr);
 
   // Create type
   Tuple bases(&scope, runtime->newTuple(1));
@@ -160,7 +160,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
     field_names.atPut(i, *member_name);
   }
   Str field_names_key(&scope, runtime->symbols()->UnderStructseqFieldNames());
-  runtime->typeDictAtPut(dict, field_names_key, field_names);
+  runtime->typeDictAtPut(thread, dict, field_names_key, field_names);
 
   return reinterpret_cast<PyTypeObject*>(
       ApiHandle::newReference(thread, *type));

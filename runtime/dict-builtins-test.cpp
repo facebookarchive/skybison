@@ -25,7 +25,7 @@ d = {'a': C()}
   {
     Object none(&scope, NoneType::object());
     Str key(&scope, runtime.newStrFromCStr("a"));
-    Object c(&scope, runtime.dictAt(dict, key));
+    Object c(&scope, runtime.dictAt(thread, dict, key));
     ref_obj = runtime.newWeakRef(thread, c, none);
   }
   WeakRef ref(&scope, *ref_obj);
@@ -145,22 +145,24 @@ foo_in_d = "foo" in d
 
 TEST(DictBuiltinsTest, DunderDelItemOnExistingKeyReturnsNone) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDictWithSize(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
-  runtime.dictAtPut(dict, key, val);
+  runtime.dictAtPut(thread, dict, key, val);
   RawObject result = runBuiltin(DictBuiltins::dunderDelItem, dict, key);
   EXPECT_TRUE(result.isNoneType());
 }
 
 TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDictWithSize(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
-  runtime.dictAtPut(dict, key, val);
+  runtime.dictAtPut(thread, dict, key, val);
 
   // "bar" doesn't exist in this dictionary, attempting to delete it should
   // cause a KeyError.
@@ -176,11 +178,12 @@ d = {"foo": 1}
 del d["foo"]
 )")
                    .isError());
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict d(&scope, moduleAt(&runtime, "__main__", "d"));
   Object foo(&scope, runtime.newStrFromCStr("foo"));
 
-  EXPECT_FALSE(runtime.dictIncludes(d, foo));
+  EXPECT_FALSE(runtime.dictIncludes(thread, d, foo));
 }
 
 TEST(DictBuiltinsTest, DelOnNonexistentKeyRaisesKeyError) {
@@ -194,22 +197,24 @@ del d["foo"]
 
 TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
   Runtime runtime;
+  Thread* thread = Thread::current();
   HandleScope scope;
   Dict dict(&scope, runtime.newDictWithSize(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
   Object val2(&scope, runtime.newInt(1));
-  runtime.dictAtPut(dict, key, val);
+  runtime.dictAtPut(thread, dict, key, val);
 
   Object result(&scope,
                 runBuiltin(DictBuiltins::dunderSetItem, dict, key, val2));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(runtime.dictAt(dict, key), *val2);
+  ASSERT_EQ(runtime.dictAt(thread, dict, key), *val2);
 }
 
 TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   Runtime runtime;
+  Thread* thread = Thread::current();
   HandleScope scope;
   Dict dict(&scope, runtime.newDictWithSize(1));
   ASSERT_EQ(dict.numItems(), 0);
@@ -219,7 +224,7 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
                 runBuiltin(DictBuiltins::dunderSetItem, dict, key, val));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
-  ASSERT_EQ(runtime.dictAt(dict, key), *val);
+  ASSERT_EQ(runtime.dictAt(thread, dict, key), *val);
 }
 
 TEST(DictBuiltinsTest, NonTypeInDunderNew) {
@@ -249,7 +254,8 @@ TEST(DictBuiltinsTest, DunderNewConstructsDict) {
 
 TEST(DictBuiltinsTest, DunderSetItemWithDictSubclassSetsItem) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class foo(dict):
   pass
@@ -262,14 +268,15 @@ d = foo()
   Object result1(&scope,
                  runBuiltin(DictBuiltins::dunderSetItem, dict, key, value));
   EXPECT_TRUE(result1.isNoneType());
-  Object result2(&scope, runtime.dictAt(dict, key));
+  Object result2(&scope, runtime.dictAt(thread, dict, key));
   ASSERT_TRUE(result2.isStr());
   EXPECT_EQ(RawStr::cast(*result2), *value);
 }
 
 TEST(DictBuiltinsTest, DunderIterReturnsDictKeyIter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object iter(&scope, runBuiltin(DictBuiltins::dunderIter, dict));
   ASSERT_TRUE(iter.isDictKeyIterator());
@@ -277,7 +284,8 @@ TEST(DictBuiltinsTest, DunderIterReturnsDictKeyIter) {
 
 TEST(DictBuiltinsTest, DunderItemsReturnsDictItems) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object items(&scope, runBuiltin(DictBuiltins::items, dict));
   ASSERT_TRUE(items.isDictItems());
@@ -285,7 +293,8 @@ TEST(DictBuiltinsTest, DunderItemsReturnsDictItems) {
 
 TEST(DictBuiltinsTest, KeysReturnsDictKeys) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object keys(&scope, runBuiltin(DictBuiltins::keys, dict));
   ASSERT_TRUE(keys.isDictKeys());
@@ -293,7 +302,8 @@ TEST(DictBuiltinsTest, KeysReturnsDictKeys) {
 
 TEST(DictBuiltinsTest, ValuesReturnsDictValues) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object values(&scope, runBuiltin(DictBuiltins::values, dict));
   ASSERT_TRUE(values.isDictValues());
@@ -301,7 +311,8 @@ TEST(DictBuiltinsTest, ValuesReturnsDictValues) {
 
 TEST(DictBuiltinsTest, DunderEqWithNonDict) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object not_a_dict(&scope, SmallInt::fromWord(5));
   EXPECT_EQ(runBuiltin(DictBuiltins::dunderEq, dict, not_a_dict),
@@ -349,42 +360,46 @@ d3 = {"a": 123}
   ASSERT_TRUE(runFromCStr(&runtime, "d1.update(d3)").isNoneType());
   EXPECT_EQ(d1.numItems(), 4);
   Str a(&scope, runtime.newStrFromCStr("a"));
-  Object a_val(&scope, runtime.dictAt(d1, a));
+  Object a_val(&scope, runtime.dictAt(thread, d1, a));
   EXPECT_TRUE(isIntEqualsWord(*a_val, 123));
 }
 
 TEST(DictItemsBuiltinsTest, DunderIterReturnsIter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
-  DictItems items(&scope, runtime.newDictItems(dict));
+  DictItems items(&scope, runtime.newDictItems(thread, dict));
   Object iter(&scope, runBuiltin(DictItemsBuiltins::dunderIter, items));
   ASSERT_TRUE(iter.isDictItemIterator());
 }
 
 TEST(DictKeysBuiltinsTest, DunderIterReturnsIter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
-  DictKeys keys(&scope, runtime.newDictKeys(dict));
+  DictKeys keys(&scope, runtime.newDictKeys(thread, dict));
   Object iter(&scope, runBuiltin(DictKeysBuiltins::dunderIter, keys));
   ASSERT_TRUE(iter.isDictKeyIterator());
 }
 
 TEST(DictValuesBuiltinsTest, DunderIterReturnsIter) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
-  DictValues values(&scope, runtime.newDictValues(dict));
+  DictValues values(&scope, runtime.newDictValues(thread, dict));
   Object iter(&scope, runBuiltin(DictValuesBuiltins::dunderIter, values));
   ASSERT_TRUE(iter.isDictValueIterator());
 }
 
 TEST(DictItemIteratorBuiltinsTest, CallDunderIterReturnsSelf) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
-  DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
+  DictItemIterator iter(&scope, runtime.newDictItemIterator(thread, dict));
   // Now call __iter__ on the iterator object
   Object result(&scope, runBuiltin(DictItemIteratorBuiltins::dunderIter, iter));
   ASSERT_EQ(*result, *iter);
@@ -392,9 +407,10 @@ TEST(DictItemIteratorBuiltinsTest, CallDunderIterReturnsSelf) {
 
 TEST(DictKeyIteratorBuiltinsTest, CallDunderIterReturnsSelf) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
-  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
+  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(thread, dict));
   // Now call __iter__ on the iterator object
   Object result(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderIter, iter));
   ASSERT_EQ(*result, *iter);
@@ -402,9 +418,10 @@ TEST(DictKeyIteratorBuiltinsTest, CallDunderIterReturnsSelf) {
 
 TEST(DictValueIteratorBuiltinsTest, CallDunderIterReturnsSelf) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
-  DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
+  DictValueIterator iter(&scope, runtime.newDictValueIterator(thread, dict));
   // Now call __iter__ on the iterator object
   Object result(&scope,
                 runBuiltin(DictValueIteratorBuiltins::dunderIter, iter));
@@ -414,9 +431,11 @@ TEST(DictValueIteratorBuiltinsTest, CallDunderIterReturnsSelf) {
 TEST(DictItemIteratorBuiltinsTest,
      DunderLengthHintOnEmptyDictItemIteratorReturnsZero) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict empty_dict(&scope, runtime.newDict());
-  DictItemIterator iter(&scope, runtime.newDictItemIterator(empty_dict));
+  DictItemIterator iter(&scope,
+                        runtime.newDictItemIterator(thread, empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictItemIteratorBuiltins::dunderLengthHint, iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
@@ -425,9 +444,10 @@ TEST(DictItemIteratorBuiltinsTest,
 TEST(DictKeyIteratorBuiltinsTest,
      DunderLengthHintOnEmptyDictKeyIteratorReturnsZero) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict empty_dict(&scope, runtime.newDict());
-  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(empty_dict));
+  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(thread, empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictKeyIteratorBuiltins::dunderLengthHint, iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
@@ -436,9 +456,11 @@ TEST(DictKeyIteratorBuiltinsTest,
 TEST(DictValueIteratorBuiltinsTest,
      DunderLengthHintOnEmptyDictValueIteratorReturnsZero) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict empty_dict(&scope, runtime.newDict());
-  DictValueIterator iter(&scope, runtime.newDictValueIterator(empty_dict));
+  DictValueIterator iter(&scope,
+                         runtime.newDictValueIterator(thread, empty_dict));
   Object length_hint(
       &scope, runBuiltin(DictValueIteratorBuiltins::dunderLengthHint, iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
@@ -446,15 +468,16 @@ TEST(DictValueIteratorBuiltinsTest,
 
 TEST(DictItemIteratorBuiltinsTest, CallDunderNextReadsItemsSequentially) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDictWithSize(5));
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   Object world(&scope, runtime.newStrFromCStr("world"));
   Object goodbye(&scope, runtime.newStrFromCStr("goodbye"));
   Object moon(&scope, runtime.newStrFromCStr("moon"));
-  runtime.dictAtPut(dict, hello, world);
-  runtime.dictAtPut(dict, goodbye, moon);
-  DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
+  runtime.dictAtPut(thread, dict, hello, world);
+  runtime.dictAtPut(thread, dict, goodbye, moon);
+  DictItemIterator iter(&scope, runtime.newDictItemIterator(thread, dict));
 
   Object item1(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1.isTuple());
@@ -472,15 +495,16 @@ TEST(DictItemIteratorBuiltinsTest, CallDunderNextReadsItemsSequentially) {
 
 TEST(DictKeyIteratorBuiltinsTest, CallDunderNextReadsKeysSequentially) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDictWithSize(5));
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   Object world(&scope, runtime.newStrFromCStr("world"));
   Object goodbye(&scope, runtime.newStrFromCStr("goodbye"));
   Object moon(&scope, runtime.newStrFromCStr("moon"));
-  runtime.dictAtPut(dict, hello, world);
-  runtime.dictAtPut(dict, goodbye, moon);
-  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
+  runtime.dictAtPut(thread, dict, hello, world);
+  runtime.dictAtPut(thread, dict, goodbye, moon);
+  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(thread, dict));
 
   Object item1(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1.isStr());
@@ -496,15 +520,16 @@ TEST(DictKeyIteratorBuiltinsTest, CallDunderNextReadsKeysSequentially) {
 
 TEST(DictValueIteratorBuiltinsTest, CallDunderNextReadsValuesSequentially) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDictWithSize(5));
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   Object world(&scope, runtime.newStrFromCStr("world"));
   Object goodbye(&scope, runtime.newStrFromCStr("goodbye"));
   Object moon(&scope, runtime.newStrFromCStr("moon"));
-  runtime.dictAtPut(dict, hello, world);
-  runtime.dictAtPut(dict, goodbye, moon);
-  DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
+  runtime.dictAtPut(thread, dict, hello, world);
+  runtime.dictAtPut(thread, dict, goodbye, moon);
+  DictValueIterator iter(&scope, runtime.newDictValueIterator(thread, dict));
 
   Object item1(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
   ASSERT_TRUE(item1.isStr());
@@ -521,12 +546,13 @@ TEST(DictValueIteratorBuiltinsTest, CallDunderNextReadsValuesSequentially) {
 TEST(DictItemIteratorBuiltinsTest,
      DunderLengthHintOnConsumedDictItemIteratorReturnsZero) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   Object world(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, hello, world);
-  DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
+  runtime.dictAtPut(thread, dict, hello, world);
+  DictItemIterator iter(&scope, runtime.newDictItemIterator(thread, dict));
 
   Object item1(&scope, runBuiltin(DictItemIteratorBuiltins::dunderNext, iter));
   ASSERT_FALSE(item1.isError());
@@ -539,12 +565,13 @@ TEST(DictItemIteratorBuiltinsTest,
 TEST(DictKeyIteratorBuiltinsTest,
      DunderLengthHintOnConsumedDictKeyIteratorReturnsZero) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   Object world(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, hello, world);
-  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
+  runtime.dictAtPut(thread, dict, hello, world);
+  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(thread, dict));
 
   Object item1(&scope, runBuiltin(DictKeyIteratorBuiltins::dunderNext, iter));
   ASSERT_FALSE(item1.isError());
@@ -557,12 +584,13 @@ TEST(DictKeyIteratorBuiltinsTest,
 TEST(DictValueIteratorBuiltinsTest,
      DunderLengthHintOnConsumedDictValueIteratorReturnsZero) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   Object world(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, hello, world);
-  DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
+  runtime.dictAtPut(thread, dict, hello, world);
+  DictValueIterator iter(&scope, runtime.newDictValueIterator(thread, dict));
 
   Object item1(&scope, runBuiltin(DictValueIteratorBuiltins::dunderNext, iter));
   ASSERT_FALSE(item1.isError());
@@ -574,48 +602,51 @@ TEST(DictValueIteratorBuiltinsTest,
 
 TEST(DictBuiltinsTest, ItemIteratorNextOnOneElementDictReturnsElement) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, runtime.newStrFromCStr("hello"));
   Object value(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, key, value);
-  DictItemIterator iter(&scope, runtime.newDictItemIterator(dict));
-  Object next(&scope, dictItemIteratorNext(Thread::current(), iter));
+  runtime.dictAtPut(thread, dict, key, value);
+  DictItemIterator iter(&scope, runtime.newDictItemIterator(thread, dict));
+  Object next(&scope, dictItemIteratorNext(thread, iter));
   ASSERT_TRUE(next.isTuple());
   EXPECT_EQ(Tuple::cast(*next).at(0), key);
   EXPECT_EQ(Tuple::cast(*next).at(1), value);
 
-  next = dictItemIteratorNext(Thread::current(), iter);
+  next = dictItemIteratorNext(thread, iter);
   ASSERT_TRUE(next.isError());
 }
 
 TEST(DictBuiltinsTest, KeyIteratorNextOnOneElementDictReturnsElement) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, runtime.newStrFromCStr("hello"));
   Object value(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, key, value);
-  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(dict));
-  Object next(&scope, dictKeyIteratorNext(Thread::current(), iter));
+  runtime.dictAtPut(thread, dict, key, value);
+  DictKeyIterator iter(&scope, runtime.newDictKeyIterator(thread, dict));
+  Object next(&scope, dictKeyIteratorNext(thread, iter));
   EXPECT_EQ(next, key);
 
-  next = dictKeyIteratorNext(Thread::current(), iter);
+  next = dictKeyIteratorNext(thread, iter);
   ASSERT_TRUE(next.isError());
 }
 
 TEST(DictBuiltinsTest, ValueIteratorNextOnOneElementDictReturnsElement) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, runtime.newStrFromCStr("hello"));
   Object value(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, key, value);
-  DictValueIterator iter(&scope, runtime.newDictValueIterator(dict));
-  Object next(&scope, dictValueIteratorNext(Thread::current(), iter));
+  runtime.dictAtPut(thread, dict, key, value);
+  DictValueIterator iter(&scope, runtime.newDictValueIterator(thread, dict));
+  Object next(&scope, dictValueIteratorNext(thread, iter));
   EXPECT_EQ(next, value);
 
-  next = dictValueIteratorNext(Thread::current(), iter);
+  next = dictValueIteratorNext(thread, iter);
   ASSERT_TRUE(next.isError());
 }
 
@@ -646,7 +677,8 @@ TEST(DictBuiltinsTest, GetWithNonDictRaisesTypeError) {
 
 TEST(DictBuiltinsTest, GetWithUnhashableTypeRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   __hash__ = 2
@@ -692,11 +724,12 @@ TEST(DictBuiltinsTest, GetReturnsNone) {
 
 TEST(DictBuiltinsTest, GetReturnsValue) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, runtime.newInt(123));
   Object value(&scope, runtime.newInt(456));
-  runtime.dictAtPut(dict, key, value);
+  runtime.dictAtPut(thread, dict, key, value);
   Object dflt(&scope, runtime.newInt(789));
   Object result(&scope, runBuiltin(DictBuiltins::get, dict, key, dflt));
   EXPECT_TRUE(isIntEqualsWord(*result, 456));
@@ -704,12 +737,13 @@ TEST(DictBuiltinsTest, GetReturnsValue) {
 
 TEST(DictBuiltinsTest, NextOnDictWithOnlyTombstonesReturnsFalse) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object key(&scope, runtime.newStrFromCStr("hello"));
   Object value(&scope, runtime.newStrFromCStr("world"));
-  runtime.dictAtPut(dict, key, value);
-  ASSERT_FALSE(runtime.dictRemove(dict, key).isError());
+  runtime.dictAtPut(thread, dict, key, value);
+  ASSERT_FALSE(runtime.dictRemove(thread, dict, key).isError());
   Tuple data(&scope, dict.data());
   word i = Dict::Bucket::kFirst;
   ASSERT_FALSE(Dict::Bucket::nextItem(*data, &i));

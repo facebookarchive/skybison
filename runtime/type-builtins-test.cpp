@@ -313,7 +313,8 @@ TEST(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
   EXPECT_TRUE(
       runBuiltin(TypeBuiltins::dunderSetattr, c, name, value).isNoneType());
   Dict type_dict(&scope, c.dict());
-  EXPECT_TRUE(isIntEqualsWord(runtime.typeDictAt(type_dict, name), -7331));
+  EXPECT_TRUE(
+      isIntEqualsWord(runtime.typeDictAt(thread, type_dict, name), -7331));
 }
 
 TEST(TypeBuiltinsTest, DunderSetattrWithNonStrNameRaisesTypeError) {
@@ -706,7 +707,8 @@ TEST(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {
   Object value(&scope, runtime.newInt(-444));
   EXPECT_TRUE(typeSetAttr(thread, c, name, value).isNoneType());
   Dict type_dict(&scope, c.dict());
-  EXPECT_TRUE(isIntEqualsWord(runtime.typeDictAt(type_dict, name), -444));
+  EXPECT_TRUE(
+      isIntEqualsWord(runtime.typeDictAt(thread, type_dict, name), -444));
 }
 
 TEST(TypeBuiltinsTest, TypeSetAttrCallsDunderSetOnDataDescriptor) {

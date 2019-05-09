@@ -306,7 +306,8 @@ PY_EXPORT PyObject* PyMapping_Keys(PyObject* mapping) {
   Object map(&scope, ApiHandle::fromPyObject(mapping)->asObject());
   if (map.isDict()) {
     Dict dict(&scope, *map);
-    return ApiHandle::newReference(thread, thread->runtime()->dictKeys(dict));
+    return ApiHandle::newReference(thread,
+                                   thread->runtime()->dictKeys(thread, dict));
   }
   return callMappingMethod(thread, map, SymbolId::kKeys, "o.keys()");
 }

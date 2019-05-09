@@ -32,7 +32,7 @@ PY_EXPORT int _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
   SmallInt hash_obj(&scope, SmallInt::fromWordTruncated(hash));
-  runtime->dictAtPutWithHash(dict, key_obj, value_obj, hash_obj);
+  runtime->dictAtPutWithHash(thread, dict, key_obj, value_obj, hash_obj);
   return 0;
 }
 
@@ -57,7 +57,7 @@ static int setItem(Thread* thread, const Object& dictobj, const Object& key,
   Int large_key_hash(&scope, intUnderlying(thread, key_hash_obj));
   SmallInt key_hash(&scope,
                     SmallInt::fromWordTruncated(large_key_hash.digitAt(0)));
-  runtime->dictAtPutWithHash(dict, key, value, key_hash);
+  runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
   return 0;
 }
 
@@ -107,7 +107,8 @@ static PyObject* getItem(Thread* thread, const Object& dict_obj,
   }
   Int hash_int(&scope, intUnderlying(thread, hash_obj));
   SmallInt key_hash(&scope, SmallInt::fromWordTruncated(hash_int.digitAt(0)));
-  Object value(&scope, runtime->dictAtWithHash(dict, key_obj, key_hash));
+  Object value(&scope,
+               runtime->dictAtWithHash(thread, dict, key_obj, key_hash));
   if (value.isError()) return nullptr;
   return ApiHandle::borrowedReference(thread, *value);
 }
@@ -125,7 +126,8 @@ PY_EXPORT PyObject* _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key,
   Dict dict(&scope, *dictobj);
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   SmallInt hash_obj(&scope, SmallInt::fromWordTruncated(hash));
-  Object value(&scope, runtime->dictAtWithHash(dict, key_obj, hash_obj));
+  Object value(&scope,
+               runtime->dictAtWithHash(thread, dict, key_obj, hash_obj));
   if (value.isError()) return nullptr;
   return ApiHandle::borrowedReference(thread, *value);
 }
@@ -168,7 +170,7 @@ PY_EXPORT int PyDict_Contains(PyObject* pydict, PyObject* key) {
   Dict dict(&scope, ApiHandle::fromPyObject(pydict)->asObject());
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   // TODO(T36757907): Return -1 when dictIncludes fails to hash the key
-  return runtime->dictIncludes(dict, key_obj);
+  return runtime->dictIncludes(thread, dict, key_obj);
 }
 
 PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {
@@ -211,7 +213,7 @@ PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
     thread->raiseTypeErrorWithCStr("key is not hashable");
     return -1;
   }
-  if (runtime->dictRemoveWithHash(dict, key_obj, key_hash).isError()) {
+  if (runtime->dictRemoveWithHash(thread, dict, key_obj, key_hash).isError()) {
     thread->raiseKeyError(*key_obj);
     return -1;
   }
@@ -251,7 +253,8 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  Object value(&scope, runtime->dictAtWithHash(dict, key_obj, key_hash));
+  Object value(&scope,
+               runtime->dictAtWithHash(thread, dict, key_obj, key_hash));
   if (value.isError()) {
     return nullptr;
   }
@@ -284,7 +287,7 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  Tuple keys_tuple(&scope, runtime->dictKeys(dict));
+  Tuple keys_tuple(&scope, runtime->dictKeys(thread, dict));
   List keys(&scope, runtime->newList());
   keys.setItems(*keys_tuple);
   keys.setNumItems(keys_tuple.length());

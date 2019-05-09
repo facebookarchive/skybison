@@ -87,7 +87,7 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
 
   Dict modules_dict(&scope, runtime->modules());
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
-  Object module(&scope, runtime->dictAt(modules_dict, name_obj));
+  Object module(&scope, runtime->dictAt(thread, modules_dict, name_obj));
   if (module.isModule()) {
     return ApiHandle::borrowedReference(thread, *module);
   }
@@ -151,8 +151,8 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
     for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                         SymbolId::kDunderName}) {
       key = runtime->symbols()->at(id);
-      value = runtime->moduleDictAt(frame_globals, key);
-      runtime->dictAtPut(globals_obj, key, value);
+      value = runtime->moduleDictAt(thread, frame_globals, key);
+      runtime->dictAtPut(thread, globals_obj, key, value);
     }
   }
   Object fromlist_obj(&scope, runtime->newTuple(0));

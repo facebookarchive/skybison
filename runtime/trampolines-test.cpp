@@ -1291,6 +1291,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
   binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
 
   Runtime runtime;
+  Thread* thread = Thread::current();
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
@@ -1317,7 +1318,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = thread->run(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1327,7 +1328,8 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
   };
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
@@ -1345,7 +1347,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
   Dict kw_dict(&scope, runtime.newDict());
   Object key(&scope, SmallInt::fromWord(2));
   Object value(&scope, SmallInt::fromWord(3));
-  runtime.dictAtPut(kw_dict, key, value);
+  runtime.dictAtPut(thread, kw_dict, key, value);
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 
@@ -1563,7 +1565,8 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   };
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
@@ -1600,7 +1603,8 @@ TEST(TrampolinesTest,
   };
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
@@ -1618,7 +1622,7 @@ TEST(TrampolinesTest,
   Dict kw_dict(&scope, runtime.newDict());
   Object key(&scope, SmallInt::fromWord(2));
   Object value(&scope, SmallInt::fromWord(3));
-  runtime.dictAtPut(kw_dict, key, value);
+  runtime.dictAtPut(thread, kw_dict, key, value);
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 
@@ -1729,8 +1733,8 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
     Runtime* runtime = thread->runtime();
     Str foo_str(&scope, runtime->newStrFromCStr("foo"));
     Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(Thread::current(),
-                                   runtime->dictAt(keyword_dict, foo_str));
+    return ApiHandle::newReference(
+        thread, runtime->dictAt(thread, keyword_dict, foo_str));
   };
 
   Runtime runtime;
@@ -1811,8 +1815,8 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
     Runtime* runtime = thread->runtime();
     Str foo_str(&scope, runtime->newStrFromCStr("bar"));
     Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(Thread::current(),
-                                   runtime->dictAt(keyword_dict, foo_str));
+    return ApiHandle::newReference(
+        thread, runtime->dictAt(thread, keyword_dict, foo_str));
   };
 
   Runtime runtime;
@@ -1890,11 +1894,12 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
     Runtime* runtime = thread->runtime();
     Str foo_str(&scope, runtime->newStrFromCStr("foo"));
     Dict keyword_dict(&scope, ApiHandle::fromPyObject(kwargs)->asObject());
-    return ApiHandle::newReference(Thread::current(),
-                                   runtime->dictAt(keyword_dict, foo_str));
+    return ApiHandle::newReference(
+        thread, runtime->dictAt(thread, keyword_dict, foo_str));
   };
 
   Runtime runtime;
+  Thread* thread = Thread::current();
   HandleScope scope;
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
@@ -1913,7 +1918,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   Dict kw_dict(&scope, runtime.newDict());
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object value(&scope, SmallInt::fromWord(1111));
-  runtime.dictAtPut(kw_dict, key, value);
+  runtime.dictAtPut(thread, kw_dict, key, value);
   consts.atPut(2, *kw_dict);
   code.setConsts(*consts);
 

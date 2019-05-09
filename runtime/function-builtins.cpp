@@ -40,7 +40,7 @@ RawObject functionSetAttr(Thread* thread, const Function& function,
     return objectSetAttr(thread, function, name_interned_str, value);
   }
   Dict function_dict(&scope, function.dict());
-  runtime->dictAtPut(function_dict, name_interned_str, value);
+  runtime->dictAtPut(thread, function_dict, name_interned_str, value);
   return NoneType::object();
 }
 

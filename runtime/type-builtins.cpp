@@ -20,7 +20,7 @@ RawObject typeLookupNameInMro(Thread* thread, const Type& type,
   for (word i = 0; i < mro.length(); i++) {
     Type mro_type(&scope, mro.at(i));
     Dict dict(&scope, mro_type.dict());
-    Object value(&scope, runtime->typeDictAt(dict, name_str));
+    Object value(&scope, runtime->typeDictAt(thread, dict, name_str));
     if (!value.isError()) {
       return *value;
     }
@@ -123,10 +123,10 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 
   // Initialize dict
   Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
-  Object class_cell(&scope, runtime->dictAt(dict, class_cell_key));
+  Object class_cell(&scope, runtime->dictAt(thread, dict, class_cell_key));
   if (!class_cell.isError()) {
     RawValueCell::cast(RawValueCell::cast(*class_cell).value()).setValue(*type);
-    runtime->dictRemove(dict, class_cell_key);
+    runtime->dictRemove(thread, dict, class_cell_key);
   }
   type.setDict(*dict);
 
@@ -188,7 +188,7 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
 
   // No data descriptor found, store the attribute in the type dict
   Dict type_dict(&scope, type.dict());
-  runtime->typeDictAtPut(type_dict, name_interned_str, value);
+  runtime->typeDictAtPut(thread, type_dict, name_interned_str, value);
   return NoneType::object();
 }
 

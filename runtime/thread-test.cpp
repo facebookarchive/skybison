@@ -614,7 +614,7 @@ TEST(ThreadTest, LoadGlobal) {
 
   Dict globals(&scope, runtime.newDict());
   Object value(&scope, runtime.newInt(1234));
-  runtime.moduleDictAtPut(globals, key, value);
+  runtime.moduleDictAtPut(thread, globals, key, value);
 
   EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, globals), 1234));
 }
@@ -753,7 +753,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
 
   Dict globals(&scope, runtime.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(globals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(thread, globals, key), 42));
 }
 
 TEST(ThreadTest, StoreGlobalReuseValueCell) {
@@ -779,9 +779,9 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
 
   Dict globals(&scope, runtime.newDict());
   Object value(&scope, runtime.newInt(99));
-  runtime.moduleDictAtPut(globals, key, value);
+  runtime.moduleDictAtPut(thread, globals, key, value);
   EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, globals), 42));
-  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(globals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(thread, globals, key), 42));
 }
 
 TEST(ThreadTest, StoreNameCreateValueCell) {
@@ -808,7 +808,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   Dict globals(&scope, runtime.newDict());
   Dict locals(&scope, runtime.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 42));
-  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(locals, key), 42));
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(thread, locals, key), 42));
 }
 
 TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
@@ -831,7 +831,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Object module_name(&scope, runtime.symbols()->Builtins());
   Module builtins(&scope, runtime.newModule(module_name));
   Object dunder_builtins_name(&scope, runtime.symbols()->DunderBuiltins());
-  runtime.moduleDictAtPut(globals, dunder_builtins_name, builtins);
+  runtime.moduleDictAtPut(thread, globals, dunder_builtins_name, builtins);
   Object value(&scope, runtime.newInt(123));
   runtime.moduleAtPut(builtins, key, value);
   Dict locals(&scope, runtime.newDict());
@@ -856,7 +856,7 @@ TEST(ThreadTest, LoadNameFromGlobals) {
 
   Dict globals(&scope, runtime.newDict());
   Object value(&scope, runtime.newInt(321));
-  runtime.typeDictAtPut(globals, key, value);
+  runtime.typeDictAtPut(thread, globals, key, value);
   Dict locals(&scope, runtime.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 321));
 }
@@ -879,10 +879,10 @@ TEST(ThreadTest, LoadNameFromLocals) {
 
   Dict globals(&scope, runtime.newDict());
   Object globals_value(&scope, runtime.newInt(456));
-  runtime.typeDictAtPut(globals, key, globals_value);
+  runtime.typeDictAtPut(thread, globals, key, globals_value);
   Dict locals(&scope, runtime.newDict());
   Object locals_value(&scope, runtime.newInt(654));
-  runtime.typeDictAtPut(globals, key, locals_value);
+  runtime.typeDictAtPut(thread, globals, key, locals_value);
   EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, locals), 654));
 }
 
@@ -917,7 +917,7 @@ TEST(ThreadTest, MakeFunction) {
   Dict locals(&scope, runtime.newDict());
   ASSERT_TRUE(thread->exec(code, globals, locals).isNoneType());
 
-  Object function_obj(&scope, runtime.moduleDictAt(locals, name));
+  Object function_obj(&scope, runtime.moduleDictAt(thread, locals, name));
   ASSERT_TRUE(function_obj.isFunction());
   Function function(&scope, *function_obj);
   EXPECT_EQ(function.code(), func_code);
@@ -1220,7 +1220,7 @@ class C:
   Dict dict(&scope, getMainModuleDict(&runtime));
 
   Object key(&scope, runtime.newStrFromCStr("C"));
-  Object value(&scope, runtime.dictAt(dict, key));
+  Object value(&scope, runtime.dictAt(thread, dict, key));
   ASSERT_TRUE(value.isValueCell());
 
   Type cls(&scope, RawValueCell::cast(*value).value());
@@ -1253,7 +1253,7 @@ class C:
 
   // Check for the class name in the module dict
   Object cls_name(&scope, runtime.newStrFromCStr("C"));
-  Object value(&scope, runtime.dictAt(mod_dict, cls_name));
+  Object value(&scope, runtime.dictAt(thread, mod_dict, cls_name));
   ASSERT_TRUE(value.isValueCell());
   Type cls(&scope, RawValueCell::cast(*value).value());
 
@@ -1272,8 +1272,8 @@ class C:
 
   // Check for the __init__ method name in the dict
   Object meth_name(&scope, runtime.symbols()->DunderInit());
-  ASSERT_TRUE(runtime.dictIncludes(cls_dict, meth_name));
-  value = runtime.dictAt(cls_dict, meth_name);
+  ASSERT_TRUE(runtime.dictIncludes(thread, cls_dict, meth_name));
+  value = runtime.dictAt(thread, cls_dict, meth_name);
   ASSERT_TRUE(value.isValueCell());
   ASSERT_TRUE(RawValueCell::cast(*value).value().isFunction());
 }
@@ -1337,14 +1337,14 @@ static RawStr className(RawObject obj) {
 
 static RawObject getMro(Runtime* runtime, const char* src,
                         const char* desired_class) {
-  HandleScope scope;
-
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   static_cast<void>(runFromCStr(runtime, src).isError());
 
   Dict mod_dict(&scope, getMainModuleDict(runtime));
   Object class_name(&scope, runtime->newStrFromCStr(desired_class));
 
-  Object value(&scope, runtime->dictAt(mod_dict, class_name));
+  Object value(&scope, runtime->dictAt(thread, mod_dict, class_name));
   Type cls(&scope, RawValueCell::cast(*value).value());
 
   return cls.mro();
@@ -2342,7 +2342,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   Dict globals(&scope, runtime.newDict());
   Dict locals(&scope, runtime.newDict());
   ASSERT_TRUE(thread->exec(code, globals, locals).isNoneType());
-  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(locals, key), 3));
+  EXPECT_TRUE(isIntEqualsWord(runtime.moduleDictAt(thread, locals, key), 3));
 }
 
 TEST(ThreadTest, BreakLoopRangeLoop) {
@@ -2730,12 +2730,12 @@ class_anno_dict = Foo.__annotations__
   Module main(&scope, findModule(&runtime, "__main__"));
   Dict module_anno_dict(&scope, moduleAt(&runtime, main, "__annotations__"));
   Object m_key(&scope, runtime.newStrFromCStr("x"));
-  Object m_value(&scope, runtime.dictAt(module_anno_dict, m_key));
+  Object m_value(&scope, runtime.dictAt(thread, module_anno_dict, m_key));
   EXPECT_EQ(*m_value, runtime.typeAt(LayoutId::kInt));
 
   Dict class_anno_dict(&scope, moduleAt(&runtime, main, "class_anno_dict"));
   Object c_key(&scope, runtime.newStrFromCStr("bar"));
-  Object c_value(&scope, runtime.dictAt(class_anno_dict, c_key));
+  Object c_value(&scope, runtime.dictAt(thread, class_anno_dict, c_key));
   EXPECT_EQ(*c_value, runtime.typeAt(LayoutId::kInt));
 }
 
@@ -2896,7 +2896,8 @@ TEST(TrampolinesTest, PushCallFrameWithGlobalsWithoutBuiltinsSetsMinimalDict) {
   Dict builtins_dict(&scope, frame->builtins());
   EXPECT_EQ(builtins_dict.numItems(), 1);
   Object none_name(&scope, runtime.symbols()->None());
-  EXPECT_EQ(runtime.moduleDictAt(builtins_dict, none_name), NoneType::object());
+  EXPECT_EQ(runtime.moduleDictAt(thread, builtins_dict, none_name),
+            NoneType::object());
 }
 
 TEST(ThreadTest, PushExecFrameSetsMissingDunderBuiltins) {
@@ -2914,7 +2915,8 @@ TEST(ThreadTest, PushExecFrameSetsMissingDunderBuiltins) {
 
   Object builtins(&scope, runtime.findModuleById(SymbolId::kBuiltins));
   Str dunder_builtins_name(&scope, runtime.symbols()->DunderBuiltins());
-  EXPECT_EQ(runtime.typeDictAt(globals, dunder_builtins_name), builtins);
+  EXPECT_EQ(runtime.typeDictAt(thread, globals, dunder_builtins_name),
+            builtins);
   Object builtins_dict(&scope, RawModule::cast(*builtins).dict());
   EXPECT_EQ(frame, thread->currentFrame());
   EXPECT_EQ(frame->builtins(), builtins_dict);

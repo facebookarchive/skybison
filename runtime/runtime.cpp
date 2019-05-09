@@ -325,7 +325,8 @@ RawObject Runtime::newBytesWithAll(View<byte> array) {
 RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
 RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Type result(&scope, heap()->createType(metaclass_id));
   Dict dict(&scope, newDict());
   result.setFlagsAndBuiltinBase(static_cast<RawType::Flag>(0),
@@ -366,7 +367,7 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
 
   // No delete descriptor found, attempt to delete from the type dict
   Dict type_dict(&scope, type.dict());
-  if (dictRemove(type_dict, name).isError()) {
+  if (dictRemove(thread, type_dict, name).isError()) {
     Str type_name(&scope, type.name());
     return thread->raiseAttributeError(newStrFromFmt(
         "type object '%S' has no attribute '%S'", &type_name, &name));
@@ -428,7 +429,7 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   // No delete descriptor found, attempt to delete from the module dict
   Module module(&scope, *receiver);
   Dict module_dict(&scope, module.dict());
-  if (dictRemove(module_dict, name).isError()) {
+  if (dictRemove(thread, module_dict, name).isError()) {
     Str module_name(&scope, module.name());
     return thread->raiseAttributeError(newStrFromFmt(
         "module '%S' has no attribute '%S'", &module_name, &name));
@@ -675,24 +676,26 @@ void Runtime::typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
                                         Function::Entry entry,
                                         Function::Entry entry_kw,
                                         Function::Entry entry_ex) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str qualname(&scope, newQualname(type, name));
   Function function(
       &scope, newNativeFunction(name, qualname, entry, entry_kw, entry_ex));
   Object key(&scope, symbols()->at(name));
   Object value(&scope, *function);
   Dict dict(&scope, type.dict());
-  dictAtPutInValueCell(dict, key, value);
+  dictAtPutInValueCell(thread, dict, key, value);
 }
 
 void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
                                      Function::Entry entry) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str qualname(&scope, newQualname(type, name));
   Object key(&scope, symbols()->at(name));
   Function function(&scope, newBuiltinFunction(name, qualname, entry));
   Dict dict(&scope, type.dict());
-  dictAtPutInValueCell(dict, key, function);
+  dictAtPutInValueCell(thread, dict, key, function);
 }
 
 RawObject Runtime::newList() {
@@ -720,7 +723,8 @@ RawObject Runtime::newSeqIterator(const Object& sequence) {
 }
 
 RawObject Runtime::newModule(const Object& name) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Module result(&scope, heap()->create<RawModule>());
   Dict dict(&scope, newDict());
   result.setDict(*dict);
@@ -1677,19 +1681,21 @@ void Runtime::visitThreadRoots(PointerVisitor* visitor) {
 }
 
 void Runtime::addModule(const Module& module) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, modules());
   Object key(&scope, module.name());
   Object value(&scope, *module);
-  dictAtPut(dict, key, value);
+  dictAtPut(thread, dict, key, value);
 }
 
 RawObject Runtime::findModule(const Object& name) {
   DCHECK(name.isStr(), "name not a string");
 
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, modules());
-  RawObject value = dictAt(dict, name);
+  RawObject value = dictAt(thread, dict, name);
   if (value.isError()) {
     return NoneType::object();
   }
@@ -1712,9 +1718,10 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
   return moduleAtById(module, name);
 }
 
-RawObject Runtime::moduleDictAt(const Dict& dict, const Object& key) {
-  HandleScope scope;
-  Object value_cell(&scope, dictAt(dict, key));
+RawObject Runtime::moduleDictAt(Thread* thread, const Dict& dict,
+                                const Object& key) {
+  HandleScope scope(thread);
+  Object value_cell(&scope, dictAt(thread, dict, key));
   if (value_cell.isError()) {
     return Error::notFound();
   }
@@ -1724,9 +1731,10 @@ RawObject Runtime::moduleDictAt(const Dict& dict, const Object& key) {
 }
 
 RawObject Runtime::moduleAt(const Module& module, const Object& key) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  return moduleDictAt(dict, key);
+  return moduleDictAt(thread, dict, key);
 }
 
 RawObject Runtime::moduleAtById(const Module& module, SymbolId key) {
@@ -1735,16 +1743,17 @@ RawObject Runtime::moduleAtById(const Module& module, SymbolId key) {
   return moduleAt(module, key_str);
 }
 
-RawObject Runtime::moduleDictAtPut(const Dict& dict, const Object& key,
-                                   const Object& value) {
-  return dictAtPutInValueCell(dict, key, value);
+RawObject Runtime::moduleDictAtPut(Thread* thread, const Dict& dict,
+                                   const Object& key, const Object& value) {
+  return dictAtPutInValueCell(thread, dict, key, value);
 }
 
 void Runtime::moduleAtPut(const Module& module, const Object& key,
                           const Object& value) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, module.dict());
-  moduleDictAtPut(dict, key, value);
+  moduleDictAtPut(thread, dict, key, value);
 }
 
 // TODO(emacs): Move these names into the modules themselves, so there is only
@@ -1765,8 +1774,8 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
 };
 
 void Runtime::initializeModules() {
-  modules_ = newDict();
   Thread* thread = Thread::current();
+  modules_ = newDict();
   createBuiltinsModule(thread);
   createSysModule(thread);
   for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
@@ -1787,9 +1796,10 @@ RawObject Runtime::typeAt(LayoutId layout_id) {
   return RawLayout::cast(layoutAt(layout_id)).describedType();
 }
 
-RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
-  HandleScope scope;
-  Object value_cell(&scope, dictAt(dict, key));
+RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
+                              const Object& key) {
+  HandleScope scope(thread);
+  Object value_cell(&scope, dictAt(thread, dict, key));
   if (value_cell.isError()) {
     return Error::notFound();
   }
@@ -1797,9 +1807,9 @@ RawObject Runtime::typeDictAt(const Dict& dict, const Object& key) {
   return RawValueCell::cast(*value_cell).value();
 }
 
-RawObject Runtime::typeDictAtPut(const Dict& dict, const Object& key,
-                                 const Object& value) {
-  return dictAtPutInValueCell(dict, key, value);
+RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,
+                                 const Object& key, const Object& value) {
+  return dictAtPutInValueCell(thread, dict, key, value);
 }
 
 LayoutId Runtime::reserveLayoutId() {
@@ -1849,7 +1859,7 @@ bool Runtime::isMethodOverloaded(Thread* thread, const Type& type,
   for (word i = 0; i < mro.length() - 1; i++) {
     Type mro_type(&scope, mro.at(i));
     Dict dict(&scope, mro_type.dict());
-    Object value_cell(&scope, dictAt(dict, key));
+    Object value_cell(&scope, dictAt(thread, dict, key));
     if (!value_cell.isError()) {
       return true;
     }
@@ -1859,30 +1869,33 @@ bool Runtime::isMethodOverloaded(Thread* thread, const Type& type,
 
 RawObject Runtime::moduleAddGlobal(const Module& module, SymbolId name,
                                    const Object& value) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, module.dict());
   Object key(&scope, symbols()->at(name));
-  return dictAtPutInValueCell(dict, key, value);
+  return dictAtPutInValueCell(thread, dict, key, value);
 }
 
 RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                             Function::Entry entry) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str key(&scope, symbols()->at(name));
   Dict dict(&scope, module.dict());
   Function value(&scope, newBuiltinFunction(name, key, entry));
-  return dictAtPutInValueCell(dict, key, value);
+  return dictAtPutInValueCell(thread, dict, key, value);
 }
 
 RawObject Runtime::moduleAddNativeFunction(const Module& module, SymbolId name,
                                            Function::Entry entry,
                                            Function::Entry entry_kw,
                                            Function::Entry entry_ex) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Str key(&scope, symbols()->at(name));
   Dict dict(&scope, module.dict());
   Object value(&scope, newNativeFunction(name, key, entry, entry_kw, entry_ex));
-  return dictAtPutInValueCell(dict, key, value);
+  return dictAtPutInValueCell(thread, dict, key, value);
 }
 
 void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
@@ -1893,9 +1906,10 @@ void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
 }
 
 void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
+  Thread* thread = Thread::current();
   HandleScope scope;
   Dict module_dict(&scope, module.dict());
-  Tuple module_keys(&scope, dictKeys(module_dict));
+  Tuple module_keys(&scope, dictKeys(thread, module_dict));
   for (word i = 0; i < module_keys.length(); i++) {
     Object symbol_name(&scope, module_keys.at(i));
     CHECK(symbol_name.isStr(), "Symbol is not a String");
@@ -1904,7 +1918,7 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
     Str symbol_name_str(&scope, *symbol_name);
     if (symbol_name_str.charAt(0) != '_') {
       Object value(&scope, moduleAt(module, symbol_name));
-      dictAtPutInValueCell(dict, symbol_name, value);
+      dictAtPutInValueCell(thread, dict, symbol_name, value);
     }
   }
 }
@@ -1947,18 +1961,18 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   // Explicitly remove module as this is not exposed in CPython
   Dict module_dict(&scope, module.dict());
   Object module_name(&scope, symbols()->Module());
-  dictRemove(module_dict, module_name);
+  dictRemove(thread, module_dict, module_name);
 
   Object dunder_import_name(&scope, symbols()->DunderImport());
-  dunder_import_ = dictAt(module_dict, dunder_import_name);
+  dunder_import_ = dictAt(thread, module_dict, dunder_import_name);
 
   Type object(&scope, typeAt(LayoutId::kObject));
   Dict object_dict(&scope, object.dict());
   Object dunder_getattribute_name(&scope, symbols()->DunderGetattribute());
   object_dunder_getattribute_ =
-      typeDictAt(object_dict, dunder_getattribute_name);
+      typeDictAt(thread, object_dict, dunder_getattribute_name);
   Object dunder_setattr_name(&scope, symbols()->DunderSetattr());
-  object_dunder_setattr_ = typeDictAt(object_dict, dunder_setattr_name);
+  object_dunder_setattr_ = typeDictAt(thread, object_dict, dunder_setattr_name);
 }
 
 void Runtime::createImportlibModule(Thread* thread) {
@@ -2079,10 +2093,10 @@ void Runtime::createSysModule(Thread* thread) {
 
   Dict module_dict(&scope, module.dict());
   Object stderr_name(&scope, symbols()->Stderr());
-  sys_stderr_ = dictAt(module_dict, stderr_name);
+  sys_stderr_ = dictAt(thread, module_dict, stderr_name);
   CHECK(!sys_stderr_.isError(), "sys.stderr not found");
   Object stdout_name(&scope, symbols()->Stdout());
-  sys_stdout_ = dictAt(module_dict, stdout_name);
+  sys_stdout_ = dictAt(thread, module_dict, stdout_name);
   CHECK(!sys_stdout_.isError(), "sys.stdout not found");
 }
 
@@ -2528,15 +2542,16 @@ RawObject Runtime::newDictWithSize(word initial_size) {
   return *result;
 }
 
-void Runtime::dictAtPutWithHash(const Dict& dict, const Object& key,
-                                const Object& value, const Object& key_hash) {
-  HandleScope scope;
+void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
+                                const Object& key, const Object& value,
+                                const Object& key_hash) {
+  HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Tuple new_data(&scope, dictGrow(data));
+    Tuple new_data(&scope, dictGrow(thread, data));
     dictLookup(new_data, key, key_hash, &index, RawObject::equals);
     DCHECK(index != -1, "invalid index %ld", index);
     dict.setData(*new_data);
@@ -2549,15 +2564,15 @@ void Runtime::dictAtPutWithHash(const Dict& dict, const Object& key,
   }
 }
 
-void Runtime::dictAtPut(const Dict& dict, const Object& key,
+void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
                         const Object& value) {
-  HandleScope scope;
+  HandleScope scope(thread);
   Object key_hash(&scope, hash(*key));
-  dictAtPutWithHash(dict, key, value, key_hash);
+  dictAtPutWithHash(thread, dict, key, value, key_hash);
 }
 
-RawTuple Runtime::dictGrow(const Tuple& data) {
-  HandleScope scope;
+RawTuple Runtime::dictGrow(Thread* thread, const Tuple& data) {
+  HandleScope scope(thread);
   word new_length = data.length() * kDictGrowthFactor;
   if (new_length == 0) {
     new_length = kInitialDictCapacity * Dict::Bucket::kNumPointers;
@@ -2576,9 +2591,9 @@ RawTuple Runtime::dictGrow(const Tuple& data) {
   return *new_data;
 }
 
-RawObject Runtime::dictAtWithHash(const Dict& dict, const Object& key,
-                                  const Object& key_hash) {
-  HandleScope scope;
+RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
+                                  const Object& key, const Object& key_hash) {
+  HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
@@ -2589,15 +2604,16 @@ RawObject Runtime::dictAtWithHash(const Dict& dict, const Object& key,
   return Error::notFound();
 }
 
-RawObject Runtime::dictAt(const Dict& dict, const Object& key) {
-  HandleScope scope;
+RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key) {
+  HandleScope scope(thread);
   Object key_hash(&scope, hash(*key));
-  return dictAtWithHash(dict, key, key_hash);
+  return dictAtWithHash(thread, dict, key, key_hash);
 }
 
-RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
+RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
+                                     const Object& key,
                                      Callback<RawObject>* thunk) {
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   Object key_hash(&scope, hash(*key));
@@ -2609,7 +2625,7 @@ RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
   Object value(&scope, thunk->call());
   if (index == -1) {
     // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Tuple new_data(&scope, dictGrow(data));
+    Tuple new_data(&scope, dictGrow(thread, data));
     dictLookup(new_data, key, key_hash, &index, RawObject::equals);
     DCHECK(index != -1, "invalid index %ld", index);
     dict.setData(*new_data);
@@ -2621,37 +2637,42 @@ RawObject Runtime::dictAtIfAbsentPut(const Dict& dict, const Object& key,
   return *value;
 }
 
-RawObject Runtime::dictAtPutInValueCell(const Dict& dict, const Object& key,
+RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
+                                        const Object& key,
                                         const Object& value) {
-  RawObject result = dictAtIfAbsentPut(dict, key, newValueCellCallback());
+  RawObject result =
+      dictAtIfAbsentPut(thread, dict, key, newValueCellCallback());
   RawValueCell::cast(result).setValue(*value);
   return result;
 }
 
-bool Runtime::dictIncludes(const Dict& dict, const Object& key) {
+bool Runtime::dictIncludes(Thread* thread, const Dict& dict,
+                           const Object& key) {
   HandleScope scope;
   // TODO(T36757907): Check if key is hashable
   Object key_hash(&scope, hash(*key));
-  return dictIncludesWithHash(dict, key, key_hash);
+  return dictIncludesWithHash(thread, dict, key, key_hash);
 }
 
-bool Runtime::dictIncludesWithHash(const Dict& dict, const Object& key,
-                                   const Object& key_hash) {
-  HandleScope scope;
+bool Runtime::dictIncludesWithHash(Thread* thread, const Dict& dict,
+                                   const Object& key, const Object& key_hash) {
+  HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word ignore;
   return dictLookup(data, key, key_hash, &ignore, RawObject::equals);
 }
 
-RawObject Runtime::dictRemove(const Dict& dict, const Object& key) {
-  HandleScope scope;
+RawObject Runtime::dictRemove(Thread* thread, const Dict& dict,
+                              const Object& key) {
+  HandleScope scope(thread);
   Object key_hash(&scope, hash(*key));
-  return dictRemoveWithHash(dict, key, key_hash);
+  return dictRemoveWithHash(thread, dict, key, key_hash);
 }
 
-RawObject Runtime::dictRemoveWithHash(const Dict& dict, const Object& key,
+RawObject Runtime::dictRemoveWithHash(Thread* thread, const Dict& dict,
+                                      const Object& key,
                                       const Object& key_hash) {
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   Object result(&scope, Error::notFound());
@@ -2713,8 +2734,8 @@ RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
   return *items;
 }
 
-RawObject Runtime::dictKeys(const Dict& dict) {
-  HandleScope scope;
+RawObject Runtime::dictKeys(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   Tuple keys(&scope, newTuple(dict.numItems()));
   word num_keys = 0;
@@ -2739,8 +2760,8 @@ RawObject Runtime::dictValues(Thread* thread, const Dict& dict) {
 
 // DictItemIterator
 
-RawObject Runtime::newDictItemIterator(const Dict& dict) {
-  HandleScope scope;
+RawObject Runtime::newDictItemIterator(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
   DictItemIterator result(&scope, heap()->create<RawDictItemIterator>());
   result.setIndex(Dict::Bucket::kFirst);
   result.setIterable(*dict);
@@ -2750,8 +2771,8 @@ RawObject Runtime::newDictItemIterator(const Dict& dict) {
 
 // DictItems
 
-RawObject Runtime::newDictItems(const Dict& dict) {
-  HandleScope scope;
+RawObject Runtime::newDictItems(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
   DictItems result(&scope, heap()->create<RawDictItems>());
   result.setDict(*dict);
   return *result;
@@ -2759,8 +2780,8 @@ RawObject Runtime::newDictItems(const Dict& dict) {
 
 // DictKeyIterator
 
-RawObject Runtime::newDictKeyIterator(const Dict& dict) {
-  HandleScope scope;
+RawObject Runtime::newDictKeyIterator(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
   DictKeyIterator result(&scope, heap()->create<RawDictKeyIterator>());
   result.setIndex(Dict::Bucket::kFirst);
   result.setIterable(*dict);
@@ -2770,8 +2791,8 @@ RawObject Runtime::newDictKeyIterator(const Dict& dict) {
 
 // DictKeys
 
-RawObject Runtime::newDictKeys(const Dict& dict) {
-  HandleScope scope;
+RawObject Runtime::newDictKeys(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
   DictKeys result(&scope, heap()->create<RawDictKeys>());
   result.setDict(*dict);
   return *result;
@@ -2779,8 +2800,8 @@ RawObject Runtime::newDictKeys(const Dict& dict) {
 
 // DictValueIterator
 
-RawObject Runtime::newDictValueIterator(const Dict& dict) {
-  HandleScope scope;
+RawObject Runtime::newDictValueIterator(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
   DictValueIterator result(&scope, heap()->create<RawDictValueIterator>());
   result.setIndex(Dict::Bucket::kFirst);
   result.setIterable(*dict);
@@ -2790,8 +2811,8 @@ RawObject Runtime::newDictValueIterator(const Dict& dict) {
 
 // DictValues
 
-RawObject Runtime::newDictValues(const Dict& dict) {
-  HandleScope scope;
+RawObject Runtime::newDictValues(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
   DictValues result(&scope, heap()->create<RawDictValues>());
   result.setDict(*dict);
   return *result;
@@ -3040,7 +3061,7 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
   if (iterable.isDict()) {
     Dict dict(&scope, *iterable);
     if (dict.numItems() > 0) {
-      Tuple keys(&scope, dictKeys(dict));
+      Tuple keys(&scope, dictKeys(thread, dict));
       Object value(&scope, NoneType::object());
       for (word i = 0; i < keys.length(); i++) {
         value = keys.at(i);
@@ -3172,7 +3193,8 @@ RawObject Runtime::newWeakRef(Thread* thread, const Object& referent,
 }
 
 void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Bytes bc(&scope, code.code());
   Tuple names(&scope, code.names());
 
@@ -3194,15 +3216,16 @@ void Runtime::collectAttributes(const Code& code, const Dict& attributes) {
     }
     word name_index = bc.byteAt(i + 3);
     Object name(&scope, names.at(name_index));
-    dictAtPut(attributes, name, name);
+    dictAtPut(thread, attributes, name, name);
   }
 }
 
 RawObject Runtime::classConstructor(const Type& type) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict type_dict(&scope, type.dict());
   Object init(&scope, symbols()->DunderInit());
-  RawObject value = dictAt(type_dict, init);
+  RawObject value = dictAt(thread, type_dict, init);
   if (value.isError()) {
     return NoneType::object();
   }
@@ -3446,7 +3469,8 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
 
 RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
                                       const Dict& builtins) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Bytes bytes(&scope, code.code());
   Tuple names(&scope, code.names());
   Tuple fast_globals(&scope, newTuple(names.length()));
@@ -3462,17 +3486,17 @@ RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
       continue;
     }
     Object key(&scope, names.at(arg));
-    RawObject value = dictAt(globals, key);
+    RawObject value = dictAt(thread, globals, key);
     if (value.isError()) {
-      value = dictAt(builtins, key);
+      value = dictAt(thread, builtins, key);
       if (value.isError()) {
         // insert a place holder to allow {STORE|DELETE}_GLOBAL
         Object handle(&scope, value);
-        value = dictAtPutInValueCell(builtins, key, handle);
+        value = dictAtPutInValueCell(thread, builtins, key, handle);
         RawValueCell::cast(value).makeUnbound();
       }
       Object handle(&scope, value);
-      value = dictAtPutInValueCell(globals, key, handle);
+      value = dictAtPutInValueCell(thread, globals, key, handle);
     }
     DCHECK(value.isValueCell(), "not  value cell");
     fast_globals.atPut(arg, value);

@@ -280,7 +280,7 @@ static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
     Object patch_obj(&scope, RawValueCell::cast(*patch_value_cell).value());
 
     // Copy function entries if the method already exists as a native builtin.
-    Object base_obj(&scope, runtime->typeDictAt(base, key));
+    Object base_obj(&scope, runtime->typeDictAt(thread, base, key));
     if (!base_obj.isError()) {
       CHECK(patch_obj.isFunction(), "Python should only annotate functions");
       Function patch_fn(&scope, *patch_obj);
@@ -290,7 +290,7 @@ static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
 
       copyFunctionEntries(thread, base_fn, patch_fn);
     }
-    runtime->typeDictAtPut(base, key, patch_obj);
+    runtime->typeDictAtPut(thread, base, key, patch_obj);
   }
 }
 
@@ -353,7 +353,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
     Dict globals(&scope, frame->previousFrame()->globals());
-    Object type_obj(&scope, runtime->moduleDictAt(globals, name));
+    Object type_obj(&scope, runtime->moduleDictAt(thread, globals, name));
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",

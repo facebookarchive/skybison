@@ -873,7 +873,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     DCHECK(slot_value.isInt(), "unexpected slot type");
 
     Str slot_name(&scope, runtime->symbols()->at(slot.name));
-    if (!runtime->typeDictAt(dict, slot_name).isError()) continue;
+    if (!runtime->typeDictAt(thread, dict, slot_name).isError()) continue;
 
     // When given PyObject_HashNotImplemented, put None in the type dict
     // rather than a wrapper. CPython does this regardless of which slot it
@@ -881,7 +881,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     if (Int::cast(*slot_value).asCPtr() ==
         bit_cast<void*>(&PyObject_HashNotImplemented)) {
       Object none(&scope, NoneType::object());
-      runtime->typeDictAtPut(dict, slot_name, none);
+      runtime->typeDictAtPut(thread, dict, slot_name, none);
       return NoneType::object();
     }
 
@@ -911,7 +911,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     }
 
     // Finally, put the wrapper in the type dict.
-    runtime->typeDictAtPut(dict, slot_name, func_obj);
+    runtime->typeDictAtPut(thread, dict, slot_name, func_obj);
   }
 
   return NoneType::object();
@@ -1028,7 +1028,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   Object name_obj(&scope, runtime->newStrFromCStr(class_name));
   type.setName(*name_obj);
   Object dict_key(&scope, runtime->symbols()->DunderName());
-  runtime->dictAtPutInValueCell(dict, dict_key, name_obj);
+  runtime->dictAtPutInValueCell(thread, dict, dict_key, name_obj);
 
   // Compute Mro
   Tuple parents(&scope, runtime->newTuple(0));
@@ -1068,7 +1068,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     for (word i = 0; methods[i].ml_name != nullptr; i++) {
       Object name(&scope, runtime->newStrFromCStr(methods[i].ml_name));
       Object function(&scope, addMethod(thread, name, &methods[i]));
-      runtime->dictAtPutInValueCell(dict, name, function);
+      runtime->dictAtPutInValueCell(thread, dict, name, function);
     }
   }
 

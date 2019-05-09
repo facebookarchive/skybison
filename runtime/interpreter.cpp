@@ -698,7 +698,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
                   entry, entry_kw, entry_ex));
 
   Object dunder_name(&scope, runtime->symbols()->at(SymbolId::kDunderName));
-  Object value_cell(&scope, runtime->dictAt(globals, dunder_name));
+  Object value_cell(&scope, runtime->dictAt(thread, globals, dunder_name));
   if (value_cell.isValueCell()) {
     DCHECK(!RawValueCell::cast(*value_cell).isUnbound(), "unbound globals");
     function.setModule(RawValueCell::cast(*value_cell).value());
@@ -1500,15 +1500,18 @@ bool Interpreter::doReturnValue(Context* ctx, word) {
 
 // opcode 85
 void Interpreter::doSetupAnnotations(Context* ctx, word) {
-  HandleScope scope(ctx->thread);
-  Runtime* runtime = ctx->thread->runtime();
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
   Dict implicit_globals(&scope, ctx->frame->implicitGlobals());
   Object annotations(&scope,
                      runtime->symbols()->at(SymbolId::kDunderAnnotations));
-  Object anno_dict(&scope, runtime->dictAt(implicit_globals, annotations));
+  Object anno_dict(&scope,
+                   runtime->dictAt(thread, implicit_globals, annotations));
   if (anno_dict.isError()) {
     Object new_dict(&scope, runtime->newDict());
-    runtime->dictAtPutInValueCell(implicit_globals, annotations, new_dict);
+    runtime->dictAtPutInValueCell(thread, implicit_globals, annotations,
+                                  new_dict);
   }
 }
 
@@ -1612,7 +1615,7 @@ void Interpreter::doStoreName(Context* ctx, word arg) {
   RawObject names = RawCode::cast(frame->code()).names();
   Object key(&scope, RawTuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
-  thread->runtime()->dictAtPutInValueCell(implicit_globals, key, value);
+  thread->runtime()->dictAtPutInValueCell(thread, implicit_globals, key, value);
 }
 
 // opcode 91
@@ -1623,7 +1626,7 @@ void Interpreter::doDeleteName(Context* ctx, word arg) {
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject names = RawCode::cast(frame->code()).names();
   Object key(&scope, RawTuple::cast(names).at(arg));
-  if (thread->runtime()->dictRemove(implicit_globals, key).isError()) {
+  if (thread->runtime()->dictRemove(thread, implicit_globals, key).isError()) {
     UNIMPLEMENTED("item not found in delete name");
   }
 }
@@ -1902,10 +1905,10 @@ void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
              RawTuple::cast(RawCode::cast(frame->code()).names()).at(arg));
   Dict builtins(&scope, frame->builtins());
   Runtime* runtime = thread->runtime();
-  Object value_in_builtin(&scope, runtime->dictAt(builtins, key));
+  Object value_in_builtin(&scope, runtime->dictAt(thread, builtins, key));
   if (value_in_builtin.isError()) {
     value_in_builtin =
-        runtime->dictAtPutInValueCell(builtins, key, value_in_builtin);
+        runtime->dictAtPutInValueCell(thread, builtins, key, value_in_builtin);
     RawValueCell::cast(*value_in_builtin).makeUnbound();
   }
   value_cell.setValue(*value_in_builtin);
@@ -1926,15 +1929,16 @@ static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
 // opcode 101
 bool Interpreter::doLoadName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
-  Runtime* runtime = ctx->thread->runtime();
-  HandleScope scope(ctx->thread);
+  Thread* thread = ctx->thread;
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
 
   Object names(&scope, RawCode::cast(frame->code()).names());
   Str key(&scope, RawTuple::cast(*names).at(arg));
 
   // 1. implicitGlobals
   Dict implicit_globals(&scope, frame->implicitGlobals());
-  RawObject value = runtime->dictAt(implicit_globals, key);
+  RawObject value = runtime->dictAt(thread, implicit_globals, key);
   if (value.isValueCell()) {
     // 3a. found in [implicit]/globals but with up to 2-layers of indirection
     DCHECK(!RawValueCell::cast(value).isUnbound(), "unbound globals");
@@ -1952,7 +1956,7 @@ bool Interpreter::doLoadName(Context* ctx, word arg) {
   if (frame->implicitGlobals() != frame->globals()) {
     // 2. globals
     Dict globals(&scope, frame->globals());
-    value = runtime->dictAt(globals, key);
+    value = runtime->dictAt(thread, globals, key);
   }
   if (value.isValueCell()) {
     // 3a. found in [implicit]/globals but with up to 2-layers of indirection
@@ -1968,7 +1972,7 @@ bool Interpreter::doLoadName(Context* ctx, word arg) {
 
   // 3b. not found; check builtins -- one layer of indirection
   Dict builtins(&scope, frame->builtins());
-  value = runtime->dictAt(builtins, key);
+  value = runtime->dictAt(thread, builtins, key);
   if (value.isValueCell()) {
     DCHECK(!RawValueCell::cast(value).isUnbound(), "unbound builtins");
     value = RawValueCell::cast(value).value();
@@ -2028,7 +2032,7 @@ void Interpreter::doBuildMap(Context* ctx, word arg) {
   for (word i = 0; i < arg; i++) {
     Object value(&scope, ctx->frame->popValue());
     Object key(&scope, ctx->frame->popValue());
-    runtime->dictAtPut(dict, key, value);
+    runtime->dictAtPut(thread, dict, key, value);
   }
   ctx->frame->pushValue(*dict);
 }
@@ -2181,8 +2185,8 @@ bool Interpreter::doCompareOp(Context* ctx, word arg) {
 
 // opcode 108
 bool Interpreter::doImportName(Context* ctx, word arg) {
-  HandleScope scope;
   Thread* thread = ctx->thread;
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Frame* frame = ctx->frame;
   Code code(&scope, frame->code());
@@ -2198,8 +2202,8 @@ bool Interpreter::doImportName(Context* ctx, word arg) {
   for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                       SymbolId::kDunderName}) {
     key = runtime->symbols()->at(id);
-    value = runtime->moduleDictAt(frame_globals, key);
-    runtime->dictAtPut(globals, key, value);
+    value = runtime->moduleDictAt(thread, frame_globals, key);
+    runtime->dictAtPut(thread, globals, key, value);
   }
   // TODO(T41634372) Pass in a dict that is similar to what `builtins.locals`
   // returns. Use `None` for now since the default importlib behavior is to
@@ -2378,7 +2382,8 @@ void Interpreter::doDeleteFast(Context* ctx, word arg) {
 
 // opcode 127
 void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
   Runtime* runtime = ctx->thread->runtime();
   Object names(&scope, RawCode::cast(ctx->frame->code()).names());
   Object value(&scope, ctx->frame->popValue());
@@ -2387,9 +2392,10 @@ void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
   Dict implicit_globals(&scope, ctx->frame->implicitGlobals());
   Object annotations(&scope,
                      runtime->symbols()->at(SymbolId::kDunderAnnotations));
-  Object value_cell(&scope, runtime->dictAt(implicit_globals, annotations));
+  Object value_cell(&scope,
+                    runtime->dictAt(thread, implicit_globals, annotations));
   Dict anno_dict(&scope, RawValueCell::cast(*value_cell).value());
-  runtime->dictAtPut(anno_dict, key, value);
+  runtime->dictAtPut(thread, anno_dict, key, value);
 }
 
 // opcode 130
@@ -2581,21 +2587,24 @@ void Interpreter::doSetAdd(Context* ctx, word arg) {
 
 // opcode 147
 void Interpreter::doMapAdd(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
   Object key(&scope, ctx->frame->popValue());
   Object value(&scope, ctx->frame->popValue());
   Dict dict(&scope, RawDict::cast(ctx->frame->peek(arg - 1)));
-  ctx->thread->runtime()->dictAtPut(dict, key, value);
+  ctx->thread->runtime()->dictAtPut(thread, dict, key, value);
 }
 
 // opcode 148
 void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
   Code code(&scope, ctx->frame->code());
   word idx = arg - code.numCellvars();
   Object name(&scope, RawTuple::cast(code.freevars()).at(idx));
   Dict implicit_global(&scope, ctx->frame->implicitGlobals());
-  Object result(&scope, ctx->thread->runtime()->dictAt(implicit_global, name));
+  Object result(&scope,
+                ctx->thread->runtime()->dictAt(thread, implicit_global, name));
   if (result.isError()) {
     ValueCell value_cell(&scope, ctx->frame->local(code.nlocals() + arg));
     if (value_cell.isUnbound()) {
@@ -2823,7 +2832,7 @@ void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
   for (word i = arg - 1; i >= 0; i--) {
     Object key(&scope, keys.at(i));
     Object value(&scope, ctx->frame->popValue());
-    thread->runtime()->dictAtPut(dict, key, value);
+    thread->runtime()->dictAtPut(thread, dict, key, value);
   }
   ctx->frame->pushValue(*dict);
 }

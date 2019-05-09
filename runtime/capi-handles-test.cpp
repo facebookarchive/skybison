@@ -63,36 +63,39 @@ TEST(CApiHandlesTest, BorrowedApiHandles) {
 
 TEST(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.apiHandles());
   Object obj(&scope, runtime.newInt(1));
-  ApiHandle* handle = ApiHandle::newReference(Thread::current(), *obj);
+  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(runtime.dictIncludes(dict, obj));
+  EXPECT_TRUE(runtime.dictIncludes(thread, dict, obj));
 }
 
 TEST(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Object obj(&scope, runtime.newInt(1));
-  ApiHandle* handle = ApiHandle::newReference(Thread::current(), *obj);
+  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
   Object handle_obj(&scope, handle->asObject());
   EXPECT_TRUE(isIntEqualsWord(*handle_obj, 1));
 }
 
 TEST(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
   Dict dict(&scope, runtime.apiHandles());
-
   Object obj(&scope, runtime.newList());
-  ASSERT_FALSE(runtime.dictIncludes(dict, obj));
+  ASSERT_FALSE(runtime.dictIncludes(thread, dict, obj));
 
-  ApiHandle* handle = ApiHandle::newReference(Thread::current(), *obj);
+  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
   EXPECT_NE(handle, nullptr);
 
-  EXPECT_TRUE(runtime.dictIncludes(dict, obj));
+  EXPECT_TRUE(runtime.dictIncludes(thread, dict, obj));
 }
 
 TEST(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
@@ -209,7 +212,7 @@ TEST(CApiHandlesTest, Cache) {
   Object key(&scope, handle1->asObject());
   handle1->dispose();
   Dict caches(&scope, runtime.apiCaches());
-  EXPECT_TRUE(runtime.dictAt(caches, key).isError());
+  EXPECT_TRUE(runtime.dictAt(Thread::current(), caches, key).isError());
   EXPECT_EQ(handle2->cache(), buffer1);
 }
 

@@ -127,7 +127,8 @@ TEST(FunctionBuiltinsTest,
 
 TEST(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, "def foo(): pass").isError());
   Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
   Object name(&scope, runtime.newStrFromCStr("foobarbaz"));
@@ -137,7 +138,8 @@ TEST(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
   ASSERT_TRUE(foo.isFunction());
   ASSERT_TRUE(RawFunction::cast(*foo).dict().isDict());
   Dict function_dict(&scope, RawFunction::cast(*foo).dict());
-  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(function_dict, name), 1337));
+  EXPECT_TRUE(
+      isIntEqualsWord(runtime.dictAt(thread, function_dict, name), 1337));
 }
 
 TEST(FunctionBuiltinsTest, DunderSetattrWithNonStringNameRaisesTypeError) {
@@ -230,7 +232,8 @@ TEST(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
   EXPECT_TRUE(functionSetAttr(thread, foo, name, value).isNoneType());
   ASSERT_TRUE(foo.dict().isDict());
   Dict function_dict(&scope, foo.dict());
-  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(function_dict, name), 6789));
+  EXPECT_TRUE(
+      isIntEqualsWord(runtime.dictAt(thread, function_dict, name), 6789));
 }
 
 }  // namespace testing

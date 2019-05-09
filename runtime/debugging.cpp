@@ -130,7 +130,7 @@ std::ostream& operator<<(std::ostream& os, RawDict value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, value);
-  Object iter_obj(&scope, runtime->newDictItemIterator(dict));
+  Object iter_obj(&scope, runtime->newDictItemIterator(thread, dict));
   if (!iter_obj.isDictItemIterator()) return os;
   os << '{';
   DictItemIterator iter(&scope, *iter_obj);

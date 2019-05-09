@@ -44,7 +44,7 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
   if (runtime->layoutHasDictOverflow(layout)) {
     Dict overflow(&scope,
                   runtime->layoutGetOverflowDict(thread, object, layout));
-    Object obj(&scope, runtime->dictAt(overflow, name_str));
+    Object obj(&scope, runtime->dictAt(thread, overflow, name_str));
     if (obj.isValueCell()) {
       obj = RawValueCell::cast(*obj).value();
     }
@@ -244,12 +244,13 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
 
 void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   // Manually set argcount to avoid bootstrap problems.
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict type_dict(&scope, new_type.dict());
   Object dunder_getattribute_name(&scope,
                                   runtime->symbols()->DunderGetattribute());
   Function dunder_getattribute(
-      &scope, runtime->typeDictAt(type_dict, dunder_getattribute_name));
+      &scope, runtime->typeDictAt(thread, type_dict, dunder_getattribute_name));
   Code code(&scope, dunder_getattribute.code());
   code.setArgcount(2);
 }

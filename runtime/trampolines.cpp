@@ -113,7 +113,7 @@ static RawObject processDefaultArguments(Thread* thread,
       word first_kw = code.argcount();
       for (word i = 0; i < code.kwonlyargcount(); i++) {
         Object name(&scope, formal_names.at(first_kw + i));
-        RawObject val = thread->runtime()->dictAt(kw_defaults, name);
+        RawObject val = thread->runtime()->dictAt(thread, kw_defaults, name);
         if (!val.isError()) {
           caller->pushValue(val);
           new_argc++;
@@ -243,7 +243,7 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
       Dict kw_defaults(&scope, function.kwDefaults());
       Thread* thread = Thread::current();
       Object name(&scope, formal_names.at(arg_pos + start));
-      RawObject val = thread->runtime()->dictAt(kw_defaults, name);
+      RawObject val = thread->runtime()->dictAt(thread, kw_defaults, name);
       if (!val.isError()) {
         *(kw_arg_base - arg_pos) = val;
         continue;  // Got it, move on to the next
@@ -326,7 +326,7 @@ static RawObject processKeywordArguments(Thread* thread, Frame* caller,
           runtime->listAdd(saved_values, value);
         } else {
           // New, add it and associated value to the varkeyargs dict
-          runtime->dictAtPut(dict, key, value);
+          runtime->dictAtPut(thread, dict, key, value);
           argc--;
         }
       }
@@ -402,13 +402,13 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
   Runtime* runtime = thread->runtime();
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     Dict dict(&scope, *kw_dict);
-    Tuple keys(&scope, runtime->dictKeys(dict));
+    Tuple keys(&scope, runtime->dictKeys(thread, dict));
     for (word i = 0; i < keys.length(); i++) {
       Object key(&scope, keys.at(i));
       if (!thread->runtime()->isInstanceOfStr(*key)) {
         return thread->raiseTypeErrorWithCStr("keywords must be strings");
       }
-      caller->pushValue(runtime->dictAt(dict, key));
+      caller->pushValue(runtime->dictAt(thread, dict, key));
     }
     argc += keys.length();
     caller->pushValue(*keys);
@@ -884,7 +884,7 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* caller, word argc) {
     for (word i = 0; i < num_keywords; i++) {
       Object key(&scope, kw_names.at(i));
       Object value(&scope, caller->peek(num_keywords - i));
-      runtime->dictAtPut(dict, key, value);
+      runtime->dictAtPut(thread, dict, key, value);
     }
     kwargs = *dict;
   }
@@ -1074,7 +1074,7 @@ RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* caller, word argc) {
     for (word i = 0; i < num_keywords; i++) {
       Object key(&scope, kw_names.at(i));
       Object value(&scope, caller->peek(num_keywords - i));
-      runtime->dictAtPut(dict, key, value);
+      runtime->dictAtPut(thread, dict, key, value);
     }
     kwargs = *dict;
   }
@@ -1228,7 +1228,7 @@ RawObject varkwSlotTrampolineKw(Thread* thread, Frame* caller, word argc) {
   for (word i = num_kwargs - 1; i >= 0; i--) {
     Object key(&scope, kw_names.at(i));
     Object value(&scope, caller->popValue());
-    runtime->dictAtPut(kwargs, key, value);
+    runtime->dictAtPut(thread, kwargs, key, value);
   }
   Tuple args(&scope, runtime->newTuple(argc - 1));
   for (word i = argc - 2; i >= 0; i--) {

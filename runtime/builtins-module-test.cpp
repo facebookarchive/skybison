@@ -722,7 +722,8 @@ TEST(BuiltinsModuleTest, DunderBuildClassWithNonFunctionRaisesTypeError) {
 
 TEST(BuiltinsModuleTest, DunderBuildClassWithNonStringRaisesTypeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, "def f(): pass").isError());
   Object body(&scope, moduleAt(&runtime, "__main__", "f"));
   Object name(&scope, NoneType::object());
@@ -738,7 +739,8 @@ TEST(BuiltinsModuleTest, DunderBuildClassWithNonStringRaisesTypeError) {
 
 TEST(BuiltinsModuleTest, DunderBuildClassCallsMetaclass) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Meta(type):
   def __new__(mcls, name, bases, namespace, *args, **kwargs):
@@ -764,14 +766,15 @@ class C(int, float, metaclass=Meta, hello="world"):
   ASSERT_TRUE(c.at(3).isDict());
   Dict c_namespace(&scope, c.at(3));
   Object x(&scope, runtime.newStrFromCStr("x"));
-  EXPECT_TRUE(runtime.dictIncludes(c_namespace, x));
+  EXPECT_TRUE(runtime.dictIncludes(thread, c_namespace, x));
   ASSERT_TRUE(c.at(4).isTuple());
   EXPECT_EQ(RawTuple::cast(c.at(4)).length(), 0);
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   ASSERT_TRUE(c.at(5).isDict());
   Dict c_kwargs(&scope, c.at(5));
   EXPECT_EQ(c_kwargs.numItems(), 1);
-  EXPECT_TRUE(isStrEqualsCStr(runtime.dictAt(c_kwargs, hello), "world"));
+  EXPECT_TRUE(
+      isStrEqualsCStr(runtime.dictAt(thread, c_kwargs, hello), "world"));
 }
 
 TEST(BuiltinsModuleTest, DunderBuildClassCalculatesMostSpecificMetaclass) {
@@ -1283,12 +1286,13 @@ exec("a = 1338")
 
 TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, "").isError());
   Module main(&scope, findModule(&runtime, "__main__"));
   Dict globals(&scope, main.dict());
   Str globals_name(&scope, runtime.newStrFromCStr("gl"));
-  runtime.moduleDictAtPut(globals, globals_name, globals);
+  runtime.moduleDictAtPut(thread, globals, globals_name, globals);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 a = 1337
 result = exec("a = 1338", gl)

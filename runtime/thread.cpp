@@ -148,7 +148,7 @@ Frame* Thread::pushCallFrame(const Function& function) {
     // TODO(T36407403): Set builtins appropriately.
     Object dunder_builtins_name(&scope, runtime()->symbols()->DunderBuiltins());
     Object builtins_module(
-        &scope, runtime()->moduleDictAt(globals, dunder_builtins_name));
+        &scope, runtime()->moduleDictAt(this, globals, dunder_builtins_name));
     if (builtins_module.isModule()) {
       builtins = RawModule::cast(*builtins_module).dict();
     } else {
@@ -157,7 +157,7 @@ Frame* Thread::pushCallFrame(const Function& function) {
       Object none_name(&scope, runtime()->symbols()->None());
       Object none(&scope, NoneType::object());
       Dict builtins_dict(&scope, *builtins);
-      runtime()->moduleDictAtPut(builtins_dict, none_name, none);
+      runtime()->moduleDictAtPut(this, builtins_dict, none_name, none);
     }
   }
   Code code(&scope, function.code());
@@ -171,11 +171,11 @@ Frame* Thread::pushExecFrame(const Code& code, const Dict& globals,
                              const Object& locals) {
   HandleScope scope(this);
   Str dunder_builtins_name(&scope, runtime()->symbols()->DunderBuiltins());
-  Object builtins_obj(&scope,
-                      runtime()->typeDictAt(globals, dunder_builtins_name));
+  Object builtins_obj(
+      &scope, runtime()->typeDictAt(this, globals, dunder_builtins_name));
   if (builtins_obj.isError()) {  // couldn't find __builtins__ in globals
     builtins_obj = runtime()->findModuleById(SymbolId::kBuiltins);
-    runtime()->typeDictAtPut(globals, dunder_builtins_name, builtins_obj);
+    runtime()->typeDictAtPut(this, globals, dunder_builtins_name, builtins_obj);
   }
   Module builtins_module(&scope, *builtins_obj);
   Dict builtins(&scope, builtins_module.dict());

@@ -1457,19 +1457,19 @@ d = {**{'a': 1, 'b': 2}, 'c': 3, **{'d': 4}}
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -1504,19 +1504,19 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -1551,19 +1551,19 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -1613,19 +1613,19 @@ d = {**Foo(), 'd': 4}
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2001,19 +2001,19 @@ d = foo(**{'a': 1, 'b': 2}, **{'c': 3, 'd': 4})
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2047,19 +2047,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2093,19 +2093,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 
@@ -2157,19 +2157,19 @@ d = foo(**{'a': 1, 'b': 2}, **Foo({'c': 3, 'd': 4}))
   EXPECT_EQ(dict.numItems(), 4);
 
   Object key(&scope, SmallStr::fromCStr("a"));
-  Object el0(&scope, runtime.dictAt(dict, key));
+  Object el0(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el0, 1));
 
   key = SmallStr::fromCStr("b");
-  Object el1(&scope, runtime.dictAt(dict, key));
+  Object el1(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el1, 2));
 
   key = SmallStr::fromCStr("c");
-  Object el2(&scope, runtime.dictAt(dict, key));
+  Object el2(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el2, 3));
 
   key = SmallStr::fromCStr("d");
-  Object el3(&scope, runtime.dictAt(dict, key));
+  Object el3(&scope, runtime.dictAt(thread, dict, key));
   EXPECT_TRUE(isIntEqualsWord(*el3, 4));
 }
 

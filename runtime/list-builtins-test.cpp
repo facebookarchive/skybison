@@ -1529,7 +1529,8 @@ TEST(ListBuiltinsTest, ExtendSet) {
 
 TEST(ListBuiltinsTest, ExtendDict) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Dict dict(&scope, runtime.newDict());
   Object value(&scope, NoneType::object());
@@ -1537,12 +1538,12 @@ TEST(ListBuiltinsTest, ExtendDict) {
 
   for (word i = 0; i < 16; i++) {
     value = SmallInt::fromWord(i);
-    runtime.dictAtPut(dict, value, value);
+    runtime.dictAtPut(thread, dict, value, value);
     sum += i;
   }
 
   Object dict_obj(&scope, *dict);
-  listExtend(Thread::current(), list, Object(&scope, *dict_obj));
+  listExtend(thread, list, Object(&scope, *dict_obj));
   EXPECT_EQ(list.numItems(), 16);
 
   for (word i = 0; i < 16; i++) {

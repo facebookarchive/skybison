@@ -46,8 +46,8 @@ RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
     value = Dict::Bucket::value(*other_data, i);
     hash = Dict::Bucket::hash(*other_data, i);
     if (do_override == Override::kOverride ||
-        !runtime->dictIncludesWithHash(dict, key, hash)) {
-      runtime->dictAtPutWithHash(dict, key, value, hash);
+        !runtime->dictIncludesWithHash(thread, dict, key, hash)) {
+      runtime->dictAtPutWithHash(thread, dict, key, value, hash);
     } else if (do_override == Override::kError) {
       return thread->raiseKeyError(*key);
     }
@@ -94,11 +94,11 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
         return *key_hash;
       }
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludesWithHash(dict, key, key_hash)) {
+          !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        runtime->dictAtPutWithHash(dict, key, value, key_hash);
+        runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
       } else if (do_override == Override::kError) {
         return thread->raiseKeyError(*key);
       }
@@ -115,11 +115,11 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
         return *key_hash;
       }
       if (do_override == Override::kOverride ||
-          !runtime->dictIncludesWithHash(dict, key, key_hash)) {
+          !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
                                          key);
         if (value.isError()) return *value;
-        runtime->dictAtPutWithHash(dict, key, value, key_hash);
+        runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
       } else if (do_override == Override::kError) {
         return thread->raiseKeyError(*key);
       }
@@ -159,11 +159,11 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       return *key_hash;
     }
     if (do_override == Override::kOverride ||
-        !runtime->dictIncludesWithHash(dict, key, key_hash)) {
+        !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
       value =
           Interpreter::callMethod2(thread, frame, subscr_method, mapping, key);
       if (value.isError()) return *value;
-      runtime->dictAtPutWithHash(dict, key, value, key_hash);
+      runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
     } else if (do_override == Override::kError) {
       return thread->raiseKeyError(*key);
     }
@@ -299,7 +299,7 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
     return *key_hash;
   }
   // Remove the key. If it doesn't exist, throw a KeyError.
-  if (runtime->dictRemoveWithHash(dict, key, key_hash).isError()) {
+  if (runtime->dictRemoveWithHash(thread, dict, key, key_hash).isError()) {
     return thread->raiseKeyError(*key);
   }
   return NoneType::object();
@@ -319,15 +319,15 @@ RawObject DictBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
     if (self.numItems() != other.numItems()) {
       return Bool::falseObj();
     }
-    Tuple keys(&scope, runtime->dictKeys(self));
+    Tuple keys(&scope, runtime->dictKeys(thread, self));
     Object left_key(&scope, NoneType::object());
     Object left(&scope, NoneType::object());
     Object right(&scope, NoneType::object());
     word length = keys.length();
     for (word i = 0; i < length; i++) {
       left_key = keys.at(i);
-      left = runtime->dictAt(self, left_key);
-      right = runtime->dictAt(other, left_key);
+      left = runtime->dictAt(thread, self, left_key);
+      right = runtime->dictAt(thread, other, left_key);
       if (right.isError()) {
         return Bool::falseObj();
       }
@@ -372,7 +372,7 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   if (key_hash.isError()) {
     return *key_hash;
   }
-  runtime->dictAtPutWithHash(dict, key, value, key_hash);
+  runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
   return NoneType::object();
 }
 
@@ -386,7 +386,7 @@ RawObject DictBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   }
   Dict dict(&scope, *self);
   // .iter() on a dict returns a keys iterator
-  return runtime->newDictKeyIterator(dict);
+  return runtime->newDictKeyIterator(thread, dict);
 }
 
 RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
@@ -398,7 +398,7 @@ RawObject DictBuiltins::items(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
-  return runtime->newDictItems(dict);
+  return runtime->newDictItems(thread, dict);
 }
 
 RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
@@ -410,7 +410,7 @@ RawObject DictBuiltins::keys(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
-  return runtime->newDictKeys(dict);
+  return runtime->newDictKeys(thread, dict);
 }
 
 RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
@@ -422,7 +422,7 @@ RawObject DictBuiltins::values(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kDict);
   }
   Dict dict(&scope, *self);
-  return runtime->newDictValues(dict);
+  return runtime->newDictValues(thread, dict);
 }
 
 RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
@@ -452,7 +452,7 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   Int hash_int(&scope, intUnderlying(thread, key_hash));
   SmallInt small_hash(&scope, SmallInt::fromWordTruncated(hash_int.digitAt(0)));
   // Return results
-  Object result(&scope, runtime->dictAtWithHash(dict, key, small_hash));
+  Object result(&scope, runtime->dictAtWithHash(thread, dict, key, small_hash));
   if (!result.isError()) return *result;
   return *default_obj;
 }
@@ -574,7 +574,7 @@ RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
   }
 
   Dict dict(&scope, DictItems::cast(*self).dict());
-  return thread->runtime()->newDictItemIterator(dict);
+  return thread->runtime()->newDictItemIterator(thread, dict);
 }
 
 const BuiltinMethod DictKeyIteratorBuiltins::kBuiltinMethods[] = {
@@ -660,7 +660,7 @@ RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
   }
 
   Dict dict(&scope, DictKeys::cast(*self).dict());
-  return thread->runtime()->newDictKeyIterator(dict);
+  return thread->runtime()->newDictKeyIterator(thread, dict);
 }
 
 const BuiltinMethod DictValueIteratorBuiltins::kBuiltinMethods[] = {
@@ -747,7 +747,7 @@ RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
   }
 
   Dict dict(&scope, DictValues::cast(*self).dict());
-  return thread->runtime()->newDictValueIterator(dict);
+  return thread->runtime()->newDictValueIterator(thread, dict);
 }
 
 }  // namespace python

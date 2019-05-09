@@ -71,11 +71,11 @@ TEST(DebuggingTests, DumpExtendedFunction) {
   Dict annotations(&scope, runtime.newDict());
   Object return_name(&scope, runtime.newStrFromCStr("return"));
   Object int_type(&scope, runtime.typeAt(LayoutId::kInt));
-  runtime.dictAtPut(annotations, return_name, int_type);
+  runtime.dictAtPut(thread, annotations, return_name, int_type);
   Dict kw_defaults(&scope, runtime.newDict());
   Object name0(&scope, runtime.newStrFromCStr("name0"));
   Object none(&scope, NoneType::object());
-  runtime.dictAtPut(kw_defaults, name0, none);
+  runtime.dictAtPut(thread, kw_defaults, name0, none);
   Tuple defaults(&scope, runtime.newTuple(1));
   defaults.atPut(0, runtime.newInt(-9));
   Dict globals(&scope, runtime.newDict());
@@ -152,14 +152,15 @@ TEST(DebuggingTests, FormatCode) {
 
 TEST(DebuggingTests, FormatDict) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
   Object key0(&scope, runtime.newStrFromCStr("hello"));
   Object key1(&scope, NoneType::object());
   Object value0(&scope, runtime.newInt(88));
   Object value1(&scope, runtime.newTuple(0));
-  runtime.dictAtPut(dict, key0, value0);
-  runtime.dictAtPut(dict, key1, value1);
+  runtime.dictAtPut(thread, dict, key0, value0);
+  runtime.dictAtPut(thread, dict, key1, value1);
   std::stringstream ss;
   ss << dict;
   EXPECT_TRUE(ss.str() == R"({"hello": 88, None: ()})" ||

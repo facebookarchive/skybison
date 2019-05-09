@@ -17,7 +17,8 @@ a = Foo()
 weak = ref(a)
 )";
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   compileAndRunToString(&runtime, src);
   RawObject a = moduleAt(&runtime, "__main__", "a");
   RawObject weak = moduleAt(&runtime, "__main__", "weak");
@@ -27,7 +28,7 @@ weak = ref(a)
   Module main(&scope, findModule(&runtime, "__main__"));
   Dict globals(&scope, main.dict());
   Object key(&scope, runtime.newStrFromCStr("a"));
-  runtime.dictRemove(globals, key);
+  runtime.dictRemove(thread, globals, key);
 
   runtime.collectGarbage();
   weak = moduleAt(&runtime, "__main__", "weak");
@@ -46,7 +47,8 @@ def f(ref):
 weak = ref(a, f)
 )";
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   compileAndRunToString(&runtime, src);
   RawObject a = moduleAt(&runtime, "__main__", "a");
   RawObject b = moduleAt(&runtime, "__main__", "b");
@@ -57,7 +59,7 @@ weak = ref(a, f)
   Module main(&scope, findModule(&runtime, "__main__"));
   Dict globals(&scope, main.dict());
   Object key(&scope, runtime.newStrFromCStr("a"));
-  runtime.dictRemove(globals, key);
+  runtime.dictRemove(thread, globals, key);
 
   runtime.collectGarbage();
   weak = moduleAt(&runtime, "__main__", "weak");

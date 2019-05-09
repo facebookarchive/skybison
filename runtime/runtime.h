@@ -103,12 +103,12 @@ class Runtime {
   RawObject newDict();
   RawObject newDictWithSize(word initial_size);
 
-  RawObject newDictItemIterator(const Dict& dict);
-  RawObject newDictItems(const Dict& dict);
-  RawObject newDictKeyIterator(const Dict& dict);
-  RawObject newDictKeys(const Dict& dict);
-  RawObject newDictValueIterator(const Dict& dict);
-  RawObject newDictValues(const Dict& dict);
+  RawObject newDictItemIterator(Thread* thread, const Dict& dict);
+  RawObject newDictItems(Thread* thread, const Dict& dict);
+  RawObject newDictKeyIterator(Thread* thread, const Dict& dict);
+  RawObject newDictKeys(Thread* thread, const Dict& dict);
+  RawObject newDictValueIterator(Thread* thread, const Dict& dict);
+  RawObject newDictValues(Thread* thread, const Dict& dict);
 
   RawObject newFloat(double value);
 
@@ -286,8 +286,9 @@ class Runtime {
   RawObject lookupNameInModule(Thread* thread, SymbolId module_name,
                                SymbolId name);
 
-  RawObject moduleDictAt(const Dict& module_dict, const Object& key);
-  RawObject moduleDictAtPut(const Dict& dict, const Object& key,
+  RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
+                         const Object& key);
+  RawObject moduleDictAtPut(Thread* thread, const Dict& dict, const Object& key,
                             const Object& value);
   RawObject moduleAt(const Module& module, const Object& key);
   RawObject moduleAtById(const Module& module, SymbolId key);
@@ -307,8 +308,8 @@ class Runtime {
     return RawLayout::cast(layoutAt(object.layoutId())).describedType();
   }
 
-  RawObject typeDictAt(const Dict& dict, const Object& key);
-  RawObject typeDictAtPut(const Dict& dict, const Object& key,
+  RawObject typeDictAt(Thread* thread, const Dict& dict, const Object& key);
+  RawObject typeDictAtPut(Thread* thread, const Dict& dict, const Object& key,
                           const Object& value);
   RawObject typeAt(LayoutId layout_id);
   RawObject layoutAt(LayoutId layout_id) {
@@ -426,53 +427,54 @@ class Runtime {
   // Associate a value with the supplied key.
   //
   // This handles growing the backing Tuple if needed.
-  void dictAtPut(const Dict& dict, const Object& key, const Object& value);
+  void dictAtPut(Thread* thread, const Dict& dict, const Object& key,
+                 const Object& value);
 
   // Look up the value associated with key. Returns Error::object() if the
   // key was not found.
-  RawObject dictAt(const Dict& dict, const Object& key);
+  RawObject dictAt(Thread* thread, const Dict& dict, const Object& key);
 
   // Looks up and returns the value associated with the key.  If the key is
   // absent, calls thunk and inserts its result as the value.
-  RawObject dictAtIfAbsentPut(const Dict& dict, const Object& key,
-                              Callback<RawObject>* thunk);
+  RawObject dictAtIfAbsentPut(Thread* thread, const Dict& dict,
+                              const Object& key, Callback<RawObject>* thunk);
 
   // Stores value in a ValueCell stored at key in dict. Careful to
   // reuse an existing value cell if one exists since it may be shared.
-  RawObject dictAtPutInValueCell(const Dict& dict, const Object& key,
-                                 const Object& value);
+  RawObject dictAtPutInValueCell(Thread* thread, const Dict& dict,
+                                 const Object& key, const Object& value);
 
   // Returns true if the dict contains the specified key.
-  bool dictIncludes(const Dict& dict, const Object& key);
+  bool dictIncludes(Thread* thread, const Dict& dict, const Object& key);
 
   // Returns true if the dict contains the specified key with the specified
   // hash.
-  bool dictIncludesWithHash(const Dict& dict, const Object& key,
+  bool dictIncludesWithHash(Thread* thread, const Dict& dict, const Object& key,
                             const Object& key_hash);
 
   // Delete a key from the dict.
   //
   // Returns true if the key existed and sets the previous value in value.
   // Returns false otherwise.
-  RawObject dictRemove(const Dict& dict, const Object& key);
+  RawObject dictRemove(Thread* thread, const Dict& dict, const Object& key);
 
   // Delete a key from the dict.
   //
   // Returns true if the key existed and sets the previous value in value.
   // Returns false otherwise.
-  RawObject dictRemoveWithHash(const Dict& dict, const Object& key,
-                               const Object& key_hash);
+  RawObject dictRemoveWithHash(Thread* thread, const Dict& dict,
+                               const Object& key, const Object& key_hash);
 
   // Support explicit hash value of key to do dictAtPut.
-  void dictAtPutWithHash(const Dict& dict, const Object& key,
+  void dictAtPutWithHash(Thread* thread, const Dict& dict, const Object& key,
                          const Object& value, const Object& key_hash);
 
   // Support explicit hash value of key to do dictAt.
-  RawObject dictAtWithHash(const Dict& dict, const Object& key,
+  RawObject dictAtWithHash(Thread* thread, const Dict& dict, const Object& key,
                            const Object& key_hash);
 
   RawObject dictItems(Thread* thread, const Dict& dict);
-  RawObject dictKeys(const Dict& dict);
+  RawObject dictKeys(Thread* thread, const Dict& dict);
   RawObject dictValues(Thread* thread, const Dict& dict);
 
   // Set related function, based on dict.
@@ -834,7 +836,7 @@ class Runtime {
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
-  RawTuple dictGrow(const Tuple& data);
+  RawTuple dictGrow(Thread* thread, const Tuple& data);
 
   // Looks up the supplied key
   //
