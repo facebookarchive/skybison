@@ -17,6 +17,19 @@ static const char* kOpNames[] = {
 #define OPNAME(name, num, handler) #name,
     FOREACH_BYTECODE(OPNAME)};
 
+std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
+                           const char* indent) {
+  for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
+    byte op = bytecode.byteAt(i);
+    byte arg = bytecode.byteAt(i + 1);
+    std::ios_base::fmtflags saved_flags = os.flags();
+    os << indent << "  " << std::setw(4) << std::hex << i << ' ';
+    os.flags(saved_flags);
+    os << kOpNames[op] << " " << static_cast<unsigned>(arg) << '\n';
+  }
+  return os;
+}
+
 std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
                                const char* indent) {
   HandleScope scope;
@@ -35,14 +48,7 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
   Object bytecode_obj(&scope, code.code());
   if (bytecode_obj.isBytes()) {
     Bytes bytecode(&scope, *bytecode_obj);
-    for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
-      byte op = bytecode.byteAt(i);
-      byte arg = bytecode.byteAt(i + 1);
-      std::ios_base::fmtflags saved_flags = os.flags();
-      os << indent << "  " << std::setw(4) << std::hex << i << ' ';
-      os.flags(saved_flags);
-      os << kOpNames[op] << " " << static_cast<unsigned>(arg) << '\n';
-    }
+    dumpBytecode(os, bytecode, indent);
   }
 
   return os;
@@ -61,6 +67,11 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
      << "  code: ";
   if (function.code().isCode()) {
     dumpExtendedCode(os, RawCode::cast(function.code()), "  ");
+    if (function.rewrittenBytecode().isBytes()) {
+      Bytes bytecode(&scope, function.rewrittenBytecode());
+      os << "  Rewritten bytecode:\n";
+      dumpBytecode(os, bytecode, "");
+    }
   } else {
     os << function.code() << '\n';
   }

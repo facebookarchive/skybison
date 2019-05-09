@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+#include "bytecode.h"
 #include "debugging.h"
 #include "test-utils.h"
 
@@ -14,7 +15,7 @@ using namespace testing;
 static RawObject makeTestCode(Thread* thread) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
-  const byte bytes_array[] = {100, 0, 83, 0};
+  const byte bytes_array[] = {LOAD_CONST, 0, LOAD_ATTR, 0, RETURN_VALUE, 0};
   Bytes bytes(&scope, runtime->newBytesWithAll(bytes_array));
   Tuple consts(&scope, runtime->newTuple(1));
   consts.atPut(0, runtime->newStrFromCStr("const0"));
@@ -54,12 +55,14 @@ TEST(DebuggingTests, DumpExtendedCode) {
   freevars: ("freevar0",)
   varnames: ("variable0",)
      0 LOAD_CONST 0
-     2 RETURN_VALUE 0
+     2 LOAD_ATTR 0
+     4 RETURN_VALUE 0
 )");
 }
 
 TEST(DebuggingTests, DumpExtendedFunction) {
   Runtime runtime;
+  runtime.enableCache();
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object qualname(&scope, runtime.newStrFromCStr("footype.baz"));
@@ -103,7 +106,12 @@ TEST(DebuggingTests, DumpExtendedFunction) {
     freevars: ("freevar0",)
     varnames: ("variable0",)
        0 LOAD_CONST 0
-       2 RETURN_VALUE 0
+       2 LOAD_ATTR 0
+       4 RETURN_VALUE 0
+  Rewritten bytecode:
+     0 LOAD_CONST 0
+     2 LOAD_ATTR_CACHED 0
+     4 RETURN_VALUE 0
 )");
 }
 
