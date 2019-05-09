@@ -33,12 +33,4 @@ RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
   return *result;
 }
 
-// Template for entry points for native functions (e.g. builtins), invoked via
-// CALL_FUNCTION, whose positional arguments are checked before entering the
-// body.
-// TODO(T24656189) - replace with JITed code once we have the facilities for
-// that.
-// TODO(T39316450): Kill this in favor of storing the fn pointer in the
-// Function->Code->code
-
 }  // namespace python
