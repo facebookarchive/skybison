@@ -52,7 +52,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   HandleScope scope(thread);
   word num_caches = 0;
 
-  // Scan bytecode to figure out how many cache slots we need.
+  // Scan bytecode to figure out how many caches we need.
   Bytes bytecode(&scope, RawCode::cast(function.code()).code());
   word bytecode_length = bytecode.length();
   for (word i = 0; i < bytecode_length; i += Frame::kCodeUnitSize) {
@@ -70,7 +70,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   ByteArray result(&scope, runtime->newByteArray());
   runtime->byteArrayEnsureCapacity(thread, result, bytecode_length);
   result.setNumItems(bytecode_length);
-  for (word i = 0, bucket = 0; i < bytecode_length;) {
+  for (word i = 0, cache = 0; i < bytecode_length;) {
     word begin = i;
     Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
     int32_t arg = bytecode.byteAt(i++);
@@ -81,18 +81,18 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
 
     if (hasCachedOp(bc)) {
       // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
-      CHECK(bucket < 256,
+      CHECK(cache < 256,
             "more than 256 entries may require bytecode stretching");
       for (word j = begin; j < i - 2; j += 2) {
         result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         result.byteAtPut(j + 1, 0);
       }
       result.byteAtPut(i - 2, static_cast<byte>(cachedOp(bc)));
-      result.byteAtPut(i - 1, static_cast<byte>(bucket));
+      result.byteAtPut(i - 1, static_cast<byte>(cache));
 
       // Remember original arg.
-      original_arguments.atPut(bucket, SmallInt::fromWord(arg));
-      bucket++;
+      original_arguments.atPut(cache, SmallInt::fromWord(arg));
+      cache++;
     } else {
       for (word j = begin; j < i; j++) {
         result.byteAtPut(j, bytecode.byteAt(j));
@@ -107,7 +107,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
 
 word icFind(const Tuple& cache, word index, LayoutId layout_id) {
   RawSmallInt layout_id_int =
-      RawSmallInt::fromWord(static_cast<word>(layout_id));
+    RawSmallInt::fromWord(static_cast<word>(layout_id));
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
     RawObject layout = cache.at(i + kIcEntryKeyOffset);

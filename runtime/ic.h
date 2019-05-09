@@ -35,9 +35,9 @@ const int kIcEntryValueOffset = 1;
 
 // Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
 // `function`. It has the arguments of opcodes that use the cache replaced with
-// an index into the cache. The previous arguments are move to a separate tuple
-// and can be retrieved with `icOriginalArg()`. Also adds a correctly sized
-// `caches` tuple to `function`.
+// a cache index. The previous arguments are moved to a separate tuple and can
+// be retrieved with `icOriginalArg()`. Also adds a correctly sized `caches`
+// tuple to `function`.
 void icRewriteBytecode(Thread* thread, const Function& function);
 
 // Returns the original argument of bytecode operations that were rewritten by
@@ -51,16 +51,15 @@ inline word icOriginalArg(const Function& function, word index) {
 // Looks for a cached value matching `layout_id` at `index`. Returns a cached
 // value or an `Error` if no cached value was found.
 inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
-  RawSmallInt layout_id_int =
-      RawSmallInt::fromWord(static_cast<word>(layout_id));
+  RawSmallInt key = RawSmallInt::fromWord(static_cast<word>(layout_id));
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
-    RawObject entry_layout_id = caches.at(i + kIcEntryKeyOffset);
-    if (entry_layout_id == layout_id_int) {
+    RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+    if (entry_key == key) {
       return caches.at(i + kIcEntryValueOffset);
     }
     // Stop the search if we found an empty entry.
-    if (entry_layout_id.isNoneType()) {
+    if (entry_key.isNoneType()) {
       break;
     }
   }
