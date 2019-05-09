@@ -88,7 +88,8 @@ def ascii_decode(data: bytes, errors: str = "strict"):
     result = bytearray()
     i = 0
     encoded = ""
-    while i < len(data):
+    length = len(data)
+    while i < length:
         encoded, i = _ascii_decode(data, errors, i, result)
         if _int_check(encoded):
             data, i = _call_decode_errorhandler(
@@ -138,7 +139,7 @@ def ascii_encode(data: str, errors: str = "strict"):
             for char in unicode:
                 if char > "\x7F":
                     raise UnicodeEncodeError(
-                        "ascii", unicode, encoded, i, "ordinal not in range(128)"
+                        "ascii", data, encoded, i, "ordinal not in range(128)"
                     )
             _bytearray_string_append(result, unicode)
             i = pos
@@ -187,7 +188,7 @@ def latin_1_encode(data: str, errors: str = "strict"):
             for char in unicode:
                 if char > "\xFF":
                     raise UnicodeEncodeError(
-                        "latin-1", unicode, encoded, i, "ordinal not in range(256)"
+                        "latin-1", data, encoded, i, "ordinal not in range(256)"
                     )
             result += latin_1_encode(unicode, errors)[0]
             i = pos
@@ -222,7 +223,8 @@ def utf_8_encode(data: str, errors: str = "strict"):
     result = bytearray()
     i = 0
     encoded = bytes()
-    while i < len(data):
+    length = len(data)
+    while i < length:
         encoded, i = _utf_8_encode(data, errors, i, result)
         if _int_check(encoded):
             unicode, pos = _call_encode_errorhandler(
@@ -233,9 +235,9 @@ def utf_8_encode(data: str, errors: str = "strict"):
                 i = pos
                 continue
             for char in unicode:
-                if ord(char) > 127:
+                if char > "\x7F":
                     raise UnicodeEncodeError(
-                        "utf-8", unicode, encoded, i, "surrogates not allowed"
+                        "utf-8", data, encoded, i, "surrogates not allowed"
                     )
             _bytearray_string_append(result, unicode)
             i = pos

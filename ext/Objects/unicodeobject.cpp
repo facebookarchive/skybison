@@ -1852,14 +1852,14 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
     return nullptr;
   }
   Object errors_obj(&scope, symbolFromError(runtime, errors));
-  Object result(
+  Object tuple_obj(
       &scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
                                       SymbolId::kUtf8Encode, str, errors_obj));
-  if (result.isError()) {
+  if (tuple_obj.isError()) {
     return nullptr;
   }
-  Tuple result_tuple(&scope, *result);
-  return ApiHandle::newReference(thread, result_tuple.at(0));
+  Tuple tuple(&scope, *tuple_obj);
+  return ApiHandle::newReference(thread, tuple.at(0));
 }
 
 PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* /* s */,

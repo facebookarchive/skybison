@@ -3,6 +3,7 @@
 #include "bytearray-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
+#include "int-builtins.h"
 #include "runtime.h"
 #include "str-builtins.h"
 
@@ -36,7 +37,7 @@ static int encodeUTF8CodePoint(int32_t codepoint, byte* byte_pattern) {
   if (codepoint < 0 || codepoint > kMaxUnicode) {
     return -1;
   }
-  if (codepoint <= 0x7f) {
+  if (codepoint <= kMaxASCII) {
     byte_pattern[0] = codepoint;
     return 1;
   }
@@ -88,27 +89,34 @@ const char* const UnderCodecsModule::kFrozenData = kUnderCodecsModuleData;
 
 RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
                                               word nargs) {
+  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  DCHECK(args.get(0).isBytes(), "First arg to _ascii_decode must be bytes");
-  Bytes bytes(&scope, args.get(0));
-  DCHECK(args.get(1).isStr(), "Second arg to _ascii_decode must be str");
-  Str errors(&scope, args.get(1));
-  DCHECK(args.get(2).isInt(), "Third arg to _ascii_decode must be int");
-  Int index_obj(&scope, args.get(2));
-  word index = index_obj.asWord();
-  DCHECK(args.get(3).isByteArray(),
+  Object bytes_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
+  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
+         "First arg to _ascii_decode must be str");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _ascii_decode must be str");
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _ascii_decode must be int");
+  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _ascii_decode must be bytearray");
-  ByteArray dst(&scope, args.get(3));
-  Runtime* runtime = thread->runtime();
-  Tuple result(&scope, runtime->newTuple(2));
+  // TODO(T36619847): Bytes subclass handling
+  Bytes bytes(&scope, *bytes_obj);
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index(&scope, intUnderlying(thread, index_obj));
+  ByteArray dst(&scope, *output_obj);
 
+  Tuple result(&scope, runtime->newTuple(2));
   word length = bytes.length();
   runtime->byteArrayEnsureCapacity(thread, dst, length);
-  word outpos = asciiDecode(thread, dst, bytes, index);
+  word outpos = asciiDecode(thread, dst, bytes, index.asWord());
   if (outpos == length) {
     result.atPut(0, runtime->newStrFromByteArray(dst));
-    result.atPut(1, runtime->newIntFromUnsigned(length));
+    result.atPut(1, runtime->newInt(length));
     return *result;
   }
 
@@ -129,7 +137,7 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
       }
       case SymbolId::kSurrogateescape: {
         byte chars[4];
-        int num_bytes = encodeUTF8CodePoint(0xdc00 + c, chars);
+        int num_bytes = encodeUTF8CodePoint(kLowSurrogateStart + c, chars);
         runtime->byteArrayExtend(thread, dst, View<byte>(chars, num_bytes));
         ++outpos;
         break;
@@ -149,13 +157,14 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
 }
 
 static bool isSurrogate(int32_t codepoint) {
-  return 0xD800 <= codepoint && codepoint <= 0xDFFF;
+  return kHighSurrogateStart <= codepoint && codepoint <= 0xDFFF;
 }
 
 // CPython encodes latin1 codepoints into the low-surrogate range, and is able
 // to recover the original codepoints from those decodable surrogate points.
 static bool isEscapedLatin1Surrogate(int32_t codepoint) {
-  return 0xDC80 <= codepoint && codepoint <= 0xDCFF;
+  return (kLowSurrogateStart + kMaxASCII) < codepoint &&
+         codepoint <= (kLowSurrogateStart + kMaxByte);
 }
 
 RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
@@ -175,10 +184,9 @@ RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
          "Third arg to _ascii_encode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _ascii_encode must be bytearray");
-  // TODO(T43357729): Have proper subclass handling
-  Str data(&scope, *data_obj);
-  Str errors(&scope, *errors_obj);
-  Int index_int(&scope, *index_obj);
+  Str data(&scope, strUnderlying(thread, data_obj));
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index_int(&scope, intUnderlying(thread, index_obj));
   ByteArray output(&scope, *output_obj);
 
   Tuple result(&scope, runtime->newTuple(2));
@@ -242,10 +250,9 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
          "Third arg to _latin_1_encode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _latin_1_encode must be bytearray");
-  // TODO(T43357729): Have proper subclass handling
-  Str data(&scope, *data_obj);
-  Str errors(&scope, *errors_obj);
-  Int index_int(&scope, *index_obj);
+  Str data(&scope, strUnderlying(thread, data_obj));
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index_int(&scope, intUnderlying(thread, index_obj));
   ByteArray output(&scope, *output_obj);
 
   Tuple result(&scope, runtime->newTuple(2));
@@ -292,74 +299,79 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
 
 RawObject UnderCodecsModule::underUtf8Encode(Thread* thread, Frame* frame,
                                              word nargs) {
-  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object data_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
   DCHECK(runtime->isInstanceOfStr(*data_obj),
          "First arg to _utf_8_encode must be str");
-  Str data(&scope, strUnderlying(thread, data_obj));
-  Object errors_obj(&scope, args.get(1));
   DCHECK(runtime->isInstanceOfStr(*errors_obj),
          "Second arg to _utf_8_encode must be str");
-  Str errors(&scope, strUnderlying(thread, errors_obj));
-  DCHECK(args.get(2).isInt(), "Third arg to _utf_8_encode must be int");
-  Int index_obj(&scope, args.get(2));
-  DCHECK(args.get(3).isByteArray(),
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _utf_8_encode must be int");
+  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _utf_8_encode must be bytearray");
-  ByteArray output(&scope, args.get(3));
+  Str data(&scope, strUnderlying(thread, data_obj));
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index_int(&scope, intUnderlying(thread, index_obj));
+  ByteArray output(&scope, *output_obj);
+
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_symbol = lookupSymbolForErrorHandler(errors);
-  word index = index_obj.asWord();
-  for (word byte_offset = data.offsetByCodePoints(0, index);
-       byte_offset < data.length(); index++) {
+  word i = index_int.asWord();
+  for (word byte_offset = data.offsetByCodePoints(0, i);
+       byte_offset < data.length(); i++) {
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     if (!isSurrogate(codepoint)) {
-      for (word i = byte_offset - num_bytes; i < byte_offset; i++) {
-        byteArrayAdd(thread, runtime, output, data.charAt(i));
+      for (word j = byte_offset - num_bytes; j < byte_offset; j++) {
+        byteArrayAdd(thread, runtime, output, data.charAt(j));
       }
     } else {
       switch (error_symbol) {
         case SymbolId::kIgnore:
           continue;
         case SymbolId::kReplace:
-          byteArrayAdd(thread, runtime, output, '?');
+          byteArrayAdd(thread, runtime, output, kASCIIReplacement);
           continue;
         case SymbolId::kSurrogateescape:
           if (isEscapedLatin1Surrogate(codepoint)) {
-            byteArrayAdd(thread, runtime, output, codepoint - 0xDC00);
+            byteArrayAdd(thread, runtime, output,
+                         codepoint - kLowSurrogateStart);
             continue;
           }
           break;
         default:
           break;
       }
-      result.atPut(0, runtime->newInt(index));
+      result.atPut(0, runtime->newInt(i));
       while (byte_offset < data.length() &&
              isSurrogate(data.codePointAt(byte_offset, &num_bytes))) {
         byte_offset += num_bytes;
-        index++;
+        i++;
       }
-      result.atPut(1, runtime->newInt(index + 1));
+      result.atPut(1, runtime->newInt(i + 1));
       return *result;
     }
   }
   result.atPut(0, byteArrayAsBytes(thread, runtime, output));
-  result.atPut(1, runtime->newInt(index));
+  result.atPut(1, runtime->newInt(i));
   return *result;
 }
 
 static void appendUtf16ToByteArray(Thread* thread, Runtime* runtime,
                                    const ByteArray& writer, int32_t codepoint,
-                                   int byteorder) {
-  if (byteorder <= 0) {
-    byteArrayAdd(thread, runtime, writer, codepoint & 0x00FF);
-    byteArrayAdd(thread, runtime, writer, codepoint >> 8);
+                                   endian endianness) {
+  if (endianness == endian::little) {
+    byteArrayAdd(thread, runtime, writer, codepoint);
+    byteArrayAdd(thread, runtime, writer, codepoint >> kBitsPerByte);
   } else {
-    byteArrayAdd(thread, runtime, writer, codepoint >> 8);
-    byteArrayAdd(thread, runtime, writer, codepoint & 0x00FF);
+    byteArrayAdd(thread, runtime, writer, codepoint >> kBitsPerByte);
+    byteArrayAdd(thread, runtime, writer, codepoint);
   }
 }
 
@@ -391,30 +403,34 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
          "Fourth arg to _utf_16_encode must be bytearray");
   DCHECK(runtime->isInstanceOfInt(*byteorder_obj),
          "Fifth arg to _utf_16_encode must be int");
-  // TODO(T43357729): Have proper subclass handling
-  Str data(&scope, *data_obj);
-  Str errors(&scope, *errors_obj);
-  Int index_int(&scope, *index_obj);
+  Str data(&scope, strUnderlying(thread, data_obj));
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index_int(&scope, intUnderlying(thread, index_obj));
   ByteArray output(&scope, *output_obj);
-  Int byteorder(&scope, *byteorder_obj);
+  Int byteorder_int(&scope, intUnderlying(thread, byteorder_obj));
+  OptInt<int32_t> byteorder = byteorder_int.asInt<int32_t>();
+  if (byteorder.error != CastError::None) {
+    return thread->raiseOverflowErrorWithCStr(
+        "Python int too large to convert to C int");
+  }
 
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   word i = index_int.asWord();
   for (word byte_offset = data.offsetByCodePoints(0, i);
        byte_offset < data.length(); i++) {
-    word bo = byteorder.asWord();
+    endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     if (!isSurrogate(codepoint)) {
       if (codepoint < kHighSurrogateStart) {
-        appendUtf16ToByteArray(thread, runtime, output, codepoint, bo);
+        appendUtf16ToByteArray(thread, runtime, output, codepoint, endianness);
       } else {
         appendUtf16ToByteArray(thread, runtime, output,
-                               highSurrogate(codepoint), bo);
+                               highSurrogate(codepoint), endianness);
         appendUtf16ToByteArray(thread, runtime, output, lowSurrogate(codepoint),
-                               bo);
+                               endianness);
       }
     } else {
       switch (error_id) {
@@ -422,12 +438,12 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
           continue;
         case SymbolId::kReplace:
           appendUtf16ToByteArray(thread, runtime, output, kASCIIReplacement,
-                                 bo);
+                                 endianness);
           continue;
         case SymbolId::kSurrogateescape:
           if (isEscapedLatin1Surrogate(codepoint)) {
             appendUtf16ToByteArray(thread, runtime, output,
-                                   codepoint - kLowSurrogateStart, bo);
+                                   codepoint - kLowSurrogateStart, endianness);
             continue;
           }
           break;
@@ -485,19 +501,23 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
          "Fourth arg to _utf_32_encode must be bytearray");
   DCHECK(runtime->isInstanceOfInt(*byteorder_obj),
          "Fifth arg to _utf_32_encode must be int");
-  // TODO(T43357729): Have proper subclass handling
-  Str data(&scope, *data_obj);
-  Str errors(&scope, *errors_obj);
-  Int index_int(&scope, *index_obj);
+  Str data(&scope, strUnderlying(thread, data_obj));
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index_int(&scope, intUnderlying(thread, index_obj));
   ByteArray output(&scope, *output_obj);
-  Int byteorder(&scope, *byteorder_obj);
+  Int byteorder_int(&scope, intUnderlying(thread, byteorder_obj));
+  OptInt<int32_t> byteorder = byteorder_int.asInt<int32_t>();
+  if (byteorder.error != CastError::None) {
+    return thread->raiseOverflowErrorWithCStr(
+        "Python int too large to convert to C int");
+  }
 
   Tuple result(&scope, runtime->newTuple(2));
   SymbolId error_id = lookupSymbolForErrorHandler(errors);
   word i = index_int.asWord();
   for (word byte_offset = data.offsetByCodePoints(0, i);
        byte_offset < data.length(); i++) {
-    endian endianness = byteorder.asWord() <= 0 ? endian::little : endian::big;
+    endian endianness = byteorder.value <= 0 ? endian::little : endian::big;
     word num_bytes;
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;

@@ -341,6 +341,20 @@ TEST(CodecsModuleTest, EncodeUTF16WithWellFormedASCIIReturnsBytes) {
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
 }
 
+TEST(CodecsModuleTest, EncodeUTF16WithLargeIntByteorderRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("hi"));
+  Object errors(&scope, runtime.newStrFromCStr("unknown"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(kMaxWord));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(UnderCodecsModule::underUtf16Encode, str,
+                                       errors, index, bytearray, byteorder),
+                            LayoutId::kOverflowError,
+                            "Python int too large to convert to C int"));
+}
+
 TEST(CodecsModuleTest, EncodeUTF16WithIgnoreErrorHandlerReturnsStr) {
   Runtime runtime;
   HandleScope scope;
@@ -479,6 +493,20 @@ TEST(CodecsModuleTest, EncodeUTF32WithWellFormedASCIIReturnsBytes) {
   EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
   byte expected[] = {'h', 0x00, 0x00, 0x00, 'i', 0x00, 0x00, 0x00};
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected));
+}
+
+TEST(CodecsModuleTest, EncodeUTF32WithLargeIntByteorderRaisesOverflowError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object str(&scope, runtime.newStrFromCStr("hi"));
+  Object errors(&scope, runtime.newStrFromCStr("unknown"));
+  Object index(&scope, runtime.newInt(0));
+  Object bytearray(&scope, runtime.newByteArray());
+  Object byteorder(&scope, runtime.newInt(kMaxWord));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(UnderCodecsModule::underUtf32Encode, str,
+                                       errors, index, bytearray, byteorder),
+                            LayoutId::kOverflowError,
+                            "Python int too large to convert to C int"));
 }
 
 TEST(CodecsModuleTest, EncodeUTF32WithIgnoreErrorHandlerReturnsStr) {

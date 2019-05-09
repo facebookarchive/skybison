@@ -166,10 +166,16 @@ class EncodeASCIITests(unittest.TestCase):
         self.assertEqual(encoded, b"ab-testing-")
         self.assertEqual(consumed, 3)
 
-    def test_encode_ascii_with_non_ascii_error_handler_raises_decode_error(self):
+    def test_encode_ascii_with_non_ascii_error_handler_raises_encode_error(self):
         _codecs.register_error("test", lambda x: ("\x80", x.end))
-        with self.assertRaises(UnicodeEncodeError):
+        with self.assertRaises(UnicodeEncodeError) as context:
             _codecs.ascii_encode("ab\x80", "test")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "ascii")
+        self.assertEqual(exc.reason, "ordinal not in range(128)")
+        self.assertEqual(exc.object, "ab\x80")
+        self.assertEqual(exc.start, 2)
+        self.assertEqual(exc.end, 3)
 
 
 class EncodeLatin1Tests(unittest.TestCase):
@@ -217,10 +223,16 @@ class EncodeLatin1Tests(unittest.TestCase):
         self.assertEqual(encoded, b"ab\x80")
         self.assertEqual(consumed, 3)
 
-    def test_encode_latin_1_with_non_latin_1_error_handler_raises_decode_error(self):
+    def test_encode_latin_1_with_non_latin_1_error_handler_raises_encode_error(self):
         _codecs.register_error("test", lambda x: ("\u0180", x.end))
-        with self.assertRaises(UnicodeEncodeError):
+        with self.assertRaises(UnicodeEncodeError) as context:
             _codecs.latin_1_encode("ab\u0f80", "test")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "latin-1")
+        self.assertEqual(exc.reason, "ordinal not in range(256)")
+        self.assertEqual(exc.object, "ab\u0f80")
+        self.assertEqual(exc.start, 2)
+        self.assertEqual(exc.end, 3)
 
 
 class EncodeUTF16Tests(unittest.TestCase):
@@ -291,8 +303,14 @@ class EncodeUTF16Tests(unittest.TestCase):
 
     def test_encode_utf_16_with_non_ascii_error_handler_raises_encode_error(self):
         _codecs.register_error("test", lambda x: ("\x80", x.end))
-        with self.assertRaises(UnicodeEncodeError):
+        with self.assertRaises(UnicodeEncodeError) as context:
             _codecs.utf_16_encode("ab\udc80", "test")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "utf-16")
+        self.assertEqual(exc.reason, "surrogates not allowed")
+        self.assertEqual(exc.object, "ab\udc80")
+        self.assertEqual(exc.start, 2)
+        self.assertEqual(exc.end, 3)
 
 
 class EncodeUTF32Tests(unittest.TestCase):
@@ -369,8 +387,14 @@ class EncodeUTF32Tests(unittest.TestCase):
 
     def test_encode_utf_32_with_non_ascii_error_handler_raises_encode_error(self):
         _codecs.register_error("test", lambda x: ("\x80", x.end))
-        with self.assertRaises(UnicodeEncodeError):
+        with self.assertRaises(UnicodeEncodeError) as context:
             _codecs.utf_32_encode("ab\udc80", "test")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "utf-32")
+        self.assertEqual(exc.reason, "surrogates not allowed")
+        self.assertEqual(exc.object, "ab\udc80")
+        self.assertEqual(exc.start, 2)
+        self.assertEqual(exc.end, 3)
 
 
 class EncodeUTF8Tests(unittest.TestCase):
@@ -404,10 +428,16 @@ class EncodeUTF8Tests(unittest.TestCase):
         self.assertEqual(encoded, b"ab-testing-")
         self.assertEqual(consumed, 3)
 
-    def test_encode_utf_8_with_non_ascii_error_handler_raises_decode_error(self):
+    def test_encode_utf_8_with_non_ascii_error_handler_raises_encode_error(self):
         _codecs.register_error("test", lambda x: ("\x80", x.end))
-        with self.assertRaises(UnicodeEncodeError):
+        with self.assertRaises(UnicodeEncodeError) as context:
             _codecs.utf_8_encode("ab\udc80", "test")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "utf-8")
+        self.assertEqual(exc.reason, "surrogates not allowed")
+        self.assertEqual(exc.object, "ab\udc80")
+        self.assertEqual(exc.start, 2)
+        self.assertEqual(exc.end, 3)
 
 
 class GeneralizedErrorHandlerTests(unittest.TestCase):
