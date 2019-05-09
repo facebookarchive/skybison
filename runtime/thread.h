@@ -77,8 +77,8 @@ class Thread {
                  const Handle<RawObject>& locals);
 
   // Runs a class body function on the current thread.
-  RawObject runClassFunction(const Handle<RawFunction>& function,
-                             const Handle<RawDict>& dict);
+  NODISCARD RawObject runClassFunction(const Handle<RawFunction>& function,
+                                       const Handle<RawDict>& dict);
 
   Thread* next() { return next_; }
 

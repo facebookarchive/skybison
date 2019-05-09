@@ -362,7 +362,8 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     Dict type_dict(&scope, type.dict());
 
     Dict patch_type(&scope, runtime->newDict());
-    thread->runClassFunction(body, patch_type);
+    Object result(&scope, thread->runClassFunction(body, patch_type));
+    if (result.isError()) return *result;
     patchTypeDict(thread, type_dict, patch_type);
     // A bootstrap type initialization is complete at this point.
     return *type;
