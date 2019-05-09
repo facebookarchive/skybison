@@ -1839,8 +1839,7 @@ bool Interpreter::doStoreAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    word cache_entry_offset = icFind(*ctx->caches, arg, layout_id);
-    icUpdate(*ctx->caches, cache_entry_offset, layout_id, *location);
+    icUpdate(thread, *ctx->caches, arg, layout_id, location);
   }
   return false;
 }
@@ -2087,8 +2086,7 @@ bool Interpreter::doLoadAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    word cache_entry_offset = icFind(*ctx->caches, arg, layout_id);
-    icUpdate(*ctx->caches, cache_entry_offset, layout_id, *location);
+    icUpdate(thread, *ctx->caches, arg, layout_id, location);
   }
   frame->setTopValue(*result);
   return false;

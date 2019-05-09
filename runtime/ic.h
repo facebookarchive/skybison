@@ -66,14 +66,8 @@ inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
   return Error::notFound();
 }
 
-// Looks for an entry matching `layout_id` or a free one. Returns the index to
-// the entry to be used with `update()` or -1 if the cache has no free entries
-// left.
-word icFind(const Tuple& caches, word index, LayoutId layout_id);
-
-// Sets a cache entry to the given `layout_id` and `to_cache` value.  This
-// should be used after `find()`.
-void icUpdate(const Tuple& caches, word entry_offset, LayoutId layout_id,
-              RawObject to_cache);
+// Sets a cache entry to the given `layout_id` as key and `value` as value.
+void icUpdate(Thread* thread, const Tuple& caches, word index,
+              LayoutId layout_id, const Object& value);
 
 }  // namespace python

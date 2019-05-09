@@ -93,16 +93,20 @@ TEST(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
   EXPECT_TRUE(icLookup(caches, 1, LayoutId::kSmallInt).isErrorNotFound());
 }
 
-TEST(IcTest, IcFindReturnsFreeEntryIndex) {
+TEST(IcTest, IcUpdateSetsEmptyEntry) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
   Tuple caches(&scope, runtime.newTuple(1 * kIcPointersPerCache));
-  EXPECT_EQ(icFind(caches, 0, LayoutId::kSmallStr), 0);
+  Object value(&scope, runtime.newInt(88));
+  icUpdate(thread, caches, 0, LayoutId::kSmallStr, value);
+  EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryKeyOffset),
+                              static_cast<word>(LayoutId::kSmallStr)));
+  EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), 88));
 }
 
-TEST(IcTest, IcFindReturnsExistingEntryIndex) {
+TEST(IcTest, IcUpdateUpdatesExistingEntry) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -114,37 +118,17 @@ TEST(IcTest, IcFindReturnsExistingEntryIndex) {
   caches.atPut(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kSmallBytes));
   caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
-               layoutIdAsSmallInt(LayoutId::kNoneType));
-  caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kSmallStr));
-  EXPECT_EQ(icFind(caches, 1, LayoutId::kSmallStr),
-            1 * kIcPointersPerCache + 3 * kIcPointersPerEntry);
-}
-
-TEST(IcTest, IcFindReturnsMinusOneOnFullCache) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Tuple caches(&scope, runtime.newTuple(1 * kIcPointersPerCache));
-  for (word i = 0; i < kIcEntriesPerCache; i++) {
-    caches.atPut(i * kIcPointersPerEntry + kIcEntryKeyOffset,
-                 SmallInt::fromWord(1000 + i));
-  }
-  EXPECT_EQ(icFind(caches, 0, LayoutId::kLargeInt), -1);
-}
-
-TEST(IcTest, IcUpdateEntrySetsValues) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
-  word offset = 1 * kIcPointersPerEntry;
-  icUpdate(caches, offset, LayoutId::kUserWarning, Str::empty());
-  EXPECT_TRUE(isIntEqualsWord(caches.at(offset + kIcEntryKeyOffset),
-                              static_cast<word>(LayoutId::kUserWarning)));
-  EXPECT_TRUE(isStrEqualsCStr(caches.at(offset + kIcEntryValueOffset), ""));
+  caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
+               layoutIdAsSmallInt(LayoutId::kBytes));
+  Object value(&scope, runtime.newStrFromCStr("test"));
+  icUpdate(thread, caches, 1, LayoutId::kSmallStr, value);
+  EXPECT_TRUE(isIntEqualsWord(
+      caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset),
+      static_cast<word>(LayoutId::kSmallStr)));
+  EXPECT_TRUE(isStrEqualsCStr(
+      caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryValueOffset),
+      "test"));
 }
 
 }  // namespace python

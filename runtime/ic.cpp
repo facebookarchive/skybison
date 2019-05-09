@@ -105,27 +105,20 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   function.setOriginalArguments(*original_arguments);
 }
 
-word icFind(const Tuple& cache, word index, LayoutId layout_id) {
-  RawSmallInt layout_id_int =
-    RawSmallInt::fromWord(static_cast<word>(layout_id));
+void icUpdate(Thread* thread, const Tuple& caches, word index,
+              LayoutId layout_id, const Object& value) {
+  HandleScope scope(thread);
+  SmallInt key(&scope, RawSmallInt::fromWord(static_cast<word>(layout_id)));
+  Object entry_key(&scope, NoneType::object());
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
-    RawObject layout = cache.at(i + kIcEntryKeyOffset);
-    if (layout.isNoneType() || layout == layout_id_int) {
-      return i;
+    entry_key = caches.at(i + kIcEntryKeyOffset);
+    if (entry_key.isNoneType() || entry_key == key) {
+      caches.atPut(i + kIcEntryKeyOffset, *key);
+      caches.atPut(i + kIcEntryValueOffset, *value);
+      return;
     }
   }
-  return -1;
-}
-
-void icUpdate(const Tuple& caches, word entry_offset, LayoutId layout_id,
-              RawObject to_cache) {
-  RawSmallInt layout_int = RawSmallInt::fromWord(static_cast<word>(layout_id));
-  DCHECK(caches.at(entry_offset + kIcEntryKeyOffset).isNoneType() ||
-             caches.at(entry_offset + kIcEntryKeyOffset) == layout_int,
-         "invalid cache slot");
-  caches.atPut(entry_offset + kIcEntryKeyOffset, layout_int);
-  caches.atPut(entry_offset + kIcEntryValueOffset, to_cache);
 }
 
 }  // namespace python
