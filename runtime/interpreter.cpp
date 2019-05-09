@@ -148,6 +148,11 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
     } else {
       new_args.atPut(0, *callable);
       target = lookupMethod(thread, frame, callable, SymbolId::kDunderCall);
+      if (target.isError()) {
+        return thread->raiseWithFmt(LayoutId::kTypeError,
+                                    "object of type '%T' is not a callable",
+                                    &callable);
+      }
     }
     new_args.replaceFromWith(1, *args);
     frame->setValueAt(*target, function_position);

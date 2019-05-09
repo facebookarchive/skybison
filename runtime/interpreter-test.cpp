@@ -2550,6 +2550,20 @@ TEST(InterpreterTest, FunctionCallWithNonFunctionRaisesTypeError) {
       raised(Interpreter::call(thread, frame, 0), LayoutId::kTypeError));
 }
 
+TEST(InterpreterTest, FunctionCallExWithNonFunctionRaisesTypeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Str not_a_func(&scope, Str::empty());
+  frame->pushValue(*not_a_func);
+  Tuple empty_args(&scope, runtime.newTuple(0));
+  frame->pushValue(*empty_args);
+  EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread, frame, 0),
+                            LayoutId::kTypeError,
+                            "object of type 'str' is not a callable"));
+}
+
 TEST(InterpreterTest, DoDeleteNameOnDictSubclass) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(

@@ -488,6 +488,7 @@ set(
   ext/Objects/fileobject-test.cpp
   ext/Objects/floatobject-test.cpp
   ext/Objects/frameobject-test.cpp
+  ext/Objects/funcobject-test.cpp
   ext/Objects/iterobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/longobject-test.cpp
