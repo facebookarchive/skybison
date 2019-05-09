@@ -369,8 +369,9 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   Dict type_dict(&scope, type.dict());
   if (dictRemove(thread, type_dict, name).isError()) {
     Str type_name(&scope, type.name());
-    return thread->raiseAttributeError(newStrFromFmt(
-        "type object '%S' has no attribute '%S'", &type_name, &name));
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "type object '%S' has no attribute '%S'",
+                                &type_name, &name);
   }
 
   return NoneType::object();
@@ -400,8 +401,9 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   Object result(&scope, instanceDel(thread, instance, name));
   if (result.isError()) {
     Str type_name(&scope, type.name());
-    return thread->raiseAttributeError(
-        newStrFromFmt("'%S' object has no attribute '%S'", &type_name, &name));
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "'%S' object has no attribute '%S'", &type_name,
+                                &name);
   }
 
   return *result;
@@ -431,8 +433,9 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   Dict module_dict(&scope, module.dict());
   if (dictRemove(thread, module_dict, name).isError()) {
     Str module_name(&scope, module.name());
-    return thread->raiseAttributeError(newStrFromFmt(
-        "module '%S' has no attribute '%S'", &module_name, &name));
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "module '%S' has no attribute '%S'",
+                                &module_name, &name);
   }
 
   return NoneType::object();
@@ -2260,9 +2263,10 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
       ByteArray array(&scope, *item);
       result_length += array.numItems();
     } else {
-      return thread->raiseTypeError(newStrFromFmt(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "sequence item %w: expected a bytes-like object, %T found", index,
-          &item));
+          &item);
     }
   }
 
@@ -3357,8 +3361,8 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   for (word i = 0; i < allocated; ++i) {
     Object elt(&scope, items.at(i));
     if (!elt.isStr() && !isInstanceOfStr(*elt)) {
-      return thread->raiseTypeError(
-          newStrFromFmt("sequence item %w: expected str instance", i));
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "sequence item %w: expected str instance", i);
     }
     Str str(&scope, items.at(i));
     result_len += str.length();
@@ -3619,8 +3623,8 @@ RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
   CHECK(found, "couldn't find attribute");
 
   if (info.isReadOnly()) {
-    return thread->raiseAttributeError(
-        newStrFromFmt("'%S' attribute is read-only", &name));
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "'%S' attribute is read-only", &name);
   }
 
   if (info.isInObject()) {

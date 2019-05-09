@@ -148,8 +148,9 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   if (runtime->isInstanceOfInt(*index_obj)) {
     Int index(&scope, intUnderlying(thread, index_obj));
     if (index.isLargeInt()) {
-      return thread->raiseIndexError(runtime->newStrFromFmt(
-          "cannot fit '%T' into an index-sized integer", &index_obj));
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "cannot fit '%T' into an index-sized integer",
+                                  &index_obj);
     }
     word idx = index.asWord();
     word len = self.numItems();
@@ -246,8 +247,9 @@ RawObject ByteArrayBuiltins::dunderImul(Thread* thread, Frame* frame,
   Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowError(runtime->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &count_index));
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &count_index);
   }
   if (count == 1) {
     return *self;
@@ -326,8 +328,9 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
   if (runtime->isInstanceOfInt(*source)) {
     Int count_int(&scope, intUnderlying(thread, source));
     if (count_int.isLargeInt()) {
-      return thread->raiseOverflowError(runtime->newStrFromFmt(
-          "cannot fit count into an index-sized integer", &source));
+      return thread->raiseWithFmt(
+          LayoutId::kOverflowError,
+          "cannot fit count into an index-sized integer", &source);
     }
     word count = count_int.asWord();
     if (count < 0) {
@@ -446,8 +449,9 @@ RawObject ByteArrayBuiltins::dunderMul(Thread* thread, Frame* frame,
   Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowError(runtime->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &count_index));
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &count_index);
   }
   word length = self.numItems();
   if (count <= 0 || length == 0) {
@@ -651,13 +655,14 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
     table_obj = array.bytes();
   } else {
     // TODO(T38246066): allow any bytes-like object
-    return thread->raiseTypeError(runtime->newStrFromFmt(
-        "a bytes-like object is required, not '%T'", &table_obj));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &table_obj);
   }
   if (table_length != BytesBuiltins::kTranslationTableLength) {
-    return thread->raiseValueError(
-        runtime->newStrFromFmt("translation table must be %w characters long",
-                               BytesBuiltins::kTranslationTableLength));
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "translation table must be %w characters long",
+                                BytesBuiltins::kTranslationTableLength);
   }
   Bytes table(&scope, *table_obj);
   Object del(&scope, args.get(2));
@@ -673,8 +678,9 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
                                          table, bytes, array.numItems());
   } else {
     // TODO(T38246066): allow any bytes-like object
-    return thread->raiseTypeError(runtime->newStrFromFmt(
-        "a bytes-like object is required, not '%T'", &del));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &del);
   }
   ByteArray result(&scope, runtime->newByteArray());
   if (translated.isSmallBytes()) {

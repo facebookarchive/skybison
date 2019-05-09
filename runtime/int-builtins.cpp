@@ -416,8 +416,9 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
           SymbolId::kBuiltins, SymbolId::kUnderBytesNew, bytes_obj);
       if (maybe_bytes.isError()) return *maybe_bytes;
     } else if (!runtime->isInstanceOfBytes(*maybe_bytes)) {
-      return thread->raiseTypeError(runtime->newStrFromFmt(
-          "__bytes__ returned non-bytes (type %T)", &maybe_bytes));
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__bytes__ returned non-bytes (type %T)",
+                                  &maybe_bytes);
     }
   }
   Bytes bytes(&scope, *maybe_bytes);
@@ -454,9 +455,10 @@ RawObject IntBuiltins::fromBytes(Thread* thread, Frame* frame, word nargs) {
 RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   KwArguments args(frame, nargs);
   if (args.numArgs() > 2) {
-    return thread->raiseTypeError(thread->runtime()->newStrFromFmt(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "from_bytes() takes at most 2 positional arguments (%w given)",
-        args.numArgs()));
+        args.numArgs());
   }
 
   HandleScope scope(thread);
@@ -954,16 +956,17 @@ RawObject intFromIndex(Thread* thread, const Object& obj) {
   Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderIndex));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      return thread->raiseTypeError(runtime->newStrFromFmt(
-          "'%T' object cannot be interpreted as an integer", &obj));
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "'%T' object cannot be interpreted as an integer", &obj);
     }
     return *result;
   }
   if (runtime->isInstanceOfInt(*result)) {
     return *result;
   }
-  return thread->raiseTypeError(
-      runtime->newStrFromFmt("__index__ returned non-int (type %T)", &result));
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "__index__ returned non-int (type %T)", &result);
 }
 
 RawObject intUnderlying(Thread* thread, const Object& obj) {

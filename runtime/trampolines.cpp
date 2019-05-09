@@ -69,15 +69,15 @@ static RawObject processDefaultArguments(Thread* thread,
                                          const word argc) {
   HandleScope scope(thread);
   Object tmp_varargs(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
   word new_argc = argc;
   if (new_argc < code.argcount() && function.hasDefaults()) {
     // Add default positional args
     Tuple default_args(&scope, function.defaults());
     if (default_args.length() < (code.argcount() - new_argc)) {
-      return thread->raiseTypeError(runtime->newStrFromFmt(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "TypeError: '%F' takes min %w positional arguments but %w given",
-          &function, code.argcount() - default_args.length(), argc));
+          &function, code.argcount() - default_args.length(), argc);
     }
     const word positional_only = code.argcount() - default_args.length();
     for (; new_argc < code.argcount(); new_argc++) {
@@ -97,9 +97,10 @@ static RawObject processDefaultArguments(Thread* thread,
       }
       tmp_varargs = *varargs;
     } else {
-      return thread->raiseTypeError(runtime->newStrFromFmt(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "TypeError: '%F' takes max %w positional arguments but %w given",
-          &function, code.argcount(), argc));
+          &function, code.argcount(), argc);
     }
   }
 
@@ -144,9 +145,10 @@ static RawObject processDefaultArguments(Thread* thread,
   // At this point, we should have the correct number of arguments.  Throw if
   // not.
   if (new_argc != code.totalArgs()) {
-    return thread->raiseTypeError(runtime->newStrFromFmt(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "TypeError: '%F' takes %w positional arguments but %w given", &function,
-        code.argcount(), new_argc - code.hasVarargs() - code.hasVarkeyargs()));
+        code.argcount(), new_argc - code.hasVarargs() - code.hasVarkeyargs());
   }
   return NoneType::object();  // value not significant, it's just not an error
 }
@@ -1201,8 +1203,7 @@ RawObject varkwSlotTrampoline(Thread* thread, Frame* caller, word argc) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   if (argc < 1) {
-    Str msg(&scope, runtime->newStrFromFmt("function needs an argument"));
-    return thread->raiseTypeError(*msg);
+    return thread->raiseTypeErrorWithCStr("function needs an argument");
   }
   // Pack everything except self up into a tuple.
   Tuple args(&scope, runtime->newTuple(argc - 1));

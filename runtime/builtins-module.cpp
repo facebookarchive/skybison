@@ -414,12 +414,14 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     if (metaclass_is_class) {
       Type metaclass_type(&scope, *metaclass);
       Str metaclass_type_name(&scope, metaclass_type.name());
-      return thread->raiseTypeError(runtime->newStrFromFmt(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "%S.__prepare__() must return a mapping, not %T",
-          &metaclass_type_name, &dict_obj));
+          &metaclass_type_name, &dict_obj);
     }
-    return thread->raiseTypeError(runtime->newStrFromFmt(
-        "<metaclass>.__prepare__() must return a mapping, not %T", &dict_obj));
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "<metaclass>.__prepare__() must return a mapping, not %T", &dict_obj);
   }
   Dict type_dict(&scope, *dict_obj);
   wrapInValueCells(thread, type_dict);
@@ -454,8 +456,8 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
   Object arg(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfInt(*arg)) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFmt("an integer is required (got type %T)", &arg));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "an integer is required (got type %T)", &arg);
   }
   Int num(&scope, intUnderlying(thread, arg));
   if (!num.isSmallInt()) {
@@ -732,8 +734,8 @@ RawObject BuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
     return runtime->bytesFromTuple(thread, source, source.length());
   }
   if (runtime->isInstanceOfStr(*src)) {
-    return thread->raiseTypeError(
-        runtime->newStrFromFmt("cannot convert '%T' object to bytes", &src));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "cannot convert '%T' object to bytes", &src);
   }
   // Slow path: iterate over source in Python, collect into list, and call again
   return NoneType::object();
@@ -748,8 +750,9 @@ RawObject BuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
   Int key(&scope, intUnderlying(thread, key_obj));
   word index = key.asWordSaturated();
   if (!SmallInt::isValid(index)) {
-    return thread->raiseIndexError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &key_obj));
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key_obj);
   }
   word length = self.length();
   if (index < 0) {
@@ -825,8 +828,9 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &count_obj));
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &count_obj);
   }
   // NOTE: unlike __mul__, we raise a value error for negative count
   if (count < 0) {
@@ -911,8 +915,9 @@ RawObject BuiltinsModule::underIntFromByteArray(Thread* thread, Frame* frame,
     Runtime* runtime = thread->runtime();
     Bytes truncated(&scope, byteArrayAsBytes(thread, runtime, array));
     Str repr(&scope, bytesReprSmartQuotes(thread, truncated));
-    return thread->raiseValueError(runtime->newStrFromFmt(
-        "invalid literal for int() with base %w: %S", base, &repr));
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "invalid literal for int() with base %w: %S",
+                                base, &repr);
   }
   return intOrUserSubclass(thread, type, result);
 }
@@ -930,8 +935,9 @@ RawObject BuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
   Object result(&scope, intFromBytes(thread, bytes, bytes.length(), base));
   if (result.isError()) {
     Str repr(&scope, bytesReprSmartQuotes(thread, bytes));
-    return thread->raiseValueError(thread->runtime()->newStrFromFmt(
-        "invalid literal for int() with base %w: %S", base, &repr));
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "invalid literal for int() with base %w: %S",
+                                base, &repr);
   }
   return intOrUserSubclass(thread, type, result);
 }
@@ -983,8 +989,9 @@ RawObject BuiltinsModule::underIntFromStr(Thread* thread, Frame* frame,
   Object result(&scope, intFromStr(thread, str, base));
   if (result.isError()) {
     Str repr(&scope, thread->invokeMethod1(str, SymbolId::kDunderRepr));
-    return thread->raiseValueError(thread->runtime()->newStrFromFmt(
-        "invalid literal for int() with base %w: %S", base, &repr));
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "invalid literal for int() with base %w: %S",
+                                base, &repr);
   }
   return intOrUserSubclass(thread, type, result);
 }

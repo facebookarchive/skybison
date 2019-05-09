@@ -66,8 +66,9 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   }
   Int index(&scope, intUnderlying(thread, len));
   if (index.numDigits() > 1) {
-    thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &len_index));
+    thread->raiseWithFmt(LayoutId::kOverflowError,
+                         "cannot fit '%T' into an index-sized integer",
+                         &len_index);
     return -1;
   }
   if (index.isNegative()) {
@@ -271,8 +272,8 @@ static PyObject* callMappingMethod(Thread* thread, const Object& map,
   Object result(&scope, thread->invokeMethod1(map, method));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseAttributeError(
-          runtime->newStrFromFmt("could not call %s", method_name));
+      thread->raiseWithFmt(LayoutId::kAttributeError, "could not call %s",
+                           method_name);
     }
     return nullptr;
   }

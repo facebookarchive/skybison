@@ -302,8 +302,9 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (rhs_index.isError()) return *rhs_index;
   Int right(&scope, intUnderlying(thread, rhs_index));
   if (right.isLargeInt()) {
-    return thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &rhs));
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &rhs);
   }
   word length = self.length();
   word times = right.asWord();

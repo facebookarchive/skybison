@@ -243,8 +243,9 @@ RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowError(runtime->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &count_index));
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &count_index);
   }
   word length = self.length();
   if (count <= 0 || length == 0) {
@@ -344,13 +345,14 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
     table_obj = array.bytes();
   } else {
     // TODO(T38246066): allow any bytes-like object
-    return thread->raiseTypeError(runtime->newStrFromFmt(
-        "a bytes-like object is required, not '%T'", &table_obj));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &table_obj);
   }
   if (table_length != kTranslationTableLength) {
-    return thread->raiseValueError(
-        runtime->newStrFromFmt("translation table must be %w characters long",
-                               kTranslationTableLength));
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "translation table must be %w characters long",
+                                kTranslationTableLength);
   }
   Bytes table(&scope, *table_obj);
   Object del(&scope, args.get(2));
@@ -366,8 +368,8 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
                                    array.numItems());
   }
   // TODO(T38246066): allow any bytes-like object
-  return thread->raiseTypeError(runtime->newStrFromFmt(
-      "a bytes-like object is required, not '%T'", &del));
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &del);
 }
 
 }  // namespace python

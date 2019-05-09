@@ -162,8 +162,9 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   if (index_int_obj.isError()) return *index_int_obj;
   Int index_int(&scope, intUnderlying(thread, index_int_obj));
   if (index_int.isLargeInt()) {
-    return thread->raiseIndexError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &index_obj));
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &index_obj);
   }
   word index = index_int.asWord();
   // TODO(T36619828) support str subclasses

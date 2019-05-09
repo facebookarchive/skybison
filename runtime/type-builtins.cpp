@@ -284,8 +284,8 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   if (result.isError()) return *result;
   if (!result.isNoneType()) {
     Object type_name(&scope, metaclass.name());
-    return thread->raiseTypeError(
-        runtime->newStrFromFmt("%S.__init__ returned non None", &type_name));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "%S.__init__ returned non None", &type_name);
   }
   return *instance;
 }

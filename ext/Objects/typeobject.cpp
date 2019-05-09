@@ -540,8 +540,9 @@ static RawObject makeIndex(Thread* thread, const Object& obj) {
   if (converted.isError()) return *converted;
   Int i(&scope, intUnderlying(thread, converted));
   if (i.numDigits() != 1) {
-    return thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &obj));
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &obj);
   }
   return *i;
 }

@@ -741,8 +741,9 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
   if (!SmallInt::isValid(count)) {
-    return thread->raiseOverflowError(runtime->newStrFromFmt(
-        "cannot fit '%T' into an index-sized integer", &count_index));
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &count_index);
   }
   Str self(&scope, *self_obj);
   word length = self.length();

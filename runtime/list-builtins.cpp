@@ -599,10 +599,11 @@ static RawObject setItemSlice(Thread* thread, const List& list,
     }
     word iter_length = SmallInt::cast(*iter_length_val).value();
     if (slice_length != iter_length) {
-      return thread->raiseValueError(thread->runtime()->newStrFromFmt(
+      return thread->raiseWithFmt(
+          LayoutId::kValueError,
           "attempt to assign sequence of size %w to extended slice of size "
           "%w",
-          iter_length, slice_length));
+          iter_length, slice_length);
     }
 
     Object value(&scope, NoneType::object());

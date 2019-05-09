@@ -146,8 +146,8 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
     thread->raiseOverflowErrorWithCStr(
         "can't convert negative value to unsigned");
   } else {
-    thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
-        "Python int too big to convert to C %s", type_name));
+    thread->raiseWithFmt(LayoutId::kOverflowError,
+                         "Python int too big to convert to C %s", type_name);
   }
   return -1;
 }
