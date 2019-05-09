@@ -29,9 +29,9 @@ TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
   icRewriteBytecode(thread, function);
 
   byte expected[] = {
-      NOP,          99,        EXTENDED_ARG, 0, LOAD_ATTR,    0,
-      NOP,          LOAD_ATTR, EXTENDED_ARG, 0, EXTENDED_ARG, 0,
-      EXTENDED_ARG, 0,         STORE_ATTR,   1, LOAD_ATTR,    2,
+      NOP,          99,        EXTENDED_ARG,      0, LOAD_ATTR_CACHED, 0,
+      NOP,          LOAD_ATTR, EXTENDED_ARG,      0, EXTENDED_ARG,     0,
+      EXTENDED_ARG, 0,         STORE_ATTR_CACHED, 1, LOAD_ATTR_CACHED, 2,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));

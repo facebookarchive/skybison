@@ -2,15 +2,17 @@
 
 namespace python {
 
-// Define the set of bytes codes.
-// `FOREACH_BYTECODE_CACHING` expects two macros as arguments: `V` for opcodes
-// that do not need a slot in the inline cache, and `C` for opcodes that do. For
-// each opcode `V` or `C` will be called with 3 arguments:
-//   1. The opcode's name
-//   2. The opcode's numeric value
+// Define the set of bytecodes.
+//
+// Except for the *_CACHED instructions at the end of the list, these are all
+// taken directly from CPython. The cached bytecodes perform the same operation
+// as their CPython counterpart, but do it more quickly using an inline cache.
+//
+// `FOREACH_BYTECODE` calls V for each bytecode with 3 arguments:
+//   1. The opcode's name.
+//   2. The opcode's numeric value.
 //   3. The opcode handler's name.
-
-#define FOREACH_BYTECODE_CACHING(V, C)                                         \
+#define FOREACH_BYTECODE(V)                                                    \
   V(UNUSED_BYTECODE_0, 0, doInvalidBytecode)                                   \
   V(POP_TOP, 1, doPopTop)                                                      \
   V(ROT_TWO, 2, doRotTwo)                                                      \
@@ -106,7 +108,7 @@ namespace python {
   V(UNPACK_SEQUENCE, 92, doUnpackSequence)                                     \
   V(FOR_ITER, 93, doForIter)                                                   \
   V(UNPACK_EX, 94, doUnpackEx)                                                 \
-  C(STORE_ATTR, 95, doStoreAttr)                                               \
+  V(STORE_ATTR, 95, doStoreAttr)                                               \
   V(DELETE_ATTR, 96, doDeleteAttr)                                             \
   V(STORE_GLOBAL, 97, doStoreGlobal)                                           \
   V(DELETE_GLOBAL, 98, doDeleteGlobal)                                         \
@@ -117,7 +119,7 @@ namespace python {
   V(BUILD_LIST, 103, doBuildList)                                              \
   V(BUILD_SET, 104, doBuildSet)                                                \
   V(BUILD_MAP, 105, doBuildMap)                                                \
-  C(LOAD_ATTR, 106, doLoadAttr)                                                \
+  V(LOAD_ATTR, 106, doLoadAttr)                                                \
   V(COMPARE_OP, 107, doCompareOp)                                              \
   V(IMPORT_NAME, 108, doImportName)                                            \
   V(IMPORT_FROM, 109, doImportFrom)                                            \
@@ -265,14 +267,10 @@ namespace python {
   V(UNUSED_BYTECODE_251, 251, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_252, 252, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_253, 253, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_254, 254, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_255, 255, doInvalidBytecode)                               \
+  V(STORE_ATTR_CACHED, 254, doStoreAttrCached)                                 \
+  V(LOAD_ATTR_CACHED, 255, doLoadAttrCached)                                   \
   V(UNUSED_BYTECODE_256, 256, doInvalidBytecode)                               \
   V(EXCEPT_HANDLER, 257, doInvalidBytecode)
-
-// Convenience version of `FOREACH_BYTECODE_CACHING` that does not differentiate
-// between byte codes needing or not needing an inline cache slot.
-#define FOREACH_BYTECODE(V) FOREACH_BYTECODE_CACHING(V, V)
 
 enum Bytecode {
 #define ENUM(name, value, handler) name = value,

@@ -7,15 +7,42 @@
 
 namespace python {
 
-static bool needsCache(Bytecode bc) {
+// The canonical list of bytecode ops that have a _CACHED variant.
+#define CACHED_OPS(X)                                                          \
+  X(STORE_ATTR)                                                                \
+  X(LOAD_ATTR)
+
+static Bytecode cachedOp(Bytecode bc) {
   switch (bc) {
-#define NOP(name, value, handler)
-#define CACHING_CASE(name, value, handler)                                     \
-  case name:                                                                   \
+#define CASE(OP)                                                               \
+  case OP:                                                                     \
+    return OP##_CACHED;
+    CACHED_OPS(CASE)
+#undef CASE
+    default:
+      return bc;
+  }
+}
+
+static bool hasCachedOp(Bytecode bc) {
+  switch (bc) {
+#define CASE(OP)                                                               \
+  case OP:                                                                     \
     return true;
-    FOREACH_BYTECODE_CACHING(NOP, CACHING_CASE)
-#undef CACHING_CASE
-#undef NOP
+    CACHED_OPS(CASE)
+#undef CASE
+    default:
+      return false;
+  }
+}
+
+static bool isCachedOp(Bytecode bc) {
+  switch (bc) {
+#define CASE(OP)                                                               \
+  case OP##_CACHED:                                                            \
+    return true;
+    CACHED_OPS(CASE)
+#undef CASE
     default:
       return false;
   }
@@ -30,7 +57,8 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   word bytecode_length = bytecode.length();
   for (word i = 0; i < bytecode_length; i += Frame::kCodeUnitSize) {
     Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i));
-    if (needsCache(bc)) {
+    DCHECK(!isCachedOp(bc), "Rewritten bytecode passed to icRewriteBytecode()");
+    if (hasCachedOp(bc)) {
       num_caches++;
     }
   }
@@ -51,7 +79,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
       arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
     }
 
-    if (needsCache(bc)) {
+    if (hasCachedOp(bc)) {
       // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
       CHECK(bucket < 256,
             "more than 256 entries may require bytecode stretching");
@@ -59,7 +87,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
         result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         result.byteAtPut(j + 1, 0);
       }
-      result.byteAtPut(i - 2, static_cast<byte>(bc));
+      result.byteAtPut(i - 2, static_cast<byte>(cachedOp(bc)));
       result.byteAtPut(i - 1, static_cast<byte>(bucket));
 
       // Remember original arg.

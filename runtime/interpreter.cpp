@@ -706,7 +706,12 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
     }
   }
   function.setFastGlobals(runtime->computeFastGlobals(code, globals, builtins));
-  icRewriteBytecode(thread, function);
+  if (runtime->isCacheEnabled()) {
+    icRewriteBytecode(thread, function);
+  } else {
+    function.setRewrittenBytecode(code.code());
+    function.setCaches(runtime->newTuple(0));
+  }
   return *function;
 }
 
@@ -1797,15 +1802,13 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
                                             const Object& value,
                                             Object* location_out) {
   Runtime* runtime = thread->runtime();
-  if (runtime->isCacheEnabled()) {
-    HandleScope scope(thread);
-    Type type(&scope, runtime->typeOf(*object));
-    Object dunder_setattr(
-        &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderSetattr));
-    if (dunder_setattr == runtime->objectDunderSetattr()) {
-      return objectSetAttrSetLocation(thread, object, name_str, value,
-                                      location_out);
-    }
+  HandleScope scope(thread);
+  Type type(&scope, runtime->typeOf(*object));
+  Object dunder_setattr(
+      &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderSetattr));
+  if (dunder_setattr == runtime->objectDunderSetattr()) {
+    return objectSetAttrSetLocation(thread, object, name_str, value,
+                                    location_out);
   }
   return thread->invokeMethod3(object, SymbolId::kDunderSetattr, name_str,
                                value);
@@ -2043,20 +2046,18 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
                                            Object* to_cache_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (runtime->isCacheEnabled()) {
-    Type type(&scope, runtime->typeOf(*object));
-    Object dunder_getattribute(
-        &scope,
-        typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetattribute));
-    if (dunder_getattribute == runtime->objectDunderGetattribute()) {
-      Object result(&scope, objectGetAttributeSetLocation(
-                                thread, object, name_str, to_cache_out));
-      if (result.isErrorNotFound()) {
-        result =
-            thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
-      }
-      return *result;
+  Type type(&scope, runtime->typeOf(*object));
+  Object dunder_getattribute(
+      &scope,
+      typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetattribute));
+  if (dunder_getattribute == runtime->objectDunderGetattribute()) {
+    Object result(&scope, objectGetAttributeSetLocation(
+                              thread, object, name_str, to_cache_out));
+    if (result.isErrorNotFound()) {
+      result =
+          thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
     }
+    return *result;
   }
 
   return thread->runtime()->attributeAt(thread, object, name_str);
@@ -2861,8 +2862,7 @@ bool wrapHandler(Interpreter::Context* ctx, word arg) {
 }
 
 static inline RawObject executeWithBytecode(Interpreter::Context* ctx,
-                                            const Bytes& byte_array,
-                                            const BoolOp* optable) {
+                                            const Bytes& byte_array) {
   auto do_return = [ctx] {
     RawObject return_val = ctx->frame->popValue();
     ctx->thread->popFrame();
@@ -2882,6 +2882,12 @@ static inline RawObject executeWithBytecode(Interpreter::Context* ctx,
     if (Interpreter::unwind(ctx)) return do_return();
   }
 
+  static const BoolOp op_table[] = {
+#define HANDLER(name, value, handler) wrapHandler<Interpreter::handler>,
+      FOREACH_BYTECODE(HANDLER)
+#undef HANDLER
+  };
+
   for (;;) {
     ctx->frame->setVirtualPC(ctx->pc);
     Bytecode bc = static_cast<Bytecode>(byte_array.byteAt(ctx->pc++));
@@ -2891,7 +2897,7 @@ static inline RawObject executeWithBytecode(Interpreter::Context* ctx,
       arg = (arg << 8) | byte_array.byteAt(ctx->pc++);
     }
 
-    if (optable[bc](ctx, arg)) return do_return();
+    if (op_table[bc](ctx, arg)) return do_return();
   }
 }
 
@@ -2906,12 +2912,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame) {
   ctx.caches = nullptr;
   ctx.pc = frame->virtualPC();
 
-  static const BoolOp op_table[] = {
-#define HANDLER(name, value, handler) wrapHandler<Interpreter::handler>,
-      FOREACH_BYTECODE(HANDLER)
-#undef HANDLER
-  };
-  return executeWithBytecode(&ctx, byte_array, op_table);
+  return executeWithBytecode(&ctx, byte_array);
 }
 
 RawObject Interpreter::executeWithCaching(Thread* thread, Frame* frame,
@@ -2927,15 +2928,7 @@ RawObject Interpreter::executeWithCaching(Thread* thread, Frame* frame,
   ctx.caches = &caches;
   ctx.pc = frame->virtualPC();
 
-  static const BoolOp op_table[] = {
-#define HANDLER(name, value, handler) wrapHandler<Interpreter::handler>,
-#define CACHING_HANDLER(name, value, handler)                                  \
-  wrapHandler<Interpreter::handler##Cached>,
-      FOREACH_BYTECODE_CACHING(HANDLER, CACHING_HANDLER)
-#undef CACHING_HANDLER
-#undef HANDLER
-  };
-  return executeWithBytecode(&ctx, byte_array, op_table);
+  return executeWithBytecode(&ctx, byte_array);
 }
 
 }  // namespace python
