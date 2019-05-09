@@ -309,7 +309,18 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
       return thread->raiseTypeErrorWithCStr(
           "string argument without an encoding");
     }
-    UNIMPLEMENTED("string encoding");  // return NoneType::value();
+    Object encoded(
+        &scope, errors.isUnbound()
+                    ? thread->invokeMethod2(source, SymbolId::kEncode, encoding)
+                    : thread->invokeMethod3(source, SymbolId::kEncode, encoding,
+                                            errors));
+    if (encoded.isError()) {
+      DCHECK(!encoded.isErrorNotFound(), "str.encode() not found");
+      return *encoded;
+    }
+    Bytes bytes(&scope, *encoded);
+    runtime->byteArrayIadd(thread, self, bytes, bytes.length());
+    return NoneType::object();
   }
   if (!encoding.isUnbound() || !errors.isUnbound()) {
     return thread->raiseTypeErrorWithCStr(

@@ -212,6 +212,7 @@ class Runtime;
   V(Dummy, "dummy")                                                            \
   V(EOFError, "EOFError")                                                      \
   V(Ellipsis, "ellipsis")                                                      \
+  V(Encode, "encode")                                                          \
   V(Encoding, "encoding")                                                      \
   V(End, "end")                                                                \
   V(Eq, "eq")                                                                  \

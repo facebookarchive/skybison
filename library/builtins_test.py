@@ -2,6 +2,18 @@
 import unittest
 
 
+class BytesTest(unittest.TestCase):
+    def test_dunder_new_with_str_without_encoding_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes("foo")
+
+    def test_dunder_new_with_str_and_encoding_returns_bytes(self):
+        self.assertEquals(bytes("foo", "ascii"), b"foo")
+
+    def test_dunder_new_with_ignore_errors_returns_bytes(self):
+        self.assertEquals(bytes("fo\x80o", "ascii", "ignore"), b"foo")
+
+
 class DictTests(unittest.TestCase):
     def test_clear_with_non_dict_raises_type_error(self):
         with self.assertRaises(TypeError):

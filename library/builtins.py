@@ -1031,7 +1031,10 @@ class bytes(bootstrap=True):
         if encoding is not _Unbound:
             if not _str_check(source):
                 raise TypeError("encoding without a string argument")
-            _unimplemented()
+            # TODO(T36619847): implement bytes subclasses
+            if errors is _Unbound:
+                return str.encode(source, encoding)
+            return str.encode(source, encoding, errors)
         if errors is not _Unbound:
             if _str_check(source):
                 raise TypeError("string argument without an encoding")

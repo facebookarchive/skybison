@@ -713,6 +713,45 @@ TEST(ByteArrayBuiltinsTest,
                             "string argument without an encoding"));
 }
 
+TEST(ByteArrayBuiltinsTest, DunderInitWithStringAndEncodingCopiesBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* str = "Hello world!";
+  Object self(&scope, runtime.newByteArray());
+  Object source(&scope, runtime.newStrFromCStr(str));
+  Object encoding(&scope, runtime.newStrFromCStr("ascii"));
+  Object unbound(&scope, Unbound::object());
+  Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
+                                 encoding, unbound));
+  EXPECT_EQ(init, NoneType::object());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, str));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderInitWithStringPropagatesSurrogateError) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object source(&scope, runtime.newStrFromCStr("hell\uac80o"));
+  Object encoding(&scope, runtime.newStrFromCStr("ascii"));
+  Object unbound(&scope, Unbound::object());
+  EXPECT_TRUE(raisedWithStr(runBuiltin(ByteArrayBuiltins::dunderInit, self,
+                                       source, encoding, unbound),
+                            LayoutId::kUnicodeEncodeError, "ascii"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderInitWithStringIgnoreErrorCopiesBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object self(&scope, runtime.newByteArray());
+  Object source(&scope, runtime.newStrFromCStr("hell\uac80o"));
+  Object encoding(&scope, runtime.newStrFromCStr("ascii"));
+  Object errors(&scope, runtime.newStrFromCStr("ignore"));
+  Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
+                                 encoding, errors));
+  EXPECT_EQ(init, NoneType::object());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "hello"));
+}
+
 TEST(ByteArrayBuiltinsTest,
      DunderInitWithNonStrSourceWithEncodingRaisesTypeError) {
   Runtime runtime;
