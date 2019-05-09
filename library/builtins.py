@@ -383,6 +383,14 @@ def _dict_check(obj) -> bool:
     pass
 
 
+def _dunder_bases_tuple_check(obj, msg) -> None:
+    try:
+        if not _tuple_check(obj.__bases__):
+            raise TypeError(msg)
+    except AttributeError:
+        raise TypeError(msg)
+
+
 @_patch
 def _float_check(obj) -> bool:
     pass
@@ -450,18 +458,10 @@ def _int_from_str(cls: type, x: str, base: int) -> int:
 def _issubclass(subclass, superclass) -> bool:
     if _type_check(subclass) and _type_check(superclass):
         return _type_issubclass(subclass, superclass)
-    try:
-        bases = subclass.__bases__
-        if not _tuple_check(bases):
-            raise AttributeError()
-    except AttributeError:
-        raise TypeError("issubclass() arg 1 must be a class")
-    try:
-        bases = superclass.__bases__
-        if not _tuple_check(bases):
-            raise AttributeError()
-    except AttributeError:
-        raise TypeError("issubclass() arg 2 must be a class or tuple of classes")
+    _dunder_bases_tuple_check(subclass, "issubclass() arg 1 must be a class")
+    _dunder_bases_tuple_check(
+        superclass, "issubclass() arg 2 must be a class or tuple of classes"
+    )
     return _issubclass_recursive(subclass, superclass)
 
 
