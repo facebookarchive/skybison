@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "slice-builtins.h"
@@ -330,18 +331,21 @@ RawObject ListBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
 
 RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (!args.get(1).isInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "index object cannot be interpreted as an integer");
-  }
-
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfList(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
-  word index = RawSmallInt::cast(args.get(1)).value();
+  Object index_obj(&scope, args.get(1));
+  index_obj = intFromIndex(thread, index_obj);
+  if (index_obj.isError()) return *index_obj;
+  Int index_int(&scope, intUnderlying(thread, index_obj));
+  if (index_int.isLargeInt()) {
+    return thread->raiseOverflowErrorWithCStr(
+        "Python int too large to convert to C ssize_t");
+  }
+  word index = index_int.asWord();
   Object value(&scope, args.get(2));
   listInsert(thread, list, value, index);
   return NoneType::object();

@@ -511,16 +511,13 @@ RawObject listFromRange(word start, word stop) {
     }
     return ::testing::AssertionFailure() << "is an " << obj;
   }
-  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(obj)) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, obj) << "'";
   }
-  if (!obj.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
   Int expected(&scope, newIntWithDigits(runtime, digits));
-  Int value_int(&scope, obj);
+  Object value_obj(&scope, obj);
+  Int value_int(&scope, intUnderlying(thread, value_obj));
   if (expected.compare(*value_int) != 0) {
     return ::testing::AssertionFailure()
            << value_int << " is not equal to " << expected;

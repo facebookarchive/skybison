@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "int-builtins.h"
 #include "interpreter.h"
 #include "object-builtins.h"
 #include "objects.h"
@@ -297,16 +298,15 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   }
   Tuple self(&scope, *self_obj);
   Object rhs(&scope, args.get(1));
-  if (!rhs.isInt()) {
-    return thread->raiseTypeErrorWithCStr("can't multiply sequence by non-int");
+  Object rhs_index(&scope, intFromIndex(thread, rhs));
+  if (rhs_index.isError()) return *rhs_index;
+  Int right(&scope, intUnderlying(thread, rhs_index));
+  if (right.isLargeInt()) {
+    return thread->raiseOverflowError(thread->runtime()->newStrFromFmt(
+        "cannot fit '%T' into an index-sized integer", &rhs));
   }
-  if (!rhs.isSmallInt()) {
-    return thread->raiseOverflowErrorWithCStr(
-        "cannot fit 'int' into an index-sized integer");
-  }
-  SmallInt right(&scope, *rhs);
   word length = self.length();
-  word times = right.value();
+  word times = right.asWord();
   if (length == 0 || times <= 0) {
     return thread->runtime()->newTuple(0);
   }

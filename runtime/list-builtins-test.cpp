@@ -363,32 +363,71 @@ print(r is None, len(b) == 3)
   EXPECT_EQ(output, "True True\n");
 }
 
-TEST(ListBuiltinsTest, ListInsertExcept) {
+TEST(ListBuiltinsTest, ListInsertWithMissingArgumentsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, R"(
-a = [1, 2]
-a.insert()
-)"),
-      LayoutId::kTypeError,
+      runFromCStr(&runtime, "[1, 2].insert()"), LayoutId::kTypeError,
       "TypeError: 'list.insert' takes 3 positional arguments but 1 given"));
-  Thread::current()->clearPendingException();
+}
 
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
-list.insert(None, 1, None)
-)"),
-                    LayoutId::kTypeError,
-                    "'insert' requires a 'list' object but got 'NoneType'"));
-  Thread::current()->clearPendingException();
+TEST(ListBuiltinsTest, ListInsertWithNonListRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "list.insert(None, 1, None)"), LayoutId::kTypeError,
+      "'insert' requires a 'list' object but got 'NoneType'"));
+}
 
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
-a = [1, 2]
-a.insert("i", "val")
-)"),
-                    LayoutId::kTypeError,
-                    "index object cannot be interpreted as an integer"));
+TEST(ListBuiltinsTest, ListInsertWithNonIntIndexRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime, "[1, 2].insert({}, 3)"), LayoutId::kTypeError,
+      "'dict' object cannot be interpreted as an integer"));
+}
+
+TEST(ListBuiltinsTest, ListInsertWithLargeIntIndexRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "[1, 2].insert(2 ** 63, 1)"),
+                            LayoutId::kOverflowError,
+                            "Python int too large to convert to C ssize_t"));
+}
+
+TEST(ListBuiltinsTest, ListInsertWithBoolIndexInsertsAtInt) {
+  Runtime runtime;
+  HandleScope scope;
+  List self(&scope, runtime.newList());
+  Object value(&scope, SmallInt::fromWord(3));
+  runtime.listAdd(self, value);
+  runtime.listAdd(self, value);
+  Object fals(&scope, Bool::falseObj());
+  Object tru(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(ListBuiltins::insert, self, tru, tru));
+  EXPECT_EQ(result, NoneType::object());
+  result = runBuiltin(ListBuiltins::insert, self, fals, fals);
+  EXPECT_EQ(result, NoneType::object());
+  ASSERT_EQ(self.numItems(), 4);
+  EXPECT_EQ(self.at(0), fals);
+  EXPECT_EQ(self.at(1), value);
+  EXPECT_EQ(self.at(2), tru);
+  EXPECT_EQ(self.at(3), value);
+}
+
+TEST(ListBuiltinsTest, ListInsertWithIntSubclassInsertsAtInt) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class N(int):
+  pass
+a = [0, 0, 0, 0, 0]
+b = N(3)
+)")
+                   .isError());
+  HandleScope scope;
+  List self(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object index(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object value(&scope, SmallInt::fromWord(1));
+  Object result(&scope, runBuiltin(ListBuiltins::insert, self, index, value));
+  EXPECT_EQ(result, NoneType::object());
+  EXPECT_EQ(self.numItems(), 6);
+  EXPECT_EQ(self.at(3), value);
 }
 
 TEST(ListBuiltinsTest, ListPop) {

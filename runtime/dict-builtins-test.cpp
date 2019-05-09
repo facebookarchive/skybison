@@ -660,6 +660,24 @@ key = Foo()
                      LayoutId::kTypeError));
 }
 
+TEST(DictBuiltinsTest, GetWithIntSubclassHashReturnsDefaultValue) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class N(int):
+  pass
+class Foo:
+  def __hash__(self):
+    return N(12)
+key = Foo()
+)")
+                   .isError());
+  Dict dict(&scope, runtime.newDict());
+  Object key(&scope, moduleAt(&runtime, "__main__", "key"));
+  Object default_obj(&scope, runtime.newInt(5));
+  EXPECT_EQ(runBuiltin(DictBuiltins::get, dict, key, default_obj), default_obj);
+}
+
 TEST(DictBuiltinsTest, GetReturnsDefaultValue) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, "res = {}.get(123, 456)").isError());

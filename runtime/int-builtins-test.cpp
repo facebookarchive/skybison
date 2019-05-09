@@ -413,24 +413,20 @@ a ^= 0x03
   EXPECT_TRUE(isIntEqualsWord(*b, 0xFE));
 }
 
-TEST(IntBuiltinsTest, DunderAbsWithBoolFalseReturnsSmallInt) {
+TEST(IntBuiltinsTest, DunderAbsWithBoolFalseReturnsZero) {
   Runtime runtime;
   HandleScope scope;
   Int self(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
-  ASSERT_TRUE(result.isInt());
-  ASSERT_TRUE(!result.isBool());
-  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  EXPECT_EQ(result, SmallInt::fromWord(0));
 }
 
-TEST(IntBuiltinsTest, DunderAbsWithBoolTrueReturnsSmallInt) {
+TEST(IntBuiltinsTest, DunderAbsWithBoolTrueReturnsOne) {
   Runtime runtime;
   HandleScope scope;
   Int self(&scope, Bool::trueObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderAbs, self));
-  ASSERT_TRUE(result.isInt());
-  ASSERT_TRUE(!result.isBool());
-  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+  EXPECT_EQ(result, SmallInt::fromWord(1));
 }
 
 TEST(IntBuiltinsTest, DunderAbsWithPositiveIntReturnsInt) {
@@ -1608,26 +1604,22 @@ TEST(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
   EXPECT_EQ(index.entryEx(), dint.entryEx());
 }
 
-TEST(IntBuiltinsTest, DunderIntWithBoolFalseReturnsSmallInt) {
+TEST(IntBuiltinsTest, DunderIntWithBoolFalseReturnsZero) {
   Runtime runtime;
   HandleScope scope;
 
   Object self(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
-  ASSERT_TRUE(result.isInt());
-  ASSERT_TRUE(!result.isBool());
-  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  EXPECT_EQ(result, SmallInt::fromWord(0));
 }
 
-TEST(IntBuiltinsTest, DunderIntWithBoolTrueReturnsSmallInt) {
+TEST(IntBuiltinsTest, DunderIntWithBoolTrueReturnsOne) {
   Runtime runtime;
   HandleScope scope;
 
   Object self(&scope, Bool::trueObj());
   Object result(&scope, runBuiltin(IntBuiltins::dunderInt, self));
-  ASSERT_TRUE(result.isInt());
-  ASSERT_TRUE(!result.isBool());
-  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+  EXPECT_EQ(result, SmallInt::fromWord(1));
 }
 
 TEST(IntBuiltinsTest, DunderIntWithSmallIntReturnsSame) {

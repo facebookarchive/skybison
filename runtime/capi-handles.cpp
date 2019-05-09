@@ -241,7 +241,7 @@ void* ApiHandle::cache() {
   Dict caches(&scope, runtime->apiCaches());
   Object cache(&scope, dictAtIdentityEquals(thread, caches, key, key_hash));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
-  if (!cache.isError()) return RawInt::cast(*cache).asCPtr();
+  if (!cache.isError()) return Int::cast(*cache).asCPtr();
   return nullptr;
 }
 
@@ -271,7 +271,7 @@ void ApiHandle::dispose() {
   dict = runtime->apiCaches();
   Object cache(&scope, dictRemoveIdentityEquals(thread, dict, key, key_hash));
   DCHECK(cache.isInt() || cache.isError(), "unexpected cache type");
-  if (!cache.isError()) std::free(RawInt::cast(*cache).asCPtr());
+  if (!cache.isError()) std::free(Int::cast(*cache).asCPtr());
 
   std::free(this);
 }

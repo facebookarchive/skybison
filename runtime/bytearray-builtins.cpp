@@ -144,17 +144,14 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self_obj, SymbolId::kByteArray);
   }
   ByteArray self(&scope, *self_obj);
-  Object index(&scope, args.get(1));
-  if (runtime->isInstanceOfInt(*index)) {
-    // TODO(T38780562): Handle Int subclasses
-    if (!index.isInt()) {
-      UNIMPLEMENTED("subclass of int");
+  Object index_obj(&scope, args.get(1));
+  if (runtime->isInstanceOfInt(*index_obj)) {
+    Int index(&scope, intUnderlying(thread, index_obj));
+    if (index.isLargeInt()) {
+      return thread->raiseIndexError(runtime->newStrFromFmt(
+          "cannot fit '%T' into an index-sized integer", &index_obj));
     }
-    if (!index.isSmallInt()) {
-      return thread->raiseIndexErrorWithCStr(
-          "cannot fit index into an index-sized integer");
-    }
-    word idx = SmallInt::cast(*index).value();
+    word idx = index.asWord();
     word len = self.numItems();
     if (idx < 0) idx += len;
     if (idx < 0 || idx >= len) {
@@ -162,8 +159,8 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     }
     return SmallInt::fromWord(self.byteAt(idx));
   }
-  if (index.isSlice()) {
-    Slice slice(&scope, *index);
+  if (index_obj.isSlice()) {
+    Slice slice(&scope, *index_obj);
     word start, stop, step;
     Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
     if (err.isError()) return *err;
@@ -327,15 +324,12 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
         "encoding or errors without a string argument");
   }
   if (runtime->isInstanceOfInt(*source)) {
-    // TODO(T38780562): Handle Int subclasses
-    if (!source.isInt()) {
-      UNIMPLEMENTED("int subclassing");
+    Int count_int(&scope, intUnderlying(thread, source));
+    if (count_int.isLargeInt()) {
+      return thread->raiseOverflowError(runtime->newStrFromFmt(
+          "cannot fit count into an index-sized integer", &source));
     }
-    if (!source.isSmallInt()) {
-      return thread->raiseOverflowErrorWithCStr(
-          "cannot fit count into an index-sized integer");
-    }
-    word count = RawSmallInt::cast(*source).value();
+    word count = count_int.asWord();
     if (count < 0) {
       return thread->raiseValueErrorWithCStr("negative count");
     }

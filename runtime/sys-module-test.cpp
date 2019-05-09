@@ -134,10 +134,9 @@ TEST(SysModuleTest, ExecutableIsValid) {
   ASSERT_TRUE(executable.length() > 0);
   EXPECT_TRUE(executable.charAt(0) == '/');
   Str test_executable_name(&scope, runtime.newStrFromCStr("python-tests"));
-  Object find_result(&scope,
-                     strFind(executable, test_executable_name, 0, kMaxWord));
-  ASSERT_TRUE(find_result.isInt());
-  EXPECT_FALSE(RawInt::cast(*find_result).isNegative());
+  Int find_result(&scope,
+                  strFind(executable, test_executable_name, 0, kMaxWord));
+  EXPECT_FALSE(find_result.isNegative());
 }
 
 TEST(SysModuleTest, StderrWriteWritesToStderrFile) {

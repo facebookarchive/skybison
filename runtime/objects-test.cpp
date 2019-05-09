@@ -52,10 +52,8 @@ TEST(IntTest, IntTest) {
   EXPECT_TRUE(isIntEqualsWord(*o2, 9223372036854775807L));
 
   int stack_val = 123;
-  Object o3(&scope, runtime.newIntFromCPtr(&stack_val));
-  ASSERT_TRUE(o3.isInt());
-  Int i3(&scope, *o3);
-  EXPECT_EQ(*static_cast<int*>(i3.asCPtr()), 123);
+  Int o3(&scope, runtime.newIntFromCPtr(&stack_val));
+  EXPECT_EQ(*static_cast<int*>(o3.asCPtr()), 123);
 
   Object o4(&scope, runtime.newInt(kMinWord));
   EXPECT_TRUE(isIntEqualsWord(*o4, kMinWord));

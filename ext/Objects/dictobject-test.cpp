@@ -102,6 +102,31 @@ c2 = C(5)
   EXPECT_EQ(result, v1);
 }
 
+TEST_F(DictExtensionApiTest, GetItemWithIntSubclassHashUsesInt) {
+  PyRun_SimpleString(R"(
+class H(int):
+  pass
+class C:
+  def __init__(self, v):
+    self.v = v
+  def __hash__(self):
+    return H(42)
+  def __eq__(self, other):
+    return self.v == other.v
+c = C(4)
+)");
+
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr v(PyLong_FromLong(1));
+  PyObjectPtr dict(PyDict_New());
+  ASSERT_EQ(PyDict_SetItem(dict, c, v), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  PyObject* result = PyDict_GetItem(dict, c);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, v);
+}
+
 TEST_F(DictExtensionApiTest, GetItemKnownHashFromNonDictRaisesSystemError) {
   // Pass a non dictionary
   PyObject* result = _PyDict_GetItem_KnownHash(Py_None, Py_None, 0);
@@ -207,6 +232,27 @@ c = C()
   ASSERT_EQ(PyDict_SetItem(dict, key, val), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithIntSubclassHashReturnsZero) {
+  PyRun_SimpleString(R"(
+class H(int):
+  pass
+class C:
+  def __init__(self, v):
+    self.v = v
+  def __hash__(self):
+    return H(42)
+  def __eq__(self, other):
+    return self.v == other.v
+c = C(4)
+)");
+
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr v(PyLong_FromLong(1));
+  PyObjectPtr dict(PyDict_New());
+  EXPECT_EQ(PyDict_SetItem(dict, c, v), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {

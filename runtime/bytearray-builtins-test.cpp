@@ -286,7 +286,7 @@ TEST(ByteArrayBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray(5)[2 ** 63]"),
                             LayoutId::kIndexError,
-                            "cannot fit index into an index-sized integer"));
+                            "cannot fit 'int' into an index-sized integer"));
 }
 
 TEST(ByteArrayBuiltinsTest,
@@ -301,6 +301,24 @@ TEST(ByteArrayBuiltinsTest,
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytearray(5)[-6]"),
                             LayoutId::kIndexError, "index out of range"));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderGetItemWithIntSubclassReturnsInt) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class N(int): pass
+index = N(3)
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ByteArray self(&scope, runtime.newByteArray());
+  const byte bytes[] = {'h', 'e', 'l', 'l', 'o'};
+  runtime.byteArrayExtend(thread, self, bytes);
+  Object index(&scope, moduleAt(&runtime, "__main__", "index"));
+  Object item(&scope,
+              runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
+  EXPECT_EQ(*item, SmallInt::fromWord('l'));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
@@ -779,6 +797,25 @@ TEST(ByteArrayBuiltinsTest,
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
   ASSERT_TRUE(init.isNoneType());
+  const byte bytes[] = {0, 0, 0};
+  EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderInitWithIntSubclassFillsWithNullBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class N(int): pass
+source = N(3)
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object self(&scope, runtime.newByteArray());
+  Object source(&scope, moduleAt(&runtime, "__main__", "source"));
+  Object unbound(&scope, Unbound::object());
+  Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
+                                 unbound, unbound));
+  EXPECT_TRUE(init.isNoneType());
   const byte bytes[] = {0, 0, 0};
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
 }

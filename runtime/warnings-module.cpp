@@ -3,6 +3,7 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "handles.h"
+#include "int-builtins.h"
 #include "runtime.h"
 #include "thread.h"
 
@@ -51,14 +52,10 @@ RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
   Object category(&scope, args.get(1));
   Object stacklevel(&scope, args.get(2));
 
-  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*stacklevel)) {
     return thread->raiseTypeErrorWithCStr("integer argument expected");
   }
-  if (!stacklevel.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-  auto result = Int(&scope, *stacklevel).asInt<word>();
+  auto result = Int(&scope, intUnderlying(thread, stacklevel)).asInt<word>();
   if (result.error != CastError::None) {
     return thread->raiseOverflowErrorWithCStr(
         "Python int too large to convert to C ssize_t");

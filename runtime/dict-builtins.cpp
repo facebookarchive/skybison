@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "int-builtins.h"
 #include "interpreter.h"
 #include "objects.h"
 #include "runtime.h"
@@ -437,26 +438,21 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, *self);
 
   // Check key hash
-  Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key,
-                                                       SymbolId::kDunderHash));
-  if (dunder_hash.isNoneType()) {
-    return thread->raiseTypeErrorWithCStr("unhashable type");
-  }
-  Object key_hash(&scope,
-                  Interpreter::callMethod1(thread, frame, dunder_hash, key));
+  Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
   if (key_hash.isError()) {
+    if (key_hash.isErrorNotFound()) {
+      return thread->raiseTypeErrorWithCStr("unhashable type");
+    }
     return *key_hash;
   }
-  // TODO(T38780562): Handle Int subclasses
   if (!runtime->isInstanceOfInt(*key_hash)) {
-    return thread->raiseTypeErrorWithCStr("__hash__ must return 'int'");
+    return thread->raiseTypeErrorWithCStr(
+        "__hash__ method should return an integer");
   }
-  if (!key_hash.isInt()) {
-    UNIMPLEMENTED("int subclassing");
-  }
-
+  Int hash_int(&scope, intUnderlying(thread, key_hash));
+  SmallInt small_hash(&scope, SmallInt::fromWordTruncated(hash_int.digitAt(0)));
   // Return results
-  Object result(&scope, runtime->dictAtWithHash(dict, key, key_hash));
+  Object result(&scope, runtime->dictAtWithHash(dict, key, small_hash));
   if (!result.isError()) return *result;
   return *default_obj;
 }
