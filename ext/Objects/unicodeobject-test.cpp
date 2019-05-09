@@ -1521,13 +1521,13 @@ TEST_F(UnicodeExtensionApiTest, SubstringCountsCodePoints) {
 }
 
 TEST_F(UnicodeExtensionApiTest, NewWithInvalidSizeReturnsError) {
-  PyObjectPtr str(PyUnicode_New(-1, 0));
+  EXPECT_EQ(PyUnicode_New(-1, 0), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
 TEST_F(UnicodeExtensionApiTest, NewWithInvalidMaxCharReturnsError) {
-  PyObjectPtr str(PyUnicode_New(1, 0x11FFFF));
+  EXPECT_EQ(PyUnicode_New(1, 0x11FFFF), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }

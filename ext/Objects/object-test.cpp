@@ -89,7 +89,7 @@ TEST_F(ObjectExtensionApiTest, BytesWithTupleOfByteReturnsBytes) {
 
 TEST_F(ObjectExtensionApiTest, BytesWithStringRaisesTypeError) {
   PyObjectPtr str(PyUnicode_FromString("hello"));
-  PyObjectPtr result(PyObject_Bytes(str));
+  EXPECT_EQ(PyObject_Bytes(str), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
@@ -288,6 +288,7 @@ TEST_F(ObjectExtensionApiTest, IncrementDecrementRefCountWithPyObjectPtr) {
     Py_INCREF(o);
     EXPECT_EQ(Py_REFCNT(o), refcnt + 1);
     testing::PyObjectPtr h(o);
+    static_cast<void>(h);
   }
   EXPECT_EQ(Py_REFCNT(o), refcnt);
   {
@@ -334,7 +335,7 @@ class C:
 c = C()
 )");
   PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
-  PyObjectPtr repr(PyObject_Repr(pyc));
+  EXPECT_EQ(PyObject_Repr(pyc), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
@@ -390,7 +391,7 @@ class C:
 c = C()
 )");
   PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
-  PyObjectPtr repr(PyObject_Str(pyc));
+  EXPECT_EQ(PyObject_Str(pyc), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
@@ -431,7 +432,7 @@ TEST_F(ObjectExtensionApiTest, RichCompareWithSameType) {
 TEST_F(ObjectExtensionApiTest, RichCompareNotComparableRaisesTypeError) {
   PyObjectPtr left(PyLong_FromLong(2));
   PyObjectPtr right(PyUnicode_FromString("hello"));
-  PyObjectPtr result(PyObject_RichCompare(left, right, Py_LT));
+  EXPECT_EQ(PyObject_RichCompare(left, right, Py_LT), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
@@ -571,7 +572,7 @@ class C:
 c = C()
 )");
   PyObjectPtr pyc(PyObject_GetAttrString(PyImport_AddModule("__main__"), "c"));
-  PyObjectPtr ascii(PyObject_ASCII(pyc));
+  EXPECT_EQ(PyObject_ASCII(pyc), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }

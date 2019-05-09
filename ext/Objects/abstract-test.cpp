@@ -2592,7 +2592,6 @@ c = C()
 
 TEST_F(AbstractExtensionApiTest,
        PySequenceDelSliceWithNullSeqRaisesSystemError) {
-  PyObjectPtr obj(PyList_New(0));
   EXPECT_EQ(PySequence_DelSlice(nullptr, 1, 2), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -2600,7 +2599,6 @@ TEST_F(AbstractExtensionApiTest,
 
 TEST_F(AbstractExtensionApiTest,
        PySequenceDelSliceWithNonIterableRaisesTypeError) {
-  PyObjectPtr obj(PyList_New(0));
   EXPECT_EQ(PySequence_DelSlice(Py_None, 1, 2), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
@@ -3263,7 +3261,7 @@ class C:
 c = C()
 )");
   PyObjectPtr c(moduleGet("__main__", "c"));
-  PyObjectPtr result(PyObject_Format(c, nullptr));
+  EXPECT_EQ(PyObject_Format(c, nullptr), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }

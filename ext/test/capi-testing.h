@@ -9,7 +9,7 @@ namespace testing {
 // the object goes out of scope or is assigned another pointer. PyObjectPtr
 // always takes the ownership of the reference, so do not use this for
 // borrowed references. This never increments the reference count.
-class PyObjectPtr {
+class __attribute__((warn_unused)) PyObjectPtr {
  public:
   // PyObjectPtr can only hold a reference for opaque types that are upcastable
   // to PyObject. Do not use with fully defined types (i.e. PyLong_Type).

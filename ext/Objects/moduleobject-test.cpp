@@ -495,6 +495,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefRunsMultipleSlotsInOrderPyro) {
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZeroPyro) {
   slot_func mod_exec_fail_silently = [](PyObject* module) {
     testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    static_cast<void>(attr);
     return 0;
   };
 
@@ -520,6 +521,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotHasErrorButReturnsZeroPyro) {
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetErrorPyro) {
   slot_func mod_exec_fail_no_error = [](PyObject* module) {
     testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    static_cast<void>(attr);
     PyErr_Clear();
     return -1;
   };
@@ -546,6 +548,7 @@ TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsButDoesntSetErrorPyro) {
 TEST_F(ModuleExtensionApiTest, ExecDefFailsIfSlotFailsAndPropogatesErrorPyro) {
   slot_func mod_exec_fail = [](PyObject* module) {
     testing::PyObjectPtr attr(PyObject_GetAttrString(module, "non-existant"));
+    static_cast<void>(attr);
     return -1;
   };
 
