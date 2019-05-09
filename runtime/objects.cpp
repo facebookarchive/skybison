@@ -337,6 +337,10 @@ void RawTuple::copyTo(RawObject array) const {
 void RawTuple::fill(RawObject value) const {
   DCHECK(header().hashCode() == RawHeader::kUninitializedHash,
          "tuple has been hashed and cannot be modified");
+  if (value.isNoneType()) {
+    std::memset(reinterpret_cast<byte*>(address()), -1, length() * kWordSize);
+    return;
+  }
   for (word i = 0; i < length(); i++) {
     atPut(i, value);
   }

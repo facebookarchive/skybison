@@ -973,9 +973,9 @@ TEST(TupleTest, NoneFillTupleFillsTupleWithNone) {
   tuple.atPut(1, SmallInt::fromWord(1));
   tuple.atPut(2, SmallInt::fromWord(2));
   tuple.fill(NoneType::object());
-  EXPECT_TRUE(tuple.at(0).isNoneType());
-  EXPECT_TRUE(tuple.at(1).isNoneType());
-  EXPECT_TRUE(tuple.at(2).isNoneType());
+  EXPECT_EQ(tuple.at(0), NoneType::object());
+  EXPECT_EQ(tuple.at(1), NoneType::object());
+  EXPECT_EQ(tuple.at(2), NoneType::object());
 }
 
 TEST(ErrorTest, ErrorIsError) {
