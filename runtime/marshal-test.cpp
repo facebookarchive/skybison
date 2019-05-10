@@ -312,7 +312,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   RawObject obj = Marshal::Reader(&scope, &runtime, buf).readObject();
   ASSERT_TRUE(obj.isLargeInt());
-  RawLargeInt integer = RawLargeInt::cast(obj);
+  RawLargeInt integer = LargeInt::cast(obj);
   EXPECT_EQ(integer.numDigits(), 2);
   EXPECT_TRUE(integer.isPositive());
   EXPECT_EQ(integer.digitAt(0), kMaxUint64);
@@ -323,7 +323,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   obj = Marshal::Reader(&scope, &runtime, buf1).readObject();
   ASSERT_TRUE(obj.isLargeInt());
-  integer = RawLargeInt::cast(obj);
+  integer = LargeInt::cast(obj);
   EXPECT_EQ(integer.numDigits(), 2);
   EXPECT_TRUE(integer.isPositive());
   EXPECT_EQ(integer.digitAt(0), uword{kMaxUint64 - 0x1});
@@ -335,7 +335,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   obj = Marshal::Reader(&scope, &runtime, buf2).readObject();
   ASSERT_TRUE(obj.isLargeInt());
-  integer = RawLargeInt::cast(obj);
+  integer = LargeInt::cast(obj);
   EXPECT_EQ(integer.numDigits(), 2);
   EXPECT_TRUE(integer.isPositive());
   EXPECT_EQ(integer.digitAt(0), uword{kMaxUint64 - 0xF});
@@ -347,7 +347,7 @@ TEST(MarshalReaderTest, ReadPositiveMultiDigitTypeLong) {
 
   obj = Marshal::Reader(&scope, &runtime, buf3).readObject();
   ASSERT_TRUE(obj.isLargeInt());
-  integer = RawLargeInt::cast(obj);
+  integer = LargeInt::cast(obj);
   ASSERT_EQ(integer.numDigits(), 2);
   EXPECT_EQ(integer.digitAt(0), uword{1} << (kBitsPerWord - 1));
   EXPECT_EQ(integer.digitAt(1), uword{0});
@@ -362,7 +362,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\xff\x7f\xff\x7f\xff\x7f\xff\x7f\x0f\x00";
   RawObject obj = Marshal::Reader(&scope, &runtime, buf).readObject();
   ASSERT_TRUE(obj.isLargeInt());
-  RawLargeInt integer = RawLargeInt::cast(obj);
+  RawLargeInt integer = LargeInt::cast(obj);
   EXPECT_EQ(integer.numDigits(), 2);
   EXPECT_TRUE(integer.isNegative());
   EXPECT_EQ(integer.digitAt(0), uword{1});
@@ -373,7 +373,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\xfe\x7f\xff\x7f\xff\x7f\xff\x7f\x1f\x00";
   RawObject obj1 = Marshal::Reader(&scope, &runtime, buf1).readObject();
   ASSERT_TRUE(obj1.isLargeInt());
-  RawLargeInt integer1 = RawLargeInt::cast(obj1);
+  RawLargeInt integer1 = LargeInt::cast(obj1);
   EXPECT_EQ(integer1.numDigits(), 2);
   EXPECT_TRUE(integer1.isNegative());
   EXPECT_EQ(integer1.digitAt(0), uword{2});  // ~(kMaxUint64 << 1) + 1
@@ -384,7 +384,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\xf0\x7f\xff\x7f\xff\x7f\xff\x7f\xff\x00";
   RawObject obj2 = Marshal::Reader(&scope, &runtime, buf2).readObject();
   ASSERT_TRUE(obj2.isLargeInt());
-  RawLargeInt integer2 = RawLargeInt::cast(obj2);
+  RawLargeInt integer2 = LargeInt::cast(obj2);
   EXPECT_EQ(integer2.numDigits(), 2);
   EXPECT_TRUE(integer2.isNegative());
   EXPECT_EQ(integer2.digitAt(0), uword{16});  // ~(kMaxUint64 << 4) + 1
@@ -395,7 +395,7 @@ TEST(MarshalReaderTest, ReadNegativeMultiDigitTypeLong) {
       "\xec\xfb\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00";
   RawObject obj3 = Marshal::Reader(&scope, &runtime, buf3).readObject();
   ASSERT_TRUE(obj3.isLargeInt());
-  RawLargeInt integer3 = RawLargeInt::cast(obj3);
+  RawLargeInt integer3 = LargeInt::cast(obj3);
   ASSERT_EQ(integer3.numDigits(), 1);
   EXPECT_EQ(integer3.digitAt(0), uword{1} << (kBitsPerWord - 1));
 }
@@ -451,7 +451,7 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   RawObject raw_object = reader.readObject();
   ASSERT_TRUE(raw_object.isCode());
 
-  RawCode code = RawCode::cast(raw_object);
+  RawCode code = Code::cast(raw_object);
   EXPECT_EQ(code.argcount(), 0);
   EXPECT_EQ(code.kwonlyargcount(), 0);
   EXPECT_EQ(code.nlocals(), 0);
@@ -460,34 +460,34 @@ TEST(MarshalReaderTest, ReadObjectCode) {
   EXPECT_EQ(code.flags(), Code::SIMPLE_CALL | Code::NOFREE);
 
   ASSERT_TRUE(code.code().isBytes());
-  EXPECT_NE(RawBytes::cast(code.code()).length(), 0);
+  EXPECT_NE(Bytes::cast(code.code()).length(), 0);
 
   ASSERT_TRUE(code.varnames().isTuple());
-  EXPECT_EQ(RawTuple::cast(code.varnames()).length(), 0);
+  EXPECT_EQ(Tuple::cast(code.varnames()).length(), 0);
 
   ASSERT_TRUE(code.cellvars().isTuple());
-  EXPECT_EQ(RawTuple::cast(code.cellvars()).length(), 0);
+  EXPECT_EQ(Tuple::cast(code.cellvars()).length(), 0);
 
   ASSERT_TRUE(code.consts().isTuple());
-  ASSERT_EQ(RawTuple::cast(code.consts()).length(), 1);
-  EXPECT_EQ(RawTuple::cast(code.consts()).at(0), NoneType::object());
+  ASSERT_EQ(Tuple::cast(code.consts()).length(), 1);
+  EXPECT_EQ(Tuple::cast(code.consts()).at(0), NoneType::object());
 
   ASSERT_TRUE(code.freevars().isTuple());
-  EXPECT_EQ(RawTuple::cast(code.freevars()).length(), 0);
+  EXPECT_EQ(Tuple::cast(code.freevars()).length(), 0);
 
   ASSERT_TRUE(code.filename().isStr());
-  EXPECT_TRUE(RawStr::cast(code.filename()).equalsCStr("pass.py"));
+  EXPECT_TRUE(Str::cast(code.filename()).equalsCStr("pass.py"));
 
   ASSERT_TRUE(code.name().isStr());
-  EXPECT_TRUE(RawStr::cast(code.name()).equalsCStr("<module>"));
+  EXPECT_TRUE(Str::cast(code.name()).equalsCStr("<module>"));
 
   ASSERT_TRUE(code.names().isTuple());
-  EXPECT_EQ(RawTuple::cast(code.names()).length(), 0);
+  EXPECT_EQ(Tuple::cast(code.names()).length(), 0);
 
   EXPECT_EQ(code.firstlineno(), 1);
 
   ASSERT_TRUE(code.lnotab().isBytes());
-  EXPECT_EQ(RawBytes::cast(code.lnotab()).length(), 0);
+  EXPECT_EQ(Bytes::cast(code.lnotab()).length(), 0);
 }
 
 TEST(MarshalReaderTest, ReadObjectSetOnEmptySetReturnsEmptySet) {
@@ -497,7 +497,7 @@ TEST(MarshalReaderTest, ReadObjectSetOnEmptySetReturnsEmptySet) {
   Marshal::Reader reader(&scope, &runtime, "\xbc\x00\x00\x00\x00");
   Object obj(&scope, reader.readObject());
   ASSERT_TRUE(obj.isSet());
-  EXPECT_EQ(RawSet::cast(*obj).numItems(), 0);
+  EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }
 
 TEST(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
@@ -527,7 +527,7 @@ TEST(MarshalReaderTest, ReadObjectFrozenSetOnEmptySetReturnsEmptyFrozenSet) {
   Marshal::Reader reader(&scope, &runtime, "\xbe\x00\x00\x00\x00");
   Object obj(&scope, reader.readObject());
   ASSERT_TRUE(obj.isFrozenSet());
-  EXPECT_EQ(RawFrozenSet::cast(*obj).numItems(), 0);
+  EXPECT_EQ(FrozenSet::cast(*obj).numItems(), 0);
 }
 
 TEST(MarshalReaderTest,

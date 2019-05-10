@@ -244,7 +244,7 @@ static bool isPass(const Code& code) {
   // const_loaded is the index into the consts array that is returned
   word const_loaded = bytes.byteAt(1);
   return bytes.length() == 4 && bytes.byteAt(0) == LOAD_CONST &&
-         RawTuple::cast(code.consts()).at(const_loaded).isNoneType() &&
+         Tuple::cast(code.consts()).at(const_loaded).isNoneType() &&
          bytes.byteAt(2) == RETURN_VALUE && bytes.byteAt(3) == 0;
 }
 
@@ -277,7 +277,7 @@ static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
     Object patch_value_cell(&scope, Dict::Bucket::value(*patch_data, i));
     DCHECK(patch_value_cell.isValueCell(),
            "Values in type dict should be ValueCell");
-    Object patch_obj(&scope, RawValueCell::cast(*patch_value_cell).value());
+    Object patch_obj(&scope, ValueCell::cast(*patch_value_cell).value());
 
     // Copy function entries if the method already exists as a native builtin.
     Object base_obj(&scope, runtime->typeDictAt(thread, base, key));
@@ -358,7 +358,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
           "You may need to add it to the builtins module.",
-          RawStr::cast(*name).toCStr());
+          Str::cast(*name).toCStr());
     Type type(&scope, *type_obj);
     Dict type_dict(&scope, type.dict());
 
@@ -659,7 +659,7 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Unsupported type in builtin 'ord'");
   }
-  auto str = RawStr::cast(arg);
+  auto str = Str::cast(arg);
   word num_bytes;
   int32_t codepoint = str.codePointAt(0, &num_bytes);
   if (num_bytes != str.length()) {

@@ -73,7 +73,7 @@ bool Heap::verify() {
         for (scan += RawHeader::kSize; scan < end; scan += kPointerSize) {
           auto pointer = reinterpret_cast<RawObject*>(scan);
           if ((*pointer).isHeapObject()) {
-            if (!space_->isAllocated(RawHeapObject::cast(*pointer).address())) {
+            if (!space_->isAllocated(HeapObject::cast(*pointer).address())) {
               return false;
             }
           }
@@ -104,7 +104,7 @@ RawObject Heap::createComplex(double real, double imag) {
                                 LayoutId::kComplex,
                                 ObjectFormat::kDataInstance));
   result.initialize(real, imag);
-  return RawComplex::cast(result);
+  return Complex::cast(result);
 }
 
 RawObject Heap::createFloat(double value) {
@@ -114,7 +114,7 @@ RawObject Heap::createFloat(double value) {
   result.setHeader(Header::from(RawFloat::kSize / kPointerSize, 0,
                                 LayoutId::kFloat, ObjectFormat::kDataInstance));
   result.initialize(value);
-  return RawFloat::cast(result);
+  return Float::cast(result);
 }
 
 RawObject Heap::createEllipsis() {
@@ -124,7 +124,7 @@ RawObject Heap::createEllipsis() {
   result.setHeader(Header::from(RawEllipsis::kSize / kPointerSize, 0,
                                 LayoutId::kEllipsis,
                                 ObjectFormat::kDataInstance));
-  return RawEllipsis::cast(result);
+  return Ellipsis::cast(result);
 }
 
 RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
@@ -146,7 +146,7 @@ RawObject Heap::createLargeBytes(word length) {
   auto result = raw.rawCast<RawLargeBytes>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kLargeBytes,
                               ObjectFormat::kDataArray8);
-  return RawLargeBytes::cast(result);
+  return LargeBytes::cast(result);
 }
 
 RawObject Heap::createLargeInt(word num_digits) {
@@ -157,7 +157,7 @@ RawObject Heap::createLargeInt(word num_digits) {
   auto result = raw.rawCast<RawLargeInt>();
   result.setHeaderAndOverflow(num_digits, 0, LayoutId::kLargeInt,
                               ObjectFormat::kDataArray64);
-  return RawLargeInt::cast(result);
+  return LargeInt::cast(result);
 }
 
 RawObject Heap::createLargeStr(word length) {
@@ -169,7 +169,7 @@ RawObject Heap::createLargeStr(word length) {
   auto result = raw.rawCast<RawLargeStr>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kLargeStr,
                               ObjectFormat::kDataArray8);
-  return RawLargeStr::cast(result);
+  return LargeStr::cast(result);
 }
 
 RawObject Heap::createLayout(LayoutId layout_id) {
@@ -180,7 +180,7 @@ RawObject Heap::createLayout(LayoutId layout_id) {
                                 static_cast<word>(layout_id), LayoutId::kLayout,
                                 ObjectFormat::kObjectInstance));
   result.initialize(RawLayout::kSize, NoneType::object());
-  return RawLayout::cast(result);
+  return Layout::cast(result);
 }
 
 RawObject Heap::createTuple(word length, RawObject value) {
@@ -192,7 +192,7 @@ RawObject Heap::createTuple(word length, RawObject value) {
   result.setHeaderAndOverflow(length, 0, LayoutId::kTuple,
                               ObjectFormat::kObjectArray);
   result.initialize(length * kPointerSize, value);
-  return RawTuple::cast(result);
+  return Tuple::cast(result);
 }
 
 RawObject Heap::createRange() {
@@ -201,7 +201,7 @@ RawObject Heap::createRange() {
   auto result = raw.rawCast<RawRange>();
   result.setHeader(Header::from(RawRange::kSize / kPointerSize, 0,
                                 LayoutId::kRange, ObjectFormat::kDataInstance));
-  return RawRange::cast(result);
+  return Range::cast(result);
 }
 
 }  // namespace python

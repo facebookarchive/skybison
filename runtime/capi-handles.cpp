@@ -179,7 +179,7 @@ void ApiHandle::visitReferences(RawObject handles, PointerVisitor* visitor) {
 }
 
 ApiHandle* ApiHandle::castFromObject(RawObject value) {
-  return static_cast<ApiHandle*>(RawInt::cast(value).asCPtr());
+  return static_cast<ApiHandle*>(Int::cast(value).asCPtr());
 }
 
 RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {

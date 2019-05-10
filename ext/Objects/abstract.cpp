@@ -1019,7 +1019,7 @@ PY_EXPORT int PySequence_Contains(PyObject* seq, PyObject* obj) {
   if (result.isError()) {
     return -1;
   }
-  return RawBool::cast(*result).value() ? 1 : 0;
+  return Bool::cast(*result).value() ? 1 : 0;
 }
 
 PY_EXPORT Py_ssize_t PySequence_Count(PyObject* seq, PyObject* obj) {

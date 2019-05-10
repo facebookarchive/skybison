@@ -650,7 +650,7 @@ RawObject Runtime::newInstance(const Layout& layout) {
   // This takes into account the potential overflow pointer.
   word num_attrs = layout.instanceSize() / kPointerSize;
   RawObject object = heap()->createInstance(layout.id(), num_attrs);
-  RawHeapObject instance = RawHeapObject::cast(object);
+  RawHeapObject instance = HeapObject::cast(object);
   // Set the overflow array
   instance.instanceVariableAtPut(layout.overflowOffset(), empty_tuple_);
   return instance;
@@ -792,11 +792,11 @@ RawObject Runtime::newIntFromUnsigned(uword value) {
 }
 
 RawObject Runtime::newFloat(double value) {
-  return RawFloat::cast(heap()->createFloat(value));
+  return Float::cast(heap()->createFloat(value));
 }
 
 RawObject Runtime::newComplex(double real, double imag) {
-  return RawComplex::cast(heap()->createComplex(real, imag));
+  return Complex::cast(heap()->createComplex(real, imag));
 }
 
 RawObject Runtime::newIntWithDigits(View<uword> digits) {
@@ -829,7 +829,7 @@ RawObject Runtime::newProperty(const Object& getter, const Object& setter,
 }
 
 RawObject Runtime::newRange(word start, word stop, word step) {
-  auto range = RawRange::cast(heap()->createRange());
+  auto range = Range::cast(heap()->createRange());
   range.setStart(start);
   range.setStop(stop);
   range.setStep(step);
@@ -1042,7 +1042,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
   if (size <= RawSmallStr::kMaxLength) {
     byte dst[SmallStr::kMaxLength];
     for (word i = 0, j = 0; i < code_units.length(); ++i) {
-      RawStr src = RawStr::cast(SmallStr::fromCodePoint(code_units.get(i)));
+      RawStr src = Str::cast(SmallStr::fromCodePoint(code_units.get(i)));
       word num_bytes = src.length();
       src.copyTo(&dst[j], num_bytes);
       j += num_bytes;
@@ -1051,7 +1051,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
   }
   RawObject result = heap()->createLargeStr(size);
   DCHECK(!result.isError(), "failed to create large string");
-  byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result).address());
+  byte* dst = reinterpret_cast<byte*>(LargeStr::cast(result).address());
   if (code_units.length() == size) {
     // ASCII fastpath
     for (word i = 0; i < size; ++i) {
@@ -1060,7 +1060,7 @@ RawObject Runtime::newStrFromUTF32(View<int32_t> code_units) {
     return result;
   }
   for (word i = 0, j = 0; i < code_units.length(); ++i) {
-    RawStr src = RawStr::cast(SmallStr::fromCodePoint(code_units.get(i)));
+    RawStr src = Str::cast(SmallStr::fromCodePoint(code_units.get(i)));
     word num_bytes = src.length();
     src.copyTo(&dst[j], num_bytes);
     j += num_bytes;
@@ -1075,7 +1075,7 @@ RawObject Runtime::newStrWithAll(View<byte> code_units) {
   }
   RawObject result = heap()->createLargeStr(length);
   DCHECK(!result.isError(), "failed to create large string");
-  byte* dst = reinterpret_cast<byte*>(RawLargeStr::cast(result).address());
+  byte* dst = reinterpret_cast<byte*>(LargeStr::cast(result).address());
   const byte* src = code_units.data();
   memcpy(dst, src, length);
   return result;
@@ -1203,7 +1203,7 @@ bool Runtime::untrackObject(ListEntry* entry) {
 }
 
 RawObject Runtime::identityHash(RawObject object) {
-  RawHeapObject src = RawHeapObject::cast(object);
+  RawHeapObject src = HeapObject::cast(object);
   word code = src.header().hashCode();
   if (code == RawHeader::kUninitializedHash) {
     code = random() & RawHeader::kHashCodeMask;
@@ -1222,7 +1222,7 @@ word Runtime::siphash24(View<byte> array) {
 }
 
 RawObject Runtime::valueHash(RawObject object) {
-  RawHeapObject src = RawHeapObject::cast(object);
+  RawHeapObject src = HeapObject::cast(object);
   RawHeader header = src.header();
   word code = header.hashCode();
   if (code == RawHeader::kUninitializedHash) {
@@ -1519,10 +1519,10 @@ void Runtime::processCallbacks() {
   HandleScope scope(thread);
   while (callbacks_ != NoneType::object()) {
     Object weak(&scope, WeakRef::dequeueReference(&callbacks_));
-    Object callback(&scope, RawWeakRef::cast(*weak).callback());
+    Object callback(&scope, WeakRef::cast(*weak).callback());
     Interpreter::callMethod1(thread, frame, callback, weak);
     thread->ignorePendingException();
-    RawWeakRef::cast(*weak).setCallback(NoneType::object());
+    WeakRef::cast(*weak).setCallback(NoneType::object());
   }
 }
 
@@ -1734,7 +1734,7 @@ RawObject Runtime::moduleDictAt(Thread* thread, const Dict& dict,
   }
   CHECK(value_cell.isValueCell(),
         "dict in moduleDictAt should return ValueCell");
-  return RawValueCell::cast(*value_cell).value();
+  return ValueCell::cast(*value_cell).value();
 }
 
 RawObject Runtime::moduleAt(const Module& module, const Object& key) {
@@ -1796,11 +1796,11 @@ void Runtime::initializeApiData() {
 }
 
 void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
-  RawList::cast(layouts_).atPut(static_cast<word>(layout_id), object);
+  List::cast(layouts_).atPut(static_cast<word>(layout_id), object);
 }
 
 RawObject Runtime::typeAt(LayoutId layout_id) {
-  return RawLayout::cast(layoutAt(layout_id)).describedType();
+  return Layout::cast(layoutAt(layout_id)).describedType();
 }
 
 RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
@@ -1811,7 +1811,7 @@ RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
     return Error::notFound();
   }
   CHECK(value_cell.isValueCell(), "dict in typeDictAt should return ValueCell");
-  return RawValueCell::cast(*value_cell).value();
+  return ValueCell::cast(*value_cell).value();
 }
 
 RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,
@@ -2644,7 +2644,7 @@ RawObject Runtime::dictAtPutInValueCell(Thread* thread, const Dict& dict,
                                         const Object& value) {
   RawObject result =
       dictAtIfAbsentPut(thread, dict, key, newValueCellCallback());
-  RawValueCell::cast(result).setValue(*value);
+  ValueCell::cast(result).setValue(*value);
   return result;
 }
 
@@ -3182,7 +3182,7 @@ void Runtime::genSave(Thread* thread, const GeneratorBase& gen) {
 RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {
   // For now, we have the invariant that GeneratorBase bodies are only invoked
   // by __next__() or send(), which have the GeneratorBase as their first local.
-  return RawGeneratorBase::cast(frame->previousFrame()->local(0));
+  return GeneratorBase::cast(frame->previousFrame()->local(0));
 }
 
 RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }
@@ -3233,7 +3233,7 @@ RawObject Runtime::classConstructor(const Type& type) {
   if (value.isError()) {
     return NoneType::object();
   }
-  return RawValueCell::cast(value).value();
+  return ValueCell::cast(value).value();
 }
 
 RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
@@ -3497,7 +3497,7 @@ RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
         // insert a place holder to allow {STORE|DELETE}_GLOBAL
         Object handle(&scope, value);
         value = dictAtPutInValueCell(thread, builtins, key, handle);
-        RawValueCell::cast(value).makeUnbound();
+        ValueCell::cast(value).makeUnbound();
       }
       Object handle(&scope, value);
       value = dictAtPutInValueCell(thread, globals, key, handle);
@@ -3584,7 +3584,7 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
     if (*candidate == *object_type) {
       candidate = *mro_type;
     } else if (*mro_type != *object_type &&
-               !RawTuple::cast(candidate.mro()).contains(*mro_type)) {
+               !Tuple::cast(candidate.mro()).contains(*mro_type)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "multiple bases have instance lay-out conflict");
@@ -3622,7 +3622,7 @@ RawObject Runtime::instanceDel(Thread* thread, const HeapObject& instance,
   Layout old_layout(&scope, layoutAt(instance.layoutId()));
   Object result(&scope, layoutDeleteAttribute(thread, old_layout, name));
   if (result.isError()) return *result;
-  LayoutId new_layout_id = RawLayout::cast(*result).id();
+  LayoutId new_layout_id = Layout::cast(*result).id();
   instance.setHeader(instance.header().withLayoutId(new_layout_id));
 
   // Remove the reference to the attribute value from the instance
@@ -3819,7 +3819,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
       if (is_deleted) {
         // Need to shift everything down by 1 once we've deleted the attribute
         entry = newTuple(2);
-        entry.atPut(0, RawTuple::cast(old_overflow.at(i)).at(0));
+        entry.atPut(0, Tuple::cast(old_overflow.at(i)).at(0));
         entry.atPut(1, AttributeInfo(j, info.flags()).asSmallInt());
       }
       new_overflow.atPut(j, *entry);

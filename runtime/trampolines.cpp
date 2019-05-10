@@ -55,11 +55,11 @@ static void processFreevarsAndCellvars(Thread* thread, const Function& function,
 
   // initialize free variables
   DCHECK(code.numFreevars() == 0 ||
-             code.numFreevars() == RawTuple::cast(function.closure()).length(),
+             code.numFreevars() == Tuple::cast(function.closure()).length(),
          "Number of freevars is different than the closure.");
   for (word i = 0; i < code.numFreevars(); i++) {
     callee_frame->setLocal(num_locals + num_cellvars + i,
-                           RawTuple::cast(function.closure()).at(i));
+                           Tuple::cast(function.closure()).at(i));
   }
 }
 
@@ -231,7 +231,7 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
     word absolute_pos = arg_pos + start;
     if (absolute_pos < code.argcount()) {
       word defaults_size = function.hasDefaults()
-                               ? RawTuple::cast(function.defaults()).length()
+                               ? Tuple::cast(function.defaults()).length()
                                : 0;
       word defaults_start = code.argcount() - defaults_size;
       if (absolute_pos >= (defaults_start)) {
@@ -444,7 +444,7 @@ static RawObject prepareExplodeCall(Thread* thread, const Function& function,
                                     const Code& code, Frame* caller, word arg) {
   RawObject arg_obj = processExplodeArguments(thread, caller, arg);
   if (arg_obj.isError()) return arg_obj;
-  word new_argc = RawSmallInt::cast(arg_obj).value();
+  word new_argc = SmallInt::cast(arg_obj).value();
 
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
     RawObject result = processKeywordArguments(thread, caller, new_argc);
@@ -1134,7 +1134,7 @@ static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller, word argc,
   Object result(&scope, init_args(function, code));
   if (result.isError()) return *result;
   argc = code.totalArgs();
-  void* entry = RawSmallInt::cast(code.code()).asCPtr();
+  void* entry = SmallInt::cast(code.code()).asCPtr();
   Frame* frame = thread->pushNativeFrame(entry, argc);
   result = bit_cast<Function::Entry>(entry)(thread, frame, argc);
   DCHECK(thread->isErrorValueOk(*result), "error/exception mismatch");
@@ -1170,7 +1170,7 @@ RawObject slotTrampoline(Thread* thread, Frame* caller, word argc) {
   HandleScope scope(thread);
   Function func(&scope, caller->peek(argc));
   Code code(&scope, func.code());
-  auto fn = bit_cast<Function::Entry>(RawInt::cast(code.code()).asCPtr());
+  auto fn = bit_cast<Function::Entry>(Int::cast(code.code()).asCPtr());
   Frame* frame = thread->openAndLinkFrame(argc, 0, 0);
   frame->setCode(*code);
   Object result(&scope, fn(thread, frame, argc));

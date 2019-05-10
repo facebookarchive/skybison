@@ -214,7 +214,7 @@ PY_EXPORT int PyObject_IsTrue(PyObject* obj) {
   if (result.isError()) {
     return -1;
   }
-  return RawBool::cast(*result).value();
+  return Bool::cast(*result).value();
 }
 
 PY_EXPORT int PyObject_Not(PyObject* obj) {
@@ -357,7 +357,7 @@ PY_EXPORT int Py_ReprEnter(PyObject* obj) {
   if (result.isError()) {
     return -1;
   }
-  return RawBool::cast(*result).value();
+  return Bool::cast(*result).value();
 }
 
 PY_EXPORT void Py_ReprLeave(PyObject* obj) {

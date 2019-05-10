@@ -41,14 +41,14 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   word stop = 0;
   word step = 1;
   if (args.get(2).isUnbound() && args.get(3).isUnbound()) {
-    stop = RawSmallInt::cast(args.get(1)).value();
+    stop = SmallInt::cast(args.get(1)).value();
   } else if (args.get(3).isUnbound()) {
-    start = RawSmallInt::cast(args.get(1)).value();
-    stop = RawSmallInt::cast(args.get(2)).value();
+    start = SmallInt::cast(args.get(1)).value();
+    stop = SmallInt::cast(args.get(2)).value();
   } else {
-    start = RawSmallInt::cast(args.get(1)).value();
-    stop = RawSmallInt::cast(args.get(2)).value();
-    step = RawSmallInt::cast(args.get(3)).value();
+    start = SmallInt::cast(args.get(1)).value();
+    stop = SmallInt::cast(args.get(2)).value();
+    step = SmallInt::cast(args.get(3)).value();
   }
 
   if (step == 0) {
@@ -104,7 +104,7 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
         "__next__() must be called with a range iterator instance as the first "
         "argument");
   }
-  Object value(&scope, RawRangeIterator::cast(*self).next());
+  Object value(&scope, RangeIterator::cast(*self).next());
   if (value.isError()) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }

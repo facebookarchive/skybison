@@ -317,7 +317,7 @@ TEST(RuntimeDictTest, EmptyDictInvariants) {
 
   EXPECT_EQ(dict.numItems(), 0);
   ASSERT_TRUE(dict.data().isTuple());
-  EXPECT_EQ(RawTuple::cast(dict.data()).length(), 0);
+  EXPECT_EQ(Tuple::cast(dict.data()).length(), 0);
 }
 
 TEST(RuntimeDictTest, GetSet) {
@@ -369,8 +369,7 @@ TEST(RuntimeDictTest, Remove) {
 
   RawObject retrieved = runtime.dictRemove(thread, dict, key);
   ASSERT_FALSE(retrieved.isError());
-  ASSERT_EQ(RawSmallInt::cast(retrieved).value(),
-            RawSmallInt::cast(*stored).value());
+  ASSERT_EQ(SmallInt::cast(retrieved).value(), SmallInt::cast(*stored).value());
 
   // Looking up a key that was deleted should fail
   EXPECT_TRUE(runtime.dictAt(thread, dict, key).isError());
@@ -446,7 +445,7 @@ TEST(RuntimeDictTest, GrowWhenFull) {
   Object init_key(&scope, SmallInt::fromWord(0));
   runtime.dictAtPut(thread, dict, init_key, init_key);
   ASSERT_TRUE(dict.data().isTuple());
-  word init_data_size = RawTuple::cast(dict.data()).length();
+  word init_data_size = Tuple::cast(dict.data()).length();
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
@@ -468,7 +467,7 @@ TEST(RuntimeDictTest, GrowWhenFull) {
   Object straw_value(&scope, make_value(num_keys));
   runtime.dictAtPut(thread, dict, straw, straw_value);
   ASSERT_TRUE(dict.data().isTuple());
-  word new_data_size = RawTuple::cast(dict.data()).length();
+  word new_data_size = Tuple::cast(dict.data()).length();
   EXPECT_EQ(new_data_size, Runtime::kDictGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys/values
@@ -499,7 +498,7 @@ TEST(RuntimeDictTest, CollidingKeys) {
 
   retrieved = runtime.dictAt(thread, dict, key2);
   ASSERT_TRUE(retrieved.isBool());
-  EXPECT_EQ(RawBool::cast(retrieved).value(), RawBool::cast(*key2).value());
+  EXPECT_EQ(Bool::cast(retrieved).value(), Bool::cast(*key2).value());
 }
 
 TEST(RuntimeDictTest, MixedKeys) {
@@ -589,7 +588,7 @@ TEST(RuntimeListTest, ListGrowth) {
 
 TEST(RuntimeListTest, EmptyListInvariants) {
   Runtime runtime;
-  RawList list = RawList::cast(runtime.newList());
+  RawList list = List::cast(runtime.newList());
   ASSERT_EQ(list.capacity(), 0);
   ASSERT_EQ(list.numItems(), 0);
 }
@@ -722,14 +721,14 @@ TEST(RuntimeTest, NewStr) {
   Str s254(&scope, runtime.newStrWithAll(bytes254));
   EXPECT_EQ(s254.length(), 254);
   ASSERT_TRUE(s254.isLargeStr());
-  EXPECT_EQ(RawHeapObject::cast(*s254).size(),
+  EXPECT_EQ(HeapObject::cast(*s254).size(),
             Utils::roundUp(kPointerSize + 254, kPointerSize));
 
   const byte bytes255[255] = {0};
   Str s255(&scope, runtime.newStrWithAll(bytes255));
   EXPECT_EQ(s255.length(), 255);
   ASSERT_TRUE(s255.isLargeStr());
-  EXPECT_EQ(RawHeapObject::cast(*s255).size(),
+  EXPECT_EQ(HeapObject::cast(*s255).size(),
             Utils::roundUp(kPointerSize * 2 + 255, kPointerSize));
 
   const byte bytes300[300] = {0};
@@ -879,7 +878,7 @@ TEST(RuntimeTest, HashLargeBytes) {
   const byte src1[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8};
   LargeBytes arr1(&scope, runtime.newBytesWithAll(src1));
   EXPECT_EQ(arr1.header().hashCode(), 0);
-  word hash1 = RawSmallInt::cast(runtime.hash(*arr1)).value();
+  word hash1 = SmallInt::cast(runtime.hash(*arr1)).value();
   EXPECT_NE(arr1.header().hashCode(), 0);
   EXPECT_EQ(arr1.header().hashCode(), hash1);
 
@@ -889,7 +888,7 @@ TEST(RuntimeTest, HashLargeBytes) {
   // LargeBytes with different values should (ideally) hash differently.
   const byte src2[] = {0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1};
   LargeBytes arr2(&scope, runtime.newBytesWithAll(src2));
-  word hash2 = RawSmallInt::cast(runtime.hash(*arr2)).value();
+  word hash2 = SmallInt::cast(runtime.hash(*arr2)).value();
   EXPECT_NE(hash1, hash2);
 
   word code2 = runtime.siphash24(src2);
@@ -898,7 +897,7 @@ TEST(RuntimeTest, HashLargeBytes) {
   // LargeBytes with the same value should hash the same.
   LargeBytes arr3(&scope, runtime.newBytesWithAll(src1));
   EXPECT_NE(arr3, arr1);
-  word hash3 = RawSmallInt::cast(runtime.hash(*arr3)).value();
+  word hash3 = SmallInt::cast(runtime.hash(*arr3)).value();
   EXPECT_EQ(hash1, hash3);
 }
 
@@ -915,11 +914,11 @@ TEST(RuntimeTest, HashSingletonImmediates) {
 
   // In CPython, these objects hash to arbitrary values.
   word none_value = NoneType::object().raw();
-  RawSmallInt hash_none = RawSmallInt::cast(runtime.hash(NoneType::object()));
+  RawSmallInt hash_none = SmallInt::cast(runtime.hash(NoneType::object()));
   EXPECT_EQ(hash_none.value(), none_value);
 
   word error_value = Error::error().raw();
-  RawSmallInt hash_error = RawSmallInt::cast(runtime.hash(Error::error()));
+  RawSmallInt hash_error = SmallInt::cast(runtime.hash(Error::error()));
   EXPECT_EQ(hash_error.value(), error_value);
 }
 
@@ -929,19 +928,19 @@ TEST(RuntimeTest, HashStr) {
 
   // LargeStr instances have their hash codes computed lazily.
   Object str1(&scope, runtime.newStrFromCStr("testing 123"));
-  EXPECT_EQ(RawHeapObject::cast(*str1).header().hashCode(), 0);
-  RawSmallInt hash1 = RawSmallInt::cast(runtime.hash(*str1));
-  EXPECT_NE(RawHeapObject::cast(*str1).header().hashCode(), 0);
-  EXPECT_EQ(RawHeapObject::cast(*str1).header().hashCode(), hash1.value());
+  EXPECT_EQ(HeapObject::cast(*str1).header().hashCode(), 0);
+  RawSmallInt hash1 = SmallInt::cast(runtime.hash(*str1));
+  EXPECT_NE(HeapObject::cast(*str1).header().hashCode(), 0);
+  EXPECT_EQ(HeapObject::cast(*str1).header().hashCode(), hash1.value());
 
   // Str with different values should (ideally) hash differently.
   Str str2(&scope, runtime.newStrFromCStr("321 testing"));
-  RawSmallInt hash2 = RawSmallInt::cast(runtime.hash(*str2));
+  RawSmallInt hash2 = SmallInt::cast(runtime.hash(*str2));
   EXPECT_NE(hash1, hash2);
 
   // Strings with the same value should hash the same.
   Str str3(&scope, runtime.newStrFromCStr("testing 123"));
-  RawSmallInt hash3 = RawSmallInt::cast(runtime.hash(*str3));
+  RawSmallInt hash3 = SmallInt::cast(runtime.hash(*str3));
   EXPECT_EQ(hash1, hash3);
 }
 
@@ -1013,7 +1012,7 @@ TEST(RuntimeTest, HashCodeSizeCheck) {
   Object name(&scope, Str::empty());
   RawObject code = runtime.newEmptyCode(name);
   ASSERT_TRUE(code.isHeapObject());
-  EXPECT_EQ(RawHeapObject::cast(code).header().hashCode(), 0);
+  EXPECT_EQ(HeapObject::cast(code).header().hashCode(), 0);
   // Verify that large-magnitude random numbers are properly
   // truncated to somethat which fits in a SmallInt
 
@@ -1200,7 +1199,7 @@ TEST(RuntimeTest, CollectAttributes) {
   // Check that we collected 'foo'
   Object result(&scope, runtime.dictAt(thread, attributes, foo));
   ASSERT_TRUE(result.isStr());
-  EXPECT_TRUE(RawStr::cast(*result).equals(*foo));
+  EXPECT_TRUE(Str::cast(*result).equals(*foo));
 
   // Bytecode for the snippet:
   //
@@ -1219,12 +1218,12 @@ TEST(RuntimeTest, CollectAttributes) {
   // Check that we collected 'bar'
   result = runtime.dictAt(thread, attributes, bar);
   ASSERT_TRUE(result.isStr());
-  EXPECT_TRUE(RawStr::cast(*result).equals(*bar));
+  EXPECT_TRUE(Str::cast(*result).equals(*bar));
 
   // Check that we collected 'baz'
   result = runtime.dictAt(thread, attributes, baz);
   ASSERT_TRUE(result.isStr());
-  EXPECT_TRUE(RawStr::cast(*result).equals(*baz));
+  EXPECT_TRUE(Str::cast(*result).equals(*baz));
 }
 
 TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
@@ -1266,7 +1265,7 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   // Check that we collected 'foo'
   Object result(&scope, runtime.dictAt(thread, attributes, foo));
   ASSERT_TRUE(result.isStr());
-  EXPECT_TRUE(RawStr::cast(*result).equals(*foo));
+  EXPECT_TRUE(Str::cast(*result).equals(*foo));
 }
 
 TEST(RuntimeTest, GetTypeConstructor) {
@@ -1343,14 +1342,14 @@ TEST(RuntimeTest, VerifySymbols) {
     ASSERT_TRUE(value.isStr());
     const char* expected = symbols->literalAt(id);
     EXPECT_TRUE(runtime.isInternedStr(value)) << "at symbol " << expected;
-    EXPECT_TRUE(RawStr::cast(*value).equalsCStr(expected))
+    EXPECT_TRUE(Str::cast(*value).equalsCStr(expected))
         << "Incorrect symbol value for " << expected;
   }
 }
 
 static RawStr className(Runtime* runtime, RawObject o) {
-  auto cls = RawType::cast(runtime->typeOf(o));
-  auto name = RawStr::cast(cls.name());
+  auto cls = Type::cast(runtime->typeOf(o));
+  auto name = Str::cast(cls.name());
   return name;
 }
 
@@ -1484,7 +1483,7 @@ c = MyTypeWithAttributes(1)
   LayoutId layout_id = instance.layoutId();
   // Since this class has extra attributes, its layout id should be greater than
   // the layout id from the type.
-  ASSERT_GT(layout_id, RawLayout::cast(type.instanceLayout()).id());
+  ASSERT_GT(layout_id, Layout::cast(type.instanceLayout()).id());
   Layout layout(&scope, runtime.layoutAt(layout_id));
   ASSERT_EQ(layout.instanceSize(), 2 * kPointerSize);
 
@@ -1537,7 +1536,7 @@ def func():
   EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, 6), 4);
 
   // print(a, b)
-  for (word i = 8; i < RawBytes::cast(code.code()).length(); i++) {
+  for (word i = 8; i < Bytes::cast(code.code()).length(); i++) {
     EXPECT_EQ(runtime.codeOffsetToLineNum(thread, code, i), 5);
   }
 }
@@ -1573,22 +1572,22 @@ TEST(RuntimeTupleTest, Create) {
 
   RawObject obj0 = runtime.newTuple(0);
   ASSERT_TRUE(obj0.isTuple());
-  RawTuple array0 = RawTuple::cast(obj0);
+  RawTuple array0 = Tuple::cast(obj0);
   EXPECT_EQ(array0.length(), 0);
 
   RawObject obj1 = runtime.newTuple(1);
   ASSERT_TRUE(obj1.isTuple());
-  RawTuple array1 = RawTuple::cast(obj1);
+  RawTuple array1 = Tuple::cast(obj1);
   EXPECT_EQ(array1.length(), 1);
 
   RawObject obj7 = runtime.newTuple(7);
   ASSERT_TRUE(obj7.isTuple());
-  RawTuple array7 = RawTuple::cast(obj7);
+  RawTuple array7 = Tuple::cast(obj7);
   EXPECT_EQ(array7.length(), 7);
 
   RawObject obj8 = runtime.newTuple(8);
   ASSERT_TRUE(obj8.isTuple());
-  RawTuple array8 = RawTuple::cast(obj8);
+  RawTuple array8 = Tuple::cast(obj8);
   EXPECT_EQ(array8.length(), 8);
 }
 
@@ -1600,7 +1599,7 @@ TEST(RuntimeSetTest, EmptySetInvariants) {
   EXPECT_EQ(set.numItems(), 0);
   ASSERT_TRUE(set.isSet());
   ASSERT_TRUE(set.data().isTuple());
-  EXPECT_EQ(RawTuple::cast(set.data()).length(), 0);
+  EXPECT_EQ(Tuple::cast(set.data()).length(), 0);
 }
 
 TEST(RuntimeSetTest, Add) {
@@ -1660,7 +1659,7 @@ TEST(RuntimeSetTest, Grow) {
   Object init_key(&scope, SmallInt::fromWord(0));
   runtime.setAdd(set, init_key);
   ASSERT_TRUE(set.data().isTuple());
-  word init_data_size = RawTuple::cast(set.data()).length();
+  word init_data_size = Tuple::cast(set.data()).length();
 
   auto make_key = [&runtime](int i) {
     byte text[]{"0123456789abcdeghiklmn"};
@@ -1679,7 +1678,7 @@ TEST(RuntimeSetTest, Grow) {
   Object straw(&scope, make_key(num_keys));
   runtime.setAdd(set, straw);
   ASSERT_TRUE(set.data().isTuple());
-  word new_data_size = RawTuple::cast(set.data()).length();
+  word new_data_size = Tuple::cast(set.data()).length();
   EXPECT_EQ(new_data_size, Runtime::kSetGrowthFactor * init_data_size);
 
   // Make sure we can still read all the stored keys
@@ -1801,7 +1800,7 @@ TEST(RuntimeSetTest, EmptySetItersectionReturnsEmptySet) {
   // set() & set()
   Object result(&scope, runtime.setIntersection(thread, set, set1));
   ASSERT_TRUE(result.isSet());
-  EXPECT_EQ(RawSet::cast(*result).numItems(), 0);
+  EXPECT_EQ(Set::cast(*result).numItems(), 0);
 }
 
 TEST(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
@@ -1819,12 +1818,12 @@ TEST(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
   // set() & {0, 1, 2, 3, 4, 5, 6, 7}
   Object result(&scope, runtime.setIntersection(thread, set, set1));
   ASSERT_TRUE(result.isSet());
-  EXPECT_EQ(RawSet::cast(*result).numItems(), 0);
+  EXPECT_EQ(Set::cast(*result).numItems(), 0);
 
   // {0, 1, 2, 3, 4, 5, 6, 7} & set()
   Object result1(&scope, runtime.setIntersection(thread, set1, set));
   ASSERT_TRUE(result1.isSet());
-  EXPECT_EQ(RawSet::cast(*result1).numItems(), 0);
+  EXPECT_EQ(Set::cast(*result1).numItems(), 0);
 }
 
 TEST(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
@@ -1847,7 +1846,7 @@ TEST(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
 
   // {0, 1, 2, 3} & {0, 1, 2, 3, 4, 5, 6, 7}
   Set result(&scope, runtime.setIntersection(thread, set, set1));
-  EXPECT_EQ(RawSet::cast(*result).numItems(), 4);
+  EXPECT_EQ(Set::cast(*result).numItems(), 4);
   key = SmallInt::fromWord(0);
   EXPECT_TRUE(runtime.setIncludes(result, key));
   key = SmallInt::fromWord(1);
@@ -1859,7 +1858,7 @@ TEST(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
 
   // {0, 1, 2, 3, 4, 5, 6, 7} & {0, 1, 2, 3}
   Set result1(&scope, runtime.setIntersection(thread, set, set1));
-  EXPECT_EQ(RawSet::cast(*result1).numItems(), 4);
+  EXPECT_EQ(Set::cast(*result1).numItems(), 4);
   key = SmallInt::fromWord(0);
   EXPECT_TRUE(runtime.setIncludes(result1, key));
   key = SmallInt::fromWord(1);
@@ -2869,7 +2868,7 @@ def gen():
   ASSERT_FALSE(runFromCStr(&runtime, src).isError());
   Object gen(&scope, moduleAt(&runtime, "__main__", "gen"));
   ASSERT_TRUE(gen.isFunction());
-  Code code(&scope, RawFunction::cast(*gen).code());
+  Code code(&scope, Function::cast(*gen).code());
   Object frame_obj(&scope, runtime.newHeapFrame(code));
   ASSERT_TRUE(frame_obj.isHeapFrame());
   HeapFrame heap_frame(&scope, *frame_obj);

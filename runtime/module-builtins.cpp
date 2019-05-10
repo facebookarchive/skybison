@@ -140,7 +140,7 @@ RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (!args.get(0).isType()) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
-  if (RawType::cast(args.get(0)).builtinBase() != LayoutId::kModule) {
+  if (Type::cast(args.get(0)).builtinBase() != LayoutId::kModule) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "not a subtype of module");
   }

@@ -154,7 +154,7 @@ except StopIteration:
 
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isSmallInt());
-  EXPECT_EQ(RawSmallInt::cast(*result).value(), 1);
+  EXPECT_EQ(SmallInt::cast(*result).value(), 1);
 }
 
 TEST(GeneratorTest, NextAfterReturnRaisesStopIteration) {

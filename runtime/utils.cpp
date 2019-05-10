@@ -43,7 +43,7 @@ class TracebackPrinter : public FrameVisitor {
 
     // Extract filename
     if (code.filename().isStr()) {
-      char* filename = RawStr::cast(code.filename()).toCStr();
+      char* filename = Str::cast(code.filename()).toCStr();
       line << "  File '" << filename << "', ";
       std::free(filename);
     } else {
@@ -60,7 +60,7 @@ class TracebackPrinter : public FrameVisitor {
 
     // Extract function
     if (code.name().isStr()) {
-      char* name = RawStr::cast(code.name()).toCStr();
+      char* name = Str::cast(code.name()).toCStr();
       line << "in " << name;
       std::free(name);
     } else {

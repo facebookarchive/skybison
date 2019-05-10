@@ -260,7 +260,7 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatfReturnsFloat) {
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
+  EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("-0x1.78e1720000000p-120", nullptr));
 }
 
@@ -274,7 +274,7 @@ TEST(MemoryViewBuiltinsTest, GetItemWithFormatdReturnsFloat) {
   Object result(&scope,
                 runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
+  EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("0x1.c0c870d1a8028p+187", nullptr));
 }
 
@@ -415,7 +415,7 @@ TEST(MemoryViewBuiltinsTest, DunderNewWithMemoryViewReturnsMemoryView) {
   MemoryView result(&scope, *result_obj);
   EXPECT_NE(result, view);
   EXPECT_EQ(view.buffer(), result.buffer());
-  EXPECT_TRUE(RawStr::cast(view.format()).equals(result.format()));
+  EXPECT_TRUE(Str::cast(view.format()).equals(result.format()));
   EXPECT_EQ(view.readOnly(), result.readOnly());
 }
 

@@ -35,7 +35,7 @@ TEST(LayoutTest, FindAttribute) {
   entry.atPut(1, AttributeInfo(2222, AttributeFlags::kInObject).asSmallInt());
   Tuple array(&scope, runtime.newTuple(1));
   array.atPut(0, *entry);
-  RawLayout::cast(*layout).setInObjectAttributes(*array);
+  Layout::cast(*layout).setInObjectAttributes(*array);
 
   // Should find the attribute
   ASSERT_TRUE(runtime.layoutFindAttribute(thread, layout, attr, &info));
@@ -273,9 +273,9 @@ TEST(LayoutTest, VerifyChildLayout) {
   // Child should have an additional overflow attribute
   EXPECT_NE(child.overflowAttributes(), parent.overflowAttributes());
   EXPECT_NE(child.additions(), parent.additions());
-  EXPECT_EQ(RawList::cast(child.additions()).numItems(), 0);
+  EXPECT_EQ(List::cast(child.additions()).numItems(), 0);
   EXPECT_NE(child.deletions(), parent.deletions());
-  EXPECT_EQ(RawList::cast(child.deletions()).numItems(), 0);
+  EXPECT_EQ(List::cast(child.deletions()).numItems(), 0);
   EXPECT_EQ(child.describedType(), parent.describedType());
   EXPECT_EQ(child.instanceSize(), parent.instanceSize());
 }

@@ -59,8 +59,8 @@ TEST(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
   Object result(&scope, runBuiltin(FunctionBuiltins::dunderGet, func, not_none,
                                    not_none_type));
   ASSERT_TRUE(result.isBoundMethod());
-  EXPECT_EQ(RawBoundMethod::cast(*result).self(), *not_none);
-  EXPECT_EQ(RawBoundMethod::cast(*result).function(), *func);
+  EXPECT_EQ(BoundMethod::cast(*result).self(), *not_none);
+  EXPECT_EQ(BoundMethod::cast(*result).function(), *func);
 }
 
 TEST(FunctionBuiltinsTest,
@@ -73,8 +73,8 @@ TEST(FunctionBuiltinsTest,
   Object result(&scope,
                 runBuiltin(FunctionBuiltins::dunderGet, func, none, none_type));
   ASSERT_TRUE(result.isBoundMethod());
-  EXPECT_EQ(RawBoundMethod::cast(*result).self(), *none);
-  EXPECT_EQ(RawBoundMethod::cast(*result).function(), *func);
+  EXPECT_EQ(BoundMethod::cast(*result).self(), *none);
+  EXPECT_EQ(BoundMethod::cast(*result).function(), *func);
 }
 
 TEST(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
@@ -136,8 +136,8 @@ TEST(FunctionBuiltinsTest, DunderSetattrSetsAttribute) {
   EXPECT_TRUE(runBuiltin(FunctionBuiltins::dunderSetattr, foo, name, value)
                   .isNoneType());
   ASSERT_TRUE(foo.isFunction());
-  ASSERT_TRUE(RawFunction::cast(*foo).dict().isDict());
-  Dict function_dict(&scope, RawFunction::cast(*foo).dict());
+  ASSERT_TRUE(Function::cast(*foo).dict().isDict());
+  Dict function_dict(&scope, Function::cast(*foo).dict());
   EXPECT_TRUE(
       isIntEqualsWord(runtime.dictAt(thread, function_dict, name), 1337));
 }
@@ -164,7 +164,7 @@ result = repr(f)
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isStr());
-  unique_c_ptr<char> result_str(RawStr::cast(*result).toCStr());
+  unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function f at 0x"));
 }
 
@@ -174,7 +174,7 @@ TEST(FunctionBuiltinsTest, ReprHandlesLambda) {
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isStr());
-  unique_c_ptr<char> result_str(RawStr::cast(*result).toCStr());
+  unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   EXPECT_TRUE(std::strstr(result_str.get(), "<function <lambda> at 0x"));
 }
 

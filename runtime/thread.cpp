@@ -150,7 +150,7 @@ Frame* Thread::pushCallFrame(const Function& function) {
     Object builtins_module(
         &scope, runtime()->moduleDictAt(this, globals, dunder_builtins_name));
     if (builtins_module.isModule()) {
-      builtins = RawModule::cast(*builtins_module).dict();
+      builtins = Module::cast(*builtins_module).dict();
     } else {
       // Create a minimal builtins dictionary with just `{'None': None}`.
       builtins = runtime()->newDict();
@@ -205,15 +205,13 @@ Frame* Thread::pushClassFunctionFrame(const Function& function,
   }
 
   // initialize free vars
-  DCHECK(
-      code.numFreevars() == 0 ||
-          code.numFreevars() ==
-              RawTuple::cast(RawFunction::cast(*function).closure()).length(),
-      "Number of freevars is different than the closure.");
+  DCHECK(code.numFreevars() == 0 ||
+             code.numFreevars() ==
+                 Tuple::cast(Function::cast(*function).closure()).length(),
+         "Number of freevars is different than the closure.");
   for (word i = 0; i < code.numFreevars(); i++) {
-    result->setLocal(
-        num_locals + num_cellvars + i,
-        RawTuple::cast(RawFunction::cast(*function).closure()).at(i));
+    result->setLocal(num_locals + num_cellvars + i,
+                     Tuple::cast(Function::cast(*function).closure()).at(i));
   }
   return result;
 }
@@ -424,7 +422,7 @@ bool Thread::hasPendingException() { return !pending_exc_type_.isNoneType(); }
 
 bool Thread::hasPendingStopIteration() {
   return pending_exc_type_.isType() &&
-         RawType::cast(pending_exc_type_).builtinBase() ==
+         Type::cast(pending_exc_type_).builtinBase() ==
              LayoutId::kStopIteration;
 }
 
@@ -459,7 +457,7 @@ void Thread::ignorePendingException() {
   }
   fprintf(stderr, "ignore pending exception");
   if (pendingExceptionValue().isStr()) {
-    RawStr message = RawStr::cast(pendingExceptionValue());
+    RawStr message = Str::cast(pendingExceptionValue());
     word len = message.length();
     byte* buffer = new byte[len + 1];
     message.copyTo(buffer, len);
@@ -490,27 +488,27 @@ bool Thread::hasCaughtException() {
 }
 
 RawObject Thread::caughtExceptionType() {
-  return RawExceptionState::cast(caught_exc_stack_).type();
+  return ExceptionState::cast(caught_exc_stack_).type();
 }
 
 RawObject Thread::caughtExceptionValue() {
-  return RawExceptionState::cast(caught_exc_stack_).value();
+  return ExceptionState::cast(caught_exc_stack_).value();
 }
 
 RawObject Thread::caughtExceptionTraceback() {
-  return RawExceptionState::cast(caught_exc_stack_).traceback();
+  return ExceptionState::cast(caught_exc_stack_).traceback();
 }
 
 void Thread::setCaughtExceptionType(RawObject type) {
-  RawExceptionState::cast(caught_exc_stack_).setType(type);
+  ExceptionState::cast(caught_exc_stack_).setType(type);
 }
 
 void Thread::setCaughtExceptionValue(RawObject value) {
-  RawExceptionState::cast(caught_exc_stack_).setValue(value);
+  ExceptionState::cast(caught_exc_stack_).setValue(value);
 }
 
 void Thread::setCaughtExceptionTraceback(RawObject tb) {
-  RawExceptionState::cast(caught_exc_stack_).setTraceback(tb);
+  ExceptionState::cast(caught_exc_stack_).setTraceback(tb);
 }
 
 RawObject Thread::caughtExceptionState() { return caught_exc_stack_; }

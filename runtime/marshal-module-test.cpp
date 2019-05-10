@@ -17,7 +17,7 @@ TEST(MarshalModuleTest, LoadsReadsSet) {
   Bytes bytes(&scope, runtime.newBytesWithAll(set_bytes));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
   ASSERT_TRUE(obj.isSet());
-  EXPECT_EQ(RawSet::cast(*obj).numItems(), 0);
+  EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }
 
 TEST(MarshalModuleTest, LoadsIgnoresExtraBytesAtEnd) {
@@ -28,7 +28,7 @@ TEST(MarshalModuleTest, LoadsIgnoresExtraBytesAtEnd) {
   Bytes bytes(&scope, runtime.newBytesWithAll(set_bytes));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
   ASSERT_TRUE(obj.isSet());
-  EXPECT_EQ(RawSet::cast(*obj).numItems(), 0);
+  EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }
 
 }  // namespace testing

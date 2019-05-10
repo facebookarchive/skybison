@@ -397,7 +397,7 @@ TEST(ThreadTest, CallFunction) {
   callee_code.setArgcount(2);
   callee_code.setStacksize(1);
   callee_code.setConsts(runtime.newTuple(1));
-  RawTuple::cast(callee_code.consts()).atPut(0, runtime.newInt(2222));
+  Tuple::cast(callee_code.consts()).atPut(0, runtime.newInt(2222));
   const byte callee_bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   callee_code.setCode(runtime.newBytesWithAll(callee_bytecode));
 
@@ -1223,7 +1223,7 @@ class C:
   Object value(&scope, runtime.dictAt(thread, dict, key));
   ASSERT_TRUE(value.isValueCell());
 
-  Type cls(&scope, RawValueCell::cast(*value).value());
+  Type cls(&scope, ValueCell::cast(*value).value());
   ASSERT_TRUE(cls.name().isSmallStr());
   EXPECT_EQ(cls.name(), SmallStr::fromCStr("C"));
 
@@ -1255,7 +1255,7 @@ class C:
   Object cls_name(&scope, runtime.newStrFromCStr("C"));
   Object value(&scope, runtime.dictAt(thread, mod_dict, cls_name));
   ASSERT_TRUE(value.isValueCell());
-  Type cls(&scope, RawValueCell::cast(*value).value());
+  Type cls(&scope, ValueCell::cast(*value).value());
 
   // Check class MRO
   Tuple mro(&scope, cls.mro());
@@ -1275,13 +1275,13 @@ class C:
   ASSERT_TRUE(runtime.dictIncludes(thread, cls_dict, meth_name));
   value = runtime.dictAt(thread, cls_dict, meth_name);
   ASSERT_TRUE(value.isValueCell());
-  ASSERT_TRUE(RawValueCell::cast(*value).value().isFunction());
+  ASSERT_TRUE(ValueCell::cast(*value).value().isFunction());
 }
 
 static RawObject nativeExceptionTest(Thread* thread, Frame*, word) {
   HandleScope scope;
   Str msg(&scope,
-          RawStr::cast(thread->runtime()->newStrFromCStr("test exception")));
+          Str::cast(thread->runtime()->newStrFromCStr("test exception")));
   return thread->raise(LayoutId::kRuntimeError, *msg);
 }
 
@@ -1345,7 +1345,7 @@ static RawObject getMro(Runtime* runtime, const char* src,
   Object class_name(&scope, runtime->newStrFromCStr(desired_class));
 
   Object value(&scope, runtime->dictAt(thread, mod_dict, class_name));
-  Type cls(&scope, RawValueCell::cast(*value).value());
+  Type cls(&scope, ValueCell::cast(*value).value());
 
   return cls.mro();
 }
@@ -2917,7 +2917,7 @@ TEST(ThreadTest, PushExecFrameSetsMissingDunderBuiltins) {
   Str dunder_builtins_name(&scope, runtime.symbols()->DunderBuiltins());
   EXPECT_EQ(runtime.typeDictAt(thread, globals, dunder_builtins_name),
             builtins);
-  Object builtins_dict(&scope, RawModule::cast(*builtins).dict());
+  Object builtins_dict(&scope, Module::cast(*builtins).dict());
   EXPECT_EQ(frame, thread->currentFrame());
   EXPECT_EQ(frame->builtins(), builtins_dict);
 }

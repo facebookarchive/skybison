@@ -158,7 +158,7 @@ c = a + b
                    .isError());
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isList());
-  List list(&scope, RawList::cast(*c));
+  List list(&scope, List::cast(*c));
   EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
   EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
@@ -178,7 +178,7 @@ c = a + b
                    .isError());
   Object c(&scope, moduleAt(&runtime, "__main__", "c"));
   ASSERT_TRUE(c.isList());
-  List list(&scope, RawList::cast(*c));
+  List list(&scope, List::cast(*c));
   EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
   EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
@@ -1522,7 +1522,7 @@ TEST(ListBuiltinsTest, ExtendSet) {
   EXPECT_EQ(list.numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
-    sum -= RawSmallInt::cast(list.at(i)).value();
+    sum -= SmallInt::cast(list.at(i)).value();
   }
   ASSERT_EQ(sum, 0);
 }
@@ -1547,7 +1547,7 @@ TEST(ListBuiltinsTest, ExtendDict) {
   EXPECT_EQ(list.numItems(), 16);
 
   for (word i = 0; i < 16; i++) {
-    sum -= RawSmallInt::cast(list.at(i)).value();
+    sum -= SmallInt::cast(list.at(i)).value();
   }
   ASSERT_EQ(sum, 0);
 }
@@ -1686,7 +1686,7 @@ result.reverse()
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isList());
-  EXPECT_EQ(RawList::cast(*result).numItems(), 0);
+  EXPECT_EQ(List::cast(*result).numItems(), 0);
 }
 
 TEST(ListBuiltinsTest, ReverseOneElementListDoesNothing) {
@@ -1699,8 +1699,8 @@ result.reverse()
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isList());
-  EXPECT_EQ(RawList::cast(*result).numItems(), 1);
-  EXPECT_EQ(RawList::cast(*result).at(0), SmallInt::fromWord(2));
+  EXPECT_EQ(List::cast(*result).numItems(), 1);
+  EXPECT_EQ(List::cast(*result).at(0), SmallInt::fromWord(2));
 }
 
 TEST(ListBuiltinsTest, ReverseOddManyElementListReversesList) {

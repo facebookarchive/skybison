@@ -98,7 +98,7 @@ TEST(BytesBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
   Object other(&scope, runtime.newBytes(5, 'a'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   ASSERT_TRUE(eq.isBool());
-  EXPECT_TRUE(RawBool::cast(*eq).value());
+  EXPECT_TRUE(Bool::cast(*eq).value());
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
@@ -108,7 +108,7 @@ TEST(BytesBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
   Object other(&scope, runtime.newBytes(4, 'a'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   ASSERT_TRUE(eq.isBool());
-  EXPECT_FALSE(RawBool::cast(*eq).value());
+  EXPECT_FALSE(Bool::cast(*eq).value());
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
@@ -118,7 +118,7 @@ TEST(BytesBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
   Object other(&scope, runtime.newBytes(3, 'b'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   ASSERT_TRUE(eq.isBool());
-  EXPECT_FALSE(RawBool::cast(*eq).value());
+  EXPECT_FALSE(Bool::cast(*eq).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithTooFewArgsRaisesTypeError) {
@@ -162,7 +162,7 @@ TEST(BytesBuiltinsTest, DunderGeWithEqualBytesReturnsTrue) {
   Object other(&scope, runtime.newBytes(5, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
-  EXPECT_TRUE(RawBool::cast(*ge).value());
+  EXPECT_TRUE(Bool::cast(*ge).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
@@ -172,7 +172,7 @@ TEST(BytesBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(2, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
-  EXPECT_TRUE(RawBool::cast(*ge).value());
+  EXPECT_TRUE(Bool::cast(*ge).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
@@ -182,7 +182,7 @@ TEST(BytesBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(4, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
-  EXPECT_FALSE(RawBool::cast(*ge).value());
+  EXPECT_FALSE(Bool::cast(*ge).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyEarlierOtherReturnsTrue) {
@@ -192,7 +192,7 @@ TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyEarlierOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(3, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
-  EXPECT_TRUE(RawBool::cast(*ge).value());
+  EXPECT_TRUE(Bool::cast(*ge).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
@@ -202,7 +202,7 @@ TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(3, 'b'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
-  EXPECT_FALSE(RawBool::cast(*ge).value());
+  EXPECT_FALSE(Bool::cast(*ge).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaisesTypeError) {
@@ -330,7 +330,7 @@ TEST(BytesBuiltinsTest, DunderGtWithEqualBytesReturnsFalse) {
   Object other(&scope, runtime.newBytes(5, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
-  EXPECT_FALSE(RawBool::cast(*gt).value());
+  EXPECT_FALSE(Bool::cast(*gt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
@@ -340,7 +340,7 @@ TEST(BytesBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(2, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
-  EXPECT_TRUE(RawBool::cast(*gt).value());
+  EXPECT_TRUE(Bool::cast(*gt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
@@ -350,7 +350,7 @@ TEST(BytesBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(4, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
-  EXPECT_FALSE(RawBool::cast(*gt).value());
+  EXPECT_FALSE(Bool::cast(*gt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyEarlierOtherReturnsTrue) {
@@ -360,7 +360,7 @@ TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyEarlierOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(3, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
-  EXPECT_TRUE(RawBool::cast(*gt).value());
+  EXPECT_TRUE(Bool::cast(*gt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
@@ -370,7 +370,7 @@ TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(3, 'b'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
-  EXPECT_FALSE(RawBool::cast(*gt).value());
+  EXPECT_FALSE(Bool::cast(*gt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderHashReturnsSmallInt) {
@@ -447,7 +447,7 @@ TEST(BytesBuiltinsTest, DunderLeWithEqualBytesReturnsTrue) {
   Object other(&scope, runtime.newBytes(5, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
-  EXPECT_TRUE(RawBool::cast(*le).value());
+  EXPECT_TRUE(Bool::cast(*le).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
@@ -457,7 +457,7 @@ TEST(BytesBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(2, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
-  EXPECT_FALSE(RawBool::cast(*le).value());
+  EXPECT_FALSE(Bool::cast(*le).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
@@ -467,7 +467,7 @@ TEST(BytesBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(4, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
-  EXPECT_TRUE(RawBool::cast(*le).value());
+  EXPECT_TRUE(Bool::cast(*le).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyEarlierOtherReturnsFalse) {
@@ -477,7 +477,7 @@ TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyEarlierOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(3, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
-  EXPECT_FALSE(RawBool::cast(*le).value());
+  EXPECT_FALSE(Bool::cast(*le).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyLaterOtherReturnsTrue) {
@@ -487,7 +487,7 @@ TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyLaterOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(3, 'b'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
-  EXPECT_TRUE(RawBool::cast(*le).value());
+  EXPECT_TRUE(Bool::cast(*le).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLenWithTooFewArgsRaisesTypeError) {
@@ -570,7 +570,7 @@ TEST(BytesBuiltinsTest, DunderLtWithEqualBytesReturnsFalse) {
   Object other(&scope, runtime.newBytes(5, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
-  EXPECT_FALSE(RawBool::cast(*lt).value());
+  EXPECT_FALSE(Bool::cast(*lt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
@@ -580,7 +580,7 @@ TEST(BytesBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(2, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
-  EXPECT_FALSE(RawBool::cast(*lt).value());
+  EXPECT_FALSE(Bool::cast(*lt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
@@ -590,7 +590,7 @@ TEST(BytesBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(4, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
-  EXPECT_TRUE(RawBool::cast(*lt).value());
+  EXPECT_TRUE(Bool::cast(*lt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyEarlierOtherReturnsFalse) {
@@ -600,7 +600,7 @@ TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyEarlierOtherReturnsFalse) {
   Object other(&scope, runtime.newBytes(3, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
-  EXPECT_FALSE(RawBool::cast(*lt).value());
+  EXPECT_FALSE(Bool::cast(*lt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
@@ -610,7 +610,7 @@ TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
   Object other(&scope, runtime.newBytes(3, 'b'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
-  EXPECT_TRUE(RawBool::cast(*lt).value());
+  EXPECT_TRUE(Bool::cast(*lt).value());
 }
 
 TEST(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
@@ -803,7 +803,7 @@ TEST(BytesBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
   Object other(&scope, runtime.newBytes(5, 'a'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   ASSERT_TRUE(ne.isBool());
-  EXPECT_FALSE(RawBool::cast(*ne).value());
+  EXPECT_FALSE(Bool::cast(*ne).value());
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
@@ -813,7 +813,7 @@ TEST(BytesBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
   Object other(&scope, runtime.newBytes(4, 'a'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   ASSERT_TRUE(ne.isBool());
-  EXPECT_TRUE(RawBool::cast(*ne).value());
+  EXPECT_TRUE(Bool::cast(*ne).value());
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
@@ -823,7 +823,7 @@ TEST(BytesBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
   Object other(&scope, runtime.newBytes(3, 'b'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   ASSERT_TRUE(ne.isBool());
-  EXPECT_TRUE(RawBool::cast(*ne).value());
+  EXPECT_TRUE(Bool::cast(*ne).value());
 }
 
 TEST(BytesBuiltinsTest, DunderNewWithoutSourceWithEncodingRaisesTypeError) {

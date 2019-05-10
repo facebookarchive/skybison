@@ -301,7 +301,7 @@ RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError, "signed must be bool");
   }
   return toBytesImpl(thread, self, length, byteorder,
-                     RawBool::cast(args.get(3)).value());
+                     Bool::cast(args.get(3)).value());
 }
 
 RawObject IntBuiltins::dunderLt(Thread* t, Frame* frame, word nargs) {

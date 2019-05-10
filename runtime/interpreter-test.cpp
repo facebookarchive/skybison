@@ -2529,13 +2529,13 @@ def bar(): pass
                    .isError());
   Object foo(&scope, testing::moduleAt(&runtime, "__main__", "foo"));
   ASSERT_TRUE(foo.isFunction());
-  Object foo_docstring(&scope, RawFunction::cast(*foo).doc());
+  Object foo_docstring(&scope, Function::cast(*foo).doc());
   ASSERT_TRUE(foo_docstring.isStr());
-  EXPECT_TRUE(RawStr::cast(*foo_docstring).equalsCStr("This is a docstring"));
+  EXPECT_TRUE(Str::cast(*foo_docstring).equalsCStr("This is a docstring"));
 
   Object bar(&scope, testing::moduleAt(&runtime, "__main__", "bar"));
   ASSERT_TRUE(bar.isFunction());
-  Object bar_docstring(&scope, RawFunction::cast(*bar).doc());
+  Object bar_docstring(&scope, Function::cast(*bar).doc());
   EXPECT_TRUE(bar_docstring.isNoneType());
 }
 

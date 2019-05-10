@@ -68,7 +68,7 @@ TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isBool());
-  EXPECT_TRUE(RawBool::cast(*result).value());
+  EXPECT_TRUE(Bool::cast(*result).value());
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
@@ -78,7 +78,7 @@ TEST(DictBuiltinsTest, DunderContainsWithNonexistentKeyReturnsFalse) {
   HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isBool());
-  EXPECT_FALSE(RawBool::cast(*result).value());
+  EXPECT_FALSE(Bool::cast(*result).value());
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithUnhashableTypeRaisesTypeError) {
@@ -270,7 +270,7 @@ d = foo()
   EXPECT_TRUE(result1.isNoneType());
   Object result2(&scope, runtime.dictAt(thread, dict, key));
   ASSERT_TRUE(result2.isStr());
-  EXPECT_EQ(RawStr::cast(*result2), *value);
+  EXPECT_EQ(Str::cast(*result2), *value);
 }
 
 TEST(DictBuiltinsTest, DunderIterReturnsDictKeyIter) {

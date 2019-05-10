@@ -40,7 +40,7 @@ TEST(TypeBuiltinTest, DunderBasesOnObjectReturnsEmptyTuple) {
   Object dunder_bases(&scope, runtime.newStrFromCStr("__bases__"));
   Object result_obj(&scope, runtime.attributeAt(thread, type, dunder_bases));
   ASSERT_TRUE(result_obj.isTuple());
-  EXPECT_EQ(RawTuple::cast(*result_obj).length(), 0);
+  EXPECT_EQ(Tuple::cast(*result_obj).length(), 0);
 }
 
 TEST(TypeBuiltinsTest, DunderBasesOnBuiltinTypeReturnsTuple) {
@@ -283,8 +283,8 @@ b = type.__new__(type, "hello");
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
   Type b(&scope, moduleAt(&runtime, "__main__", "b"));
 
-  EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kInt);
-  EXPECT_EQ(RawLayout::cast(b.instanceLayout()).id(), LayoutId::kStr);
+  EXPECT_EQ(Layout::cast(a.instanceLayout()).id(), LayoutId::kInt);
+  EXPECT_EQ(Layout::cast(b.instanceLayout()).id(), LayoutId::kStr);
 }
 
 TEST(TypeBuiltinsTest, DunderNewWithOneMetaclassArgReturnsType) {
@@ -297,7 +297,7 @@ a = type.__new__(type, Foo);
 )")
                    .isError());
   Type a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_EQ(RawLayout::cast(a.instanceLayout()).id(), LayoutId::kType);
+  EXPECT_EQ(Layout::cast(a.instanceLayout()).id(), LayoutId::kType);
 }
 
 TEST(TypeBuiltinsTest, DunderSetattrSetsAttribute) {
@@ -348,7 +348,7 @@ TEST(TypeBuiltinsTest, TypeHasDunderNameAttribute) {
       runFromCStr(&runtime, "result = str.__class__.__name__").isError());
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   ASSERT_TRUE(result.isStr());
-  EXPECT_TRUE(isStrEqualsCStr(RawStr::cast(*result), "type"));
+  EXPECT_TRUE(isStrEqualsCStr(Str::cast(*result), "type"));
 }
 
 TEST(TypeBuiltinsTest, TypeHasDunderFlagsAttribute) {

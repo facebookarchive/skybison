@@ -595,8 +595,7 @@ TEST(IntBuiltinsTest, DunderCeilAliasesDunderInt) {
   Object dint_obj(&scope, runtime.typeDictAt(thread, dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *ceil_obj);
-  EXPECT_EQ(RawCode::cast(ceil.code()).code(),
-            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(Code::cast(ceil.code()).code(), Code::cast(dint.code()).code());
   EXPECT_EQ(ceil.entry(), dint.entry());
   EXPECT_EQ(ceil.entryKw(), dint.entryKw());
   EXPECT_EQ(ceil.entryEx(), dint.entryEx());
@@ -616,8 +615,7 @@ TEST(IntBuiltinsTest, DunderFloorAliasesDunderInt) {
   Object dint_obj(&scope, runtime.typeDictAt(thread, dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *floor_obj);
-  EXPECT_EQ(RawCode::cast(floor.code()).code(),
-            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(Code::cast(floor.code()).code(), Code::cast(dint.code()).code());
   EXPECT_EQ(floor.entry(), dint.entry());
   EXPECT_EQ(floor.entryKw(), dint.entryKw());
   EXPECT_EQ(floor.entryEx(), dint.entryEx());
@@ -1198,12 +1196,12 @@ TEST(IntBuiltinsTest, DunderFloatWithBoolReturnsFloat) {
   Object a(&scope, Bool::trueObj());
   Object a_float(&scope, runBuiltin(IntBuiltins::dunderFloat, a));
   ASSERT_TRUE(a_float.isFloat());
-  EXPECT_EQ(RawFloat::cast(*a_float).value(), 1.0);
+  EXPECT_EQ(Float::cast(*a_float).value(), 1.0);
 
   Object b(&scope, Bool::falseObj());
   Object b_float(&scope, runBuiltin(IntBuiltins::dunderFloat, b));
   ASSERT_TRUE(b_float.isFloat());
-  EXPECT_EQ(RawFloat::cast(*b_float).value(), 0.0);
+  EXPECT_EQ(Float::cast(*b_float).value(), 0.0);
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithSmallIntReturnsFloat) {
@@ -1213,7 +1211,7 @@ TEST(IntBuiltinsTest, DunderFloatWithSmallIntReturnsFloat) {
   Int num(&scope, RawSmallInt::fromWord(-7));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(), -7.0);
+  EXPECT_EQ(Float::cast(*result).value(), -7.0);
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
@@ -1224,7 +1222,7 @@ TEST(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(), static_cast<double>(kMinWord));
+  EXPECT_EQ(Float::cast(*result).value(), static_cast<double>(kMinWord));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
@@ -1235,7 +1233,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
+  EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("0x1.29ef685b3f6fbp+84", nullptr));
 }
 
@@ -1247,7 +1245,7 @@ TEST(IntBuiltinsTest, DunderFloatWithNegativeLargeIntReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
+  EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("-0x1.339bb95e4de58p+126", nullptr));
 }
 
@@ -1260,8 +1258,7 @@ TEST(IntBuiltinsTest,
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
-            std::strtod("-0x1.234p240", nullptr));
+  EXPECT_EQ(Float::cast(*result).value(), std::strtod("-0x1.234p240", nullptr));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownReturnsFloat) {
@@ -1275,7 +1272,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("0x1.p116", nullptr));
+  EXPECT_EQ(Float::cast(*result).value(), std::strtod("0x1.p116", nullptr));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
@@ -1287,7 +1284,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownToEvenReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("0x1.p64", nullptr));
+  EXPECT_EQ(Float::cast(*result).value(), std::strtod("0x1.p64", nullptr));
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
@@ -1300,7 +1297,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
+  EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("0x1.0000000000002p116", nullptr));
 }
 
@@ -1314,7 +1311,7 @@ TEST(IntBuiltinsTest,
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("-0x1.p180", nullptr));
+  EXPECT_EQ(Float::cast(*result).value(), std::strtod("-0x1.p180", nullptr));
 }
 
 TEST(IntBuiltinsTest,
@@ -1328,7 +1325,7 @@ TEST(IntBuiltinsTest,
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
+  EXPECT_EQ(Float::cast(*result).value(),
             std::strtod("-0x1.0000000000002p180", nullptr));
 }
 
@@ -1343,7 +1340,7 @@ TEST(IntBuiltinsTest,
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(), std::strtod("0x1.p117", nullptr));
+  EXPECT_EQ(Float::cast(*result).value(), std::strtod("0x1.p117", nullptr));
 }
 
 static RawObject largestIntBeforeFloatOverflow(Runtime* runtime) {
@@ -1371,8 +1368,7 @@ TEST(IntBuiltinsTest,
   Int num(&scope, largestIntBeforeFloatOverflow(&runtime));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(RawFloat::cast(*result).value(),
-            std::numeric_limits<double>::max());
+  EXPECT_EQ(Float::cast(*result).value(), std::numeric_limits<double>::max());
 }
 
 TEST(IntBuiltinsTest, DunderFloatOverflowRaisesOverflowError) {
@@ -1600,8 +1596,7 @@ TEST(IntBuiltinsTest, DunderIndexAliasesDunderInt) {
   Object dint_obj(&scope, runtime.typeDictAt(thread, dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *index_obj);
-  EXPECT_EQ(RawCode::cast(index.code()).code(),
-            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(Code::cast(index.code()).code(), Code::cast(dint.code()).code());
   EXPECT_EQ(index.entry(), dint.entry());
   EXPECT_EQ(index.entryKw(), dint.entryKw());
   EXPECT_EQ(index.entryEx(), dint.entryEx());
@@ -2308,8 +2303,7 @@ TEST(IntBuiltinsTest, DunderPosAliasesDunderInt) {
   Object dint_obj(&scope, runtime.typeDictAt(thread, dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *pos_obj);
-  EXPECT_EQ(RawCode::cast(pos.code()).code(),
-            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(Code::cast(pos.code()).code(), Code::cast(dint.code()).code());
   EXPECT_EQ(pos.entry(), dint.entry());
   EXPECT_EQ(pos.entryKw(), dint.entryKw());
   EXPECT_EQ(pos.entryEx(), dint.entryEx());
@@ -2407,8 +2401,7 @@ TEST(IntBuiltinsTest, DunderRoundAliasesDunderInt) {
   Object dint_obj(&scope, runtime.typeDictAt(thread, dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *round_obj);
-  EXPECT_EQ(RawCode::cast(round.code()).code(),
-            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(Code::cast(round.code()).code(), Code::cast(dint.code()).code());
   EXPECT_EQ(round.entry(), dint.entry());
   EXPECT_EQ(round.entryKw(), dint.entryKw());
   EXPECT_EQ(round.entryEx(), dint.entryEx());
@@ -2428,8 +2421,7 @@ TEST(IntBuiltinsTest, DunderTruncAliasesDunderInt) {
   Object dint_obj(&scope, runtime.typeDictAt(thread, dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *trunc_obj);
-  EXPECT_EQ(RawCode::cast(trunc.code()).code(),
-            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(Code::cast(trunc.code()).code(), Code::cast(dint.code()).code());
   EXPECT_EQ(trunc.entry(), dint.entry());
   EXPECT_EQ(trunc.entryKw(), dint.entryKw());
   EXPECT_EQ(trunc.entryEx(), dint.entryEx());
@@ -3025,8 +3017,7 @@ TEST(IntBuiltinsTest, DunderStrAliasesDunderRepr) {
   Object repr_obj(&scope, runtime.typeDictAt(thread, dict, repr_name));
   ASSERT_TRUE(repr_obj.isFunction());
   Function repr(&scope, *str_obj);
-  EXPECT_EQ(RawCode::cast(str.code()).code(),
-            RawCode::cast(repr.code()).code());
+  EXPECT_EQ(Code::cast(str.code()).code(), Code::cast(repr.code()).code());
   EXPECT_EQ(str.entry(), repr.entry());
   EXPECT_EQ(str.entryKw(), repr.entryKw());
   EXPECT_EQ(str.entryEx(), repr.entryEx());
@@ -3694,8 +3685,8 @@ TEST(IntBuiltinsTest, ConjugateAliasesDunderInt) {
   Object dint_obj(&scope, runtime.typeDictAt(thread, dict, dint_name));
   ASSERT_TRUE(dint_obj.isFunction());
   Function dint(&scope, *conjugate_obj);
-  EXPECT_EQ(RawCode::cast(conjugate.code()).code(),
-            RawCode::cast(dint.code()).code());
+  EXPECT_EQ(Code::cast(conjugate.code()).code(),
+            Code::cast(dint.code()).code());
   EXPECT_EQ(conjugate.entry(), dint.entry());
   EXPECT_EQ(conjugate.entryKw(), dint.entryKw());
   EXPECT_EQ(conjugate.entryEx(), dint.entryEx());

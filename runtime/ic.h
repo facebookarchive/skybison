@@ -43,8 +43,7 @@ void icRewriteBytecode(Thread* thread, const Function& function);
 // Returns the original argument of bytecode operations that were rewritten by
 // `rewriteBytecode()`.
 inline word icOriginalArg(const Function& function, word index) {
-  return RawSmallInt::cast(
-             RawTuple::cast(function.originalArguments()).at(index))
+  return SmallInt::cast(Tuple::cast(function.originalArguments()).at(index))
       .value();
 }
 

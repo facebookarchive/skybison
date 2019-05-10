@@ -55,7 +55,7 @@ TEST(HeapTest, AllocateBigLargeInt) {
   HandleScope scope;
   Object result(&scope, runtime.heap()->createLargeInt(100000));
   ASSERT_TRUE(result.isLargeInt());
-  EXPECT_EQ(RawLargeInt::cast(*result).numDigits(), 100000);
+  EXPECT_EQ(LargeInt::cast(*result).numDigits(), 100000);
 }
 
 TEST(HeapTest, AllocateBigInstance) {
@@ -64,7 +64,7 @@ TEST(HeapTest, AllocateBigInstance) {
   Layout layout(&scope, runtime.layoutCreateEmpty(Thread::current()));
   Object result(&scope, runtime.heap()->createInstance(layout.id(), 100000));
   ASSERT_TRUE(result.isInstance());
-  EXPECT_EQ(RawInstance::cast(*result).headerCountOrOverflow(), 100000);
+  EXPECT_EQ(Instance::cast(*result).headerCountOrOverflow(), 100000);
 }
 
 }  // namespace python

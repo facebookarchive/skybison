@@ -22,7 +22,7 @@ RawObject RefBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'__call__' requires a 'ref' object");
   }
-  return RawWeakRef::cast(*self).referent();
+  return WeakRef::cast(*self).referent();
 }
 
 RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {

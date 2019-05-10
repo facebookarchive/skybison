@@ -45,7 +45,7 @@ TEST(ScavengerTest, ClearWeakReference) {
     EXPECT_EQ(ref_inner.referent(), *array);
   }
   runtime.collectGarbage();
-  EXPECT_EQ(RawWeakRef::cast(*ref).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref).referent(), NoneType::object());
 }
 
 TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
@@ -71,19 +71,19 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   }
 
   // Make sure the weak references point to the expected referents.
-  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0)).referent());
-  EXPECT_EQ(strongrefs.at(1), RawWeakRef::cast(weakrefs.at(1)).referent());
-  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2)).referent());
-  EXPECT_EQ(strongrefs.at(3), RawWeakRef::cast(weakrefs.at(3)).referent());
+  EXPECT_EQ(strongrefs.at(0), WeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(strongrefs.at(1), WeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(strongrefs.at(2), WeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(strongrefs.at(3), WeakRef::cast(weakrefs.at(3)).referent());
 
   // Now do a garbage collection.
   runtime.collectGarbage();
 
   // Make sure that the weak references still point to the expected referents.
-  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0)).referent());
-  EXPECT_EQ(strongrefs.at(1), RawWeakRef::cast(weakrefs.at(1)).referent());
-  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2)).referent());
-  EXPECT_EQ(strongrefs.at(3), RawWeakRef::cast(weakrefs.at(3)).referent());
+  EXPECT_EQ(strongrefs.at(0), WeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(strongrefs.at(1), WeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(strongrefs.at(2), WeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(strongrefs.at(3), WeakRef::cast(weakrefs.at(3)).referent());
 
   // Clear the odd indexed strong references.
   strongrefs.atPut(1, NoneType::object());
@@ -95,10 +95,10 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
 
   // Check that the strongly referenced referents are preserved and the weakly
   // referenced referents are now cleared.
-  EXPECT_EQ(strongrefs.at(0), RawWeakRef::cast(weakrefs.at(0)).referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(1)).referent());
-  EXPECT_EQ(strongrefs.at(2), RawWeakRef::cast(weakrefs.at(2)).referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(3)).referent());
+  EXPECT_EQ(strongrefs.at(0), WeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(strongrefs.at(2), WeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs.at(3)).referent());
 
   // Clear the even indexed strong references.
   strongrefs.atPut(0, NoneType::object());
@@ -109,10 +109,10 @@ TEST(ScavengerTest, PreserveSomeClearSomeReferents) {
   runtime.collectGarbage();
 
   // Check that all of the referents are cleared.
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(0)).referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(1)).referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(2)).referent());
-  EXPECT_EQ(NoneType::object(), RawWeakRef::cast(weakrefs.at(3)).referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs.at(0)).referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs.at(1)).referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs.at(2)).referent());
+  EXPECT_EQ(NoneType::object(), WeakRef::cast(weakrefs.at(3)).referent());
 }
 
 TEST(ScavengerTest, BaseCallback) {
@@ -156,10 +156,10 @@ def g(ref, c=4):
   }
   runtime.collectGarbage();
 
-  EXPECT_EQ(RawWeakRef::cast(*ref1).referent(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref1).callback(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref1).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref1).callback(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   SmallInt b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a.value(), 3);
@@ -206,8 +206,8 @@ def g(ref, c=4):
 
   EXPECT_EQ(ref1.referent(), *array1);
   EXPECT_EQ(ref1.callback(), *func_f);
-  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   SmallInt b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a.value(), 1);
@@ -255,10 +255,10 @@ def g(ref, b=2):
   }
   runtime.collectGarbage();
 
-  EXPECT_EQ(RawWeakRef::cast(*ref1).referent(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref1).callback(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref1).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref1).callback(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   EXPECT_EQ(a.value(), 2);
 }
@@ -312,10 +312,10 @@ def g(ref, c=4):
   EXPECT_EQ(moduleAt(&runtime, main, "callback_ran"), Bool::trueObj());
   EXPECT_EQ(moduleAt(&runtime, main, "callback_returned"), Bool::falseObj());
 
-  EXPECT_EQ(RawWeakRef::cast(*ref1).referent(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref1).callback(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref2).referent(), NoneType::object());
-  EXPECT_EQ(RawWeakRef::cast(*ref2).callback(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref1).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref1).callback(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*ref2).callback(), NoneType::object());
   SmallInt a(&scope, moduleAt(&runtime, main, "a"));
   SmallInt b(&scope, moduleAt(&runtime, main, "b"));
   EXPECT_EQ(a.value(), 1);

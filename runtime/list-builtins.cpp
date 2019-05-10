@@ -156,7 +156,7 @@ RawObject listSort(Thread* thread, const List& list) {
       if (compare_result.isError()) {
         return *compare_result;
       }
-      if (!RawBool::cast(*compare_result).value()) {
+      if (!Bool::cast(*compare_result).value()) {
         break;
       }
       list.atPut(j + 1, *list_j);
@@ -362,7 +362,7 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kList);
   }
   if (other.isSmallInt()) {
-    word ntimes = RawSmallInt::cast(other).value();
+    word ntimes = SmallInt::cast(other).value();
     List list(&scope, *self);
     return listReplicate(thread, list, ntimes);
   }
@@ -390,7 +390,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   }
   word index = length - 1;
   if (!args.get(1).isUnbound()) {
-    index = RawSmallInt::cast(args.get(1)).value();
+    index = SmallInt::cast(args.get(1)).value();
     if (index < 0) index += length;
   }
   if (index < 0 || index >= length) {
@@ -465,7 +465,7 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   word length = list.numItems();
   RawObject index = args.get(1);
   if (index.isSmallInt()) {
-    word idx = RawSmallInt::cast(index).value();
+    word idx = SmallInt::cast(index).value();
     if (idx < 0) {
       idx += length;
     }
@@ -666,7 +666,7 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
   Object src(&scope, args.get(2));
 
   if (index.isSmallInt()) {
-    word idx = RawSmallInt::cast(*index).value();
+    word idx = SmallInt::cast(*index).value();
     word length = list.numItems();
     if (idx < 0) {
       idx += length;
@@ -700,7 +700,7 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   word length = list.numItems();
   RawObject index = args.get(1);
   if (index.isSmallInt()) {
-    word idx = RawSmallInt::cast(index).value();
+    word idx = SmallInt::cast(index).value();
     if (idx < 0) {
       idx += length;
     }

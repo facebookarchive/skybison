@@ -919,7 +919,7 @@ PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
     return -1;
   }
   DCHECK(result.isBool(), "result of __contains__ should be bool");
-  return RawBool::cast(*result).value();
+  return Bool::cast(*result).value();
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_CopyCharacters(PyObject*, Py_ssize_t, PyObject*,
@@ -1752,7 +1752,7 @@ static PyObject* decodeUnicodeToString(Thread* thread, const void* src,
   ByteArray dst(&scope, runtime->newByteArray());
   runtime->byteArrayEnsureCapacity(thread, dst, size);
   for (word i = 0; i < size; ++i) {
-    RawStr str = RawStr::cast(SmallStr::fromCodePoint(cp[i]));
+    RawStr str = Str::cast(SmallStr::fromCodePoint(cp[i]));
     for (word j = 0; j < str.length(); ++j) {
       byteArrayAdd(thread, runtime, dst, str.charAt(j));
     }

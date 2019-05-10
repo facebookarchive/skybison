@@ -195,7 +195,7 @@ def test(a, b):
   // Create an instance of D
   Object type_d(&scope, moduleAt(&runtime, main, "D"));
   ASSERT_TRUE(type_d.isType());
-  Layout layout(&scope, RawType::cast(*type_d).instanceLayout());
+  Layout layout(&scope, Type::cast(*type_d).instanceLayout());
   Object instance(&scope, runtime.newInstance(layout));
 
   // Fetch the test function
@@ -768,7 +768,7 @@ class C(int, float, metaclass=Meta, hello="world"):
   Object x(&scope, runtime.newStrFromCStr("x"));
   EXPECT_TRUE(runtime.dictIncludes(thread, c_namespace, x));
   ASSERT_TRUE(c.at(4).isTuple());
-  EXPECT_EQ(RawTuple::cast(c.at(4)).length(), 0);
+  EXPECT_EQ(Tuple::cast(c.at(4)).length(), 0);
   Object hello(&scope, runtime.newStrFromCStr("hello"));
   ASSERT_TRUE(c.at(5).isDict());
   Dict c_kwargs(&scope, c.at(5));
@@ -2120,12 +2120,12 @@ except StopIteration:
   HandleScope scope;
   Object res1(&scope, moduleAt(&runtime, "__main__", "res1"));
   ASSERT_TRUE(res1.isTuple());
-  EXPECT_EQ(RawTuple::cast(*res1).at(0), SmallInt::fromWord(0));
-  EXPECT_EQ(RawTuple::cast(*res1).at(1), SmallInt::fromWord(7));
+  EXPECT_EQ(Tuple::cast(*res1).at(0), SmallInt::fromWord(0));
+  EXPECT_EQ(Tuple::cast(*res1).at(1), SmallInt::fromWord(7));
   Object res2(&scope, moduleAt(&runtime, "__main__", "res2"));
   ASSERT_TRUE(res2.isTuple());
-  EXPECT_EQ(RawTuple::cast(*res2).at(0), SmallInt::fromWord(1));
-  EXPECT_EQ(RawTuple::cast(*res2).at(1), SmallInt::fromWord(3));
+  EXPECT_EQ(Tuple::cast(*res2).at(0), SmallInt::fromWord(1));
+  EXPECT_EQ(Tuple::cast(*res2).at(1), SmallInt::fromWord(3));
   EXPECT_EQ(moduleAt(&runtime, "__main__", "exhausted"), Bool::trueObj());
 }
 

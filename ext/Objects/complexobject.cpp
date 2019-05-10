@@ -109,7 +109,7 @@ PY_EXPORT double PyComplex_RealAsDouble(PyObject* pycomplex) {
   if (!runtime->isInstanceOfComplex(*obj)) {
     Object float_or_err(&scope, asFloatObject(thread, obj));
     if (float_or_err.isError()) return -1;
-    return RawFloat::cast(*float_or_err).value();
+    return Float::cast(*float_or_err).value();
   }
   // TODO(T36619862): strict subclass of complex
   Complex comp(&scope, *obj);

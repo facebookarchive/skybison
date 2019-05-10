@@ -619,8 +619,8 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
           return thread->raiseWithFmt(LayoutId::kTypeError,
                                       "Argument mismatch");
         }
-        len += snprintf(nullptr, 0, "%ld",
-                        RawInt::cast(args.at(arg_idx)).asWord());
+        len +=
+            snprintf(nullptr, 0, "%ld", Int::cast(args.at(arg_idx)).asWord());
         arg_idx++;
       } break;
       case 'g': {
@@ -629,8 +629,8 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
           return thread->raiseWithFmt(LayoutId::kTypeError,
                                       "Argument mismatch");
         }
-        len += snprintf(nullptr, 0, "%g",
-                        RawFloat::cast(args.at(arg_idx)).value());
+        len +=
+            snprintf(nullptr, 0, "%g", Float::cast(args.at(arg_idx)).value());
         arg_idx++;
       } break;
       case 's': {
@@ -639,7 +639,7 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
           return thread->raiseWithFmt(LayoutId::kTypeError,
                                       "Argument mismatch");
         }
-        len += RawStr::cast(args.at(arg_idx)).length();
+        len += Str::cast(args.at(arg_idx)).length();
         arg_idx++;
       } break;
       case '%':
@@ -668,15 +668,15 @@ static void stringFormatToBuffer(const Str& fmt, const Tuple& args, char* dst,
     }
     switch (fmt.charAt(++fmt_idx)) {
       case 'd': {
-        word value = RawInt::cast(args.at(arg_idx++)).asWord();
+        word value = Int::cast(args.at(arg_idx++)).asWord();
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%ld", value);
       } break;
       case 'g': {
-        double value = RawFloat::cast(args.at(arg_idx++)).value();
+        double value = Float::cast(args.at(arg_idx++)).value();
         dst_idx += snprintf(&dst[dst_idx], len - dst_idx + 1, "%g", value);
       } break;
       case 's': {
-        RawStr value = RawStr::cast(args.at(arg_idx));
+        RawStr value = Str::cast(args.at(arg_idx));
         value.copyTo(reinterpret_cast<byte*>(&dst[dst_idx]), value.length());
         dst_idx += value.length();
         arg_idx++;
@@ -698,7 +698,7 @@ RawObject StrBuiltins::strFormat(Thread* thread, const Str& fmt,
   }
   RawObject raw_len = strFormatBufferLength(thread, fmt, args);
   if (raw_len.isError()) return raw_len;
-  word len = RawSmallInt::cast(raw_len).value();
+  word len = SmallInt::cast(raw_len).value();
   char* dst = static_cast<char*>(std::malloc(len + 1));
   CHECK(dst != nullptr, "Buffer allocation failure");
   stringFormatToBuffer(fmt, args, dst, len);

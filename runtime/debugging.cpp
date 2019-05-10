@@ -66,7 +66,7 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
      << "  kwdefaults: " << function.kwDefaults() << '\n'
      << "  code: ";
   if (function.code().isCode()) {
-    dumpExtendedCode(os, RawCode::cast(function.code()), "  ");
+    dumpExtendedCode(os, Code::cast(function.code()), "  ");
     if (function.rewrittenBytecode().isBytes()) {
       Bytes bytecode(&scope, function.rewrittenBytecode());
       os << "  Rewritten bytecode:\n";
@@ -82,9 +82,9 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
   LayoutId layout = value.layoutId();
   switch (layout) {
     case LayoutId::kCode:
-      return dumpExtendedCode(os, RawCode::cast(value), "");
+      return dumpExtendedCode(os, Code::cast(value), "");
     case LayoutId::kFunction:
-      return dumpExtendedFunction(os, RawFunction::cast(value));
+      return dumpExtendedFunction(os, Function::cast(value));
     default:
       return os << value;
   }
@@ -107,9 +107,8 @@ std::ostream& operator<<(std::ostream& os, RawBool value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawBoundMethod value) {
-  return os << "<bound_method "
-            << RawFunction::cast(value.function()).qualname() << ", "
-            << value.self() << '>';
+  return os << "<bound_method " << Function::cast(value.function()).qualname()
+            << ", " << value.self() << '>';
 }
 
 std::ostream& operator<<(std::ostream& os, RawBytes value) {
@@ -175,9 +174,9 @@ std::ostream& operator<<(std::ostream& os, RawFunction value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawInt value) {
-  if (value.isSmallInt()) return os << RawSmallInt::cast(value);
-  if (value.isBool()) return os << RawBool::cast(value);
-  return os << RawLargeInt::cast(value);
+  if (value.isSmallInt()) return os << SmallInt::cast(value);
+  if (value.isBool()) return os << Bool::cast(value);
+  return os << LargeInt::cast(value);
 }
 
 std::ostream& operator<<(std::ostream& os, RawLargeInt value) {
@@ -247,41 +246,41 @@ std::ostream& operator<<(std::ostream& os, RawObject value) {
   LayoutId layout = value.layoutId();
   switch (layout) {
     case LayoutId::kBool:
-      return os << RawBool::cast(value);
+      return os << Bool::cast(value);
     case LayoutId::kBoundMethod:
-      return os << RawBoundMethod::cast(value);
+      return os << BoundMethod::cast(value);
     case LayoutId::kCode:
-      return os << RawCode::cast(value);
+      return os << Code::cast(value);
     case LayoutId::kDict:
-      return os << RawDict::cast(value);
+      return os << Dict::cast(value);
     case LayoutId::kError:
-      return os << RawError::cast(value);
+      return os << Error::cast(value);
     case LayoutId::kFloat:
-      return os << RawFloat::cast(value);
+      return os << Float::cast(value);
     case LayoutId::kFunction:
-      return os << RawFunction::cast(value);
+      return os << Function::cast(value);
     case LayoutId::kLargeBytes:
-      return os << RawBytes::cast(value);
+      return os << Bytes::cast(value);
     case LayoutId::kLargeInt:
-      return os << RawLargeInt::cast(value);
+      return os << LargeInt::cast(value);
     case LayoutId::kLargeStr:
-      return os << RawLargeStr::cast(value);
+      return os << LargeStr::cast(value);
     case LayoutId::kList:
-      return os << RawList::cast(value);
+      return os << List::cast(value);
     case LayoutId::kModule:
-      return os << RawModule::cast(value);
+      return os << Module::cast(value);
     case LayoutId::kNoneType:
-      return os << RawNoneType::cast(value);
+      return os << NoneType::cast(value);
     case LayoutId::kSmallBytes:
-      return os << RawBytes::cast(value);
+      return os << Bytes::cast(value);
     case LayoutId::kSmallInt:
-      return os << RawSmallInt::cast(value);
+      return os << SmallInt::cast(value);
     case LayoutId::kSmallStr:
-      return os << RawSmallStr::cast(value);
+      return os << SmallStr::cast(value);
     case LayoutId::kTuple:
-      return os << RawTuple::cast(value);
+      return os << Tuple::cast(value);
     case LayoutId::kType:
-      return os << RawType::cast(value);
+      return os << Type::cast(value);
     default:
       return printObjectGeneric(os, value);
   }
@@ -304,8 +303,8 @@ std::ostream& operator<<(std::ostream& os, RawSmallStr value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawStr value) {
-  if (value.isSmallStr()) return os << RawSmallStr::cast(value);
-  return os << RawLargeStr::cast(value);
+  if (value.isSmallStr()) return os << SmallStr::cast(value);
+  return os << LargeStr::cast(value);
 }
 
 std::ostream& operator<<(std::ostream& os, RawTuple value) {
@@ -331,7 +330,7 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   Tuple var_names(&scope, thread->runtime()->newTuple(0));
   Object code_obj(&scope, frame->code());
   if (code_obj.isCode()) {
-    Object names_raw(&scope, RawCode::cast(*code_obj).varnames());
+    Object names_raw(&scope, Code::cast(*code_obj).varnames());
     if (names_raw.isTuple()) {
       var_names = *names_raw;
     }

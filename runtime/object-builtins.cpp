@@ -46,7 +46,7 @@ static RawObject instanceGetAttributeSetLocation(Thread* thread,
                   runtime->layoutGetOverflowDict(thread, object, layout));
     Object obj(&scope, runtime->dictAt(thread, overflow, name_str));
     if (obj.isValueCell()) {
-      obj = RawValueCell::cast(*obj).value();
+      obj = ValueCell::cast(*obj).value();
     }
     return *obj;
   }

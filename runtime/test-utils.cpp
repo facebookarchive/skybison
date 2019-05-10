@@ -100,7 +100,7 @@ template <typename T1, typename T2>
 
       case Value::Type::Bool: {
         if (!actual_item.isBool()) return bad_type("bool");
-        auto const actual_val = RawBool::cast(*actual_item) == Bool::trueObj();
+        auto const actual_val = Bool::cast(*actual_item) == Bool::trueObj();
         auto const expected_val = expected_item.boolVal();
         if (actual_val != expected_val) {
           return badListValue(actual_expr, i, actual_val ? "True" : "False",
@@ -123,7 +123,7 @@ template <typename T1, typename T2>
 
       case Value::Type::Float: {
         if (!actual_item.isFloat()) return bad_type("float");
-        auto const actual_val = RawFloat::cast(*actual_item).value();
+        auto const actual_val = Float::cast(*actual_item).value();
         auto const expected_val = expected_item.floatVal();
         if (std::abs(actual_val - expected_val) >= DBL_EPSILON) {
           return badListValue(actual_expr, i, actual_val, expected_val);
@@ -263,7 +263,7 @@ RawObject moduleAt(Runtime* runtime, const char* module_name,
 
 std::string typeName(Runtime* runtime, RawObject obj) {
   if (obj.layoutId() == LayoutId::kError) return "Error";
-  RawStr name = RawStr::cast(RawType::cast(runtime->typeOf(obj)).name());
+  RawStr name = Str::cast(Type::cast(runtime->typeOf(obj)).name());
   word length = name.length();
   std::string result(length, '\0');
   name.copyTo(reinterpret_cast<byte*>(&result[0]), length);
@@ -293,7 +293,7 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
   Bytes bytes_obj(&scope, runtime->newBytesWithAll(bytes));
   MemoryView result(&scope,
                     runtime->newMemoryView(thread, bytes_obj, read_only));
-  result.setFormat(RawStr::cast(runtime->newStrFromCStr(format)));
+  result.setFormat(Str::cast(runtime->newStrFromCStr(format)));
   return *result;
 }
 

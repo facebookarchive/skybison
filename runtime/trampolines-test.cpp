@@ -643,7 +643,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 2);
   EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 1234));
-  EXPECT_TRUE(RawStr::cast(tuple.at(1)).equalsCStr("bar"));
+  EXPECT_TRUE(Str::cast(tuple.at(1)).equalsCStr("bar"));
 }
 
 // test "builtin-kw" func that returns a list of first position arg

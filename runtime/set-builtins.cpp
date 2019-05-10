@@ -569,7 +569,7 @@ RawObject SetBuiltins::dunderIand(Thread* thread, Frame* frame, word nargs) {
   if (intersection.isError()) {
     return *intersection;
   }
-  RawSet intersection_set = RawSet::cast(*intersection);
+  RawSet intersection_set = Set::cast(*intersection);
   set.setData(intersection_set.data());
   set.setNumItems(intersection_set.numItems());
   return *set;

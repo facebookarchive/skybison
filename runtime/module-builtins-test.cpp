@@ -124,7 +124,7 @@ TEST(ModuleBuiltinsTest, DunderNewReturnsModule) {
   Object module(&scope,
                 runBuiltin(ModuleBuiltins::dunderNew, moduletype, module_name));
   ASSERT_TRUE(module.isModule());
-  Object result_module_name(&scope, RawModule::cast(*module).name());
+  Object result_module_name(&scope, Module::cast(*module).name());
   EXPECT_TRUE(isStrEquals(result_module_name, module_name));
 }
 

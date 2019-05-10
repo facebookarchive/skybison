@@ -75,7 +75,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
 
   Object object_class(
       &scope,
-      RawLayout::cast(runtime->layoutAt(LayoutId::kObject)).describedType());
+      Layout::cast(runtime->layoutAt(LayoutId::kObject)).describedType());
 
   // Special case for no explicit ancestors.
   if (parents.length() == 0) {
@@ -118,7 +118,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   }
 
   for (word i = 0; i < merge_list_indices.size(); i++) {
-    if (merge_list_indices[i] != RawTuple::cast(merge_lists.at(i)).length()) {
+    if (merge_list_indices[i] != Tuple::cast(merge_lists.at(i)).length()) {
       // TODO(T36404516): list bases in error message.
       return thread->raiseWithFmt(
           LayoutId::kTypeError,

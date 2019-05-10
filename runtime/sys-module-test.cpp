@@ -251,10 +251,10 @@ sysname = sys.platform
   bool is_linux = !std::strcmp(name.sysname, "Linux");
   ASSERT_TRUE(is_darwin || is_linux);
   if (is_darwin) {
-    EXPECT_TRUE(RawStr::cast(*sysname).equalsCStr("darwin"));
+    EXPECT_TRUE(Str::cast(*sysname).equalsCStr("darwin"));
   }
   if (is_linux) {
-    EXPECT_TRUE(RawStr::cast(*sysname).equalsCStr("linux"));
+    EXPECT_TRUE(Str::cast(*sysname).equalsCStr("linux"));
   }
 }
 
@@ -290,8 +290,8 @@ builtin_names = sys.builtin_module_names
   bool builtin_sys = false;
   bool builtin__stat = false;
   for (int i = 0; i < builtins_tuple.length(); i++) {
-    builtin_sys |= RawStr::cast(builtins_tuple.at(i)).equalsCStr("sys");
-    builtin__stat |= RawStr::cast(builtins_tuple.at(i)).equalsCStr("_stat");
+    builtin_sys |= Str::cast(builtins_tuple.at(i)).equalsCStr("sys");
+    builtin__stat |= Str::cast(builtins_tuple.at(i)).equalsCStr("_stat");
   }
   EXPECT_TRUE(builtin_sys);
   EXPECT_TRUE(builtin__stat);

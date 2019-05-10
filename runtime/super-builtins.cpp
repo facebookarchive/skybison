@@ -14,7 +14,7 @@ RawObject superGetAttribute(Thread* thread, const Super& super,
                             const Object& name_str) {
   // This must return `super`.
   Runtime* runtime = thread->runtime();
-  if (RawStr::cast(runtime->symbols()->DunderClass()).equals(*name_str)) {
+  if (Str::cast(runtime->symbols()->DunderClass()).equals(*name_str)) {
     return runtime->typeOf(*super);
   }
 
@@ -126,7 +126,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     Tuple free_vars(&scope, code.freevars());
     RawObject cell = Error::notFound();
     for (word i = 0; i < free_vars.length(); i++) {
-      if (RawStr::cast(free_vars.at(i))
+      if (Str::cast(free_vars.at(i))
               .equals(runtime->symbols()->DunderClass())) {
         cell = caller_frame->local(code.nlocals() + code.numCellvars() + i);
         break;
@@ -136,7 +136,7 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): __class__ cell not found");
     }
-    type_obj = RawValueCell::cast(cell).value();
+    type_obj = ValueCell::cast(cell).value();
     // TODO(zekun): handle cell2arg case
     obj = caller_frame->local(0);
   } else {

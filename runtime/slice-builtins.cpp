@@ -97,7 +97,7 @@ RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'__new__' requires a type object");
   }
-  Layout layout(&scope, RawType::cast(*type_obj).instanceLayout());
+  Layout layout(&scope, Type::cast(*type_obj).instanceLayout());
   if (layout.id() != LayoutId::kSlice) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "slice.__new__ requires the slice type");

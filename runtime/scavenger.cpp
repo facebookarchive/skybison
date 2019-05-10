@@ -37,7 +37,7 @@ void Scavenger::scavengePointer(RawObject* pointer) {
   if (!(*pointer).isHeapObject()) {
     return;
   }
-  RawHeapObject object = RawHeapObject::cast(*pointer);
+  RawHeapObject object = HeapObject::cast(*pointer);
   if (from_->contains(object.address())) {
     if (object.isForwarding()) {
       *pointer = object.forward();
@@ -50,11 +50,11 @@ void Scavenger::scavengePointer(RawObject* pointer) {
 void Scavenger::processRoots() { runtime_->visitRoots(visitor()); }
 
 bool Scavenger::hasWhiteReferent(RawObject reference) {
-  RawWeakRef weak = RawWeakRef::cast(reference);
+  RawWeakRef weak = WeakRef::cast(reference);
   if (!weak.referent().isHeapObject()) {
     return false;
   }
-  return !RawHeapObject::cast(weak.referent()).isForwarding();
+  return !HeapObject::cast(weak.referent()).isForwarding();
 }
 
 void Scavenger::processGrayObjects() {
@@ -88,11 +88,11 @@ void Scavenger::processGrayObjects() {
 void Scavenger::processDelayedReferences() {
   while (delayed_references_ != NoneType::object()) {
     RawWeakRef weak =
-        RawWeakRef::cast(WeakRef::dequeueReference(&delayed_references_));
+        WeakRef::cast(WeakRef::dequeueReference(&delayed_references_));
     if (!weak.referent().isHeapObject()) {
       continue;
     }
-    RawHeapObject referent = RawHeapObject::cast(weak.referent());
+    RawHeapObject referent = HeapObject::cast(weak.referent());
     if (referent.isForwarding()) {
       weak.setReferent(referent.forward());
     } else {
@@ -105,7 +105,7 @@ void Scavenger::processDelayedReferences() {
 }
 
 RawObject Scavenger::transport(RawObject old_object) {
-  RawHeapObject from_object = RawHeapObject::cast(old_object);
+  RawHeapObject from_object = HeapObject::cast(old_object);
   word size = from_object.size();
   uword address = to_->allocate(size);
   auto dst = reinterpret_cast<void*>(address);

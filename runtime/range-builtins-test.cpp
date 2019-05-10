@@ -55,7 +55,7 @@ TEST(RangeIteratorBuiltinsTest, DunderLengthHintReturnsPendingLength) {
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint1, 0));
 
-  RawRangeIterator::cast(*iter).setRange(runtime.newRange(0, 1, 1));
+  RangeIterator::cast(*iter).setRange(runtime.newRange(0, 1, 1));
   Object length_hint2(
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 1));

@@ -53,7 +53,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   word num_caches = 0;
 
   // Scan bytecode to figure out how many caches we need.
-  Bytes bytecode(&scope, RawCode::cast(function.code()).code());
+  Bytes bytecode(&scope, Code::cast(function.code()).code());
   word bytecode_length = bytecode.length();
   for (word i = 0; i < bytecode_length; i += Frame::kCodeUnitSize) {
     Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i));

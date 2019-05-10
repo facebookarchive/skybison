@@ -316,14 +316,14 @@ class KwArguments : public Arguments {
  public:
   KwArguments(Frame* frame, word nargs)
       : Arguments(frame, nargs),
-        kwnames_(RawTuple::cast(frame->local(nargs - 1))),
+        kwnames_(Tuple::cast(frame->local(nargs - 1))),
         num_keywords_(kwnames_.length()) {
     num_args_ = nargs - num_keywords_ - 1;
   }
 
   RawObject getKw(RawObject name) const {
     for (word i = 0; i < num_keywords_; i++) {
-      if (RawStr::cast(name).equals(kwnames_.at(i))) {
+      if (Str::cast(name).equals(kwnames_.at(i))) {
         return frame_->local(num_args_ + i);
       }
     }
@@ -352,7 +352,7 @@ inline BlockStack* Frame::blockStack() {
 }
 
 inline word Frame::virtualPC() {
-  return RawSmallInt::cast(at(kVirtualPCOffset)).value();
+  return SmallInt::cast(at(kVirtualPCOffset)).value();
 }
 
 inline void Frame::setVirtualPC(word pc) {
@@ -415,12 +415,12 @@ inline void Frame::resetLocals(word num_locals) {
 }
 
 inline word Frame::numLocals() {
-  return RawSmallInt::cast(at(kNumLocalsOffset)).value();
+  return SmallInt::cast(at(kNumLocalsOffset)).value();
 }
 
 inline Frame* Frame::previousFrame() {
   RawObject frame = at(kPreviousFrameOffset);
-  return static_cast<Frame*>(RawSmallInt::cast(frame).asCPtr());
+  return static_cast<Frame*>(SmallInt::cast(frame).asCPtr());
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
@@ -434,7 +434,7 @@ inline RawObject* Frame::valueStackBase() {
 
 inline RawObject* Frame::valueStackTop() {
   RawObject top = at(kValueStackTopOffset);
-  return static_cast<RawObject*>(RawSmallInt::cast(top).asCPtr());
+  return static_cast<RawObject*>(SmallInt::cast(top).asCPtr());
 }
 
 inline void Frame::setValueStackTop(RawObject* top) {
@@ -502,7 +502,7 @@ inline bool Frame::isSentinelFrame() { return previousFrame() == nullptr; }
 
 inline void* Frame::nativeFunctionPointer() {
   DCHECK(isNativeFrame(), "not native frame");
-  return RawInt::cast(code()).asCPtr();
+  return Int::cast(code()).asCPtr();
 }
 
 inline bool Frame::isNativeFrame() { return code().isInt(); }
@@ -587,7 +587,7 @@ inline void BlockStack::atPut(int offset, RawObject value) {
 }
 
 inline word BlockStack::depth() {
-  return RawSmallInt::cast(at(kTopOffset)).value();
+  return SmallInt::cast(at(kTopOffset)).value();
 }
 
 inline void BlockStack::setDepth(word new_top) {

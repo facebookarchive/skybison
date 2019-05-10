@@ -38,7 +38,7 @@ RawObject ClassMethodBuiltins::dunderGet(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
   Object owner(&scope, args.get(2));
 
-  Object method(&scope, RawClassMethod::cast(*self).function());
+  Object method(&scope, ClassMethod::cast(*self).function());
   return thread->runtime()->newBoundMethod(method, owner);
 }
 
@@ -57,7 +57,7 @@ RawObject StaticMethodBuiltins::dunderGet(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
 
-  return RawStaticMethod::cast(*self).function();
+  return StaticMethod::cast(*self).function();
 }
 
 RawObject StaticMethodBuiltins::dunderNew(Thread* thread, Frame*, word) {

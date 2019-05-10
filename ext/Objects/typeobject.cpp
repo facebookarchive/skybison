@@ -27,13 +27,13 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
 
 static RawObject extensionSlot(const Type& type, Type::ExtensionSlot slot_id) {
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
-  return RawTuple::cast(type.extensionSlots()).at(static_cast<word>(slot_id));
+  return Tuple::cast(type.extensionSlots()).at(static_cast<word>(slot_id));
 }
 
 static void setExtensionSlot(const Type& type, Type::ExtensionSlot slot_id,
                              RawObject slot) {
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
-  return RawTuple::cast(type.extensionSlots())
+  return Tuple::cast(type.extensionSlots())
       .atPut(static_cast<word>(slot_id), slot);
 }
 

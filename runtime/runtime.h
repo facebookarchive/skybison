@@ -226,8 +226,8 @@ class Runtime {
   RawObject ellipsis() { return ellipsis_; }
   RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
   RawObject objectDunderSetattr() { return object_dunder_setattr_; }
-  RawValueCell sysStderr() { return RawValueCell::cast(sys_stderr_); }
-  RawValueCell sysStdout() { return RawValueCell::cast(sys_stdout_); }
+  RawValueCell sysStderr() { return ValueCell::cast(sys_stderr_); }
+  RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
 
   void createBuiltinsModule(Thread* thread);
   void createImportlibModule(Thread* thread);
@@ -305,7 +305,7 @@ class Runtime {
                                              const Object& name);
 
   RawObject typeOf(RawObject object) {
-    return RawLayout::cast(layoutAt(object.layoutId())).describedType();
+    return Layout::cast(layoutAt(object.layoutId())).describedType();
   }
 
   RawObject typeDictAt(Thread* thread, const Dict& dict, const Object& key);
@@ -314,7 +314,7 @@ class Runtime {
   RawObject typeAt(LayoutId layout_id);
   RawObject layoutAt(LayoutId layout_id) {
     DCHECK(layout_id != LayoutId::kError, "Error has no Layout");
-    return RawList::cast(layouts_).at(static_cast<word>(layout_id));
+    return List::cast(layouts_).at(static_cast<word>(layout_id));
   }
   void layoutAtPut(LayoutId layout_id, RawObject object);
 
@@ -664,7 +664,7 @@ class Runtime {
 #define DEFINE_IS_USER_INSTANCE(ty)                                            \
   bool isInstanceOfUser##ty##Base(RawObject obj) {                             \
     return !obj.is##ty() &&                                                    \
-           RawType::cast(typeOf(obj)).builtinBase() == LayoutId::k##ty;        \
+           Type::cast(typeOf(obj)).builtinBase() == LayoutId::k##ty;           \
   }
   DEFINE_IS_USER_INSTANCE(Float)
   DEFINE_IS_USER_INSTANCE(Int)
@@ -675,7 +675,7 @@ class Runtime {
   // BaseException must be handled specially because it has builtin subclasses
   // that are visible to managed code.
   bool isInstanceOfBaseException(RawObject obj) {
-    return RawType::cast(typeOf(obj)).isBaseExceptionSubclass();
+    return Type::cast(typeOf(obj)).isBaseExceptionSubclass();
   }
 
   // SetBase must also be handled specially because many builtin functions
@@ -684,7 +684,7 @@ class Runtime {
     if (instance.isSetBase()) {
       return true;
     }
-    LayoutId builtin_base = RawType::cast(typeOf(instance)).builtinBase();
+    LayoutId builtin_base = Type::cast(typeOf(instance)).builtinBase();
     return builtin_base == LayoutId::kSet ||
            builtin_base == LayoutId::kFrozenSet;
   }
