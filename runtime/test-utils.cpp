@@ -304,7 +304,7 @@ RawObject setFromRange(word start, word stop) {
   Object value(&scope, NoneType::object());
   for (word i = start; i < stop; i++) {
     value = SmallInt::fromWord(i);
-    thread->runtime()->setAdd(result, value);
+    thread->runtime()->setAdd(thread, result, value);
   }
   return *result;
 }

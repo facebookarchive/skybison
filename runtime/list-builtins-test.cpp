@@ -1672,7 +1672,8 @@ TEST(ListBuiltinsTest, ExtendTuple) {
 
 TEST(ListBuiltinsTest, ExtendSet) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Set set(&scope, runtime.newSet());
   Object value(&scope, NoneType::object());
@@ -1680,7 +1681,7 @@ TEST(ListBuiltinsTest, ExtendSet) {
 
   for (word i = 0; i < 16; i++) {
     value = SmallInt::fromWord(i);
-    runtime.setAdd(set, value);
+    runtime.setAdd(thread, set, value);
     sum += i;
   }
 

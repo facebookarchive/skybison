@@ -35,7 +35,7 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
         "__contains__() requires a 'set' or 'frozenset' object");
   }
   SetBase set(&scope, *self);
-  return Bool::fromBool(thread->runtime()->setIncludes(set, value));
+  return Bool::fromBool(thread->runtime()->setIncludes(thread, set, value));
 }
 
 RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
@@ -85,7 +85,7 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
       if (value.isError()) {
         break;
       }
-      if (runtime->setIncludes(b, value)) {
+      if (runtime->setIncludes(thread, b, value)) {
         return Bool::falseObj();
       }
     }
@@ -118,7 +118,7 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
       if (thread->clearPendingStopIteration()) break;
       return *value;
     }
-    if (runtime->setIncludes(a, value)) {
+    if (runtime->setIncludes(thread, a, value)) {
       return Bool::falseObj();
     }
   }
@@ -417,7 +417,7 @@ const BuiltinMethod SetBuiltins::kBuiltinMethods[] = {
 RawObject setAdd(Thread* thread, const Set& set, const Object& key) {
   // TODO(T36756972): raise MemoryError when heap is full
   // TODO(T36757907): raise TypeError if key is unhashable
-  return thread->runtime()->setAdd(set, key);
+  return thread->runtime()->setAdd(thread, set, key);
 }
 
 RawObject setCopy(Thread* thread, const SetBase& set) {
@@ -428,7 +428,7 @@ RawObject setCopy(Thread* thread, const SetBase& set) {
                                           : runtime->emptyFrozenSet();
   }
 
-  HandleScope scope;
+  HandleScope scope(thread);
   SetBase new_set(&scope, runtime->isInstanceOfSet(*set)
                               ? runtime->newSet()
                               : runtime->newFrozenSet());
@@ -454,7 +454,7 @@ bool setIsSubset(Thread* thread, const SetBase& set, const SetBase& other) {
   for (word i = SetBase::Bucket::kFirst;
        SetBase::Bucket::nextItem(*data, &i);) {
     key = RawSetBase::Bucket::key(*data, i);
-    if (!thread->runtime()->setIncludes(other, key)) {
+    if (!thread->runtime()->setIncludes(thread, other, key)) {
       return false;
     }
   }
@@ -547,7 +547,7 @@ RawObject SetBuiltins::discard(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kSet);
   }
   Set self(&scope, *self_obj);
-  runtime->setRemove(self, value);
+  runtime->setRemove(thread, self, value);
   return NoneType::object();
 }
 
@@ -615,7 +615,7 @@ RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kSet);
   }
   Set set(&scope, *self);
-  if (!runtime->setRemove(set, value)) {
+  if (!runtime->setRemove(thread, set, value)) {
     return thread->raise(LayoutId::kKeyError, *value);
   }
   return NoneType::object();

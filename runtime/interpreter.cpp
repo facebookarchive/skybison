@@ -2029,7 +2029,7 @@ void Interpreter::doBuildSet(Context* ctx, word arg) {
   Runtime* runtime = thread->runtime();
   Set set(&scope, Set::cast(runtime->newSet()));
   for (word i = arg - 1; i >= 0; i--) {
-    runtime->setAdd(set, Object(&scope, ctx->frame->popValue()));
+    runtime->setAdd(thread, set, Object(&scope, ctx->frame->popValue()));
   }
   ctx->frame->pushValue(*set);
 }
@@ -2585,10 +2585,11 @@ void Interpreter::doListAppend(Context* ctx, word arg) {
 
 // opcode 146
 void Interpreter::doSetAdd(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
   Object value(&scope, ctx->frame->popValue());
   Set set(&scope, Set::cast(ctx->frame->peek(arg - 1)));
-  ctx->thread->runtime()->setAdd(set, value);
+  thread->runtime()->setAdd(thread, set, value);
 }
 
 // opcode 147

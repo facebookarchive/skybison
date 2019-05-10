@@ -502,7 +502,8 @@ TEST(MarshalReaderTest, ReadObjectSetOnEmptySetReturnsEmptySet) {
 
 TEST(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   // marshal.dumps(set([1,2,3]))
   const char* buffer =
       "\xbc\x03\x00\x00\x00\xe9\x01\x00\x00\x00\xe9\x02\x00\x00\x00\xe9\x03\x00"
@@ -513,11 +514,11 @@ TEST(MarshalReaderTest, ReadObjectSetOnNonEmptySetReturnsCorrectNonEmptySet) {
   Set set(&scope, *obj);
   EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime.setIncludes(set, one));
+  EXPECT_TRUE(runtime.setIncludes(thread, set, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime.setIncludes(set, two));
+  EXPECT_TRUE(runtime.setIncludes(thread, set, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime.setIncludes(set, three));
+  EXPECT_TRUE(runtime.setIncludes(thread, set, three));
 }
 
 TEST(MarshalReaderTest, ReadObjectFrozenSetOnEmptySetReturnsEmptyFrozenSet) {
@@ -543,7 +544,8 @@ TEST(MarshalReaderTest,
 TEST(MarshalReaderTest,
      ReadObjectFrozenSetOnNonEmptySetReturnsCorrectNonEmptyFrozenSet) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   // marshal.dumps(frozenset([1,2,3]))
   const char* buffer =
       "\xbe\x03\x00\x00\x00\xe9\x01\x00\x00\x00\xe9\x02\x00\x00\x00\xe9\x03\x00"
@@ -554,11 +556,11 @@ TEST(MarshalReaderTest,
   FrozenSet set(&scope, *obj);
   EXPECT_EQ(set.numItems(), 3);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime.setIncludes(set, one));
+  EXPECT_TRUE(runtime.setIncludes(thread, set, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime.setIncludes(set, two));
+  EXPECT_TRUE(runtime.setIncludes(thread, set, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime.setIncludes(set, three));
+  EXPECT_TRUE(runtime.setIncludes(thread, set, three));
 }
 
 TEST(MarshalReaderTest,

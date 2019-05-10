@@ -1055,7 +1055,8 @@ TEST(RuntimeTest, NewCapacity) {
 
 TEST(RuntimeTest, InternLargeStr) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Set interned(&scope, runtime.interned());
 
@@ -1064,14 +1065,14 @@ TEST(RuntimeTest, InternLargeStr) {
   Object str1(&scope, runtime.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str1.isLargeStr());
   EXPECT_EQ(num_interned, interned.numItems());
-  EXPECT_FALSE(runtime.setIncludes(interned, str1));
+  EXPECT_FALSE(runtime.setIncludes(thread, interned, str1));
   EXPECT_FALSE(runtime.isInternedStr(str1));
 
   // Interning the string should add it to the intern table and increase the
   // size of the intern table by one.
   num_interned = interned.numItems();
   Object sym1(&scope, runtime.internStr(str1));
-  EXPECT_TRUE(runtime.setIncludes(interned, str1));
+  EXPECT_TRUE(runtime.setIncludes(thread, interned, str1));
   EXPECT_EQ(*sym1, *str1);
   EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime.isInternedStr(str1));
@@ -1085,7 +1086,7 @@ TEST(RuntimeTest, InternLargeStr) {
   num_interned = interned.numItems();
   Object sym2(&scope, runtime.internStr(str2));
   EXPECT_EQ(num_interned + 1, interned.numItems());
-  EXPECT_TRUE(runtime.setIncludes(interned, str2));
+  EXPECT_TRUE(runtime.setIncludes(thread, interned, str2));
   EXPECT_EQ(*sym2, *str2);
   EXPECT_NE(*sym1, *sym2);
 
@@ -1093,7 +1094,7 @@ TEST(RuntimeTest, InternLargeStr) {
   Object str3(&scope, runtime.newStrFromCStr("hello, world"));
   ASSERT_TRUE(str3.isLargeStr());
   EXPECT_NE(*str1, *str3);
-  EXPECT_TRUE(runtime.setIncludes(interned, str3));
+  EXPECT_TRUE(runtime.setIncludes(thread, interned, str3));
   EXPECT_FALSE(runtime.isInternedStr(str3));
 
   // Interning a duplicate string should not affecct the intern table.
@@ -1106,7 +1107,8 @@ TEST(RuntimeTest, InternLargeStr) {
 
 TEST(RuntimeTest, InternSmallStr) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Set interned(&scope, runtime.interned());
 
@@ -1114,13 +1116,13 @@ TEST(RuntimeTest, InternSmallStr) {
   word num_interned = interned.numItems();
   Object str(&scope, runtime.newStrFromCStr("a"));
   ASSERT_TRUE(str.isSmallStr());
-  EXPECT_FALSE(runtime.setIncludes(interned, str));
+  EXPECT_FALSE(runtime.setIncludes(thread, interned, str));
   EXPECT_EQ(num_interned, interned.numItems());
 
   // Interning a small string should have no affect on the intern table.
   Object sym(&scope, runtime.internStr(str));
   EXPECT_TRUE(sym.isSmallStr());
-  EXPECT_FALSE(runtime.setIncludes(interned, str));
+  EXPECT_FALSE(runtime.setIncludes(thread, interned, str));
   EXPECT_EQ(num_interned, interned.numItems());
   EXPECT_EQ(*sym, *str);
   EXPECT_TRUE(runtime.isInternedStr(str));
@@ -1128,14 +1130,15 @@ TEST(RuntimeTest, InternSmallStr) {
 
 TEST(RuntimeTest, InternCStr) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   Set interned(&scope, runtime.interned());
 
   word num_interned = interned.numItems();
   Object sym(&scope, runtime.internStrFromCStr("hello, world"));
   EXPECT_TRUE(sym.isStr());
-  EXPECT_TRUE(runtime.setIncludes(interned, sym));
+  EXPECT_TRUE(runtime.setIncludes(thread, interned, sym));
   EXPECT_EQ(num_interned + 1, interned.numItems());
   EXPECT_TRUE(runtime.isInternedStr(sym));
 }
@@ -1593,7 +1596,8 @@ TEST(RuntimeTupleTest, Create) {
 
 TEST(RuntimeSetTest, EmptySetInvariants) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
 
   EXPECT_EQ(set.numItems(), 0);
@@ -1604,60 +1608,63 @@ TEST(RuntimeSetTest, EmptySetInvariants) {
 
 TEST(RuntimeSetTest, Add) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Object value(&scope, SmallInt::fromWord(12345));
 
   // Store a value
-  runtime.setAdd(set, value);
+  runtime.setAdd(thread, set, value);
   EXPECT_EQ(set.numItems(), 1);
 
   // Retrieve the stored value
-  ASSERT_TRUE(runtime.setIncludes(set, value));
+  ASSERT_TRUE(runtime.setIncludes(thread, set, value));
 
   // Add a new value
   Object new_value(&scope, SmallInt::fromWord(5555));
-  runtime.setAdd(set, new_value);
+  runtime.setAdd(thread, set, new_value);
   EXPECT_EQ(set.numItems(), 2);
 
   // Get the new value
-  ASSERT_TRUE(runtime.setIncludes(set, new_value));
+  ASSERT_TRUE(runtime.setIncludes(thread, set, new_value));
 
   // Add a existing value
   Object same_value(&scope, SmallInt::fromWord(12345));
-  RawObject old_value = runtime.setAdd(set, same_value);
+  RawObject old_value = runtime.setAdd(thread, set, same_value);
   EXPECT_EQ(set.numItems(), 2);
   EXPECT_EQ(old_value, *value);
 }
 
 TEST(RuntimeSetTest, Remove) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Object value(&scope, SmallInt::fromWord(12345));
 
   // Removing a key that doesn't exist should fail
-  EXPECT_FALSE(runtime.setRemove(set, value));
+  EXPECT_FALSE(runtime.setRemove(thread, set, value));
 
-  runtime.setAdd(set, value);
+  runtime.setAdd(thread, set, value);
   EXPECT_EQ(set.numItems(), 1);
 
-  ASSERT_TRUE(runtime.setRemove(set, value));
+  ASSERT_TRUE(runtime.setRemove(thread, set, value));
   EXPECT_EQ(set.numItems(), 0);
 
   // Looking up a key that was deleted should fail
-  ASSERT_FALSE(runtime.setIncludes(set, value));
+  ASSERT_FALSE(runtime.setIncludes(thread, set, value));
 }
 
 TEST(RuntimeSetTest, Grow) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
 
   // Fill up the dict - we insert an initial key to force the allocation of the
   // backing Tuple.
   Object init_key(&scope, SmallInt::fromWord(0));
-  runtime.setAdd(set, init_key);
+  runtime.setAdd(thread, set, init_key);
   ASSERT_TRUE(set.data().isTuple());
   word init_data_size = Tuple::cast(set.data()).length();
 
@@ -1671,12 +1678,12 @@ TEST(RuntimeSetTest, Grow) {
   word num_keys = Runtime::kInitialSetCapacity;
   for (int i = 1; i < num_keys; i++) {
     Object key(&scope, make_key(i));
-    runtime.setAdd(set, key);
+    runtime.setAdd(thread, set, key);
   }
 
   // Add another key which should force us to double the capacity
   Object straw(&scope, make_key(num_keys));
-  runtime.setAdd(set, straw);
+  runtime.setAdd(thread, set, straw);
   ASSERT_TRUE(set.data().isTuple());
   word new_data_size = Tuple::cast(set.data()).length();
   EXPECT_EQ(new_data_size, Runtime::kSetGrowthFactor * init_data_size);
@@ -1684,26 +1691,27 @@ TEST(RuntimeSetTest, Grow) {
   // Make sure we can still read all the stored keys
   for (int i = 1; i <= num_keys; i++) {
     Object key(&scope, make_key(i));
-    bool found = runtime.setIncludes(set, key);
+    bool found = runtime.setIncludes(thread, set, key);
     ASSERT_TRUE(found);
   }
 }
 
 TEST(RuntimeSetTest, UpdateSet) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Set set1(&scope, runtime.newSet());
   Object set1_handle(&scope, *set1);
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set, value);
+    runtime.setAdd(thread, set, value);
   }
   runtime.setUpdate(Thread::current(), set, set1_handle);
   ASSERT_EQ(set.numItems(), 8);
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set1, value);
+    runtime.setAdd(thread, set1, value);
   }
   runtime.setUpdate(Thread::current(), set, set1_handle);
   ASSERT_EQ(set.numItems(), 12);
@@ -1713,7 +1721,8 @@ TEST(RuntimeSetTest, UpdateSet) {
 
 TEST(RuntimeSetTest, UpdateList) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Set set(&scope, runtime.newSet());
   for (word i = 0; i < 8; i++) {
@@ -1722,7 +1731,7 @@ TEST(RuntimeSetTest, UpdateList) {
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set, value);
+    runtime.setAdd(thread, set, value);
   }
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
@@ -1734,7 +1743,8 @@ TEST(RuntimeSetTest, UpdateList) {
 
 TEST(RuntimeSetTest, UpdateListIterator) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Set set(&scope, runtime.newSet());
   for (word i = 0; i < 8; i++) {
@@ -1743,7 +1753,7 @@ TEST(RuntimeSetTest, UpdateListIterator) {
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set, value);
+    runtime.setAdd(thread, set, value);
   }
   ASSERT_EQ(set.numItems(), 8);
   Object list_handle(&scope, *list);
@@ -1754,7 +1764,8 @@ TEST(RuntimeSetTest, UpdateListIterator) {
 
 TEST(RuntimeSetTest, UpdateTuple) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Tuple object_array(&scope, runtime.newTuple(8));
   Set set(&scope, runtime.newSet());
   for (word i = 0; i < 8; i++) {
@@ -1762,7 +1773,7 @@ TEST(RuntimeSetTest, UpdateTuple) {
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set, value);
+    runtime.setAdd(thread, set, value);
   }
   ASSERT_EQ(set.numItems(), 8);
   Object object_array_handle(&scope, *object_array);
@@ -1772,7 +1783,8 @@ TEST(RuntimeSetTest, UpdateTuple) {
 
 TEST(RuntimeSetTest, UpdateIterator) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Object iterable(&scope, runtime.newRange(1, 4, 1));
   runtime.setUpdate(Thread::current(), set, iterable);
@@ -1782,7 +1794,8 @@ TEST(RuntimeSetTest, UpdateIterator) {
 
 TEST(RuntimeSetTest, UpdateWithNonIterable) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Object non_iterable(&scope, NoneType::object());
   Object result(&scope,
@@ -1812,7 +1825,7 @@ TEST(RuntimeSetTest, ItersectionWithEmptySetReturnsEmptySet) {
 
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set1, value);
+    runtime.setAdd(thread, set1, value);
   }
 
   // set() & {0, 1, 2, 3, 4, 5, 6, 7}
@@ -1836,37 +1849,37 @@ TEST(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
 
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set1, value);
+    runtime.setAdd(thread, set1, value);
   }
 
   for (word i = 0; i < 4; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.setAdd(set, value);
+    runtime.setAdd(thread, set, value);
   }
 
   // {0, 1, 2, 3} & {0, 1, 2, 3, 4, 5, 6, 7}
   Set result(&scope, runtime.setIntersection(thread, set, set1));
   EXPECT_EQ(Set::cast(*result).numItems(), 4);
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime.setIncludes(result, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(result, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime.setIncludes(result, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, key));
   key = SmallInt::fromWord(3);
-  EXPECT_TRUE(runtime.setIncludes(result, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, key));
 
   // {0, 1, 2, 3, 4, 5, 6, 7} & {0, 1, 2, 3}
   Set result1(&scope, runtime.setIntersection(thread, set, set1));
   EXPECT_EQ(Set::cast(*result1).numItems(), 4);
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result1, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result1, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result1, key));
   key = SmallInt::fromWord(3);
-  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result1, key));
 }
 
 TEST(RuntimeSetTest, IntersectIterator) {
@@ -1879,15 +1892,15 @@ TEST(RuntimeSetTest, IntersectIterator) {
   EXPECT_EQ(result.numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(1));
-  runtime.setAdd(set, key);
+  runtime.setAdd(thread, set, key);
   key = SmallInt::fromWord(2);
-  runtime.setAdd(set, key);
+  runtime.setAdd(thread, set, key);
   Object iterable1(&scope, runtime.newRange(1, 4, 1));
   Set result1(&scope, runtime.setIntersection(thread, set, iterable1));
   EXPECT_EQ(result1.numItems(), 2);
-  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result1, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(result1, key));
+  EXPECT_TRUE(runtime.setIncludes(thread, result1, key));
 }
 
 TEST(RuntimeSetTest, IntersectWithNonIterable) {
@@ -3003,7 +3016,8 @@ TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
 // Set is not special except that it is a builtin type with sealed attributes.
 TEST(RuntimeTest, SetHasSameSizeCreatedTwoDifferentWays) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Layout layout(&scope, runtime.layoutAt(LayoutId::kSet));
   Set set1(&scope, runtime.newInstance(layout));
   Set set2(&scope, runtime.newSet());
@@ -3022,11 +3036,11 @@ TEST(RuntimeTest, SealedClassLayoutDoesNotHaveSpaceForOverflowAttributes) {
 
 TEST(RuntimeTest, SettingNewAttributeOnSealedClassRaisesAttributeError) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
   Str attr(&scope, runtime.newStrFromCStr("attr"));
   Str value(&scope, runtime.newStrFromCStr("value"));
-  Thread* thread = Thread::current();
   Object result(&scope, instanceSetAttr(thread, set, attr, value));
   EXPECT_TRUE(raised(*result, LayoutId::kAttributeError));
 }
@@ -3086,9 +3100,10 @@ a = C()
 
 TEST(RuntimeTest, IsMappingReturnsFalseOnSet) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Set set(&scope, runtime.newSet());
-  EXPECT_FALSE(runtime.isMapping(Thread::current(), set));
+  EXPECT_FALSE(runtime.isMapping(thread, set));
 }
 
 TEST(RuntimeTest, IsMappingReturnsTrueOnDict) {

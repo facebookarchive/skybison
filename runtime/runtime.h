@@ -479,13 +479,13 @@ class Runtime {
 
   // Set related function, based on dict.
   // Add a value to set and return the object in set.
-  RawObject setAdd(const SetBase& set, const Object& value);
+  RawObject setAdd(Thread* thread, const SetBase& set, const Object& value);
 
-  RawObject setAddWithHash(const SetBase& set, const Object& value,
-                           const Object& key_hash);
+  RawObject setAddWithHash(Thread* thread, const SetBase& set,
+                           const Object& value, const Object& key_hash);
 
   // Returns true if the set contains the specified value.
-  bool setIncludes(const SetBase& set, const Object& value);
+  bool setIncludes(Thread* thread, const SetBase& set, const Object& value);
 
   // Compute the set intersection between a set and an iterator
   // Returns either a new set with the intersection or an Error object.
@@ -493,7 +493,7 @@ class Runtime {
                             const Object& iterable);
 
   // Delete a key from the set, returns true if the key existed.
-  bool setRemove(const Set& set, const Object& value);
+  bool setRemove(Thread* thread, const Set& set, const Object& value);
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.
@@ -850,7 +850,7 @@ class Runtime {
   template <SetLookupType type>
   word setLookup(const Tuple& data, const Object& key, const Object& key_hash);
 
-  RawTuple setGrow(const Tuple& data);
+  RawTuple setGrow(Thread* thread, const Tuple& data);
 
   // Generic attribute deletion code used for class objects
   RawObject classDelAttr(Thread* thread, const Object& receiver,

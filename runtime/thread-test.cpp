@@ -990,7 +990,7 @@ TEST(ThreadTest, BuildSetWithOneItem) {
   Set result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 1);
   Object int_val(&scope, SmallInt::fromWord(111));
-  EXPECT_TRUE(runtime.setIncludes(result, int_val));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, int_val));
 }
 
 TEST(ThreadTest, BuildSet) {
@@ -1018,11 +1018,11 @@ TEST(ThreadTest, BuildSet) {
   Set result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 3);
   Object int_val(&scope, runtime.newInt(111));
-  EXPECT_TRUE(runtime.setIncludes(result, int_val));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, int_val));
   Object str(&scope, runtime.newStrFromCStr("qqq"));
-  EXPECT_TRUE(runtime.setIncludes(result, str));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, str));
   Object none(&scope, NoneType::object());
-  EXPECT_TRUE(runtime.setIncludes(result, none));
+  EXPECT_TRUE(runtime.setIncludes(thread, result, none));
 }
 
 static RawObject inspect_block(Thread*, Frame* frame, word) ALIGN_16;
@@ -1902,17 +1902,17 @@ s = {*[0, 1], *{2, 3}, *(4, 5), *[]}
   Set set_s(&scope, *s);
   EXPECT_EQ(set_s.numItems(), 6);
   Object small_int(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  EXPECT_TRUE(runtime.setIncludes(thread, set_s, small_int));
   small_int = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  EXPECT_TRUE(runtime.setIncludes(thread, set_s, small_int));
   small_int = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  EXPECT_TRUE(runtime.setIncludes(thread, set_s, small_int));
   small_int = SmallInt::fromWord(3);
-  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  EXPECT_TRUE(runtime.setIncludes(thread, set_s, small_int));
   small_int = SmallInt::fromWord(4);
-  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  EXPECT_TRUE(runtime.setIncludes(thread, set_s, small_int));
   small_int = SmallInt::fromWord(5);
-  EXPECT_TRUE(runtime.setIncludes(set_s, small_int));
+  EXPECT_TRUE(runtime.setIncludes(thread, set_s, small_int));
 }
 
 TEST(BuildString, buildStringEmpty) {

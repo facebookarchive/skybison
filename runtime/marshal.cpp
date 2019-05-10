@@ -363,11 +363,12 @@ RawObject Marshal::Reader::doSetElements(int32_t n, RawObject raw_set) {
   if (isRef_) {
     addRef(raw_set);
   }
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   SetBase set(&scope, raw_set);
   for (int32_t i = 0; i < n; i++) {
     Object value(&scope, readObject());
-    RawObject result = runtime_->setAdd(set, value);
+    RawObject result = runtime_->setAdd(thread, set, value);
     if (result.isError()) {
       return result;
     }

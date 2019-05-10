@@ -398,7 +398,7 @@ static RawObject printSingleException(Thread* thread, const Object& file,
 static RawObject printExceptionChain(Thread* thread, const Object& file,
                                      const Object& value, const Set& seen) {
   Runtime* runtime = thread->runtime();
-  runtime->setAdd(seen, value);
+  runtime->setAdd(thread, seen, value);
 
   if (runtime->isInstanceOfBaseException(*value)) {
     HandleScope scope(thread);
@@ -406,7 +406,7 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
     Object cause(&scope, exc.cause());
     Object context(&scope, exc.context());
     if (!cause.isNoneType()) {
-      if (!runtime->setIncludes(seen, cause)) {
+      if (!runtime->setIncludes(thread, seen, cause)) {
         MAY_RAISE(printExceptionChain(thread, file, cause, seen));
         MAY_RAISE(
             fileWriteString(thread, file,
@@ -415,7 +415,7 @@ static RawObject printExceptionChain(Thread* thread, const Object& file,
       }
     } else if (!context.isNoneType() &&
                exc.suppressContext() != RawBool::trueObj()) {
-      if (!runtime->setIncludes(seen, context)) {
+      if (!runtime->setIncludes(thread, seen, context)) {
         MAY_RAISE(printExceptionChain(thread, file, context, seen));
         MAY_RAISE(
             fileWriteString(thread, file,
