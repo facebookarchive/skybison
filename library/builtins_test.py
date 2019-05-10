@@ -269,6 +269,35 @@ class GeneratorTests(unittest.TestCase):
 
 
 class IntTests(unittest.TestCase):
+    def test_dunder_pow_with_zero_returns_one(self):
+        self.assertEqual(int.__pow__(4, 0), 1)
+
+    def test_dunder_pow_with_one_returns_self(self):
+        self.assertEqual(int.__pow__(4, 1), 4)
+
+    def test_dunder_pow_with_two_squares_number(self):
+        self.assertEqual(int.__pow__(4, 2), 16)
+
+    def test_dunder_pow_with_mod_equals_one_returns_zero(self):
+        self.assertEqual(int.__pow__(4, 2, 1), 0)
+
+    def test_dunder_pow_with_negative_power_and_mod_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            int.__pow__(4, -2, 1)
+
+    def test_dunder_pow_with_mod(self):
+        self.assertEqual(int.__pow__(4, 8, 10), 6)
+
+    def test_dunder_pow_with_negative_base_calls_float_dunder_pow(self):
+        self.assertLess((int.__pow__(2, -1) - 0.5).__abs__(), 0.00001)
+
+    def test_dunder_pow_with_non_int_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            int.__pow__(None, 1, 1)
+
+    def test_dunder_pow_with_non_int_power_returns_not_implemented(self):
+        self.assertEqual(int.__pow__(1, None), NotImplemented)
+
     def test_new_with_base_without_str_raises_type_error(self):
         with self.assertRaises(TypeError):
             int(base=8)
