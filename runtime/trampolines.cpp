@@ -326,8 +326,8 @@ static RawObject prepareKeywordCall(Thread* thread, const Function& function,
         Object value(&scope, *(p - i));
         if (findName(*key, *formal_parm_names) < formal_parm_size) {
           // Got a match, stash pair for future restoration on the stack
-          runtime->listAdd(saved_keyword_list, key);
-          runtime->listAdd(saved_values, value);
+          runtime->listAdd(thread, saved_keyword_list, key);
+          runtime->listAdd(thread, saved_values, value);
         } else {
           // New, add it and associated value to the varkeyargs dict
           runtime->dictAtPut(thread, dict, key, value);

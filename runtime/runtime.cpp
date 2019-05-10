@@ -1155,13 +1155,13 @@ uword Runtime::random() {
   return result;
 }
 
-void Runtime::setArgv(int argc, const char** argv) {
-  HandleScope scope;
+void Runtime::setArgv(Thread* thread, int argc, const char** argv) {
+  HandleScope scope(thread);
   List list(&scope, newList());
   CHECK(argc >= 1, "Unexpected argc");
   for (int i = 1; i < argc; i++) {  // skip program name (i.e. "python")
     Object arg_val(&scope, newStrFromCStr(argv[i]));
-    listAdd(list, arg_val);
+    listAdd(thread, list, arg_val);
   }
 
   Object module_name(&scope, symbols()->Sys());
@@ -1821,14 +1821,14 @@ RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,
   return dictAtPutInValueCell(thread, dict, key, value);
 }
 
-LayoutId Runtime::reserveLayoutId() {
-  HandleScope scope;
+LayoutId Runtime::reserveLayoutId(Thread* thread) {
+  HandleScope scope(thread);
   List list(&scope, layouts_);
   Object value(&scope, NoneType::object());
   word result = list.numItems();
   DCHECK(result <= RawHeader::kMaxLayoutId,
          "exceeded layout id space in header word");
-  listAdd(list, value);
+  listAdd(thread, list, value);
   return static_cast<LayoutId>(result);
 }
 
@@ -2433,21 +2433,22 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
 
 // List
 
-void Runtime::listEnsureCapacity(const List& list, word min_capacity) {
+void Runtime::listEnsureCapacity(Thread* thread, const List& list,
+                                 word min_capacity) {
   DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);
   word curr_capacity = list.capacity();
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple old_array(&scope, list.items());
   Tuple new_array(&scope, newTuple(new_capacity));
   old_array.copyTo(*new_array);
   list.setItems(*new_array);
 }
 
-void Runtime::listAdd(const List& list, const Object& value) {
+void Runtime::listAdd(Thread* thread, const List& list, const Object& value) {
   word index = list.numItems();
-  listEnsureCapacity(list, index + 1);
+  listEnsureCapacity(thread, list, index + 1);
   list.setNumItems(index + 1);
   list.atPut(index, *value);
 }
@@ -3274,7 +3275,7 @@ RawObject Runtime::computeInitialLayout(Thread* thread, const Type& type,
                                         LayoutId base_layout_id) {
   HandleScope scope(thread);
   // Create the layout
-  LayoutId layout_id = reserveLayoutId();
+  LayoutId layout_id = reserveLayoutId(thread);
   Layout layout(&scope, layoutCreateSubclassWithBuiltins(
                             layout_id, base_layout_id,
                             View<BuiltinAttribute>(nullptr, 0)));
@@ -3691,12 +3692,12 @@ RawObject Runtime::layoutFollowEdge(const List& edges, const Object& label) {
   return Error::notFound();
 }
 
-void Runtime::layoutAddEdge(const List& edges, const Object& label,
-                            const Object& layout) {
+void Runtime::layoutAddEdge(Thread* thread, const List& edges,
+                            const Object& label, const Object& layout) {
   DCHECK(edges.numItems() % 2 == 0,
          "edges must contain an even number of elements");
-  listAdd(edges, label);
-  listAdd(edges, layout);
+  listAdd(thread, edges, label);
+  listAdd(thread, edges, layout);
 }
 
 bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
@@ -3737,7 +3738,7 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
 RawObject Runtime::layoutCreateEmpty(Thread* thread) {
   HandleScope scope(thread);
   Layout result(&scope, newLayout());
-  result.setId(reserveLayoutId());
+  result.setId(reserveLayoutId(thread));
   layoutAtPut(result.id(), *result);
   return *result;
 }
@@ -3745,7 +3746,7 @@ RawObject Runtime::layoutCreateEmpty(Thread* thread) {
 RawObject Runtime::layoutCreateChild(Thread* thread, const Layout& layout) {
   HandleScope scope(thread);
   Layout new_layout(&scope, newLayout());
-  new_layout.setId(reserveLayoutId());
+  new_layout.setId(reserveLayoutId(thread));
   new_layout.setDescribedType(layout.describedType());
   new_layout.setNumInObjectAttributes(layout.numInObjectAttributes());
   new_layout.setInObjectAttributes(layout.inObjectAttributes());
@@ -3798,7 +3799,7 @@ RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
 
   // Add the edge to the existing layout
   Object value(&scope, *new_layout);
-  layoutAddEdge(edges, iname, value);
+  layoutAddEdge(thread, edges, iname, value);
 
   return *new_layout;
 }
@@ -3864,7 +3865,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
 
   // Add the edge to the existing layout
   Object value(&scope, *new_layout);
-  layoutAddEdge(edges, iname, value);
+  layoutAddEdge(thread, edges, iname, value);
 
   return *new_layout;
 }

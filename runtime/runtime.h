@@ -249,7 +249,7 @@ class Runtime {
 
   uword random();
 
-  void setArgv(int argc, const char** argv);
+  void setArgv(Thread* thread, int argc, const char** argv);
 
   Heap* heap() { return &heap_; }
 
@@ -327,7 +327,7 @@ class Runtime {
                            const BuiltinAttribute attrs[],
                            const BuiltinMethod builtins[]);
 
-  LayoutId reserveLayoutId();
+  LayoutId reserveLayoutId(Thread* thread);
 
   SymbolId binaryOperationSelector(Interpreter::BinaryOp op);
   SymbolId swappedBinaryOperationSelector(Interpreter::BinaryOp op);
@@ -419,10 +419,10 @@ class Runtime {
 
   // Ensures that the list has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
-  void listEnsureCapacity(const List& list, word min_capacity);
+  void listEnsureCapacity(Thread* thread, const List& list, word min_capacity);
 
   // Appends an element to the end of the list.
-  void listAdd(const List& list, const Object& value);
+  void listAdd(Thread* thread, const List& list, const Object& value);
 
   // Associate a value with the supplied key.
   //
@@ -887,7 +887,7 @@ class Runtime {
   //
   // edges is expected to be a list of edges (label, layout pairs) corresponding
   // to a class of shape altering mutations (e.g. attribute addition).
-  void layoutAddEdge(const List& edges, const Object& label,
+  void layoutAddEdge(Thread* thread, const List& edges, const Object& label,
                      const Object& layout);
 
   // Create a new tuple for the name, info pair and return a new tuple

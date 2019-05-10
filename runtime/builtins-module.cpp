@@ -1030,7 +1030,7 @@ RawObject BuiltinsModule::underListDelItem(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kIndexError,
                                 "list assignment index out of range");
   }
-  listPop(self, idx);
+  listPop(thread, self, idx);
   return NoneType::object();
 }
 

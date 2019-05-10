@@ -872,9 +872,9 @@ TEST(ByteArrayBuiltinsTest, DunderInitWithIterableCopiesBytes) {
   Object one(&scope, runtime.newInt(1));
   Object two(&scope, runtime.newInt(2));
   Object six(&scope, runtime.newInt(6));
-  runtime.listAdd(source, one);
-  runtime.listAdd(source, two);
-  runtime.listAdd(source, six);
+  runtime.listAdd(thread, source, one);
+  runtime.listAdd(thread, source, two);
+  runtime.listAdd(thread, source, six);
   Object unbound(&scope, Unbound::object());
   Object init(&scope, runBuiltin(ByteArrayBuiltins::dunderInit, self, source,
                                  unbound, unbound));
@@ -1552,9 +1552,9 @@ TEST(ByteArrayBuiltinsTest, JoinWithNonEmptyReturnsByteArray) {
   byteArrayAdd(thread, &runtime, self, ' ');
   List iter(&scope, runtime.newList());
   Bytes value(&scope, runtime.newBytes(1, '*'));
-  runtime.listAdd(iter, value);
-  runtime.listAdd(iter, value);
-  runtime.listAdd(iter, value);
+  runtime.listAdd(thread, iter, value);
+  runtime.listAdd(thread, iter, value);
+  runtime.listAdd(thread, iter, value);
   Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "* * *"));
 }

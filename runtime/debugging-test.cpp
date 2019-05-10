@@ -231,12 +231,13 @@ TEST(DebuggingTests, FormatLargeStr) {
 
 TEST(DebuggingTests, FormatList) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object o0(&scope, NoneType::object());
   Object o1(&scope, runtime.newInt(17));
-  runtime.listAdd(list, o0);
-  runtime.listAdd(list, o1);
+  runtime.listAdd(thread, list, o0);
+  runtime.listAdd(thread, list, o1);
   std::stringstream ss;
   ss << list;
   EXPECT_EQ(ss.str(), "[None, 17]");

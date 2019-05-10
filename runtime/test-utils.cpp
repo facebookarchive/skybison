@@ -356,7 +356,7 @@ RawObject listFromRange(word start, word stop) {
   Object value(&scope, NoneType::object());
   for (word i = start; i < stop; i++) {
     value = SmallInt::fromWord(i);
-    thread->runtime()->listAdd(result, value);
+    thread->runtime()->listAdd(thread, result, value);
   }
   return *result;
 }

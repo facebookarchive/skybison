@@ -34,11 +34,12 @@ TEST(ImportlibTest, SimpleImport) {
   writeFile(tempdir.path + "bar.py", "x = 67");
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List sys_path(&scope, moduleAt(&runtime, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime.newStrFromCStr(tempdir.path.c_str()));
-  runtime.listAdd(sys_path, temp_dir_str);
+  runtime.listAdd(thread, sys_path, temp_dir_str);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 import foo
 import bar
@@ -66,11 +67,12 @@ TEST(ImportlibTest, ImportsEmptyModule) {
   ASSERT_EQ(mkdir(module_dir.c_str(), S_IRWXU), 0);
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List sys_path(&scope, moduleAt(&runtime, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime.newStrFromCStr(tempdir.path.c_str()));
-  runtime.listAdd(sys_path, temp_dir_str);
+  runtime.listAdd(thread, sys_path, temp_dir_str);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 import somedir
 )")
@@ -86,11 +88,12 @@ TEST(ImportlibTest, ImportsModuleWithInitPy) {
   writeFile(module_dir + "/__init__.py", "y = 13");
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List sys_path(&scope, moduleAt(&runtime, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime.newStrFromCStr(tempdir.path.c_str()));
-  runtime.listAdd(sys_path, temp_dir_str);
+  runtime.listAdd(thread, sys_path, temp_dir_str);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 import bar
 )")
@@ -110,11 +113,12 @@ TEST(ImportlibTest, SubModuleImport) {
   writeFile(module_dir + "/blam.py", "z = 7");
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List sys_path(&scope, moduleAt(&runtime, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime.newStrFromCStr(tempdir.path.c_str()));
-  runtime.listAdd(sys_path, temp_dir_str);
+  runtime.listAdd(thread, sys_path, temp_dir_str);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 import baz.blam
 )")
@@ -141,11 +145,12 @@ TEST(ImportlibTest, FromImportsWithRelativeName) {
   writeFile(submodule + "/a.py", "val = 'submodule val'");
 
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List sys_path(&scope, moduleAt(&runtime, "sys", "path"));
   sys_path.setNumItems(0);
   Str temp_dir_str(&scope, runtime.newStrFromCStr(tempdir.path.c_str()));
-  runtime.listAdd(sys_path, temp_dir_str);
+  runtime.listAdd(thread, sys_path, temp_dir_str);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 import a
 import submodule

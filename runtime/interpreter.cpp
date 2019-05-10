@@ -1782,7 +1782,7 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
       if (thread->clearPendingStopIteration()) break;
       return unwind(ctx);
     }
-    runtime->listAdd(list, value);
+    runtime->listAdd(thread, list, value);
   }
 
   frame->pushValue(*list);
@@ -2590,10 +2590,11 @@ bool Interpreter::doSetupWith(Context* ctx, word arg) {
 
 // opcode 145
 void Interpreter::doListAppend(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
   Object value(&scope, ctx->frame->popValue());
   List list(&scope, ctx->frame->peek(arg - 1));
-  ctx->thread->runtime()->listAdd(list, value);
+  thread->runtime()->listAdd(thread, list, value);
 }
 
 // opcode 146

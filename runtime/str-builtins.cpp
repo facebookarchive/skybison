@@ -118,12 +118,12 @@ RawObject strSplitlines(Thread* thread, const Str& str, bool keepends) {
 
     // If there are no newlines, the str returned should be identity-equal
     if (j == 0 && eol_pos == str.length() && str.isStr()) {
-      runtime->listAdd(result, str);
+      runtime->listAdd(thread, result, str);
       return *result;
     }
 
     Str substr(&scope, runtime->strSubstr(thread, str, j, eol_pos - j));
-    runtime->listAdd(result, substr);
+    runtime->listAdd(thread, result, substr);
   }
 
   return *result;

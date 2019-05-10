@@ -20,7 +20,7 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
     word old_length = dst.numItems();
     word new_length = old_length + src.numItems();
     if (new_length != old_length) {
-      runtime->listEnsureCapacity(dst, new_length);
+      runtime->listEnsureCapacity(thread, dst, new_length);
       // Save the number of items before adding the two sizes together. This is
       // for the a.extend(a) case (src == dst).
       dst.setNumItems(new_length);
@@ -36,7 +36,7 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
     word old_length = dst.numItems();
     word new_length = old_length + src.length();
     if (new_length != old_length) {
-      runtime->listEnsureCapacity(dst, new_length);
+      runtime->listEnsureCapacity(thread, dst, new_length);
       dst.setNumItems(new_length);
       for (word i = 0, j = old_length; j < new_length; i++, j++) {
         dst.atPut(j, src.at(i));
@@ -72,14 +72,14 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
       if (thread->clearPendingStopIteration()) break;
       return *value;
     }
-    runtime->listAdd(dst, value);
+    runtime->listAdd(thread, dst, value);
   }
   return *dst;
 }
 
 void listInsert(Thread* thread, const List& list, const Object& value,
                 word index) {
-  thread->runtime()->listAdd(list, value);
+  thread->runtime()->listAdd(thread, list, value);
   word last_index = list.numItems() - 1;
   if (index < 0) {
     index = last_index + index;
@@ -92,8 +92,8 @@ void listInsert(Thread* thread, const List& list, const Object& value,
   list.atPut(index, *value);
 }
 
-RawObject listPop(const List& list, word index) {
-  HandleScope scope;
+RawObject listPop(Thread* thread, const List& list, word index) {
+  HandleScope scope(thread);
   Object popped(&scope, list.at(index));
   list.atPut(index, NoneType::object());
   word last_index = list.numItems() - 1;
@@ -235,7 +235,8 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   List self(&scope, *self_obj);
   List other(&scope, *other_obj);
   List new_list(&scope, runtime->newList());
-  runtime->listEnsureCapacity(new_list, self.numItems() + other.numItems());
+  runtime->listEnsureCapacity(thread, new_list,
+                              self.numItems() + other.numItems());
   new_list = listExtend(thread, new_list, self);
   if (!new_list.isError()) {
     new_list = listExtend(thread, new_list, other);
@@ -295,7 +296,7 @@ RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   }
   List list(&scope, *self);
   Object value(&scope, args.get(1));
-  thread->runtime()->listAdd(list, value);
+  thread->runtime()->listAdd(thread, list, value);
   return NoneType::object();
 }
 
@@ -393,7 +394,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
                                 "pop index out of range");
   }
 
-  return listPop(list, index);
+  return listPop(thread, list, index);
 }
 
 RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
@@ -411,7 +412,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   for (word i = 0, num_items = self.numItems(); i < num_items; ++i) {
     item = self.at(i);
     if (*value == *item) {
-      listPop(self, i);
+      listPop(thread, self, i);
       return NoneType::object();
     }
     comp_result = Interpreter::compareOperation(thread, frame, CompareOp::EQ,
@@ -420,7 +421,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
     found = Interpreter::isTrue(thread, frame, comp_result);
     if (found.isError()) return *found;
     if (found == Bool::trueObj()) {
-      listPop(self, i);
+      listPop(thread, self, i);
       return NoneType::object();
     }
   }
@@ -561,7 +562,7 @@ static RawObject setItemSlice(Thread* thread, const List& list,
   // Note: initial capacity for result array here is an optimistic guess
   // since we don't yet know length iterator
   // Potential optimization: use __length_hint__ of src
-  runtime->listEnsureCapacity(result_list, list.numItems());
+  runtime->listEnsureCapacity(thread, result_list, list.numItems());
 
   // copy prefix into result array:
   word prefix_length = Utils::minimum(start, stop + 1);
@@ -633,7 +634,7 @@ static RawObject setItemSlice(Thread* thread, const List& list,
   // And now copy suffix:
   word suffix_length = list.numItems() - suffix_start;
   word result_length = result_list.numItems() + suffix_length;
-  runtime->listEnsureCapacity(result_list, result_length);
+  runtime->listEnsureCapacity(thread, result_list, result_length);
 
   word index = result_list.numItems();
   result_list.setNumItems(result_length);

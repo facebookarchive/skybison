@@ -567,27 +567,28 @@ TEST(RuntimeDictTest, CanCreateDictItems) {
 
 TEST(RuntimeListTest, ListGrowth) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Tuple array1(&scope, runtime.newTuple(1));
   list.setItems(*array1);
   EXPECT_EQ(array1.length(), 1);
-  runtime.listEnsureCapacity(list, 2);
+  runtime.listEnsureCapacity(thread, list, 2);
   Tuple array2(&scope, list.items());
   EXPECT_NE(*array1, *array2);
   EXPECT_GE(array2.length(), 2);
 
   Tuple array4(&scope, runtime.newTuple(4));
   list.setItems(*array4);
-  runtime.listEnsureCapacity(list, 5);
+  runtime.listEnsureCapacity(thread, list, 5);
   Tuple array16(&scope, list.items());
   EXPECT_NE(*array4, *array16);
   EXPECT_EQ(array16.length(), 16);
-  runtime.listEnsureCapacity(list, 17);
+  runtime.listEnsureCapacity(thread, list, 17);
   Tuple array24(&scope, list.items());
   EXPECT_NE(*array16, *array24);
   EXPECT_EQ(array24.length(), 24);
-  runtime.listEnsureCapacity(list, 40);
+  runtime.listEnsureCapacity(thread, list, 40);
   EXPECT_EQ(list.capacity(), 40);
 }
 
@@ -600,7 +601,8 @@ TEST(RuntimeListTest, EmptyListInvariants) {
 
 TEST(RuntimeListTest, AppendToList) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
 
   // Check that list capacity grows by 1.5
@@ -609,7 +611,7 @@ TEST(RuntimeListTest, AppendToList) {
                               24, 24, 24, 24, 24, 24, 36};
   for (int i = 0; i < 25; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.listAdd(list, value);
+    runtime.listAdd(thread, list, value);
     ASSERT_EQ(list.capacity(), expected_capacity[i]) << i;
     ASSERT_EQ(list.numItems(), i + 1) << i;
   }
@@ -1732,7 +1734,7 @@ TEST(RuntimeSetTest, UpdateList) {
   Set set(&scope, runtime.newSet());
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.listAdd(list, value);
+    runtime.listAdd(thread, list, value);
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
@@ -1754,7 +1756,7 @@ TEST(RuntimeSetTest, UpdateListIterator) {
   Set set(&scope, runtime.newSet());
   for (word i = 0; i < 8; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.listAdd(list, value);
+    runtime.listAdd(thread, list, value);
   }
   for (word i = 4; i < 12; i++) {
     Object value(&scope, SmallInt::fromWord(i));
@@ -2696,7 +2698,7 @@ TEST(RuntimeTest, InstanceDelWithReadOnlyAttributeRaisesAttributeError) {
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
-  LayoutId layout_id = runtime.reserveLayoutId();
+  LayoutId layout_id = runtime.reserveLayoutId(thread);
   Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
                                            LayoutId::kObject, attrs, builtins));
   Layout layout(&scope, type.instanceLayout());
@@ -3062,7 +3064,7 @@ TEST(RuntimeTest, InstanceAtPutWithReadOnlyAttributeRaisesAttributeError) {
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
-  LayoutId layout_id = runtime.reserveLayoutId();
+  LayoutId layout_id = runtime.reserveLayoutId(thread);
   Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
                                            LayoutId::kObject, attrs, builtins));
   Layout layout(&scope, type.instanceLayout());
@@ -3317,7 +3319,8 @@ TEST(RuntimeStrTest, StrReplaceWithPostfixReplacesEnd) {
 
 TEST(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   BuiltinAttribute attrs[] = {
       {SymbolId::kDunderGlobals, 0, AttributeFlags::kReadOnly},
@@ -3326,7 +3329,7 @@ TEST(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
-  LayoutId layout_id = runtime.reserveLayoutId();
+  LayoutId layout_id = runtime.reserveLayoutId(thread);
   Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
                                            LayoutId::kObject, attrs, builtins));
   EXPECT_EQ(type.builtinBase(), layout_id);
@@ -3334,7 +3337,8 @@ TEST(RuntimeTest, BuiltinBaseOfNonEmptyTypeIsTypeItself) {
 
 TEST(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   BuiltinAttribute attrs[] = {
       {SymbolId::kSentinelId, -1},
@@ -3342,7 +3346,7 @@ TEST(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   BuiltinMethod builtins[] = {
       {SymbolId::kSentinelId, nullptr},
   };
-  LayoutId layout_id = runtime.reserveLayoutId();
+  LayoutId layout_id = runtime.reserveLayoutId(thread);
   Type type(&scope, runtime.addBuiltinType(SymbolId::kVersion, layout_id,
                                            LayoutId::kObject, attrs, builtins));
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);

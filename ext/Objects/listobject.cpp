@@ -129,7 +129,7 @@ PY_EXPORT int PyList_Append(PyObject* op, PyObject* newitem) {
   }
   List list(&scope, *list_obj);
 
-  runtime->listAdd(list, value);
+  runtime->listAdd(thread, list, value);
   Py_INCREF(newitem);
   return 0;
 }

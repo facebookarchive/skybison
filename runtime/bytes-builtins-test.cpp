@@ -1147,9 +1147,9 @@ TEST(BytesBuiltinsTest, JoinWithNonEmptyListReturnsBytes) {
   Bytes self(&scope, runtime.newBytes(1, ' '));
   List iter(&scope, runtime.newList());
   Bytes value(&scope, runtime.newBytes(1, '*'));
-  runtime.listAdd(iter, value);
-  runtime.listAdd(iter, value);
-  runtime.listAdd(iter, value);
+  runtime.listAdd(thread, iter, value);
+  runtime.listAdd(thread, iter, value);
+  runtime.listAdd(thread, iter, value);
   Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "* * *"));
 }

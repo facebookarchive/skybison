@@ -544,7 +544,7 @@ RawObject Thread::reprEnter(const Object& obj) {
     }
   }
   // TODO(emacs): When there is better error handling, raise an exception.
-  runtime_->listAdd(list, obj);
+  runtime_->listAdd(this, list, obj);
   return RawBool::falseObj();
 }
 

@@ -249,10 +249,11 @@ RawObject Marshal::Reader::readObject() {
 }
 
 word Marshal::Reader::addRef(RawObject value) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object value_handle(&scope, value);
   word result = refs_.numItems();
-  runtime_->listAdd(refs_, value_handle);
+  runtime_->listAdd(thread, refs_, value_handle);
   return result;
 }
 

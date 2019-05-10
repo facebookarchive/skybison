@@ -115,7 +115,7 @@ TEST(InterpreterTest, IsTrueDunderLen) {
 
   List nonempty_list(&scope, runtime.newList());
   Object elt(&scope, NoneType::object());
-  runtime.listAdd(nonempty_list, elt);
+  runtime.listAdd(thread, nonempty_list, elt);
 
   EXPECT_EQ(Interpreter::isTrue(thread, frame, nonempty_list), Bool::trueObj());
 

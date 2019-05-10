@@ -249,9 +249,9 @@ TEST(SetBuiltinsTest, SetIntersectionWithIterableReturnsIntersection) {
   Set set(&scope, setFromRange(0, 3));
   List list(&scope, runtime.newList());
   Object key(&scope, SmallInt::fromWord(4));
-  runtime.listAdd(list, key);
+  runtime.listAdd(thread, list, key);
   key = SmallInt::fromWord(0);
-  runtime.listAdd(list, key);
+  runtime.listAdd(thread, list, key);
   Object result(&scope, runBuiltin(SetBuiltins::intersection, set, list));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 1);
@@ -443,7 +443,7 @@ TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint([None])
-  runtime.listAdd(other, value);
+  runtime.listAdd(thread, other, value);
   Object result1(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
@@ -457,7 +457,7 @@ TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   // {None}.isdisjoint([1])
   other = runtime.newList();
   value = SmallInt::fromWord(1);
-  runtime.listAdd(other, value);
+  runtime.listAdd(thread, other, value);
   Object result3(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());

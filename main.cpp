@@ -17,7 +17,8 @@ int main(int argc, const char** argv) {
   if (enable_cache != nullptr && enable_cache[0] != '\0') {
     runtime.enableCache();
   }
-  runtime.setArgv(argc, argv);
+  python::Thread* thread = python::Thread::current();
+  runtime.setArgv(thread, argc, argv);
   const char* file_name = argv[1];
   word file_len;
   std::unique_ptr<char[]> buffer(python::OS::readFile(file_name, &file_len));
@@ -31,7 +32,7 @@ int main(int argc, const char** argv) {
   }
 
   // TODO(T39499894): Rewrite this whole function to use the C-API.
-  python::HandleScope scope;
+  python::HandleScope scope(thread);
   python::Object result(&scope, runtime.run(buffer.get()));
   if (result.isError()) {
     python::printPendingException(python::Thread::current());

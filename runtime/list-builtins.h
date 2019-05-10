@@ -19,7 +19,7 @@ void listInsert(Thread* thread, const List& list, const Object& value,
 
 // Removes and returns an element from the specified list index.
 // Expects index to be within [0, len(list)]
-RawObject listPop(const List& list, word index);
+RawObject listPop(Thread* thread, const List& list, word index);
 
 // Return a new list that is composed of list repeated ntimes
 RawObject listReplicate(Thread* thread, const List& list, word ntimes);

@@ -219,14 +219,15 @@ print(a[0], a[1], a[2][0])
 
 TEST(ListBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Int value0(&scope, runtime.newInt(1));
   Bool value1(&scope, RawBool::falseObj());
   Str value2(&scope, runtime.newStrFromCStr("hello"));
   List list(&scope, runtime.newList());
-  runtime.listAdd(list, value0);
-  runtime.listAdd(list, value1);
-  runtime.listAdd(list, value2);
+  runtime.listAdd(thread, list, value0);
+  runtime.listAdd(thread, list, value1);
+  runtime.listAdd(thread, list, value2);
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value0),
             RawBool::trueObj());
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value1),
@@ -237,12 +238,13 @@ TEST(ListBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
 
 TEST(ListBuiltinsTest, DunderContainsWithUncontainedElementReturnsFalse) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Int value0(&scope, runtime.newInt(7));
   NoneType value1(&scope, RawNoneType::object());
   List list(&scope, runtime.newList());
-  runtime.listAdd(list, value0);
-  runtime.listAdd(list, value1);
+  runtime.listAdd(thread, list, value0);
+  runtime.listAdd(thread, list, value1);
   Int value2(&scope, runtime.newInt(42));
   Bool value3(&scope, RawBool::trueObj());
   EXPECT_EQ(runBuiltin(ListBuiltins::dunderContains, list, value2),
@@ -394,11 +396,12 @@ TEST(ListBuiltinsTest, ListInsertWithLargeIntIndexRaisesTypeError) {
 
 TEST(ListBuiltinsTest, ListInsertWithBoolIndexInsertsAtInt) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List self(&scope, runtime.newList());
   Object value(&scope, SmallInt::fromWord(3));
-  runtime.listAdd(self, value);
-  runtime.listAdd(self, value);
+  runtime.listAdd(thread, self, value);
+  runtime.listAdd(thread, self, value);
   Object fals(&scope, Bool::falseObj());
   Object tru(&scope, Bool::trueObj());
   Object result(&scope, runBuiltin(ListBuiltins::insert, self, tru, tru));
@@ -505,16 +508,17 @@ print(len(a), a[0], a[1], a[2])
 
 TEST(ListBuiltinsTest, ListRemoveWithDuplicateItemsRemovesFirstMatchingItem) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Int value0(&scope, runtime.newInt(0));
   Int value1(&scope, runtime.newInt(1));
   Int value2(&scope, runtime.newInt(2));
   List list(&scope, runtime.newList());
-  runtime.listAdd(list, value0);
-  runtime.listAdd(list, value1);
-  runtime.listAdd(list, value2);
-  runtime.listAdd(list, value1);
-  runtime.listAdd(list, value0);
+  runtime.listAdd(thread, list, value0);
+  runtime.listAdd(thread, list, value1);
+  runtime.listAdd(thread, list, value2);
+  runtime.listAdd(thread, list, value1);
+  runtime.listAdd(thread, list, value0);
 
   EXPECT_EQ(list.numItems(), 5);
   runBuiltin(ListBuiltins::remove, list, value1);
@@ -1516,7 +1520,8 @@ TEST(ListIteratorBuiltinsTest, DunderLengthHintOnConsumedListIterator) {
 
 TEST(ListBuiltinsTest, InsertToList) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
 
   for (int i = 0; i < 9; i++) {
@@ -1524,12 +1529,11 @@ TEST(ListBuiltinsTest, InsertToList) {
       continue;
     }
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.listAdd(list, value);
+    runtime.listAdd(thread, list, value);
   }
   EXPECT_FALSE(isIntEqualsWord(list.at(1), 1));
   EXPECT_FALSE(isIntEqualsWord(list.at(6), 6));
 
-  Thread* thread = Thread::current();
   Object value2(&scope, SmallInt::fromWord(1));
   listInsert(thread, list, value2, 1);
   Object value12(&scope, SmallInt::fromWord(6));
@@ -1540,15 +1544,15 @@ TEST(ListBuiltinsTest, InsertToList) {
 
 TEST(ListBuiltinsTest, InsertToListBounds) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   for (int i = 0; i < 10; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.listAdd(list, value);
+    runtime.listAdd(thread, list, value);
   }
   ASSERT_EQ(list.numItems(), 10);
 
-  Thread* thread = Thread::current();
   Object value100(&scope, SmallInt::fromWord(100));
   listInsert(thread, list, value100, 100);
   ASSERT_EQ(list.numItems(), 11);
@@ -1567,23 +1571,24 @@ TEST(ListBuiltinsTest, InsertToListBounds) {
 
 TEST(ListBuiltinsTest, PopList) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   for (int i = 0; i < 16; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.listAdd(list, value);
+    runtime.listAdd(thread, list, value);
   }
   ASSERT_EQ(list.numItems(), 16);
 
   // Pop from the end
-  RawObject res1 = listPop(list, 15);
+  RawObject res1 = listPop(thread, list, 15);
   ASSERT_EQ(list.numItems(), 15);
   EXPECT_TRUE(isIntEqualsWord(list.at(14), 14));
   EXPECT_TRUE(isIntEqualsWord(res1, 15));
 
   // Pop elements from 5 - 10
   for (int i = 0; i < 5; i++) {
-    RawObject res5 = listPop(list, 5);
+    RawObject res5 = listPop(thread, list, 5);
     EXPECT_TRUE(isIntEqualsWord(res5, i + 5));
   }
   ASSERT_EQ(list.numItems(), 10);
@@ -1595,7 +1600,7 @@ TEST(ListBuiltinsTest, PopList) {
   }
 
   // Pop element 0
-  RawObject res0 = listPop(list, 0);
+  RawObject res0 = listPop(thread, list, 0);
   ASSERT_EQ(list.numItems(), 9);
   EXPECT_TRUE(isIntEqualsWord(list.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(res0, 0));
@@ -1603,14 +1608,15 @@ TEST(ListBuiltinsTest, PopList) {
 
 TEST(ListBuiltinsTest, ExtendList) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   List list1(&scope, runtime.newList());
   for (int i = 0; i < 4; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     Object value1(&scope, SmallInt::fromWord(i + 4));
-    runtime.listAdd(list, value);
-    runtime.listAdd(list1, value1);
+    runtime.listAdd(thread, list, value);
+    runtime.listAdd(thread, list1, value1);
   }
   EXPECT_EQ(list.numItems(), 4);
   Object list1_handle(&scope, *list1);
@@ -1620,14 +1626,15 @@ TEST(ListBuiltinsTest, ExtendList) {
 
 TEST(ListBuiltinsTest, ExtendListIterator) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   List list1(&scope, runtime.newList());
   for (int i = 0; i < 4; i++) {
     Object value(&scope, SmallInt::fromWord(i));
     Object value1(&scope, SmallInt::fromWord(i + 4));
-    runtime.listAdd(list, value);
-    runtime.listAdd(list1, value1);
+    runtime.listAdd(thread, list, value);
+    runtime.listAdd(thread, list1, value1);
   }
   EXPECT_EQ(list.numItems(), 4);
   Object list1_handle(&scope, *list1);
@@ -1638,7 +1645,8 @@ TEST(ListBuiltinsTest, ExtendListIterator) {
 
 TEST(ListBuiltinsTest, ExtendTuple) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object object_array0(&scope, runtime.newTuple(0));
   Tuple object_array1(&scope, runtime.newTuple(1));
@@ -1646,7 +1654,7 @@ TEST(ListBuiltinsTest, ExtendTuple) {
 
   for (int i = 0; i < 4; i++) {
     Object value(&scope, SmallInt::fromWord(i));
-    runtime.listAdd(list, value);
+    runtime.listAdd(thread, list, value);
   }
   listExtend(Thread::current(), list, object_array0);
   EXPECT_EQ(list.numItems(), 4);
@@ -1722,10 +1730,11 @@ TEST(ListBuiltinsTest, ExtendDict) {
 
 TEST(ListBuiltinsTest, ExtendIterator) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object iterable(&scope, runtime.newRange(1, 4, 1));
-  listExtend(Thread::current(), list, iterable);
+  listExtend(thread, list, iterable);
 
   EXPECT_PYLIST_EQ(list, {1, 2, 3});
 }
@@ -1744,7 +1753,7 @@ TEST(ListBuiltinsTest, SortSingleElementListSucceeds) {
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt(&scope, SmallInt::fromWord(5));
-  runtime.listAdd(list, elt);
+  runtime.listAdd(thread, list, elt);
   ASSERT_EQ(listSort(thread, list), NoneType::object());
   EXPECT_EQ(list.numItems(), 1);
   EXPECT_EQ(list.at(0), *elt);
@@ -1756,11 +1765,11 @@ TEST(ListBuiltinsTest, SortMultiElementListSucceeds) {
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt3(&scope, SmallInt::fromWord(3));
-  runtime.listAdd(list, elt3);
+  runtime.listAdd(thread, list, elt3);
   Object elt2(&scope, SmallInt::fromWord(2));
-  runtime.listAdd(list, elt2);
+  runtime.listAdd(thread, list, elt2);
   Object elt1(&scope, SmallInt::fromWord(1));
-  runtime.listAdd(list, elt1);
+  runtime.listAdd(thread, list, elt1);
   ASSERT_EQ(listSort(thread, list), NoneType::object());
   EXPECT_EQ(list.numItems(), 3);
   EXPECT_PYLIST_EQ(list, {1, 2, 3});
@@ -1772,11 +1781,11 @@ TEST(ListBuiltinsTest, SortMultiElementListSucceeds2) {
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt3(&scope, SmallInt::fromWord(1));
-  runtime.listAdd(list, elt3);
+  runtime.listAdd(thread, list, elt3);
   Object elt2(&scope, SmallInt::fromWord(3));
-  runtime.listAdd(list, elt2);
+  runtime.listAdd(thread, list, elt2);
   Object elt1(&scope, SmallInt::fromWord(2));
-  runtime.listAdd(list, elt1);
+  runtime.listAdd(thread, list, elt1);
   ASSERT_EQ(listSort(thread, list), NoneType::object());
   EXPECT_EQ(list.numItems(), 3);
   EXPECT_PYLIST_EQ(list, {1, 2, 3});
@@ -1788,13 +1797,13 @@ TEST(ListBuiltinsTest, SortIsStable) {
   HandleScope scope(thread);
   List list(&scope, runtime.newList());
   Object elt4(&scope, runtime.newStrFromCStr("q"));
-  runtime.listAdd(list, elt4);
+  runtime.listAdd(thread, list, elt4);
   Object elt3(&scope, runtime.newStrFromCStr("world"));
-  runtime.listAdd(list, elt3);
+  runtime.listAdd(thread, list, elt3);
   Object elt2(&scope, runtime.newStrFromCStr("hello"));
-  runtime.listAdd(list, elt2);
+  runtime.listAdd(thread, list, elt2);
   Object elt1(&scope, runtime.newStrFromCStr("hello"));
-  runtime.listAdd(list, elt1);
+  runtime.listAdd(thread, list, elt1);
   ASSERT_EQ(listSort(thread, list), NoneType::object());
   EXPECT_EQ(list.numItems(), 4);
   EXPECT_EQ(list.at(0), *elt2);

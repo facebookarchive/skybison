@@ -169,7 +169,7 @@ for x in sys.argv:
   const char* argv[2];
   argv[0] = "./python";  // program
   argv[1] = "SysArgv";   // script
-  runtime.setArgv(2, argv);
+  runtime.setArgv(Thread::current(), 2, argv);
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "1\nSysArgv\n");
 }
@@ -189,7 +189,7 @@ for x in sys.argv:
   argv[0] = "./python";  // program
   argv[1] = "SysArgv";   // script
   argv[2] = "200";       // argument
-  runtime.setArgv(3, argv);
+  runtime.setArgv(Thread::current(), 3, argv);
   std::string output = compileAndRunToString(&runtime, src);
   EXPECT_EQ(output, "2\n200\nSysArgv\n200\n");
 }
