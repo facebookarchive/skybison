@@ -3,9 +3,27 @@
 
 #include "handles.h"
 #include "objects.h"
-#include "runtime.h"
 
 namespace python {
+
+// Looks for a cache entry with a `layout_id` key. Returns the cached value.
+// Returns `ErrorNotFound` if none was found.
+RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id);
+
+// Returns the original argument of bytecode operations that were rewritten by
+// `rewriteBytecode()`.
+word icOriginalArg(const Function& function, word index);
+
+// Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
+// `function`. It has the arguments of opcodes that use the cache replaced with
+// a cache index. The previous arguments are moved to a separate tuple and can
+// be retrieved with `icOriginalArg()`. Also adds a correctly sized `caches`
+// tuple to `function`.
+void icRewriteBytecode(Thread* thread, const Function& function);
+
+// Sets a cache entry to the given `layout_id` as key and `value` as value.
+void icUpdate(Thread* thread, const Tuple& caches, word index,
+              LayoutId layout_id, const Object& value);
 
 // Cache layout:
 //  The caches for the caching opcodes of a function are joined together in a
@@ -33,22 +51,6 @@ const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
 const int kIcEntryKeyOffset = 0;
 const int kIcEntryValueOffset = 1;
 
-// Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
-// `function`. It has the arguments of opcodes that use the cache replaced with
-// a cache index. The previous arguments are moved to a separate tuple and can
-// be retrieved with `icOriginalArg()`. Also adds a correctly sized `caches`
-// tuple to `function`.
-void icRewriteBytecode(Thread* thread, const Function& function);
-
-// Returns the original argument of bytecode operations that were rewritten by
-// `rewriteBytecode()`.
-inline word icOriginalArg(const Function& function, word index) {
-  return SmallInt::cast(Tuple::cast(function.originalArguments()).at(index))
-      .value();
-}
-
-// Looks for a cached value matching `layout_id` at `index`. Returns a cached
-// value or an `Error` if no cached value was found.
 inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
   RawSmallInt key = RawSmallInt::fromWord(static_cast<word>(layout_id));
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
@@ -65,8 +67,9 @@ inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
   return Error::notFound();
 }
 
-// Sets a cache entry to the given `layout_id` as key and `value` as value.
-void icUpdate(Thread* thread, const Tuple& caches, word index,
-              LayoutId layout_id, const Object& value);
+inline word icOriginalArg(const Function& function, word index) {
+  return SmallInt::cast(Tuple::cast(function.originalArguments()).at(index))
+      .value();
+}
 
 }  // namespace python
