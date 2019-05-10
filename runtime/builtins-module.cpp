@@ -28,8 +28,8 @@ namespace python {
 RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseTypeErrorWithCStr(
-        "getattr(): attribute name must be string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "getattr(): attribute name must be string");
   }
   return runtime->attributeAt(thread, self, name);
 }
@@ -37,8 +37,8 @@ RawObject getAttribute(Thread* thread, const Object& self, const Object& name) {
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseTypeErrorWithCStr(
-        "hasattr(): attribute name must be string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "hasattr(): attribute name must be string");
   }
 
   HandleScope scope(thread);
@@ -61,8 +61,8 @@ RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value) {
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseTypeErrorWithCStr(
-        "setattr(): attribute name must be string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "setattr(): attribute name must be string");
   }
   HandleScope scope(thread);
   Object result(&scope, thread->invokeMethod3(self, SymbolId::kDunderSetattr,
@@ -304,7 +304,8 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
     if (runtime->isSubclass(base_type, result)) {
       result = *base_type;
     } else if (!runtime->isSubclass(result, base_type)) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "metaclass conflict: the metaclass of a derived class must be a "
           "(non-strict) subclass of the metaclasses of all its bases");
     }
@@ -335,14 +336,14 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object body_obj(&scope, args.get(0));
   if (!body_obj.isFunction()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__build_class__: func must be a function");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__build_class__: func must be a function");
   }
   Function body(&scope, *body_obj);
   Object name(&scope, args.get(1));
   if (!runtime->isInstanceOfStr(*name)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__build_class__: name is not a string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__build_class__: name is not a string");
   }
   Object metaclass(&scope, args.get(2));
   Object bootstrap(&scope, args.get(3));
@@ -461,12 +462,13 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
   }
   Int num(&scope, intUnderlying(thread, arg));
   if (!num.isSmallInt()) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Python int too large to convert to C long");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C long");
   }
   word code_point = num.asWord();
   if (code_point < 0 || code_point > kMaxUnicode) {
-    return thread->raiseValueErrorWithCStr("chr() arg not in range(0x110000)");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "chr() arg not in range(0x110000)");
   }
   return SmallStr::fromCodePoint(static_cast<int32_t>(code_point));
 }
@@ -507,29 +509,34 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
   // TODO(T40808881): Add compile support for bytearray, buffer, and subclasses
   Object data(&scope, args.get(0));
   if (!data.isStr() && !data.isBytes()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "compile() currently only supports a str or bytes source");
   }
   Str filename(&scope, args.get(1));
   Str mode(&scope, args.get(2));
   // TODO(emacs): Refactor into sane argument-fetching code
   if (args.get(3) != SmallInt::fromWord(0)) {  // not the default
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "compile() does not yet support user-supplied flags");
   }
   // TODO(T40872645): Add support for compiler flag forwarding
   if (args.get(4) == Bool::falseObj()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "compile() does not yet support compiler flag forwarding");
   }
   if (args.get(5) != SmallInt::fromWord(-1)) {  // not the default
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "compile() does not yet support user-supplied optimize");
   }
   // Note: mode doesn't actually do anything yet.
   if (!mode.equalsCStr("exec") && !mode.equalsCStr("eval") &&
       !mode.equalsCStr("single")) {
-    return thread->raiseValueErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
         "Expected mode to be 'exec', 'eval', or 'single' in 'compile'");
   }
 
@@ -550,8 +557,8 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object source_obj(&scope, args.get(0));
   if (!source_obj.isCode() && !source_obj.isStr()) {
-    return thread->raiseTypeErrorWithCStr(
-        "Expected 'source' to be str or code in 'exec'");
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "Expected 'source' to be str or code in 'exec'");
   }
   // Per the docs:
   //   In all cases, if the optional parts are omitted, the code is executed in
@@ -575,18 +582,18 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
     locals = *globals_obj;
   } else if (!globals_obj.isNoneType()) {  // only globals is provided
     if (!runtime->isInstanceOfDict(*globals_obj)) {
-      return thread->raiseTypeErrorWithCStr(
-          "Expected 'globals' to be dict in 'exec'");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "Expected 'globals' to be dict in 'exec'");
     }
     locals = *globals_obj;
   } else {  // both globals and locals are provided
     if (!runtime->isInstanceOfDict(*globals_obj)) {
-      return thread->raiseTypeErrorWithCStr(
-          "Expected 'globals' to be dict in 'exec'");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "Expected 'globals' to be dict in 'exec'");
     }
     if (!runtime->isMapping(thread, locals)) {
-      return thread->raiseTypeErrorWithCStr(
-          "Expected 'locals' to be a mapping in 'exec'");
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError, "Expected 'locals' to be a mapping in 'exec'");
     }
     // TODO(T37888835): Fix 3 argument case
     UNIMPLEMENTED("exec() with both globals and locals");
@@ -599,7 +606,8 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   }
   Code code(&scope, *source_obj);
   if (code.numFreevars() != 0) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "Expected 'source' not to have free variables in 'exec'");
   }
   Dict globals(&scope, *globals_obj);
@@ -628,7 +636,8 @@ static RawObject isinstanceImpl(Thread* thread, const Object& obj,
     return Bool::falseObj();
   }
 
-  return thread->raiseTypeErrorWithCStr(
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
       "isinstance() arg 2 must be a type or tuple of types");
 }
 
@@ -647,14 +656,15 @@ RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
   Arguments args(frame_frame, nargs);
   RawObject arg = args.get(0);
   if (!arg.isStr()) {
-    return thread->raiseTypeErrorWithCStr("Unsupported type in builtin 'ord'");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Unsupported type in builtin 'ord'");
   }
   auto str = RawStr::cast(arg);
   word num_bytes;
   int32_t codepoint = str.codePointAt(0, &num_bytes);
   if (num_bytes != str.length()) {
-    return thread->raiseTypeErrorWithCStr(
-        "Builtin 'ord' expects string of length 1");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Builtin 'ord' expects string of length 1");
   }
   return SmallInt::fromWord(codepoint);
 }
@@ -759,7 +769,7 @@ RawObject BuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
     index += length;
   }
   if (index < 0 || index >= length) {
-    return thread->raiseIndexErrorWithCStr("index out of range");
+    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
   }
   return SmallInt::fromWord(self.byteAt(index));
 }
@@ -834,7 +844,7 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   }
   // NOTE: unlike __mul__, we raise a value error for negative count
   if (count < 0) {
-    return thread->raiseValueErrorWithCStr("negative count");
+    return thread->raiseWithFmt(LayoutId::kValueError, "negative count");
   }
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
@@ -1059,12 +1069,14 @@ RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("_patch expects 1 argument");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "_patch expects 1 argument");
   }
 
   Object patch_fn_obj(&scope, args.get(0));
   if (!patch_fn_obj.isFunction()) {
-    return thread->raiseTypeErrorWithCStr("_patch expects function argument");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "_patch expects function argument");
   }
   Function patch_fn(&scope, *patch_fn_obj);
   Str fn_name(&scope, patch_fn.name());
@@ -1073,7 +1085,8 @@ RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {
   Module module(&scope, runtime->findModule(module_name));
   Object base_fn_obj(&scope, runtime->moduleAt(module, fn_name));
   if (!base_fn_obj.isFunction()) {
-    return thread->raiseTypeErrorWithCStr("_patch can only patch functions");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "_patch can only patch functions");
   }
   Function base_fn(&scope, *base_fn_obj);
   copyFunctionEntries(thread, base_fn, patch_fn);

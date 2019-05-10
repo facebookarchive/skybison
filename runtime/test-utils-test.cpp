@@ -36,7 +36,8 @@ TEST(TestUtils, IsByteArrayEquals) {
   const char* error_msg = "is an Error";
   EXPECT_STREQ(error.message(), error_msg);
 
-  Object result(&scope, thread->raiseValueErrorWithCStr("bad things"));
+  Object result(&scope,
+                thread->raiseWithFmt(LayoutId::kValueError, "bad things"));
   auto const exc = isByteArrayEqualsBytes(result, view);
   EXPECT_FALSE(exc);
   const char* exc_msg = "pending 'ValueError' exception";
@@ -70,7 +71,8 @@ TEST(TestUtils, IsBytesEquals) {
   const char* error_msg = "is an Error";
   EXPECT_STREQ(error.message(), error_msg);
 
-  Object result(&scope, thread->raiseValueErrorWithCStr("bad things"));
+  Object result(&scope,
+                thread->raiseWithFmt(LayoutId::kValueError, "bad things"));
   auto const exc = isBytesEqualsBytes(result, view);
   EXPECT_FALSE(exc);
   const char* exc_msg = "pending 'ValueError' exception";

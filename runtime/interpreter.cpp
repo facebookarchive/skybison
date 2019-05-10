@@ -80,7 +80,7 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
         continue;
       }
     }
-    return thread->raiseTypeErrorWithCStr("object is not callable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not callable");
   }
 }
 
@@ -573,7 +573,8 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
   Object dunder_iter(
       &scope, lookupMethod(thread, caller, container, SymbolId::kDunderIter));
   if (dunder_iter.isError()) {
-    return thread->raiseTypeErrorWithCStr("__iter__ not defined on object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__iter__ not defined on object");
   }
   Object iter(&scope, callMethod1(thread, caller, dunder_iter, container));
   if (iter.isError()) {
@@ -582,7 +583,8 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
   Object dunder_next(&scope,
                      lookupMethod(thread, caller, iter, SymbolId::kDunderNext));
   if (dunder_next.isError()) {
-    return thread->raiseTypeErrorWithCStr("__next__ not defined on iterator");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__next__ not defined on iterator");
   }
   Object current(&scope, NoneType::object());
   Object compare_result(&scope, NoneType::object());
@@ -638,7 +640,8 @@ RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
   if (!method.isError()) {
     Object result(&scope, callMethod1(thread, caller, method, self));
     if (result.isError() || result.isBool()) return *result;
-    return thread->raiseTypeErrorWithCStr("__bool__ should return bool");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__bool__ should return bool");
   }
 
   method = lookupMethod(thread, caller, self, SymbolId::kDunderLen);
@@ -649,10 +652,11 @@ RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
       Int integer(&scope, intUnderlying(thread, result));
       if (integer.isPositive()) return Bool::trueObj();
       if (integer.isZero()) return Bool::falseObj();
-      return thread->raiseValueErrorWithCStr("__len__() should return >= 0");
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "__len__() should return >= 0");
     }
-    return thread->raiseTypeErrorWithCStr(
-        "object cannot be interpreted as an integer");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "object cannot be interpreted as an integer");
   }
   return Bool::trueObj();
 }
@@ -740,7 +744,8 @@ void Interpreter::raise(Context* ctx, RawObject raw_exc, RawObject raw_cause) {
     if (!runtime->isInstanceOfBaseException(*value)) {
       // TODO(bsimmers): Include relevant types here once we have better string
       // formatting.
-      thread->raiseTypeErrorWithCStr(
+      thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "calling exception type did not return an instance of BaseException");
       return;
     }
@@ -751,8 +756,8 @@ void Interpreter::raise(Context* ctx, RawObject raw_exc, RawObject raw_cause) {
     type = runtime->typeOf(*value);
   } else {
     // raise was given some other, unexpected value.
-    ctx->thread->raiseTypeErrorWithCStr(
-        "exceptions must derive from BaseException");
+    ctx->thread->raiseWithFmt(LayoutId::kTypeError,
+                              "exceptions must derive from BaseException");
     return;
   }
 
@@ -766,8 +771,8 @@ void Interpreter::raise(Context* ctx, RawObject raw_exc, RawObject raw_cause) {
       if (cause.isError()) return;
     } else if (!runtime->isInstanceOfBaseException(*cause) &&
                !cause.isNoneType()) {
-      thread->raiseTypeErrorWithCStr(
-          "exception causes must derive from BaseException");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "exception causes must derive from BaseException");
       return;
     }
     BaseException(&scope, *value).setCause(*cause);
@@ -1052,7 +1057,8 @@ bool Interpreter::doBinarySubscr(Context* ctx, word) {
   Object getitem(&scope, typeLookupSymbolInMro(ctx->thread, type,
                                                SymbolId::kDunderGetitem));
   if (getitem.isError()) {
-    ctx->thread->raiseTypeErrorWithCStr("object does not support indexing");
+    ctx->thread->raiseWithFmt(LayoutId::kTypeError,
+                              "object does not support indexing");
     return unwind(ctx);
   }
 
@@ -1091,7 +1097,8 @@ bool Interpreter::doGetAiter(Context* ctx, word) {
   Object method(&scope,
                 lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAiter));
   if (method.isError()) {
-    thread->raiseTypeErrorWithCStr(
+    thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "'async for' requires an object with __aiter__ method");
     return unwind(ctx);
   }
@@ -1109,7 +1116,8 @@ bool Interpreter::doGetAnext(Context* ctx, word) {
   Object anext(&scope,
                lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAnext));
   if (anext.isError()) {
-    thread->raiseTypeErrorWithCStr(
+    thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "'async for' requires an iterator with __anext__ method");
     return unwind(ctx);
   }
@@ -1121,7 +1129,8 @@ bool Interpreter::doGetAnext(Context* ctx, word) {
   Object await(&scope,
                lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAwait));
   if (await.isError()) {
-    thread->raiseTypeErrorWithCStr(
+    thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "'async for' received an invalid object from __anext__");
     return unwind(ctx);
   }
@@ -1255,7 +1264,7 @@ bool Interpreter::doGetIter(Context* ctx, word) {
   Object method(&scope, lookupMethod(thread, ctx->frame, iterable,
                                      SymbolId::kDunderIter));
   if (method.isError()) {
-    thread->raiseTypeErrorWithCStr("object is not iterable");
+    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
     return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, ctx->frame, method, iterable));
@@ -1276,7 +1285,8 @@ bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
   if (iterable.isCoroutine()) {
     Code code(&scope, frame->code());
     if (code.hasCoroutine() || code.hasIterableCoroutine()) {
-      thread->raiseTypeErrorWithCStr(
+      thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "cannot 'yield from' a coroutine object in a non-coroutine "
           "generator");
       return unwind(ctx);
@@ -1287,7 +1297,7 @@ bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
   Object method(&scope,
                 lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (method.isError()) {
-    thread->raiseTypeErrorWithCStr("object is not iterable");
+    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
     return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, frame, method, iterable));
@@ -1331,7 +1341,8 @@ bool Interpreter::doYieldFrom(Context* ctx, word) {
     Object next_method(
         &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
     if (next_method.isError()) {
-      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "iter() returned non-iterator");
       return unwind(ctx);
     }
     result = callMethod1(thread, frame, next_method, iterator);
@@ -1339,7 +1350,8 @@ bool Interpreter::doYieldFrom(Context* ctx, word) {
     Object send_method(&scope,
                        lookupMethod(thread, frame, iterator, SymbolId::kSend));
     if (send_method.isError()) {
-      thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "iter() returned non-iterator");
       return unwind(ctx);
     }
     result = callMethod2(thread, frame, send_method, iterator, value);
@@ -1371,8 +1383,8 @@ bool Interpreter::doGetAwaitable(Context* ctx, word) {
   Object await(&scope,
                lookupMethod(thread, ctx->frame, obj, SymbolId::kDunderAwait));
   if (await.isError()) {
-    thread->raiseTypeErrorWithCStr(
-        "object can't be used in 'await' expression");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "object can't be used in 'await' expression");
     return unwind(ctx);
   }
   Object iter(&scope, callMethod1(thread, ctx->frame, await, obj));
@@ -1585,7 +1597,8 @@ bool Interpreter::doEndFinally(Context* ctx, word) {
     return unwind(ctx);
   }
   if (!status.isNoneType()) {
-    thread->raiseSystemErrorWithCStr("Bad exception given to 'finally'");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "Bad exception given to 'finally'");
     return unwind(ctx);
   }
 
@@ -1599,7 +1612,8 @@ bool Interpreter::doPopExcept(Context* ctx, word) {
 
   TryBlock block = ctx->frame->blockStack()->pop();
   if (block.kind() != TryBlock::kExceptHandler) {
-    thread->raiseSystemErrorWithCStr("popped block is not an except handler");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "popped block is not an except handler");
     return unwind(ctx);
   }
 
@@ -1641,7 +1655,7 @@ bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Object iter_method(
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    thread->raiseTypeErrorWithCStr("object is not iterable");
+    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
     return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, frame, iter_method, iterable));
@@ -1650,7 +1664,7 @@ bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Object next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+    thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return unwind(ctx);
   }
   word num_pushed = 0;
@@ -1660,12 +1674,13 @@ bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
     if (value.isError()) {
       if (thread->clearPendingStopIteration()) {
         if (num_pushed == arg) break;
-        thread->raiseValueErrorWithCStr("not enough values to unpack");
+        thread->raiseWithFmt(LayoutId::kValueError,
+                             "not enough values to unpack");
       }
       return unwind(ctx);
     }
     if (num_pushed == arg) {
-      thread->raiseValueErrorWithCStr("too many values to unpack");
+      thread->raiseWithFmt(LayoutId::kValueError, "too many values to unpack");
       return unwind(ctx);
     }
     frame->pushValue(*value);
@@ -1691,7 +1706,7 @@ bool Interpreter::doForIter(Context* ctx, word arg) {
   Object next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
                                           SymbolId::kDunderNext));
   if (next_method.isError()) {
-    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+    thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return unwind(ctx);
   }
   Object value(&scope, callMethod1(thread, ctx->frame, next_method, iterator));
@@ -1717,7 +1732,7 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
   Object iter_method(
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    thread->raiseTypeErrorWithCStr("object is not iterable");
+    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
     return unwind(ctx);
   }
   Object iterator(&scope, callMethod1(thread, frame, iter_method, iterable));
@@ -1726,7 +1741,7 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
   Object next_method(
       &scope, lookupMethod(thread, frame, iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+    thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return unwind(ctx);
   }
 
@@ -1744,7 +1759,7 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
   }
 
   if (num_pushed < before) {
-    thread->raiseValueErrorWithCStr("not enough values to unpack");
+    thread->raiseWithFmt(LayoutId::kValueError, "not enough values to unpack");
     return unwind(ctx);
   }
 
@@ -1762,7 +1777,7 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
   num_pushed++;
 
   if (list.numItems() < after) {
-    thread->raiseValueErrorWithCStr("not enough values to unpack");
+    thread->raiseWithFmt(LayoutId::kValueError, "not enough values to unpack");
     return unwind(ctx);
   }
 
@@ -2143,12 +2158,13 @@ static RawObject excMatch(Interpreter::Context* ctx, const Object& left,
       Object obj(&scope, tuple.at(i));
       if (!(runtime->isInstanceOfType(*obj) &&
             Type(&scope, *obj).isBaseExceptionSubclass())) {
-        return ctx->thread->raiseTypeErrorWithCStr(cannot_catch_msg);
+        return ctx->thread->raiseWithFmt(LayoutId::kTypeError,
+                                         cannot_catch_msg);
       }
     }
   } else if (!(runtime->isInstanceOfType(*right) &&
                Type(&scope, *right).isBaseExceptionSubclass())) {
-    return ctx->thread->raiseTypeErrorWithCStr(cannot_catch_msg);
+    return ctx->thread->raiseWithFmt(LayoutId::kTypeError, cannot_catch_msg);
   }
 
   return Bool::fromBool(givenExceptionMatches(ctx->thread, left, right));
@@ -2408,7 +2424,8 @@ bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
       thread->setPendingExceptionValue(thread->caughtExceptionValue());
       thread->setPendingExceptionTraceback(thread->caughtExceptionTraceback());
     } else {
-      thread->raiseRuntimeErrorWithCStr("No active exception to reraise");
+      thread->raiseWithFmt(LayoutId::kRuntimeError,
+                           "No active exception to reraise");
     }
   } else {
     Frame* frame = ctx->frame;
@@ -2540,16 +2557,16 @@ bool Interpreter::doSetupWith(Context* ctx, word arg) {
                lookupMethod(thread, frame, mgr, SymbolId::kDunderEnter));
   if (enter.isError()) {
     if (enter.isErrorNotFound()) {
-      thread->raiseAttributeError(
-          runtime->symbols()->at(SymbolId::kDunderEnter));
+      thread->raise(LayoutId::kAttributeError,
+                    runtime->symbols()->at(SymbolId::kDunderEnter));
     }
     return unwind(ctx);
   }
   Object exit(&scope, lookupMethod(thread, frame, mgr, SymbolId::kDunderExit));
   if (exit.isError()) {
     if (exit.isErrorNotFound()) {
-      thread->raiseAttributeError(
-          runtime->symbols()->at(SymbolId::kDunderExit));
+      thread->raise(LayoutId::kAttributeError,
+                    runtime->symbols()->at(SymbolId::kDunderExit));
     }
     return unwind(ctx);
   }
@@ -2644,7 +2661,7 @@ bool Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
           runtime->typeAt(LayoutId::kAttributeError)) {
         // TODO(bsimmers): Include type name once we have a better formatter.
         thread->clearPendingException();
-        thread->raiseTypeErrorWithCStr("object is not a mapping");
+        thread->raiseWithFmt(LayoutId::kTypeError, "object is not a mapping");
       }
       return unwind(ctx);
     }
@@ -2668,7 +2685,7 @@ bool Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
       if (thread->pendingExceptionType() ==
           runtime->typeAt(LayoutId::kAttributeError)) {
         thread->clearPendingException();
-        thread->raiseTypeErrorWithCStr("object is not a mapping");
+        thread->raiseWithFmt(LayoutId::kTypeError, "object is not a mapping");
       } else if (thread->pendingExceptionType() ==
                  runtime->typeAt(LayoutId::kKeyError)) {
         Object value(&scope, thread->pendingExceptionValue());
@@ -2676,10 +2693,11 @@ bool Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
         // TODO(bsimmers): Make these error messages more informative once
         // we have a better formatter.
         if (runtime->isInstanceOfStr(*value)) {
-          thread->raiseTypeErrorWithCStr(
-              "got multiple values for keyword argument");
+          thread->raiseWithFmt(LayoutId::kTypeError,
+                               "got multiple values for keyword argument");
         } else {
-          thread->raiseTypeErrorWithCStr("keywords must be strings");
+          thread->raiseWithFmt(LayoutId::kTypeError,
+                               "keywords must be strings");
         }
       }
       return unwind(ctx);
@@ -2764,7 +2782,8 @@ bool Interpreter::doFormatValue(Context* ctx, word flags) {
         return unwind(ctx);
       }
       if (!runtime->isInstanceOfStr(*value)) {
-        thread->raiseTypeErrorWithCStr("__str__ returned non-string");
+        thread->raiseWithFmt(LayoutId::kTypeError,
+                             "__str__ returned non-string");
         return unwind(ctx);
       }
       break;
@@ -2779,7 +2798,8 @@ bool Interpreter::doFormatValue(Context* ctx, word flags) {
         return unwind(ctx);
       }
       if (!runtime->isInstanceOfStr(*value)) {
-        thread->raiseTypeErrorWithCStr("__repr__ returned non-string");
+        thread->raiseWithFmt(LayoutId::kTypeError,
+                             "__repr__ returned non-string");
         return unwind(ctx);
       }
       break;
@@ -2794,7 +2814,8 @@ bool Interpreter::doFormatValue(Context* ctx, word flags) {
         return unwind(ctx);
       }
       if (!runtime->isInstanceOfStr(*value)) {
-        thread->raiseTypeErrorWithCStr("__repr__ returned non-string");
+        thread->raiseWithFmt(LayoutId::kTypeError,
+                             "__repr__ returned non-string");
         return unwind(ctx);
       }
       value = strEscapeNonASCII(thread, value);
@@ -2812,7 +2833,8 @@ bool Interpreter::doFormatValue(Context* ctx, word flags) {
     return unwind(ctx);
   }
   if (!runtime->isInstanceOfStr(*value)) {
-    thread->raiseTypeErrorWithCStr("__format__ returned non-string");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__format__ returned non-string");
     return unwind(ctx);
   }
   ctx->frame->pushValue(*value);

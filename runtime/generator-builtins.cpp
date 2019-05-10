@@ -23,7 +23,7 @@ static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
   // raise StopIteration.
   if (heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC &&
       !thread->hasPendingException()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   // Don't allow sending non-None values before the generator is primed.
   if (heap_frame.frame()->virtualPC() == 0 && !value.isNoneType()) {
@@ -40,7 +40,7 @@ static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
       heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC) {
     // The generator finished normally. Forward its return value in a
     // StopIteration.
-    return thread->raiseStopIteration(*result);
+    return thread->raise(LayoutId::kStopIteration, *result);
   }
   return *result;
 }
@@ -82,7 +82,8 @@ static RawObject genThrowDoRaise(Thread* thread, const GeneratorBase& gen,
   Object tb(&scope, tb_in.isUnbound() ? NoneType::object() : *tb_in);
 
   if (!tb.isNoneType() && !tb.isTraceback()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "throw() third argument must be a traceback object");
   }
   if (runtime->isInstanceOfType(*exc) &&
@@ -90,7 +91,8 @@ static RawObject genThrowDoRaise(Thread* thread, const GeneratorBase& gen,
     normalizeException(thread, &exc, &value, &tb);
   } else if (runtime->isInstanceOfBaseException(*exc)) {
     if (!value.isNoneType()) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "instance exception may not have a separate value");
     }
     value = *exc;
@@ -227,7 +229,8 @@ RawObject GeneratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isGenerator()) {
-    return thread->raiseAttributeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kAttributeError,
         "__iter__() must be called with a generator instance as the first "
         "argument");
   }

@@ -44,7 +44,8 @@ PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
   bool valid_right = runtime->isInstanceOfByteArray(*right) ||
                      runtime->isInstanceOfBytes(*right);
   if (!valid_left || !valid_right) {
-    thread->raiseTypeErrorWithCStr("can only concatenate bytearray or bytes");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "can only concatenate bytearray or bytes");
     return nullptr;
   }
   Object result(&scope, runtime->newByteArray());
@@ -61,7 +62,8 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
                                                   Py_ssize_t size) {
   Thread* thread = Thread::current();
   if (size < 0) {
-    thread->raiseSystemErrorWithCStr(
+    thread->raiseWithFmt(
+        LayoutId::kSystemError,
         "Negative size passed to PyByteArray_FromStringAndSize");
     return nullptr;
   }

@@ -41,7 +41,8 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
   if (def->m_methods != nullptr) {
     for (PyMethodDef* fdef = def->m_methods; fdef->ml_name != nullptr; fdef++) {
       if (fdef->ml_flags & METH_CLASS || fdef->ml_flags & METH_STATIC) {
-        thread->raiseValueErrorWithCStr(
+        thread->raiseWithFmt(
+            LayoutId::kValueError,
             "module functions cannot set METH_CLASS or METH_STATIC");
         return nullptr;
       }
@@ -138,7 +139,7 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
   Str key(&scope, runtime->symbols()->DunderName());
   Object name(&scope, runtime->moduleAt(module, key));
   if (!runtime->isInstanceOfStr(*name)) {
-    thread->raiseSystemErrorWithCStr("nameless module");
+    thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *name);
@@ -201,7 +202,7 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
   Str key(&scope, runtime->symbols()->DunderFile());
   Object filename(&scope, runtime->moduleAt(module, key));
   if (!runtime->isInstanceOfStr(*filename)) {
-    thread->raiseSystemErrorWithCStr("module filename missing");
+    thread->raiseWithFmt(LayoutId::kSystemError, "module filename missing");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *filename);

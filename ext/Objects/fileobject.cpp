@@ -14,7 +14,7 @@ PY_EXPORT int PyFile_WriteObject(PyObject* pyobj, PyObject* pyfile, int flags) {
   HandleScope scope(thread);
 
   if (pyfile == nullptr) {
-    thread->raiseTypeErrorWithCStr("writeobject with NULL file");
+    thread->raiseWithFmt(LayoutId::kTypeError, "writeobject with NULL file");
     return -1;
   }
 
@@ -42,7 +42,8 @@ PY_EXPORT int PyFile_WriteString(const char* str, PyObject* pyfile) {
 
   if (thread->hasPendingException()) return -1;
   if (pyfile == nullptr) {
-    thread->raiseSystemErrorWithCStr("null file for PyFile_WriteString");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "null file for PyFile_WriteString");
     return -1;
   }
 
@@ -62,21 +63,23 @@ PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
     object = thread->invokeMethod1(object, SymbolId::kFileno);
     if (object.isError()) {
       if (object.isErrorNotFound()) {
-        thread->raiseTypeErrorWithCStr(
+        thread->raiseWithFmt(
+            LayoutId::kTypeError,
             "argument must be an int, or have a fileno() method.");
       }
       return -1;
     }
     if (!runtime->isInstanceOfInt(*object)) {
-      thread->raiseTypeErrorWithCStr("fileno() returned a non-integer");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "fileno() returned a non-integer");
       return -1;
     }
   }
   Int result(&scope, intUnderlying(thread, object));
   auto const optint = result.asInt<int>();
   if (optint.error != CastError::None) {
-    thread->raiseOverflowErrorWithCStr(
-        "Python int too big to convert to C int");
+    thread->raiseWithFmt(LayoutId::kOverflowError,
+                         "Python int too big to convert to C int");
     return -1;
   }
   int fd = optint.value;

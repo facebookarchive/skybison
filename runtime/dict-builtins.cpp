@@ -49,7 +49,7 @@ RawObject dictMergeDict(Thread* thread, const Dict& dict, const Object& mapping,
         !runtime->dictIncludesWithHash(thread, dict, key, hash)) {
       runtime->dictAtPutWithHash(thread, dict, key, value, hash);
     } else if (do_override == Override::kError) {
-      return thread->raiseKeyError(*key);
+      return thread->raise(LayoutId::kKeyError, *key);
     }
   }
   return NoneType::object();
@@ -70,8 +70,8 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
   Object keys_method(&scope, Interpreter::lookupMethod(thread, frame, mapping,
                                                        SymbolId::kKeys));
   if (keys_method.isError()) {
-    return thread->raiseAttributeErrorWithCStr(
-        "object has no 'keys' attribute");
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "object has no 'keys' attribute");
   }
 
   // Generic mapping, use keys() and __getitem__()
@@ -79,7 +79,8 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
                        Interpreter::lookupMethod(thread, frame, mapping,
                                                  SymbolId::kDunderGetitem));
   if (subscr_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not subscriptable");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "object is not subscriptable");
   }
   Object keys(&scope,
               Interpreter::callMethod1(thread, frame, keys_method, mapping));
@@ -100,7 +101,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
         if (value.isError()) return *value;
         runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
       } else if (do_override == Override::kError) {
-        return thread->raiseKeyError(*key);
+        return thread->raise(LayoutId::kKeyError, *key);
       }
     }
     return NoneType::object();
@@ -121,7 +122,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
         if (value.isError()) return *value;
         runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
       } else if (do_override == Override::kError) {
-        return thread->raiseKeyError(*key);
+        return thread->raise(LayoutId::kKeyError, *key);
       }
     }
     return NoneType::object();
@@ -132,20 +133,20 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), keys,
                                         SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("keys() is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
 
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
                                            iter_method, keys));
   if (iterator.isError()) {
-    return thread->raiseTypeErrorWithCStr("keys() is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
   Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("keys() is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "keys() is not iterable");
   }
   for (;;) {
     key = Interpreter::callMethod1(thread, thread->currentFrame(), next_method,
@@ -165,7 +166,7 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (value.isError()) return *value;
       runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
     } else if (do_override == Override::kError) {
-      return thread->raiseKeyError(*key);
+      return thread->raise(LayoutId::kKeyError, *key);
     }
   }
   return NoneType::object();
@@ -300,7 +301,7 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   }
   // Remove the key. If it doesn't exist, throw a KeyError.
   if (runtime->dictRemoveWithHash(thread, dict, key, key_hash).isError()) {
-    return thread->raiseKeyError(*key);
+    return thread->raise(LayoutId::kKeyError, *key);
   }
   return NoneType::object();
 }
@@ -441,13 +442,13 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
   Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
   if (key_hash.isError()) {
     if (key_hash.isErrorNotFound()) {
-      return thread->raiseTypeErrorWithCStr("unhashable type");
+      return thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type");
     }
     return *key_hash;
   }
   if (!runtime->isInstanceOfInt(*key_hash)) {
-    return thread->raiseTypeErrorWithCStr(
-        "__hash__ method should return an integer");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__hash__ method should return an integer");
   }
   Int hash_int(&scope, intUnderlying(thread, key_hash));
   SmallInt small_hash(&scope, SmallInt::fromWordTruncated(hash_int.digitAt(0)));
@@ -460,12 +461,12 @@ RawObject DictBuiltins::get(Thread* thread, Frame* frame, word nargs) {
 RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   if (type.builtinBase() != LayoutId::kDict) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of dict");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of dict");
   }
   Layout layout(&scope, type.instanceLayout());
   Dict result(&scope, thread->runtime()->newInstance(layout));
@@ -501,13 +502,15 @@ const BuiltinMethod DictItemIteratorBuiltins::kBuiltinMethods[] = {
 RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                                word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a dict_itemiterator iterator instance "
         "as the first argument");
   }
@@ -517,20 +520,22 @@ RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                                word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__next__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__next__() must be called with a dict_itemiterator instance as the "
         "first argument");
   }
   DictItemIterator iter(&scope, *self);
   Object value(&scope, dictItemIteratorNext(thread, iter));
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }
@@ -538,14 +543,15 @@ RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
                                                      Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__length_hint__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItemIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__length_hint__() must be called with a dict_itemiterator instance as "
         "the first argument");
   }
@@ -562,13 +568,15 @@ const BuiltinMethod DictItemsBuiltins::kBuiltinMethods[] = {
 RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
                                         word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictItems()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a dict_items instance as the first "
         "argument");
   }
@@ -587,13 +595,15 @@ const BuiltinMethod DictKeyIteratorBuiltins::kBuiltinMethods[] = {
 RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                               word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a dict_keyiterator iterator instance "
         "as the first argument");
   }
@@ -603,20 +613,22 @@ RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                               word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__next__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__next__() must be called with a dict_keyiterator instance as the "
         "first argument");
   }
   DictKeyIterator iter(&scope, *self);
   Object value(&scope, dictKeyIteratorNext(thread, iter));
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }
@@ -624,14 +636,15 @@ RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
                                                     Frame* frame, word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__length_hint__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeyIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__length_hint__() must be called with a dict_keyiterator instance as "
         "the first argument");
   }
@@ -648,13 +661,15 @@ const BuiltinMethod DictKeysBuiltins::kBuiltinMethods[] = {
 RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
                                        word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictKeys()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a dict_keys instance as the first "
         "argument");
   }
@@ -673,13 +688,15 @@ const BuiltinMethod DictValueIteratorBuiltins::kBuiltinMethods[] = {
 RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                                 word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a dict_valueiterator iterator instance "
         "as the first argument");
   }
@@ -689,20 +706,22 @@ RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                                 word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__next__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__next__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__next__() must be called with a dict_valueiterator instance as the "
         "first argument");
   }
   DictValueIterator iter(&scope, *self);
   Object value(&scope, dictValueIteratorNext(thread, iter));
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }
@@ -711,14 +730,15 @@ RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__length_hint__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValueIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__length_hint__() must be called with a dict_valueiterator instance "
         "as the first argument");
   }
@@ -735,13 +755,15 @@ const BuiltinMethod DictValuesBuiltins::kBuiltinMethods[] = {
 RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
                                          word nargs) {
   if (nargs != 1) {
-    return thread->raiseTypeErrorWithCStr("__iter__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__iter__() takes no arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isDictValues()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a dict_values instance as the first "
         "argument");
   }

@@ -99,14 +99,14 @@ static RawObject asIntObject(Thread* thread, const Object& object) {
   Object method(&scope, Interpreter::lookupMethod(thread, frame, object,
                                                   SymbolId::kDunderInt));
   if (method.isError()) {
-    return thread->raiseTypeErrorWithCStr("an integer is required");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "an integer is required");
   }
   Object result(&scope,
                 Interpreter::callMethod1(thread, frame, method, object));
   if (result.isError() || runtime->isInstanceOfInt(*result)) {
     return *result;
   }
-  return thread->raiseTypeErrorWithCStr("__int__ returned non-int");
+  return thread->raiseWithFmt(LayoutId::kTypeError, "__int__ returned non-int");
 }
 
 // Attempt to convert the given PyObject to T. When overflow != nullptr,
@@ -143,8 +143,8 @@ static T asInt(PyObject* pylong, const char* type_name, int* overflow) {
     *overflow = (result.error == CastError::Underflow) ? -1 : 1;
   } else if (result.error == CastError::Underflow &&
              std::is_unsigned<T>::value) {
-    thread->raiseOverflowErrorWithCStr(
-        "can't convert negative value to unsigned");
+    thread->raiseWithFmt(LayoutId::kOverflowError,
+                         "can't convert negative value to unsigned");
   } else {
     thread->raiseWithFmt(LayoutId::kOverflowError,
                          "Python int too big to convert to C %s", type_name);
@@ -242,7 +242,7 @@ PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   if (!thread->runtime()->isInstanceOfInt(*object)) {
-    thread->raiseTypeErrorWithCStr("an integer is required");
+    thread->raiseWithFmt(LayoutId::kTypeError, "an integer is required");
     return -1.0;
   }
   Int value(&scope, intUnderlying(thread, object));
@@ -291,8 +291,8 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
   Object self_obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   Int self(&scope, intUnderlying(thread, self_obj));
   if (!is_signed && self.isNegative()) {
-    thread->raiseOverflowErrorWithCStr(
-        "can't convert negative int to unsigned");
+    thread->raiseWithFmt(LayoutId::kOverflowError,
+                         "can't convert negative int to unsigned");
     return -1;
   }
   word length = static_cast<word>(n);
@@ -306,7 +306,7 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
   word bit_length =
       num_digits * kBitsPerWord - Utils::numRedundantSignBits(high_digit);
   if (bit_length > length * kBitsPerByte + !is_signed) {
-    thread->raiseOverflowErrorWithCStr("int too big to convert");
+    thread->raiseWithFmt(LayoutId::kOverflowError, "int too big to convert");
     return -1;
   }
   return 0;

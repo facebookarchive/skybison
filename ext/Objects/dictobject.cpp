@@ -51,7 +51,8 @@ static int setItem(Thread* thread, const Object& dictobj, const Object& key,
     return -1;
   }
   if (!runtime->isInstanceOfInt(*key_hash_obj)) {
-    thread->raiseTypeErrorWithCStr("__hash__ method should return an integer");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__hash__ method should return an integer");
     return -1;
   }
   Int large_key_hash(&scope, intUnderlying(thread, key_hash_obj));
@@ -102,7 +103,8 @@ static PyObject* getItem(Thread* thread, const Object& dict_obj,
     return nullptr;
   }
   if (!runtime->isInstanceOfInt(*hash_obj)) {
-    thread->raiseTypeErrorWithCStr("__hash__ method should return an integer");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__hash__ method should return an integer");
     return nullptr;
   }
   Int hash_int(&scope, intUnderlying(thread, hash_obj));
@@ -204,17 +206,17 @@ PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
   Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key_obj,
                                                        SymbolId::kDunderHash));
   if (dunder_hash.isNoneType()) {
-    thread->raiseTypeErrorWithCStr("unhashable object");
+    thread->raiseWithFmt(LayoutId::kTypeError, "unhashable object");
     return -1;
   }
   Object key_hash(
       &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key_obj));
   if (key_hash.isError()) {
-    thread->raiseTypeErrorWithCStr("key is not hashable");
+    thread->raiseWithFmt(LayoutId::kTypeError, "key is not hashable");
     return -1;
   }
   if (runtime->dictRemoveWithHash(thread, dict, key_obj, key_hash).isError()) {
-    thread->raiseKeyError(*key_obj);
+    thread->raise(LayoutId::kKeyError, *key_obj);
     return -1;
   }
   return 0;
@@ -243,13 +245,13 @@ PY_EXPORT PyObject* PyDict_GetItemWithError(PyObject* pydict, PyObject* key) {
   Object dunder_hash(&scope, Interpreter::lookupMethod(thread, frame, key_obj,
                                                        SymbolId::kDunderHash));
   if (dunder_hash.isNoneType()) {
-    thread->raiseTypeErrorWithCStr("unhashable object");
+    thread->raiseWithFmt(LayoutId::kTypeError, "unhashable object");
     return nullptr;
   }
   Object key_hash(
       &scope, Interpreter::callMethod1(thread, frame, dunder_hash, key_obj));
   if (key_hash.isError()) {
-    thread->raiseTypeErrorWithCStr("key is not hashable");
+    thread->raiseWithFmt(LayoutId::kTypeError, "key is not hashable");
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);

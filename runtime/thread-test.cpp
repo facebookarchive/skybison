@@ -1282,7 +1282,7 @@ static RawObject nativeExceptionTest(Thread* thread, Frame*, word) {
   HandleScope scope;
   Str msg(&scope,
           RawStr::cast(thread->runtime()->newStrFromCStr("test exception")));
-  return thread->raiseRuntimeError(*msg);
+  return thread->raise(LayoutId::kRuntimeError, *msg);
 }
 
 TEST(ThreadTest, NativeExceptions) {
@@ -1320,7 +1320,7 @@ TEST(ThreadTest, PendingStopIterationValueInspectsTuple) {
   Tuple tuple(&scope, runtime.newTuple(2));
   tuple.atPut(0, runtime.newInt(123));
   tuple.atPut(1, runtime.newInt(456));
-  thread->raiseStopIteration(*tuple);
+  thread->raise(LayoutId::kStopIteration, *tuple);
 
   ASSERT_TRUE(thread->hasPendingStopIteration());
   EXPECT_TRUE(isIntEqualsWord(thread->pendingStopIterationValue(), 123));

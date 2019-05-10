@@ -55,7 +55,8 @@ PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
 
   Tuple tuple(&scope, tupleUnderlying(thread, tupleobj));
   if (pos < 0 || pos >= tuple.length()) {
-    thread->raiseIndexErrorWithCStr("tuple assignment index out of range");
+    thread->raiseWithFmt(LayoutId::kIndexError,
+                         "tuple assignment index out of range");
     return -1;
   }
 

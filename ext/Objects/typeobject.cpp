@@ -421,7 +421,7 @@ RawObject wrapNext(Thread* thread, Frame* frame, word argc) {
   PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
   PyObject* result = func(self);
   if (result == nullptr && !thread->hasPendingException()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return ApiHandle::stealReference(thread, result);
 }
@@ -442,7 +442,8 @@ RawObject wrapDescrGet(Thread* thread, Frame* frame, word argc) {
     type = ApiHandle::borrowedReference(thread, args.get(2));
   }
   if (obj == nullptr && type == nullptr) {
-    return thread->raiseTypeErrorWithCStr("__get__(None, None), is invalid");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__get__(None, None), is invalid");
   }
   return ApiHandle::stealReference(thread, func(self, obj, type));
 }
@@ -1055,7 +1056,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     Object field(&scope, runtime->newIntFromCPtr(slot_ptr));
     Type::ExtensionSlot field_id = slotToTypeSlot(slot->slot);
     if (field_id >= Type::ExtensionSlot::kEnd) {
-      thread->raiseRuntimeErrorWithCStr("invalid slot offset");
+      thread->raiseWithFmt(LayoutId::kRuntimeError, "invalid slot offset");
       return nullptr;
     }
     setExtensionSlot(type, field_id, *field);

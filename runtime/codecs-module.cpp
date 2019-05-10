@@ -410,8 +410,8 @@ RawObject UnderCodecsModule::underUtf16Encode(Thread* thread, Frame* frame,
   Int byteorder_int(&scope, intUnderlying(thread, byteorder_obj));
   OptInt<int32_t> byteorder = byteorder_int.asInt<int32_t>();
   if (byteorder.error != CastError::None) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Python int too large to convert to C int");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C int");
   }
 
   Tuple result(&scope, runtime->newTuple(2));
@@ -508,8 +508,8 @@ RawObject UnderCodecsModule::underUtf32Encode(Thread* thread, Frame* frame,
   Int byteorder_int(&scope, intUnderlying(thread, byteorder_obj));
   OptInt<int32_t> byteorder = byteorder_int.asInt<int32_t>();
   if (byteorder.error != CastError::None) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Python int too large to convert to C int");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C int");
   }
 
   Tuple result(&scope, runtime->newTuple(2));

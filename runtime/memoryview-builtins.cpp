@@ -122,13 +122,15 @@ RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object format_obj(&scope, args.get(1));
   if (!runtime->isInstanceOfStr(*format_obj)) {
-    return thread->raiseTypeErrorWithCStr("format argument must be a string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "format argument must be a string");
   }
   Str format(&scope, *format_obj);
   char format_c = formatChar(format);
   word item_size;
   if (format_c < 0 || (item_size = itemSize(format_c)) < 0) {
-    return thread->raiseValueErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
         "memoryview: destination must be a native single character format "
         "prefixed with an optional '@'");
   }
@@ -136,7 +138,8 @@ RawObject MemoryViewBuiltins::cast(Thread* thread, Frame* frame, word nargs) {
   Bytes buffer(&scope, self.buffer());
   word length = buffer.length();
   if (pow2_remainder(length, item_size) != 0) {
-    return thread->raiseValueErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
         "memoryview: length is not a multiple of itemsize");
   }
   MemoryView result(
@@ -180,7 +183,7 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   word byte_index;
   if (__builtin_mul_overflow(index_abs, item_size, &byte_index) ||
       byte_index + (item_size - 1) >= length) {
-    return thread->raiseIndexErrorWithCStr("index out of bounds");
+    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of bounds");
   }
   if (index < 0) {
     byte_index = length - byte_index;
@@ -215,8 +218,8 @@ RawObject MemoryViewBuiltins::dunderNew(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Runtime* runtime = thread->runtime();
   if (args.get(0) != runtime->typeAt(LayoutId::kMemoryView)) {
-    return thread->raiseTypeErrorWithCStr(
-        "memoryview.__new__(X): X is not 'memoryview'");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "memoryview.__new__(X): X is not 'memoryview'");
   }
 
   Object object(&scope, args.get(1));
@@ -239,8 +242,8 @@ RawObject MemoryViewBuiltins::dunderNew(Thread* thread, Frame* frame,
     result.setFormat(view.format());
     return *result;
   }
-  return thread->raiseTypeErrorWithCStr(
-      "memoryview: a bytes-like object is required");
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "memoryview: a bytes-like object is required");
 }
 
 }  // namespace python

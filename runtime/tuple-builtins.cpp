@@ -112,8 +112,8 @@ RawObject TupleBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
 
   word new_length = llength + rlength;
   if (new_length > kMaxWord) {
-    return thread->raiseOverflowErrorWithCStr(
-        "cannot fit 'int' into an index-sized integer");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit 'int' into an index-sized integer");
   }
 
   Tuple new_tuple(&scope, runtime->newTuple(new_length));
@@ -232,7 +232,8 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
       idx += tuple.length();
     }
     if (idx < 0 || idx >= tuple.length()) {
-      return thread->raiseIndexErrorWithCStr("tuple index out of range");
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "tuple index out of range");
     }
     return tuple.at(idx);
   }
@@ -240,8 +241,8 @@ RawObject TupleBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     Slice tuple_slice(&scope, *index);
     return slice(thread, tuple, tuple_slice);
   }
-  return thread->raiseTypeErrorWithCStr(
-      "tuple indices must be integers or slices");
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "tuple indices must be integers or slices");
 }
 
 RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
@@ -318,8 +319,8 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   word new_length = length * times;
   // If the new length overflows, raise an OverflowError.
   if ((new_length / length) != times) {
-    return thread->raiseOverflowErrorWithCStr(
-        "cannot fit 'int' into an index-sized integer");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot fit 'int' into an index-sized integer");
   }
 
   Tuple new_tuple(&scope, thread->runtime()->newTuple(new_length));
@@ -347,14 +348,14 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object type_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "tuple.__new__(X): X is not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "tuple.__new__(X): X is not a type object");
   }
 
   Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kTuple) {
-    return thread->raiseTypeErrorWithCStr(
-        "tuple.__new__(X): X is not a subclass of tuple");
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "tuple.__new__(X): X is not a subclass of tuple");
   }
 
   // If no iterable is given as an argument, return an empty zero tuple.
@@ -368,7 +369,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Object dunder_iter(&scope, Interpreter::lookupMethod(thread, frame, iterable,
                                                        SymbolId::kDunderIter));
   if (dunder_iter.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object iterator(
       &scope, Interpreter::callMethod1(thread, frame, dunder_iter, iterable));
@@ -462,7 +463,7 @@ RawObject TupleIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   TupleIterator self(&scope, *self_obj);
   Object value(&scope, tupleIteratorNext(thread, self));
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }

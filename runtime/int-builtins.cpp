@@ -183,8 +183,8 @@ RawObject IntBuiltins::dunderDivmod(Thread* t, Frame* frame, word nargs) {
         Runtime* runtime = thread->runtime();
         if (!runtime->intDivideModulo(thread, left, right, &quotient,
                                       &remainder)) {
-          return thread->raiseZeroDivisionErrorWithCStr(
-              "integer division or modulo by zero");
+          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                      "integer division or modulo by zero");
         }
         Tuple result(&scope, runtime->newTuple(2));
         result.atPut(0, *quotient);
@@ -217,8 +217,8 @@ RawObject IntBuiltins::dunderFloordiv(Thread* t, Frame* frame, word nargs) {
         Object quotient(&scope, NoneType::object());
         if (!thread->runtime()->intDivideModulo(thread, left, right, &quotient,
                                                 nullptr)) {
-          return thread->raiseZeroDivisionErrorWithCStr(
-              "integer division or modulo by zero");
+          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                      "integer division or modulo by zero");
         }
         return *quotient;
       });
@@ -242,24 +242,25 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   }
   Int self(&scope, intUnderlying(thread, self_obj));
   if (!runtime->isInstanceOfInt(*length_obj)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "length argument cannot be interpreted as an integer");
   }
   Int length_int(&scope, intUnderlying(thread, length_obj));
   OptInt<word> l = length_int.asInt<word>();
   if (l.error != CastError::None) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Python int too large to convert to C word");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C word");
   }
   word length = l.value;
   if (length < 0) {
-    return thread->raiseValueErrorWithCStr(
-        "length argument must be non-negative");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "length argument must be non-negative");
   }
 
   if (!runtime->isInstanceOfStr(*byteorder_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "to_bytes() argument 2 must be str, not int");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "to_bytes() argument 2 must be str, not int");
   }
   Str byteorder(&scope, *byteorder_obj);
   endian endianness;
@@ -268,13 +269,13 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   } else if (byteorder.equals(runtime->symbols()->Big())) {
     endianness = endian::big;
   } else {
-    return thread->raiseValueErrorWithCStr(
-        "byteorder must be either 'little' or 'big'");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "byteorder must be either 'little' or 'big'");
   }
 
   if (!is_signed && self.isNegative()) {
-    return thread->raiseOverflowErrorWithCStr(
-        "can't convert negative int to unsigned");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "can't convert negative int to unsigned");
   }
 
   // Check for overflow.
@@ -283,7 +284,8 @@ static RawObject toBytesImpl(Thread* thread, const Object& self_obj,
   word bit_length =
       num_digits * kBitsPerWord - Utils::numRedundantSignBits(high_digit);
   if (bit_length > length * kBitsPerByte + !is_signed) {
-    return thread->raiseOverflowErrorWithCStr("int too big to convert");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "int too big to convert");
   }
 
   return runtime->intToBytes(thread, self, length, endianness);
@@ -296,7 +298,7 @@ RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
   Object length(&scope, args.get(1));
   Object byteorder(&scope, args.get(2));
   if (!args.get(3).isBool()) {
-    return thread->raiseTypeErrorWithCStr("signed must be bool");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "signed must be bool");
   }
   return toBytesImpl(thread, self, length, byteorder,
                      RawBool::cast(args.get(3)).value());
@@ -334,8 +336,8 @@ RawObject IntBuiltins::dunderMod(Thread* t, Frame* frame, word nargs) {
         Object remainder(&scope, NoneType::object());
         if (!thread->runtime()->intDivideModulo(thread, left, right, nullptr,
                                                 &remainder)) {
-          return thread->raiseZeroDivisionErrorWithCStr(
-              "integer division or modulo by zero");
+          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                      "integer division or modulo by zero");
         }
         return *remainder;
       });
@@ -366,7 +368,8 @@ RawObject IntBuiltins::dunderRshift(Thread* t, Frame* frame, word nargs) {
   return intBinaryOp(
       t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
         if (right.isNegative()) {
-          return thread->raiseValueErrorWithCStr("negative shift count");
+          return thread->raiseWithFmt(LayoutId::kValueError,
+                                      "negative shift count");
         }
         return thread->runtime()->intBinaryRshift(thread, left, right);
       });
@@ -383,7 +386,8 @@ RawObject IntBuiltins::dunderTrueDiv(Thread* t, Frame* frame, word nargs) {
   return intBinaryOp(
       t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
         if (right.isZero()) {
-          return thread->raiseZeroDivisionErrorWithCStr("division by zero");
+          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                      "division by zero");
         }
         if (left.isLargeInt() || right.isLargeInt()) {
           UNIMPLEMENTED("true division of LargeInts");  // TODO(T40072578)
@@ -424,7 +428,8 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   Bytes bytes(&scope, *maybe_bytes);
 
   if (!runtime->isInstanceOfStr(*byteorder_obj)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "from_bytes() must be called with str instance as second argument");
   }
   Str byteorder(&scope, *byteorder_obj);
@@ -434,7 +439,8 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
   } else if (byteorder.equals(runtime->symbols()->Big())) {
     endianness = endian::big;
   } else {
-    return thread->raiseValueErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
         "from_bytes() byteorder argument must be 'little' or 'big'");
   }
 
@@ -443,7 +449,7 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
 
 RawObject IntBuiltins::fromBytes(Thread* thread, Frame* frame, word nargs) {
   if (nargs != 2) {
-    return thread->raiseTypeErrorWithCStr("expected 2 arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "expected 2 arguments");
   }
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -467,13 +473,15 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   Object bytes(&scope, args.getKw(runtime->symbols()->Bytes()));
   if (args.numArgs() > 0) {
     if (!bytes.isError()) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "argument for from_bytes() given by name ('bytes') and position (1)");
     }
     bytes = args.get(0);
   } else {
     if (bytes.isError()) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "from_bytes() missing required argument 'bytes' (pos 1)");
     }
     ++num_known_keywords;
@@ -482,14 +490,16 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   Object byteorder(&scope, args.getKw(runtime->symbols()->Byteorder()));
   if (args.numArgs() > 1) {
     if (!byteorder.isError()) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "argument for from_bytes() given by name ('byteorder') and position "
           "(2)");
     }
     byteorder = args.get(1);
   } else {
     if (byteorder.isError()) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "from_bytes() missing required argument 'byteorder' (pos 2)");
     }
     ++num_known_keywords;
@@ -505,7 +515,8 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   }
 
   if (args.numKeywords() != num_known_keywords) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "from_bytes() called with invalid keyword arguments");
   }
 
@@ -523,7 +534,8 @@ RawObject IntBuiltins::dunderLshift(Thread* t, Frame* frame, word nargs) {
   return intBinaryOp(
       t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
         if (right.isNegative()) {
-          return thread->raiseValueErrorWithCStr("negative shift count");
+          return thread->raiseWithFmt(LayoutId::kValueError,
+                                      "negative shift count");
         }
         return thread->runtime()->intBinaryLshift(thread, left, right);
       });
@@ -714,8 +726,8 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object type_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "bool.__new__(X): X is not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "bool.__new__(X): X is not a type object");
   }
   Type type(&scope, *type_obj);
 
@@ -723,7 +735,8 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // bool.
   Layout layout(&scope, type.instanceLayout());
   if (layout.id() != LayoutId::kBool) {
-    return thread->raiseTypeErrorWithCStr("bool.__new__(X): X is not bool");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "bool.__new__(X): X is not bool");
   }
 
   // If no arguments are given, return false.
@@ -867,8 +880,8 @@ RawObject convertIntToDouble(Thread* thread, const Int& value, double* result) {
   HandleScope scope(thread);
   LargeInt large_int(&scope, *value);
   if (!convertLargeIntToDouble(large_int, result, nullptr)) {
-    return thread->raiseOverflowErrorWithCStr(
-        "int too large to convert to float");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "int too large to convert to float");
   }
   return NoneType::object();
 }

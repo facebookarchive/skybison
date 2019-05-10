@@ -68,8 +68,8 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
       return {-1.0, 0.0};
     }
     if (!runtime->isInstanceOfComplex(*result)) {
-      thread->raiseTypeErrorWithCStr(
-          "__complex__ should returns a complex object");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "__complex__ should returns a complex object");
       return {-1.0, 0.0};
     }
     // TODO(T36619862): strict subclass of complex

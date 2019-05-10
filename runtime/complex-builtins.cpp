@@ -47,13 +47,14 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   Object type_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "complex.__new__(X): X is not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "complex.__new__(X): X is not a type object");
   }
 
   Type type(&scope, *type_obj);
   if (type.builtinBase() != LayoutId::kComplex) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "complex.__new__(X): X is not a subtype of complex");
   }
 

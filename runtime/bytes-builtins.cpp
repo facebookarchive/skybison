@@ -257,7 +257,8 @@ RawObject BytesBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   word new_length;
   if (__builtin_mul_overflow(length, count, &new_length) ||
       !SmallInt::isValid(new_length)) {
-    return thread->raiseOverflowErrorWithCStr("repeated bytes are too long");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "repeated bytes are too long");
   }
   return runtime->bytesRepeat(thread, self, length, count);
 }

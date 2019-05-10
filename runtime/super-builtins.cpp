@@ -94,7 +94,8 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   if (!args.get(0).isSuper()) {
-    return thread->raiseTypeErrorWithCStr("requires a super object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "requires a super object");
   }
   Super super(&scope, args.get(0));
   Object type_obj(&scope, NoneType::object());
@@ -104,19 +105,23 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
     if (frame->previousFrame() == nullptr) {
-      return thread->raiseRuntimeErrorWithCStr("super(): no current frame");
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "super(): no current frame");
     }
     Frame* caller_frame = frame->previousFrame();
     if (caller_frame->previousFrame() == nullptr) {
-      return thread->raiseRuntimeErrorWithCStr("super(): no current frame");
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "super(): no current frame");
     }
     caller_frame = caller_frame->previousFrame();
     if (!caller_frame->code().isCode()) {
-      return thread->raiseRuntimeErrorWithCStr("super(): no code object");
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "super(): no code object");
     }
     Code code(&scope, caller_frame->code());
     if (code.argcount() == 0) {
-      return thread->raiseRuntimeErrorWithCStr("super(): no arguments");
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "super(): no arguments");
     }
     Tuple free_vars(&scope, code.freevars());
     RawObject cell = Error::notFound();
@@ -128,21 +133,23 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
       }
     }
     if (cell.isError() || !cell.isValueCell()) {
-      return thread->raiseRuntimeErrorWithCStr(
-          "super(): __class__ cell not found");
+      return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                  "super(): __class__ cell not found");
     }
     type_obj = RawValueCell::cast(cell).value();
     // TODO(zekun): handle cell2arg case
     obj = caller_frame->local(0);
   } else {
     if (args.get(2).isUnbound()) {
-      return thread->raiseTypeErrorWithCStr("super() expected 2 arguments");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "super() expected 2 arguments");
     }
     type_obj = args.get(1);
     obj = args.get(2);
   }
   if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseTypeErrorWithCStr("super() argument 1 must be type");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "super() argument 1 must be type");
   }
   super.setType(*type_obj);
   super.setObject(*obj);
@@ -160,8 +167,8 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     }
   }
   if (obj_type_obj.isNoneType()) {
-    return thread->raiseTypeErrorWithCStr(
-        "obj must be an instance or subtype of type");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "obj must be an instance or subtype of type");
   }
   super.setObjectType(*obj_type_obj);
   return NoneType::object();

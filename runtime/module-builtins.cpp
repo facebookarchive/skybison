@@ -39,7 +39,7 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
   Str key(&scope, runtime->symbols()->DunderName());
   Object name_obj(&scope, runtime->moduleAt(module, key));
   if (!runtime->isInstanceOfStr(*name_obj)) {
-    thread->raiseSystemErrorWithCStr("nameless module");
+    thread->raiseWithFmt(LayoutId::kSystemError, "nameless module");
     return -1;
   }
 
@@ -138,14 +138,16 @@ RawObject ModuleBuiltins::dunderGetattribute(Thread* thread, Frame* frame,
 RawObject ModuleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   if (RawType::cast(args.get(0)).builtinBase() != LayoutId::kModule) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of module");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "not a subtype of module");
   }
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(args.get(1))) {
-    return thread->raiseTypeErrorWithCStr("argument must be a str instance");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "argument must be a str instance");
   }
   HandleScope scope(thread);
   Str name(&scope, args.get(1));

@@ -18,8 +18,8 @@ PY_EXPORT PyObject* PyOS_FSPath(PyObject* path) {
                        Interpreter::lookupMethod(thread, frame, path_obj,
                                                  SymbolId::kDunderFspath));
   if (fspath_method.isError()) {
-    thread->raiseTypeErrorWithCStr(
-        "expected str, bytes or os.PathLike object.");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "expected str, bytes or os.PathLike object.");
     return nullptr;
   }
   Object fspath(
@@ -28,8 +28,8 @@ PY_EXPORT PyObject* PyOS_FSPath(PyObject* path) {
 
   if (!runtime->isInstanceOfStr(*fspath) &&
       !runtime->isInstanceOfBytes(*fspath)) {
-    thread->raiseTypeErrorWithCStr(
-        "expected __fspath__ to return str or bytes");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "expected __fspath__ to return str or bytes");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *fspath);

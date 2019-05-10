@@ -163,9 +163,9 @@ static const char* writeArg(Thread* thread, Runtime* runtime,
     case 'c': {
       int c = va_arg(vargs, int);
       if (c < 0 || c > 255) {
-        thread->raiseOverflowErrorWithCStr(
-            "PyBytes_FromFormatV(): "
-            "%c format expects an integer in [0,255]");
+        thread->raiseWithFmt(LayoutId::kOverflowError,
+                             "PyBytes_FromFormatV(): "
+                             "%%c format expects an integer in [0,255]");
         return nullptr;
       }
       byteArrayAdd(thread, runtime, writer, static_cast<byte>(c));
@@ -281,8 +281,8 @@ PY_EXPORT PyObject* PyBytes_FromStringAndSize(const char* str,
                                               Py_ssize_t size) {
   Thread* thread = Thread::current();
   if (size < 0) {
-    thread->raiseSystemErrorWithCStr(
-        "Negative size passed to PyBytes_FromStringAndSize");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "Negative size passed to PyBytes_FromStringAndSize");
     return nullptr;
   }
   if (str == nullptr) {
@@ -327,7 +327,7 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
   Object bytes_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
 
   if (!runtime->isInstanceOfBytes(*bytes_obj)) {
-    thread->raiseTypeErrorWithCStr("PyBytes_Size expected bytes");
+    thread->raiseWithFmt(LayoutId::kTypeError, "PyBytes_Size expected bytes");
     return -1;
   }
 

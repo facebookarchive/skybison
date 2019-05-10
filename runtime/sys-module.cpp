@@ -245,11 +245,12 @@ RawObject SysModule::underGetframeCode(Thread* thread, Frame* frame,
   DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
   Int depth(&scope, intUnderlying(thread, depth_obj));
   if (depth.isNegative()) {
-    return thread->raiseValueErrorWithCStr("negative stack level");
+    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
   }
   frame = frameAtDepth(thread, depth.asWordSaturated());
   if (frame == nullptr) {
-    return thread->raiseValueErrorWithCStr("call stack is not deep enough");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "call stack is not deep enough");
   }
   if (frame->isNativeFrame()) {
     return NoneType::object();
@@ -265,11 +266,12 @@ RawObject SysModule::underGetframeGlobals(Thread* thread, Frame* frame,
   DCHECK(thread->runtime()->isInstanceOfInt(*depth_obj), "depth must be int");
   Int depth(&scope, intUnderlying(thread, depth_obj));
   if (depth.isNegative()) {
-    return thread->raiseValueErrorWithCStr("negative stack level");
+    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
   }
   frame = frameAtDepth(thread, depth.asWordSaturated());
   if (frame == nullptr) {
-    return thread->raiseValueErrorWithCStr("call stack is not deep enough");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "call stack is not deep enough");
   }
   return frame->globals();
 }
@@ -283,11 +285,12 @@ RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,
   DCHECK(runtime->isInstanceOfInt(*depth_obj), "depth must be int");
   Int depth(&scope, intUnderlying(thread, depth_obj));
   if (depth.isNegative()) {
-    return thread->raiseValueErrorWithCStr("negative stack level");
+    return thread->raiseWithFmt(LayoutId::kValueError, "negative stack level");
   }
   frame = frameAtDepth(thread, depth.asWordSaturated());
   if (frame == nullptr) {
-    return thread->raiseValueErrorWithCStr("call stack is not deep enough");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "call stack is not deep enough");
   }
   if (frame->isNativeFrame()) {
     return SmallInt::fromWord(-1);

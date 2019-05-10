@@ -324,13 +324,15 @@ PY_EXPORT int PyException_SetTraceback(PyObject* self, PyObject* tb) {
   HandleScope scope(thread);
 
   if (tb == nullptr) {
-    thread->raiseTypeErrorWithCStr("__traceback__ may not be deleted");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__traceback__ may not be deleted");
     return -1;
   }
   BaseException exc(&scope, ApiHandle::fromPyObject(self)->asObject());
   Object tb_obj(&scope, ApiHandle::fromPyObject(tb)->asObject());
   if (!tb_obj.isNoneType() && !tb_obj.isTraceback()) {
-    thread->raiseTypeErrorWithCStr("__traceback__ must be a traceback or None");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__traceback__ must be a traceback or None");
     return -1;
   }
   exc.setTraceback(*tb_obj);
@@ -366,7 +368,8 @@ PY_EXPORT PyObject* PyUnicodeDecodeError_Create(
                     encoding_obj, object_obj, start_obj, end_obj, reason_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseRuntimeErrorWithCStr("could not call UnicodeDecodeError()");
+      thread->raiseWithFmt(LayoutId::kRuntimeError,
+                           "could not call UnicodeDecodeError()");
     }
     return nullptr;
   }
@@ -397,7 +400,8 @@ PY_EXPORT int PyUnicodeDecodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
   UnicodeError exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfBytes(*object_attr)) {
-    thread->raiseTypeErrorWithCStr("object must be instance of bytes");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "object must be instance of bytes");
     return -1;
   }
   Bytes object(&scope, *object_attr);
@@ -453,7 +457,8 @@ PY_EXPORT int PyUnicodeDecodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
   UnicodeError exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfBytes(*object_attr)) {
-    thread->raiseTypeErrorWithCStr("object must be instance of bytes");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "object must be instance of bytes");
     return -1;
   }
   Bytes object(&scope, *object_attr);
@@ -531,7 +536,8 @@ PY_EXPORT int PyUnicodeEncodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
   UnicodeError exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfStr(*object_attr)) {
-    thread->raiseTypeErrorWithCStr("object must be instance of str");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "object must be instance of str");
     return -1;
   }
   Str object(&scope, *object_attr);
@@ -577,7 +583,8 @@ PY_EXPORT int PyUnicodeEncodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
   UnicodeError exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfStr(*object_attr)) {
-    thread->raiseTypeErrorWithCStr("object must be instance of str");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "object must be instance of str");
     return -1;
   }
   Str object(&scope, *object_attr);

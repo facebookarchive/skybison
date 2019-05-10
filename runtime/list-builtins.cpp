@@ -49,19 +49,20 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
                                            iter_method, iterable));
   if (iterator.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned a non-iterator");
   }
   Object value(&scope, NoneType::object());
   for (;;) {
@@ -205,12 +206,12 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
 RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   if (type.builtinBase() != LayoutId::kList) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of list");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of list");
   }
   Layout layout(&scope, type.instanceLayout());
   List result(&scope, thread->runtime()->newInstance(layout));
@@ -229,7 +230,8 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   }
   Object other_obj(&scope, args.get(1));
   if (!other_obj.isList()) {
-    return thread->raiseTypeErrorWithCStr("can only concatenate list to list");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "can only concatenate list to list");
   }
   List self(&scope, *self_obj);
   List other(&scope, *other_obj);
@@ -342,8 +344,8 @@ RawObject ListBuiltins::insert(Thread* thread, Frame* frame, word nargs) {
   if (index_obj.isError()) return *index_obj;
   Int index_int(&scope, intUnderlying(thread, index_obj));
   if (index_int.isLargeInt()) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Python int too large to convert to C ssize_t");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
   }
   word index = index_int.asWord();
   Object value(&scope, args.get(2));
@@ -364,13 +366,15 @@ RawObject ListBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
     List list(&scope, *self);
     return listReplicate(thread, list, ntimes);
   }
-  return thread->raiseTypeErrorWithCStr("can't multiply list by non-int");
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "can't multiply list by non-int");
 }
 
 RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(1).isUnbound() && !args.get(1).isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "index object cannot be interpreted as an integer");
   }
 
@@ -382,7 +386,7 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
   List list(&scope, *self);
   word length = list.numItems();
   if (length == 0) {
-    return thread->raiseIndexErrorWithCStr("pop from empty list");
+    return thread->raiseWithFmt(LayoutId::kIndexError, "pop from empty list");
   }
   word index = length - 1;
   if (!args.get(1).isUnbound()) {
@@ -390,7 +394,8 @@ RawObject ListBuiltins::pop(Thread* thread, Frame* frame, word nargs) {
     if (index < 0) index += length;
   }
   if (index < 0 || index >= length) {
-    return thread->raiseIndexErrorWithCStr("pop index out of range");
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "pop index out of range");
   }
 
   return listPop(list, index);
@@ -424,7 +429,8 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
       return NoneType::object();
     }
   }
-  return thread->raiseValueErrorWithCStr("list.remove(x) x not in list");
+  return thread->raiseWithFmt(LayoutId::kValueError,
+                              "list.remove(x) x not in list");
 }
 
 RawObject listSlice(Thread* thread, const List& list, const Slice& slice) {
@@ -464,7 +470,8 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
       idx += length;
     }
     if (idx < 0 || idx >= length) {
-      return thread->raiseIndexErrorWithCStr("list index out of range");
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "list index out of range");
     }
     return list.at(idx);
   }
@@ -472,8 +479,8 @@ RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     Slice slice(&scope, index);
     return listSlice(thread, list, slice);
   }
-  return thread->raiseTypeErrorWithCStr(
-      "list indices must be integers or slices");
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "list indices must be integers or slices");
 }
 
 RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -515,7 +522,7 @@ RawObject ListIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   ListIterator self(&scope, *self_obj);
   Object value(&scope, listIteratorNext(thread, self));
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }
@@ -576,25 +583,29 @@ static RawObject setItemSlice(Thread* thread, const List& list,
         &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), src,
                                           SymbolId::kDunderIter));
     if (iter_method.isError()) {
-      return thread->raiseTypeErrorWithCStr("object is not iterable");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "object is not iterable");
     }
     Object iterator(&scope,
                     Interpreter::callMethod1(thread, thread->currentFrame(),
                                              iter_method, src));
     if (iterator.isError()) {
-      return thread->raiseTypeErrorWithCStr("object is not iterable");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "object is not iterable");
     }
     Object next_method(
         &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                           iterator, SymbolId::kDunderNext));
     if (next_method.isError()) {
-      return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "iter() returned a non-iterator");
     }
 
     Object iter_length_val(&scope,
                            runtime->iteratorLengthHint(thread, iterator));
     if (iter_length_val.isError()) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "slice assignment: unable to get length of assigned sequence");
     }
     word iter_length = SmallInt::cast(*iter_length_val).value();
@@ -661,8 +672,8 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
       idx += length;
     }
     if (idx < 0 || idx >= length) {
-      return thread->raiseIndexErrorWithCStr(
-          "list assignment index out of range");
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "list assignment index out of range");
     }
     list.atPut(idx, *src);
     return NoneType::object();
@@ -671,8 +682,8 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
     Slice slice(&scope, *index);
     return setItemSlice(thread, list, slice, src);
   }
-  return thread->raiseTypeErrorWithCStr(
-      "list indices must be integers or slices");
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "list indices must be integers or slices");
 }
 
 RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
@@ -694,15 +705,15 @@ RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
       idx += length;
     }
     if (idx < 0 || idx >= length) {
-      return thread->raiseIndexErrorWithCStr(
-          "list assignment index out of range");
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "list assignment index out of range");
     }
     listPop(list, idx);
     return NoneType::object();
   }
   // TODO(T44021459): Add support for slices
-  return thread->raiseTypeErrorWithCStr(
-      "list indices must be integers or slices");
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "list indices must be integers or slices");
 }
 
 }  // namespace python

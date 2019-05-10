@@ -155,12 +155,7 @@ class Thread {
   // returned up the stack by the caller.
   RawObject raise(LayoutId type, RawObject value);
   RawObject raiseWithFmt(LayoutId type, const char* fmt, ...);
-  RawObject raiseWithCStr(LayoutId type, const char* message);
-
-  // Raises an AttributeError exception and returns an Error that must be
-  // returned up the stack by the caller.
-  RawObject raiseAttributeError(RawObject value);
-  RawObject raiseAttributeErrorWithCStr(const char* message);
+  RawObject raiseWithId(LayoutId type, SymbolId msg);
 
   // Raises a TypeError exception for PyErr_BadArgument.
   void raiseBadArgument();
@@ -168,27 +163,9 @@ class Thread {
   // Raises a SystemError exception for PyErr_BadInternalCall.
   void raiseBadInternalCall();
 
-  RawObject raiseBufferError(RawObject value);
-  RawObject raiseBufferErrorWithCStr(const char* message);
-
-  // Raises an Index exception and returns an Error object that must be returned
-  // up the stack by the caller.
-  RawObject raiseIndexError(RawObject value);
-  RawObject raiseIndexErrorWithCStr(const char* message);
-
-  // Raises a KeyError exception and returns an Error that must be returned up
-  // the stack by the caller.
-  RawObject raiseKeyError(RawObject value);
-  RawObject raiseKeyErrorWithCStr(const char* message);
-
   // Raises a MemoryError exception and returns an Error that must be returned
   // up the stack by the caller.
   RawObject raiseMemoryError();
-
-  // Raises an OverflowError exception and returns an Error object that must be
-  // returned up the stack by the caller.
-  RawObject raiseOverflowError(RawObject value);
-  RawObject raiseOverflowErrorWithCStr(const char* message);
 
   // Raises a TypeError exception of the form '<method> requires a <type(obj)>
   // object but got <expected_type>' and returns an Error object that must be
@@ -196,40 +173,11 @@ class Thread {
   RawObject raiseRequiresType(const Handle<RawObject>& obj,
                               SymbolId expected_type);
 
-  // Raises a RuntimeError exception and returns an Error object that must be
-  // returned up the stack by the caller.
-  RawObject raiseRuntimeError(RawObject value);
-  RawObject raiseRuntimeErrorWithCStr(const char* message);
-
-  // Raises a SystemError exception and returns an Error object that must be
-  // returned up the stack by the caller.
-  RawObject raiseSystemError(RawObject value);
-  RawObject raiseSystemErrorWithCStr(const char* message);
-
-  // Raises a TypeError exception and returns an Error object that must be
-  // returned up the stack by the caller.
-  RawObject raiseTypeError(RawObject value);
-  RawObject raiseTypeErrorWithCStr(const char* message);
-
   // Raises a TypeError exception and returns an Error object that must be
   // returned up the stack by the caller.
   RawObject raiseUnsupportedBinaryOperation(const Handle<RawObject>& left,
                                             const Handle<RawObject>& right,
                                             const Handle<RawStr>& op_name);
-
-  // Raises a ValueError exception and returns an Error object that must be
-  // returned up the stack by the caller.
-  RawObject raiseValueError(RawObject value);
-  RawObject raiseValueErrorWithCStr(const char* message);
-
-  // Raises a StopIteration exception and returns an Error object that must be
-  // returned up the stack by the caller.
-  RawObject raiseStopIteration(RawObject value);
-
-  // Raises a ZeroDivision exception and returns an Error object that must be
-  // returned up the stack by the caller.
-  RawObject raiseZeroDivisionError(RawObject value);
-  RawObject raiseZeroDivisionErrorWithCStr(const char* message);
 
   // Exception support
   //

@@ -14,7 +14,8 @@ namespace python {
 
 static PyObject* nullError(Thread* thread) {
   if (!thread->hasPendingException()) {
-    thread->raiseSystemErrorWithCStr("null argument to internal routine");
+    thread->raiseWithId(LayoutId::kSystemError,
+                        SymbolId::kNullArgumentToInternalRoutine);
   }
   return nullptr;
 }
@@ -56,7 +57,7 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
   Object len_index(&scope, thread->invokeMethod1(obj, SymbolId::kDunderLen));
   if (len_index.isError()) {
     if (len_index.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("object has no len()");
+      thread->raiseWithFmt(LayoutId::kTypeError, "object has no len()");
     }
     return -1;
   }
@@ -72,7 +73,7 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
     return -1;
   }
   if (index.isNegative()) {
-    thread->raiseValueErrorWithCStr("__len__() should return >= 0");
+    thread->raiseWithFmt(LayoutId::kValueError, "__len__() should return >= 0");
     return -1;
   }
   return index.asWord();
@@ -83,12 +84,14 @@ static Py_ssize_t objectLength(PyObject* pyobj) {
 PY_EXPORT int PyBuffer_FillInfo(Py_buffer* view, PyObject* exporter, void* buf,
                                 Py_ssize_t len, int readonly, int flags) {
   if (view == nullptr) {
-    Thread::current()->raiseBufferErrorWithCStr(
+    Thread::current()->raiseWithFmt(
+        LayoutId::kBufferError,
         "PyBuffer_FillInfo: view==NULL argument is obsolete");
     return -1;
   }
   if ((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE && readonly == 1) {
-    Thread::current()->raiseBufferErrorWithCStr("Object is not writable.");
+    Thread::current()->raiseWithFmt(LayoutId::kBufferError,
+                                    "Object is not writable.");
     return -1;
   }
 
@@ -160,7 +163,8 @@ PY_EXPORT PyObject* PyIter_Next(PyObject* iter) {
   if (next.isError()) {
     // Method lookup or call failed
     if (next.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("failed to call __next__ on iterable");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "failed to call __next__ on iterable");
     }
     return nullptr;
   }
@@ -182,7 +186,7 @@ static PyObject* getItem(Thread* thread, const Object& obj, const Object& key) {
                 thread->invokeMethod2(obj, SymbolId::kDunderGetitem, key));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("object is not subscriptable");
+      thread->raiseWithFmt(LayoutId::kTypeError, "object is not subscriptable");
     }
     return nullptr;
   }
@@ -230,14 +234,16 @@ static RawObject getIter(Thread* thread, const Object& obj) {
     // need to have __iter__.
     if (iter.isErrorNotFound()) {
       if (runtime->isSequence(thread, obj)) return runtime->newSeqIterator(obj);
-      return thread->raiseTypeErrorWithCStr("object is not iterable");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "object is not iterable");
     }
     return *iter;
   }
   // If the object has __iter__, ensure that the resulting object has __next__.
   Type type(&scope, runtime->typeOf(*iter));
   if (typeLookupSymbolInMro(thread, type, SymbolId::kDunderNext).isError()) {
-    return thread->raiseTypeErrorWithCStr("iter() returned non-iterator");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned non-iterator");
   }
   return *iter;
 }
@@ -793,7 +799,8 @@ PY_EXPORT PyObject* PyObject_CallObject(PyObject* callable, PyObject* args) {
   if (args != nullptr) {
     Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
     if (!thread->runtime()->isInstanceOfTuple(*args_obj)) {
-      thread->raiseTypeErrorWithCStr("argument list must be a tuple");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "argument list must be a tuple");
       return nullptr;
     }
     frame->pushValue(*args_obj);
@@ -952,7 +959,8 @@ PY_EXPORT int PyObject_SetItem(PyObject* obj, PyObject* key, PyObject* value) {
                                               key_obj, value_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("object does not support item assignment");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "object does not support item assignment");
     }
     return -1;
   }
@@ -989,7 +997,8 @@ PY_EXPORT PyObject* PySequence_Concat(PyObject* left, PyObject* right) {
     return nullError(thread);
   }
   if (!PySequence_Check(left) || !PySequence_Check(right)) {
-    thread->raiseTypeErrorWithCStr("objects cannot be concatenated");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "objects cannot be concatenated");
     return nullptr;
   }
   return PyNumber_Add(left, right);
@@ -1070,7 +1079,8 @@ PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,
       &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderDelitem, slice));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("object does not support slice deletion");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "object does not support slice deletion");
     }
     return -1;
   }
@@ -1104,7 +1114,7 @@ PY_EXPORT PyObject* PySequence_GetItem(PyObject* seq, Py_ssize_t idx) {
                                               idx_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call __getitem__");
+      thread->raiseWithFmt(LayoutId::kTypeError, "could not call __getitem__");
     }
     return nullptr;
   }
@@ -1124,7 +1134,7 @@ PY_EXPORT PyObject* PySequence_GetSlice(PyObject* seq, Py_ssize_t low,
       &scope, thread->invokeMethod2(seq_obj, SymbolId::kDunderGetitem, slice));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call __getitem__");
+      thread->raiseWithFmt(LayoutId::kTypeError, "could not call __getitem__");
     }
     return nullptr;
   }
@@ -1211,7 +1221,7 @@ PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {
     return nullError(thread);
   }
   if (!PySequence_Check(pyseq)) {
-    thread->raiseTypeErrorWithCStr("object cannot be repeated");
+    thread->raiseWithFmt(LayoutId::kTypeError, "object cannot be repeated");
     return nullptr;
   }
   PyObject* count_obj(PyLong_FromSsize_t(count));
@@ -1240,7 +1250,7 @@ PY_EXPORT int PySequence_SetItem(PyObject* seq, Py_ssize_t idx, PyObject* obj) {
   }
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("object is not subscriptable");
+      thread->raiseWithFmt(LayoutId::kTypeError, "object is not subscriptable");
     }
     return -1;
   }
@@ -1267,8 +1277,8 @@ PY_EXPORT int PySequence_SetSlice(PyObject* seq, Py_ssize_t low,
   }
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr(
-          "object does not support slice assignment");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "object does not support slice assignment");
     }
     return -1;
   }

@@ -66,7 +66,8 @@ PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
   }
   List list(&scope, *list_obj);
   if (i >= list.numItems()) {
-    thread->raiseIndexErrorWithCStr("index out of bounds in PyList_GetItem");
+    thread->raiseWithFmt(LayoutId::kIndexError,
+                         "index out of bounds in PyList_GetItem");
     return nullptr;
   }
   Object value(&scope, list.at(i));
@@ -102,7 +103,8 @@ PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {
   }
   List list(&scope, *list_obj);
   if (i >= list.numItems()) {
-    thread->raiseIndexErrorWithCStr("index out of bounds in PyList_SetItem");
+    thread->raiseWithFmt(LayoutId::kIndexError,
+                         "index out of bounds in PyList_SetItem");
     return -1;
   }
   list.atPut(i, ApiHandle::fromPyObject(item)->asObject());
@@ -178,7 +180,8 @@ PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,
   }
   List list(&scope, *list_obj);
   if (list.numItems() == kMaxWord) {
-    thread->raiseSystemErrorWithCStr("cannot add more objects to list");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "cannot add more objects to list");
     return -1;
   }
   Object item_obj(&scope, ApiHandle::fromPyObject(item)->asObject());

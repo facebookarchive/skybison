@@ -19,14 +19,16 @@ RawObject RefBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfWeakRef(*self)) {
-    return thread->raiseTypeErrorWithCStr("'__call__' requires a 'ref' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__call__' requires a 'ref' object");
   }
   return RawWeakRef::cast(*self).referent();
 }
 
 RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   if (nargs < 2 || nargs > 3) {
-    return thread->raiseTypeErrorWithCStr("ref() expected 2 or 3 arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "ref() expected 2 or 3 arguments");
   }
   Arguments args(frame, nargs);
   HandleScope scope(thread);

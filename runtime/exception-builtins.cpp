@@ -95,7 +95,7 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
     if (normalize()) return;
 
     if (i == normalize_limit - 1) {
-      thread->raiseWithCStr(
+      thread->raiseWithFmt(
           LayoutId::kRecursionError,
           "maximum recursion depth exceeded while normalizing an exception");
     }
@@ -527,8 +527,8 @@ RawObject BaseExceptionBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfBaseException(args.get(0))) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'BaseException' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__init__' requires a 'BaseException' object");
   }
   BaseException self(&scope, args.get(0));
   self.setArgs(args.get(1));
@@ -554,8 +554,8 @@ RawObject StopIterationBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfStopIteration(args.get(0))) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'StopIteration' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__init__' requires a 'StopIteration' object");
   }
   StopIteration self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);
@@ -584,8 +584,8 @@ RawObject SystemExitBuiltins::dunderInit(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!thread->runtime()->isInstanceOfSystemExit(args.get(0))) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'SystemExit' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__init__' requires a 'SystemExit' object");
   }
   SystemExit self(&scope, args.get(0));
   RawObject result = BaseExceptionBuiltins::dunderInit(thread, frame, nargs);

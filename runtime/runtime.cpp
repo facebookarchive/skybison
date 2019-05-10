@@ -341,7 +341,8 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   if (!name.isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "attribute name must be a string");
   }
 
   HandleScope scope(thread);
@@ -351,7 +352,8 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
     // TODO(T25140871): Refactor this into something that includes the type name
     // like:
     //     thread->throwImmutableTypeManipulationError(type)
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "can't set attributes of built-in/extension type");
   }
 
@@ -382,7 +384,8 @@ RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
   if (!name.isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "attribute name must be a string");
   }
 
   // Check for a descriptor with __delete__
@@ -414,7 +417,8 @@ RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
   if (!name.isStr()) {
     // TODO(T25140871): Refactor into something like:
     //     thread->throwUnexpectedTypeError(expected, actual)
-    return thread->raiseTypeErrorWithCStr("attribute name must be a string");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "attribute name must be a string");
   }
 
   // Check for a descriptor with __delete__
@@ -888,7 +892,7 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       continue;
     }
     if (++fmt_idx >= fmt.length()) {
-      return thread->raiseValueErrorWithCStr("Incomplete format");
+      return thread->raiseWithFmt(LayoutId::kValueError, "Incomplete format");
     }
     switch (fmt.charAt(fmt_idx)) {
       case 'd': {
@@ -988,8 +992,8 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
     dst[size] = '\0';
   }
   if (!SmallInt::isValid(len)) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Output of format string is too long");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Output of format string is too long");
   }
   return SmallInt::fromWord(len);
 }
@@ -2237,7 +2241,8 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
     if (current_byte.error == CastError::None) {
       dst[idx] = current_byte.value;
     } else {
-      return thread->raiseValueErrorWithCStr("bytes must be in range(0, 256)");
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "bytes must be in range(0, 256)");
     }
   }
   return length <= SmallBytes::kMaxLength
@@ -2958,19 +2963,20 @@ RawObject Runtime::setIntersection(Thread* thread, const SetBase& set,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
                                            iter_method, iterable));
   if (iterator.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned a non-iterator");
   }
   if (set.numItems() == 0) {
     return *dst;
@@ -3072,19 +3078,20 @@ RawObject Runtime::setUpdate(Thread* thread, const SetBase& dst,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
                                            iter_method, iterable));
   if (iterator.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned a non-iterator");
   }
   Object value(&scope, NoneType::object());
   for (;;) {
@@ -3578,7 +3585,8 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
       candidate = *mro_type;
     } else if (*mro_type != *object_type &&
                !RawTuple::cast(candidate.mro()).contains(*mro_type)) {
-      return thread->raiseTypeErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
           "multiple bases have instance lay-out conflict");
     }
   }
@@ -3870,8 +3878,8 @@ RawObject Runtime::iteratorLengthHint(Thread* thread, const Object& iterator) {
     return *result;
   }
   if (!result.isSmallInt()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__length_hint__ returned non-integer value");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__length_hint__ returned non-integer value");
   }
   return *result;
 }

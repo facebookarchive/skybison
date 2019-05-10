@@ -604,8 +604,8 @@ PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
   Thread* thread = Thread::current();
 
   if (size < 0) {
-    thread->raiseSystemErrorWithCStr(
-        "Negative size passed to PyUnicode_FromStringAndSize");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "Negative size passed to PyUnicode_FromStringAndSize");
     return nullptr;
   }
   if (u == nullptr) {
@@ -632,12 +632,13 @@ PY_EXPORT PyObject* PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar) {
     return ApiHandle::newReference(thread, Str::empty());
   }
   if (maxchar > kMaxUnicode) {
-    thread->raiseSystemErrorWithCStr(
-        "invalid maximum character passed to PyUnicode_New");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "invalid maximum character passed to PyUnicode_New");
     return nullptr;
   }
   if (size < 0) {
-    thread->raiseSystemErrorWithCStr("Negative size passed to PyUnicode_New");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "Negative size passed to PyUnicode_New");
     return nullptr;
   }
   // TODO(T41498010): Add modifiable string state
@@ -884,14 +885,16 @@ PY_EXPORT PyObject* PyUnicode_Concat(PyObject* left, PyObject* right) {
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());
   if (!runtime->isInstanceOfStr(*left_obj) ||
       !runtime->isInstanceOfStr(*right_obj)) {
-    thread->raiseTypeErrorWithCStr("can only concatenate str to str");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "can only concatenate str to str");
     return nullptr;
   }
   Str left_str(&scope, strUnderlying(thread, left_obj));
   Str right_str(&scope, strUnderlying(thread, right_obj));
   word dummy;
   if (__builtin_add_overflow(left_str.length(), right_str.length(), &dummy)) {
-    thread->raiseOverflowErrorWithCStr("strings are too large to concat");
+    thread->raiseWithFmt(LayoutId::kOverflowError,
+                         "strings are too large to concat");
     return nullptr;
   }
   return ApiHandle::newReference(
@@ -910,7 +913,8 @@ PY_EXPORT int PyUnicode_Contains(PyObject* str, PyObject* substr) {
                                                     str_obj, substr_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call str.__contains__");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "could not call str.__contains__");
     }
     return -1;
   }
@@ -946,7 +950,8 @@ PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
                                                     bytes, errors_obj));
   if (result_obj.isError()) {
     if (result_obj.isErrorNotFound()) {
-      thread->raiseSystemErrorWithCStr("could not call _codecs.ascii_decode");
+      thread->raiseWithFmt(LayoutId::kSystemError,
+                           "could not call _codecs.ascii_decode");
     }
     return nullptr;
   }
@@ -1296,12 +1301,14 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
   Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfStr(*str_obj)) {
-    thread->raiseTypeErrorWithCStr("PyUnicode_Find requires a 'str' instance");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "PyUnicode_Find requires a 'str' instance");
     return -2;
   }
   Str str_str(&scope, strUnderlying(thread, str_obj));
   if (!runtime->isInstanceOfStr(*substr_obj)) {
-    thread->raiseTypeErrorWithCStr("PyUnicode_Find requires a 'str' instance");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "PyUnicode_Find requires a 'str' instance");
     return -2;
   }
   Str substr_str(&scope, strUnderlying(thread, substr_obj));
@@ -1311,7 +1318,7 @@ PY_EXPORT Py_ssize_t PyUnicode_Find(PyObject* str, PyObject* substr,
   if (maybe_int.error == CastError::None) {
     return maybe_int.value;
   }
-  thread->raiseOverflowErrorWithCStr("int overflow or underflow");
+  thread->raiseWithFmt(LayoutId::kOverflowError, "int overflow or underflow");
   return -2;
 }
 
@@ -1322,7 +1329,7 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
   DCHECK(direction == 1 || direction == -1, "direction must be -1 or 1");
   Thread* thread = Thread::current();
   if (start < 0 || end < 0) {
-    thread->raiseIndexErrorWithCStr("string index out of range");
+    thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
     return -2;
   }
   HandleScope scope(thread);
@@ -1338,7 +1345,7 @@ PY_EXPORT Py_ssize_t PyUnicode_FindChar(PyObject* str, Py_UCS4 ch,
   if (maybe_int.error == CastError::None) {
     return maybe_int.value;
   }
-  thread->raiseOverflowErrorWithCStr("int overflow or underflow");
+  thread->raiseWithFmt(LayoutId::kOverflowError, "int overflow or underflow");
   return -2;
 }
 
@@ -1415,7 +1422,8 @@ PY_EXPORT PyObject* PyUnicode_FromObject(PyObject* /* j */) {
 PY_EXPORT PyObject* PyUnicode_FromOrdinal(int ordinal) {
   Thread* thread = Thread::current();
   if (ordinal < 0 || ordinal > kMaxUnicode) {
-    thread->raiseValueErrorWithCStr("chr() arg not in range(0x110000)");
+    thread->raiseWithFmt(LayoutId::kValueError,
+                         "chr() arg not in range(0x110000)");
     return nullptr;
   }
   return ApiHandle::newReference(thread, SmallStr::fromCodePoint(ordinal));
@@ -1440,7 +1448,7 @@ PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
         "size of wchar_t should be either 16 or 32 bits");
   for (Py_ssize_t i = 0; i < size; ++i) {
     if (buffer[i] > kMaxUnicode) {
-      thread->raiseValueErrorWithCStr("character is not in range");
+      thread->raiseWithFmt(LayoutId::kValueError, "character is not in range");
       return nullptr;
     }
   }
@@ -1521,7 +1529,7 @@ PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
                             LayoutId::kStr, SymbolId::kJoin, sep_obj, seq_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call str.join");
+      thread->raiseWithFmt(LayoutId::kTypeError, "could not call str.join");
     }
     return nullptr;
   }
@@ -1540,7 +1548,8 @@ PY_EXPORT PyObject* PyUnicode_Partition(PyObject* str, PyObject* sep) {
                                           str_obj, sep_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call str.partition");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "could not call str.partition");
     }
     return nullptr;
   }
@@ -1559,7 +1568,8 @@ PY_EXPORT PyObject* PyUnicode_RPartition(PyObject* str, PyObject* sep) {
                                           str_obj, sep_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call str.rpartition");
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "could not call str.rpartition");
     }
     return nullptr;
   }
@@ -1580,7 +1590,7 @@ PY_EXPORT PyObject* PyUnicode_RSplit(PyObject* str, PyObject* sep,
                                             str_obj, sep_obj, maxsplit_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call str.rsplit");
+      thread->raiseWithFmt(LayoutId::kTypeError, "could not call str.rsplit");
     }
     return nullptr;
   }
@@ -1601,19 +1611,19 @@ PY_EXPORT PyObject* PyUnicode_Replace(PyObject* str, PyObject* substr,
   Runtime* runtime = thread->runtime();
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
   if (!runtime->isInstanceOfStr(*str_obj)) {
-    thread->raiseTypeErrorWithCStr("str must be str");
+    thread->raiseWithFmt(LayoutId::kTypeError, "str must be str");
     return nullptr;
   }
 
   Object substr_obj(&scope, ApiHandle::fromPyObject(substr)->asObject());
   if (!runtime->isInstanceOfStr(*substr_obj)) {
-    thread->raiseTypeErrorWithCStr("substr must be str");
+    thread->raiseWithFmt(LayoutId::kTypeError, "substr must be str");
     return nullptr;
   }
 
   Object replstr_obj(&scope, ApiHandle::fromPyObject(replstr)->asObject());
   if (!runtime->isInstanceOfStr(*replstr_obj)) {
-    thread->raiseTypeErrorWithCStr("replstr must be str");
+    thread->raiseWithFmt(LayoutId::kTypeError, "replstr must be str");
     return nullptr;
   }
 
@@ -1650,7 +1660,7 @@ PY_EXPORT PyObject* PyUnicode_Split(PyObject* str, PyObject* sep,
                                             str_obj, sep_obj, maxsplit_obj));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("could not call str.split");
+      thread->raiseWithFmt(LayoutId::kTypeError, "could not call str.split");
     }
     return nullptr;
   }
@@ -1676,7 +1686,7 @@ PY_EXPORT PyObject* PyUnicode_Substring(PyObject* pyobj, Py_ssize_t start,
   DCHECK(pyobj != nullptr, "null argument to PyUnicode_Substring");
   Thread* thread = Thread::current();
   if (start < 0 || end < 0) {
-    thread->raiseIndexErrorWithCStr("string index out of range");
+    thread->raiseWithFmt(LayoutId::kIndexError, "string index out of range");
     return nullptr;
   }
   HandleScope scope(thread);
@@ -1754,7 +1764,7 @@ PY_EXPORT PyObject* PyUnicode_FromKindAndData(int kind, const void* buffer,
                                               Py_ssize_t size) {
   Thread* thread = Thread::current();
   if (size < 0) {
-    thread->raiseValueErrorWithCStr("size must be positive");
+    thread->raiseWithFmt(LayoutId::kValueError, "size must be positive");
     return nullptr;
   }
   if (size == 0) {
@@ -1768,7 +1778,7 @@ PY_EXPORT PyObject* PyUnicode_FromKindAndData(int kind, const void* buffer,
     case PyUnicode_4BYTE_KIND:
       return decodeUnicodeToString<Py_UCS4>(thread, buffer, size);
   }
-  thread->raiseSystemErrorWithCStr("invalid kind");
+  thread->raiseWithFmt(LayoutId::kSystemError, "invalid kind");
   return nullptr;
 }
 
@@ -1788,7 +1798,7 @@ PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,
   Thread* thread = Thread::current();
   for (Py_ssize_t i = 0; i < size; ++i) {
     if (code_units[i] > kMaxUnicode) {
-      thread->raiseValueErrorWithCStr("character is not in range");
+      thread->raiseWithFmt(LayoutId::kValueError, "character is not in range");
       return nullptr;
     }
   }

@@ -250,7 +250,8 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   }
 
   if (!runtime->isInstanceOfType(*metaclass_obj)) {
-    return thread->raiseTypeErrorWithCStr("self must be a type instance");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "self must be a type instance");
   }
   Type metaclass(&scope, *metaclass_obj);
 

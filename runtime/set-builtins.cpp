@@ -15,7 +15,8 @@ RawObject SetBaseBuiltins::dunderLen(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "'__len__' requires a 'set' or 'frozenset' object");
   }
   SetBase set(&scope, *self);
@@ -29,7 +30,8 @@ RawObject SetBaseBuiltins::dunderContains(Thread* thread, Frame* frame,
   Object self(&scope, args.get(0));
   Object value(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__contains__() requires a 'set' or 'frozenset' object");
   }
   SetBase set(&scope, *self);
@@ -42,7 +44,8 @@ RawObject SetBaseBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a 'set' or 'frozenset' instance as the "
         "first argument");
   }
@@ -58,7 +61,8 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
   Object other(&scope, args.get(1));
   Object value(&scope, NoneType::object());
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "isdisjoint() requires a 'set' or 'frozenset' object");
   }
   SetBase a(&scope, *self);
@@ -92,19 +96,20 @@ RawObject SetBaseBuiltins::isDisjoint(Thread* thread, Frame* frame,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), other,
                                         SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
                                            iter_method, other));
   if (iterator.isError()) {
-    return thread->raiseTypeErrorWithCStr("object is not iterable");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
   }
   Object next_method(
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    return thread->raiseTypeErrorWithCStr("iter() returned a non-iterator");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned a non-iterator");
   }
   for (;;) {
     value = Interpreter::callMethod1(thread, thread->currentFrame(),
@@ -127,7 +132,8 @@ RawObject SetBaseBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr("__and__() requires a 'set' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__and__() requires a 'set' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
     return NotImplementedType::object();
@@ -143,7 +149,8 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "intersection() requires a 'set' or 'frozenset' object");
   }
   SetBase set(&scope, *self);
@@ -181,7 +188,8 @@ RawObject SetBaseBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__eq__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
@@ -199,7 +207,8 @@ RawObject SetBaseBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__ne__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
@@ -217,7 +226,8 @@ RawObject SetBaseBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__le__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
@@ -235,7 +245,8 @@ RawObject SetBaseBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__lt__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
@@ -253,7 +264,8 @@ RawObject SetBaseBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__ge__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
@@ -271,7 +283,8 @@ RawObject SetBaseBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (!runtime->isInstanceOfSetBase(*self)) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__gt__() requires a 'set' or 'frozenset' object");
   }
   if (!runtime->isInstanceOfSetBase(*other)) {
@@ -324,12 +337,13 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   if (type.builtinBase() != LayoutId::kFrozenSet) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of frozenset");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "not a subtype of frozenset");
   }
   if (args.get(1).isUnbound()) {
     // Iterable not provided
@@ -355,7 +369,8 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (dunder_iter.isError()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "frozenset.__new__ must be called with an iterable");
   }
   FrozenSet result(&scope, thread->runtime()->newFrozenSet());
@@ -478,7 +493,7 @@ RawObject setPop(Thread* thread, const Set& set) {
     }
   }
   // num_items == 0 or all buckets were found empty
-  return thread->raiseKeyErrorWithCStr("pop from an empty set");
+  return thread->raiseWithFmt(LayoutId::kKeyError, "pop from an empty set");
 }
 
 RawObject setIteratorNext(Thread* thread, const SetIterator& iter) {
@@ -501,7 +516,8 @@ RawObject SetBuiltins::add(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Object key(&scope, args.get(1));
   if (!thread->runtime()->isInstanceOfSet(*self)) {
-    return thread->raiseTypeErrorWithCStr("'add' requires a 'set' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'add' requires a 'set' object");
   }
   Set set(&scope, *self);
 
@@ -600,7 +616,7 @@ RawObject SetBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   }
   Set set(&scope, *self);
   if (!runtime->setRemove(set, value)) {
-    return thread->raiseKeyError(*value);
+    return thread->raise(LayoutId::kKeyError, *value);
   }
   return NoneType::object();
 }
@@ -633,12 +649,12 @@ RawObject SetBuiltins::update(Thread* thread, Frame* frame, word nargs) {
 RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   if (type.builtinBase() != LayoutId::kSet) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of set");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of set");
   }
   Layout layout(&scope, type.instanceLayout());
   Set result(&scope, thread->runtime()->newInstance(layout));
@@ -676,7 +692,7 @@ RawObject SetIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   SetIterator self(&scope, *self_obj);
   Object value(&scope, setIteratorNext(thread, self));
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }

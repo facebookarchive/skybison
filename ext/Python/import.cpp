@@ -19,11 +19,11 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
   HandleScope scope(thread);
 
   if (name == nullptr) {
-    thread->raiseValueErrorWithCStr("Empty module name");
+    thread->raiseWithFmt(LayoutId::kValueError, "Empty module name");
     return nullptr;
   }
   if (level < 0) {
-    thread->raiseValueErrorWithCStr("level must be >= 0");
+    thread->raiseWithFmt(LayoutId::kValueError, "level must be >= 0");
     return nullptr;
   }
   Object name_obj(&scope, ApiHandle::fromPyObject(name)->asObject());
@@ -34,12 +34,12 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
     }
   }
   if (globals == nullptr) {
-    thread->raiseKeyErrorWithCStr("'__name__' not in globals");
+    thread->raiseWithFmt(LayoutId::kKeyError, "'__name__' not in globals");
     return nullptr;
   }
   Object globals_obj(&scope, ApiHandle::fromPyObject(globals)->asObject());
   if (!thread->runtime()->isInstanceOfDict(*globals_obj)) {
-    thread->raiseTypeErrorWithCStr("globals must be a dict");
+    thread->raiseWithFmt(LayoutId::kTypeError, "globals must be a dict");
     return nullptr;
   }
 

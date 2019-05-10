@@ -610,13 +610,14 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
       continue;
     }
     if (++fmt_idx >= fmt.length()) {
-      return thread->raiseValueErrorWithCStr("Incomplete format");
+      return thread->raiseWithFmt(LayoutId::kValueError, "Incomplete format");
     }
     switch (fmt.charAt(fmt_idx)) {
       case 'd': {
         len--;
         if (!args.at(arg_idx).isInt()) {
-          return thread->raiseTypeErrorWithCStr("Argument mismatch");
+          return thread->raiseWithFmt(LayoutId::kTypeError,
+                                      "Argument mismatch");
         }
         len += snprintf(nullptr, 0, "%ld",
                         RawInt::cast(args.at(arg_idx)).asWord());
@@ -625,7 +626,8 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
       case 'g': {
         len--;
         if (!args.at(arg_idx).isFloat()) {
-          return thread->raiseTypeErrorWithCStr("Argument mismatch");
+          return thread->raiseWithFmt(LayoutId::kTypeError,
+                                      "Argument mismatch");
         }
         len += snprintf(nullptr, 0, "%g",
                         RawFloat::cast(args.at(arg_idx)).value());
@@ -634,7 +636,8 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
       case 's': {
         len--;
         if (!args.at(arg_idx).isStr()) {
-          return thread->raiseTypeErrorWithCStr("Argument mismatch");
+          return thread->raiseWithFmt(LayoutId::kTypeError,
+                                      "Argument mismatch");
         }
         len += RawStr::cast(args.at(arg_idx)).length();
         arg_idx++;
@@ -647,8 +650,8 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
   }
 
   if (!SmallInt::isValid(len)) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Output of format string is too long");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Output of format string is too long");
   }
   return SmallInt::fromWord(len);
 }
@@ -753,7 +756,8 @@ RawObject StrBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   word new_length;
   if (__builtin_mul_overflow(length, count, &new_length) ||
       !SmallInt::isValid(new_length)) {
-    return thread->raiseOverflowErrorWithCStr("repeated string is too long");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "repeated string is too long");
   }
   return runtime->strRepeat(thread, self, count);
 }
@@ -802,7 +806,8 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
   if (runtime->isInstanceOfInt(*index_obj)) {
     Int index(&scope, intUnderlying(thread, index_obj));
     if (!index.isSmallInt()) {
-      return thread->raiseIndexErrorWithCStr(
+      return thread->raiseWithFmt(
+          LayoutId::kIndexError,
           "cannot fit index into an index-sized integer");
     }
     word idx = index.asWord();
@@ -810,7 +815,8 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
       idx += string.length();
     }
     if (idx < 0 || idx >= string.length()) {
-      return thread->raiseIndexErrorWithCStr("string index out of range");
+      return thread->raiseWithFmt(LayoutId::kIndexError,
+                                  "string index out of range");
     }
     byte c = string.charAt(idx);
     return SmallStr::fromBytes(View<byte>(&c, 1));
@@ -820,8 +826,8 @@ RawObject StrBuiltins::dunderGetItem(Thread* thread, Frame* frame, word nargs) {
     return slice(thread, string, str_slice);
   }
   // TODO(T27897506): use __index__ to get index
-  return thread->raiseTypeErrorWithCStr(
-      "string indices must be integers or slices");
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "string indices must be integers or slices");
 }
 
 RawObject StrBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -971,8 +977,8 @@ RawObject StrBuiltins::lstrip(Thread* thread, Frame* frame, word nargs) {
     return strStripSpaceLeft(thread, str);
   }
   if (!runtime->isInstanceOfStr(*other_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "str.lstrip() arg must be None or str");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "str.lstrip() arg must be None or str");
   }
   Str chars(&scope, strUnderlying(thread, other_obj));
   return strStripLeft(thread, str, chars);
@@ -992,8 +998,8 @@ RawObject StrBuiltins::rstrip(Thread* thread, Frame* frame, word nargs) {
     return strStripSpaceRight(thread, str);
   }
   if (!runtime->isInstanceOfStr(*other_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "str.rstrip() arg must be None or str");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "str.rstrip() arg must be None or str");
   }
   Str chars(&scope, strUnderlying(thread, other_obj));
   return strStripRight(thread, str, chars);
@@ -1013,8 +1019,8 @@ RawObject StrBuiltins::strip(Thread* thread, Frame* frame, word nargs) {
     return strStripSpace(thread, str);
   }
   if (!runtime->isInstanceOfStr(*other_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "str.strip() arg must be None or str");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "str.strip() arg must be None or str");
   }
   Str chars(&scope, strUnderlying(thread, other_obj));
   return strStrip(thread, str, chars);
@@ -1033,7 +1039,8 @@ RawObject StrIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a str iterator instance as the first "
         "argument");
   }
@@ -1049,14 +1056,15 @@ RawObject StrIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__next__() must be called with a str iterator instance as the first "
         "argument");
   }
   StrIterator iter(&scope, *self);
   Object value(&scope, strIteratorNext(thread, iter));
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }
@@ -1067,7 +1075,8 @@ RawObject StrIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isStrIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__length_hint__() must be called with a str iterator instance as the "
         "first argument");
   }

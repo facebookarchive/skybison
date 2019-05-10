@@ -66,7 +66,8 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
     other_len = Bytes::cast(*other_obj).length();
   } else {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "can only concatenate bytearray or bytes to bytearray");
   }
 
@@ -156,7 +157,7 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     word len = self.numItems();
     if (idx < 0) idx += len;
     if (idx < 0 || idx >= len) {
-      return thread->raiseIndexErrorWithCStr("index out of range");
+      return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
     }
     return SmallInt::fromWord(self.byteAt(idx));
   }
@@ -174,7 +175,8 @@ RawObject ByteArrayBuiltins::dunderGetItem(Thread* thread, Frame* frame,
     }
     return *result;
   }
-  return thread->raiseTypeErrorWithCStr(
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
       "bytearray indices must either be slice or provide '__index__'");
 }
 
@@ -223,7 +225,8 @@ RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
     other_len = Bytes::cast(*other_obj).length();
   } else {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "can only concatenate bytearray or bytes to bytearray");
   }
   Bytes other(&scope, *other_obj);
@@ -300,13 +303,13 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     if (encoding.isUnbound() && errors.isUnbound()) {
       return NoneType::object();
     }
-    return thread->raiseTypeErrorWithCStr(
-        "encoding or errors without sequence argument");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "encoding or errors without sequence argument");
   }
   if (runtime->isInstanceOfStr(*source)) {
     if (encoding.isUnbound()) {
-      return thread->raiseTypeErrorWithCStr(
-          "string argument without an encoding");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "string argument without an encoding");
     }
     Object encoded(
         &scope, errors.isUnbound()
@@ -322,8 +325,8 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     return NoneType::object();
   }
   if (!encoding.isUnbound() || !errors.isUnbound()) {
-    return thread->raiseTypeErrorWithCStr(
-        "encoding or errors without a string argument");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "encoding or errors without a string argument");
   }
   if (runtime->isInstanceOfInt(*source)) {
     Int count_int(&scope, intUnderlying(thread, source));
@@ -334,7 +337,7 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     }
     word count = count_int.asWord();
     if (count < 0) {
-      return thread->raiseValueErrorWithCStr("negative count");
+      return thread->raiseWithFmt(LayoutId::kValueError, "negative count");
     }
     runtime->byteArrayEnsureCapacity(thread, self, count);
     self.setNumItems(count);
@@ -505,12 +508,13 @@ RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   if (type.builtinBase() != LayoutId::kByteArray) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of bytearray");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "not a subtype of bytearray");
   }
   Layout layout(&scope, type.instanceLayout());
   Runtime* runtime = thread->runtime();
@@ -534,8 +538,8 @@ RawObject ByteArrayBuiltins::dunderRepr(Thread* thread, Frame* frame,
   word length = self.numItems();
   word affix_length = 14;  // strlen("bytearray(b'')") == 14
   if (length > (kMaxWord - affix_length) / 4) {
-    return thread->raiseOverflowErrorWithCStr(
-        "bytearray object is too large to make repr");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "bytearray object is too large to make repr");
   }
 
   // Figure out which quote to use; single is preferred
@@ -721,7 +725,7 @@ RawObject ByteArrayIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   ByteArrayIterator self(&scope, *self_obj);
   ByteArray bytearray(&scope, self.iterable());
   if (self.index() >= bytearray.numItems()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   Int item(&scope, thread->runtime()->newInt(bytearray.byteAt(self.index())));
   self.setIndex(self.index() + 1);

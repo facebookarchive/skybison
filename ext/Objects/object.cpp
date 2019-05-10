@@ -84,8 +84,8 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
     if (result.isErrorException()) return nullptr;
     DCHECK(!result.isError(), "Couldn't call builtins._bytes_new");
   } else if (!runtime->isInstanceOfBytes(*result)) {
-    thread->raiseTypeError(runtime->newStrFromFmt(
-        "__bytes__ returned non-bytes (type %T)", &result));
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__bytes__ returned non-bytes (type %T)", &result);
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
@@ -174,7 +174,7 @@ PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
   Object result(&scope, thread->invokeMethod1(object, SymbolId::kDunderHash));
   if (result.isError()) {
     if (result.isErrorNotFound()) {
-      thread->raiseTypeErrorWithCStr("unhashable type");
+      thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type");
     }
     return -1;
   }
@@ -185,7 +185,7 @@ PY_EXPORT Py_hash_t PyObject_Hash(PyObject* obj) {
 
 PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
   Thread* thread = Thread::current();
-  thread->raiseTypeErrorWithCStr("unhashable type");
+  thread->raiseWithFmt(LayoutId::kTypeError, "unhashable type");
   return -1;
 }
 
@@ -243,7 +243,8 @@ PY_EXPORT PyObject* PyObject_Repr(PyObject* obj) {
     return nullptr;
   }
   if (!thread->runtime()->isInstanceOfStr(*result)) {
-    thread->raiseTypeErrorWithCStr("__repr__ returned non-str instance");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__repr__ returned non-str instance");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);
@@ -331,7 +332,8 @@ PY_EXPORT PyObject* PyObject_Str(PyObject* obj) {
     return nullptr;
   }
   if (!thread->runtime()->isInstanceOfStr(*result)) {
-    thread->raiseTypeErrorWithCStr("__str__ returned non-str instance");
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__str__ returned non-str instance");
     return nullptr;
   }
   return ApiHandle::newReference(thread, *result);

@@ -27,14 +27,15 @@ PY_EXPORT PyObject* PyWeakref_GET_OBJECT_Func(PyObject* ref) {
 PY_EXPORT PyObject* PyWeakref_GetObject(PyObject* ref) {
   Thread* thread = Thread::current();
   if (ref == nullptr) {
-    thread->raiseSystemErrorWithCStr(
-        "PyWeakref_GetObject expected non-null ref");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "PyWeakref_GetObject expected non-null ref");
     return nullptr;
   }
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(ref)->asObject());
   if (!obj.isWeakRef()) {
-    thread->raiseSystemErrorWithCStr("PyWeakref_GetObject expected weakref");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "PyWeakref_GetObject expected weakref");
     return nullptr;
   }
   return getObject(thread, obj);
@@ -70,7 +71,7 @@ PY_EXPORT PyObject* PyWeakref_NewRef(PyObject* obj, PyObject* callback) {
     return ApiHandle::newReference(
         thread, runtime->newWeakRef(thread, referent, callback_obj));
   }
-  thread->raiseTypeErrorWithCStr("callback is not callable");
+  thread->raiseWithFmt(LayoutId::kTypeError, "callback is not callable");
   return nullptr;
 }
 

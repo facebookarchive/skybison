@@ -23,17 +23,17 @@ const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
 RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isType()) {
-    return thread->raiseTypeErrorWithCStr("not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   if (type.builtinBase() != LayoutId::kRange) {
-    return thread->raiseTypeErrorWithCStr("not a subtype of range");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of range");
   }
   for (word i = 1; i < nargs; i++) {
     if (!args.get(i).isSmallInt() && !args.get(i).isUnbound()) {
-      return thread->raiseTypeErrorWithCStr(
-          "Arguments to range() must be integers");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "Arguments to range() must be integers");
     }
   }
 
@@ -52,8 +52,8 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   }
 
   if (step == 0) {
-    return thread->raiseValueErrorWithCStr(
-        "range() step argument must not be zero");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "range() step argument must not be zero");
   }
 
   return thread->runtime()->newRange(start, stop, step);
@@ -64,7 +64,8 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRange()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__getitem__() must be called with a range instance as the first "
         "argument");
   }
@@ -84,7 +85,8 @@ RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__iter__() must be called with a range iterator instance as the first "
         "argument");
   }
@@ -97,13 +99,14 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__next__() must be called with a range iterator instance as the first "
         "argument");
   }
   Object value(&scope, RawRangeIterator::cast(*self).next());
   if (value.isError()) {
-    return thread->raiseStopIteration(NoneType::object());
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   return *value;
 }
@@ -114,7 +117,8 @@ RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "__length_hint__() must be called with a range iterator instance as "
         "the first argument");
   }

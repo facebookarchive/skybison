@@ -72,11 +72,12 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
   DCHECK(thread->isErrorValueOk(*name_obj), "error/exception mismatch");
   if (name_obj.isError()) {
     thread->clearPendingException();
-    return thread->raiseTypeErrorWithCStr("spec has no attribute 'name'");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "spec has no attribute 'name'");
   }
   if (!runtime->isInstanceOfStr(*name_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "spec name must be an instance of str");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "spec name must be an instance of str");
   }
   Str name(&scope, *name_obj);
   Object existing_module(&scope, runtime->findModule(name));
@@ -89,8 +90,8 @@ RawObject UnderImpModule::createBuiltin(Thread* thread, Frame* frame,
       PyObject* pymodule = (*_PyImport_Inittab[i].initfunc)();
       if (pymodule == nullptr) {
         if (thread->hasPendingException()) return Error::exception();
-        return thread->raiseSystemErrorWithCStr(
-            "NULL return without exception set");
+        return thread->raiseWithFmt(LayoutId::kSystemError,
+                                    "NULL return without exception set");
       };
       Object module_obj(&scope, ApiHandle::fromPyObject(pymodule)->asObject());
       if (!module_obj.isModule()) {
@@ -165,7 +166,8 @@ RawObject UnderImpModule::isBuiltin(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   Object name_obj(&scope, args.get(0));
   if (!runtime->isInstanceOfStr(*name_obj)) {
-    return thread->raiseTypeErrorWithCStr("is_builtin requires a str object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "is_builtin requires a str object");
   }
   Str name(&scope, *name_obj);
 
@@ -190,7 +192,8 @@ RawObject UnderImpModule::isFrozen(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object name(&scope, args.get(0));
   if (!thread->runtime()->isInstanceOfStr(*name)) {
-    return thread->raiseTypeErrorWithCStr("is_frozen requires a str object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "is_frozen requires a str object");
   }
   // Always return False
   return RawBool::falseObj();
@@ -204,7 +207,8 @@ RawObject UnderImpModule::isFrozenPackage(Thread* /* thread */,
 
 RawObject UnderImpModule::releaseLock(Thread* thread, Frame*, word) {
   if (!importReleaseLock(thread)) {
-    return thread->raiseRuntimeErrorWithCStr("not holding the import lock");
+    return thread->raiseWithFmt(LayoutId::kRuntimeError,
+                                "not holding the import lock");
   }
   return RawNoneType::object();
 }

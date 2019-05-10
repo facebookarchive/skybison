@@ -30,13 +30,14 @@ RawObject asFloatObject(Thread* thread, const Object& obj) {
   Object fltmethod(&scope, Interpreter::lookupMethod(thread, frame, obj,
                                                      SymbolId::kDunderFloat));
   if (fltmethod.isError()) {
-    return thread->raiseTypeErrorWithCStr("must be a real number");
+    return thread->raiseWithFmt(LayoutId::kTypeError, "must be a real number");
   }
   Object flt_obj(&scope,
                  Interpreter::callMethod1(thread, frame, fltmethod, obj));
   if (flt_obj.isError() || flt_obj.isFloat()) return *flt_obj;
   if (!runtime->isInstanceOfFloat(*flt_obj)) {
-    return thread->raiseTypeErrorWithCStr("__float__ returned non-float");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__float__ returned non-float");
   }
   UserFloatBase user_float(&scope, *obj);
   return user_float.floatValue();
@@ -109,7 +110,8 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   Object method(&scope, Interpreter::lookupMethod(thread, frame, obj,
                                                   SymbolId::kDunderFloat));
   if (method.isError()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "TypeError: float() argument must have a __float__");
   }
 
@@ -122,7 +124,8 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
 
   // If __float__ returns a non-float, throw a type error.
   if (!runtime->isInstanceOfFloat(*converted)) {
-    return thread->raiseTypeErrorWithCStr("__float__ returned non-float");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__float__ returned non-float");
   }
 
   // __float__ used to be allowed to return any subtype of float, but that
@@ -150,7 +153,8 @@ RawObject FloatBuiltins::floatFromString(Thread* thread, RawStr str) {
 
   // No conversion occurred, the string was not a valid float.
   if (c_str == str_end) {
-    return thread->raiseValueErrorWithCStr("could not convert string to float");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "could not convert string to float");
   }
   return thread->runtime()->newFloat(result);
 }
@@ -246,7 +250,8 @@ RawObject FloatBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self)) {
-    return thread->raiseTypeErrorWithCStr("'__gt__' requires a 'float' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__gt__' requires a 'float' object");
   }
   double left = RawFloat::cast(*self).value();
 
@@ -281,8 +286,8 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   Object self_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfFloat(*self_obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__int__' requires a 'float' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__int__' requires a 'float' object");
   }
   double dval = RawFloat::cast(*self_obj).value();
 
@@ -294,11 +299,11 @@ RawObject FloatBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
   int max_exp = 1 << (exp_bits - 1);
   if (exp == max_exp) {
     if (man == 0) {
-      return thread->raiseOverflowErrorWithCStr(
-          "cannot convert float infinity to integer");
+      return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                  "cannot convert float infinity to integer");
     }
-    return thread->raiseValueErrorWithCStr(
-        "cannot convert float NaN to integer");
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "cannot convert float NaN to integer");
   }
 
   // No fractional part.
@@ -419,13 +424,13 @@ RawObject FloatBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   if (!runtime->isInstanceOfType(*obj)) {
-    return thread->raiseTypeErrorWithCStr(
-        "float.__new__(X): X is not a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "float.__new__(X): X is not a type object");
   }
   Type type(&scope, *obj);
   if (type.builtinBase() != LayoutId::kFloat) {
-    return thread->raiseTypeErrorWithCStr(
-        "float.__new__(X): X is not a subtype of float");
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "float.__new__(X): X is not a subtype of float");
   }
 
   // Handle subclasses
@@ -480,7 +485,8 @@ RawObject FloatBuiltins::dunderTrueDiv(Thread* thread, Frame* frame,
   if (!maybe_error.isNoneType()) return *maybe_error;
 
   if (right == 0.0) {
-    return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
+    return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                "float division by zero");
   }
   return runtime->newFloat(left / right);
 }
@@ -524,7 +530,8 @@ RawObject FloatBuiltins::dunderRtrueDiv(Thread* thread, Frame* frame,
   if (!maybe_error.isNoneType()) return *maybe_error;
 
   if (right == 0.0) {
-    return thread->raiseZeroDivisionErrorWithCStr("float division by zero");
+    return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                "float division by zero");
   }
   return runtime->newFloat(left / right);
 }
@@ -563,7 +570,8 @@ RawObject FloatBuiltins::dunderPow(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("float subclass");
   }
   if (!args.get(2).isUnbound()) {
-    return thread->raiseTypeErrorWithCStr(
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
         "pow() 3rd argument not allowed unless all arguments are integers");
   }
   double left = RawFloat::cast(*self).value();

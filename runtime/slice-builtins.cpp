@@ -19,7 +19,8 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
     if (step_obj.isError()) return *step_obj;
     Int index(&scope, *step_obj);
     if (index.isZero()) {
-      return thread->raiseValueErrorWithCStr("slice step cannot be zero");
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "slice step cannot be zero");
     }
     word step_word = index.asWordSaturated();
     if (step_word > SmallInt::kMaxValue) {
@@ -93,12 +94,13 @@ RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   Object type_obj(&scope, args.get(0));
   if (!type_obj.isType()) {
-    return thread->raiseTypeErrorWithCStr("'__new__' requires a type object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__new__' requires a type object");
   }
   Layout layout(&scope, RawType::cast(*type_obj).instanceLayout());
   if (layout.id() != LayoutId::kSlice) {
-    return thread->raiseTypeErrorWithCStr(
-        "slice.__new__ requires the slice type");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "slice.__new__ requires the slice type");
   }
   Slice slice(&scope, thread->runtime()->newSlice());
   Object arg2(&scope, args.get(2));

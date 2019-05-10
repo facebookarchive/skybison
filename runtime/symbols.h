@@ -144,6 +144,9 @@ class Runtime;
   V(AssertionError, "AssertionError")                                          \
   V(AttributeError, "AttributeError")                                          \
   V(Backslashreplace, "backslashreplace")                                      \
+  V(BadArgumentToInternalFunction, "bad argument to internal function")        \
+  V(BadArgumentTypeForBuiltinOperation,                                        \
+    "bad argument type for built-in operation")                                \
   V(BaseException, "BaseException")                                            \
   V(Big, "big")                                                                \
   V(BitLength, "bit_length")                                                   \
@@ -340,6 +343,7 @@ class Runtime;
   V(NotImplementedError, "NotImplementedError")                                \
   V(NotImplementedType, "NotImplementedType")                                  \
   V(Null, "<NULL>")                                                            \
+  V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
   V(OSError, "OSError")                                                        \
   V(ObjectTypename, "object")                                                  \
   V(Offset, "offset")                                                          \

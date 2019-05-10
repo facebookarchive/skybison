@@ -376,10 +376,6 @@ RawObject Thread::raise(LayoutId type, RawObject value) {
   return Error::exception();
 }
 
-RawObject Thread::raiseWithCStr(LayoutId type, const char* message) {
-  return raise(type, runtime()->newStrFromCStr(message));
-}
-
 RawObject Thread::raiseWithFmt(LayoutId type, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -389,33 +385,8 @@ RawObject Thread::raiseWithFmt(LayoutId type, const char* fmt, ...) {
   return raise(type, *message);
 }
 
-// Convenience method for throwing a RuntimeError exception with an error
-// message.
-RawObject Thread::raiseRuntimeError(RawObject value) {
-  return raise(LayoutId::kRuntimeError, value);
-}
-
-RawObject Thread::raiseRuntimeErrorWithCStr(const char* message) {
-  return raiseRuntimeError(runtime()->newStrFromCStr(message));
-}
-
-// Convenience method for throwing a SystemError exception with an error
-// message.
-RawObject Thread::raiseSystemError(RawObject value) {
-  return raise(LayoutId::kSystemError, value);
-}
-
-RawObject Thread::raiseSystemErrorWithCStr(const char* message) {
-  return raiseSystemError(runtime()->newStrFromCStr(message));
-}
-
-// Convenience method for throwing a TypeError exception with an error message.
-RawObject Thread::raiseTypeError(RawObject value) {
-  return raise(LayoutId::kTypeError, value);
-}
-
-RawObject Thread::raiseTypeErrorWithCStr(const char* message) {
-  return raiseTypeError(runtime()->newStrFromCStr(message));
+RawObject Thread::raiseWithId(LayoutId type, SymbolId msg) {
+  return raise(type, runtime()->symbols()->at(msg));
 }
 
 // Convenience method for throwing a binary-operation-specific TypeError
@@ -427,57 +398,17 @@ RawObject Thread::raiseUnsupportedBinaryOperation(
                       &op_name, &right);
 }
 
-// Convenience method for throwing a ValueError exception with an error message.
-RawObject Thread::raiseValueError(RawObject value) {
-  return raise(LayoutId::kValueError, value);
-}
-
-RawObject Thread::raiseValueErrorWithCStr(const char* message) {
-  return raiseValueError(runtime()->newStrFromCStr(message));
-}
-
-RawObject Thread::raiseAttributeError(RawObject value) {
-  return raise(LayoutId::kAttributeError, value);
-}
-
-RawObject Thread::raiseAttributeErrorWithCStr(const char* message) {
-  return raiseAttributeError(runtime()->newStrFromCStr(message));
-}
-
 void Thread::raiseBadArgument() {
-  raiseTypeErrorWithCStr("bad argument type for built-in operation");
+  raiseWithId(LayoutId::kTypeError,
+              SymbolId::kBadArgumentTypeForBuiltinOperation);
 }
 
 void Thread::raiseBadInternalCall() {
-  raiseSystemErrorWithCStr("bad argument to internal function");
-}
-
-RawObject Thread::raiseBufferError(RawObject value) {
-  return raise(LayoutId::kBufferError, value);
-}
-
-RawObject Thread::raiseBufferErrorWithCStr(const char* message) {
-  return raiseBufferError(runtime()->newStrFromCStr(message));
-}
-
-RawObject Thread::raiseKeyError(RawObject value) {
-  return raise(LayoutId::kKeyError, value);
-}
-
-RawObject Thread::raiseKeyErrorWithCStr(const char* message) {
-  return raiseKeyError(runtime()->newStrFromCStr(message));
+  raiseWithId(LayoutId::kSystemError, SymbolId::kBadArgumentToInternalFunction);
 }
 
 RawObject Thread::raiseMemoryError() {
   return raise(LayoutId::kMemoryError, NoneType::object());
-}
-
-RawObject Thread::raiseOverflowError(RawObject value) {
-  return raise(LayoutId::kOverflowError, value);
-}
-
-RawObject Thread::raiseOverflowErrorWithCStr(const char* message) {
-  return raiseOverflowError(runtime()->newStrFromCStr(message));
 }
 
 RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {
@@ -487,26 +418,6 @@ RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {
   return raiseWithFmt(LayoutId::kTypeError,
                       "'%S' requires a '%Y' object but got '%T'",
                       &function_name, expected_type, &obj);
-}
-
-RawObject Thread::raiseIndexError(RawObject value) {
-  return raise(LayoutId::kIndexError, value);
-}
-
-RawObject Thread::raiseIndexErrorWithCStr(const char* message) {
-  return raiseIndexError(runtime()->newStrFromCStr(message));
-}
-
-RawObject Thread::raiseStopIteration(RawObject value) {
-  return raise(LayoutId::kStopIteration, value);
-}
-
-RawObject Thread::raiseZeroDivisionError(RawObject value) {
-  return raise(LayoutId::kZeroDivisionError, value);
-}
-
-RawObject Thread::raiseZeroDivisionErrorWithCStr(const char* message) {
-  return raiseZeroDivisionError(runtime()->newStrFromCStr(message));
 }
 
 bool Thread::hasPendingException() { return !pending_exc_type_.isNoneType(); }

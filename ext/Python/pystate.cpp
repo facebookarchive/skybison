@@ -40,8 +40,8 @@ PY_EXPORT int PyState_AddModule(PyObject* module, struct PyModuleDef* def) {
   }
   // Below is the body of the port of _PyState_AddModule in CPython.
   if (def->m_slots != nullptr) {
-    thread->raiseSystemErrorWithCStr(
-        "PyState_AddModule called on module with slots");
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "PyState_AddModule called on module with slots");
     return -1;
   }
   // CPython adds the module into a separate module list to do an index lookup

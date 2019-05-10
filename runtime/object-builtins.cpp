@@ -72,8 +72,8 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   AttributeInfo info;
   if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
     if (layout.overflowAttributes().isNoneType()) {
-      return thread->raiseAttributeErrorWithCStr(
-          "Cannot set attribute on sealed class");
+      return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                  "Cannot set attribute on sealed class");
     }
     // Transition the layout
     layout = runtime->layoutAddAttribute(thread, layout, name_interned, 0);
@@ -299,8 +299,8 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
       runtime->isMethodOverloaded(thread, type, SymbolId::kDunderInit)) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
     // overwritten by self, or __init__ was overloaded by self.
-    return thread->raiseTypeErrorWithCStr(
-        "object.__init__() takes no parameters");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "object.__init__() takes no parameters");
   }
   // Else it's alright to have extra arguments.
   return NoneType::object();
@@ -309,8 +309,8 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
 RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (nargs < 1) {
-    return thread->raiseTypeErrorWithCStr(
-        "object.__new__() takes no arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "object.__new__() takes no arguments");
   }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
@@ -376,8 +376,8 @@ RawObject NoneBuiltins::dunderNew(Thread*, Frame*, word) {
 RawObject NoneBuiltins::dunderRepr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isNoneType()) {
-    return thread->raiseTypeErrorWithCStr(
-        "__repr__ expects None as first argument");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__repr__ expects None as first argument");
   }
   return thread->runtime()->symbols()->None();
 }

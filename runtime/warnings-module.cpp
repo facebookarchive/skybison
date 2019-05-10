@@ -25,8 +25,8 @@ RawObject getCategory(Thread* thread, const Object& message,
       result = *category;
     }
     if (!runtime->isSubclass(result, warning)) {
-      return thread->raiseTypeErrorWithCStr(
-          "category must be a Warning subclass");
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "category must be a Warning subclass");
     }
   }
 
@@ -53,12 +53,13 @@ RawObject UnderWarningsModule::warn(Thread* thread, Frame* frame, word nargs) {
   Object stacklevel(&scope, args.get(2));
 
   if (!runtime->isInstanceOfInt(*stacklevel)) {
-    return thread->raiseTypeErrorWithCStr("integer argument expected");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "integer argument expected");
   }
   auto result = Int(&scope, intUnderlying(thread, stacklevel)).asInt<word>();
   if (result.error != CastError::None) {
-    return thread->raiseOverflowErrorWithCStr(
-        "Python int too large to convert to C ssize_t");
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C ssize_t");
   }
 
   Object real_category(&scope, getCategory(thread, message, category));

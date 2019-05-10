@@ -92,8 +92,8 @@ const BuiltinMethod PropertyBuiltins::kBuiltinMethods[] = {
 RawObject PropertyBuiltins::deleter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {
-    return thread->raiseTypeErrorWithCStr(
-        "'deleter' requires a 'property' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'deleter' requires a 'property' object");
   }
 
   HandleScope scope(thread);
@@ -107,21 +107,22 @@ RawObject PropertyBuiltins::deleter(Thread* thread, Frame* frame, word nargs) {
 RawObject PropertyBuiltins::dunderGet(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs < 3 || nargs > 4) {
-    return thread->raiseTypeErrorWithCStr(
-        "property.__get__ expects 2-3 arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "property.__get__ expects 2-3 arguments");
   }
 
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__get__' requires a 'property' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__get__' requires a 'property' object");
   }
   Property property(&scope, args.get(0));
   Object obj(&scope, args.get(1));
 
   if (property.getter() == NoneType::object()) {
-    return thread->raiseAttributeErrorWithCStr("unreadable attribute");
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "unreadable attribute");
   }
 
   if (obj.isNoneType()) {
@@ -135,22 +136,23 @@ RawObject PropertyBuiltins::dunderGet(Thread* thread, Frame* frame,
 RawObject PropertyBuiltins::dunderSet(Thread* thread, Frame* frame,
                                       word nargs) {
   if (nargs != 3) {
-    return thread->raiseTypeErrorWithCStr(
-        "property.__set__ expects 2 arguments");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "property.__set__ expects 2 arguments");
   }
 
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__set__' requires a 'property' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__set__' requires a 'property' object");
   }
   Property property(&scope, args.get(0));
   Object obj(&scope, args.get(1));
   Object value(&scope, args.get(2));
 
   if (property.setter().isNoneType()) {
-    return thread->raiseAttributeErrorWithCStr("can't set attribute");
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "can't set attribute");
   }
 
   Object setter(&scope, property.setter());
@@ -160,8 +162,8 @@ RawObject PropertyBuiltins::dunderSet(Thread* thread, Frame* frame,
 RawObject PropertyBuiltins::getter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {
-    return thread->raiseTypeErrorWithCStr(
-        "'getter' requires a 'property' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'getter' requires a 'property' object");
   }
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
@@ -175,8 +177,8 @@ RawObject PropertyBuiltins::dunderInit(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {
-    return thread->raiseTypeErrorWithCStr(
-        "'__init__' requires a 'property' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'__init__' requires a 'property' object");
   }
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
@@ -196,8 +198,8 @@ RawObject PropertyBuiltins::dunderNew(Thread* thread, Frame*, word) {
 RawObject PropertyBuiltins::setter(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {
-    return thread->raiseTypeErrorWithCStr(
-        "'setter' requires a 'property' object");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'setter' requires a 'property' object");
   }
   HandleScope scope(thread);
   Property property(&scope, args.get(0));
