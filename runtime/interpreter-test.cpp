@@ -1071,7 +1071,8 @@ meth = C().foo
 TEST(InterpreterTest, CallingUncallableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "(1)()"),
-                            LayoutId::kTypeError, "object is not callable"));
+                            LayoutId::kTypeError,
+                            "'int' object is not callable"));
 }
 
 TEST(InterpreterTest, CallingUncallableDunderCallRaisesTypeError) {
@@ -1083,7 +1084,8 @@ class C:
 c = C()
 c()
   )"),
-                            LayoutId::kTypeError, "object is not callable"));
+                            LayoutId::kTypeError,
+                            "'int' object is not callable"));
 }
 
 TEST(InterpreterTest, CallingNonDescriptorDunderCallRaisesTypeError) {
@@ -1097,7 +1099,8 @@ class C:
 c = C()
 c()
   )"),
-                            LayoutId::kTypeError, "object is not callable"));
+                            LayoutId::kTypeError,
+                            "'D' object is not callable"));
 }
 
 TEST(InterpreterTest, CallDescriptorReturningUncallableRaisesTypeError) {
@@ -1113,7 +1116,8 @@ class C:
 c = C()
 c()
   )"),
-                            LayoutId::kTypeError, "object is not callable"));
+                            LayoutId::kTypeError,
+                            "'int' object is not callable"));
 }
 
 TEST(InterpreterTest, LookupMethodLoopsOnCallBoundToDescriptor) {
@@ -2561,7 +2565,27 @@ TEST(InterpreterTest, FunctionCallExWithNonFunctionRaisesTypeError) {
   frame->pushValue(*empty_args);
   EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread, frame, 0),
                             LayoutId::kTypeError,
-                            "object of type 'str' is not a callable"));
+                            "'str' object is not callable"));
+}
+
+TEST(InterpreterTest, CallExWithDescriptorDunderCall) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class FakeFunc:
+    def __get__(self, obj, owner):
+        return self
+    def __call__(self, arg):
+        return arg
+
+class C:
+    __call__ = FakeFunc()
+
+args = ["hello!"]
+result = C()(*args)
+)")
+                   .isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "hello!"));
 }
 
 TEST(InterpreterTest, DoDeleteNameOnDictSubclass) {

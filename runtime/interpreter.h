@@ -98,17 +98,32 @@ class Interpreter {
                                const Object& arg1, const Object& arg2,
                                const Object& arg3);
 
-  // Re-arrange the stack so that it is in "normal" form.
+  // Given a non-Function object in `callable`, attempt to normalize it to a
+  // Function by either unpacking a BoundMethod or looking up the object's
+  // __call__ method, iterating multiple times if necessary.
   //
-  // This is used when the target of a call or keyword call is not a concrete
-  // Function object. It extracts the concrete function object from the
-  // callable and re-arranges the stack so that the function is followed by its
-  // arguments.
+  // On success, `callable` will contain the Function to call, and the return
+  // value will be a bool indicating whether or not `self` was populated with an
+  // object unpacked from a BoundMethod.
   //
-  // Returns the concrete function that should be called. Updates nargs with the
-  // number of items added to the stack.
+  // On failure, Error is returned and `callable` may have been modified.
+  static RawObject prepareCallable(Thread* thread, Frame* frame,
+                                   Object* callable, Object* self);
+
+  // Prepare the stack to for a positional or keyword call by normalizing the
+  // callable object using prepareCallableObject().
+  //
+  // Returns the concrete Function that should be called. Updates nargs if a
+  // self object was unpacked from the callable and inserted into the stack.
   static RawObject prepareCallableCall(Thread* thread, Frame* frame,
                                        word callable_idx, word* nargs);
+
+  // Prepare the stack for an explode call by normalizing the callable object
+  // using prepareCallableObject().
+  //
+  // Returns the concrete Function that should be called.
+  static RawObject prepareCallableEx(Thread* thread, Frame* frame,
+                                     word callable_idx);
 
   static RawObject unaryOperation(Thread* thread, const Object& receiver,
                                   SymbolId selector);

@@ -21,14 +21,62 @@
 
 namespace python {
 
+RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
+                                       Object* callable, Object* self) {
+  DCHECK(!callable->isFunction(),
+         "prepareCallable should only be called on non-function types");
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  for (;;) {
+    if (callable->isBoundMethod()) {
+      BoundMethod method(&scope, **callable);
+      *callable = method.function();
+      *self = method.self();
+      return Bool::trueObj();
+    }
+
+    // TODO(T44238481): Look into using lookupMethod() once it's fixed.
+    Type type(&scope, runtime->typeOf(**callable));
+    Object dunder_call(
+        &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall));
+    if (!dunder_call.isError()) {
+      if (dunder_call.isFunction()) {
+        // Avoid calling function.__get__ and creating a short-lived BoundMethod
+        // object. Instead, return the unpacked values directly.
+        *self = **callable;
+        *callable = *dunder_call;
+        return Bool::trueObj();
+      }
+      Type call_type(&scope, runtime->typeOf(*dunder_call));
+      if (typeIsNonDataDescriptor(thread, call_type)) {
+        *callable =
+            callDescriptorGet(thread, frame, dunder_call, *callable, type);
+        if (callable->isError()) return **callable;
+        if (callable->isFunction()) return Bool::falseObj();
+
+        // Retry the lookup using the object returned by the descriptor.
+        continue;
+      }
+      // Update callable for the exception message below.
+      *callable = *dunder_call;
+    }
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' object is not callable", callable);
+  }
+}
+
 RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
                                            word callable_idx, word* nargs) {
   HandleScope scope(thread);
   Object callable(&scope, frame->peek(callable_idx));
-  DCHECK(!callable.isFunction(),
-         "prepareCallableCall should only be called on non-function types");
-  if (callable.isBoundMethod()) {
-    // Shift all arguments on the stack down by 1 and unpack the BoundMethod.
+  Object self(&scope, NoneType::object());
+  RawObject result = prepareCallable(thread, frame, &callable, &self);
+  if (result.isError()) return result;
+  frame->setValueAt(*callable, callable_idx);
+  if (result == Bool::trueObj()) {
+    // Shift all arguments on the stack down by 1 and use the unpacked
+    // BoundMethod.
     //
     // We don't need to worry too much about the performance overhead for method
     // calls here.
@@ -45,43 +93,10 @@ RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
     //
     // Our contention is that uses of this pattern are not performance
     // sensitive.
-    BoundMethod method(&scope, *callable);
-    callable = method.function();
-    frame->setValueAt(method.self(), callable_idx);
-    frame->insertValueAt(*callable, callable_idx + 1);
+    frame->insertValueAt(*self, callable_idx);
     *nargs += 1;
-    return *callable;
   }
-
-  Runtime* runtime = thread->runtime();
-  for (;;) {
-    // This does not use Runtime::isCallable because that would involve two
-    // loads.
-    Type type(&scope, runtime->typeOf(*callable));
-    Object attr(&scope,
-                typeLookupSymbolInMro(thread, type, SymbolId::kDunderCall));
-    if (!attr.isError()) {
-      if (attr.isFunction()) {
-        // Avoid creating a short-lived BoundMethod object. Instead, insert the
-        // Function object in front of the callable, leaving the stack in the
-        // same state as if a BoundMethod had been created and called.
-        frame->insertValueAt(*attr, callable_idx + 1);
-        *nargs += 1;
-        return *attr;
-      }
-      Type attr_type(&scope, runtime->typeOf(*attr));
-      if (typeIsNonDataDescriptor(thread, attr_type)) {
-        callable = callDescriptorGet(thread, frame, attr, callable, attr_type);
-        if (callable.isFunction()) {
-          frame->setValueAt(*callable, callable_idx);
-          return *callable;
-        }
-        // Retry the lookup using the object returned by the descriptor.
-        continue;
-      }
-    }
-    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not callable");
-  }
+  return *callable;
 }
 
 RawObject Interpreter::call(Thread* thread, Frame* frame, word nargs) {
@@ -121,47 +136,45 @@ RawObject Interpreter::callEx(Thread* thread, Frame* frame, word flags) {
   // Low bit of flags indicates whether var-keyword argument is on TOS.
   // In all cases, var-positional tuple is next, followed by the function
   // pointer.
+  word callable_idx = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  RawObject* post_call_sp = frame->valueStackTop() + callable_idx + 1;
   HandleScope scope(thread);
-  word function_position = (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
-  RawObject* sp = frame->valueStackTop() + function_position + 1;
-  Object callable(&scope, frame->peek(function_position));
-  word args_position = function_position - 1;
-  Object args_obj(&scope, frame->peek(args_position));
+  Object callable(&scope, prepareCallableEx(thread, frame, callable_idx));
+  if (callable.isError()) return *callable;
+  Object result(&scope,
+                RawFunction::cast(*callable).entryEx()(thread, frame, flags));
+  frame->setValueStackTop(post_call_sp);
+  return *result;
+}
+
+RawObject Interpreter::prepareCallableEx(Thread* thread, Frame* frame,
+                                         word callable_idx) {
+  HandleScope scope(thread);
+  Object callable(&scope, frame->peek(callable_idx));
+  word args_idx = callable_idx - 1;
+  Object args_obj(&scope, frame->peek(args_idx));
   if (!args_obj.isTuple()) {
     // Make sure the argument sequence is a tuple.
     args_obj = sequenceAsTuple(thread, args_obj);
-    if (args_obj.isError()) {
-      frame->setValueStackTop(sp);
-      return *args_obj;
-    }
-    frame->setValueAt(*args_obj, args_position);
+    if (args_obj.isError()) return *args_obj;
+    frame->setValueAt(*args_obj, args_idx);
   }
   if (!callable.isFunction()) {
-    // Create a new argument tuple with self as the first argument
-    Tuple args(&scope, *args_obj);
-    Tuple new_args(&scope, thread->runtime()->newTuple(args.length() + 1));
-    Object target(&scope, NoneType::object());
-    if (callable.isBoundMethod()) {
-      BoundMethod method(&scope, *callable);
-      new_args.atPut(0, method.self());
-      target = method.function();
-    } else {
-      new_args.atPut(0, *callable);
-      target = lookupMethod(thread, frame, callable, SymbolId::kDunderCall);
-      if (target.isError()) {
-        return thread->raiseWithFmt(LayoutId::kTypeError,
-                                    "object of type '%T' is not a callable",
-                                    &callable);
-      }
+    Object self(&scope, NoneType::object());
+    Object result(&scope, prepareCallable(thread, frame, &callable, &self));
+    if (result.isError()) return *result;
+    frame->setValueAt(*callable, callable_idx);
+
+    if (result == Bool::trueObj()) {
+      // Create a new argument tuple with self as the first argument
+      Tuple args(&scope, *args_obj);
+      Tuple new_args(&scope, thread->runtime()->newTuple(args.length() + 1));
+      new_args.atPut(0, *self);
+      new_args.replaceFromWith(1, *args);
+      frame->setValueAt(*new_args, args_idx);
     }
-    new_args.replaceFromWith(1, *args);
-    frame->setValueAt(*target, function_position);
-    frame->setValueAt(*new_args, args_position);
-    callable = *target;
   }
-  RawObject result = Function::cast(*callable).entryEx()(thread, frame, flags);
-  frame->setValueStackTop(sp);
-  return result;
+  return *callable;
 }
 
 RawObject Interpreter::stringJoin(Thread* thread, RawObject* sp, word num) {

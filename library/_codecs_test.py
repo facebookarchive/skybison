@@ -117,7 +117,7 @@ class CodecsTests(unittest.TestCase):
         _codecs.register(lookup_function)
         with self.assertRaises(TypeError) as context:
             _codecs.decode(b"bytes", "decode-with-function-with-int-codec")
-        self.assertEqual(str(context.exception), "object is not callable")
+        self.assertEqual(str(context.exception), "'int' object is not callable")
 
     def test_decode_with_function_with_non_tuple_return_raises_type_error(self):
         def lookup_function(encoding):
@@ -173,7 +173,7 @@ class CodecsTests(unittest.TestCase):
         _codecs.register(lookup_function)
         with self.assertRaises(TypeError) as context:
             _codecs.encode("str", "encode-with-function-with-int-codec")
-        self.assertEqual(str(context.exception), "object is not callable")
+        self.assertEqual(str(context.exception), "'int' object is not callable")
 
     def test_encode_with_function_with_non_tuple_return_raises_type_error(self):
         def lookup_function(encoding):
