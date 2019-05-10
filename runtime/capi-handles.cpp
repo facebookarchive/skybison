@@ -43,14 +43,49 @@ RawObject ApiHandle::dictAtIdentityEquals(Thread* thread, const Dict& dict,
   return Error::notFound();
 }
 
-RawTuple ApiHandle::dictGrowIdentityEqual(Thread* thread, const Tuple& data) {
-  HandleScope scope;
-  word new_length = data.length() * Runtime::kDictGrowthFactor;
-  if (new_length == 0) {
-    new_length = Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers;
-  }
+void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
+                                        const Object& key, const Object& value,
+                                        const Object& key_hash) {
   Runtime* runtime = thread->runtime();
-  Tuple new_data(&scope, runtime->newTuple(new_length));
+  if (dict.capacity() == 0) {
+    dict.setData(runtime->newTuple(Runtime::kInitialDictCapacity *
+                                   Dict::Bucket::kNumPointers));
+    dict.setNumEmptyItems(Runtime::kInitialDictCapacity);
+  }
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  word index = -1;
+  bool found = runtime->dictLookup(data, key, key_hash, &index, identityEqual);
+  DCHECK(index != -1, "invalid index %ld", index);
+  bool empty_slot = Dict::Bucket::isEmpty(*data, index);
+  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  if (found) {
+    return;
+  }
+  dict.setNumItems(dict.numItems() + 1);
+  if (empty_slot) {
+    dict.setNumEmptyItems(dict.numEmptyItems() - 1);
+    dictEnsureCapacity(thread, dict);
+  }
+}
+
+void ApiHandle::dictEnsureCapacity(Thread* thread, const Dict& dict) {
+  // TODO(T44245141): Move initialization of an empty dict here.
+  DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
+         "dict capacity must be power of two, greater than zero");
+  word num_non_empty = dict.capacity() - dict.numEmptyItems();
+  // Grow only If 2/3 of dict are occpupied.
+  // TODO(T44247845): Use usable instead to simplify the check.
+  if (num_non_empty * 3 < dict.capacity() * 2) {
+    return;
+  }
+  // TODO(T44247845): Handle overflow here.
+  word new_capacity = dict.capacity() * 2;
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple data(&scope, dict.data());
+  Tuple new_data(&scope,
+                 runtime->newTuple(new_capacity * Dict::Bucket::kNumPointers));
   // Re-insert items
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     Object key(&scope, Dict::Bucket::key(*data, i));
@@ -61,30 +96,8 @@ RawTuple ApiHandle::dictGrowIdentityEqual(Thread* thread, const Tuple& data) {
     Dict::Bucket::set(*new_data, index, *hash, *key,
                       Dict::Bucket::value(*data, i));
   }
-  return *new_data;
-}
-
-void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
-                                        const Object& key, const Object& value,
-                                        const Object& key_hash) {
-  HandleScope scope;
-  Tuple data(&scope, dict.data());
-  word index = -1;
-  Runtime* runtime = thread->runtime();
-  bool found = runtime->dictLookup(data, key, key_hash, &index, identityEqual);
-  if (index == -1) {
-    // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Tuple new_data(&scope, dictGrowIdentityEqual(thread, data));
-    runtime->dictLookup(new_data, key, key_hash, &index, identityEqual);
-    DCHECK(index != -1, "invalid index %ld", index);
-    dict.setData(*new_data);
-    Dict::Bucket::set(*new_data, index, *key_hash, *key, *value);
-  } else {
-    Dict::Bucket::set(*data, index, *key_hash, *key, *value);
-  }
-  if (!found) {
-    dict.setNumItems(dict.numItems() + 1);
-  }
+  dict.setData(*new_data);
+  dict.setNumEmptyItems(dict.capacity() - dict.numItems());
 }
 
 RawObject ApiHandle::dictRemoveIdentityEquals(Thread* thread, const Dict& dict,

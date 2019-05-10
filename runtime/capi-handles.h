@@ -101,23 +101,24 @@ class ApiHandle : public PyObject {
   // instance
   static RawObject getExtensionPtrAttr(Thread* thread, const Object& obj);
 
-  // TODO(emacs): Remove these functions when handles have their own
+  // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
   static RawObject dictAtIdentityEquals(Thread* thread, const Dict& dict,
                                         const Object& key,
                                         const Object& key_hash);
 
-  // TODO(emacs): Remove these functions when handles have their own
-  // specialized hash table.
-  static RawTuple dictGrowIdentityEqual(Thread* thread, const Tuple& data);
-
-  // TODO(emacs): Remove these functions when handles have their own
+  // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
   static void dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
                                       const Object& key, const Object& value,
                                       const Object& key_hash);
 
-  // TODO(emacs): Remove these functions when handles have their own
+  // TODO(T44244793): Remove these functions when handles have their own
+  // specialized hash table.
+  // The given dict gets grown if dict reaches its load factor.
+  static void dictEnsureCapacity(Thread* thread, const Dict& dict);
+
+  // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.
   static RawObject dictRemoveIdentityEquals(Thread* thread, const Dict& dict,
                                             const Object& key,

@@ -836,7 +836,10 @@ class Runtime {
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
-  RawTuple dictGrow(Thread* thread, const Tuple& data);
+  // The given dict gets grown if dict reaches its load factor.
+  void dictEnsureCapacity(Thread* thread, const Dict& data);
+
+  static bool dictHasEmptyItem(const Tuple& data);
 
   // Looks up the supplied key
   //

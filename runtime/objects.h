@@ -1903,9 +1903,10 @@ class RawByteArray : public RawHeapObject {
  * RawLayout:
  *
  *   [RawType pointer]
- *   [NumItems     ] - Number of items currently in the dict
- *   [Items        ] - Pointer to an RawTuple that stores the underlying
+ *   [NumItems      ] - Number of items currently in the dict
+ *   [Items         ] - Pointer to an RawTuple that stores the underlying
  * data.
+ *   [NumEmptyItems ] - Number of items that are not occupied or tombstones.
  *
  * RawDict entries are stored in buckets as a triple of (hash, key, value).
  * Empty buckets are stored as (RawNoneType, RawNoneType, RawNoneType).
@@ -1916,19 +1917,28 @@ class RawDict : public RawHeapObject {
  public:
   class Bucket;
 
+  // Number of items currently in the dict
+  word numItems() const;
+  void setNumItems(word num_items) const;
+
   // Getters and setters.
   // The RawTuple backing the dict
   RawObject data() const;
   void setData(RawObject data) const;
 
-  // Number of items currently in the dict
-  word numItems() const;
-  void setNumItems(word num_items) const;
+  // Number of empty items currently in the dict.
+  // See Runtime::dictEnsureCapacity() for how it's used.
+  word numEmptyItems() const;
+  void setNumEmptyItems(word num_empty_items) const;
+
+  // Number of hash buckets.
+  word capacity() const;
 
   // Layout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
-  static const int kSize = kDataOffset + kPointerSize;
+  static const int kNumEmptyItemsOffset = kDataOffset + kPointerSize;
+  static const int kSize = kNumEmptyItemsOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Dict);
 };
@@ -1936,15 +1946,28 @@ class RawDict : public RawHeapObject {
 typedef bool (*DictEq)(RawObject a, RawObject b);
 
 // Helper class for manipulating buckets in the RawTuple that backs the
-// dict
+// dict. None of operations here do bounds checking on the backing array.
 class RawDict::Bucket {
  public:
-  // none of these operations do bounds checking on the backing array
-  static word getIndex(RawTuple data, RawObject hash) {
-    word nbuckets = data.length() / kNumPointers;
+  static word bucket(RawTuple data, RawObject hash, word* bucket_mask,
+                     uword* perturb) {
+    const word nbuckets = data.length() / kNumPointers;
     DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
-    word value = RawSmallInt::cast(hash).value();
-    return (value & (nbuckets - 1)) * kNumPointers;
+    DCHECK(nbuckets > 0, "bucket size <= 0");
+    const word value = RawSmallInt::cast(hash).value();
+    *perturb = static_cast<uword>(value);
+    *bucket_mask = nbuckets - 1;
+    return *bucket_mask & value;
+  }
+
+  static word nextBucket(word current, word bucket_mask, uword* perturb) {
+    // Given that current stands for the index of a bucket, this advances
+    // current to (5 * bucket + 1 + perturb). Note that it's guaranteed that
+    // keeping calling this function returns a permutation of all indices when
+    // the number of the buckets is power of two. See
+    // https://en.wikipedia.org/wiki/Linear_congruential_generator#c_%E2%89%A0_0.
+    *perturb >>= 5;
+    return (current * 5 + 1 + *perturb) & bucket_mask;
   }
 
   static bool hasKey(RawTuple data, word index, RawObject that_key,
@@ -4258,12 +4281,26 @@ inline void RawDict::setNumItems(word num_items) const {
   instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
 }
 
+inline word RawDict::numEmptyItems() const {
+  return RawSmallInt::cast(instanceVariableAt(kNumEmptyItemsOffset)).value();
+}
+
+inline void RawDict::setNumEmptyItems(word num_empty_items) const {
+  instanceVariableAtPut(kNumEmptyItemsOffset,
+                        RawSmallInt::fromWord(num_empty_items));
+}
+
 inline RawObject RawDict::data() const {
   return instanceVariableAt(kDataOffset);
 }
 
 inline void RawDict::setData(RawObject data) const {
   instanceVariableAtPut(kDataOffset, data);
+}
+
+inline word RawDict::capacity() const {
+  return RawTuple::cast(instanceVariableAt(kDataOffset)).length() /
+         Bucket::kNumPointers;
 }
 
 // RawDictIteratorBase

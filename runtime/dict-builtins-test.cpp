@@ -9,6 +9,20 @@ namespace python {
 
 using namespace testing;
 
+TEST(DictBuiltinsTest, DictAtGrowsToInitialCapacity) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Dict dict(&scope, runtime.newDict());
+  EXPECT_EQ(dict.capacity(), 0);
+
+  Object key(&scope, runtime.newInt(123));
+  Object value(&scope, runtime.newInt(456));
+  runtime.dictAtPut(thread, dict, key, value);
+  int expected = Runtime::kInitialDictCapacity;
+  EXPECT_EQ(dict.capacity(), expected);
+}
+
 TEST(DictBuiltinsTest, ClearRemovesAllElements) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -59,6 +73,7 @@ result = dict.copy(d)
   Dict result(&scope, *result_obj);
   EXPECT_NE(*dict, *result);
   EXPECT_EQ(result.numItems(), 1);
+  EXPECT_EQ(result.numEmptyItems(), result.capacity() - 1);
 }
 
 TEST(DictBuiltinsTest, DunderContainsWithExistingKeyReturnsTrue) {
@@ -209,6 +224,7 @@ TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
                 runBuiltin(DictBuiltins::dunderSetItem, dict, key, val2));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
+  ASSERT_EQ(dict.numEmptyItems(), dict.capacity() - 1);
   ASSERT_EQ(runtime.dictAt(thread, dict, key), *val2);
 }
 
@@ -218,12 +234,14 @@ TEST(DictBuiltinsTest, DunderSetItemWithNonExistentKey) {
   HandleScope scope;
   Dict dict(&scope, runtime.newDictWithSize(1));
   ASSERT_EQ(dict.numItems(), 0);
+  ASSERT_EQ(dict.numEmptyItems(), dict.capacity());
   Object key(&scope, runtime.newStrFromCStr("foo"));
   Object val(&scope, runtime.newInt(0));
   Object result(&scope,
                 runBuiltin(DictBuiltins::dunderSetItem, dict, key, val));
   ASSERT_TRUE(result.isNoneType());
   ASSERT_EQ(dict.numItems(), 1);
+  ASSERT_EQ(dict.numEmptyItems(), dict.capacity() - 1);
   ASSERT_EQ(runtime.dictAt(thread, dict, key), *val);
 }
 
@@ -352,13 +370,18 @@ d3 = {"a": 123}
   Dict d1(&scope, moduleAt(&runtime, "__main__", "d1"));
   Dict d2(&scope, moduleAt(&runtime, "__main__", "d2"));
   ASSERT_EQ(d1.numItems(), 2);
+  ASSERT_EQ(d1.numEmptyItems(), d1.capacity() - 2);
   ASSERT_EQ(d2.numItems(), 2);
+  ASSERT_EQ(d2.numEmptyItems(), d2.capacity() - 2);
   ASSERT_TRUE(runFromCStr(&runtime, "d1.update(d2)").isNoneType());
   EXPECT_EQ(d1.numItems(), 4);
+  EXPECT_EQ(d1.numEmptyItems(), d1.capacity() - 4);
   EXPECT_EQ(d2.numItems(), 2);
+  EXPECT_EQ(d2.numEmptyItems(), d2.capacity() - 2);
 
   ASSERT_TRUE(runFromCStr(&runtime, "d1.update(d3)").isNoneType());
   EXPECT_EQ(d1.numItems(), 4);
+  EXPECT_EQ(d1.numEmptyItems(), d1.capacity() - 4);
   Str a(&scope, runtime.newStrFromCStr("a"));
   Object a_val(&scope, runtime.dictAt(thread, d1, a));
   EXPECT_TRUE(isIntEqualsWord(*a_val, 123));
@@ -782,6 +805,8 @@ result = d.pop("hello")
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
   Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
   EXPECT_EQ(dict.numItems(), 0);
+  // Tombstone still fills up an item.
+  EXPECT_EQ(dict.numEmptyItems(), dict.capacity() - 1);
 }
 
 TEST(DictBuiltinsTest, PopWithMissingKeyAndDefaultReturnsDefault) {
@@ -794,6 +819,7 @@ result = d.pop("hello", "world")
   HandleScope scope;
   Dict dict(&scope, moduleAt(&runtime, "__main__", "d"));
   EXPECT_EQ(dict.numItems(), 0);
+  EXPECT_EQ(dict.numEmptyItems(), dict.capacity());
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
 }
@@ -819,6 +845,8 @@ result = c.pop('hello')
   HandleScope scope(thread);
   Dict dict(&scope, moduleAt(&runtime, "__main__", "c"));
   EXPECT_EQ(dict.numItems(), 0);
+  // Tombstone still fills up an item.
+  EXPECT_EQ(dict.numEmptyItems(), dict.capacity() - 1);
   EXPECT_TRUE(
       isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "world"));
 }
@@ -867,6 +895,43 @@ result = d["hello"]
 )")
                    .isError());
   EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+}
+
+TEST(DictBuiltinsTest, nextBucketProbesAllBuckets) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Dict dict(&scope, runtime.newDict());
+  Object key(&scope, runtime.newInt(123));
+  Object value(&scope, runtime.newInt(456));
+  runtime.dictAtPut(thread, dict, key, value);
+
+  Tuple data(&scope, dict.data());
+  ASSERT_EQ(data.length(),
+            Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers);
+
+  bool probed[Runtime::kInitialDictCapacity] = {false};
+  Int key_hash(&scope, SmallInt::fromWord(123));
+
+  uword perturb;
+  word bucket_mask;
+  word current = Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
+  probed[current] = true;
+  // Probe until perturb becomes zero.
+  while (perturb > 0) {
+    current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb);
+    probed[current] = true;
+  }
+  // Probe as many times as the capacity.
+  for (word i = 1; i < Runtime::kInitialDictCapacity; ++i) {
+    current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb);
+    probed[current] = true;
+  }
+  bool all_probed = true;
+  for (word i = 0; i < Runtime::kInitialDictCapacity; ++i) {
+    all_probed &= probed[i];
+  }
+  EXPECT_TRUE(all_probed);
 }
 
 }  // namespace python

@@ -278,6 +278,7 @@ RawObject DictBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
   Dict dict(&scope, *self);
   if (dict.numItems() > 0) {
     dict.setNumItems(0);
+    dict.setNumEmptyItems(dict.capacity());
     Tuple data(&scope, dict.data());
     data.fill(NoneType::object());
   }
@@ -471,6 +472,7 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type.instanceLayout());
   Dict result(&scope, thread->runtime()->newInstance(layout));
   result.setNumItems(0);
+  result.setNumEmptyItems(0);
   result.setData(thread->runtime()->newTuple(0));
   return *result;
 }

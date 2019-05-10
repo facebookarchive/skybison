@@ -434,48 +434,53 @@ TEST(RuntimeDictTest, AtIfAbsentPutLength) {
   EXPECT_EQ(retrieved, *v1);
 }
 
-TEST(RuntimeDictTest, GrowWhenFull) {
+TEST(RuntimeDictTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict dict(&scope, runtime.newDict());
+  EXPECT_EQ(dict.capacity(), 0);
 
-  // Fill up the dict - we insert an initial key to force the allocation of the
-  // backing Tuple.
-  Object init_key(&scope, SmallInt::fromWord(0));
-  runtime.dictAtPut(thread, dict, init_key, init_key);
-  ASSERT_TRUE(dict.data().isTuple());
-  word init_data_size = Tuple::cast(dict.data()).length();
+  Object first_key(&scope, SmallInt::fromWord(0));
+  Object first_value(&scope, SmallInt::fromWord(1));
+  runtime.dictAtPut(thread, dict, first_key, first_value);
 
-  auto make_key = [&runtime](int i) {
-    byte text[]{"0123456789abcdeghiklmn"};
-    return runtime.newStrWithAll(View<byte>(text + i % 10, 10));
-  };
-  auto make_value = [](int i) { return SmallInt::fromWord(i); };
+  word initial_capacity = Runtime::kInitialDictCapacity;
+  EXPECT_EQ(dict.numItems(), 1);
+  EXPECT_EQ(dict.capacity(), initial_capacity);
+}
+
+TEST(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsFull) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope;
+  Dict dict(&scope, runtime.newDict());
 
   // Fill in one fewer keys than would require growing the underlying object
-  // array again
-  word num_keys = Runtime::kInitialDictCapacity;
-  for (int i = 1; i < num_keys; i++) {
-    Object key(&scope, make_key(i));
-    Object value(&scope, make_value(i));
+  // array again.
+  word threshold = ((Runtime::kInitialDictCapacity * 2) / 3);
+  for (word i = 0; i < threshold; i++) {
+    Object key(&scope, SmallInt::fromWord(i));
+    Object value(&scope, SmallInt::fromWord(-i));
     runtime.dictAtPut(thread, dict, key, value);
   }
+  EXPECT_EQ(dict.numItems(), threshold);
+  word initial_capacity = Runtime::kInitialDictCapacity;
+  EXPECT_EQ(dict.capacity(), initial_capacity);
 
   // Add another key which should force us to double the capacity
-  Object straw(&scope, make_key(num_keys));
-  Object straw_value(&scope, make_value(num_keys));
-  runtime.dictAtPut(thread, dict, straw, straw_value);
-  ASSERT_TRUE(dict.data().isTuple());
-  word new_data_size = Tuple::cast(dict.data()).length();
-  EXPECT_EQ(new_data_size, Runtime::kDictGrowthFactor * init_data_size);
+  Object last_key(&scope, SmallInt::fromWord(threshold));
+  Object last_value(&scope, SmallInt::fromWord(-threshold));
+  runtime.dictAtPut(thread, dict, last_key, last_value);
+  EXPECT_EQ(dict.numItems(), threshold + 1);
+  EXPECT_EQ(dict.capacity(), initial_capacity * Runtime::kDictGrowthFactor);
 
-  // Make sure we can still read all the stored keys/values
-  for (int i = 1; i <= num_keys; i++) {
-    Object key(&scope, make_key(i));
+  // Make sure we can still read all the stored keys/values.
+  for (word i = 0; i < threshold + 1; i++) {
+    Object key(&scope, SmallInt::fromWord(i));
     RawObject value = runtime.dictAt(thread, dict, key);
     ASSERT_FALSE(value.isError());
-    EXPECT_TRUE(Object::equals(value, make_value(i)));
+    EXPECT_TRUE(Object::equals(value, SmallInt::fromWord(-i)));
   }
 }
 

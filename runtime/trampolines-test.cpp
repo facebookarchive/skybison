@@ -391,12 +391,26 @@ foo(1,2);
 
 TEST(CallTest, CallWithKeywordsCalleeWithVarkeyword) {
   Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def foo(a,b,c,**d):
-    print(a,b,c,d)
-foo(1,2,c=3,g=4,h=5,i=6,j="bar")
-)");
-  EXPECT_EQ(output, "1 2 3 {'g': 4, 'h': 5, 'i': 6, 'j': 'bar'}\n");
+    return [a,b,c,d]
+result = foo(1,2,c=3,g=4,h=5,j="bar")
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  List result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 3));
+
+  Dict dict(&scope, result.at(3));
+  Object key_g(&scope, runtime.newStrFromCStr("g"));
+  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(thread, dict, key_g), 4));
+  Object key_h(&scope, runtime.newStrFromCStr("h"));
+  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(thread, dict, key_h), 5));
+  Object key_j(&scope, runtime.newStrFromCStr("j"));
+  EXPECT_TRUE(isStrEqualsCStr(runtime.dictAt(thread, dict, key_j), "bar"));
 }
 
 TEST(CallTest, CallWithNoArgsCalleeDefaultArgsVarargsVarkeyargs) {
@@ -421,22 +435,56 @@ bar(1,2,3,4,5,6,7)
 
 TEST(CallTest, CallWithKeywordsCalleeEmptyVarargsFullVarkeyargs) {
   Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def bar(a=1, b=2, *c, **d):
-    print(a,b,c,d)
-bar(a1=11, a2=12, a3=13)
-)");
-  EXPECT_EQ(output, "1 2 () {'a1': 11, 'a2': 12, 'a3': 13}\n");
+    return [a,b,c,d]
+result = bar(a1=11, a2=12, a3=13)
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  List result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+
+  Object tuple_obj(&scope, result.at(2));
+  ASSERT_TRUE(tuple_obj.isTuple());
+  Tuple tuple(&scope, *tuple_obj);
+  EXPECT_EQ(tuple.length(), 0);
+
+  Dict dict(&scope, result.at(3));
+  Object key0(&scope, runtime.newStrFromCStr("a3"));
+  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(thread, dict, key0), 13));
+  Object key1(&scope, runtime.newStrFromCStr("a1"));
+  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(thread, dict, key1), 11));
+  Object key2(&scope, runtime.newStrFromCStr("a2"));
+  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(thread, dict, key2), 12));
 }
 
 TEST(CallTest, CallWithKeywordsCalleeFullVarargsFullVarkeyargs) {
   Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
 def bar(a=1, b=2, *c, **d):
-    print(a,b,c,d)
-bar(1,2,3,4,5,6,7,a9=9)
-)");
-  EXPECT_EQ(output, "1 2 (3, 4, 5, 6, 7) {'a9': 9}\n");
+    return [a,b,c,d]
+result = bar(1,2,3,4,5,6,7,a9=9)
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  List result(&scope, testing::moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+
+  Tuple tuple(&scope, result.at(2));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 3));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(1), 4));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(2), 5));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(3), 6));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(4), 7));
+
+  Dict dict(&scope, result.at(3));
+  Object key_g(&scope, runtime.newStrFromCStr("a9"));
+  EXPECT_TRUE(isIntEqualsWord(runtime.dictAt(thread, dict, key_g), 9));
 }
 
 TEST(CallTest, CallWithOutOfOrderKeywords) {

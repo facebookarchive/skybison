@@ -2529,6 +2529,7 @@ RawObject Runtime::newDict() {
   HandleScope scope;
   Dict result(&scope, heap()->create<RawDict>());
   result.setNumItems(0);
+  result.setNumEmptyItems(0);
   result.setData(empty_tuple_);
   return *result;
 }
@@ -2536,36 +2537,52 @@ RawObject Runtime::newDict() {
 RawObject Runtime::newDictWithSize(word initial_size) {
   HandleScope scope;
   // TODO(jeethu): initialSize should be scaled up by a load factor.
-  word initial_capacity = Utils::nextPowerOfTwo(initial_size);
-  Tuple array(&scope,
-              newTuple(Utils::maximum(static_cast<word>(kInitialDictCapacity),
-                                      initial_capacity) *
-                       Dict::Bucket::kNumPointers));
+  word initial_capacity = Utils::maximum(
+      static_cast<word>(kInitialDictCapacity),
+      Utils::nextPowerOfTwo(initial_size) * Runtime::kDictGrowthFactor);
+  Tuple array(&scope, newTuple(initial_capacity * Dict::Bucket::kNumPointers));
   Dict result(&scope, newDict());
   result.setData(*array);
+  result.setNumEmptyItems(initial_capacity);
   return *result;
+}
+
+bool Runtime::dictHasEmptyItem(const Tuple& data) {
+  for (word index = 0; index < data.length();
+       index += Dict::Bucket::kNumPointers) {
+    if (Dict::Bucket::isEmpty(*data, index)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
                                 const Object& key, const Object& value,
                                 const Object& key_hash) {
+  // TODO(T44245141): Move initialization of an empty dict to
+  // dictEnsureCapacity.
+  if (dict.capacity() == 0) {
+    dict.setData(
+        newTuple(Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
+    dict.setNumEmptyItems(Runtime::kInitialDictCapacity);
+  }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
-  if (index == -1) {
-    // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Tuple new_data(&scope, dictGrow(thread, data));
-    dictLookup(new_data, key, key_hash, &index, RawObject::equals);
-    DCHECK(index != -1, "invalid index %ld", index);
-    dict.setData(*new_data);
-    Dict::Bucket::set(*new_data, index, *key_hash, *key, *value);
-  } else {
-    Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  DCHECK(index != -1, "invalid index %ld", index);
+  bool empty_slot = Dict::Bucket::isEmpty(*data, index);
+  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  if (found) {
+    return;
   }
-  if (!found) {
-    dict.setNumItems(dict.numItems() + 1);
+  dict.setNumItems(dict.numItems() + 1);
+  if (empty_slot) {
+    dict.setNumEmptyItems(dict.numEmptyItems() - 1);
+    dictEnsureCapacity(thread, dict);
   }
+  DCHECK(dictHasEmptyItem(data), "dict must have at least an empty item");
 }
 
 void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
@@ -2575,13 +2592,21 @@ void Runtime::dictAtPut(Thread* thread, const Dict& dict, const Object& key,
   dictAtPutWithHash(thread, dict, key, value, key_hash);
 }
 
-RawTuple Runtime::dictGrow(Thread* thread, const Tuple& data) {
-  HandleScope scope(thread);
-  word new_length = data.length() * kDictGrowthFactor;
-  if (new_length == 0) {
-    new_length = kInitialDictCapacity * Dict::Bucket::kNumPointers;
+void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
+  // TODO(T44245141): Move initialization of an empty dict here.
+  DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
+         "dict capacity must be power of two, greater than zero");
+  word num_non_empty = dict.capacity() - dict.numEmptyItems();
+  // Grow only If 2/3 of dict are occpupied.
+  // TODO(T44247845): Use usable instead to simplify the check.
+  if (num_non_empty * 3 < dict.capacity() * 2) {
+    return;
   }
-  Tuple new_data(&scope, newTuple(new_length));
+  // TODO(T44247845): Handle overflow here.
+  word new_capacity = dict.capacity() * 2;
+  HandleScope scope(thread);
+  Tuple data(&scope, dict.data());
+  Tuple new_data(&scope, newTuple(new_capacity * Dict::Bucket::kNumPointers));
   // Re-insert items
   for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
     Object key(&scope, Dict::Bucket::key(*data, i));
@@ -2592,7 +2617,8 @@ RawTuple Runtime::dictGrow(Thread* thread, const Tuple& data) {
     Dict::Bucket::set(*new_data, index, *hash, *key,
                       Dict::Bucket::value(*data, i));
   }
-  return *new_data;
+  dict.setData(*new_data);
+  dict.setNumEmptyItems(dict.capacity() - dict.numItems());
 }
 
 RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
@@ -2602,7 +2628,6 @@ RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
   word index = -1;
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (found) {
-    DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
   }
   return Error::notFound();
@@ -2617,27 +2642,31 @@ RawObject Runtime::dictAt(Thread* thread, const Dict& dict, const Object& key) {
 RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
                                      const Object& key,
                                      Callback<RawObject>* thunk) {
+  // TODO(T44245141): Move initialization of an empty dict to
+  // dictEnsureCapacity.
+  if (dict.capacity() == 0) {
+    dict.setData(
+        newTuple(Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
+    dict.setNumEmptyItems(Runtime::kInitialDictCapacity);
+  }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   word index = -1;
   Object key_hash(&scope, hash(*key));
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
+  DCHECK(index != -1, "invalid index %ld", index);
   if (found) {
-    DCHECK(index != -1, "invalid index %ld", index);
     return Dict::Bucket::value(*data, index);
   }
+  bool empty_slot = Dict::Bucket::isEmpty(*data, index);
   Object value(&scope, thunk->call());
-  if (index == -1) {
-    // TODO(mpage): Grow at a predetermined load factor, rather than when full
-    Tuple new_data(&scope, dictGrow(thread, data));
-    dictLookup(new_data, key, key_hash, &index, RawObject::equals);
-    DCHECK(index != -1, "invalid index %ld", index);
-    dict.setData(*new_data);
-    Dict::Bucket::set(*new_data, index, *key_hash, *key, *value);
-  } else {
-    Dict::Bucket::set(*data, index, *key_hash, *key, *value);
-  }
+  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
   dict.setNumItems(dict.numItems() + 1);
+  if (empty_slot) {
+    dict.setNumEmptyItems(dict.numEmptyItems() - 1);
+    dictEnsureCapacity(thread, dict);
+  }
+  DCHECK(dictHasEmptyItem(data), "dict must have at least an empty item");
   return *value;
 }
 
@@ -2682,7 +2711,6 @@ RawObject Runtime::dictRemoveWithHash(Thread* thread, const Dict& dict,
   Object result(&scope, Error::notFound());
   bool found = dictLookup(data, key, key_hash, &index, RawObject::equals);
   if (found) {
-    DCHECK(index != -1, "unexpected index %ld", index);
     result = Dict::Bucket::value(*data, index);
     Dict::Bucket::setTombstone(*data, index);
     dict.setNumItems(dict.numItems() - 1);
@@ -2692,36 +2720,38 @@ RawObject Runtime::dictRemoveWithHash(Thread* thread, const Dict& dict,
 
 bool Runtime::dictLookup(const Tuple& data, const Object& key,
                          const Object& key_hash, word* index, DictEq pred) {
-  word start = Dict::Bucket::getIndex(*data, *key_hash);
-  word current = start;
-  word next_free_index = -1;
-
-  // TODO(mpage) - Quadratic probing?
-  word length = data.length();
-  if (length == 0) {
+  if (data.length() == 0) {
     *index = -1;
     return false;
   }
-
-  do {
-    if (Dict::Bucket::hasKey(*data, current, *key, pred)) {
-      *index = current;
+  DCHECK(dictHasEmptyItem(data),
+         "dict must be non-empty and have at least an empty item to guarantee "
+         "termination of lookup");
+  word bucket_mask;
+  // hash value left shifted per probing to use different bits
+  // for probing.
+  uword perturb;
+  word current = Dict::Bucket::bucket(*data, *key_hash, &bucket_mask, &perturb);
+  word current_index = current * Dict::Bucket::kNumPointers;
+  word next_free_index = -1;
+  for (;;) {
+    if (Dict::Bucket::hasKey(*data, current_index, *key, pred)) {
+      *index = current_index;
       return true;
     }
-    if (next_free_index == -1 && Dict::Bucket::isTombstone(*data, current)) {
-      next_free_index = current;
-    } else if (Dict::Bucket::isEmpty(*data, current)) {
+    if (next_free_index == -1 &&
+        Dict::Bucket::isTombstone(*data, current_index)) {
+      next_free_index = current_index;
+    } else if (Dict::Bucket::isEmpty(*data, current_index)) {
       if (next_free_index == -1) {
-        next_free_index = current;
+        next_free_index = current_index;
       }
-      break;
+      *index = next_free_index;
+      return false;
     }
-    current = (current + Dict::Bucket::kNumPointers) % length;
-  } while (current != start);
-
-  *index = next_free_index;
-
-  return false;
+    current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb);
+    current_index = current * Dict::Bucket::kNumPointers;
+  }
 }
 
 RawObject Runtime::dictItems(Thread* thread, const Dict& dict) {
