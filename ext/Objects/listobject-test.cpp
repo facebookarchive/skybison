@@ -205,6 +205,22 @@ TEST_F(ListExtensionApiTest, SetSliceWithNegativeOutOfBoundsLowStartsAtZero) {
   EXPECT_EQ(PyList_GetItem(lhs, 2), two);
 }
 
+TEST_F(ListExtensionApiTest, SetSliceWithNullItemsDeletesSlice) {
+  PyObjectPtr lhs(PyList_New(0));
+  PyObjectPtr zero(PyLong_FromLong(0));
+  PyList_Append(lhs, zero);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyList_Append(lhs, one);
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyList_Append(lhs, two);
+
+  ASSERT_EQ(PyList_SetSlice(lhs, 0, 1, nullptr), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyList_Size(lhs), 2);
+  EXPECT_EQ(PyList_GetItem(lhs, 0), one);
+  EXPECT_EQ(PyList_GetItem(lhs, 1), two);
+}
+
 TEST_F(ListExtensionApiTest, GetSliceOnNonListRaisesSystemError) {
   ASSERT_EQ(PyList_GetSlice(Py_None, 0, 0), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);

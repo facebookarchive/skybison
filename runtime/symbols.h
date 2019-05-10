@@ -471,6 +471,8 @@ class Runtime;
   V(UnderIntFromStr, "_int_from_str")                                          \
   V(UnderIo, "_io")                                                            \
   V(UnderListCheck, "_list_check")                                             \
+  V(UnderListDelitem, "_list_delitem")                                         \
+  V(UnderListDelslice, "_list_delslice")                                       \
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderModuleRepr, "_module_repr")                                           \

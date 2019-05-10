@@ -105,6 +105,8 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderIntFromInt, underIntFromInt},
     {SymbolId::kUnderIntFromStr, underIntFromStr},
     {SymbolId::kUnderListCheck, underListCheck},
+    {SymbolId::kUnderListDelitem, underListDelItem},
+    {SymbolId::kUnderListDelslice, underListDelSlice},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
@@ -1010,6 +1012,96 @@ RawObject BuiltinsModule::underListCheck(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfList(args.get(0)));
+}
+
+RawObject BuiltinsModule::underListDelItem(Thread* thread, Frame* frame,
+                                           word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  List self(&scope, args.get(0));
+  word length = self.numItems();
+  Object index_obj(&scope, args.get(1));
+  Int index_int(&scope, intUnderlying(thread, index_obj));
+  word idx = index_int.asWordSaturated();
+  if (idx < 0) {
+    idx += length;
+  }
+  if (idx < 0 || idx >= length) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "list assignment index out of range");
+  }
+  listPop(self, idx);
+  return NoneType::object();
+}
+
+RawObject BuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
+                                            word nargs) {
+  // This function deletes elements that are specified by a slice by copying.
+  // It compacts to the left elements in the slice range and then copies
+  // elements after the slice into the free area.  The list element count is
+  // decremented and elements in the unused part of the list are overwritten
+  // with None.
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  List list(&scope, args.get(0));
+
+  Object start_obj(&scope, args.get(1));
+  Int start_int(&scope, intUnderlying(thread, start_obj));
+  word start = start_int.asWord();
+
+  Object stop_obj(&scope, args.get(2));
+  Int stop_int(&scope, intUnderlying(thread, stop_obj));
+  word stop = stop_int.asWord();
+
+  Object step_obj(&scope, args.get(3));
+  Int step_int(&scope, intUnderlying(thread, step_obj));
+  // Lossy truncation of step to a word is expected.
+  word step = step_int.asWordSaturated();
+
+  word slice_length = Slice::length(start, stop, step);
+  DCHECK(slice_length >= 0, "slice length should be positive");
+  if (slice_length == 0) {
+    // Nothing to delete
+    return NoneType::object();
+  }
+  if (slice_length == list.numItems()) {
+    // Delete all the items
+    list.clearFrom(0);
+    return NoneType::object();
+  }
+  if (step < 0) {
+    // Adjust step to make iterating easier
+    start = start + step * (slice_length - 1);
+    step = -step;
+  }
+  DCHECK(start >= 0, "start should be positive");
+  DCHECK(start < list.numItems(), "start should be in bounds");
+  DCHECK(step <= list.numItems() || slice_length == 1,
+         "Step should be in bounds or only one element should be sliced");
+  // Sliding compaction of elements out of the slice to the left
+  // Invariant: At each iteration of the loop, `fast` is the index of an
+  // element addressed by the slice.
+  // Invariant: At each iteration of the inner loop, `slow` is the index of a
+  // location to where we are relocating a slice addressed element. It is *not*
+  // addressed by the slice.
+  word fast = start;
+  for (word i = 1; i < slice_length; i++) {
+    DCHECK_INDEX(fast, list.numItems());
+    word slow = fast + 1;
+    fast += step;
+    for (; slow < fast; slow++) {
+      list.atPut(slow - i, list.at(slow));
+    }
+  }
+  // Copy elements into the space where the deleted elements were
+  for (word i = fast + 1; i < list.numItems(); i++) {
+    list.atPut(i - slice_length, list.at(i));
+  }
+  word new_length = list.numItems() - slice_length;
+  DCHECK(new_length >= 0, "new_length must be positive");
+  // Untrack all deleted elements
+  list.clearFrom(new_length);
+  return NoneType::object();
 }
 
 RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,

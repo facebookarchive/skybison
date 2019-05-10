@@ -2189,6 +2189,7 @@ class RawList : public RawHeapObject {
   void setItems(RawObject new_items) const;
   word numItems() const;
   void setNumItems(word num_items) const;
+  void clearFrom(word idx) const;
 
   // Return the total number of elements that may be held without growing the
   // list
@@ -4474,6 +4475,14 @@ inline word RawList::numItems() const {
 
 inline void RawList::setNumItems(word num_items) const {
   instanceVariableAtPut(kAllocatedOffset, RawSmallInt::fromWord(num_items));
+}
+
+inline void RawList::clearFrom(word idx) const {
+  DCHECK_INDEX(idx, numItems());
+  std::memset(reinterpret_cast<byte*>(RawTuple::cast(items()).address()) +
+                  idx * kPointerSize,
+              -1, (numItems() - idx) * kWordSize);
+  setNumItems(idx);
 }
 
 inline void RawList::atPut(word index, RawObject value) const {

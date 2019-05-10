@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "builtins-module.h"
 #include "list-builtins.h"
 #include "objects.h"
 #include "runtime.h"
@@ -840,11 +841,9 @@ TEST(ListBuiltinsTest, DelItemWithNegativeIndex) {
   HandleScope scope;
   List list(&scope, listFromRange(1, 4));
   Object idx(&scope, SmallInt::fromWord(-3));
-  Object result(&scope, runBuiltin(ListBuiltins::dunderDelItem, list, idx));
-  ASSERT_TRUE(result.isNoneType());
-  ASSERT_EQ(list.numItems(), 2);
-  EXPECT_TRUE(isIntEqualsWord(list.at(0), 2));
-  EXPECT_TRUE(isIntEqualsWord(list.at(1), 3));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelItem, list, idx).isNoneType());
+  EXPECT_PYLIST_EQ(list, {2, 3});
 }
 
 TEST(ListBuiltinsTest, SetItemWithNegativeIndex) {
@@ -1268,6 +1267,174 @@ e = a[0]
   Object element(&scope, moduleAt(&runtime, "__main__", "e"));
   EXPECT_EQ(*len, SmallInt::fromWord(1));
   EXPECT_EQ(*element, SmallStr::fromCStr("foo"));
+}
+
+TEST(ListBuiltinsTest, DelItemWithLastIndexRemovesLastItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 2));
+  Object idx(&scope, SmallInt::fromWord(1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelItem, list, idx).isNoneType());
+  EXPECT_PYLIST_EQ(list, {0});
+}
+
+TEST(ListBuiltinsTest, DelItemWithFirstIndexRemovesFirstItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 2));
+  Object idx(&scope, SmallInt::fromWord(0));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelItem, list, idx).isNoneType());
+  EXPECT_PYLIST_EQ(list, {1});
+}
+
+TEST(ListBuiltinsTest, DelItemWithNegativeFirstIndexRemovesFirstItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 2));
+  Object idx(&scope, SmallInt::fromWord(-2));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelItem, list, idx).isNoneType());
+  EXPECT_PYLIST_EQ(list, {1});
+}
+
+TEST(ListBuiltinsTest, DelItemWithNegativeLastIndexRemovesLastItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 2));
+  Object idx(&scope, SmallInt::fromWord(-1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelItem, list, idx).isNoneType());
+  EXPECT_PYLIST_EQ(list, {0});
+}
+
+TEST(ListBuiltinsTest, DelItemWithNumberGreaterThanSmallIntMaxDoesNotCrash) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 2));
+  Int big(&scope, runtime.newInt(SmallInt::kMaxValue + 100));
+  EXPECT_TRUE(raised(runBuiltin(BuiltinsModule::underListDelItem, list, big),
+                     LayoutId::kIndexError));
+  EXPECT_PYLIST_EQ(list, {0, 1});
+}
+
+TEST(ListBuiltinsTest, DelSliceRemovesItems) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(1, 4));
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(1));
+  Int step(&scope, SmallInt::fromWord(1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {2, 3});
+}
+
+TEST(ListBuiltinsTest, DelSliceRemovesFirstItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 2));
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(1));
+  Int step(&scope, SmallInt::fromWord(1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {1});
+}
+
+TEST(ListBuiltinsTest, DelSliceRemovesLastItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 2));
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(2));
+  Int step(&scope, SmallInt::fromWord(1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {0});
+}
+
+TEST(ListBuiltinsTest, DelSliceWithStopEqualsLengthRemovesTrailingItems) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(1, 4));
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(3));
+  Int step(&scope, SmallInt::fromWord(1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {1});
+}
+
+TEST(ListBuiltinsTest, DelSliceWithStartEqualsZeroRemovesStartingItems) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(1, 4));
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(1));
+  Int step(&scope, SmallInt::fromWord(1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {2, 3});
+}
+
+TEST(ListBuiltinsTest,
+     DelSliceWithStartEqualsZeroAndStopEqualsLengthRemovesAllItems) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(1, 4));
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(3));
+  Int step(&scope, SmallInt::fromWord(1));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_EQ(list.numItems(), 0);
+}
+
+TEST(ListBuiltinsTest, DelSliceWithStepEqualsTwoDeletesEveryEvenItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 5));
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(5));
+  Int step(&scope, SmallInt::fromWord(2));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {1, 3});
+}
+
+TEST(ListBuiltinsTest, DelSliceWithStepEqualsTwoDeletesEveryOddItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 5));
+  Int start(&scope, SmallInt::fromWord(1));
+  Int stop(&scope, SmallInt::fromWord(5));
+  Int step(&scope, SmallInt::fromWord(2));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {0, 2, 4});
+}
+
+TEST(ListBuiltinsTest, DelSliceWithStepGreaterThanLengthDeletesOneItem) {
+  Runtime runtime;
+  HandleScope scope;
+  List list(&scope, listFromRange(0, 5));
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, SmallInt::fromWord(5));
+  Int step(&scope, SmallInt::fromWord(1000));
+  ASSERT_TRUE(
+      runBuiltin(BuiltinsModule::underListDelSlice, list, start, stop, step)
+          .isNoneType());
+  EXPECT_PYLIST_EQ(list, {1, 2, 3, 4});
 }
 
 TEST(ListBuiltinsTest, DunderIterReturnsListIter) {

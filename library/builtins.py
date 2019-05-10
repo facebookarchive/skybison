@@ -2008,6 +2008,16 @@ def len(seq):
     return dunder_len()
 
 
+@_patch
+def _list_delitem(self, key: int) -> None:
+    pass
+
+
+@_patch
+def _list_delslice(self, start: int, stop: int, step: int) -> None:
+    pass
+
+
 class list(bootstrap=True):
     def __add__(self, other):
         pass
@@ -2015,8 +2025,20 @@ class list(bootstrap=True):
     def __contains__(self, value):
         pass
 
-    def __delitem__(self, key):
-        pass
+    def __delitem__(self, key) -> None:
+        if not _list_check(self):
+            raise TypeError(
+                f"'__delitem__' requires 'list' but received a '{type(self).__name__}'"
+            )
+        if _int_check(key):
+            return _list_delitem(self, key)
+        if _slice_check(key):
+            return _list_delslice(self, *key.indices(list.__len__(self)))
+        try:
+            return _list_delitem(self, _index(key))
+        except TypeError:
+            pass
+        raise TypeError("list indices must be integers or slices")
 
     def __eq__(self, other):
         if not _list_check(self):

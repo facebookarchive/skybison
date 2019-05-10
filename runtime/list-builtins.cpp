@@ -188,7 +188,6 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderDelitem, dunderDelItem},
     {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
@@ -283,11 +282,7 @@ RawObject ListBuiltins::clear(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kList);
   }
   List list(&scope, *self);
-  if (list.numItems() > 0) {
-    list.setNumItems(0);
-    Tuple items(&scope, list.items());
-    items.fill(NoneType::object());
-  }
+  list.clearFrom(0);
   return NoneType::object();
 }
 
@@ -682,36 +677,6 @@ RawObject ListBuiltins::dunderSetItem(Thread* thread, Frame* frame,
     Slice slice(&scope, *index);
     return setItemSlice(thread, list, slice, src);
   }
-  return thread->raiseWithFmt(LayoutId::kTypeError,
-                              "list indices must be integers or slices");
-}
-
-RawObject ListBuiltins::dunderDelItem(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-
-  if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
-  }
-
-  List list(&scope, *self);
-  word length = list.numItems();
-  RawObject index = args.get(1);
-  if (index.isSmallInt()) {
-    word idx = SmallInt::cast(index).value();
-    if (idx < 0) {
-      idx += length;
-    }
-    if (idx < 0 || idx >= length) {
-      return thread->raiseWithFmt(LayoutId::kIndexError,
-                                  "list assignment index out of range");
-    }
-    listPop(list, idx);
-    return NoneType::object();
-  }
-  // TODO(T44021459): Add support for slices
   return thread->raiseWithFmt(LayoutId::kTypeError,
                               "list indices must be integers or slices");
 }

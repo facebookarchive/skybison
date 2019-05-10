@@ -439,6 +439,51 @@ class ReversedTests(unittest.TestCase):
         self.assertEqual(it.__length_hint__(), 0)
 
 
+class ListTests(unittest.TestCase):
+    def test_delitem_with_int_subclass_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise ValueError("foo")
+
+        ls = list(range(5))
+        del ls[C(0)]
+        self.assertEqual(ls, [1, 2, 3, 4])
+
+    def test_delitem_with_dunder_index_calls_dunder_index(self):
+        class C:
+            def __index__(self):
+                return 2
+
+        ls = list(range(5))
+        del ls[C()]
+        self.assertEqual(ls, [0, 1, 3, 4])
+
+    def test_delslice_negative_indexes_removes_first_element(self):
+        a = [0, 1]
+        del a[-2:-1]
+        self.assertEqual(a, [1])
+
+    def test_delslice_negative_start_no_stop_removes_trailing_elements(self):
+        a = [0, 1]
+        del a[-1:]
+        self.assertEqual(a, [0])
+
+    def test_delslice_with_negative_step_deletes_every_other_element(self):
+        a = [0, 1, 2, 3, 4]
+        del a[::-2]
+        self.assertEqual(a, [1, 3])
+
+    def test_delslice_with_start_and_negative_step_deletes_every_other_element(self):
+        a = [0, 1, 2, 3, 4]
+        del a[1::-2]
+        self.assertEqual(a, [0, 2, 3, 4])
+
+    def test_delslice_with_large_step_deletes_last_element(self):
+        a = [0, 1, 2, 3, 4]
+        del a[4 :: 1 << 333]
+        self.assertEqual(a, [0, 1, 2, 3])
+
+
 class SetTests(unittest.TestCase):
     def test_discard_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):

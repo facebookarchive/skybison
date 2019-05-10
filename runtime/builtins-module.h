@@ -52,6 +52,8 @@ class BuiltinsModule {
   static RawObject underIntFromInt(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntFromStr(Thread* thread, Frame* frame, word nargs);
   static RawObject underListCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListDelItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
