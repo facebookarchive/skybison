@@ -65,16 +65,15 @@ RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {
 }
 
 RawObject tupleUnderlying(Thread* thread, const Object& obj) {
-  DCHECK(thread->runtime()->isInstanceOfTuple(*obj), "Non-tuple value");
   if (obj.isTuple()) return *obj;
-
+  DCHECK(thread->runtime()->isInstanceOfTuple(*obj), "Non-tuple value");
   HandleScope scope(thread);
   UserTupleBase base(&scope, *obj);
   return base.tupleValue();
 }
 
 const BuiltinAttribute TupleBuiltins::kAttributes[] = {
-    {SymbolId::kInvalid, RawUserTupleBase::kTupleOffset},
+    {SymbolId::kInvalid, UserTupleBase::kTupleOffset},
     {SymbolId::kSentinelId, -1},
 };
 
@@ -293,11 +292,11 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
-  if (!self_obj.isTuple()) {
-    UserTupleBase user_tuple(&scope, *self_obj);
-    self_obj = user_tuple.tupleValue();
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfTuple(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kTuple);
   }
-  Tuple self(&scope, *self_obj);
+  Tuple self(&scope, tupleUnderlying(thread, self_obj));
   Object rhs(&scope, args.get(1));
   Object rhs_index(&scope, intFromIndex(thread, rhs));
   if (rhs_index.isError()) return *rhs_index;
@@ -310,7 +309,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   word length = self.length();
   word times = right.asWord();
   if (length == 0 || times <= 0) {
-    return thread->runtime()->newTuple(0);
+    return runtime->newTuple(0);
   }
   if (length == 1 || times == 1) {
     return *self;
@@ -323,7 +322,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
                                 "cannot fit 'int' into an index-sized integer");
   }
 
-  Tuple new_tuple(&scope, thread->runtime()->newTuple(new_length));
+  Tuple new_tuple(&scope, runtime->newTuple(new_length));
   for (word i = 0; i < times; i++) {
     for (word j = 0; j < length; j++) {
       new_tuple.atPut(i * length + j, self.at(j));
