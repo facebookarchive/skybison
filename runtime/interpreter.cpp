@@ -2901,8 +2901,8 @@ bool wrapHandler(Interpreter::Context* ctx, word arg) {
   return op(ctx, arg);
 }
 
-static inline RawObject executeWithBytecode(Interpreter::Context* ctx,
-                                            const Bytes& byte_array) {
+inline RawObject Interpreter::executeWithBytecode(Interpreter::Context* ctx,
+                                                  const Bytes& byte_array) {
   auto do_return = [ctx] {
     RawObject return_val = ctx->frame->popValue();
     ctx->thread->popFrame();
