@@ -233,12 +233,12 @@ class Runtime {
   void createImportlibModule(Thread* thread);
   void createSysModule(Thread* thread);
 
-  RawObject internStr(const Object& str);
-  RawObject internStrFromCStr(const char* c_str);
+  RawObject internStr(Thread* thread, const Object& str);
+  RawObject internStrFromCStr(Thread* thread, const char* c_str);
   // This function should only be used for `CHECK()`/`DCHECK()`. It is as slow
   // as the whole `internStr()` operation and will always return true for small
   // strings, even when the user did not explicitly intern them.
-  bool isInternedStr(const Object& str);
+  bool isInternedStr(Thread* thread, const Object& str);
 
   void collectGarbage();
 
@@ -915,7 +915,7 @@ class Runtime {
   RawObject layoutCreateChild(Thread* thread, const Layout& parent);
 
   // Joins the type's name and attribute's name to produce a qualname
-  RawObject newQualname(const Type& type, SymbolId name);
+  RawObject newQualname(Thread* thread, const Type& type, SymbolId name);
 
   // The size newCapacity grows to if array is empty. Must be large enough to
   // guarantee a LargeBytes/LargeStr for ByteArray/StrArray.

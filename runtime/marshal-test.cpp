@@ -29,7 +29,8 @@ TEST(MarshalReaderTest, ReadBytes) {
 
 TEST(MarshalReaderTest, ReadTypeAscii) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x61\x0a\x00\x00\x00testing123");
@@ -40,7 +41,7 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
   Object str(&scope, runtime.newStrFromCStr("testing123"));
-  EXPECT_EQ(runtime.internStr(str), *str);
+  EXPECT_EQ(runtime.internStr(thread, str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
@@ -52,7 +53,7 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
   Object str2(&scope, runtime.newStrFromCStr("testing321"));
-  EXPECT_EQ(runtime.internStr(str2), *str2);
+  EXPECT_EQ(runtime.internStr(thread, str2), *str2);
 
   // Read an ascii string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
@@ -62,7 +63,8 @@ TEST(MarshalReaderTest, ReadTypeAscii) {
 
 TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x41\x0a\x00\x00\x00testing123");
@@ -73,7 +75,7 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str(&scope, runtime.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime.internStr(str), *str);
+  EXPECT_NE(runtime.internStr(thread, str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
@@ -85,7 +87,7 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str2(&scope, runtime.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime.internStr(str2), *str2);
+  EXPECT_NE(runtime.internStr(thread, str2), *str2);
 
   // Read an ascii string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
@@ -95,7 +97,8 @@ TEST(MarshalReaderTest, ReadTypeAsciiInterned) {
 
 TEST(MarshalReaderTest, ReadTypeUnicode) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x75\x0a\x00\x00\x00testing123");
@@ -106,7 +109,7 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
   Object str(&scope, runtime.newStrFromCStr("testing123"));
-  EXPECT_EQ(runtime.internStr(str), *str);
+  EXPECT_EQ(runtime.internStr(thread, str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
@@ -118,7 +121,7 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
   // Shouldn't have interned the string during unmarshaling, so interning it
   // now should return the same string
   Object str2(&scope, runtime.newStrFromCStr("testing321"));
-  EXPECT_EQ(runtime.internStr(str2), *str2);
+  EXPECT_EQ(runtime.internStr(thread, str2), *str2);
 
   // Read an unicode string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
@@ -128,7 +131,8 @@ TEST(MarshalReaderTest, ReadTypeUnicode) {
 
 TEST(MarshalReaderTest, ReadTypeInterned) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x74\x0a\x00\x00\x00testing123");
@@ -139,7 +143,7 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str(&scope, runtime.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime.internStr(str), *str);
+  EXPECT_NE(runtime.internStr(thread, str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime,
@@ -151,7 +155,7 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str2(&scope, runtime.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime.internStr(str2), *str2);
+  EXPECT_NE(runtime.internStr(thread, str2), *str2);
 
   // Read an interned string with negative length
   Marshal::Reader neg_reader(&scope, &runtime,
@@ -161,7 +165,8 @@ TEST(MarshalReaderTest, ReadTypeInterned) {
 
 TEST(MarshalReaderTest, ReadTypeShortAsciiInterned) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Read a non ref
   Marshal::Reader reader(&scope, &runtime, "\x5a\x0atesting123");
@@ -172,7 +177,7 @@ TEST(MarshalReaderTest, ReadTypeShortAsciiInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str(&scope, runtime.newStrFromCStr("testing123"));
-  EXPECT_NE(runtime.internStr(str), *str);
+  EXPECT_NE(runtime.internStr(thread, str), *str);
 
   // Read a ref
   Marshal::Reader ref_reader(&scope, &runtime, "\xda\x0atesting321");
@@ -183,7 +188,7 @@ TEST(MarshalReaderTest, ReadTypeShortAsciiInterned) {
   // Should have interned the string during unmarshaling, so interning it
   // now should return the canonical value.
   Object str2(&scope, runtime.newStrFromCStr("testing321"));
-  EXPECT_NE(runtime.internStr(str2), *str2);
+  EXPECT_NE(runtime.internStr(thread, str2), *str2);
 }
 
 TEST(MarshalReaderTest, ReadLong) {

@@ -161,7 +161,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 RawObject typeSetAttr(Thread* thread, const Type& type,
                       const Object& name_interned_str, const Object& value) {
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInternedStr(name_interned_str),
+  DCHECK(runtime->isInternedStr(thread, name_interned_str),
          "name must be an interned string");
   HandleScope scope(thread);
   if (type.isBuiltin()) {
@@ -353,7 +353,7 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   if (!name.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  name = runtime->internStr(name);
+  name = runtime->internStr(thread, name);
   Object value(&scope, args.get(2));
   return typeSetAttr(thread, self, name, value);
 }

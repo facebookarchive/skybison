@@ -204,7 +204,7 @@ TEST(ModuleBuiltinsTest, ModuleSetAttrSetsAttribute) {
   HandleScope scope(thread);
   Object module_name(&scope, runtime.newStrFromCStr("foo"));
   Module module(&scope, runtime.newModule(module_name));
-  Object name(&scope, runtime.internStrFromCStr("bar"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "bar"));
   Object value(&scope, runtime.newInt(-543));
   EXPECT_TRUE(moduleSetAttr(thread, module, name, value).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(runtime.moduleAt(module, name), -543));

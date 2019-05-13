@@ -25,7 +25,7 @@ RawObject functionSetAttr(Thread* thread, const Function& function,
                           const Object& name_interned_str,
                           const Object& value) {
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInternedStr(name_interned_str),
+  DCHECK(runtime->isInternedStr(thread, name_interned_str),
          "name must be an interned string");
   // Initialize Dict if non-existent
   HandleScope scope(thread);
@@ -136,7 +136,7 @@ RawObject FunctionBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   if (!name.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  name = runtime->internStr(name);
+  name = runtime->internStr(thread, name);
   Object value(&scope, args.get(2));
   return functionSetAttr(thread, self, name, value);
 }

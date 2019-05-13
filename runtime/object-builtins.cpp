@@ -177,7 +177,8 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
                                    const Object& name_interned_str,
                                    const Object& value, Object* location_out) {
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInternedStr(name_interned_str), "name must be interned");
+  DCHECK(runtime->isInternedStr(thread, name_interned_str),
+         "name must be interned");
   // Check for a data descriptor
   HandleScope scope(thread);
   Type type(&scope, runtime->typeOf(*object));
@@ -342,7 +343,7 @@ RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   if (!name.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  name = runtime->internStr(name);
+  name = runtime->internStr(thread, name);
   Object value(&scope, args.get(2));
   return objectSetAttr(thread, self, name, value);
 }

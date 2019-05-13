@@ -314,11 +314,12 @@ RawObject Marshal::Reader::readStr(word length) {
 
 RawObject Marshal::Reader::readAndInternStr(word length) {
   const byte* data = readBytes(length);
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   // TODO(T25820368): Intern strings iff the string isn't already part of the
   // intern table.
   Object str(&scope, runtime_->newStrWithAll(View<byte>(data, length)));
-  RawObject result = runtime_->internStr(str);
+  RawObject result = runtime_->internStr(thread, str);
   if (isRef_) {
     addRef(result);
   }

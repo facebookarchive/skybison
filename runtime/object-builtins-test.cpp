@@ -628,7 +628,7 @@ i = C()
 )")
                    .isError());
   Object i(&scope, moduleAt(&runtime, "__main__", "i"));
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
   Object value(&scope, runtime.newInt(47));
   EXPECT_TRUE(objectSetAttr(thread, i, name, value).isNoneType());
   EXPECT_TRUE(isIntEqualsWord(objectGetAttribute(thread, i, name), 47));
@@ -653,7 +653,7 @@ i = C()
                    .isError());
   Object i(&scope, moduleAt(&runtime, "__main__", "i"));
   Object foo_descr(&scope, moduleAt(&runtime, "__main__", "foo_descr"));
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
   Object value(&scope, runtime.newInt(47));
   EXPECT_TRUE(objectSetAttr(thread, i, name, value).isNoneType());
   Object set_args_obj(&scope, moduleAt(&runtime, "__main__", "set_args"));
@@ -679,7 +679,7 @@ i = C()
 )")
                    .isError());
   Object i(&scope, moduleAt(&runtime, "__main__", "i"));
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
   Object value(&scope, runtime.newInt(1));
   EXPECT_TRUE(
       raised(objectSetAttr(thread, i, name, value), LayoutId::kUserWarning));
@@ -690,7 +690,7 @@ TEST(ObjectBuiltinsTest, ObjectSetAttrOnNonHeapObjectRaisesAttributeError) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object object(&scope, runtime.newInt(42));
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
   Object value(&scope, runtime.newInt(1));
   EXPECT_TRUE(raisedWithStr(objectSetAttr(thread, object, name, value),
                             LayoutId::kAttributeError,
@@ -709,7 +709,7 @@ i = C()
 )")
                    .isError());
   Object i(&scope, moduleAt(&runtime, "__main__", "i"));
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
 
   AttributeInfo info;
   Layout layout(&scope, runtime.layoutAt(i.layoutId()));
@@ -744,7 +744,7 @@ i.foo = 0
 )")
                    .isError());
   Object i(&scope, moduleAt(&runtime, "__main__", "i"));
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
 
   AttributeInfo info;
   Layout layout(&scope, runtime.layoutAt(i.layoutId()));

@@ -149,8 +149,8 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   // Add struct sequence fields
   Tuple field_names(&scope, runtime->newTuple(num_fields));
   for (int i = 0; i < num_fields; i++) {
-    Object member_name(&scope,
-                       runtime->internStrFromCStr(desc->fields[i].name));
+    Object member_name(
+        &scope, runtime->internStrFromCStr(thread, desc->fields[i].name));
     Object index(&scope, i < desc->n_in_sequence ? runtime->newInt(i)
                                                  : NoneType::object());
     Object structseq_field(

@@ -802,7 +802,7 @@ TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   word nlocals = 1;
   Tuple varnames(&scope, runtime.newTuple(nlocals));
   Tuple cellvars(&scope, runtime.newTuple(1));
-  Str bar(&scope, runtime.internStrFromCStr("bar"));
+  Str bar(&scope, runtime.internStrFromCStr(thread, "bar"));
   varnames.atPut(0, *bar);
   cellvars.atPut(0, *bar);
   const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
@@ -834,7 +834,8 @@ TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
 
 TEST(TrampolinesTest, InterpreterClosureUsesCellValue) {
   Runtime runtime;
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
   // Create code object
   word nlocals = 2;
@@ -842,9 +843,9 @@ TEST(TrampolinesTest, InterpreterClosureUsesCellValue) {
   consts.atPut(0, runtime.newInt(10));
   Tuple varnames(&scope, runtime.newTuple(nlocals));
   Tuple cellvars(&scope, runtime.newTuple(2));
-  Str bar(&scope, runtime.internStrFromCStr("bar"));
-  Str baz(&scope, runtime.internStrFromCStr("baz"));
-  Str foobar(&scope, runtime.internStrFromCStr("foobar"));
+  Str bar(&scope, runtime.internStrFromCStr(thread, "bar"));
+  Str baz(&scope, runtime.internStrFromCStr(thread, "baz"));
+  Str foobar(&scope, runtime.internStrFromCStr(thread, "foobar"));
   varnames.atPut(0, *bar);
   varnames.atPut(1, *baz);
   cellvars.atPut(0, *foobar);

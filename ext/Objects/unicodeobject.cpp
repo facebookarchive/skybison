@@ -39,7 +39,8 @@ struct _PyUnicodeWriter {  // NOLINT
   unsigned char readonly;
 };  // NOLINT
 
-static RawObject symbolFromError(Runtime* runtime, const char* error) {
+static RawObject symbolFromError(Thread* thread, const char* error) {
+  Runtime* runtime = thread->runtime();
   Symbols* symbols = runtime->symbols();
   if (error == nullptr || std::strcmp(error, "strict") == 0) {
     return symbols->Strict();
@@ -50,7 +51,7 @@ static RawObject symbolFromError(Runtime* runtime, const char* error) {
   if (std::strcmp(error, "replace") == 0) {
     return symbols->Replace();
   }
-  return runtime->internStrFromCStr(error);
+  return runtime->internStrFromCStr(thread, error);
 }
 
 PY_EXPORT void PyUnicode_WRITE_Func(enum PyUnicode_Kind kind, void* data,
@@ -682,7 +683,7 @@ PY_EXPORT PyObject* _PyUnicode_AsASCIIString(PyObject* unicode,
     thread->raiseBadArgument();
     return nullptr;
   }
-  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
   Object tuple_obj(
       &scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
                                       SymbolId::kAsciiEncode, str, errors_obj));
@@ -743,7 +744,7 @@ PY_EXPORT PyObject* _PyUnicode_AsLatin1String(PyObject* unicode,
     thread->raiseBadArgument();
     return nullptr;
   }
-  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
   Object tuple_obj(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
                                                    SymbolId::kLatin1Encode, str,
                                                    errors_obj));
@@ -944,7 +945,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeASCII(const char* c_str, Py_ssize_t size,
   HandleScope scope(thread);
   Bytes bytes(&scope, runtime->newBytesWithAll(View<byte>(
                           reinterpret_cast<const byte*>(c_str), size)));
-  Str errors_obj(&scope, symbolFromError(runtime, errors));
+  Str errors_obj(&scope, symbolFromError(thread, errors));
   Object result_obj(&scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
                                                     SymbolId::kAsciiDecode,
                                                     bytes, errors_obj));
@@ -1194,7 +1195,7 @@ PY_EXPORT PyObject* _PyUnicode_EncodeUTF16(PyObject* unicode,
     thread->raiseBadArgument();
     return nullptr;
   }
-  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
   Object byteorder_obj(&scope, runtime->newInt(byteorder));
   Object tuple_obj(&scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
                                                    SymbolId::kUtf16Encode, str,
@@ -1227,7 +1228,7 @@ PY_EXPORT PyObject* _PyUnicode_EncodeUTF32(PyObject* unicode,
     thread->raiseBadArgument();
     return nullptr;
   }
-  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
   Object byteorder_obj(&scope, runtime->newInt(byteorder));
   Object tuple_obj(&scope, thread->invokeFunction3(SymbolId::kUnderCodecs,
                                                    SymbolId::kUtf32Encode, str,
@@ -1508,7 +1509,7 @@ PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
     return;
   }
   HeapObject heap_obj(&scope, *obj);
-  HeapObject result(&scope, thread->runtime()->internStr(obj));
+  HeapObject result(&scope, thread->runtime()->internStr(thread, obj));
   if (result.address() != heap_obj.address()) {
     *pobj = ApiHandle::newReference(thread, *result);
   }
@@ -1861,7 +1862,7 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
     thread->raiseBadArgument();
     return nullptr;
   }
-  Object errors_obj(&scope, symbolFromError(runtime, errors));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
   Object tuple_obj(
       &scope, thread->invokeFunction2(SymbolId::kUnderCodecs,
                                       SymbolId::kUtf8Encode, str, errors_obj));

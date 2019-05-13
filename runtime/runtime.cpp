@@ -569,10 +569,11 @@ RawObject Runtime::newNativeFunction(SymbolId name, const Str& qualname,
                                      Function::Entry entry,
                                      Function::Entry entry_kw,
                                      Function::Entry entry_ex) {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Function result(&scope, heap()->create<RawFunction>());
   result.setName(symbols()->at(name));
-  result.setQualname(internStr(qualname));
+  result.setQualname(internStr(thread, qualname));
   result.setEntry(entry);
   result.setEntryKw(entry_kw);
   result.setEntryEx(entry_ex);
@@ -669,14 +670,15 @@ void Runtime::typeAddNativeFunctionKw(const Type& type, SymbolId name,
                             unimplementedTrampoline);
 }
 
-RawObject Runtime::newQualname(const Type& type, SymbolId name) {
+RawObject Runtime::newQualname(Thread* thread, const Type& type,
+                               SymbolId name) {
   // TODO(T40440499): Clean this mess up with a helper or string formatting
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple parts(&scope, newTuple(2));
   parts.atPut(0, type.name());
   parts.atPut(1, symbols()->at(name));
   Str sep(&scope, newStrFromCStr("."));
-  return strJoin(Thread::current(), sep, parts, 2);
+  return strJoin(thread, sep, parts, 2);
 }
 
 void Runtime::typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
@@ -685,7 +687,7 @@ void Runtime::typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
                                         Function::Entry entry_ex) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str qualname(&scope, newQualname(type, name));
+  Str qualname(&scope, newQualname(thread, type, name));
   Function function(
       &scope, newNativeFunction(name, qualname, entry, entry_kw, entry_ex));
   Object key(&scope, symbols()->at(name));
@@ -698,7 +700,7 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
                                      Function::Entry entry) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str qualname(&scope, newQualname(type, name));
+  Str qualname(&scope, newQualname(thread, type, name));
   Object key(&scope, symbols()->at(name));
   Function function(&scope, newBuiltinFunction(name, qualname, entry));
   Dict dict(&scope, type.dict());
@@ -1081,15 +1083,14 @@ RawObject Runtime::newStrWithAll(View<byte> code_units) {
   return result;
 }
 
-RawObject Runtime::internStrFromCStr(const char* c_str) {
-  HandleScope scope;
+RawObject Runtime::internStrFromCStr(Thread* thread, const char* c_str) {
+  HandleScope scope(thread);
   // TODO(T29648342): Optimize lookup to avoid creating an intermediary Str
   Object str(&scope, newStrFromCStr(c_str));
-  return internStr(str);
+  return internStr(thread, str);
 }
 
-RawObject Runtime::internStr(const Object& str) {
-  Thread* thread = Thread::current();
+RawObject Runtime::internStr(Thread* thread, const Object& str) {
   HandleScope scope(thread);
   Set set(&scope, interned());
   DCHECK(str.isStr(), "not a string");
@@ -1100,12 +1101,11 @@ RawObject Runtime::internStr(const Object& str) {
   return setAddWithHash(thread, set, str, key_hash);
 }
 
-bool Runtime::isInternedStr(const Object& str) {
+bool Runtime::isInternedStr(Thread* thread, const Object& str) {
   if (str.isSmallStr()) {
     return true;
   }
   DCHECK(str.isLargeStr(), "expected small or large str");
-  Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, interned());
   Tuple data(&scope, set.data());
@@ -1635,12 +1635,13 @@ void Runtime::initializeRandom() {
 }
 
 void Runtime::initializeSymbols() {
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   symbols_ = new Symbols(this);
   for (int i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
     SymbolId id = static_cast<SymbolId>(i);
     Object symbol(&scope, symbols()->at(id));
-    internStr(symbol);
+    internStr(thread, symbol);
   }
 }
 
@@ -3350,7 +3351,7 @@ RawObject Runtime::attributeAtId(Thread* thread, const Object& receiver,
 RawObject Runtime::attributeAtWithCStr(Thread* thread, const Object& receiver,
                                        const char* name) {
   HandleScope scope(thread);
-  Object name_str(&scope, internStrFromCStr(name));
+  Object name_str(&scope, internStrFromCStr(thread, name));
   return attributeAt(thread, receiver, name_str);
 }
 
@@ -3703,7 +3704,7 @@ void Runtime::layoutAddEdge(Thread* thread, const List& edges,
 bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
                                   const Object& name, AttributeInfo* info) {
   HandleScope scope(thread);
-  Object iname(&scope, internStr(name));
+  Object iname(&scope, internStr(thread, name));
 
   // Check in-object attributes
   Tuple in_object(&scope, layout.inObjectAttributes());
@@ -3773,7 +3774,7 @@ RawObject Runtime::layoutAddAttributeEntry(Thread* thread, const Tuple& entries,
 RawObject Runtime::layoutAddAttribute(Thread* thread, const Layout& layout,
                                       const Object& name, word flags) {
   HandleScope scope(thread);
-  Object iname(&scope, internStr(name));
+  Object iname(&scope, internStr(thread, name));
 
   // Check if a edge for the attribute addition already exists
   List edges(&scope, layout.additions());
@@ -3815,7 +3816,7 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
   }
 
   // Check if an edge exists for removing the attribute
-  Object iname(&scope, internStr(name));
+  Object iname(&scope, internStr(thread, name));
   List edges(&scope, layout.deletions());
   RawObject next_layout = layoutFollowEdge(edges, iname);
   if (!next_layout.isError()) {

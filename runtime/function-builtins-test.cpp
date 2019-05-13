@@ -227,7 +227,7 @@ TEST(FunctionBuiltinsTest, FunctionSetAttrSetsAttribute) {
   Object foo_obj(&scope, moduleAt(&runtime, "__main__", "foo"));
   ASSERT_TRUE(foo_obj.isFunction());
   Function foo(&scope, *foo_obj);
-  Object name(&scope, runtime.internStrFromCStr("bar"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "bar"));
   Object value(&scope, runtime.newInt(6789));
   EXPECT_TRUE(functionSetAttr(thread, foo, name, value).isNoneType());
   ASSERT_TRUE(foo.dict().isDict());

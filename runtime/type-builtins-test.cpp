@@ -703,7 +703,7 @@ TEST(TypeBuiltinsTest, TypeSetAttrSetsAttribute) {
   Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
   ASSERT_TRUE(runtime.isInstanceOfType(*c_obj));
   Type c(&scope, *c_obj);
-  Object name(&scope, runtime.internStrFromCStr("foobarbaz"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foobarbaz"));
   Object value(&scope, runtime.newInt(-444));
   EXPECT_TRUE(typeSetAttr(thread, c, name, value).isNoneType());
   Dict type_dict(&scope, c.dict());
@@ -733,7 +733,7 @@ class A(metaclass=M):
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
   ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
   Object value(&scope, runtime.newInt(77));
   EXPECT_TRUE(typeSetAttr(thread, a, name, value).isNoneType());
   Object set_args_obj(&scope, moduleAt(&runtime, "__main__", "set_args"));
@@ -762,7 +762,7 @@ class A(metaclass=M):
   Object a_obj(&scope, moduleAt(&runtime, "__main__", "A"));
   ASSERT_TRUE(runtime.isInstanceOfType(*a_obj));
   Type a(&scope, *a_obj);
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
   Object value(&scope, runtime.newInt(1));
   EXPECT_TRUE(
       raised(typeSetAttr(thread, a, name, value), LayoutId::kUserWarning));
@@ -773,7 +773,7 @@ TEST(TypeBuiltinsTest, TypeSetAttrOnBuiltinTypeRaisesTypeError) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Object name(&scope, runtime.internStrFromCStr("foo"));
+  Object name(&scope, runtime.internStrFromCStr(thread, "foo"));
   Object value(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
       typeSetAttr(thread, type, name, value), LayoutId::kTypeError,
