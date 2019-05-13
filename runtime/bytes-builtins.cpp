@@ -110,13 +110,20 @@ RawObject BytesBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*self_obj)) {
     return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
   }
-  Object other_obj(&scope, args.get(1));
-  if (!runtime->isInstanceOfBytes(*other_obj)) {
-    return thread->raiseRequiresType(other_obj, SymbolId::kBytes);
-  }
   Bytes self(&scope, *self_obj);
-  Bytes other(&scope, *other_obj);
-  return runtime->bytesConcat(thread, self, other);
+  Object other_obj(&scope, args.get(1));
+  if (runtime->isInstanceOfBytes(*other_obj)) {
+    Bytes other(&scope, *other_obj);
+    return runtime->bytesConcat(thread, self, other);
+  }
+  if (runtime->isInstanceOfByteArray(*other_obj)) {
+    ByteArray other(&scope, *other_obj);
+    Bytes other_bytes(&scope, byteArrayAsBytes(thread, runtime, other));
+    return runtime->bytesConcat(thread, self, other_bytes);
+  }
+  // TODO(T38246066): buffers besides bytes/bytearray
+  return thread->raiseWithFmt(LayoutId::kTypeError, "can't concat %T to bytes",
+                              &other_obj);
 }
 
 RawObject BytesBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {

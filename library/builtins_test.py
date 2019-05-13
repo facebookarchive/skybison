@@ -3,6 +3,14 @@ import unittest
 
 
 class BytesTest(unittest.TestCase):
+    def test_dunder_add_with_bytes_like_other_returns_bytes(self):
+        self.assertEqual(b"123".__add__(bytearray(b"456")), b"123456")
+
+    def test_dunder_add_with_non_bytes_like_other_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            b"".__add__(2)
+        self.assertEqual(str(context.exception), "can't concat int to bytes")
+
     def test_dunder_new_with_str_without_encoding_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytes("foo")

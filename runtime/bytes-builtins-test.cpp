@@ -48,6 +48,18 @@ TEST(BytesBuiltinsTest, DunderAddWithNonBytesOtherRaisesTypeError) {
   EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
+TEST(BytesBuiltinsTest, DunderAddWithBytesLikeOtherReturnsBytes) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object self(&scope, runtime.newBytes(1, '1'));
+  ByteArray other(&scope, runtime.newByteArray());
+  const byte buf[] = {'2', '3'};
+  runtime.byteArrayExtend(thread, other, buf);
+  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
+  EXPECT_TRUE(isBytesEqualsCStr(sum, "123"));
+}
+
 TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
   Runtime runtime;
   HandleScope scope;
