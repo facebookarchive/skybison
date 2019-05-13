@@ -10,6 +10,24 @@ using namespace testing;
 
 using WeakRefExtensionApiTest = ExtensionApi;
 
+TEST_F(WeakRefExtensionApiTest, ClearRefClearsReferent) {
+  PyRun_SimpleString(R"(
+class C:
+  pass
+obj = C()
+def foo():
+  pass
+)");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  PyObjectPtr ref(PyWeakref_NewRef(obj, foo));
+  ASSERT_TRUE(PyWeakref_Check(ref));
+
+  EXPECT_NE(PyWeakref_GetObject(ref), Py_None);
+  _PyWeakref_ClearRef(reinterpret_cast<PyWeakReference*>(ref.get()));
+  EXPECT_EQ(PyWeakref_GetObject(ref), Py_None);
+}
+
 TEST_F(WeakRefExtensionApiTest, NewProxyWithCallbackReturnsProxy) {
   PyRun_SimpleString(R"(
 class C:

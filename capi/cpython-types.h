@@ -28,6 +28,8 @@ typedef Py_ssize_t Py_hash_t;
  * https://mail.python.org/pipermail/python-dev/2018-August/154946.html */
 #define PyVarObject_HEAD_INIT(type, size) \
     { PyObject_HEAD_INIT(NULL) 0 },
+
+#define PyWeakref_GET_OBJECT(ref) PyWeakref_GetObject(ref)
 /* clang-format on */
 
 #define Py_TPFLAGS_READY (1UL << 12)
@@ -36,6 +38,7 @@ typedef Py_ssize_t Py_hash_t;
 
 typedef struct _longobject PyLongObject;
 typedef struct _typeobject PyTypeObject;
+typedef struct _PyWeakReference PyWeakReference;
 
 typedef struct _object {
   _PyObject_HEAD_EXTRA Py_ssize_t ob_refcnt;
