@@ -378,25 +378,23 @@ class IsSubclassTests(unittest.TestCase):
     def test_issubclass_with_non_type_subclass_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             issubclass("bad - not a type", str)
-            self.assertEqual(
-                str(context.exception), "issubclass() arg 1 must be a class"
-            )
+        self.assertEqual(str(context.exception), "issubclass() arg 1 must be a class")
 
     def test_issubclass_with_non_type_superclass_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             issubclass(int, "bad - not a type")
-            self.assertEqual(
-                str(context.exception),
-                "issubclass() arg 2 must be a class or tuple of classes",
-            )
+        self.assertEqual(
+            str(context.exception),
+            "issubclass() arg 2 must be a class or tuple of classes",
+        )
 
     def test_issubclass_with_non_type_in_tuple_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             issubclass(bool, ("bad - not a type", int))
-            self.assertEqual(
-                str(context.exception),
-                "issubclass() arg 2 must be a class or tuple of classes",
-            )
+        self.assertEqual(
+            str(context.exception),
+            "issubclass() arg 2 must be a class or tuple of classes",
+        )
 
     def test_issubclass_with_non_type_subclass_uses_bases(self):
         class A:
