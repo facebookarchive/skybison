@@ -2737,19 +2737,20 @@ bool Runtime::dictLookup(const Tuple& data, const Object& key,
   word current_index = current * Dict::Bucket::kNumPointers;
   word next_free_index = -1;
   for (;;) {
-    if (Dict::Bucket::hasKey(*data, current_index, *key, pred)) {
-      *index = current_index;
-      return true;
-    }
-    if (next_free_index == -1 &&
-        Dict::Bucket::isTombstone(*data, current_index)) {
-      next_free_index = current_index;
-    } else if (Dict::Bucket::isEmpty(*data, current_index)) {
+    if (Dict::Bucket::isEmpty(*data, current_index)) {
       if (next_free_index == -1) {
         next_free_index = current_index;
       }
       *index = next_free_index;
       return false;
+    }
+    if (Dict::Bucket::isTombstone(*data, current_index)) {
+      if (next_free_index == -1) {
+        next_free_index = current_index;
+      }
+    } else if (Dict::Bucket::hasKey(*data, current_index, *key, pred)) {
+      *index = current_index;
+      return true;
     }
     current = Dict::Bucket::nextBucket(current, bucket_mask, &perturb);
     current_index = current * Dict::Bucket::kNumPointers;
