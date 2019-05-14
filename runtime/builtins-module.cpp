@@ -281,7 +281,6 @@ void copyFunctionEntries(Thread* thread, const Function& base,
         "Useless declaration of native code method %s in managed code",
         method_name.toCStr());
   patch_code.setCode(base_code.code());
-  base.setCode(*patch_code);
   patch.setEntry(base.entry());
   patch.setEntryKw(base.entryKw());
   patch.setEntryEx(base.entryEx());
