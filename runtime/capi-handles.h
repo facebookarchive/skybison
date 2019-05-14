@@ -48,6 +48,10 @@ class ApiHandle : public PyObject {
   // Check if the type is PyType_Type
   bool isType();
 
+  // Get ExtensionPtr attribute from obj; returns Error if not an extension
+  // instance
+  static RawObject getExtensionPtrAttr(Thread* thread, const Object& obj);
+
   // Returns true if the PyObject* is a managed object.
   static bool isManaged(const PyObject* obj) {
     return (obj->ob_refcnt & kManagedBit) != 0;
@@ -96,10 +100,6 @@ class ApiHandle : public PyObject {
 
   // Create a new runtime instance based on this ApiHandle
   RawObject asInstance(RawObject type);
-
-  // Get ExtensionPtr attribute from obj; returns Error if not an extension
-  // instance
-  static RawObject getExtensionPtrAttr(Thread* thread, const Object& obj);
 
   // TODO(T44244793): Remove these functions when handles have their own
   // specialized hash table.

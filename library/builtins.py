@@ -401,6 +401,71 @@ def _frozenset_check(obj) -> bool:
     pass
 
 
+@_patch
+def _get_member_byte(addr):
+    pass
+
+
+@_patch
+def _get_member_double(addr):
+    pass
+
+
+@_patch
+def _get_member_float(addr):
+    pass
+
+
+@_patch
+def _get_member_char(addr):
+    pass
+
+
+@_patch
+def _get_member_int(addr):
+    pass
+
+
+@_patch
+def _get_member_long(addr):
+    pass
+
+
+@_patch
+def _get_member_pyobject(addr, name):
+    pass
+
+
+@_patch
+def _get_member_short(addr):
+    pass
+
+
+@_patch
+def _get_member_string(addr):
+    pass
+
+
+@_patch
+def _get_member_ubyte(addr):
+    pass
+
+
+@_patch
+def _get_member_uint(addr):
+    pass
+
+
+@_patch
+def _get_member_ulong(addr):
+    pass
+
+
+@_patch
+def _get_member_ushort(addr):
+    pass
+
+
 def _index(obj) -> int:
     # equivalent to PyNumber_Index
     if _int_check(obj):
@@ -486,6 +551,144 @@ def _list_sort(list):
     pass
 
 
+def _new_member_get_bool(offset):
+    return lambda instance: bool(_get_member_int(_pyobject_offset(instance, offset)))
+
+
+def _new_member_get_byte(offset):
+    return lambda instance: _get_member_byte(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_char(offset):
+    return lambda instance: _get_member_char(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_double(offset):
+    return lambda instance: _get_member_double(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_float(offset):
+    return lambda instance: _get_member_float(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_int(offset):
+    return lambda instance: _get_member_int(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_long(offset):
+    return lambda instance: _get_member_long(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_short(offset):
+    return lambda instance: _get_member_short(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_string(offset):
+    return lambda instance: _get_member_string(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_pyobject(offset, name=None):
+    return lambda instance: _get_member_pyobject(
+        _pyobject_offset(instance, offset), name
+    )
+
+
+def _new_member_get_none(offset):
+    return lambda instance: None
+
+
+def _new_member_get_ubyte(offset):
+    return lambda instance: _get_member_ubyte(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_uint(offset):
+    return lambda instance: _get_member_uint(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_ulong(offset):
+    return lambda instance: _get_member_ulong(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_ushort(offset):
+    return lambda instance: _get_member_ushort(_pyobject_offset(instance, offset))
+
+
+def _new_member_set_readonly(name):
+    def setter(instance, value):
+        raise AttributeError("{name} is a readonly attribute")
+
+    return setter
+
+
+def _new_member_set_readonly_strings(name):
+    def setter(instance, value):
+        raise TypeError("{name} is a readonly attribute")
+
+    return setter
+
+
+def _new_member_set_bool(offset):
+    def setter(instance, value):
+        if not isinstance(value, bool):
+            raise TypeError("attribute value type must be bool")
+        _set_member_integral(_pyobject_offset(instance, offset), int(value), 4)
+
+    return setter
+
+
+def _new_member_set_char(offset):
+    def setter(instance, value):
+        if not isinstance(value, str):
+            raise TypeError("attribute value type must be str")
+        if len(value) != 1:
+            raise TypeError("attribute str length must be 1")
+        _set_member_integral(_pyobject_offset(instance, offset), value, 1)
+
+    return setter
+
+
+def _new_member_set_double(offset):
+    def setter(instance, value):
+        if not isinstance(value, float):
+            raise TypeError("attribute value type must be float")
+        _set_member_double(_pyobject_offset(instance, offset), value)
+
+    return setter
+
+
+def _new_member_set_float(offset):
+    def setter(instance, value):
+        if not isinstance(value, float):
+            raise TypeError("attribute value type must be float")
+        _set_member_float(_pyobject_offset(instance, offset), value)
+
+    return setter
+
+
+def _new_member_set_integral(offset, num_bytes, min_value, max_value, primitive_type):
+    def setter(instance, value):
+        if not isinstance(value, int):
+            raise TypeError("attribute value type must be int")
+        _set_member_integral(_pyobject_offset(instance, offset), value, num_bytes)
+        if value < min_value or value > max_value:
+            import warnings
+
+            warnings.warn(f"Truncation of value to {primitive_type}")
+
+    return setter
+
+
+def _new_member_set_pyobject(offset):
+    return lambda instance, value: _set_member_pyobject(
+        _pyobject_offset(instance, offset), value
+    )
+
+
+@_patch
+def _pyobject_offset(instance, offset):
+    pass
+
+
 @_patch
 def _repr_enter(obj: object) -> bool:
     pass
@@ -498,6 +701,26 @@ def _repr_leave(obj: object) -> None:
 
 @_patch
 def _set_check(obj) -> bool:
+    pass
+
+
+@_patch
+def _set_member_double(addr, value):
+    pass
+
+
+@_patch
+def _set_member_float(addr, value):
+    pass
+
+
+@_patch
+def _set_member_integral(addr, value, num_bytes):
+    pass
+
+
+@_patch
+def _set_member_pyobject(addr, value):
     pass
 
 

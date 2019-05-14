@@ -6,6 +6,7 @@
 
 #include <cinttypes>
 
+#include "builtins-module.h"
 #include "handles.h"
 #include "int-builtins.h"
 #include "mro.h"
@@ -965,6 +966,298 @@ PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* spec) {
   return PyType_FromSpecWithBases(spec, nullptr);
 }
 
+static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object name(&scope, runtime->newStrFromCStr(member.name));
+  Tuple consts(&scope, runtime->newTuple(1));
+  consts.atPut(0, runtime->newInt(member.offset));
+  Int offset(&scope, runtime->newInt(member.offset));
+  switch (member.type) {
+    case T_BOOL:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetBool, offset);
+    case T_BYTE:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetByte, offset);
+    case T_UBYTE:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetUByte, offset);
+    case T_SHORT:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetShort, offset);
+    case T_USHORT:
+      return thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetUShort, offset);
+    case T_INT:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetInt, offset);
+    case T_UINT:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetUInt, offset);
+    case T_LONG:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetLong, offset);
+    case T_ULONG:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetULong, offset);
+    case T_PYSSIZET:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetULong, offset);
+    case T_FLOAT:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetFloat, offset);
+    case T_DOUBLE:
+      return thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetDouble, offset);
+    case T_LONGLONG:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetLong, offset);
+    case T_ULONGLONG:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetULong, offset);
+    case T_STRING:
+      return thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetString, offset);
+    case T_STRING_INPLACE:
+      return thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetString, offset);
+    case T_CHAR:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetChar, offset);
+    case T_OBJECT:
+      return thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyObject, offset);
+    case T_OBJECT_EX:
+      return thread->invokeFunction2(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberGetPyObject,
+                                     offset, name);
+    case T_NONE:
+      return thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberGetPyObject, offset);
+    default:
+      return thread->raiseWithFmt(LayoutId::kSystemError,
+                                  "bad member name type");
+  }
+}
+
+static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (member.flags & READONLY) {
+    Object name(&scope, runtime->newStrFromCStr(member.name));
+    Function setter(&scope, thread->invokeFunction1(
+                                SymbolId::kBuiltins,
+                                SymbolId::kUnderNewMemberSetReadonly, name));
+    return *setter;
+  }
+
+  Int offset(&scope, runtime->newInt(member.offset));
+  switch (member.type) {
+    case T_BOOL:
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberSetBool, offset);
+    case T_BYTE: {
+      Int num_bytes(&scope, runtime->newInt(1));
+      Int min_value(&scope, runtime->newInt(std::numeric_limits<char>::min()));
+      Int max_value(&scope, runtime->newInt(std::numeric_limits<char>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("char"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_UBYTE: {
+      Int num_bytes(&scope, runtime->newInt(1));
+      Int min_value(&scope, runtime->newInt(0));
+      Int max_value(&scope,
+                    runtime->newInt(std::numeric_limits<unsigned char>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("unsigned char"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_SHORT: {
+      Int num_bytes(&scope, runtime->newInt(2));
+      Int min_value(&scope, runtime->newInt(std::numeric_limits<short>::min()));
+      Int max_value(&scope, runtime->newInt(std::numeric_limits<short>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("short"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_USHORT: {
+      Int num_bytes(&scope, runtime->newInt(2));
+      Int min_value(&scope, runtime->newInt(0));
+      Int max_value(
+          &scope, runtime->newInt(std::numeric_limits<unsigned short>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("unsigned short"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_INT: {
+      Int num_bytes(&scope, runtime->newInt(4));
+      Int min_value(&scope, runtime->newInt(std::numeric_limits<int>::min()));
+      Int max_value(&scope, runtime->newInt(std::numeric_limits<int>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("int"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_UINT: {
+      Int num_bytes(&scope, runtime->newInt(4));
+      Int min_value(&scope, runtime->newInt(0));
+      Int max_value(&scope,
+                    runtime->newInt(std::numeric_limits<unsigned int>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("unsigned int"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_LONG: {
+      Int num_bytes(&scope, runtime->newInt(8));
+      Int min_value(&scope, runtime->newInt(std::numeric_limits<long>::min()));
+      Int max_value(&scope, runtime->newInt(std::numeric_limits<long>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("long"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_ULONG: {
+      Int num_bytes(&scope, runtime->newInt(8));
+      Int min_value(&scope, runtime->newInt(0));
+      Int max_value(&scope,
+                    runtime->newInt(std::numeric_limits<unsigned long>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("unsigned long"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_PYSSIZET: {
+      Int num_bytes(&scope, runtime->newInt(8));
+      Int min_value(&scope, runtime->newInt(0));
+      Int max_value(&scope,
+                    runtime->newInt(std::numeric_limits<Py_ssize_t>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("Py_ssize_t"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_FLOAT: {
+      return thread->invokeFunction1(SymbolId::kBuiltins,
+                                     SymbolId::kUnderNewMemberSetFloat, offset);
+    }
+    case T_DOUBLE: {
+      return thread->invokeFunction1(
+          SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetDouble, offset);
+    }
+    case T_STRING: {
+      Object name(&scope, runtime->newStrFromCStr(member.name));
+      Function setter(&scope,
+                      thread->invokeFunction1(
+                          SymbolId::kBuiltins,
+                          SymbolId::kUnderNewMemberSetReadonlyStrings, name));
+      return *setter;
+    }
+    case T_STRING_INPLACE: {
+      Object name(&scope, runtime->newStrFromCStr(member.name));
+      Function setter(&scope,
+                      thread->invokeFunction1(
+                          SymbolId::kBuiltins,
+                          SymbolId::kUnderNewMemberSetReadonlyStrings, name));
+      return *setter;
+    }
+    case T_CHAR: {
+      Function setter(&scope, thread->invokeFunction1(
+                                  SymbolId::kBuiltins,
+                                  SymbolId::kUnderNewMemberSetChar, offset));
+      return *setter;
+    }
+    case T_OBJECT: {
+      Function setter(
+          &scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                          SymbolId::kUnderNewMemberSetPyObject,
+                                          offset));
+      return *setter;
+    }
+    case T_OBJECT_EX: {
+      Function setter(
+          &scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                          SymbolId::kUnderNewMemberSetPyObject,
+                                          offset));
+      return *setter;
+    }
+    case T_LONGLONG: {
+      Int num_bytes(&scope, runtime->newInt(8));
+      Int min_value(&scope,
+                    runtime->newInt(std::numeric_limits<long long>::min()));
+      Int max_value(&scope,
+                    runtime->newInt(std::numeric_limits<long long>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("long long"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    case T_ULONGLONG: {
+      Int num_bytes(&scope, runtime->newInt(8));
+      Int min_value(&scope, runtime->newInt(0));
+      Int max_value(
+          &scope,
+          runtime->newInt(std::numeric_limits<unsigned long long>::max()));
+      Str primitive_type(&scope, runtime->newStrFromCStr("unsigned long long"));
+      Function setter(
+          &scope, thread->invokeFunction5(
+                      SymbolId::kBuiltins, SymbolId::kUnderNewMemberSetIntegral,
+                      offset, num_bytes, min_value, max_value, primitive_type));
+      return *setter;
+    }
+    default:
+      return thread->raiseWithFmt(LayoutId::kSystemError,
+                                  "bad member name type");
+  }
+}
+
+RawObject addMembers(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Object slot_value(&scope, extensionSlot(type, Type::ExtensionSlot::kMembers));
+  if (slot_value.isNoneType()) return NoneType::object();
+  DCHECK(slot_value.isInt(), "unexpected slot type");
+  auto members = bit_cast<PyMemberDef*>(Int::cast(*slot_value).asCPtr());
+  Dict dict(&scope, type.dict());
+  Object none(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  for (word i = 0; members[i].name != nullptr; i++) {
+    Object name(&scope, runtime->newStrFromCStr(members[i].name));
+    Object getter(&scope, memberGetter(thread, members[i]));
+    if (getter.isError()) return *getter;
+    Object setter(&scope, memberSetter(thread, members[i]));
+    if (setter.isError()) return *setter;
+    Object property(&scope, runtime->newProperty(getter, setter, none));
+    runtime->typeDictAtPut(thread, dict, name, property);
+  }
+  return NoneType::object();
+}
+
 static RawObject addMethod(Thread* thread, const Object& name,
                            PyMethodDef* def) {
   DCHECK(def != nullptr, "methods should not be nullptr");
@@ -1048,8 +1341,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
       &scope, runtime->newTuple(static_cast<int>(Type::ExtensionSlot::kEnd)));
   type.setExtensionSlots(*extension_slots);
 
-  PyMethodDef* methods = nullptr;
-
   // Set the type slots
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
     void* slot_ptr = slot->pfunc;
@@ -1060,18 +1351,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
       return nullptr;
     }
     setExtensionSlot(type, field_id, *field);
-
-    if (slot->slot == Py_tp_methods) {
-      methods = static_cast<PyMethodDef*>(slot_ptr);
-    }
-  }
-
-  if (methods != nullptr) {
-    for (word i = 0; methods[i].ml_name != nullptr; i++) {
-      Object name(&scope, runtime->newStrFromCStr(methods[i].ml_name));
-      Object function(&scope, addMethod(thread, name, &methods[i]));
-      runtime->dictAtPutInValueCell(thread, dict, name, function);
-    }
   }
 
   // Set size
@@ -1085,6 +1364,20 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   setExtensionSlot(type, Type::ExtensionSlot::kFlags, *flags);
 
   if (addOperators(thread, type).isError()) return nullptr;
+
+  Object methods_ptr(&scope,
+                     extensionSlot(type, Type::ExtensionSlot::kMethods));
+  if (!methods_ptr.isNoneType()) {
+    PyMethodDef* methods =
+        reinterpret_cast<PyMethodDef*>(Int::cast(*methods_ptr).asCPtr());
+    for (word i = 0; methods[i].ml_name != nullptr; i++) {
+      Object name(&scope, runtime->newStrFromCStr(methods[i].ml_name));
+      Object function(&scope, addMethod(thread, name, &methods[i]));
+      runtime->dictAtPutInValueCell(thread, dict, name, function);
+    }
+  }
+
+  if (addMembers(thread, type).isError()) return nullptr;
 
   return ApiHandle::newReference(thread, *type);
 }

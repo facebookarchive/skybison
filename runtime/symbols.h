@@ -459,6 +459,19 @@ class Runtime;
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
   V(UnderFunctools, "_functools")                                              \
+  V(UnderGetMemberByte, "_get_member_byte")                                    \
+  V(UnderGetMemberChar, "_get_member_char")                                    \
+  V(UnderGetMemberDouble, "_get_member_double")                                \
+  V(UnderGetMemberFloat, "_get_member_float")                                  \
+  V(UnderGetMemberInt, "_get_member_int")                                      \
+  V(UnderGetMemberLong, "_get_member_long")                                    \
+  V(UnderGetMemberPyObject, "_get_member_pyobject")                            \
+  V(UnderGetMemberShort, "_get_member_short")                                  \
+  V(UnderGetMemberString, "_get_member_string")                                \
+  V(UnderGetMemberUByte, "_get_member_ubyte")                                  \
+  V(UnderGetMemberUInt, "_get_member_uint")                                    \
+  V(UnderGetMemberULong, "_get_member_ulong")                                  \
+  V(UnderGetMemberUShort, "_get_member_ushort")                                \
   V(UnderGetframeCode, "_getframe_code")                                       \
   V(UnderGetframeGlobals, "_getframe_globals")                                 \
   V(UnderGetframeLineno, "_getframe_lineno")                                   \
@@ -476,13 +489,42 @@ class Runtime;
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderModuleRepr, "_module_repr")                                           \
+  V(UnderNewMemberGetBool, "_new_member_get_bool")                             \
+  V(UnderNewMemberGetByte, "_new_member_get_byte")                             \
+  V(UnderNewMemberGetChar, "_new_member_get_char")                             \
+  V(UnderNewMemberGetDouble, "_new_member_get_double")                         \
+  V(UnderNewMemberGetFloat, "_new_member_get_float")                           \
+  V(UnderNewMemberGetInt, "_new_member_get_int")                               \
+  V(UnderNewMemberGetLong, "_new_member_get_long")                             \
+  V(UnderNewMemberGetNone, "_new_member_get_none")                             \
+  V(UnderNewMemberGetPyObject, "_new_member_get_pyobject")                     \
+  V(UnderNewMemberGetShort, "_new_member_get_short")                           \
+  V(UnderNewMemberGetString, "_new_member_get_string")                         \
+  V(UnderNewMemberGetUByte, "_new_member_get_ubyte")                           \
+  V(UnderNewMemberGetUInt, "_new_member_get_uint")                             \
+  V(UnderNewMemberGetUIntegral, "_new_member_get_uintegral")                   \
+  V(UnderNewMemberGetULong, "_new_member_get_ulong")                           \
+  V(UnderNewMemberGetUShort, "_new_member_get_ushort")                         \
+  V(UnderNewMemberSetBool, "_new_member_set_bool")                             \
+  V(UnderNewMemberSetChar, "_new_member_set_char")                             \
+  V(UnderNewMemberSetDouble, "_new_member_set_double")                         \
+  V(UnderNewMemberSetFloat, "_new_member_set_float")                           \
+  V(UnderNewMemberSetIntegral, "_new_member_set_integral")                     \
+  V(UnderNewMemberSetPyObject, "_new_member_set_pyobject")                     \
+  V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
+  V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderPatch, "_patch")                                                      \
+  V(UnderPyObjectOffset, "_pyobject_offset")                                   \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
   V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderSetCheck, "_set_check")                                               \
+  V(UnderSetMemberDouble, "_set_member_double")                                \
+  V(UnderSetMemberFloat, "_set_member_float")                                  \
+  V(UnderSetMemberIntegral, "_set_member_integral")                            \
+  V(UnderSetMemberPyObject, "_set_member_pyobject")                            \
   V(UnderSliceCheck, "_slice_check")                                           \
   V(UnderSliceIndex, "_slice_index")                                           \
   V(UnderStderrFd, "_stderr_fd")                                               \

@@ -57,7 +57,9 @@ HEADER_DEFINITIONS_REGEX = {
         SymbolRegex(regex=re.compile("^struct(.|\n)*?};.*\n", re.MULTILINE), pos=1)
     ],
     "macro": [
-        SymbolRegex(regex=re.compile("^#define.*[^\\\\]\n", re.MULTILINE), pos=1),
+        SymbolRegex(
+            regex=re.compile("^#define[^\\\\]*?(?=[\n\\/])", re.MULTILINE), pos=1
+        ),
         SymbolRegex(
             regex=re.compile("^#define.*\\\\(\n.*\\\\)*\n.*\n", re.MULTILINE), pos=1
         ),

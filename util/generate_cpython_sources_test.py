@@ -269,13 +269,19 @@ typedef int FooBar;
 
 typedef int FooBar;
 
-#define Bar(o) Foo;
+#define Bar(o) Foo;  /* Multi-line
+                        comment */
 
 #define FooBaz(o)       \\
     { Baz(type) },
 """
         expected_lines = """
+// Comment
+
 typedef int FooBar;
+
+/* Multi-line
+                        comment */
 
 #define FooBaz(o)       \\
     { Baz(type) },

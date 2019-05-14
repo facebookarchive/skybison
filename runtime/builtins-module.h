@@ -45,6 +45,27 @@ class BuiltinsModule {
   static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underFrozenSetCheck(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underGetMemberByte(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetMemberChar(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetMemberDouble(Thread* thread, Frame* frame,
+                                        word nargs);
+  static RawObject underGetMemberFloat(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underGetMemberInt(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetMemberLong(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetMemberPyObject(Thread* thread, Frame* frame,
+                                          word nargs);
+  static RawObject underGetMemberShort(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underGetMemberString(Thread* thread, Frame* frame,
+                                        word nargs);
+  static RawObject underGetMemberUByte(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underGetMemberUInt(Thread* thread, Frame* frame, word nargs);
+  static RawObject underGetMemberULong(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underGetMemberUShort(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntFromByteArray(Thread* thread, Frame* frame,
                                          word nargs);
@@ -56,9 +77,19 @@ class BuiltinsModule {
   static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
+  static RawObject underPyObjectOffset(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprLeave(Thread* thread, Frame* frame, word nargs);
   static RawObject underSetCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSetMemberDouble(Thread* thread, Frame* frame,
+                                        word nargs);
+  static RawObject underSetMemberFloat(Thread* thread, Frame* frame,
+                                       word nargs);
+  static RawObject underSetMemberIntegral(Thread* thread, Frame* frame,
+                                          word nargs);
+  static RawObject underSetMemberPyObject(Thread* thread, Frame* frame,
+                                          word nargs);
   static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,

@@ -99,6 +99,19 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
+    {SymbolId::kUnderGetMemberByte, underGetMemberByte},
+    {SymbolId::kUnderGetMemberChar, underGetMemberChar},
+    {SymbolId::kUnderGetMemberDouble, underGetMemberDouble},
+    {SymbolId::kUnderGetMemberFloat, underGetMemberFloat},
+    {SymbolId::kUnderGetMemberInt, underGetMemberInt},
+    {SymbolId::kUnderGetMemberLong, underGetMemberLong},
+    {SymbolId::kUnderGetMemberPyObject, underGetMemberPyObject},
+    {SymbolId::kUnderGetMemberShort, underGetMemberShort},
+    {SymbolId::kUnderGetMemberString, underGetMemberString},
+    {SymbolId::kUnderGetMemberUByte, underGetMemberUByte},
+    {SymbolId::kUnderGetMemberUInt, underGetMemberUInt},
+    {SymbolId::kUnderGetMemberULong, underGetMemberULong},
+    {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
     {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntFromByteArray, underIntFromByteArray},
@@ -108,8 +121,13 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
     {SymbolId::kUnderListSort, underListSort},
+    {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
+    {SymbolId::kUnderSetMemberDouble, underSetMemberDouble},
+    {SymbolId::kUnderSetMemberFloat, underSetMemberFloat},
+    {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
+    {SymbolId::kUnderSetMemberPyObject, underSetMemberPyObject},
     {SymbolId::kUnderSetCheck, underSetCheck},
     {SymbolId::kUnderSliceCheck, underSliceCheck},
     {SymbolId::kUnderStrCheck, underStrCheck},
@@ -869,6 +887,125 @@ RawObject BuiltinsModule::underFrozenSetCheck(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfFrozenSet(args.get(0)));
 }
 
+RawObject BuiltinsModule::underGetMemberByte(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  char value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), 1);
+  return thread->runtime()->newInt(value);
+}
+
+RawObject BuiltinsModule::underGetMemberChar(Thread*, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  return SmallStr::fromCodePoint(*reinterpret_cast<byte*>(addr));
+}
+
+RawObject BuiltinsModule::underGetMemberDouble(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  double value = 0.0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newFloat(value);
+}
+
+RawObject BuiltinsModule::underGetMemberFloat(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  float value = 0.0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newFloat(value);
+}
+
+RawObject BuiltinsModule::underGetMemberInt(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  int value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newInt(value);
+}
+
+RawObject BuiltinsModule::underGetMemberLong(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  long value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newInt(value);
+}
+
+RawObject BuiltinsModule::underGetMemberPyObject(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  auto pyobject = reinterpret_cast<PyObject**>(addr);
+  if (*pyobject == nullptr) {
+    if (args.get(1).isNoneType()) return NoneType::object();
+    HandleScope scope(thread);
+    Str name(&scope, args.get(1));
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "Object attribute '%S' is nullptr", &name);
+  }
+  return ApiHandle::fromPyObject(*pyobject)->asObject();
+}
+
+RawObject BuiltinsModule::underGetMemberShort(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  short value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newInt(value);
+}
+
+RawObject BuiltinsModule::underGetMemberString(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  return thread->runtime()->newStrFromCStr(*reinterpret_cast<char**>(addr));
+}
+
+RawObject BuiltinsModule::underGetMemberUByte(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  unsigned char value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newIntFromUnsigned(value);
+}
+
+RawObject BuiltinsModule::underGetMemberUInt(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  unsigned int value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newIntFromUnsigned(value);
+}
+
+RawObject BuiltinsModule::underGetMemberULong(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  unsigned long value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newIntFromUnsigned(value);
+}
+
+RawObject BuiltinsModule::underGetMemberUShort(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  unsigned short value = 0;
+  std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
+  return thread->runtime()->newIntFromUnsigned(value);
+}
+
 RawObject BuiltinsModule::underIntCheck(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);
@@ -1114,6 +1251,18 @@ RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,
   return listSort(thread, list);
 }
 
+RawObject BuiltinsModule::underPyObjectOffset(Thread* thread, Frame* frame,
+                                              word nargs) {
+  // TODO(eelizondo): Remove the HandleScope
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object instance_obj(&scope, args.get(0));
+  Int instance(&scope, ApiHandle::getExtensionPtrAttr(thread, instance_obj));
+  auto addr = reinterpret_cast<uword>(instance.asCPtr());
+  addr += RawInt::cast(args.get(1)).asWord();
+  return thread->runtime()->newIntFromCPtr(bit_cast<void*>(addr));
+}
+
 // TODO(T39322942): Turn this into the Range constructor (__init__ or __new__)
 RawObject BuiltinsModule::getattr(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
@@ -1199,6 +1348,43 @@ RawObject BuiltinsModule::underReprLeave(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   thread->reprLeave(obj);
+  return NoneType::object();
+}
+
+RawObject BuiltinsModule::underSetMemberDouble(Thread*, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  double value = RawFloat::cast(args.get(1)).value();
+  std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
+  return NoneType::object();
+}
+
+RawObject BuiltinsModule::underSetMemberFloat(Thread*, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  float value = RawFloat::cast(args.get(1)).value();
+  std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
+  return NoneType::object();
+}
+
+RawObject BuiltinsModule::underSetMemberIntegral(Thread*, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  auto value = RawInt::cast(args.get(1)).asWord();
+  auto num_bytes = RawInt::cast(args.get(2)).asWord();
+  std::memcpy(reinterpret_cast<void*>(addr), &value, num_bytes);
+  return NoneType::object();
+}
+
+RawObject BuiltinsModule::underSetMemberPyObject(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  auto addr = Int::cast(args.get(0)).asCPtr();
+  PyObject* value = ApiHandle::borrowedReference(thread, args.get(1));
+  std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
   return NoneType::object();
 }
 
