@@ -264,6 +264,11 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
     if (hash_result_obj.isError()) {
       return *hash_result_obj;
     }
+    if (!runtime->isInstanceOfInt(*hash_result_obj)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__hash__ method should return an integer");
+    }
+    // TODO(T44339224): Remove this.
     DCHECK(hash_result_obj.isSmallInt(), "hash result must be smallint");
     word hash_result = SmallInt::cast(*hash_result_obj).value();
     result = (result ^ hash_result) * mult;

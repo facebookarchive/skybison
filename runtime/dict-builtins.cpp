@@ -94,6 +94,10 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       if (key_hash.isError()) {
         return *key_hash;
       }
+      if (!runtime->isInstanceOfInt(*key_hash)) {
+        return thread->raiseWithFmt(LayoutId::kTypeError,
+                                    "__hash__ method should return an integer");
+      }
       if (do_override == Override::kOverride ||
           !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
         value = Interpreter::callMethod2(thread, frame, subscr_method, mapping,
@@ -114,6 +118,10 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
       key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
       if (key_hash.isError()) {
         return *key_hash;
+      }
+      if (!runtime->isInstanceOfInt(*key_hash)) {
+        return thread->raiseWithFmt(LayoutId::kTypeError,
+                                    "__hash__ method should return an integer");
       }
       if (do_override == Override::kOverride ||
           !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
@@ -158,6 +166,10 @@ RawObject dictMergeImpl(Thread* thread, const Dict& dict, const Object& mapping,
     key_hash = thread->invokeMethod1(key, SymbolId::kDunderHash);
     if (key_hash.isError()) {
       return *key_hash;
+    }
+    if (!runtime->isInstanceOfInt(*key_hash)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__hash__ method should return an integer");
     }
     if (do_override == Override::kOverride ||
         !runtime->dictIncludesWithHash(thread, dict, key, key_hash)) {
@@ -300,6 +312,10 @@ RawObject DictBuiltins::dunderDelItem(Thread* thread, Frame* frame,
   if (key_hash.isError()) {
     return *key_hash;
   }
+  if (!runtime->isInstanceOfInt(*key_hash)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__hash__ method should return an integer");
+  }
   // Remove the key. If it doesn't exist, throw a KeyError.
   if (runtime->dictRemoveWithHash(thread, dict, key, key_hash).isError()) {
     return thread->raise(LayoutId::kKeyError, *key);
@@ -373,6 +389,10 @@ RawObject DictBuiltins::dunderSetItem(Thread* thread, Frame* frame,
                   Interpreter::callMethod1(thread, frame, dunder_hash, key));
   if (key_hash.isError()) {
     return *key_hash;
+  }
+  if (!runtime->isInstanceOfInt(*key_hash)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "__hash__ method should return an integer");
   }
   runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
   return NoneType::object();

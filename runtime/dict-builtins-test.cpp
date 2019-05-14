@@ -186,6 +186,19 @@ TEST(DictBuiltinsTest, DunderDelItemOnNonexistentKeyRaisesKeyError) {
   ASSERT_TRUE(result.isError());
 }
 
+TEST(DictBuiltinsTest, DelOnObjectHashReturningNonIntRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class E:
+  def __hash__(self): return "non int"
+
+d = {}
+del d[E()]
+)"),
+                            LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
+}
+
 TEST(DictBuiltinsTest, DelOnExistingKeyDeletesKey) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -208,6 +221,19 @@ d = {}
 del d["foo"]
 )"),
                             LayoutId::kKeyError, "foo"));
+}
+
+TEST(DictBuiltinsTest, DunderSetItemWithKeyHashReturningNonIntRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class E:
+  def __hash__(self): return "non int"
+
+d = {}
+d[E()] = 4
+)"),
+                            LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
 }
 
 TEST(DictBuiltinsTest, DunderSetItemWithExistingKey) {
@@ -355,6 +381,75 @@ TEST(DictBuiltinsTest, UpdateWithNonMappingTypeRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "dict.update({}, 1)"),
                             LayoutId::kTypeError,
                             "'int' object is not iterable"));
+}
+
+TEST(DictBuiltinsTest,
+     UpdateWithListContainerWithObjectHashReturningNonIntRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class E:
+  def __hash__(self): return "non int"
+
+class C:
+  def __init__(self):
+    self.item = E()
+
+  def __getitem__(self, idx):
+    return self.item
+
+  def keys(self):
+    return [self.item]
+
+dict.update({1:4}, C())
+)"),
+                            LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
+}
+
+TEST(DictBuiltinsTest,
+     UpdateWithTupleContainerWithObjectHashReturningNonIntRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class E:
+  def __hash__(self): return "non int"
+
+class C:
+  def __init__(self):
+    self.item = E()
+
+  def __getitem__(self, idx):
+    return self.item
+
+  def keys(self):
+    return (self.item,)
+
+dict.update({1:4}, C())
+)"),
+                            LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
+}
+
+TEST(DictBuiltinsTest,
+     UpdateWithIterContainerWithObjectHashReturningNonIntRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class E:
+  def __hash__(self): return "non int"
+
+class C:
+  def __init__(self):
+    self.item = E()
+
+  def __getitem__(self, idx):
+    return self.item
+
+  def keys(self):
+    return iter([self.item])
+
+dict.update({1:4}, C())
+)"),
+                            LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
 }
 
 TEST(DictBuiltinsTest, UpdateWithDictReturnsUpdatedDict) {

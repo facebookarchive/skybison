@@ -827,6 +827,18 @@ TEST(TupleBuiltinsTest, DunderContainsWithNonTupleSelfRaisesTypeError) {
                      LayoutId::kTypeError));
 }
 
+TEST(TupleBuiltinsTest, DunderHashWithElementsHashNonIntRaisesTypeError) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class E:
+  def __hash__(self): return "non int"
+
+result = (E(), ).__hash__()
+)"),
+                            LayoutId::kTypeError,
+                            "__hash__ method should return an integer"));
+}
+
 TEST(TupleBuiltinsTest, DunderHashReturnsSmallInt) {
   Runtime runtime;
   ASSERT_FALSE(
