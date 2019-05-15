@@ -1324,6 +1324,19 @@ class RawFloat : public RawHeapObject {
   friend class Heap;
 };
 
+class RawUserBytesBase : public RawHeapObject {
+ public:
+  // Getters and setters.
+  RawObject value() const;
+  void setValue(RawObject value) const;
+
+  // RawLayout
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UserBytesBase);
+};
+
 class RawUserFloatBase : public RawHeapObject {
  public:
   // Getters and setters.
@@ -4099,6 +4112,17 @@ inline double RawComplex::imag() const {
 inline void RawComplex::initialize(double real, double imag) const {
   *reinterpret_cast<double*>(address() + kRealOffset) = real;
   *reinterpret_cast<double*>(address() + kImagOffset) = imag;
+}
+
+// RawUserBytesBase
+
+inline RawObject RawUserBytesBase::value() const {
+  return instanceVariableAt(kValueOffset);
+}
+
+inline void RawUserBytesBase::setValue(RawObject value) const {
+  DCHECK(value.isBytes(), "Only bytes type is permitted as a value.");
+  instanceVariableAtPut(kValueOffset, value);
 }
 
 // RawUserFloatBase

@@ -60,6 +60,21 @@ TEST(BytesBuiltinsTest, DunderAddWithBytesLikeOtherReturnsBytes) {
   EXPECT_TRUE(isBytesEqualsCStr(sum, "123"));
 }
 
+TEST(BytesBuiltinsTest, DunderAddWithBytesSubclassReturnsBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b'abc')
+other = Foo(b'123')
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
+  EXPECT_TRUE(isBytesEqualsCStr(sum, "abc123"));
+}
+
 TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
   Runtime runtime;
   HandleScope scope;
@@ -101,6 +116,21 @@ TEST(BytesBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
   Object other(&scope, SmallInt::fromWord(0));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   EXPECT_TRUE(eq.isNotImplementedType());
+}
+
+TEST(BytesBuiltinsTest, DunderEqWithBytesSubclassComparesBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b'123')
+other = Foo(b'123')
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
+  EXPECT_EQ(eq, Bool::trueObj());
 }
 
 TEST(BytesBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
@@ -165,6 +195,21 @@ TEST(BytesBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
   Object other(&scope, SmallInt::fromWord(0));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isNotImplementedType());
+}
+
+TEST(BytesBuiltinsTest, DunderGeWithBytesSubclassComparesBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b'123')
+other = Foo(b'123')
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
+  EXPECT_EQ(ge, Bool::trueObj());
 }
 
 TEST(BytesBuiltinsTest, DunderGeWithEqualBytesReturnsTrue) {
@@ -335,6 +380,21 @@ TEST(BytesBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
   ASSERT_TRUE(gt.isNotImplementedType());
 }
 
+TEST(BytesBuiltinsTest, DunderGtWithBytesSubclassComparesBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b'123')
+other = Foo(b'123')
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
+  EXPECT_EQ(gt, Bool::falseObj());
+}
+
 TEST(BytesBuiltinsTest, DunderGtWithEqualBytesReturnsFalse) {
   Runtime runtime;
   HandleScope scope;
@@ -452,6 +512,21 @@ TEST(BytesBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
   ASSERT_TRUE(le.isNotImplementedType());
 }
 
+TEST(BytesBuiltinsTest, DunderLeWithBytesSubclassComparesBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b'123')
+other = Foo(b'123')
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
+  EXPECT_EQ(le, Bool::trueObj());
+}
+
 TEST(BytesBuiltinsTest, DunderLeWithEqualBytesReturnsTrue) {
   Runtime runtime;
   HandleScope scope;
@@ -541,6 +616,19 @@ TEST(BytesBuiltinsTest, DunderLenWithNonEmptyBytesReturnsLength) {
   EXPECT_EQ(len, SmallInt::fromWord(4));
 }
 
+TEST(BytesBuiltinsTest, DunderLenWithBytesSubclassReturnsLength) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b"1234567890")
+  )")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
+  EXPECT_EQ(len, SmallInt::fromWord(10));
+}
+
 TEST(BytesBuiltinsTest, DunderLtWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
@@ -573,6 +661,21 @@ TEST(BytesBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
   Object other(&scope, SmallInt::fromWord(0));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isNotImplementedType());
+}
+
+TEST(BytesBuiltinsTest, DunderLtWithBytesSubclassComparesBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b'123')
+other = Foo(b'123')
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
+  EXPECT_EQ(lt, Bool::falseObj());
 }
 
 TEST(BytesBuiltinsTest, DunderLtWithEqualBytesReturnsFalse) {
@@ -774,6 +877,20 @@ TEST(BytesBuiltinsTest, DunderMulReturnsRepeatedBytes) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "ababab"));
 }
 
+TEST(BytesBuiltinsTest, DunderMulWithBytesSubclassReturnsRepeatedBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b"ab")
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object count(&scope, SmallInt::fromWord(3));
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "ababab"));
+}
+
 TEST(BytesBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(
@@ -806,6 +923,21 @@ TEST(BytesBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
   Object other(&scope, SmallInt::fromWord(0));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   EXPECT_TRUE(ne.isNotImplementedType());
+}
+
+TEST(BytesBuiltinsTest, DunderNeWithBytesSubclassComparesBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b'123')
+other = Foo(b'123')
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
+  EXPECT_EQ(ne, Bool::falseObj());
 }
 
 TEST(BytesBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
@@ -1030,6 +1162,19 @@ TEST(BytesBuiltinsTest, DunderReprWithSimpleBytesReturnsRepr) {
   EXPECT_TRUE(isStrEqualsCStr(*repr, "b'**********'"));
 }
 
+TEST(BytesBuiltinsTest, DunderReprWithBytesSubclassReturnsStr) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b"*****")
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "b'*****'"));
+}
+
 TEST(BytesBuiltinsTest, DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
   Runtime runtime;
   HandleScope scope;
@@ -1114,6 +1259,19 @@ TEST(BytesBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
   Bytes self(&scope, runtime.newBytesWithAll(bytes_array));
   Object result(&scope, runBuiltin(BytesBuiltins::hex, self));
   EXPECT_TRUE(isStrEqualsCStr(*result, "1234fe5b"));
+}
+
+TEST(BytesBuiltinsTest, HexWithBytesSubclassReturnsStr) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+self = Foo(b"*\x01a\x92")
+)")
+                   .isError());
+  HandleScope scope;
+  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  Object repr(&scope, runBuiltin(BytesBuiltins::hex, self));
+  EXPECT_TRUE(isStrEqualsCStr(*repr, "2a016192"));
 }
 
 TEST(BytesBuiltinsTest, JoinWithNonBytesRaisesTypeError) {

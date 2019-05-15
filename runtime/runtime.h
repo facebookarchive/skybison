@@ -666,6 +666,7 @@ class Runtime {
     return !obj.is##ty() &&                                                    \
            Type::cast(typeOf(obj)).builtinBase() == LayoutId::k##ty;           \
   }
+  DEFINE_IS_USER_INSTANCE(Bytes)
   DEFINE_IS_USER_INSTANCE(Float)
   DEFINE_IS_USER_INSTANCE(Int)
   DEFINE_IS_USER_INSTANCE(Str)

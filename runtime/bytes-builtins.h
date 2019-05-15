@@ -15,6 +15,9 @@ RawObject bytesReprSingleQuotes(Thread* thread, const Bytes& self);
 // Scans self to select an appropriate delimiter (single or double quotes).
 RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
 
+// Returns the internal bytes value of an instance of bytes.
+RawObject bytesUnderlying(Thread* thread, const Object& obj);
+
 class SmallBytesBuiltins
     : public Builtins<SmallBytesBuiltins, SymbolId::kBytes,
                       LayoutId::kSmallBytes, LayoutId::kBytes> {
@@ -61,6 +64,7 @@ class BytesBuiltins
   static RawObject join(Thread* thread, Frame* frame, word nargs);
   static RawObject translate(Thread* thread, Frame* frame, word nargs);
 
+  static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];
   static const word kTranslationTableLength = 1 << kBitsPerByte;
 
