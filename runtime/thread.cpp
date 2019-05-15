@@ -391,9 +391,9 @@ RawObject Thread::raiseWithId(LayoutId type, SymbolId msg) {
 // exception with an error message.
 RawObject Thread::raiseUnsupportedBinaryOperation(
     const Handle<RawObject>& left, const Handle<RawObject>& right,
-    const Handle<RawStr>& op_name) {
-  return raiseWithFmt(LayoutId::kTypeError, "%T.%S(%T) is not supported", &left,
-                      &op_name, &right);
+    SymbolId op_name) {
+  return raiseWithFmt(LayoutId::kTypeError, "%T.%Y(%T) is not supported", &left,
+                      op_name, &right);
 }
 
 void Thread::raiseBadArgument() {

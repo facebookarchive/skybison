@@ -177,7 +177,7 @@ class Thread {
   // returned up the stack by the caller.
   RawObject raiseUnsupportedBinaryOperation(const Handle<RawObject>& left,
                                             const Handle<RawObject>& right,
-                                            const Handle<RawStr>& op_name);
+                                            SymbolId op_name);
 
   // Exception support
   //

@@ -483,8 +483,7 @@ RawObject Interpreter::binaryOperation(Thread* thread, Frame* caller,
     if (!result.isNotImplementedType()) return *result;
   }
 
-  Str op_name(&scope,
-              runtime->symbols()->at(runtime->binaryOperationSelector(op)));
+  SymbolId op_name = runtime->binaryOperationSelector(op);
   return thread->raiseUnsupportedBinaryOperation(self, other, op_name);
 }
 
@@ -574,7 +573,7 @@ RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
     return Bool::fromBool(*left != *right);
   }
 
-  Str op_name(&scope, runtime->symbols()->at(runtime->comparisonSelector(op)));
+  SymbolId op_name = runtime->comparisonSelector(op);
   return thread->raiseUnsupportedBinaryOperation(left, right, op_name);
 }
 
