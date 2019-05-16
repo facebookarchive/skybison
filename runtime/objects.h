@@ -57,6 +57,7 @@ class Handle;
   V(ListIterator)                                                              \
   V(MemoryView)                                                                \
   V(Module)                                                                    \
+  V(MutableBytes)                                                              \
   V(Property)                                                                  \
   V(Range)                                                                     \
   V(RangeIterator)                                                             \
@@ -296,6 +297,7 @@ class RawObject {
   bool isMemoryView() const;
   bool isModule() const;
   bool isModuleNotFoundError() const;
+  bool isMutableBytes() const;
   bool isNotImplementedError() const;
   bool isProperty() const;
   bool isRange() const;
@@ -1160,18 +1162,14 @@ class RawArray : public RawHeapObject {
   RAW_OBJECT_COMMON_NO_CAST(Array);
 };
 
-class RawLargeBytes : public RawArray {
+class RawHeapBytes : public RawArray {
  public:
   // Sizing.
   static word allocationSize(word length);
 
-  RAW_OBJECT_COMMON(LargeBytes);
-
- private:
-  // Getters and setters.
   byte byteAt(word index) const;
-  void byteAtPut(word index, byte value) const;
   void copyTo(byte* dst, word length) const;
+
   // Read adjacent bytes as `uint16_t` integer.
   uint16_t uint16At(word index) const;
   // Read adjacent bytes as `uint32_t` integer.
@@ -1179,9 +1177,27 @@ class RawLargeBytes : public RawArray {
   // Read adjacent bytes as `uint64_t` integer.
   uint64_t uint64At(word index) const;
 
+  RAW_OBJECT_COMMON_NO_CAST(HeapBytes);
+};
+
+class RawLargeBytes : public RawHeapBytes {
+ public:
+  RAW_OBJECT_COMMON(LargeBytes);
+
+ private:
+  // TODO(atalaba): Remove once ByteArray is backed by MutableBytes
+  void byteAtPut(word index, byte value) const;
   friend class RawByteArray;
+
   friend class RawBytes;
   friend class Runtime;
+};
+
+class RawMutableBytes : public RawHeapBytes {
+ public:
+  void byteAtPut(word index, byte value) const;
+
+  RAW_OBJECT_COMMON(MutableBytes);
 };
 
 class RawTuple : public RawArray {
@@ -2874,6 +2890,10 @@ inline bool RawObject::isModuleNotFoundError() const {
   return isHeapObjectWithLayout(LayoutId::kModuleNotFoundError);
 }
 
+inline bool RawObject::isMutableBytes() const {
+  return isHeapObjectWithLayout(LayoutId::kMutableBytes);
+}
+
 inline bool RawObject::isNotImplementedError() const {
   return isHeapObjectWithLayout(LayoutId::kNotImplementedError);
 }
@@ -3696,34 +3716,30 @@ inline void RawType::sealAttributes() const {
 // RawArray
 
 inline word RawArray::length() const {
-  DCHECK(isLargeBytes() || isTuple() || isLargeStr(), "invalid array type");
+  DCHECK(isMutableBytes() || isLargeBytes() || isTuple() || isLargeStr(),
+         "invalid array type");
   return headerCountOrOverflow();
 }
 
-// RawLargeBytes
+// RawHeapBytes
 
-inline word RawLargeBytes::allocationSize(word length) {
+inline word RawHeapBytes::allocationSize(word length) {
   DCHECK(length >= 0, "invalid length %ld", length);
   word size = headerSize(length) + length;
   return Utils::maximum(kMinimumSize, Utils::roundUp(size, kPointerSize));
 }
 
-inline byte RawLargeBytes::byteAt(word index) const {
+inline byte RawHeapBytes::byteAt(word index) const {
   DCHECK_INDEX(index, length());
   return *reinterpret_cast<byte*>(address() + index);
 }
 
-inline void RawLargeBytes::byteAtPut(word index, byte value) const {
-  DCHECK_INDEX(index, length());
-  *reinterpret_cast<byte*>(address() + index) = value;
-}
-
-inline void RawLargeBytes::copyTo(byte* dst, word length) const {
+inline void RawHeapBytes::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<const byte*>(address()), length);
 }
 
-inline uint16_t RawLargeBytes::uint16At(word index) const {
+inline uint16_t RawHeapBytes::uint16At(word index) const {
   uint16_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -3731,7 +3747,7 @@ inline uint16_t RawLargeBytes::uint16At(word index) const {
   return result;
 }
 
-inline uint32_t RawLargeBytes::uint32At(word index) const {
+inline uint32_t RawHeapBytes::uint32At(word index) const {
   uint32_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
@@ -3739,12 +3755,26 @@ inline uint32_t RawLargeBytes::uint32At(word index) const {
   return result;
 }
 
-inline uint64_t RawLargeBytes::uint64At(word index) const {
+inline uint64_t RawHeapBytes::uint64At(word index) const {
   uint64_t result;
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(result) - 1));
   std::memcpy(&result, reinterpret_cast<const char*>(address() + index),
               sizeof(result));
   return result;
+}
+
+// RawLargeBytes
+
+inline void RawLargeBytes::byteAtPut(word index, byte value) const {
+  DCHECK_INDEX(index, length());
+  *reinterpret_cast<byte*>(address() + index) = value;
+}
+
+// RawMutableBytes
+
+inline void RawMutableBytes::byteAtPut(word index, byte value) const {
+  DCHECK_INDEX(index, length());
+  *reinterpret_cast<byte*>(address() + index) = value;
 }
 
 // RawTuple

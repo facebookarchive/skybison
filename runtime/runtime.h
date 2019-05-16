@@ -940,6 +940,7 @@ class Runtime {
   RawObject dunder_import_;
   RawObject ellipsis_;
   RawObject empty_frozen_set_;
+  RawObject empty_mutable_bytes_;
   RawObject empty_tuple_;
   RawObject object_dunder_getattribute_;
   RawObject object_dunder_setattr_;

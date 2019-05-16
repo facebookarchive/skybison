@@ -41,6 +41,8 @@ class Heap {
 
   RawObject createLayout(LayoutId layout_id);
 
+  RawObject createMutableBytes(word length);
+
   RawObject createTuple(word length, RawObject value);
 
   RawObject createRange();

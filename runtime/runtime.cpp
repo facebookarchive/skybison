@@ -1276,6 +1276,8 @@ void Runtime::initializeHeapTypes() {
   // Runtime-internal classes.
   addEmptyBuiltinType(SymbolId::kExceptionState, LayoutId::kExceptionState,
                       LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kUnderMutableBytes, LayoutId::kMutableBytes,
+                      LayoutId::kObject);
 
   // Abstract classes.
   BytesBuiltins::initialize(this);
@@ -1592,6 +1594,7 @@ void Runtime::initializeThreads() {
 void Runtime::initializePrimitiveInstances() {
   empty_tuple_ = heap()->createTuple(0, NoneType::object());
   empty_frozen_set_ = newFrozenSet();
+  empty_mutable_bytes_ = heap()->createMutableBytes(0);
   ellipsis_ = heap()->createEllipsis();
   callbacks_ = NoneType::object();
 }
@@ -1660,6 +1663,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&dunder_import_);
   visitor->visitPointer(&ellipsis_);
   visitor->visitPointer(&empty_frozen_set_);
+  visitor->visitPointer(&empty_mutable_bytes_);
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&object_dunder_getattribute_);
   visitor->visitPointer(&object_dunder_setattr_);

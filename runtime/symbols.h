@@ -489,6 +489,7 @@ class Runtime;
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderModuleRepr, "_module_repr")                                           \
+  V(UnderMutableBytes, "_mutablebytes")                                        \
   V(UnderNewMemberGetBool, "_new_member_get_bool")                             \
   V(UnderNewMemberGetByte, "_new_member_get_byte")                             \
   V(UnderNewMemberGetChar, "_new_member_get_char")                             \

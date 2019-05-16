@@ -158,6 +158,7 @@ class WARN_UNUSED Handle : public T {
   V(MemoryView)                                                                \
   V(Module)                                                                    \
   V(ModuleNotFoundError)                                                       \
+  V(MutableBytes)                                                              \
   V(NoneType)                                                                  \
   V(NotImplementedError)                                                       \
   V(NotImplementedType)                                                        \

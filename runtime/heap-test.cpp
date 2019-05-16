@@ -67,4 +67,12 @@ TEST(HeapTest, AllocateBigInstance) {
   EXPECT_EQ(Instance::cast(*result).headerCountOrOverflow(), 100000);
 }
 
+TEST(HeapTest, AllocateMutableBytes) {
+  Runtime runtime;
+  HandleScope scope;
+  Object result(&scope, runtime.heap()->createMutableBytes(15));
+  ASSERT_TRUE(result.isMutableBytes());
+  EXPECT_EQ(MutableBytes::cast(*result).length(), 15);
+}
+
 }  // namespace python

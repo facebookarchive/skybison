@@ -183,6 +183,17 @@ RawObject Heap::createLayout(LayoutId layout_id) {
   return Layout::cast(result);
 }
 
+RawObject Heap::createMutableBytes(word length) {
+  DCHECK(length >= 0, "cannot allocate negative size");
+  word size = MutableBytes::allocationSize(length);
+  RawObject raw = allocate(size, MutableBytes::headerSize(length));
+  CHECK(!raw.isError(), "out of memory");
+  auto result = raw.rawCast<RawMutableBytes>();
+  result.setHeaderAndOverflow(length, 0, LayoutId::kMutableBytes,
+                              ObjectFormat::kDataArray8);
+  return MutableBytes::cast(result);
+}
+
 RawObject Heap::createTuple(word length, RawObject value) {
   DCHECK(!value.isHeapObject(), "value must be an immediate object");
   word size = Tuple::allocationSize(length);
