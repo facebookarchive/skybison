@@ -9,8 +9,17 @@ namespace python {
 class Frame;
 class Thread;
 
+using PrepareCallFunc = RawObject (*)(Thread*, const Function&, const Code&,
+                                      Frame*, word);
 RawObject preparePositionalCall(Thread* thread, const Function& function,
                                 const Code& code, Frame* caller, word argc);
+RawObject prepareKeywordCall(Thread* thread, const Function& function,
+                             const Code& code, Frame* caller, word argc);
+RawObject prepareExplodeCall(Thread* thread, const Function& function,
+                             const Code& code, Frame* caller, word arg);
+Frame* pushCallee(Thread* thread, const Function& function);
+void processFreevarsAndCellvars(Thread* thread, const Function& function,
+                                Frame* callee_frame, const Code& code);
 
 // Entry points for ordinary interpreted functions
 RawObject interpreterTrampoline(Thread* thread, Frame* caller,

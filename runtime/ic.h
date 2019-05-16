@@ -67,9 +67,8 @@ inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
   return Error::notFound();
 }
 
-inline word icOriginalArg(const Function& function, word index) {
-  return SmallInt::cast(Tuple::cast(function.originalArguments()).at(index))
-      .value();
+inline word icOriginalArg(const Tuple& original_args, word index) {
+  return SmallInt::cast(original_args.at(index)).value();
 }
 
 }  // namespace python

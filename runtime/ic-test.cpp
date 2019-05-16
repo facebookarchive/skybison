@@ -43,9 +43,10 @@ TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
 
-  EXPECT_EQ(icOriginalArg(function, 0), 0xcafe);
-  EXPECT_EQ(icOriginalArg(function, 1), 0x01020304);
-  EXPECT_EQ(icOriginalArg(function, 2), 77);
+  Tuple original_args(&scope, function.originalArguments());
+  EXPECT_EQ(icOriginalArg(original_args, 0), 0xcafe);
+  EXPECT_EQ(icOriginalArg(original_args, 1), 0x01020304);
+  EXPECT_EQ(icOriginalArg(original_args, 2), 77);
 }
 
 static RawObject layoutIdAsSmallInt(LayoutId id) {

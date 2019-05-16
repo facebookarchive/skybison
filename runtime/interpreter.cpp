@@ -685,6 +685,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   Function::Entry entry;
   Function::Entry entry_kw;
   Function::Entry entry_ex;
+  bool is_interpreted;
   if (code.hasCoroutineOrGenerator()) {
     if (code.hasFreevarsOrCellvars()) {
       entry = generatorClosureTrampoline;
@@ -695,6 +696,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
       entry_kw = generatorTrampolineKw;
       entry_ex = generatorTrampolineEx;
     }
+    is_interpreted = false;
   } else {
     if (code.hasFreevarsOrCellvars()) {
       entry = interpreterClosureTrampoline;
@@ -705,13 +707,14 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
       entry_kw = interpreterTrampolineKw;
       entry_ex = interpreterTrampolineEx;
     }
+    is_interpreted = true;
   }
   Object name(&scope, code.name());
   Function function(
       &scope, runtime->newInterpreterFunction(
                   thread, name, qualname_str, code, closure_tuple,
                   annotations_dict, kw_defaults_dict, defaults_tuple, globals,
-                  entry, entry_kw, entry_ex));
+                  entry, entry_kw, entry_ex, is_interpreted));
 
   Object dunder_name(&scope, runtime->symbols()->at(SymbolId::kDunderName));
   Object value_cell(&scope, runtime->dictAt(thread, globals, dunder_name));
@@ -732,6 +735,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   } else {
     function.setRewrittenBytecode(code.code());
     function.setCaches(runtime->newTuple(0));
+    function.setOriginalArguments(runtime->newTuple(0));
   }
   return *function;
 }
@@ -871,9 +875,15 @@ bool Interpreter::handleReturn(Context* ctx, const Object& retval) {
   Frame* frame = ctx->frame;
   for (;;) {
     if (frame->blockStack()->depth() == 0) {
-      finishCurrentGenerator(ctx);
-      frame->pushValue(*retval);
-      return true;
+      if (frame == ctx->entry_frame) {
+        finishCurrentGenerator(ctx);
+        frame->pushValue(*retval);
+        return true;
+      }
+
+      popFrame(ctx);
+      ctx->frame->pushValue(*retval);
+      return false;
     }
     if (popBlock(ctx, TryBlock::Why::kReturn, retval)) return false;
   }
@@ -889,56 +899,90 @@ void Interpreter::handleLoopExit(Context* ctx, TryBlock::Why why,
 bool Interpreter::unwind(Context* ctx) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
-  Frame* frame = ctx->frame;
-  BlockStack* stack = frame->blockStack();
 
   // TODO(bsimmers): Record traceback for newly-raised exceptions, like what
   // CPython does with PyTraceBack_Here().
 
-  // TODO(T31788973): Extend this to unwind more than one Frame before giving
-  // up.
-  while (stack->depth() > 0) {
-    TryBlock block = stack->pop();
-    if (block.kind() == TryBlock::kExceptHandler) {
-      unwindExceptHandler(thread, frame, block);
-      continue;
+  for (;;) {
+    Frame* frame = ctx->frame;
+    BlockStack* stack = frame->blockStack();
+
+    while (stack->depth() > 0) {
+      TryBlock block = stack->pop();
+      if (block.kind() == TryBlock::kExceptHandler) {
+        unwindExceptHandler(thread, frame, block);
+        continue;
+      }
+      frame->dropValues(frame->valueStackSize() - block.level());
+
+      if (block.kind() == TryBlock::kLoop) continue;
+      DCHECK(block.kind() == TryBlock::kExcept ||
+                 block.kind() == TryBlock::kFinally,
+             "Unexpected TryBlock::Kind");
+
+      // Push a handler block and save the current caught exception, if any.
+      stack->push(
+          TryBlock{TryBlock::kExceptHandler, 0, frame->valueStackSize()});
+      frame->pushValue(thread->caughtExceptionTraceback());
+      frame->pushValue(thread->caughtExceptionValue());
+      frame->pushValue(thread->caughtExceptionType());
+
+      // Load and normalize the pending exception.
+      Object type(&scope, thread->pendingExceptionType());
+      Object value(&scope, thread->pendingExceptionValue());
+      Object traceback(&scope, thread->pendingExceptionTraceback());
+      thread->clearPendingException();
+      normalizeException(thread, &type, &value, &traceback);
+      BaseException(&scope, *value).setTraceback(*traceback);
+
+      // Promote the normalized exception to caught, push it for the bytecode
+      // handler, and jump to the handler.
+      thread->setCaughtExceptionType(*type);
+      thread->setCaughtExceptionValue(*value);
+      thread->setCaughtExceptionTraceback(*traceback);
+      frame->pushValue(*traceback);
+      frame->pushValue(*value);
+      frame->pushValue(*type);
+      ctx->pc = block.handler();
+      return false;
     }
-    frame->dropValues(frame->valueStackSize() - block.level());
 
-    if (block.kind() == TryBlock::kLoop) continue;
-    DCHECK(
-        block.kind() == TryBlock::kExcept || block.kind() == TryBlock::kFinally,
-        "Unexpected TryBlock::Kind");
-
-    // Push a handler block and save the current caught exception, if any.
-    stack->push(TryBlock{TryBlock::kExceptHandler, 0, frame->valueStackSize()});
-    frame->pushValue(thread->caughtExceptionTraceback());
-    frame->pushValue(thread->caughtExceptionValue());
-    frame->pushValue(thread->caughtExceptionType());
-
-    // Load and normalize the pending exception.
-    Object type(&scope, thread->pendingExceptionType());
-    Object value(&scope, thread->pendingExceptionValue());
-    Object traceback(&scope, thread->pendingExceptionTraceback());
-    thread->clearPendingException();
-    normalizeException(thread, &type, &value, &traceback);
-    BaseException(&scope, *value).setTraceback(*traceback);
-
-    // Promote the normalized exception to caught, push it for the bytecode
-    // handler, and jump to the handler.
-    thread->setCaughtExceptionType(*type);
-    thread->setCaughtExceptionValue(*value);
-    thread->setCaughtExceptionTraceback(*traceback);
-    frame->pushValue(*traceback);
-    frame->pushValue(*value);
-    frame->pushValue(*type);
-    ctx->pc = block.handler();
-    return false;
+    if (frame == ctx->entry_frame) break;
+    popFrame(ctx);
   }
 
   finishCurrentGenerator(ctx);
-  frame->pushValue(Error::exception());
+  ctx->frame->pushValue(Error::exception());
   return true;
+}
+
+void Interpreter::popFrame(Context* ctx) {
+  DCHECK(ctx->frame != ctx->entry_frame, "Should not pop entry frame");
+  finishCurrentGenerator(ctx);
+  Frame* caller_frame = ctx->frame->previousFrame();
+  ctx->frame = caller_frame;
+  ctx->thread->popFrame();
+
+  // Using Frame::function() in a critical path is a little sketchy, since
+  // it depends on a not-quite-invariant property of our system that the stack
+  // slot right above the current Frame contains the Function that was called to
+  // execute it. We can clean this up once we merge Code and Function
+  // and store a Function directly in the Frame.
+  HandleScope scope(ctx->thread);
+  Object caller_obj(&scope, caller_frame->function());
+  if (caller_obj.isError()) {
+    Code caller_code(&scope, caller_frame->code());
+    ctx->bytecode = caller_code.code();
+    RawObject empty_tuple = ctx->thread->runtime()->emptyTuple();
+    ctx->caches = empty_tuple;
+    ctx->original_args = empty_tuple;
+  } else {
+    Function caller_func(&scope, *caller_obj);
+    ctx->bytecode = caller_func.rewrittenBytecode();
+    ctx->caches = caller_func.caches();
+    ctx->original_args = caller_func.originalArguments();
+  }
+  ctx->pc = caller_frame->virtualPC();
 }
 
 static Bytecode currentBytecode(const Interpreter::Context* ctx) {
@@ -1850,7 +1894,7 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
 }
 
 bool Interpreter::storeAttrUpdateCache(Context* ctx, word arg) {
-  word original_arg = icOriginalArg(*ctx->function, arg);
+  word original_arg = icOriginalArg(ctx->original_args, arg);
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
@@ -1865,7 +1909,7 @@ bool Interpreter::storeAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(thread, *ctx->caches, arg, layout_id, location);
+    icUpdate(thread, ctx->caches, arg, layout_id, location);
   }
   return false;
 }
@@ -1874,7 +1918,7 @@ bool Interpreter::doStoreAttrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(ctx->caches, arg, layout_id);
   if (cached.isError()) {
     return storeAttrUpdateCache(ctx, arg);
   }
@@ -2096,7 +2140,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
 }
 
 bool Interpreter::loadAttrUpdateCache(Context* ctx, word arg) {
-  word original_arg = icOriginalArg(*ctx->function, arg);
+  word original_arg = icOriginalArg(ctx->original_args, arg);
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
@@ -2109,7 +2153,7 @@ bool Interpreter::loadAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(thread, *ctx->caches, arg, layout_id, location);
+    icUpdate(thread, ctx->caches, arg, layout_id, location);
   }
   frame->setTopValue(*result);
   return false;
@@ -2143,7 +2187,7 @@ bool Interpreter::doLoadAttrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(ctx->caches, arg, layout_id);
   if (cached.isErrorNotFound()) {
     return loadAttrUpdateCache(ctx, arg);
   }
@@ -2442,12 +2486,64 @@ bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
   return unwind(ctx);
 }
 
-// opcode 131
-bool Interpreter::doCallFunction(Context* ctx, word arg) {
-  RawObject result = call(ctx->thread, ctx->frame, arg);
+void Interpreter::pushFrame(Context* ctx, const Function& function,
+                            const Code& code, RawObject* post_call_sp) {
+  Frame* callee_frame = pushCallee(ctx->thread, function);
+  // Pop the arguments off of the caller's stack now that the callee "owns"
+  // them.
+  ctx->frame->setValueStackTop(post_call_sp);
+
+  if (code.hasFreevarsOrCellvars()) {
+    processFreevarsAndCellvars(ctx->thread, function, callee_frame, code);
+  }
+
+  ctx->frame->setVirtualPC(ctx->pc);
+  ctx->frame = callee_frame;
+  ctx->pc = callee_frame->virtualPC();
+  ctx->bytecode = function.rewrittenBytecode();
+  ctx->caches = function.caches();
+  ctx->original_args = function.originalArguments();
+}
+
+bool Interpreter::callTrampoline(Context* ctx, Function::Entry entry, word argc,
+                                 RawObject* post_call_sp) {
+  RawObject result = entry(ctx->thread, ctx->frame, argc);
   if (result.isError()) return unwind(ctx);
+  ctx->frame->setValueStackTop(post_call_sp);
   ctx->frame->pushValue(result);
   return false;
+}
+
+bool Interpreter::handleCall(Context* ctx, word argc, word callable_idx,
+                             PrepareCallFunc prepare_args,
+                             Function::Entry (Function::*get_entry)() const) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  RawObject* post_call_sp = frame->valueStackTop() + callable_idx + 1;
+  Object callable(&scope, frame->peek(callable_idx));
+  if (!callable.isFunction()) {
+    callable = prepareCallableCall(thread, frame, callable_idx, &argc);
+    if (callable.isError()) return unwind(ctx);
+  }
+
+  Function function(&scope, *callable);
+  if (!function.isInterpreted()) {
+    return callTrampoline(ctx, (function.*get_entry)(), argc, post_call_sp);
+  }
+
+  Code code(&scope, function.code());
+  if (prepare_args(thread, function, code, frame, argc).isError()) {
+    return unwind(ctx);
+  }
+
+  pushFrame(ctx, function, code, post_call_sp);
+  return false;
+}
+
+// opcode 131
+bool Interpreter::doCallFunction(Context* ctx, word argc) {
+  return handleCall(ctx, argc, argc, preparePositionalCall, &Function::entry);
 }
 
 // opcode 132
@@ -2536,18 +2632,32 @@ void Interpreter::doDeleteDeref(Context* ctx, word arg) {
 }
 
 // opcode 141
-bool Interpreter::doCallFunctionKw(Context* ctx, word arg) {
-  RawObject result = callKw(ctx->thread, ctx->frame, arg);
-  if (result.isError()) return unwind(ctx);
-  ctx->frame->pushValue(result);
-  return false;
+bool Interpreter::doCallFunctionKw(Context* ctx, word argc) {
+  return handleCall(ctx, argc, argc + 1, prepareKeywordCall,
+                    &Function::entryKw);
 }
 
 // opcode 142
 bool Interpreter::doCallFunctionEx(Context* ctx, word arg) {
-  RawObject result = callEx(ctx->thread, ctx->frame, arg);
-  if (result.isError()) return unwind(ctx);
-  ctx->frame->pushValue(result);
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  word callable_idx = (arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1;
+  RawObject* post_call_sp = frame->valueStackTop() + callable_idx + 1;
+  HandleScope scope(thread);
+  Object callable(&scope, prepareCallableEx(thread, frame, callable_idx));
+  if (callable.isError()) return unwind(ctx);
+
+  Function function(&scope, *callable);
+  if (!function.isInterpreted()) {
+    return callTrampoline(ctx, function.entryEx(), arg, post_call_sp);
+  }
+
+  Code code(&scope, function.code());
+  if (prepareExplodeCall(thread, function, code, frame, arg).isError()) {
+    return unwind(ctx);
+  }
+
+  pushFrame(ctx, function, code, post_call_sp);
   return false;
 }
 
@@ -2900,8 +3010,7 @@ bool wrapHandler(Interpreter::Context* ctx, word arg) {
   return op(ctx, arg);
 }
 
-inline RawObject Interpreter::executeWithBytecode(Interpreter::Context* ctx,
-                                                  const Bytes& byte_array) {
+inline RawObject Interpreter::executeWithContext(Interpreter::Context* ctx) {
   auto do_return = [ctx] {
     RawObject return_val = ctx->frame->popValue();
     ctx->thread->popFrame();
@@ -2929,11 +3038,11 @@ inline RawObject Interpreter::executeWithBytecode(Interpreter::Context* ctx,
 
   for (;;) {
     ctx->frame->setVirtualPC(ctx->pc);
-    Bytecode bc = static_cast<Bytecode>(byte_array.byteAt(ctx->pc++));
-    int32_t arg = byte_array.byteAt(ctx->pc++);
+    Bytecode bc = static_cast<Bytecode>(ctx->bytecode.byteAt(ctx->pc++));
+    int32_t arg = ctx->bytecode.byteAt(ctx->pc++);
     while (bc == Bytecode::EXTENDED_ARG) {
-      bc = static_cast<Bytecode>(byte_array.byteAt(ctx->pc++));
-      arg = (arg << 8) | byte_array.byteAt(ctx->pc++);
+      bc = static_cast<Bytecode>(ctx->bytecode.byteAt(ctx->pc++));
+      arg = (arg << 8) | ctx->bytecode.byteAt(ctx->pc++);
     }
 
     if (op_table[bc](ctx, arg)) return do_return();
@@ -2943,31 +3052,20 @@ inline RawObject Interpreter::executeWithBytecode(Interpreter::Context* ctx,
 RawObject Interpreter::execute(Thread* thread, Frame* frame) {
   HandleScope scope(thread);
   Code code(&scope, frame->code());
-  Bytes byte_array(&scope, code.code());
-  Context ctx;
-  ctx.thread = thread;
-  ctx.frame = frame;
-  ctx.function = nullptr;
-  ctx.caches = nullptr;
-  ctx.pc = frame->virtualPC();
+  Tuple empty_tuple(&scope, thread->runtime()->emptyTuple());
+  Context ctx(&scope, thread, frame, code.code(), *empty_tuple, *empty_tuple);
 
-  return executeWithBytecode(&ctx, byte_array);
+  return executeWithContext(&ctx);
 }
 
 RawObject Interpreter::executeWithCaching(Thread* thread, Frame* frame,
                                           const Function& function) {
   HandleScope scope(thread);
   DCHECK(frame->code() == function.code(), "function should match code");
-  Bytes byte_array(&scope, function.rewrittenBytecode());
-  Tuple caches(&scope, function.caches());
-  Context ctx;
-  ctx.thread = thread;
-  ctx.frame = frame;
-  ctx.function = &function;
-  ctx.caches = &caches;
-  ctx.pc = frame->virtualPC();
+  Context ctx(&scope, thread, frame, function.rewrittenBytecode(),
+              function.caches(), function.originalArguments());
 
-  return executeWithBytecode(&ctx, byte_array);
+  return executeWithContext(&ctx);
 }
 
 }  // namespace python

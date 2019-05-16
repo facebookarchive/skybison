@@ -5,6 +5,7 @@
 #include "globals.h"
 #include "handles.h"
 #include "symbols.h"
+#include "trampolines.h"
 
 namespace python {
 
@@ -29,6 +30,52 @@ class Interpreter {
     AND,
     XOR,
     OR
+  };
+
+  // Interpreter-internal execution state, containing the information necessary
+  // for running bytecode.
+  struct Context {
+    // The current thread.
+    Thread* thread;
+
+    // The Frame at the top level of this interpreter nesting level. Attempting
+    // to unwind or return from this frame will instead cause
+    // Interpreter::execute() to return.
+    //
+    // TODO(bsimmers): Encode this somewhere else, like the virtualPC() of the
+    // calling frame.
+    Frame* entry_frame;
+
+    // The frame currently being executed. Unless there is another interpreter
+    // nested below this one, and except for a brief window during calls and
+    // returns, this is the same as thread->currentFrame().
+    Frame* frame;
+
+    // The bytecode, caches, and original opcode arguments for the current
+    // function. If caching is disabled or we're executing a Code object without
+    // a Function (like a module body), caches and original_args will be empty
+    // tuples.
+    Bytes bytecode;
+    Tuple caches;
+    Tuple original_args;
+
+    // The current program counter. Since it's updated as we decode an
+    // instruction, it usually points to the next instruction to execute while
+    // in a bytecode handler.
+    word pc;
+
+    Context(HandleScope* scope, Thread* thread_in, Frame* frame_in,
+            RawObject bytecode_in, RawObject caches_in,
+            RawObject original_args_in)
+        : thread(thread_in),
+          entry_frame(frame_in),
+          frame(frame_in),
+          bytecode(scope, bytecode_in),
+          caches(scope, caches_in),
+          original_args(scope, original_args_in),
+          pc(frame->virtualPC()) {}
+
+    DISALLOW_HEAP_ALLOCATION();
   };
 
   static RawObject execute(Thread* thread, Frame* frame);
@@ -98,32 +145,15 @@ class Interpreter {
                                const Object& arg1, const Object& arg2,
                                const Object& arg3);
 
-  // Given a non-Function object in `callable`, attempt to normalize it to a
-  // Function by either unpacking a BoundMethod or looking up the object's
-  // __call__ method, iterating multiple times if necessary.
-  //
-  // On success, `callable` will contain the Function to call, and the return
-  // value will be a bool indicating whether or not `self` was populated with an
-  // object unpacked from a BoundMethod.
-  //
-  // On failure, Error is returned and `callable` may have been modified.
-  static RawObject prepareCallable(Thread* thread, Frame* frame,
-                                   Object* callable, Object* self);
-
   // Prepare the stack to for a positional or keyword call by normalizing the
   // callable object using prepareCallableObject().
   //
   // Returns the concrete Function that should be called. Updates nargs if a
   // self object was unpacked from the callable and inserted into the stack.
+  //
+  // Not intended for public use; only here for testing purposes.
   static RawObject prepareCallableCall(Thread* thread, Frame* frame,
                                        word callable_idx, word* nargs);
-
-  // Prepare the stack for an explode call by normalizing the callable object
-  // using prepareCallableObject().
-  //
-  // Returns the concrete Function that should be called.
-  static RawObject prepareCallableEx(Thread* thread, Frame* frame,
-                                     word callable_idx);
 
   static RawObject unaryOperation(Thread* thread, const Object& receiver,
                                   SymbolId selector);
@@ -151,14 +181,6 @@ class Interpreter {
                                 const Object& kw_defaults_dict,
                                 const Object& defaults_tuple,
                                 const Dict& globals, const Dict& builtins);
-
-  struct Context {
-    Thread* thread;
-    Frame* frame;
-    const Function* function;
-    const Tuple* caches;
-    word pc;
-  };
 
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);
@@ -356,8 +378,45 @@ class Interpreter {
   static bool doInplaceOperation(BinaryOp op, Context* ctx);
   static bool doUnaryOperation(SymbolId selector, Context* ctx);
 
-  static RawObject executeWithBytecode(Interpreter::Context* ctx,
-                                       const Bytes& byte_array);
+  // Given a non-Function object in `callable`, attempt to normalize it to a
+  // Function by either unpacking a BoundMethod or looking up the object's
+  // __call__ method, iterating multiple times if necessary.
+  //
+  // On success, `callable` will contain the Function to call, and the return
+  // value will be a bool indicating whether or not `self` was populated with an
+  // object unpacked from a BoundMethod.
+  //
+  // On failure, Error is returned and `callable` may have been modified.
+  static RawObject prepareCallable(Thread* thread, Frame* frame,
+                                   Object* callable, Object* self);
+
+  // Prepare the stack for an explode call by normalizing the callable object
+  // using prepareCallableObject().
+  //
+  // Returns the concrete Function that should be called.
+  static RawObject prepareCallableEx(Thread* thread, Frame* frame,
+                                     word callable_idx);
+
+  // Perform a positional or keyword call. Used by doCallFunction() and
+  // doCallFunctionKw().
+  static bool handleCall(Context* ctx, word argc, word callable_idx,
+                         PrepareCallFunc prepare_args,
+                         Function::Entry (Function::*get_entry)() const);
+
+  // Call a function through its trampoline, pushing the result on the stack.
+  static bool callTrampoline(Context* ctx, Function::Entry entry, word argc,
+                             RawObject* post_call_sp);
+
+  // After a callable is prepared and all arguments are processed, push a frame
+  // for the callee and update the Context to begin executing it.
+  static void pushFrame(Context* ctx, const Function& function,
+                        const Code& code, RawObject* post_call_sp);
+
+  // Pop the current Frame, restoring the execution context of the previous
+  // Frame.
+  static void popFrame(Context* ctx);
+
+  static RawObject executeWithContext(Interpreter::Context* ctx);
 
   static bool loadAttrUpdateCache(Context* ctx, word arg);
   static bool storeAttrUpdateCache(Context* ctx, word arg);

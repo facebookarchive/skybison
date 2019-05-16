@@ -577,6 +577,7 @@ RawObject Runtime::newNativeFunction(SymbolId name, const Str& qualname,
   result.setEntry(entry);
   result.setEntryKw(entry_kw);
   result.setEntryEx(entry_ex);
+  result.setIsInterpreted(false);
   return *result;
 }
 
@@ -597,7 +598,8 @@ RawObject Runtime::newInterpreterFunction(
     Thread* thread, const Object& name, const Object& qualname,
     const Code& code, const Object& closure, const Object& annotations,
     const Object& kw_defaults, const Object& defaults, const Dict& globals,
-    Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex) {
+    Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex,
+    bool is_interpreted) {
   HandleScope scope(thread);
   Function function(&scope, heap()->create<RawFunction>());
   function.setName(*name);
@@ -611,6 +613,7 @@ RawObject Runtime::newInterpreterFunction(
   function.setEntry(entry);
   function.setEntryKw(entry_kw);
   function.setEntryEx(entry_ex);
+  function.setIsInterpreted(is_interpreted);
   return *function;
 }
 
@@ -625,6 +628,7 @@ RawObject Runtime::newFunction() {
   result.setEntryKw(unimplementedTrampoline);
   result.setEntryEx(unimplementedTrampoline);
   result.setName(symbols()->Anonymous());
+  result.setIsInterpreted(false);
   return *result;
 }
 
@@ -769,9 +773,11 @@ RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
 
+RawObject Runtime::emptyTuple() { return empty_tuple_; }
+
 RawObject Runtime::newTuple(word length) {
   if (length == 0) {
-    return empty_tuple_;
+    return emptyTuple();
   }
   return heap()->createTuple(length, NoneType::object());
 }

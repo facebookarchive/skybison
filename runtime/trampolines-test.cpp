@@ -868,7 +868,7 @@ def foo(bar): pass
 )")
                    .isError());
   Function foo(&scope, moduleAt(&runtime, "__main__", "foo"));
-  foo.setEntry(interpreterClosureTrampoline);
+  foo.setEntry(interpreterTrampoline);
   foo.setCode(*code);
 
   // Run function

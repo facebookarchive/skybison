@@ -1808,6 +1808,11 @@ class RawFunction : public RawHeapObject {
   RawObject dict() const;
   void setDict(RawObject dict) const;
 
+  // Whether or not the function consists of bytecode that can be executed
+  // normally by the interpreter.
+  bool isInterpreted() const;
+  void setIsInterpreted(bool interpreted) const;
+
   // Layout.
   static const int kDocOffset = RawHeapObject::kSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
@@ -1827,7 +1832,8 @@ class RawFunction : public RawHeapObject {
   static const int kCachesOffset = kRewrittenBytecodeOffset + kPointerSize;
   static const int kOriginalArgumentsOffset = kCachesOffset + kPointerSize;
   static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
-  static const int kSize = kDictOffset + kPointerSize;
+  static const int kInterpreterInfoOffset = kDictOffset + kPointerSize;
+  static const int kSize = kInterpreterInfoOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Function);
 };
@@ -4554,6 +4560,14 @@ inline RawObject RawFunction::dict() const {
 
 inline void RawFunction::setDict(RawObject dict) const {
   instanceVariableAtPut(kDictOffset, dict);
+}
+
+inline bool RawFunction::isInterpreted() const {
+  return RawBool::cast(instanceVariableAt(kInterpreterInfoOffset)).value();
+}
+
+inline void RawFunction::setIsInterpreted(bool interpreted) const {
+  instanceVariableAtPut(kInterpreterInfoOffset, RawBool::fromBool(interpreted));
 }
 
 // RawInstance

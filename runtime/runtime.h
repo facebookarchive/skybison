@@ -129,8 +129,8 @@ class Runtime {
       Thread* thread, const Object& name, const Object& qualname,
       const Code& code, const Object& closure, const Object& annotations,
       const Object& kw_defaults, const Object& defaults, const Dict& globals,
-      Function::Entry entry, Function::Entry entry_kw,
-      Function::Entry entry_ex);
+      Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex,
+      bool is_interpreted);
 
   RawObject newExceptionState();
 
@@ -170,6 +170,10 @@ class Runtime {
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
 
+  // Returns the singleton empty tuple. Guaranteed to not allocate.
+  RawObject emptyTuple();
+
+  // Return a new, None-initialized tuple of the given length.
   RawObject newTuple(word length);
 
   RawObject newProperty(const Object& getter, const Object& setter,

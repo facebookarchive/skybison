@@ -12,7 +12,7 @@
 namespace python {
 
 // Pushes a frame for the callee and initializes it
-static Frame* pushCallee(Thread* thread, const Function& function) {
+Frame* pushCallee(Thread* thread, const Function& function) {
   // Set up the new frame
   Frame* callee_frame = thread->pushCallFrame(function);
   callee_frame->setFastGlobals(function.fastGlobals());
@@ -20,8 +20,8 @@ static Frame* pushCallee(Thread* thread, const Function& function) {
 }
 
 // Populate the free variable and cell variable arguments.
-static void processFreevarsAndCellvars(Thread* thread, const Function& function,
-                                       Frame* callee_frame, const Code& code) {
+void processFreevarsAndCellvars(Thread* thread, const Function& function,
+                                Frame* callee_frame, const Code& code) {
   CHECK(code.hasFreevarsOrCellvars(), "no free variables or cell variables");
 
   // initialize cell variables
@@ -261,9 +261,8 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
 // Converts the outgoing arguments of a keyword call into positional arguments
 // and processes default arguments, rearranging everything into a form expected
 // by the callee.
-static RawObject prepareKeywordCall(Thread* thread, const Function& function,
-                                    const Code& code, Frame* caller,
-                                    word argc) {
+RawObject prepareKeywordCall(Thread* thread, const Function& function,
+                             const Code& code, Frame* caller, word argc) {
   HandleScope scope(thread);
   // Destructively pop the tuple of kwarg names
   Tuple keywords(&scope, caller->topValue());
@@ -439,8 +438,8 @@ RawObject preparePositionalCall(Thread* thread, const Function& function,
 
 // Takes the outgoing arguments of an explode argument call and rearranges them
 // into the form expected by the callee.
-static RawObject prepareExplodeCall(Thread* thread, const Function& function,
-                                    const Code& code, Frame* caller, word arg) {
+RawObject prepareExplodeCall(Thread* thread, const Function& function,
+                             const Code& code, Frame* caller, word arg) {
   RawObject arg_obj = processExplodeArguments(thread, caller, arg);
   if (arg_obj.isError()) return arg_obj;
   word new_argc = SmallInt::cast(arg_obj).value();

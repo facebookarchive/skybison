@@ -284,6 +284,7 @@ void copyFunctionEntries(Thread* thread, const Function& base,
   patch.setEntry(base.entry());
   patch.setEntryKw(base.entryKw());
   patch.setEntryEx(base.entryEx());
+  patch.setIsInterpreted(false);
 }
 
 static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
