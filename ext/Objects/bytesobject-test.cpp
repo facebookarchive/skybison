@@ -43,6 +43,15 @@ TEST_F(BytesExtensionApiTest, AsStringReturnsSameBufferTwice) {
   EXPECT_EQ(buffer1, buffer2);
 }
 
+TEST_F(BytesExtensionApiTest, AsStringWithBytesSubclassReturnsString) {
+  PyRun_SimpleString(R"(
+class Foo(bytes): pass
+foo = Foo(b"foo")
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  EXPECT_STREQ(PyBytes_AsString(foo), "foo");
+}
+
 TEST_F(BytesExtensionApiTest,
        AsStringAndSizeWithNullBufferReturnsNegativeAndRaisesSystemError) {
   PyObjectPtr bytes(PyBytes_FromString(""));
@@ -68,6 +77,20 @@ TEST_F(BytesExtensionApiTest, AsStringAndSizeWithBytesReturnsStringAndSize) {
   Py_ssize_t length;
   ASSERT_EQ(PyBytes_AsStringAndSize(bytes, &buffer, &length), 0);
   EXPECT_STREQ(buffer, str);
+  EXPECT_EQ(length, 3);
+}
+
+TEST_F(BytesExtensionApiTest,
+       AsStringAndSizeWithBytesSubclassReturnsStringAndSize) {
+  PyRun_SimpleString(R"(
+class Foo(bytes): pass
+foo = Foo(b"foo")
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  char* buffer;
+  Py_ssize_t length;
+  ASSERT_EQ(PyBytes_AsStringAndSize(foo, &buffer, &length), 0);
+  EXPECT_STREQ(buffer, "foo");
   EXPECT_EQ(length, 3);
 }
 
@@ -151,6 +174,20 @@ TEST_F(BytesExtensionApiTest, ConcatWithBytesConcatenatesByteStrings) {
   PyBytes_Concat(&foo, bar);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(PyBytes_Size(foo), 6);
+}
+
+TEST_F(BytesExtensionApiTest, ConcatWithBytesSubclassesReturnsBytes) {
+  PyRun_SimpleString(R"(
+class Foo(bytes): pass
+foo = Foo(b"foo")
+bar = Foo(b"bar")
+)");
+  PyObject* foo = moduleGet("__main__", "foo");
+  PyObjectPtr bar(moduleGet("__main__", "bar"));
+  PyBytes_Concat(&foo, bar);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(PyBytes_AsString(foo), "foobar");
+  Py_DECREF(foo);
 }
 
 TEST_F(BytesExtensionApiTest, ConcatDoesNotDecrefSecondArg) {
@@ -481,6 +518,27 @@ TEST_F(BytesExtensionApiTest, JoinWithNonEmptySeparatorReturnsBytes) {
   EXPECT_STREQ(PyBytes_AsString(join), "ab cde f");
 }
 
+TEST_F(BytesExtensionApiTest, JoinWithBytesSubclassReturnsBytes) {
+  PyRun_SimpleString(R"(
+class Foo(bytes):
+  def join(self, iterable):
+    # we expect to call bytes.join(), not this method
+    return 0
+sep = Foo(b"-")
+first = Foo(b"ab")
+second = Foo(b"")
+third = Foo(b"123456789")
+  )");
+  PyObjectPtr sep(moduleGet("__main__", "sep"));
+  PyObjectPtr iter(PyList_New(3));
+  ASSERT_EQ(PyList_SetItem(iter, 0, moduleGet("__main__", "first")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 1, moduleGet("__main__", "second")), 0);
+  ASSERT_EQ(PyList_SetItem(iter, 2, moduleGet("__main__", "third")), 0);
+  PyObjectPtr join(_PyBytes_Join(sep, iter));
+  EXPECT_TRUE(PyBytes_CheckExact(join));
+  EXPECT_STREQ(PyBytes_AsString(join), "ab--123456789");
+}
+
 TEST_F(BytesExtensionApiTest, JoinWithMistypedIteratorRaisesTypeError) {
   PyObjectPtr sep(PyBytes_FromString(" "));
   PyObjectPtr iter(PyTuple_New(1));
@@ -507,6 +565,16 @@ TEST_F(BytesExtensionApiTest, ReprWithEmptyBytesReturnsEmptyRepr) {
 TEST_F(BytesExtensionApiTest, ReprWithSimpleBytesReturnsRepr) {
   PyObjectPtr bytes(PyBytes_FromString("Hello world!"));
   PyObjectPtr repr(PyBytes_Repr(bytes, true));
+  EXPECT_TRUE(isUnicodeEqualsCStr(repr, "b'Hello world!'"));
+}
+
+TEST_F(BytesExtensionApiTest, ReprWithBytesSubclassReturnsString) {
+  PyRun_SimpleString(R"(
+class Foo(bytes): pass
+self = Foo(b"Hello world!")
+)");
+  PyObjectPtr self(moduleGet("__main__", "self"));
+  PyObjectPtr repr(PyBytes_Repr(self, true));
   EXPECT_TRUE(isUnicodeEqualsCStr(repr, "b'Hello world!'"));
 }
 
@@ -598,6 +666,18 @@ TEST_F(BytesExtensionApiTest, SizeWithNonBytesReturnsNegative) {
   EXPECT_EQ(PyBytes_Size(dict), -1);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(BytesExtensionApiTest, SizeWithBytesSubclassesReturnsLength) {
+  PyRun_SimpleString(R"(
+class Foo(bytes): pass
+empty = Foo()
+foo = Foo(b"foo")
+)");
+  PyObjectPtr empty(moduleGet("__main__", "empty"));
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  EXPECT_EQ(PyBytes_Size(empty), 0);
+  EXPECT_EQ(PyBytes_Size(foo), 3);
 }
 
 }  // namespace python

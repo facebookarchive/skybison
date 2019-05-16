@@ -1,3 +1,4 @@
+#include "bytes-builtins.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "int-builtins.h"
@@ -404,7 +405,7 @@ PY_EXPORT int PyUnicodeDecodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
                          "object must be instance of bytes");
     return -1;
   }
-  Bytes object(&scope, *object_attr);
+  Bytes object(&scope, bytesUnderlying(thread, object_attr));
   Object end_attr(&scope, exc_err.end());
   DCHECK(runtime->isInstanceOfInt(*end_attr), "end must be instance of int");
   Int end_int(&scope, intUnderlying(thread, end_attr));
@@ -461,7 +462,7 @@ PY_EXPORT int PyUnicodeDecodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
                          "object must be instance of bytes");
     return -1;
   }
-  Bytes object(&scope, *object_attr);
+  Bytes object(&scope, bytesUnderlying(thread, object_attr));
   Object start_attr(&scope, exc_err.start());
   DCHECK(runtime->isInstanceOfInt(*start_attr),
          "start must be instance of int");

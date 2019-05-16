@@ -29,7 +29,7 @@ PY_EXPORT char* PyBytes_AsString(PyObject* pyobj) {
     return nullptr;
   }
   if (void* cache = handle->cache()) return static_cast<char*>(cache);
-  Bytes bytes(&scope, *obj);
+  Bytes bytes(&scope, bytesUnderlying(thread, obj));
   word len = bytes.length();
   auto cache = static_cast<byte*>(std::malloc(len + 1));
   bytes.copyTo(cache, len);
@@ -81,8 +81,8 @@ PY_EXPORT void PyBytes_Concat(PyObject** pyobj, PyObject* newpart) {
     return;
   }
 
-  Bytes self(&scope, *obj);
-  Bytes other(&scope, *newpart_obj);
+  Bytes self(&scope, bytesUnderlying(thread, obj));
+  Bytes other(&scope, bytesUnderlying(thread, newpart_obj));
   Bytes result(&scope, runtime->bytesConcat(thread, self, other));
   *pyobj = ApiHandle::newReference(thread, *result);
   obj_handle->decref();
@@ -312,7 +312,7 @@ PY_EXPORT PyObject* PyBytes_Repr(PyObject* pyobj, int smartquotes) {
     thread->raiseBadArgument();
     return nullptr;
   }
-  Bytes self(&scope, *obj);
+  Bytes self(&scope, bytesUnderlying(thread, obj));
   Object result(&scope, smartquotes ? bytesReprSmartQuotes(thread, self)
                                     : bytesReprSingleQuotes(thread, self));
   if (result.isError()) return nullptr;
@@ -331,9 +331,7 @@ PY_EXPORT Py_ssize_t PyBytes_Size(PyObject* obj) {
     return -1;
   }
 
-  // TODO(wmeehan): handle delegated subtype of bytes
-
-  Bytes bytes(&scope, *bytes_obj);
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   return bytes.length();
 }
 
@@ -345,9 +343,9 @@ PY_EXPORT PyObject* _PyBytes_Join(PyObject* sep, PyObject* iter) {
   Runtime* runtime = thread->runtime();
   DCHECK(runtime->isInstanceOfBytes(*obj),
          "non-bytes argument to _PyBytes_Join");
-  Bytes self(&scope, *obj);
   Object iterable(&scope, ApiHandle::fromPyObject(iter)->asObject());
-  Object result(&scope, thread->invokeMethod2(self, SymbolId::kJoin, iterable));
+  Object result(&scope, thread->invokeMethodStatic2(
+                            LayoutId::kBytes, SymbolId::kJoin, obj, iterable));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
 }
 
@@ -365,7 +363,7 @@ PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
     thread->raiseBadInternalCall();
     return -1;
   }
-  Bytes bytes(&scope, *obj);
+  Bytes bytes(&scope, bytesUnderlying(thread, obj));
   if (bytes.length() == newsize) return 0;
   // we don't check here that Py_REFCNT(*pyobj) == 1
   *pyobj = ApiHandle::newReference(
