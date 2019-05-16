@@ -450,7 +450,7 @@ TEST(RuntimeDictTest, DictAtPutGrowsDictWhenDictIsEmpty) {
   EXPECT_EQ(dict.capacity(), initial_capacity);
 }
 
-TEST(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsFull) {
+TEST(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsUsed) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope;
@@ -458,13 +458,14 @@ TEST(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsFull) {
 
   // Fill in one fewer keys than would require growing the underlying object
   // array again.
-  word threshold = ((Runtime::kInitialDictCapacity * 2) / 3);
+  word threshold = ((Runtime::kInitialDictCapacity * 2) / 3) - 1;
   for (word i = 0; i < threshold; i++) {
     Object key(&scope, SmallInt::fromWord(i));
     Object value(&scope, SmallInt::fromWord(-i));
     runtime.dictAtPut(thread, dict, key, value);
   }
   EXPECT_EQ(dict.numItems(), threshold);
+  EXPECT_EQ(dict.numUsableItems(), 1);
   word initial_capacity = Runtime::kInitialDictCapacity;
   EXPECT_EQ(dict.capacity(), initial_capacity);
 
@@ -474,9 +475,11 @@ TEST(RuntimeDictTest, DictAtPutGrowsDictWhenTwoThirdsFull) {
   runtime.dictAtPut(thread, dict, last_key, last_value);
   EXPECT_EQ(dict.numItems(), threshold + 1);
   EXPECT_EQ(dict.capacity(), initial_capacity * Runtime::kDictGrowthFactor);
+  EXPECT_EQ(dict.numUsableItems(),
+            ((dict.capacity() * 2) / 3) - dict.numItems());
 
   // Make sure we can still read all the stored keys/values.
-  for (word i = 0; i < threshold + 1; i++) {
+  for (word i = 0; i <= threshold; i++) {
     Object key(&scope, SmallInt::fromWord(i));
     RawObject value = runtime.dictAt(thread, dict, key);
     ASSERT_FALSE(value.isError());

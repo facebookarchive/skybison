@@ -1931,11 +1931,10 @@ class RawByteArray : public RawHeapObject {
  *
  * RawLayout:
  *
- *   [RawType pointer]
- *   [NumItems      ] - Number of items currently in the dict
- *   [Items         ] - Pointer to an RawTuple that stores the underlying
+ *   [NumItems       ] - Number of items currently in the dict
+ *   [Items          ] - Pointer to an RawTuple that stores the underlying
  * data.
- *   [NumEmptyItems ] - Number of items that are not occupied or tombstones.
+ *   [NumUsableItems ] - Usable items for insertion.
  *
  * RawDict entries are stored in buckets as a triple of (hash, key, value).
  * Empty buckets are stored as (RawNoneType, RawNoneType, RawNoneType).
@@ -1955,10 +1954,18 @@ class RawDict : public RawHeapObject {
   RawObject data() const;
   void setData(RawObject data) const;
 
-  // Number of empty items currently in the dict.
+  // Number of usable items for insertion.
+  word numUsableItems() const;
+  void setNumUsableItems(word num_usable_items) const;
+
+  // Returns true if numUsableItems is positive.
   // See Runtime::dictEnsureCapacity() for how it's used.
-  word numEmptyItems() const;
-  void setNumEmptyItems(word num_empty_items) const;
+  bool hasUsableItems() const;
+
+  // Reset the number of usable items according to the capacity and number of
+  // items in the dict.
+  void resetNumUsableItems() const;
+  void decrementNumUsableItems() const;
 
   // Number of hash buckets.
   word capacity() const;
@@ -1966,8 +1973,8 @@ class RawDict : public RawHeapObject {
   // Layout.
   static const int kNumItemsOffset = RawHeapObject::kSize;
   static const int kDataOffset = kNumItemsOffset + kPointerSize;
-  static const int kNumEmptyItemsOffset = kDataOffset + kPointerSize;
-  static const int kSize = kNumEmptyItemsOffset + kPointerSize;
+  static const int kNumUsableItemsOffset = kDataOffset + kPointerSize;
+  static const int kSize = kNumUsableItemsOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Dict);
 };
@@ -4335,21 +4342,32 @@ inline void RawDict::setNumItems(word num_items) const {
   instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
 }
 
-inline word RawDict::numEmptyItems() const {
-  return RawSmallInt::cast(instanceVariableAt(kNumEmptyItemsOffset)).value();
-}
-
-inline void RawDict::setNumEmptyItems(word num_empty_items) const {
-  instanceVariableAtPut(kNumEmptyItemsOffset,
-                        RawSmallInt::fromWord(num_empty_items));
-}
-
 inline RawObject RawDict::data() const {
   return instanceVariableAt(kDataOffset);
 }
 
 inline void RawDict::setData(RawObject data) const {
   instanceVariableAtPut(kDataOffset, data);
+}
+
+inline bool RawDict::hasUsableItems() const { return numUsableItems() > 0; }
+
+inline word RawDict::numUsableItems() const {
+  return RawSmallInt::cast(instanceVariableAt(kNumUsableItemsOffset)).value();
+}
+
+inline void RawDict::setNumUsableItems(word num_usable_items) const {
+  DCHECK(num_usable_items >= 0, "numUsableItems must be >= 0");
+  instanceVariableAtPut(kNumUsableItemsOffset,
+                        RawSmallInt::fromWord(num_usable_items));
+}
+
+inline void RawDict::resetNumUsableItems() const {
+  setNumUsableItems((capacity() * 2) / 3 - numItems());
+}
+
+inline void RawDict::decrementNumUsableItems() const {
+  setNumUsableItems(numUsableItems() - 1);
 }
 
 inline word RawDict::capacity() const {

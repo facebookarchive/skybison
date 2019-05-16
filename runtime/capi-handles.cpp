@@ -50,7 +50,7 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
   if (dict.capacity() == 0) {
     dict.setData(runtime->newTuple(Runtime::kInitialDictCapacity *
                                    Dict::Bucket::kNumPointers));
-    dict.setNumEmptyItems(Runtime::kInitialDictCapacity);
+    dict.resetNumUsableItems();
   }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
@@ -64,7 +64,8 @@ void ApiHandle::dictAtPutIdentityEquals(Thread* thread, const Dict& dict,
   }
   dict.setNumItems(dict.numItems() + 1);
   if (empty_slot) {
-    dict.setNumEmptyItems(dict.numEmptyItems() - 1);
+    DCHECK(dict.numUsableItems() > 0, "dict.numIsableItems() must be positive");
+    dict.decrementNumUsableItems();
     dictEnsureCapacity(thread, dict);
   }
 }
@@ -73,14 +74,11 @@ void ApiHandle::dictEnsureCapacity(Thread* thread, const Dict& dict) {
   // TODO(T44245141): Move initialization of an empty dict here.
   DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
          "dict capacity must be power of two, greater than zero");
-  word num_non_empty = dict.capacity() - dict.numEmptyItems();
-  // Grow only If 2/3 of dict are occpupied.
-  // TODO(T44247845): Use usable instead to simplify the check.
-  if (num_non_empty * 3 < dict.capacity() * 2) {
+  if (dict.numUsableItems() > 0) {
     return;
   }
   // TODO(T44247845): Handle overflow here.
-  word new_capacity = dict.capacity() * 2;
+  word new_capacity = dict.capacity() * Runtime::kDictGrowthFactor;
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Tuple data(&scope, dict.data());
@@ -97,7 +95,7 @@ void ApiHandle::dictEnsureCapacity(Thread* thread, const Dict& dict) {
                       Dict::Bucket::value(*data, i));
   }
   dict.setData(*new_data);
-  dict.setNumEmptyItems(dict.capacity() - dict.numItems());
+  dict.resetNumUsableItems();
 }
 
 RawObject ApiHandle::dictRemoveIdentityEquals(Thread* thread, const Dict& dict,

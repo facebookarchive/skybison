@@ -2535,8 +2535,8 @@ RawObject Runtime::newDict() {
   HandleScope scope;
   Dict result(&scope, heap()->create<RawDict>());
   result.setNumItems(0);
-  result.setNumEmptyItems(0);
   result.setData(empty_tuple_);
+  result.setNumUsableItems(0);
   return *result;
 }
 
@@ -2548,8 +2548,9 @@ RawObject Runtime::newDictWithSize(word initial_size) {
       Utils::nextPowerOfTwo(initial_size) * Runtime::kDictGrowthFactor);
   Tuple array(&scope, newTuple(initial_capacity * Dict::Bucket::kNumPointers));
   Dict result(&scope, newDict());
+  result.setNumItems(0);
   result.setData(*array);
-  result.setNumEmptyItems(initial_capacity);
+  result.resetNumUsableItems();
   return *result;
 }
 
@@ -2571,7 +2572,7 @@ void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
   if (dict.capacity() == 0) {
     dict.setData(
         newTuple(Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
-    dict.setNumEmptyItems(Runtime::kInitialDictCapacity);
+    dict.resetNumUsableItems();
   }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
@@ -2585,7 +2586,7 @@ void Runtime::dictAtPutWithHash(Thread* thread, const Dict& dict,
   }
   dict.setNumItems(dict.numItems() + 1);
   if (empty_slot) {
-    dict.setNumEmptyItems(dict.numEmptyItems() - 1);
+    dict.decrementNumUsableItems();
     dictEnsureCapacity(thread, dict);
   }
   DCHECK(dictHasEmptyItem(data), "dict must have at least an empty item");
@@ -2602,14 +2603,11 @@ void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
   // TODO(T44245141): Move initialization of an empty dict here.
   DCHECK(dict.capacity() > 0 && Utils::isPowerOfTwo(dict.capacity()),
          "dict capacity must be power of two, greater than zero");
-  word num_non_empty = dict.capacity() - dict.numEmptyItems();
-  // Grow only If 2/3 of dict are occpupied.
-  // TODO(T44247845): Use usable instead to simplify the check.
-  if (num_non_empty * 3 < dict.capacity() * 2) {
+  if (dict.hasUsableItems()) {
     return;
   }
   // TODO(T44247845): Handle overflow here.
-  word new_capacity = dict.capacity() * 2;
+  word new_capacity = dict.capacity() * kDictGrowthFactor;
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
   Tuple new_data(&scope, newTuple(new_capacity * Dict::Bucket::kNumPointers));
@@ -2624,7 +2622,7 @@ void Runtime::dictEnsureCapacity(Thread* thread, const Dict& dict) {
                       Dict::Bucket::value(*data, i));
   }
   dict.setData(*new_data);
-  dict.setNumEmptyItems(dict.capacity() - dict.numItems());
+  dict.resetNumUsableItems();
 }
 
 RawObject Runtime::dictAtWithHash(Thread* thread, const Dict& dict,
@@ -2653,7 +2651,7 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   if (dict.capacity() == 0) {
     dict.setData(
         newTuple(Runtime::kInitialDictCapacity * Dict::Bucket::kNumPointers));
-    dict.setNumEmptyItems(Runtime::kInitialDictCapacity);
+    dict.resetNumUsableItems();
   }
   HandleScope scope(thread);
   Tuple data(&scope, dict.data());
@@ -2669,7 +2667,8 @@ RawObject Runtime::dictAtIfAbsentPut(Thread* thread, const Dict& dict,
   Dict::Bucket::set(*data, index, *key_hash, *key, *value);
   dict.setNumItems(dict.numItems() + 1);
   if (empty_slot) {
-    dict.setNumEmptyItems(dict.numEmptyItems() - 1);
+    DCHECK(dict.numUsableItems() > 0, "dict.numIsableItems() must be positive");
+    dict.decrementNumUsableItems();
     dictEnsureCapacity(thread, dict);
   }
   DCHECK(dictHasEmptyItem(data), "dict must have at least an empty item");
