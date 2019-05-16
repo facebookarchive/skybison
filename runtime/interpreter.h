@@ -282,7 +282,6 @@ class Interpreter {
   static bool doInplaceXor(Context* ctx, word arg);
   static bool doLoadAttr(Context* ctx, word arg);
   static bool doLoadAttrCached(Context* ctx, word arg);
-  static bool doLoadAttrUpdateCache(Context* ctx, word arg);
   static bool doLoadDeref(Context* ctx, word arg);
   static bool doLoadFast(Context* ctx, word arg);
   static bool doLoadName(Context* ctx, word arg);
@@ -292,7 +291,6 @@ class Interpreter {
   static bool doSetupWith(Context* ctx, word arg);
   static bool doStoreAttr(Context* ctx, word arg);
   static bool doStoreAttrCached(Context* ctx, word arg);
-  static bool doStoreAttrUpdateCache(Context* ctx, word arg);
   static bool doStoreSubscr(Context* ctx, word arg);
   static bool doUnaryInvert(Context* ctx, word arg);
   static bool doUnaryNegative(Context* ctx, word arg);
@@ -360,6 +358,9 @@ class Interpreter {
 
   static RawObject executeWithBytecode(Interpreter::Context* ctx,
                                        const Bytes& byte_array);
+
+  static bool loadAttrUpdateCache(Context* ctx, word arg);
+  static bool storeAttrUpdateCache(Context* ctx, word arg);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };

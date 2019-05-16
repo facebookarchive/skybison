@@ -1849,7 +1849,7 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
                                value);
 }
 
-bool Interpreter::doStoreAttrUpdateCache(Context* ctx, word arg) {
+bool Interpreter::storeAttrUpdateCache(Context* ctx, word arg) {
   word original_arg = icOriginalArg(*ctx->function, arg);
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1876,7 +1876,7 @@ bool Interpreter::doStoreAttrCached(Context* ctx, word arg) {
   LayoutId layout_id = receiver_raw.layoutId();
   RawObject cached = icLookup(*ctx->caches, arg, layout_id);
   if (cached.isError()) {
-    return doStoreAttrUpdateCache(ctx, arg);
+    return storeAttrUpdateCache(ctx, arg);
   }
 
   RawObject value_raw = frame->peek(1);
@@ -2095,7 +2095,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
   return thread->runtime()->attributeAt(thread, object, name_str);
 }
 
-bool Interpreter::doLoadAttrUpdateCache(Context* ctx, word arg) {
+bool Interpreter::loadAttrUpdateCache(Context* ctx, word arg) {
   word original_arg = icOriginalArg(*ctx->function, arg);
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2145,7 +2145,7 @@ bool Interpreter::doLoadAttrCached(Context* ctx, word arg) {
   LayoutId layout_id = receiver_raw.layoutId();
   RawObject cached = icLookup(*ctx->caches, arg, layout_id);
   if (cached.isErrorNotFound()) {
-    return doLoadAttrUpdateCache(ctx, arg);
+    return loadAttrUpdateCache(ctx, arg);
   }
 
   RawObject result = loadAttrWithLocation(ctx->thread, receiver_raw, cached);
