@@ -64,6 +64,7 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
      << "  closure: " << function.closure() << '\n'
      << "  defaults: " << function.defaults() << '\n'
      << "  kwdefaults: " << function.kwDefaults() << '\n'
+     << "  dict: " << function.dict() << '\n'
      << "  code: ";
   if (function.code().isCode()) {
     dumpExtendedCode(os, Code::cast(function.code()), "  ");
@@ -78,6 +79,40 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
   return os;
 }
 
+std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  HeapObject heap_object(&scope, value);
+  Layout layout(&scope, runtime->layoutAt(heap_object.layoutId()));
+  Type type(&scope, layout.describedType());
+  os << "heap object " << type << ":\n";
+  Tuple in_object(&scope, layout.inObjectAttributes());
+  Tuple entry(&scope, runtime->newTuple(0));
+  for (word i = 0, length = in_object.length(); i < length; i++) {
+    entry = in_object.at(i);
+    AttributeInfo info(entry.at(1));
+    os << "  (in-object) " << entry.at(0) << " = "
+       << heap_object.instanceVariableAt(info.offset()) << '\n';
+  }
+  Object overflow_attributes_obj(&scope, layout.overflowAttributes());
+  if (overflow_attributes_obj.isTuple()) {
+    Tuple overflow_attributes(&scope, *overflow_attributes_obj);
+    Tuple overflow(&scope,
+                   heap_object.instanceVariableAt(layout.overflowOffset()));
+    for (word i = 0, length = overflow_attributes.length(); i < length; i++) {
+      entry = overflow_attributes.at(i);
+      AttributeInfo info(entry.at(1));
+      os << "  (overflow)  " << entry.at(0) << " = "
+         << overflow.at(info.offset()) << '\n';
+    }
+  } else if (overflow_attributes_obj.isSmallInt()) {
+    word offset = RawSmallInt::cast(*overflow_attributes_obj).value();
+    os << "  overflow dict: " << heap_object.instanceVariableAt(offset) << '\n';
+  }
+  return os;
+}
+
 std::ostream& dumpExtended(std::ostream& os, RawObject value) {
   LayoutId layout = value.layoutId();
   switch (layout) {
@@ -86,6 +121,9 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
     case LayoutId::kFunction:
       return dumpExtendedFunction(os, Function::cast(value));
     default:
+      if (value.isInstance()) {
+        return dumpExtendedHeapObject(os, RawHeapObject::cast(value));
+      }
       return os << value;
   }
 }

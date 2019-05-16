@@ -34,6 +34,37 @@ static RawObject makeTestCode(Thread* thread) {
                           freevars, cellvars, filename, name, 0, lnotab);
 }
 
+static RawObject makeTestFunction(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object qualname(&scope, runtime->newStrFromCStr("footype.baz"));
+  Code code(&scope, makeTestCode(thread));
+  Object closure(&scope, runtime->newTuple(0));
+  Dict annotations(&scope, runtime->newDict());
+  Object return_name(&scope, runtime->newStrFromCStr("return"));
+  Object int_type(&scope, runtime->typeAt(LayoutId::kInt));
+  runtime->dictAtPut(thread, annotations, return_name, int_type);
+  Dict kw_defaults(&scope, runtime->newDict());
+  Object name0(&scope, runtime->newStrFromCStr("name0"));
+  Object none(&scope, NoneType::object());
+  runtime->dictAtPut(thread, kw_defaults, name0, none);
+  Tuple defaults(&scope, runtime->newTuple(1));
+  defaults.atPut(0, runtime->newInt(-9));
+  Dict globals(&scope, runtime->newDict());
+  Dict builtins(&scope, runtime->newDict());
+  Function func(&scope, Interpreter::makeFunction(
+                            thread, qualname, code, closure, annotations,
+                            kw_defaults, defaults, globals, builtins));
+  func.setModule(runtime->newStrFromCStr("barmodule"));
+  func.setName(runtime->newStrFromCStr("baz"));
+  Dict attrs(&scope, runtime->newDict());
+  Object attr_name(&scope, runtime->newStrFromCStr("funcattr0"));
+  Object attr_value(&scope, runtime->newInt(4));
+  runtime->dictAtPut(thread, attrs, attr_name, attr_value);
+  func.setDict(*attrs);
+  return *func;
+}
+
 TEST(DebuggingTests, DumpExtendedCode) {
   Runtime runtime;
   Thread* thread = Thread::current();
@@ -65,26 +96,7 @@ TEST(DebuggingTests, DumpExtendedFunction) {
   runtime.enableCache();
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object qualname(&scope, runtime.newStrFromCStr("footype.baz"));
-  Code code(&scope, makeTestCode(thread));
-  Object closure(&scope, runtime.newTuple(0));
-  Dict annotations(&scope, runtime.newDict());
-  Object return_name(&scope, runtime.newStrFromCStr("return"));
-  Object int_type(&scope, runtime.typeAt(LayoutId::kInt));
-  runtime.dictAtPut(thread, annotations, return_name, int_type);
-  Dict kw_defaults(&scope, runtime.newDict());
-  Object name0(&scope, runtime.newStrFromCStr("name0"));
-  Object none(&scope, NoneType::object());
-  runtime.dictAtPut(thread, kw_defaults, name0, none);
-  Tuple defaults(&scope, runtime.newTuple(1));
-  defaults.atPut(0, runtime.newInt(-9));
-  Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
-  Function func(&scope, Interpreter::makeFunction(
-                            thread, qualname, code, closure, annotations,
-                            kw_defaults, defaults, globals, builtins));
-  func.setModule(runtime.newStrFromCStr("barmodule"));
-  func.setName(runtime.newStrFromCStr("baz"));
+  Object func(&scope, makeTestFunction(thread));
   std::stringstream ss;
   dumpExtended(ss, *func);
   EXPECT_EQ(ss.str(), R"(function "baz":
@@ -94,6 +106,7 @@ TEST(DebuggingTests, DumpExtendedFunction) {
   closure: ()
   defaults: (-9,)
   kwdefaults: {"name0": None}
+  dict: {"funcattr0": 4}
   code: code "name0":
     argcount: 1
     kwonlyargcount: 0
@@ -112,6 +125,49 @@ TEST(DebuggingTests, DumpExtendedFunction) {
      0 LOAD_CONST 0
      2 LOAD_ATTR_CACHED 0
      4 RETURN_VALUE 0
+)");
+}
+
+TEST(DebuggingTests, DumpExtendedHeapObject) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 5
+    self.bar = "hello"
+i = C()
+i.baz = ()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  ASSERT_TRUE(i.isHeapObject());
+  std::stringstream ss;
+  dumpExtended(ss, *i);
+  EXPECT_EQ(ss.str(), R"(heap object <type "C">:
+  (in-object) "foo" = 5
+  (in-object) "bar" = "hello"
+  (overflow)  "baz" = ()
+)");
+}
+
+TEST(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object func(&scope, makeTestFunction(thread));
+  std::stringstream ss;
+  dumpExtendedHeapObject(ss, RawHeapObject::cast(*func));
+  EXPECT_EQ(ss.str(), R"(heap object <type "function">:
+  (in-object) "__code__" = <code "name0">
+  (in-object) "__doc__" = "const0"
+  (in-object) "__globals__" = {}
+  (in-object) "__module__" = "barmodule"
+  (in-object) "__name__" = "baz"
+  (in-object) "__qualname__" = "footype.baz"
+  (in-object) "__dict__" = {"funcattr0": 4}
+  overflow dict: {"funcattr0": 4}
 )");
 }
 
