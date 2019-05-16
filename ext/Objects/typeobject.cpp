@@ -1237,6 +1237,70 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
   }
 }
 
+static RawObject getterWrapper(Thread* thread, Frame* frame, word argc) {
+  if (argc != 1) return raiseWrongArgs(thread, argc, 1);
+  auto func = getNativeFunc<getter>(thread, frame);
+  Arguments args(frame, argc);
+  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  return ApiHandle::stealReference(thread, func(self, nullptr));
+}
+
+static RawObject setterWrapper(Thread* thread, Frame* frame, word argc) {
+  if (argc != 2) return raiseWrongArgs(thread, argc, 2);
+  auto func = getNativeFunc<setter>(thread, frame);
+  Arguments args(frame, argc);
+  PyObject* self = ApiHandle::borrowedReference(thread, args.get(0));
+  PyObject* value = ApiHandle::borrowedReference(thread, args.get(1));
+  if (func(self, value, nullptr) < 0) return Error::exception();
+  return NoneType::object();
+}
+
+static RawObject getSetGetter(Thread* thread, const Object& name,
+                              PyGetSetDef& def) {
+  if (def.get == nullptr) return NoneType::object();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function function(&scope, runtime->newFunction());
+  function.setName(*name);
+  function.setEntry(slotTrampoline);
+  function.setEntryKw(slotTrampolineKw);
+  function.setEntryEx(slotTrampolineEx);
+  if (def.doc != nullptr) {
+    Object doc(&scope, runtime->newStrFromCStr(def.doc));
+    function.setDoc(*doc);
+  }
+  Code code(&scope, runtime->newEmptyCode(name));
+  code.setCode(runtime->newIntFromCPtr(bit_cast<void*>(&getterWrapper)));
+  Tuple consts(&scope, runtime->newTuple(1));
+  consts.atPut(0, runtime->newIntFromCPtr(bit_cast<void*>(def.get)));
+  code.setConsts(*consts);
+  function.setCode(*code);
+  return *function;
+}
+
+static RawObject getSetSetter(Thread* thread, const Object& name,
+                              PyGetSetDef& def) {
+  if (def.set == nullptr) return NoneType::object();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function function(&scope, runtime->newFunction());
+  function.setName(*name);
+  function.setEntry(slotTrampoline);
+  function.setEntryKw(slotTrampolineKw);
+  function.setEntryEx(slotTrampolineEx);
+  if (def.doc != nullptr) {
+    Object doc(&scope, runtime->newStrFromCStr(def.doc));
+    function.setDoc(*doc);
+  }
+  Code code(&scope, runtime->newEmptyCode(name));
+  code.setCode(runtime->newIntFromCPtr(bit_cast<void*>(&setterWrapper)));
+  Tuple consts(&scope, runtime->newTuple(1));
+  consts.atPut(0, runtime->newIntFromCPtr(bit_cast<void*>(def.set)));
+  code.setConsts(*consts);
+  function.setCode(*code);
+  return *function;
+}
+
 RawObject addMembers(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   Object slot_value(&scope, extensionSlot(type, Type::ExtensionSlot::kMembers));
@@ -1251,6 +1315,27 @@ RawObject addMembers(Thread* thread, const Type& type) {
     Object getter(&scope, memberGetter(thread, members[i]));
     if (getter.isError()) return *getter;
     Object setter(&scope, memberSetter(thread, members[i]));
+    if (setter.isError()) return *setter;
+    Object property(&scope, runtime->newProperty(getter, setter, none));
+    runtime->typeDictAtPut(thread, dict, name, property);
+  }
+  return NoneType::object();
+}
+
+RawObject addGetSet(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Object slot_value(&scope, extensionSlot(type, Type::ExtensionSlot::kGetset));
+  if (slot_value.isNoneType()) return NoneType::object();
+  DCHECK(slot_value.isInt(), "unexpected slot type");
+  auto getsets = bit_cast<PyGetSetDef*>(Int::cast(*slot_value).asCPtr());
+  Dict dict(&scope, type.dict());
+  Object none(&scope, NoneType::object());
+  Runtime* runtime = thread->runtime();
+  for (word i = 0; getsets[i].name != nullptr; i++) {
+    Object name(&scope, runtime->newStrFromCStr(getsets[i].name));
+    Object getter(&scope, getSetGetter(thread, name, getsets[i]));
+    if (getter.isError()) return *getter;
+    Object setter(&scope, getSetSetter(thread, name, getsets[i]));
     if (setter.isError()) return *setter;
     Object property(&scope, runtime->newProperty(getter, setter, none));
     runtime->typeDictAtPut(thread, dict, name, property);
@@ -1378,6 +1463,8 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   }
 
   if (addMembers(thread, type).isError()) return nullptr;
+
+  if (addGetSet(thread, type).isError()) return nullptr;
 
   return ApiHandle::newReference(thread, *type);
 }

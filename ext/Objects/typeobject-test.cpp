@@ -2291,4 +2291,133 @@ TEST_F(TypeExtensionApiTest, MemberUnknownRaisesSystemErrorPyro) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+static void createBarTypeWithGetSetObject() {
+  struct BarObject {
+    PyObject_HEAD long attribute;
+    long readonly_attribute;
+  };
+
+  getter attribute_getter = [](PyObject* self, void*) {
+    return PyLong_FromLong(reinterpret_cast<BarObject*>(self)->attribute);
+  };
+
+  setter attribute_setter = [](PyObject* self, PyObject* value, void*) {
+    reinterpret_cast<BarObject*>(self)->attribute = PyLong_AsLong(value);
+    return 0;
+  };
+
+  getter readonly_attribute_getter = [](PyObject* self, void*) {
+    return PyLong_FromLong(
+        reinterpret_cast<BarObject*>(self)->readonly_attribute);
+  };
+
+  setter raise_attribute_setter = [](PyObject*, PyObject*, void*) {
+    PyErr_BadArgument();
+    return -1;
+  };
+
+  static PyGetSetDef getsets[4];
+  getsets[0] = {const_cast<char*>("attribute"), attribute_getter,
+                attribute_setter};
+  getsets[1] = {const_cast<char*>("readonly_attribute"),
+                readonly_attribute_getter, nullptr};
+  getsets[2] = {const_cast<char*>("raise_attribute"), attribute_getter,
+                raise_attribute_setter};
+  getsets[3] = {nullptr};
+
+  newfunc new_func = [](PyTypeObject* type, PyObject*, PyObject*) {
+    void* slot = PyType_GetSlot(type, Py_tp_alloc);
+    return reinterpret_cast<allocfunc>(slot)(type, 0);
+  };
+  initproc init_func = [](PyObject* self, PyObject*, PyObject*) {
+    reinterpret_cast<BarObject*>(self)->attribute = 123;
+    reinterpret_cast<BarObject*>(self)->readonly_attribute = 456;
+    return 0;
+  };
+  destructor dealloc_func = [](PyObject* self) {
+    PyObjectPtr type(PyObject_Type(self));
+    void* slot =
+        PyType_GetSlot(reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free);
+    return reinterpret_cast<freefunc>(slot)(self);
+  };
+  static PyType_Slot slots[7];
+  // TODO(T40540469): Most of functions should be inherited from object.
+  // However, inheritance is not supported yet. For now, just set them manually.
+  slots[0] = {Py_tp_new, reinterpret_cast<void*>(new_func)};
+  slots[1] = {Py_tp_init, reinterpret_cast<void*>(init_func)};
+  slots[2] = {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
+  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
+  slots[4] = {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)};
+  slots[5] = {Py_tp_getset, reinterpret_cast<void*>(getsets)};
+  slots[6] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
+  };
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+  ASSERT_EQ(moduleSet("__main__", "Bar", type), 0);
+}
+
+TEST_F(TypeExtensionApiTest, GetSetAttributePyro) {
+  ASSERT_NO_FATAL_FAILURE(createBarTypeWithGetSetObject());
+  ASSERT_EQ(PyRun_SimpleString(R"(
+b = Bar()
+r1 = b.attribute
+b.attribute = 321
+r2 = b.attribute
+)"),
+            0);
+  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  ASSERT_EQ(PyLong_Check(r1), 1);
+  EXPECT_EQ(PyLong_AsLong(r1), 123);
+  PyObjectPtr r2(moduleGet("__main__", "r2"));
+  ASSERT_EQ(PyLong_Check(r2), 1);
+  EXPECT_EQ(PyLong_AsLong(r2), 321);
+  destroyBar();
+}
+
+TEST_F(TypeExtensionApiTest, GetSetReadonlyAttributePyro) {
+  ASSERT_NO_FATAL_FAILURE(createBarTypeWithGetSetObject());
+  ASSERT_EQ(PyRun_SimpleString(R"(
+b = Bar()
+raised = False
+try:
+  b.readonly_attribute = 321
+  raise RuntimeError("call didn't throw")
+except AttributeError:
+  raised = True
+r1 = b.readonly_attribute
+)"),
+            0);
+  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  EXPECT_EQ(raised, Py_True);
+  ASSERT_EQ(PyLong_Check(r1), 1);
+  EXPECT_EQ(PyLong_AsLong(r1), 456);
+  destroyBar();
+}
+
+TEST_F(TypeExtensionApiTest, GetSetRaiseAttributePyro) {
+  ASSERT_NO_FATAL_FAILURE(createBarTypeWithGetSetObject());
+  ASSERT_EQ(PyRun_SimpleString(R"(
+b = Bar()
+raised = False
+try:
+  b.raise_attribute = 321
+  raise SystemError("call didn't throw")
+except TypeError:
+  raised = True
+r1 = b.raise_attribute
+)"),
+            0);
+  PyObjectPtr r1(moduleGet("__main__", "r1"));
+  PyObjectPtr raised(moduleGet("__main__", "raised"));
+  EXPECT_EQ(raised, Py_True);
+  ASSERT_EQ(PyLong_Check(r1), 1);
+  EXPECT_EQ(PyLong_AsLong(r1), 123);
+  destroyBar();
+}
+
 }  // namespace python
