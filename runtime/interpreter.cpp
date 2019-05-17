@@ -1004,10 +1004,8 @@ void Interpreter::doNotImplemented(Context* ctx, word) {
   UNIMPLEMENTED("bytecode '%s'", kBytecodeNames[bc]);
 }
 
-// opcode 1
 void Interpreter::doPopTop(Context* ctx, word) { ctx->frame->popValue(); }
 
-// opcode 2
 void Interpreter::doRotTwo(Context* ctx, word) {
   RawObject* sp = ctx->frame->valueStackTop();
   RawObject top = *sp;
@@ -1015,7 +1013,6 @@ void Interpreter::doRotTwo(Context* ctx, word) {
   *(sp + 1) = top;
 }
 
-// opcode 3
 void Interpreter::doRotThree(Context* ctx, word) {
   RawObject* sp = ctx->frame->valueStackTop();
   RawObject top = *sp;
@@ -1024,12 +1021,10 @@ void Interpreter::doRotThree(Context* ctx, word) {
   *(sp + 2) = top;
 }
 
-// opcode 4
 void Interpreter::doDupTop(Context* ctx, word) {
   ctx->frame->pushValue(ctx->frame->topValue());
 }
 
-// opcode 5
 void Interpreter::doDupTopTwo(Context* ctx, word) {
   RawObject first = ctx->frame->topValue();
   RawObject second = ctx->frame->peek(1);
@@ -1037,20 +1032,16 @@ void Interpreter::doDupTopTwo(Context* ctx, word) {
   ctx->frame->pushValue(first);
 }
 
-// opcode 9
 void Interpreter::doNop(Context*, word) {}
 
-// opcode 10
 bool Interpreter::doUnaryPositive(Context* ctx, word) {
   return doUnaryOperation(SymbolId::kDunderPos, ctx);
 }
 
-// opcode 11
 bool Interpreter::doUnaryNegative(Context* ctx, word) {
   return doUnaryOperation(SymbolId::kDunderNeg, ctx);
 }
 
-// opcode 12
 bool Interpreter::doUnaryNot(Context* ctx, word) {
   RawObject value = ctx->frame->topValue();
   if (!value.isBool()) {
@@ -1061,42 +1052,34 @@ bool Interpreter::doUnaryNot(Context* ctx, word) {
   return false;
 }
 
-// opcode 15
 bool Interpreter::doUnaryInvert(Context* ctx, word) {
   return doUnaryOperation(SymbolId::kDunderInvert, ctx);
 }
 
-// opcode 16
 bool Interpreter::doBinaryMatrixMultiply(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::MATMUL, ctx);
 }
 
-// opcode 17
 bool Interpreter::doInplaceMatrixMultiply(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::MATMUL, ctx);
 }
 
-// opcode 19
 bool Interpreter::doBinaryPower(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::POW, ctx);
 }
 
-// opcode 20
 bool Interpreter::doBinaryMultiply(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::MUL, ctx);
 }
 
-// opcode 22
 bool Interpreter::doBinaryModulo(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::MOD, ctx);
 }
 
-// opcode 23
 bool Interpreter::doBinaryAdd(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::ADD, ctx);
 }
 
-// opcode 24
 bool Interpreter::doBinarySubtract(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::SUB, ctx);
 }
@@ -1124,7 +1107,6 @@ bool Interpreter::binarySubscrUpdateCache(Context* ctx, word index) {
   return doCallFunction(ctx, 1);
 }
 
-// opcode 25
 bool Interpreter::doBinarySubscr(Context* ctx, word) {
   return binarySubscrUpdateCache(ctx, -1);
 }
@@ -1143,27 +1125,22 @@ bool Interpreter::doBinarySubscrCached(Context* ctx, word arg) {
   return doCallFunction(ctx, 2);
 }
 
-// opcode 26
 bool Interpreter::doBinaryFloorDivide(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::FLOORDIV, ctx);
 }
 
-// opcode 27
 bool Interpreter::doBinaryTrueDivide(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::TRUEDIV, ctx);
 }
 
-// opcode 28
 bool Interpreter::doInplaceFloorDivide(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::FLOORDIV, ctx);
 }
 
-// opcode 29
 bool Interpreter::doInplaceTrueDivide(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::TRUEDIV, ctx);
 }
 
-// opcode 50
 bool Interpreter::doGetAiter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1182,7 +1159,6 @@ bool Interpreter::doGetAiter(Context* ctx, word) {
   return false;
 }
 
-// opcode 51
 bool Interpreter::doGetAnext(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1215,7 +1191,6 @@ bool Interpreter::doGetAnext(Context* ctx, word) {
   return false;
 }
 
-// opcode 52
 bool Interpreter::doBeforeAsyncWith(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1243,27 +1218,22 @@ bool Interpreter::doBeforeAsyncWith(Context* ctx, word) {
   return false;
 }
 
-// opcode 55
 bool Interpreter::doInplaceAdd(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::ADD, ctx);
 }
 
-// opcode 56
 bool Interpreter::doInplaceSubtract(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::SUB, ctx);
 }
 
-// opcode 57
 bool Interpreter::doInplaceMultiply(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::MUL, ctx);
 }
 
-// opcode 59
 bool Interpreter::doInplaceModulo(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::MOD, ctx);
 }
 
-// opcode 60
 bool Interpreter::doStoreSubscr(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1282,7 +1252,6 @@ bool Interpreter::doStoreSubscr(Context* ctx, word) {
   return false;
 }
 
-// opcode 61
 bool Interpreter::doDeleteSubscr(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1300,37 +1269,30 @@ bool Interpreter::doDeleteSubscr(Context* ctx, word) {
   return false;
 }
 
-// opcode 62
 bool Interpreter::doBinaryLshift(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::LSHIFT, ctx);
 }
 
-// opcode 63
 bool Interpreter::doBinaryRshift(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::RSHIFT, ctx);
 }
 
-// opcode 64
 bool Interpreter::doBinaryAnd(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::AND, ctx);
 }
 
-// opcode 65
 bool Interpreter::doBinaryXor(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::XOR, ctx);
 }
 
-// opcode 66
 bool Interpreter::doBinaryOr(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::OR, ctx);
 }
 
-// opcode 67
 bool Interpreter::doInplacePower(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::POW, ctx);
 }
 
-// opcode 68
 bool Interpreter::doGetIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1347,7 +1309,6 @@ bool Interpreter::doGetIter(Context* ctx, word) {
   return false;
 }
 
-// opcode 69
 bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1380,7 +1341,6 @@ bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
   return false;
 }
 
-// opcode 70
 void Interpreter::doPrintExpr(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1395,14 +1355,12 @@ void Interpreter::doPrintExpr(Context* ctx, word) {
   call(thread, frame, 1);
 }
 
-// opcode 71
 void Interpreter::doLoadBuildClass(Context* ctx, word) {
   Thread* thread = ctx->thread;
   RawValueCell value_cell = ValueCell::cast(thread->runtime()->buildClass());
   ctx->frame->pushValue(value_cell.value());
 }
 
-// opcode 72
 bool Interpreter::doYieldFrom(Context* ctx, word) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1446,7 +1404,6 @@ bool Interpreter::doYieldFrom(Context* ctx, word) {
   return true;
 }
 
-// opcode 73
 bool Interpreter::doGetAwaitable(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1468,39 +1425,32 @@ bool Interpreter::doGetAwaitable(Context* ctx, word) {
   return false;
 }
 
-// opcode 75
 bool Interpreter::doInplaceLshift(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::LSHIFT, ctx);
 }
 
-// opcode 76
 bool Interpreter::doInplaceRshift(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::RSHIFT, ctx);
 }
 
-// opcode 77
 bool Interpreter::doInplaceAnd(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::AND, ctx);
 }
 
-// opcode 78
 bool Interpreter::doInplaceXor(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::XOR, ctx);
 }
 
-// opcode 79
 bool Interpreter::doInplaceOr(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::OR, ctx);
 }
 
-// opcode 80
 void Interpreter::doBreakLoop(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Object none(&scope, NoneType::object());
   handleLoopExit(ctx, TryBlock::Why::kBreak, none);
 }
 
-// opcode 81
 bool Interpreter::doWithCleanupStart(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Frame* frame = ctx->frame;
@@ -1560,7 +1510,6 @@ bool Interpreter::doWithCleanupStart(Context* ctx, word) {
   return false;
 }
 
-// opcode 82
 bool Interpreter::doWithCleanupFinish(Context* ctx, word) {
   Frame* frame = ctx->frame;
   HandleScope scope(ctx->thread);
@@ -1578,14 +1527,12 @@ bool Interpreter::doWithCleanupFinish(Context* ctx, word) {
   return false;
 }
 
-// opcode 83
 bool Interpreter::doReturnValue(Context* ctx, word) {
   HandleScope scope(ctx->thread);
   Object result(&scope, ctx->frame->popValue());
   return handleReturn(ctx, result);
 }
 
-// opcode 85
 void Interpreter::doSetupAnnotations(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1602,7 +1549,6 @@ void Interpreter::doSetupAnnotations(Context* ctx, word) {
   }
 }
 
-// opcode 86
 bool Interpreter::doYieldValue(Context* ctx, word) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -1616,7 +1562,6 @@ bool Interpreter::doYieldValue(Context* ctx, word) {
   return true;
 }
 
-// opcode 84
 void Interpreter::doImportStar(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1633,14 +1578,12 @@ void Interpreter::doImportStar(Context* ctx, word) {
   thread->runtime()->moduleImportAllFrom(implicit_globals, module);
 }
 
-// opcode 87
 void Interpreter::doPopBlock(Context* ctx, word) {
   Frame* frame = ctx->frame;
   TryBlock block = frame->blockStack()->pop();
   frame->setValueStackTop(frame->valueStackBase() - block.level());
 }
 
-// opcode 88
 bool Interpreter::doEndFinally(Context* ctx, word) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1679,7 +1622,6 @@ bool Interpreter::doEndFinally(Context* ctx, word) {
   return false;
 }
 
-// opcode 89
 bool Interpreter::doPopExcept(Context* ctx, word) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1695,7 +1637,6 @@ bool Interpreter::doPopExcept(Context* ctx, word) {
   return false;
 }
 
-// opcode 90
 void Interpreter::doStoreName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -1707,7 +1648,6 @@ void Interpreter::doStoreName(Context* ctx, word arg) {
   thread->runtime()->dictAtPutInValueCell(thread, implicit_globals, key, value);
 }
 
-// opcode 91
 void Interpreter::doDeleteName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -1720,7 +1660,6 @@ void Interpreter::doDeleteName(Context* ctx, word arg) {
   }
 }
 
-// opcode 92
 bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1772,7 +1711,6 @@ bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 93
 bool Interpreter::doForIter(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -1796,7 +1734,6 @@ bool Interpreter::doForIter(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 94
 bool Interpreter::doUnpackEx(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1876,7 +1813,6 @@ bool Interpreter::doUnpackEx(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 95
 
 void Interpreter::storeAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location, RawObject value) {
@@ -1962,7 +1898,6 @@ bool Interpreter::doStoreAttr(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 96
 bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -1975,13 +1910,11 @@ bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 97
 void Interpreter::doStoreGlobal(Context* ctx, word arg) {
   ValueCell::cast(Tuple::cast(ctx->frame->fastGlobals()).at(arg))
       .setValue(ctx->frame->popValue());
 }
 
-// opcode 98
 void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2001,7 +1934,6 @@ void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   value_cell.setValue(*value_in_builtin);
 }
 
-// opcode 100
 void Interpreter::doLoadConst(Context* ctx, word arg) {
   RawObject consts = Code::cast(ctx->frame->code()).consts();
   ctx->frame->pushValue(Tuple::cast(consts).at(arg));
@@ -2012,7 +1944,6 @@ static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
                               &name);
 }
 
-// opcode 101
 bool Interpreter::doLoadName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2072,7 +2003,6 @@ bool Interpreter::doLoadName(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 102
 void Interpreter::doBuildTuple(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -2083,7 +2013,6 @@ void Interpreter::doBuildTuple(Context* ctx, word arg) {
   ctx->frame->pushValue(*tuple);
 }
 
-// opcode 103
 void Interpreter::doBuildList(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -2097,7 +2026,6 @@ void Interpreter::doBuildList(Context* ctx, word arg) {
   ctx->frame->pushValue(list);
 }
 
-// opcode 104
 void Interpreter::doBuildSet(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -2109,7 +2037,6 @@ void Interpreter::doBuildSet(Context* ctx, word arg) {
   ctx->frame->pushValue(*set);
 }
 
-// opcode 105
 void Interpreter::doBuildMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
@@ -2123,7 +2050,6 @@ void Interpreter::doBuildMap(Context* ctx, word arg) {
   ctx->frame->pushValue(*dict);
 }
 
-// opcode 106
 bool Interpreter::doLoadAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -2241,7 +2167,6 @@ static RawObject excMatch(Interpreter::Context* ctx, const Object& left,
   return Bool::fromBool(givenExceptionMatches(ctx->thread, left, right));
 }
 
-// opcode 107
 bool Interpreter::doCompareOp(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Object right(&scope, ctx->frame->popValue());
@@ -2268,7 +2193,6 @@ bool Interpreter::doCompareOp(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 108
 bool Interpreter::doImportName(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2306,7 +2230,6 @@ bool Interpreter::doImportName(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 109
 bool Interpreter::doImportFrom(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2328,10 +2251,8 @@ bool Interpreter::doImportFrom(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 110
 void Interpreter::doJumpForward(Context* ctx, word arg) { ctx->pc += arg; }
 
-// opcode 111
 bool Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
   RawObject value = ctx->frame->topValue();
   if (!value.isBool()) {
@@ -2346,7 +2267,6 @@ bool Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 112
 bool Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
   RawObject value = ctx->frame->topValue();
   if (!value.isBool()) {
@@ -2361,10 +2281,8 @@ bool Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 113
 void Interpreter::doJumpAbsolute(Context* ctx, word arg) { ctx->pc = arg; }
 
-// opcode 114
 bool Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
   RawObject value = ctx->frame->popValue();
   if (!value.isBool()) {
@@ -2377,7 +2295,6 @@ bool Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 115
 bool Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
   RawObject value = ctx->frame->popValue();
   if (!value.isBool()) {
@@ -2390,7 +2307,6 @@ bool Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 116
 void Interpreter::doLoadGlobal(Context* ctx, word arg) {
   RawObject value =
       ValueCell::cast(Tuple::cast(ctx->frame->fastGlobals()).at(arg)).value();
@@ -2404,14 +2320,12 @@ void Interpreter::doLoadGlobal(Context* ctx, word arg) {
   DCHECK(!ctx->frame->topValue().isError(), "unexpected error object");
 }
 
-// opcode 119
 void Interpreter::doContinueLoop(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Object arg_int(&scope, RawSmallInt::fromWord(arg));
   handleLoopExit(ctx, TryBlock::Why::kContinue, arg_int);
 }
 
-// opcode 120
 void Interpreter::doSetupLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
@@ -2419,7 +2333,6 @@ void Interpreter::doSetupLoop(Context* ctx, word arg) {
   block_stack->push(TryBlock(TryBlock::kLoop, ctx->pc + arg, stack_depth));
 }
 
-// opcode 121
 void Interpreter::doSetupExcept(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackSize();
@@ -2427,7 +2340,6 @@ void Interpreter::doSetupExcept(Context* ctx, word arg) {
   block_stack->push(TryBlock(TryBlock::kExcept, ctx->pc + arg, stack_depth));
 }
 
-// opcode 122
 void Interpreter::doSetupFinally(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
@@ -2435,7 +2347,6 @@ void Interpreter::doSetupFinally(Context* ctx, word arg) {
   block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
 }
 
-// opcode 124
 bool Interpreter::doLoadFast(Context* ctx, word arg) {
   // TODO(cshapiro): Need to handle unbound local error
   RawObject value = ctx->frame->local(arg);
@@ -2453,13 +2364,11 @@ bool Interpreter::doLoadFast(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 125
 void Interpreter::doStoreFast(Context* ctx, word arg) {
   RawObject value = ctx->frame->popValue();
   ctx->frame->setLocal(arg, value);
 }
 
-// opcode 126
 void Interpreter::doDeleteFast(Context* ctx, word arg) {
   // TODO(T32821785): use another immediate value than Error to signal unbound
   // local
@@ -2471,7 +2380,6 @@ void Interpreter::doDeleteFast(Context* ctx, word arg) {
   ctx->frame->setLocal(arg, Error::notFound());
 }
 
-// opcode 127
 void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2489,7 +2397,6 @@ void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
   runtime->dictAtPut(thread, anno_dict, key, value);
 }
 
-// opcode 130
 bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
   DCHECK(arg >= 0, "Negative argument to RAISE_VARARGS");
   DCHECK(arg <= 2, "Argument to RAISE_VARARGS too large");
@@ -2570,12 +2477,10 @@ bool Interpreter::handleCall(Context* ctx, word argc, word callable_idx,
   return false;
 }
 
-// opcode 131
 bool Interpreter::doCallFunction(Context* ctx, word argc) {
   return handleCall(ctx, argc, argc, preparePositionalCall, &Function::entry);
 }
 
-// opcode 132
 void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2596,7 +2501,6 @@ void Interpreter::doMakeFunction(Context* ctx, word arg) {
                                 kw_defaults, defaults, globals, builtins));
 }
 
-// opcode 133
 void Interpreter::doBuildSlice(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2607,7 +2511,6 @@ void Interpreter::doBuildSlice(Context* ctx, word arg) {
   ctx->frame->setTopValue(*slice);
 }
 
-// opcode 135
 void Interpreter::doLoadClosure(Context* ctx, word arg) {
   RawCode code = Code::cast(ctx->frame->code());
   ctx->frame->pushValue(ctx->frame->local(code.nlocals() + arg));
@@ -2633,7 +2536,6 @@ static RawObject raiseUnboundCellFreeVar(Thread* thread, const Code& code,
   return thread->raiseWithFmt(LayoutId::kUnboundLocalError, fmt, &name);
 }
 
-// opcode 136
 bool Interpreter::doLoadDeref(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2647,26 +2549,22 @@ bool Interpreter::doLoadDeref(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 137
 void Interpreter::doStoreDeref(Context* ctx, word arg) {
   RawCode code = Code::cast(ctx->frame->code());
   ValueCell::cast(ctx->frame->local(code.nlocals() + arg))
       .setValue(ctx->frame->popValue());
 }
 
-// opcode 138
 void Interpreter::doDeleteDeref(Context* ctx, word arg) {
   RawCode code = Code::cast(ctx->frame->code());
   ValueCell::cast(ctx->frame->local(code.nlocals() + arg)).makeUnbound();
 }
 
-// opcode 141
 bool Interpreter::doCallFunctionKw(Context* ctx, word argc) {
   return handleCall(ctx, argc, argc + 1, prepareKeywordCall,
                     &Function::entryKw);
 }
 
-// opcode 142
 bool Interpreter::doCallFunctionEx(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -2690,7 +2588,6 @@ bool Interpreter::doCallFunctionEx(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 143
 bool Interpreter::doSetupWith(Context* ctx, word arg) {
   HandleScope scope(ctx->thread);
   Thread* thread = ctx->thread;
@@ -2726,7 +2623,6 @@ bool Interpreter::doSetupWith(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 145
 void Interpreter::doListAppend(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2735,7 +2631,6 @@ void Interpreter::doListAppend(Context* ctx, word arg) {
   thread->runtime()->listAdd(thread, list, value);
 }
 
-// opcode 146
 void Interpreter::doSetAdd(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2744,7 +2639,6 @@ void Interpreter::doSetAdd(Context* ctx, word arg) {
   thread->runtime()->setAdd(thread, set, value);
 }
 
-// opcode 147
 void Interpreter::doMapAdd(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2754,7 +2648,6 @@ void Interpreter::doMapAdd(Context* ctx, word arg) {
   ctx->thread->runtime()->dictAtPut(thread, dict, key, value);
 }
 
-// opcode 148
 void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2775,7 +2668,6 @@ void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
   }
 }
 
-// opcode 149
 bool Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2792,7 +2684,6 @@ bool Interpreter::doBuildListUnpack(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 150
 bool Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2817,7 +2708,6 @@ bool Interpreter::doBuildMapUnpack(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 151
 bool Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2854,7 +2744,6 @@ bool Interpreter::doBuildMapUnpackWithCall(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 152 & opcode 158
 bool Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2875,7 +2764,6 @@ bool Interpreter::doBuildTupleUnpack(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 153
 bool Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
@@ -2892,7 +2780,6 @@ bool Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   return false;
 }
 
-// opcode 154
 void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   HandleScope scope(ctx->thread);
@@ -2903,7 +2790,6 @@ void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
   frame->pushValue(*result);
 }
 
-// opcode 155
 bool Interpreter::doFormatValue(Context* ctx, word flags) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2987,7 +2873,6 @@ bool Interpreter::doFormatValue(Context* ctx, word flags) {
   return false;
 }
 
-// opcode 156
 void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope;
@@ -3001,7 +2886,6 @@ void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
   ctx->frame->pushValue(*dict);
 }
 
-// opcode 157
 void Interpreter::doBuildString(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
