@@ -3094,7 +3094,7 @@ inline word RawBytes::length() const {
   return RawLargeBytes::cast(*this).length();
 }
 
-inline byte RawBytes::byteAt(word index) const {
+ALWAYS_INLINE byte RawBytes::byteAt(word index) const {
   if (isSmallBytes()) {
     return RawSmallBytes::cast(*this).byteAt(index);
   }
