@@ -245,6 +245,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kType, LayoutId::kType},
     {SymbolId::kTypeError, LayoutId::kTypeError},
     {SymbolId::kUnboundLocalError, LayoutId::kUnboundLocalError},
+    {SymbolId::kUnderStrArray, LayoutId::kStrArray},
     {SymbolId::kUnicodeDecodeError, LayoutId::kUnicodeDecodeError},
     {SymbolId::kUnicodeEncodeError, LayoutId::kUnicodeEncodeError},
     {SymbolId::kUnicodeError, LayoutId::kUnicodeError},

@@ -830,6 +830,25 @@ def _str_splitlines(self, keepends):
     pass
 
 
+class _strarray(bootstrap=True):  # noqa: F821
+    def __iadd__(self, other):
+        pass
+
+    def __init__(self, source=_Unbound) -> None:
+        pass
+
+    def __new__(cls, source=_Unbound) -> _strarray:  # noqa: F821
+        pass
+
+    def __repr__(self) -> str:
+        if type(self) is not _strarray:
+            raise TypeError("'__repr__' requires a '_strarray' object")
+        return f"_strarray('{self.__str__()}')"
+
+    def __str__(self) -> str:  # noqa: T484
+        pass
+
+
 class _structseq_field:
     def __get__(self, instance, owner):
         if self.index is not None:

@@ -52,6 +52,7 @@
 #include "siphash.h"
 #include "slice-builtins.h"
 #include "str-builtins.h"
+#include "strarray-builtins.h"
 #include "super-builtins.h"
 #include "sys-module.h"
 #include "thread.h"
@@ -1305,8 +1306,7 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   addEmptyBuiltinType(SymbolId::kUnderMutableBytes, LayoutId::kMutableBytes,
                       LayoutId::kObject);
-  addEmptyBuiltinType(SymbolId::kUnderStrArray, LayoutId::kStrArray,
-                      LayoutId::kObject);
+  StrArrayBuiltins::initialize(this);
 
   // Abstract classes.
   BytesBuiltins::initialize(this);

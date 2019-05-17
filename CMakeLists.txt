@@ -302,6 +302,8 @@ add_library(
   runtime/space.h
   runtime/str-builtins.cpp
   runtime/str-builtins.h
+  runtime/strarray-builtins.cpp
+  runtime/strarray-builtins.h
   runtime/super-builtins.cpp
   runtime/super-builtins.h
   runtime/symbols.cpp
@@ -446,6 +448,7 @@ add_library(
   runtime/slice-builtins-test.cpp
   runtime/space-test.cpp
   runtime/str-builtins-test.cpp
+  runtime/strarray-builtins-test.cpp
   runtime/super-builtins-test.cpp
   runtime/sys-module-test.cpp
   runtime/test-utils-test.cpp
