@@ -174,6 +174,7 @@ class WARN_UNUSED Handle : public T {
   V(SmallStr)                                                                  \
   V(StaticMethod)                                                              \
   V(Str)                                                                       \
+  V(StrArray)                                                                  \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(Tuple)                                                                     \

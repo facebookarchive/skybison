@@ -67,6 +67,7 @@ class Handle;
   V(Slice)                                                                     \
   V(StaticMethod)                                                              \
   V(Str)                                                                       \
+  V(StrArray)                                                                  \
   V(StrIterator)                                                               \
   V(Super)                                                                     \
   V(Traceback)                                                                 \
@@ -309,6 +310,7 @@ class RawObject {
   bool isSlice() const;
   bool isStaticMethod() const;
   bool isStopIteration() const;
+  bool isStrArray() const;
   bool isStrIterator() const;
   bool isSuper() const;
   bool isSystemExit() const;
@@ -1940,6 +1942,37 @@ class RawByteArray : public RawHeapObject {
 };
 
 /**
+ * A mutable Unicode array, for internal string building.
+ *
+ * Invariant: The allocated code units form valid UTF-8.
+ *
+ * RawLayout:
+ *   [Items          ] - Pointer to a RawMutableBytes with the underlying data.
+ *   [NumItems       ] - Number of bytes currently in the array.
+ */
+class RawStrArray : public RawHeapObject {
+ public:
+  // Getters and setters
+  RawObject items() const;
+  void setItems(RawObject new_items) const;
+  word numItems() const;
+  void setNumItems(word num_items) const;
+
+  void copyTo(byte* dst, word length) const;
+  int32_t codePointAt(word index, word* length) const;
+
+  // The size of the underlying string in bytes.
+  word capacity() const;
+
+  // Layout
+  static const int kItemsOffset = RawHeapObject::kSize;
+  static const int kNumItemsOffset = kItemsOffset + kPointerSize;
+  static const int kSize = kNumItemsOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(StrArray);
+};
+
+/**
  * A simple dict that uses open addressing and linear probing.
  *
  * RawLayout:
@@ -2956,6 +2989,10 @@ inline bool RawObject::isStaticMethod() const {
 
 inline bool RawObject::isStopIteration() const {
   return isHeapObjectWithLayout(LayoutId::kStopIteration);
+}
+
+inline bool RawObject::isStrArray() const {
+  return isHeapObjectWithLayout(LayoutId::kStrArray);
 }
 
 inline bool RawObject::isStrIterator() const {
@@ -4343,6 +4380,35 @@ inline void RawByteArray::setBytes(RawObject new_bytes) const {
 
 inline word RawByteArray::capacity() const {
   return RawBytes::cast(bytes()).length();
+}
+
+// RawStrArray
+
+inline RawObject RawStrArray::items() const {
+  return instanceVariableAt(kItemsOffset);
+}
+
+inline void RawStrArray::setItems(RawObject new_items) const {
+  DCHECK(new_items.isMutableBytes(), "StrArray must be backed by MutableBytes");
+  instanceVariableAtPut(kItemsOffset, new_items);
+}
+
+inline word RawStrArray::numItems() const {
+  return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
+}
+
+inline void RawStrArray::setNumItems(word num_bytes) const {
+  DCHECK_BOUND(num_bytes, capacity());
+  instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_bytes));
+}
+
+inline void RawStrArray::copyTo(byte* dst, word length) const {
+  DCHECK_BOUND(length, numItems());
+  RawMutableBytes::cast(items()).copyTo(dst, length);
+}
+
+inline word RawStrArray::capacity() const {
+  return RawMutableBytes::cast(items()).length();
 }
 
 // RawDict

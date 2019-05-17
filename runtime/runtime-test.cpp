@@ -3361,4 +3361,61 @@ TEST(RuntimeTest, BuiltinBaseOfEmptyTypeIsSuperclass) {
   EXPECT_EQ(type.builtinBase(), LayoutId::kObject);
 }
 
+TEST(RuntimeStrArrayTest, NewStrArrayReturnsEmptyStrArray) {
+  Runtime runtime;
+  HandleScope scope;
+  Object obj(&scope, runtime.newStrArray());
+  ASSERT_TRUE(obj.isStrArray());
+  StrArray str_arr(&scope, *obj);
+  EXPECT_EQ(str_arr.numItems(), 0);
+  EXPECT_EQ(str_arr.capacity(), 0);
+}
+
+TEST(RuntimeStrArrayTest, EnsureCapacitySetsProperCapacity) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  StrArray array(&scope, runtime.newStrArray());
+  word length = 1;
+  word expected_capacity = 16;
+  runtime.strArrayEnsureCapacity(thread, array, length);
+  EXPECT_EQ(array.capacity(), expected_capacity);
+
+  length = 17;
+  expected_capacity = 24;
+  runtime.strArrayEnsureCapacity(thread, array, length);
+  EXPECT_EQ(array.capacity(), expected_capacity);
+
+  length = 40;
+  expected_capacity = 40;
+  runtime.strArrayEnsureCapacity(thread, array, length);
+  EXPECT_EQ(array.capacity(), expected_capacity);
+}
+
+TEST(RuntimeStrArrayTest, NewStrFromEmptyStrArrayReturnsEmptyStr) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  StrArray array(&scope, runtime.newStrArray());
+  EXPECT_EQ(runtime.strFromStrArray(array), Str::empty());
+}
+
+TEST(RuntimeStrArrayTest, AppendStrAppendsValidUTF8) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  StrArray array(&scope, runtime.newStrArray());
+  Str one(&scope, runtime.newStrFromCStr("a\xC3\xA9"));
+  Str two(&scope, runtime.newStrFromCStr("\xE2\xB3\x80\xF0\x9F\x86\x92"));
+  runtime.strArrayAddStr(thread, array, one);
+  runtime.strArrayAddStr(thread, array, two);
+  EXPECT_EQ(array.numItems(), 10);
+
+  EXPECT_TRUE(isStrEqualsCStr(runtime.strFromStrArray(array),
+                              "a\xC3\xA9\xE2\xB3\x80\xF0\x9F\x86\x92"));
+}
+
 }  // namespace python

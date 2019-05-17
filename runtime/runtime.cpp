@@ -866,6 +866,14 @@ RawObject Runtime::newStaticMethod() {
   return heap()->create<RawStaticMethod>();
 }
 
+RawObject Runtime::newStrArray() {
+  HandleScope scope;
+  StrArray result(&scope, heap()->create<RawStrArray>());
+  result.setItems(empty_mutable_bytes_);
+  result.setNumItems(0);
+  return *result;
+}
+
 RawObject Runtime::newStrFromByteArray(const ByteArray& array) {
   word length = array.numItems();
   if (length <= SmallStr::kMaxLength) {
@@ -884,6 +892,19 @@ RawObject Runtime::newStrFromCStr(const char* c_str) {
   word length = std::strlen(c_str);
   auto data = reinterpret_cast<const byte*>(c_str);
   return newStrWithAll(View<byte>(data, length));
+}
+
+RawObject Runtime::strFromStrArray(const StrArray& array) {
+  word length = array.numItems();
+  if (length <= SmallStr::kMaxLength) {
+    byte buffer[SmallStr::kMaxLength];
+    array.copyTo(buffer, length);
+    return SmallStr::fromBytes({buffer, length});
+  }
+  HandleScope scope;
+  LargeStr result(&scope, heap()->createLargeStr(length));
+  array.copyTo(reinterpret_cast<byte*>(result.address()), length);
+  return *result;
 }
 
 RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
@@ -1283,6 +1304,8 @@ void Runtime::initializeHeapTypes() {
   addEmptyBuiltinType(SymbolId::kExceptionState, LayoutId::kExceptionState,
                       LayoutId::kObject);
   addEmptyBuiltinType(SymbolId::kUnderMutableBytes, LayoutId::kMutableBytes,
+                      LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kUnderStrArray, LayoutId::kStrArray,
                       LayoutId::kObject);
 
   // Abstract classes.
@@ -3515,6 +3538,38 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
   std::memcpy(reinterpret_cast<void*>(result.address()),
               reinterpret_cast<void*>(source.address() + start), length);
   return *result;
+}
+
+// StrArray
+
+void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
+                                     word min_capacity) {
+  DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);
+  word curr_capacity = array.capacity();
+  if (min_capacity <= curr_capacity) return;
+  word new_capacity = newCapacity(curr_capacity, min_capacity);
+  HandleScope scope(thread);
+  MutableBytes new_bytes(&scope, heap()->createMutableBytes(new_capacity));
+  byte* dst = reinterpret_cast<byte*>(new_bytes.address());
+  word old_length = array.numItems();
+  array.copyTo(dst, old_length);
+  std::memset(dst + old_length, 0, new_capacity - old_length);
+  array.setItems(*new_bytes);
+}
+
+void Runtime::strArrayAddStr(Thread* thread, const StrArray& array,
+                             const Str& str) {
+  word length = str.length();
+  if (length == 0) return;
+  word num_items = array.numItems();
+  word new_length;
+  bool did_overflow = __builtin_add_overflow(length, num_items, &new_length);
+  DCHECK(!did_overflow, "string is too large to concat");
+  strArrayEnsureCapacity(thread, array, new_length);
+  byte* dst =
+      reinterpret_cast<byte*>(MutableBytes::cast(array.items()).address());
+  str.copyTo(dst + num_items, length);
+  array.setNumItems(new_length);
 }
 
 RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,

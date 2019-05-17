@@ -513,30 +513,36 @@ bool RawStr::equalsCStr(const char* c_str) const {
   return *cp == '\0';
 }
 
-int32_t RawStr::codePointAt(word index, word* length) const {
-  DCHECK_INDEX(index, this->length());
-  byte ch0 = charAt(index);
+template <typename T, typename F>
+static inline int32_t decodeCodePoint(T src, F at, word src_length, word index,
+                                      word* length) {
+  DCHECK_INDEX(index, src_length);
+  byte ch0 = (src->*at)(index);
   if (ch0 <= kMaxASCII) {
     *length = 1;
     return ch0;
   }
-  DCHECK_INDEX(index + 1, this->length());
-  byte ch1 = charAt(index + 1) & byte{0x3F};
+  DCHECK_INDEX(index + 1, src_length);
+  byte ch1 = (src->*at)(index + 1) & byte{0x3F};
   if ((ch0 & 0xE0) == 0xC0) {
     *length = 2;
     return ((ch0 & 0x1F) << 6) | ch1;
   }
-  DCHECK_INDEX(index + 2, this->length());
-  byte ch2 = charAt(index + 2) & byte{0x3F};
+  DCHECK_INDEX(index + 2, src_length);
+  byte ch2 = (src->*at)(index + 2) & byte{0x3F};
   if ((ch0 & 0xF0) == 0xE0) {
     *length = 3;
     return ((ch0 & 0xF) << 12) | (ch1 << 6) | ch2;
   }
   DCHECK((ch0 & 0xF8) == 0xF0, "invalid code unit");
-  DCHECK_INDEX(index + 2, this->length());
-  byte ch3 = charAt(index + 3) & byte{0x3F};
+  DCHECK_INDEX(index + 2, src_length);
+  byte ch3 = (src->*at)(index + 3) & byte{0x3F};
   *length = 4;
   return ((ch0 & 0x7) << 18) | (ch1 << 12) | (ch2 << 6) | ch3;
+}
+
+int32_t RawStr::codePointAt(word index, word* length) const {
+  return decodeCodePoint(this, &RawStr::charAt, this->length(), index, length);
 }
 
 word RawStr::offsetByCodePoints(word index, word count) const {
@@ -555,6 +561,14 @@ word RawStr::offsetByCodePoints(word index, word count) const {
     }
   }
   return Utils::minimum(index, len);
+}
+
+// RawStrArray
+
+int32_t RawStrArray::codePointAt(word index, word* length) const {
+  RawMutableBytes buffer = RawMutableBytes::cast(items());
+  return decodeCodePoint(&buffer, &RawMutableBytes::byteAt, numItems(), index,
+                         length);
 }
 
 // RawWeakRef
