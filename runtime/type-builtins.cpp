@@ -49,6 +49,16 @@ bool typeIsNonDataDescriptor(Thread* thread, const Type& type) {
   return !typeLookupNameInMro(thread, type, dunder_get_name).isError();
 }
 
+RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
+                               const Object& instance,
+                               const Object& instance_type) {
+  HandleScope scope(thread);
+  Type type(&scope, thread->runtime()->typeOf(*descr));
+  if (!typeIsNonDataDescriptor(thread, type)) return *descr;
+  return Interpreter::callDescriptorGet(thread, thread->currentFrame(), descr,
+                                        instance, instance_type);
+}
+
 RawObject typeGetAttribute(Thread* thread, const Type& type,
                            const Object& name_str) {
   // Look for the attribute in the meta class
@@ -95,13 +105,7 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   // No attr found in type or its mro, use the non-data descriptor found in
   // the metaclass (if any).
   if (!meta_attr.isError()) {
-    Type meta_attr_type(&scope, runtime->typeOf(*meta_attr));
-    if (typeIsNonDataDescriptor(thread, meta_attr_type)) {
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            meta_attr, type, meta_type);
-    }
-    // If a regular attribute was found in the metaclass, return it
-    return *meta_attr;
+    return resolveDescriptorGet(thread, meta_attr, type, meta_type);
   }
 
   return Error::notFound();

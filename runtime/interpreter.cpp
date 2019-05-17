@@ -249,24 +249,18 @@ RawObject Interpreter::callDescriptorDelete(Thread* thread, Frame* caller,
   return callMethod2(thread, caller, method, descriptor, receiver);
 }
 
-RawObject Interpreter::lookupMethod(Thread* thread, Frame* caller,
+RawObject Interpreter::lookupMethod(Thread* thread, Frame* /* caller */,
                                     const Object& receiver, SymbolId selector) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*receiver));
   Object method(&scope, typeLookupSymbolInMro(thread, type, selector));
-  if (method.isFunction()) {
-    // Do not create a short-lived bound method object.
+  if (method.isFunction() || method.isError()) {
+    // Do not create a short-lived bound method object, and propagate
+    // exceptions.
     return *method;
   }
-  if (!method.isError()) {
-    Type method_type(&scope, runtime->typeOf(*method));
-    if (typeIsNonDataDescriptor(thread, method_type)) {
-      Object owner(&scope, *type);
-      return callDescriptorGet(thread, caller, method, receiver, owner);
-    }
-  }
-  return *method;
+  return resolveDescriptorGet(thread, method, receiver, type);
 }
 
 RawObject Interpreter::callFunction0(Thread* thread, Frame* caller,

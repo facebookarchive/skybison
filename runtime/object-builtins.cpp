@@ -155,14 +155,7 @@ RawObject objectGetAttributeSetLocation(Thread* thread, const Object& object,
       return runtime->newBoundMethod(type_attr, object);
     }
 
-    Type type_attr_type(&scope, runtime->typeOf(*type_attr));
-    if (typeIsNonDataDescriptor(thread, type_attr_type)) {
-      return Interpreter::callDescriptorGet(thread, thread->currentFrame(),
-                                            type_attr, object, type);
-    }
-
-    // If a regular attribute was found in the class, return it
-    return *type_attr;
+    return resolveDescriptorGet(thread, type_attr, object, type);
   }
 
   return Error::notFound();

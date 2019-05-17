@@ -17,6 +17,12 @@ bool typeIsDataDescriptor(Thread* thread, const Type& type);
 // Returns true if the type defines a __get__ method.
 bool typeIsNonDataDescriptor(Thread* thread, const Type& type);
 
+// If descr's Type has __get__(), call it with the appropriate arguments and
+// return the result. Otherwise, return descr.
+RawObject resolveDescriptorGet(Thread* thread, const Object& descr,
+                               const Object& instance,
+                               const Object& instance_type);
+
 // Looks up `name` in the dict of each entry in type's MRO. Returns an `Error`
 // object if the name wasn't found.
 RawObject typeLookupNameInMro(Thread* thread, const Type& type,

@@ -820,4 +820,29 @@ result = type(99999999999999999999999999999999999999999)
             runtime.typeAt(LayoutId::kInt));
 }
 
+TEST(TypeBuiltinsTest, ResolveDescriptorGetReturnsNonDescriptor) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Object instance(&scope, runtime.newInt(123));
+  Object owner(&scope, NoneType::object());
+  Object descr(&scope, runtime.newInt(456));
+  EXPECT_EQ(resolveDescriptorGet(thread, descr, instance, owner), *descr);
+}
+
+TEST(TypeBuiltinsTest, ResolveDescriptorGetCallsDescriptorDunderGet) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Object instance(&scope, runtime.newInt(123));
+  Type owner(&scope, runtime.typeOf(*instance));
+  Object descr(&scope,
+               typeLookupSymbolInMro(thread, owner, SymbolId::kDunderAdd));
+  ASSERT_TRUE(descr.isFunction());
+  EXPECT_TRUE(
+      resolveDescriptorGet(thread, descr, instance, owner).isBoundMethod());
+}
+
 }  // namespace python
