@@ -52,8 +52,14 @@
   if (false) {                                                                 \
     CHECK(__VA_ARGS__);                                                        \
   }
-#define DCHECK_BOUND(val, high)
-#define DCHECK_INDEX(index, high)
+#define DCHECK_BOUND(val, high)                                                \
+  if (false) {                                                                 \
+    CHECK_BOUND(val, high);                                                    \
+  }
+#define DCHECK_INDEX(index, high)                                              \
+  if (false) {                                                                 \
+    CHECK_INDEX(index, high);                                                  \
+  }
 #else
 #define DCHECK(...) CHECK(__VA_ARGS__)
 #define DCHECK_BOUND(val, high) CHECK_BOUND(val, high)
