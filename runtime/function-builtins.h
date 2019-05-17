@@ -8,6 +8,10 @@
 
 namespace python {
 
+RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
+                                const char* c_doc,
+                                Function::ExtensionType flags);
+
 RawObject functionGetAttribute(Thread* thread, const Function& function,
                                const Object& name_str);
 

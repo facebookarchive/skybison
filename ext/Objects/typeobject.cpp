@@ -7,6 +7,7 @@
 #include <cinttypes>
 
 #include "builtins-module.h"
+#include "function-builtins.h"
 #include "handles.h"
 #include "int-builtins.h"
 #include "mro.h"
@@ -218,6 +219,21 @@ static Type::ExtensionSlot slotToTypeSlot(int slot) {
       return Type::ExtensionSlot::kFinalize;
     default:
       return Type::ExtensionSlot::kEnd;
+  }
+}
+
+static Function::ExtensionType flagToFunctionType(int flag) {
+  switch (flag) {
+    case METH_NOARGS:
+      return Function::ExtensionType::kMethNoArgs;
+    case METH_O:
+      return Function::ExtensionType::kMethO;
+    case METH_VARARGS:
+      return Function::ExtensionType::kMethVarArgs;
+    case METH_VARARGS | METH_KEYWORDS:
+      return Function::ExtensionType::kMethVarArgsAndKeywords;
+    default:
+      UNIMPLEMENTED("Unsupported function type");
   }
 }
 
@@ -1343,50 +1359,6 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
-static RawObject addMethod(Thread* thread, const Object& name,
-                           PyMethodDef* def) {
-  DCHECK(def != nullptr, "methods should not be nullptr");
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Function function(&scope, runtime->newFunction());
-  function.setName(*name);
-  function.setCode(runtime->newIntFromCPtr(bit_cast<void*>(def->ml_meth)));
-  if (def->ml_doc != nullptr) {
-    Object doc(&scope, runtime->newStrFromCStr(def->ml_doc));
-    function.setDoc(*doc);
-  }
-  switch (def->ml_flags) {
-    case METH_NOARGS:
-      function.setEntry(methodTrampolineNoArgs);
-      function.setEntryKw(methodTrampolineNoArgsKw);
-      function.setEntryEx(methodTrampolineNoArgsEx);
-      break;
-    case METH_O:
-      function.setEntry(methodTrampolineOneArg);
-      function.setEntryKw(methodTrampolineOneArgKw);
-      function.setEntryEx(methodTrampolineOneArgEx);
-      break;
-    case METH_VARARGS:
-      function.setEntry(methodTrampolineVarArgs);
-      function.setEntryKw(methodTrampolineVarArgsKw);
-      function.setEntryEx(methodTrampolineVarArgsEx);
-      break;
-    case METH_VARARGS | METH_KEYWORDS:
-      function.setEntry(methodTrampolineKeywords);
-      function.setEntryKw(methodTrampolineKeywordsKw);
-      function.setEntryEx(methodTrampolineKeywordsEx);
-      break;
-    case METH_FASTCALL:
-      UNIMPLEMENTED("METH_FASTCALL");
-      break;
-    default:
-      UNIMPLEMENTED(
-          "Bad call flags in PyCFunction_Call. METH_OLDARGS is no longer "
-          "supported!");
-  }
-  return *function;
-}
-
 PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
                                              PyObject* /* bases */) {
   Thread* thread = Thread::current();
@@ -1457,7 +1429,11 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
         reinterpret_cast<PyMethodDef*>(Int::cast(*methods_ptr).asCPtr());
     for (word i = 0; methods[i].ml_name != nullptr; i++) {
       Object name(&scope, runtime->newStrFromCStr(methods[i].ml_name));
-      Object function(&scope, addMethod(thread, name, &methods[i]));
+      Object function(
+          &scope,
+          functionFromMethodDef(
+              thread, methods[i].ml_name, bit_cast<void*>(methods[i].ml_meth),
+              methods[i].ml_doc, flagToFunctionType(methods[i].ml_flags)));
       runtime->dictAtPutInValueCell(thread, dict, name, function);
     }
   }

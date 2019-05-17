@@ -431,9 +431,10 @@ class Runtime;
   V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderAddress, "_address")                                                  \
   V(UnderAsciiDecode, "_ascii_decode")                                         \
-  V(UnderBases, "_bases")                                                      \
   V(UnderBaseDir, "_base_dir")                                                 \
+  V(UnderBases, "_bases")                                                      \
   V(UnderBootstrap, "_bootstrap")                                              \
+  V(UnderBoundMethod, "_bound_method")                                         \
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
@@ -449,6 +450,7 @@ class Runtime;
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
+  V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictCheck, "_dict_check")                                             \
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
   V(UnderFdFlush, "_fd_flush")                                                 \

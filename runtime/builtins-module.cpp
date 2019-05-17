@@ -84,6 +84,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kOrd, ord},
     {SymbolId::kSetattr, setattr},
     {SymbolId::kUnderAddress, underAddress},
+    {SymbolId::kUnderBoundMethod, underBoundMethod},
     {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
     {SymbolId::kUnderByteArrayJoin, ByteArrayBuiltins::join},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
@@ -1304,6 +1305,15 @@ RawObject BuiltinsModule::underAddress(Thread* thread, Frame* frame,
                                        word nargs) {
   Arguments args(frame, nargs);
   return thread->runtime()->newInt(args.get(0).raw());
+}
+
+RawObject BuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object function(&scope, args.get(0));
+  Object owner(&scope, args.get(1));
+  return thread->runtime()->newBoundMethod(function, owner);
 }
 
 RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {

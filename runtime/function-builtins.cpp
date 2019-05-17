@@ -10,6 +10,46 @@
 
 namespace python {
 
+RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
+                                const char* c_doc,
+                                Function::ExtensionType flags) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function function(&scope, runtime->newFunction());
+  Object name(&scope, runtime->newStrFromCStr(c_name));
+  function.setName(*name);
+  function.setCode(runtime->newIntFromCPtr(meth));
+  if (c_doc != nullptr) {
+    Object doc(&scope, runtime->newStrFromCStr(c_doc));
+    function.setDoc(*doc);
+  }
+  switch (flags) {
+    case Function::ExtensionType::kMethNoArgs:
+      function.setEntry(methodTrampolineNoArgs);
+      function.setEntryKw(methodTrampolineNoArgsKw);
+      function.setEntryEx(methodTrampolineNoArgsEx);
+      break;
+    case Function::ExtensionType::kMethO:
+      function.setEntry(methodTrampolineOneArg);
+      function.setEntryKw(methodTrampolineOneArgKw);
+      function.setEntryEx(methodTrampolineOneArgEx);
+      break;
+    case Function::ExtensionType::kMethVarArgs:
+      function.setEntry(methodTrampolineVarArgs);
+      function.setEntryKw(methodTrampolineVarArgsKw);
+      function.setEntryEx(methodTrampolineVarArgsEx);
+      break;
+    case Function::ExtensionType::kMethVarArgsAndKeywords:
+      function.setEntry(methodTrampolineKeywords);
+      function.setEntryKw(methodTrampolineKeywordsKw);
+      function.setEntryEx(methodTrampolineKeywordsEx);
+      break;
+    default:
+      UNIMPLEMENTED("Unsupported MethodDef type");
+  }
+  return *function;
+}
+
 RawObject functionGetAttribute(Thread* thread, const Function& function,
                                const Object& name_str) {
   // TODO(T39611261): Figure out a way to skip dict init.

@@ -483,6 +483,7 @@ set(
   ext/Objects/bytesobject-test.cpp
   ext/Objects/classobject-test.cpp
   ext/Objects/complexobject-test.cpp
+  ext/Objects/descrobject-test.cpp
   ext/Objects/dictobject-test.cpp
   ext/Objects/exceptions-test.cpp
   ext/Objects/fileobject-test.cpp

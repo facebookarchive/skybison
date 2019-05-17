@@ -1726,6 +1726,13 @@ class RawFunction : public RawHeapObject {
    */
   using Entry = RawObject (*)(Thread*, Frame*, word);
 
+  enum class ExtensionType {
+    kMethNoArgs,
+    kMethO,
+    kMethVarArgs,
+    kMethVarArgsAndKeywords,
+  };
+
   // Getters and setters.
 
   // A dict containing parameter annotations

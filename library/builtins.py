@@ -309,6 +309,11 @@ def _address(c):
 
 
 @_patch
+def _bound_method(fn, owner):
+    pass
+
+
+@_patch
 def _bytearray_check(obj) -> bool:
     pass
 
@@ -376,6 +381,25 @@ def _complex_imag(c):
 @_patch
 def _complex_real(c):
     pass
+
+
+class _descrclassmethod:
+    def __init__(self, cls, fn):
+        self.cls = cls
+        self.fn = fn
+
+    def __get__(self, instance, cls):
+        if not _type_issubclass(cls, self.cls):
+            raise TypeError(f"Expected instance of type {self.cls} not {cls}")
+        return _bound_method(self.fn, cls)
+
+    def __call__(self, *args, **kwargs):
+        if not args:
+            raise TypeError(f"Function {self.fn} needs at least 1 argument")
+        cls = args[0]
+        if not issubclass(cls, self.cls):
+            raise TypeError(f"Expected type {self.cls} not {self}")
+        return self.fn(*args, **kwargs)
 
 
 @_patch
