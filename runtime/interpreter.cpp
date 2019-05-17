@@ -613,7 +613,7 @@ RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
     if (compare_result.isError()) {
       return *compare_result;
     }
-    result = isTrue(thread, caller, compare_result);
+    result = isTrue(thread, *compare_result);
     // isTrue can return Error or Bool, and we would want to return on Error or
     // True.
     if (result != Bool::falseObj()) {
@@ -635,30 +635,30 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
     if (result.isError()) {
       return *result;
     }
-    return isTrue(thread, caller, result);
+    return isTrue(thread, *result);
   }
   return sequenceIterSearch(thread, caller, value, container);
 }
 
-RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
-                              const Object& self) {
-  HandleScope scope(thread);
-  if (self.isBool()) return *self;
-  if (self.isNoneType()) return Bool::falseObj();
+RawObject Interpreter::isTrue(Thread* thread, RawObject value_raw) {
+  if (value_raw.isBool()) return value_raw;
+  if (value_raw.isNoneType()) return Bool::falseObj();
 
-  Object method(&scope,
-                lookupMethod(thread, caller, self, SymbolId::kDunderBool));
-  if (!method.isError()) {
-    Object result(&scope, callMethod1(thread, caller, method, self));
-    if (result.isError() || result.isBool()) return *result;
+  HandleScope scope(thread);
+  Object value(&scope, value_raw);
+  Object result(&scope, thread->invokeMethod1(value, SymbolId::kDunderBool));
+  if (!result.isError()) {
+    if (result.isBool()) return *result;
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "__bool__ should return bool");
   }
+  if (result.isErrorException()) {
+    return *result;
+  }
+  DCHECK(result.isErrorNotFound(), "expected error not found");
 
-  method = lookupMethod(thread, caller, self, SymbolId::kDunderLen);
-  if (!method.isError()) {
-    Object result(&scope, callMethod1(thread, caller, method, self));
-    if (result.isError()) return *result;
+  result = thread->invokeMethod1(value, SymbolId::kDunderLen);
+  if (!result.isError()) {
     if (thread->runtime()->isInstanceOfInt(*result)) {
       Int integer(&scope, intUnderlying(thread, result));
       if (integer.isPositive()) return Bool::trueObj();
@@ -669,6 +669,10 @@ RawObject Interpreter::isTrue(Thread* thread, Frame* caller,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "object cannot be interpreted as an integer");
   }
+  if (result.isErrorException()) {
+    return *result;
+  }
+  DCHECK(result.isErrorNotFound(), "expected error not found");
   return Bool::trueObj();
 }
 
@@ -1054,11 +1058,12 @@ bool Interpreter::doUnaryNegative(Context* ctx, word) {
 
 // opcode 12
 bool Interpreter::doUnaryNot(Context* ctx, word) {
-  HandleScope scope(ctx->thread);
-  Object self(&scope, ctx->frame->topValue());
-  RawObject result = isTrue(ctx->thread, ctx->frame, self);
-  if (result.isError()) return unwind(ctx);
-  ctx->frame->setTopValue(Bool::fromBool(result != Bool::trueObj()));
+  RawObject value = ctx->frame->topValue();
+  if (!value.isBool()) {
+    value = isTrue(ctx->thread, value);
+    if (value.isError()) return unwind(ctx);
+  }
+  ctx->frame->setTopValue(RawBool::negate(value));
   return false;
 }
 
@@ -1548,7 +1553,7 @@ bool Interpreter::doWithCleanupFinish(Context* ctx, word) {
   Object result(&scope, frame->popValue());
   Object exc(&scope, frame->popValue());
   if (!exc.isNoneType()) {
-    Object is_true(&scope, isTrue(ctx->thread, frame, result));
+    Object is_true(&scope, isTrue(ctx->thread, *result));
     if (is_true.isError()) return unwind(ctx);
     if (*is_true == Bool::trueObj()) {
       frame->pushValue(
@@ -2313,52 +2318,62 @@ bool Interpreter::doImportFrom(Context* ctx, word arg) {
 void Interpreter::doJumpForward(Context* ctx, word arg) { ctx->pc += arg; }
 
 // opcode 111
-void Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
-  Object self(&scope, ctx->frame->topValue());
-  RawObject result = isTrue(ctx->thread, ctx->frame, self);
-  if (result == Bool::falseObj()) {
+bool Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
+  RawObject value = ctx->frame->topValue();
+  if (!value.isBool()) {
+    value = isTrue(ctx->thread, value);
+    if (value.isError()) return unwind(ctx);
+  }
+  if (value == Bool::falseObj()) {
     ctx->pc = arg;
   } else {
     ctx->frame->popValue();
   }
+  return false;
 }
 
 // opcode 112
-void Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
-  Object self(&scope, ctx->frame->topValue());
-  RawObject result = isTrue(ctx->thread, ctx->frame, self);
-  if (result == Bool::trueObj()) {
+bool Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
+  RawObject value = ctx->frame->topValue();
+  if (!value.isBool()) {
+    value = isTrue(ctx->thread, value);
+    if (value.isError()) return unwind(ctx);
+  }
+  if (value == Bool::trueObj()) {
     ctx->pc = arg;
   } else {
     ctx->frame->popValue();
   }
+  return false;
 }
 
 // opcode 113
 void Interpreter::doJumpAbsolute(Context* ctx, word arg) { ctx->pc = arg; }
 
 // opcode 114
-void Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
-  Object self(&scope, ctx->frame->topValue());
-  RawObject result = isTrue(ctx->thread, ctx->frame, self);
-  ctx->frame->popValue();
-  if (result == Bool::falseObj()) {
+bool Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
+  RawObject value = ctx->frame->popValue();
+  if (!value.isBool()) {
+    value = isTrue(ctx->thread, value);
+    if (value.isError()) return unwind(ctx);
+  }
+  if (value == Bool::falseObj()) {
     ctx->pc = arg;
   }
+  return false;
 }
 
 // opcode 115
-void Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
-  Object self(&scope, ctx->frame->topValue());
-  RawObject result = isTrue(ctx->thread, ctx->frame, self);
-  ctx->frame->popValue();
-  if (result == Bool::trueObj()) {
+bool Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
+  RawObject value = ctx->frame->popValue();
+  if (!value.isBool()) {
+    value = isTrue(ctx->thread, value);
+    if (value.isError()) return unwind(ctx);
+  }
+  if (value == Bool::trueObj()) {
     ctx->pc = arg;
   }
+  return false;
 }
 
 // opcode 116

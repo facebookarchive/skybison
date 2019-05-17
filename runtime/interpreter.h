@@ -89,7 +89,7 @@ class Interpreter {
   // batch concat/join <num> string objects on the stack (no conversion)
   static RawObject stringJoin(Thread* thread, RawObject* sp, word num);
 
-  static RawObject isTrue(Thread* thread, Frame* caller, const Object& self);
+  static RawObject isTrue(Thread* thread, RawObject value);
 
   static RawObject callDescriptorGet(Thread* thread, Frame* caller,
                                      const Object& descriptor,
@@ -342,8 +342,8 @@ class Interpreter {
   static void doImportStar(Context* ctx, word arg);
   static void doJumpAbsolute(Context* ctx, word arg);
   static void doJumpForward(Context* ctx, word arg);
-  static void doJumpIfFalseOrPop(Context* ctx, word arg);
-  static void doJumpIfTrueOrPop(Context* ctx, word arg);
+  static bool doJumpIfFalseOrPop(Context* ctx, word arg);
+  static bool doJumpIfTrueOrPop(Context* ctx, word arg);
   static void doListAppend(Context* ctx, word arg);
   static void doLoadBuildClass(Context* ctx, word arg);
   static void doLoadClassDeref(Context* ctx, word arg);
@@ -354,8 +354,8 @@ class Interpreter {
   static void doMapAdd(Context* ctx, word arg);
   static void doNop(Context* ctx, word arg);
   static void doPopBlock(Context* ctx, word arg);
-  static void doPopJumpIfFalse(Context* ctx, word arg);
-  static void doPopJumpIfTrue(Context* ctx, word arg);
+  static bool doPopJumpIfFalse(Context* ctx, word arg);
+  static bool doPopJumpIfTrue(Context* ctx, word arg);
   static void doPopTop(Context* ctx, word arg);
   static void doPrintExpr(Context* ctx, word);
   static void doRotThree(Context* ctx, word arg);

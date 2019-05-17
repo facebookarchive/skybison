@@ -209,8 +209,7 @@ PY_EXPORT int PyObject_IsTrue(PyObject* obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Frame* frame = thread->currentFrame();
-  Object result(&scope, Interpreter::isTrue(thread, frame, obj_obj));
+  Object result(&scope, Interpreter::isTrue(thread, *obj_obj));
   if (result.isError()) {
     return -1;
   }

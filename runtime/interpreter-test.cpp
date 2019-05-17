@@ -26,10 +26,10 @@ TEST(InterpreterTest, IsTrueBool) {
   ASSERT_TRUE(frame->isSentinelFrame());
 
   Object true_value(&scope, Bool::trueObj());
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, true_value), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *true_value), Bool::trueObj());
 
   Object false_object(&scope, Bool::falseObj());
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, false_object), Bool::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *false_object), Bool::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueInt) {
@@ -42,17 +42,16 @@ TEST(InterpreterTest, IsTrueInt) {
   ASSERT_TRUE(frame->isSentinelFrame());
 
   Object true_value(&scope, runtime.newInt(1234));
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, true_value), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *true_value), Bool::trueObj());
 
   Object false_value(&scope, runtime.newInt(0));
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, false_value), Bool::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *false_value), Bool::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueWithDunderBoolRaisingPropagatesException) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __bool__(self):
@@ -61,7 +60,7 @@ value = Foo()
 )")
                    .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
-  Object result(&scope, Interpreter::isTrue(thread, frame, value));
+  Object result(&scope, Interpreter::isTrue(thread, *value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
@@ -69,7 +68,6 @@ TEST(InterpreterTest, IsTrueWithDunderLenRaisingPropagatesException) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo:
   def __len__(self):
@@ -78,7 +76,7 @@ value = Foo()
 )")
                    .isError());
   Object value(&scope, moduleAt(&runtime, "__main__", "value"));
-  Object result(&scope, Interpreter::isTrue(thread, frame, value));
+  Object result(&scope, Interpreter::isTrue(thread, *value));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
@@ -86,7 +84,6 @@ TEST(InterpreterTest, IsTrueWithIntSubclassDunderLenUsesBaseInt) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 class Foo(int): pass
 class Bar:
@@ -100,8 +97,8 @@ false_value = Bar(0)
                    .isError());
   Object true_value(&scope, moduleAt(&runtime, "__main__", "true_value"));
   Object false_value(&scope, moduleAt(&runtime, "__main__", "false_value"));
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, true_value), Bool::trueObj());
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, false_value), Bool::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *true_value), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *false_value), Bool::falseObj());
 }
 
 TEST(InterpreterTest, IsTrueDunderLen) {
@@ -117,10 +114,10 @@ TEST(InterpreterTest, IsTrueDunderLen) {
   Object elt(&scope, NoneType::object());
   runtime.listAdd(thread, nonempty_list, elt);
 
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, nonempty_list), Bool::trueObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *nonempty_list), Bool::trueObj());
 
   List empty_list(&scope, runtime.newList());
-  EXPECT_EQ(Interpreter::isTrue(thread, frame, empty_list), Bool::falseObj());
+  EXPECT_EQ(Interpreter::isTrue(thread, *empty_list), Bool::falseObj());
 }
 
 TEST(InterpreterTest, UnaryOperationWithIntReturnsInt) {

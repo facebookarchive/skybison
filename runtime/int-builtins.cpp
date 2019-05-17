@@ -509,7 +509,7 @@ RawObject IntBuiltins::fromBytesKw(Thread* thread, Frame* frame, word nargs) {
   Object signed_arg(&scope, args.getKw(runtime->symbols()->Signed()));
   if (!signed_arg.isError()) {
     ++num_known_keywords;
-    Object is_true(&scope, Interpreter::isTrue(thread, frame, signed_arg));
+    Object is_true(&scope, Interpreter::isTrue(thread, *signed_arg));
     if (is_true.isError()) return *is_true;
     is_signed = is_true == Bool::trueObj();
   }
@@ -744,8 +744,7 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return Bool::falseObj();
   }
 
-  Object arg(&scope, args.get(1));
-  return Interpreter::isTrue(thread, frame, arg);
+  return Interpreter::isTrue(thread, args.get(1));
 }
 
 const BuiltinMethod BoolBuiltins::kBuiltinMethods[] = {

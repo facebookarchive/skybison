@@ -141,7 +141,6 @@ RawObject listSort(Thread* thread, const List& list) {
   Object list_j(&scope, NoneType::object());
   Object list_i(&scope, NoneType::object());
   Object compare_result(&scope, NoneType::object());
-  Frame* frame = thread->currentFrame();
   for (word i = 1; i < length; i++) {
     list_i = list.at(i);
     word j = i - 1;
@@ -152,7 +151,7 @@ RawObject listSort(Thread* thread, const List& list) {
       if (compare_result.isError()) {
         return *compare_result;
       }
-      compare_result = Interpreter::isTrue(thread, frame, compare_result);
+      compare_result = Interpreter::isTrue(thread, *compare_result);
       if (compare_result.isError()) {
         return *compare_result;
       }
@@ -266,7 +265,7 @@ RawObject ListBuiltins::dunderContains(Thread* thread, Frame* frame,
     comp_result = thread->invokeFunction2(SymbolId::kOperator, SymbolId::kEq,
                                           value, item);
     if (comp_result.isError()) return *comp_result;
-    found = Interpreter::isTrue(thread, frame, comp_result);
+    found = Interpreter::isTrue(thread, *comp_result);
     if (found.isError()) return *found;
     if (found == Bool::trueObj()) {
       return *found;
@@ -418,7 +417,7 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
     comp_result = Interpreter::compareOperation(thread, frame, CompareOp::EQ,
                                                 item, value);
     if (comp_result.isError()) return *comp_result;
-    found = Interpreter::isTrue(thread, frame, comp_result);
+    found = Interpreter::isTrue(thread, *comp_result);
     if (found.isError()) return *found;
     if (found == Bool::trueObj()) {
       listPop(thread, self, i);
