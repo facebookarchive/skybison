@@ -10,6 +10,23 @@ using namespace testing;
 
 using CodeExtensionApiTest = ExtensionApi;
 
+TEST_F(CodeExtensionApiTest, GetNumFreeReturnsNumberOfFreevars) {
+  PyObjectPtr freevars(PyTuple_New(3));
+  PyTuple_SetItem(freevars, 0, PyUnicode_FromString("foo"));
+  PyTuple_SetItem(freevars, 1, PyUnicode_FromString("bar"));
+  PyTuple_SetItem(freevars, 2, PyUnicode_FromString("baz"));
+  PyObjectPtr empty_tuple(PyTuple_New(0));
+  PyObjectPtr empty_bytes(PyBytes_FromString(""));
+  PyObjectPtr empty_str(PyUnicode_FromString(""));
+  PyCodeObject* code = PyCode_New(
+      0, 0, 0, 0, 0, empty_bytes, empty_tuple, empty_tuple, empty_tuple,
+      freevars, empty_tuple, empty_str, empty_str, 0, empty_bytes);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(code, nullptr);
+  EXPECT_EQ(PyCode_GetNumFree(code), 3);
+  Py_DECREF(code);
+}
+
 TEST_F(CodeExtensionApiTest, NewWithValidArgsReturnsCodeObject) {
   int argcount = 3;
   int kwargcount = 0;
