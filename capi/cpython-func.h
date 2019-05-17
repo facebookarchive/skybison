@@ -109,6 +109,9 @@ PyAPI_FUNC(char*) PyBytes_AsString(PyObject*);
 PyAPI_FUNC(int) PyBytes_AsStringAndSize(PyObject*, char**, Py_ssize_t*);
 PyAPI_FUNC(void) PyBytes_Concat(PyObject**, PyObject*);
 PyAPI_FUNC(void) PyBytes_ConcatAndDel(PyObject**, PyObject*);
+PyAPI_FUNC(PyObject*)
+    _PyBytes_DecodeEscape(const char*, Py_ssize_t, const char*, Py_ssize_t,
+                          const char*, const char**);
 PyAPI_FUNC(PyObject*) PyBytes_DecodeEscape(const char*, Py_ssize_t, const char*,
                                            Py_ssize_t, const char*);
 PyAPI_FUNC(PyObject*) PyBytes_FromFormat(const char*, ...);
@@ -249,6 +252,8 @@ PyAPI_FUNC(void) PyErr_SyntaxLocationEx(const char*, int, int);
 PyAPI_FUNC(int) PyErr_WarnEx(PyObject*, const char*, Py_ssize_t);
 PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject*, const char*, const char*, int,
                                    const char*, PyObject*);
+PyAPI_FUNC(int) PyErr_WarnExplicitObject(PyObject*, PyObject*, PyObject*, int,
+                                         PyObject*, PyObject*);
 PyAPI_FUNC(int) PyErr_WarnFormat(PyObject*, Py_ssize_t, const char*, ...);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject*);
 PyAPI_FUNC(void) PyEval_AcquireLock();
@@ -542,6 +547,7 @@ PyAPI_FUNC(int) PyObject_SetItem(PyObject*, PyObject*, PyObject*);
 PyAPI_FUNC(Py_ssize_t) PyObject_Size(PyObject*);
 PyAPI_FUNC(PyObject*) PyObject_Str(PyObject*);
 PyAPI_FUNC(PyObject*) PyObject_Type(PyObject*);
+PyAPI_FUNC(const char*) PyObject_TypeName(PyObject*);
 PyAPI_FUNC(struct _node*)
     PyParser_SimpleParseFileFlags(FILE*, const char*, int, int);
 PyAPI_FUNC(struct _node*)
@@ -652,6 +658,8 @@ PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject*, PyTypeObject*);
 PyAPI_FUNC(void) PyType_Modified(PyTypeObject*);
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject*);
+PyAPI_FUNC(const char*) _PyType_Name(PyTypeObject*);
+PyAPI_FUNC(PyObject*) _PyType_Lookup(PyTypeObject*, PyObject*);
 PyAPI_FUNC(PyObject*)
     PyUnicodeDecodeError_Create(const char*, const char*, Py_ssize_t,
                                 Py_ssize_t, Py_ssize_t, const char*);
@@ -759,6 +767,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF8Stateful(const char*, Py_ssize_t,
                                                    const char*, Py_ssize_t*);
 PyAPI_FUNC(PyObject*)
     PyUnicode_DecodeUnicodeEscape(const char*, Py_ssize_t, const char*);
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(const char*, Py_ssize_t,
+                                                     const char*, const char**);
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject*, PyObject*);
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(int, PyObject*, const char*);
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeFSDefault(PyObject*);

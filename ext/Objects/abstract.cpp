@@ -996,6 +996,10 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
   return ApiHandle::newReference(thread, userVisibleTypeOf(thread, obj));
 }
 
+PY_EXPORT const char* PyObject_TypeName(PyObject* /* obj */) {
+  UNIMPLEMENTED("PyObject_TypeName");
+}
+
 // Sequence Protocol
 
 PY_EXPORT int PySequence_Check(PyObject* py_obj) {

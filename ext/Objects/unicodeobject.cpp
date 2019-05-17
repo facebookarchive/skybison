@@ -1174,6 +1174,12 @@ PY_EXPORT PyObject* PyUnicode_DecodeUnicodeEscape(const char* /* s */,
   UNIMPLEMENTED("PyUnicode_DecodeUnicodeEscape");
 }
 
+PY_EXPORT PyObject* _PyUnicode_DecodeUnicodeEscape(
+    const char* /* s */, Py_ssize_t /* size */, const char* /* errors */,
+    const char** /* first_invalid_escape */) {
+  UNIMPLEMENTED("_PyUnicode_DecodeUnicodeEscape");
+}
+
 PY_EXPORT PyObject* PyUnicode_EncodeCodePage(int /* e */, PyObject* /* e */,
                                              const char* /* s */) {
   UNIMPLEMENTED("PyUnicode_EncodeCodePage");

@@ -68,6 +68,14 @@ PY_EXPORT int PyErr_WarnExplicit(PyObject* /* y */, const char* /* t */,
   UNIMPLEMENTED("PyErr_WarnExplicit");
 }
 
+PY_EXPORT int PyErr_WarnExplicitObject(PyObject* /* category */,
+                                       PyObject* /* message */,
+                                       PyObject* /* filename */,
+                                       int /* lineno */, PyObject* /* module */,
+                                       PyObject* /* registry */) {
+  UNIMPLEMENTED("PyErr_WarnExplicitObject");
+}
+
 PY_EXPORT int PyErr_WarnFormat(PyObject* category, Py_ssize_t stack_level,
                                const char* format, ...) {
   va_list vargs;

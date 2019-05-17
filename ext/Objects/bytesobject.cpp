@@ -101,6 +101,13 @@ PY_EXPORT PyObject* PyBytes_DecodeEscape(const char* /* s */,
   UNIMPLEMENTED("PyBytes_DecodeEscape");
 }
 
+PY_EXPORT PyObject* _PyBytes_DecodeEscape(
+    const char* /* s */, Py_ssize_t /* len */, const char* /* errors */,
+    Py_ssize_t /* unicode */, const char* /* recode_encoding */,
+    const char** /* first_invalid_escape */) {
+  UNIMPLEMENTED("_PyBytes_DecodeEscape");
+}
+
 PY_EXPORT PyObject* PyBytes_FromFormat(const char* format, ...) {
   va_list vargs;
   va_start(vargs, format);

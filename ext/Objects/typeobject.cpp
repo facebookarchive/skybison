@@ -1521,4 +1521,13 @@ PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
   UNIMPLEMENTED("_PyObject_LookupSpecial");
 }
 
+PY_EXPORT const char* _PyType_Name(PyTypeObject* /* type */) {
+  UNIMPLEMENTED("_PyType_Name");
+}
+
+PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* /* type */,
+                                   PyObject* /* name */) {
+  UNIMPLEMENTED("_PyType_Lookup");
+}
+
 }  // namespace python
