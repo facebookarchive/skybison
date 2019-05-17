@@ -270,6 +270,8 @@ class Runtime;
   V(Ipow, "ipow")                                                              \
   V(Irshift, "irshift")                                                        \
   V(Irepeat, "irepeat")                                                        \
+  V(IsInstance, "isinstance")                                                  \
+  V(IsSubclass, "issubclass")                                                  \
   V(Isub, "isub")                                                              \
   V(Itruediv, "itruediv")                                                      \
   V(Ixor, "ixor")                                                              \

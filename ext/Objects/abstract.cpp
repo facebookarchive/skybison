@@ -928,12 +928,26 @@ PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
   return ApiHandle::newReference(thread, *result);
 }
 
-PY_EXPORT int PyObject_IsInstance(PyObject* /* t */, PyObject* /* s */) {
-  UNIMPLEMENTED("PyObject_IsInstance");
+PY_EXPORT int PyObject_IsInstance(PyObject* instance, PyObject* cls) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object object(&scope, ApiHandle::fromPyObject(instance)->asObject());
+  Object classinfo(&scope, ApiHandle::fromPyObject(cls)->asObject());
+  Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
+                                                SymbolId::kIsInstance, object,
+                                                classinfo));
+  return result.isError() ? -1 : Bool::cast(*result).value();
 }
 
-PY_EXPORT int PyObject_IsSubclass(PyObject* /* d */, PyObject* /* s */) {
-  UNIMPLEMENTED("PyObject_IsSubclass");
+PY_EXPORT int PyObject_IsSubclass(PyObject* derived, PyObject* cls) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object subclass(&scope, ApiHandle::fromPyObject(derived)->asObject());
+  Object classinfo(&scope, ApiHandle::fromPyObject(cls)->asObject());
+  Object result(&scope, thread->invokeFunction2(SymbolId::kBuiltins,
+                                                SymbolId::kIsSubclass, subclass,
+                                                classinfo));
+  return result.isError() ? -1 : Bool::cast(*result).value();
 }
 
 PY_EXPORT Py_ssize_t PyObject_Length(PyObject* pyobj) {

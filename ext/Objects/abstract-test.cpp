@@ -1338,6 +1338,8 @@ TEST_F(AbstractExtensionApiTest, PyNumberXorWithIntsReturnsBitwiseOr) {
   EXPECT_EQ(PyLong_AsLong(result), 6);  // 0b0110
 }
 
+// Object Protocol
+
 TEST_F(AbstractExtensionApiTest, PyObjectCallWithArgsCalls) {
   PyRun_SimpleString(R"(
 def func(*args, **kwargs):
@@ -1768,6 +1770,92 @@ c = C()
   ASSERT_EQ(PyObject_GetIter(c), nullptr);
   ASSERT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsInstanceWithNonTypeRaisesTypeError) {
+  PyObjectPtr obj(PyLong_FromLong(1));
+  PyObjectPtr cls(PyList_New(0));
+  EXPECT_EQ(PyObject_IsInstance(obj, cls), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsInstanceWithTypeReturnsTrue) {
+  PyObjectPtr obj(PyList_New(0));
+  PyObjectPtr cls(PyObject_Type(obj));
+  EXPECT_EQ(PyObject_IsInstance(obj, cls), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsInstanceWithSupertypeReturnsTrue) {
+  PyObjectPtr obj(PyLong_FromLong(0));
+  PyObjectPtr cls(PyObject_Type(obj));
+  EXPECT_EQ(PyObject_IsInstance(Py_True, cls), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsInstanceWithSubtypeReturnsFalse) {
+  PyObjectPtr obj(PyLong_FromLong(0));
+  PyObjectPtr cls(PyObject_Type(Py_True));
+  EXPECT_EQ(PyObject_IsInstance(obj, cls), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsInstanceWithTupleChecksTypes) {
+  PyObjectPtr obj1(PyList_New(0));
+  PyObjectPtr obj2(PyLong_FromLong(10));
+  PyObjectPtr cls(PyTuple_New(3));
+  PyTuple_SetItem(cls, 0, PyObject_Type(obj1));
+  PyTuple_SetItem(cls, 1, PyObject_Type(obj2));
+  PyTuple_SetItem(cls, 2, PySet_New(nullptr));
+  EXPECT_EQ(PyObject_IsInstance(Py_True, cls), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsSubclassWithNonTypeRaisesTypeError) {
+  PyObjectPtr obj(PyLong_FromLong(2));
+  PyObjectPtr subclass(PyObject_Type(obj));
+  PyObjectPtr superclass(PyList_New(0));
+  EXPECT_EQ(PyObject_IsSubclass(subclass, superclass), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsSubclassWithSameTypesReturnsTrue) {
+  PyObjectPtr obj1(PyLong_FromLong(2));
+  PyObjectPtr obj2(PyLong_FromLong(10));
+  PyObjectPtr subclass(PyObject_Type(obj1));
+  PyObjectPtr superclass(PyObject_Type(obj2));
+  EXPECT_EQ(PyObject_IsSubclass(subclass, superclass), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsSubclassWithSubtypeReturnsTrue) {
+  PyObjectPtr obj(PyLong_FromLong(10));
+  PyObjectPtr subclass(PyObject_Type(Py_True));
+  PyObjectPtr superclass(PyObject_Type(obj));
+  EXPECT_EQ(PyObject_IsSubclass(subclass, superclass), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsSubclassWithSupertypeReturnsFalse) {
+  PyObjectPtr obj(PyLong_FromLong(10));
+  PyObjectPtr subclass(PyObject_Type(obj));
+  PyObjectPtr superclass(PyObject_Type(Py_True));
+  EXPECT_EQ(PyObject_IsSubclass(subclass, superclass), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest, PyObjectIsSubclassWithTupleChecksTypes) {
+  PyObjectPtr obj1(PyList_New(0));
+  PyObjectPtr obj2(PyLong_FromLong(10));
+  PyObjectPtr subclass(PyObject_Type(Py_True));
+  PyObjectPtr superclass(PyTuple_New(3));
+  PyTuple_SetItem(superclass, 0, PyObject_Type(obj1));
+  PyTuple_SetItem(superclass, 1, PyObject_Type(obj2));
+  PyTuple_SetItem(superclass, 2, PySet_New(nullptr));
+  EXPECT_EQ(PyObject_IsSubclass(subclass, superclass), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
 TEST_F(AbstractExtensionApiTest, PyObjectLengthOnNullRaisesSystemError) {
