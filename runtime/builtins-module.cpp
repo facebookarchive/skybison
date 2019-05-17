@@ -565,7 +565,7 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
     Str source_str(&scope, *data);
     return compileStr(thread, source_str, filename);
   }
-  Bytes source_bytes(&scope, *data);
+  Bytes source_bytes(&scope, bytesUnderlying(thread, data));
   return compileBytes(thread, source_bytes, filename);
 }
 
@@ -776,7 +776,8 @@ RawObject BuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Bytes self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object key_obj(&scope, args.get(1));
   Int key(&scope, intUnderlying(thread, key_obj));
   word index = key.asWordSaturated();
@@ -799,7 +800,8 @@ RawObject BuiltinsModule::underBytesGetItemSlice(Thread* thread, Frame* frame,
                                                  word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Bytes self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object obj(&scope, args.get(1));
   Int start(&scope, intUnderlying(thread, obj));
   obj = args.get(2);
@@ -819,8 +821,9 @@ RawObject BuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
   word length;
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfBytes(*from_obj)) {
-    Bytes bytes(&scope, *from_obj);
+    Bytes bytes(&scope, bytesUnderlying(thread, from_obj));
     length = bytes.length();
+    from_obj = *bytes;
   } else if (runtime->isInstanceOfByteArray(*from_obj)) {
     ByteArray array(&scope, *from_obj);
     length = array.numItems();
@@ -829,8 +832,9 @@ RawObject BuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
     UNIMPLEMENTED("bytes-like other than bytes or bytearray");
   }
   if (runtime->isInstanceOfBytes(*to_obj)) {
-    Bytes bytes(&scope, *to_obj);
+    Bytes bytes(&scope, bytesUnderlying(thread, to_obj));
     DCHECK(bytes.length() == length, "lengths should already be the same");
+    to_obj = *bytes;
   } else if (runtime->isInstanceOfByteArray(*to_obj)) {
     ByteArray array(&scope, *to_obj);
     DCHECK(array.numItems() == length, "lengths should already be the same");
@@ -854,7 +858,8 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
                                            word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  Bytes self(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
   Object count_obj(&scope, args.get(1));
   Int count_int(&scope, intUnderlying(thread, count_obj));
   word count = count_int.asWordSaturated();
@@ -1077,7 +1082,8 @@ RawObject BuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
-  Bytes bytes(&scope, args.get(1));
+  Object bytes_obj(&scope, args.get(1));
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   Object base_obj(&scope, args.get(2));
   Int base_int(&scope, intUnderlying(thread, base_obj));
   DCHECK(base_int.numDigits() == 1, "invalid base");

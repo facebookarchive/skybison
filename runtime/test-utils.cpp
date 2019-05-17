@@ -415,7 +415,7 @@ RawObject listFromRange(word start, word stop) {
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, *result) << "'";
   }
-  Bytes result_bytes(&scope, *result);
+  Bytes result_bytes(&scope, bytesUnderlying(thread, result));
   Bytes expected_bytes(&scope, runtime->newBytesWithAll(expected));
   if (result_bytes.compare(*expected_bytes) != 0) {
     return ::testing::AssertionFailure()

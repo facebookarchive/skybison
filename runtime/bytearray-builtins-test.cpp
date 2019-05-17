@@ -77,6 +77,22 @@ TEST(ByteArrayBuiltinsTest, DunderAddWithBytesOtherReturnsNewByteArray) {
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "1111"));
 }
 
+TEST(ByteArrayBuiltinsTest,
+     DunderAddWithBytesSubclassOtherReturnsNewByteArray) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+other = Foo(b"1234")
+)")
+                   .isError());
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Bytes other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderAdd, self, other));
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, ""));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "1234"));
+}
+
 TEST(ByteArrayBuiltinsTest, DunderAddReturnsConcatenatedByteArray) {
   Runtime runtime;
   Thread* thread = Thread::current();
@@ -519,6 +535,22 @@ TEST(ByteArrayBuiltinsTest, DunderIaddWithBytesOtherConcatenatesToSelf) {
   Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
   EXPECT_TRUE(isByteArrayEqualsBytes(self, bytes));
   EXPECT_TRUE(isByteArrayEqualsBytes(result, bytes));
+}
+
+TEST(ByteArrayBuiltinsTest, DunderAddWithBytesSubclassOtherConcatenatesToSelf) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+other = Foo(b"1234")
+)")
+                   .isError());
+  HandleScope scope;
+  ByteArray self(&scope, runtime.newByteArray());
+  Bytes other(&scope, moduleAt(&runtime, "__main__", "other"));
+  Object result(&scope, runBuiltin(ByteArrayBuiltins::dunderIadd, self, other));
+  const char* expected = "1234";
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, expected));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, expected));
 }
 
 TEST(ByteArrayBuiltinsTest, DunderImulWithNonByteArrayRaisesTypeError) {

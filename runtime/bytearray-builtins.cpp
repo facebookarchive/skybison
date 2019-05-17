@@ -64,7 +64,9 @@ RawObject ByteArrayBuiltins::dunderAdd(Thread* thread, Frame* frame,
     other_len = array.numItems();
     other_obj = array.bytes();
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
-    other_len = Bytes::cast(*other_obj).length();
+    Bytes bytes(&scope, bytesUnderlying(thread, other_obj));
+    other_len = bytes.length();
+    other_obj = *bytes;
   } else {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
@@ -96,7 +98,7 @@ RawObject ByteArrayBuiltins::dunderEq(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, *other_obj);
+    Bytes other(&scope, bytesUnderlying(thread, other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -122,7 +124,7 @@ RawObject ByteArrayBuiltins::dunderGe(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, *other_obj);
+    Bytes other(&scope, bytesUnderlying(thread, other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -193,7 +195,7 @@ RawObject ByteArrayBuiltins::dunderGt(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, *other_obj);
+    Bytes other(&scope, bytesUnderlying(thread, other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -223,7 +225,9 @@ RawObject ByteArrayBuiltins::dunderIadd(Thread* thread, Frame* frame,
     other_len = array.numItems();
     other_obj = array.bytes();
   } else if (runtime->isInstanceOfBytes(*other_obj)) {
-    other_len = Bytes::cast(*other_obj).length();
+    Bytes bytes(&scope, bytesUnderlying(thread, other_obj));
+    other_len = bytes.length();
+    other_obj = *bytes;
   } else {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
@@ -342,7 +346,7 @@ RawObject ByteArrayBuiltins::dunderInit(Thread* thread, Frame* frame,
     runtime->byteArrayEnsureCapacity(thread, self, count);
     self.setNumItems(count);
   } else if (runtime->isInstanceOfBytes(*source)) {  // TODO(T38246066)
-    Bytes bytes(&scope, *source);
+    Bytes bytes(&scope, bytesUnderlying(thread, source));
     runtime->byteArrayIadd(thread, self, bytes, bytes.length());
   } else if (runtime->isInstanceOfByteArray(*source)) {
     ByteArray array(&scope, *source);
@@ -385,7 +389,7 @@ RawObject ByteArrayBuiltins::dunderLe(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, *other_obj);
+    Bytes other(&scope, bytesUnderlying(thread, other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -423,7 +427,7 @@ RawObject ByteArrayBuiltins::dunderLt(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, *other_obj);
+    Bytes other(&scope, bytesUnderlying(thread, other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -491,7 +495,7 @@ RawObject ByteArrayBuiltins::dunderNe(Thread* thread, Frame* frame,
   Object other_obj(&scope, args.get(1));
   word comparison;
   if (runtime->isInstanceOfBytes(*other_obj)) {
-    Bytes other(&scope, *other_obj);
+    Bytes other(&scope, bytesUnderlying(thread, other_obj));
     comparison = self.compare(*other, other.length());
   } else if (runtime->isInstanceOfByteArray(*other_obj)) {
     ByteArray other(&scope, *other_obj);
@@ -625,11 +629,10 @@ RawObject ByteArrayBuiltins::join(Thread* thread, Frame* frame, word nargs) {
   ByteArray result(&scope, runtime->newByteArray());
   Bytes joined_bytes(&scope, *joined);
   if (joined.isSmallBytes()) {
-    Bytes bytes(&scope, *joined);
-    runtime->byteArrayIadd(thread, result, joined_bytes, bytes.length());
+    runtime->byteArrayIadd(thread, result, joined_bytes, joined_bytes.length());
   } else {
     result.setBytes(*joined);
-    result.setNumItems(Bytes::cast(*joined).length());
+    result.setNumItems(joined_bytes.length());
   }
   return *result;
 }
@@ -651,8 +654,9 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
     table_length = BytesBuiltins::kTranslationTableLength;
     table_obj = Bytes::empty();
   } else if (runtime->isInstanceOfBytes(*table_obj)) {
-    Bytes bytes(&scope, *table_obj);
+    Bytes bytes(&scope, bytesUnderlying(thread, table_obj));
     table_length = bytes.length();
+    table_obj = *bytes;
   } else if (runtime->isInstanceOfByteArray(*table_obj)) {
     ByteArray array(&scope, *table_obj);
     table_length = array.numItems();
@@ -672,7 +676,7 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
   Object del(&scope, args.get(2));
   Bytes translated(&scope, Bytes::empty());
   if (runtime->isInstanceOfBytes(*del)) {
-    Bytes bytes(&scope, *del);
+    Bytes bytes(&scope, bytesUnderlying(thread, del));
     translated = runtime->bytesTranslate(thread, self_bytes, self.numItems(),
                                          table, bytes, bytes.length());
   } else if (runtime->isInstanceOfByteArray(*del)) {

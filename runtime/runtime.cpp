@@ -2275,7 +2275,7 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
   for (word index = 0; index < src_length; index++) {
     item = src.at(index);
     if (isInstanceOfBytes(*item)) {
-      Bytes bytes(&scope, *item);
+      Bytes bytes(&scope, bytesUnderlying(thread, item));
       result_length += bytes.length();
     } else if (isInstanceOfByteArray(*item)) {
       ByteArray array(&scope, *item);
@@ -2308,7 +2308,7 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
     Bytes bytes(&scope, Bytes::empty());
     word length;
     if (isInstanceOfBytes(*item)) {
-      bytes = *item;
+      bytes = bytesUnderlying(thread, item);
       length = bytes.length();
     } else {
       DCHECK(isInstanceOfByteArray(*item), "source is not bytes-like");

@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "builtins-module.h"
+#include "bytes-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
@@ -197,7 +198,7 @@ RawObject SysModule::underFdWrite(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfBytes(*bytes_obj)) {
     return thread->raiseRequiresType(bytes_obj, SymbolId::kBytes);
   }
-  Bytes bytes(&scope, *bytes_obj);
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
 
   // This is a slow way to write. We eventually expect this whole function to
   // get replaced with something else anyway.

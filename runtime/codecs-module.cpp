@@ -1,6 +1,7 @@
 #include "codecs-module.h"
 
 #include "bytearray-builtins.h"
+#include "bytes-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
@@ -104,8 +105,7 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
          "Third arg to _ascii_decode must be int");
   DCHECK(runtime->isInstanceOfByteArray(*output_obj),
          "Fourth arg to _ascii_decode must be bytearray");
-  // TODO(T36619847): Bytes subclass handling
-  Bytes bytes(&scope, *bytes_obj);
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   Str errors(&scope, strUnderlying(thread, errors_obj));
   Int index(&scope, intUnderlying(thread, index_obj));
   ByteArray dst(&scope, *output_obj);

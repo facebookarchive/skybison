@@ -397,7 +397,7 @@ TEST(BuiltinsModuleTest, IntFromBytesWithInvalidByteRaisesValueError) {
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
-TEST(BuiltinsModuleTest, IntFromBytesWithInvalidLiteraRaisesValueError) {
+TEST(BuiltinsModuleTest, IntFromBytesWithInvalidLiteralRaisesValueError) {
   Runtime runtime;
   HandleScope scope;
   const byte view[] = {'8', '6'};
@@ -407,6 +407,21 @@ TEST(BuiltinsModuleTest, IntFromBytesWithInvalidLiteraRaisesValueError) {
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntFromBytes, type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 7: b'86'"));
+}
+
+TEST(BuiltinsModuleTest, IntFromBytesWithBytesSubclassReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+foo = Foo(b"42")
+)")
+                   .isError());
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Int base(&scope, SmallInt::fromWord(21));
+  EXPECT_EQ(runBuiltin(BuiltinsModule::underIntFromBytes, type, bytes, base),
+            SmallInt::fromWord(86));
 }
 
 TEST(BuiltinsModuleTest, IntFromIntWithBoolReturnsSmallInt) {
@@ -1232,6 +1247,26 @@ TEST(BuiltinsModuleTest, BuiltinCompileBytes) {
   HandleScope scope;
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 data = b'a = 1; b = 2'
+code = compile(data, "<string>", "eval", dont_inherit=True)
+)")
+                   .isError());
+  Code code(&scope, moduleAt(&runtime, "__main__", "code"));
+  Object filename(&scope, code.filename());
+  EXPECT_TRUE(isStrEqualsCStr(*filename, "<string>"));
+
+  ASSERT_TRUE(code.names().isTuple());
+  Tuple names(&scope, code.names());
+  ASSERT_EQ(names.length(), 2);
+  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("b")));
+}
+
+TEST(BuiltinsModuleTest, BuiltinCompileWithBytesSubclass) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+data = Foo(b"a = 1; b = 2")
 code = compile(data, "<string>", "eval", dont_inherit=True)
 )")
                    .isError());

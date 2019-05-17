@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "bytes-builtins.h"
 #include "marshal-module.h"
 #include "os.h"
 #include "runtime.h"
@@ -15,6 +16,21 @@ TEST(MarshalModuleTest, LoadsReadsSet) {
   // marshal.loads(set())
   const byte set_bytes[] = "\xbc\x00\x00\x00\x00";
   Bytes bytes(&scope, runtime.newBytesWithAll(set_bytes));
+  Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
+  ASSERT_TRUE(obj.isSet());
+  EXPECT_EQ(Set::cast(*obj).numItems(), 0);
+}
+
+TEST(MarshalModuleTest, LoadsWithBytesSubclassReadsSet) {
+  Runtime runtime;
+  HandleScope scope;
+  // marshal.loads(set())
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+foo = Foo(b"\xbc\x00\x00\x00\x00")
+)")
+                   .isError());
+  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "foo"));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);

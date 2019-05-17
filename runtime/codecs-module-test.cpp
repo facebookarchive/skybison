@@ -87,6 +87,29 @@ TEST(CodecsModuleTest, DecodeASCIIWithSurroogateescapeErrorHandlerReturnsStr) {
   EXPECT_EQ(str.codePointAt(4, &placeholder), 0xdc80);
 }
 
+TEST(CodecsModuleTest, DecodeASCIIWithBytesSubclassReturnsStr) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+encoded = Foo(b"hello")
+)")
+                   .isError());
+  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "encoded"));
+  Str errors(&scope, runtime.newStrFromCStr("strict"));
+  Int index(&scope, runtime.newInt(0));
+  ByteArray bytearray(&scope, runtime.newByteArray());
+  Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
+                                       bytes, errors, index, bytearray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  EXPECT_EQ(str.length(), 5);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
+  EXPECT_TRUE(str.equalsCStr("hello"));
+}
+
 TEST(CodecsModuleTest, EncodeASCIIWithWellFormedASCIIReturnsString) {
   Runtime runtime;
   HandleScope scope;

@@ -1,5 +1,6 @@
 #include "io-module.h"
 
+#include "bytes-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -35,7 +36,8 @@ RawObject UnderIoModule::underReadBytes(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
-  Bytes bytes(&scope, args.get(0));
+  Object bytes_obj(&scope, args.get(0));
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   word length = bytes.length();
   std::unique_ptr<char[]> data(new char[length + 1]);
   for (word idx = 0; idx < length; idx++) data[idx] = bytes.byteAt(idx);

@@ -54,6 +54,15 @@ TEST(TestUtils, IsBytesEquals) {
   auto const ok = isBytesEqualsBytes(bytes, view);
   EXPECT_TRUE(ok);
 
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+foo = Foo(b"foo")
+)")
+                   .isError());
+  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  auto const subclass_ok = isBytesEqualsBytes(foo, view);
+  EXPECT_TRUE(subclass_ok);
+
   auto const not_equal = isBytesEqualsCStr(bytes, "bar");
   EXPECT_FALSE(not_equal);
   const char* ne_msg = "b'foo' is not equal to b'bar'";

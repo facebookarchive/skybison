@@ -1324,6 +1324,27 @@ TEST(BytesBuiltinsTest, JoinWithNonEmptyListReturnsBytes) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "* * *"));
 }
 
+TEST(BytesBuiltinsTest, JoinWithBytesSubclassesReturnsBytes) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes):
+  def join(self, iterable):
+    # this should not be called - expect bytes.join() instead
+    return 0
+sep = Foo(b"-")
+ac = Foo(b"AC")
+dc = Foo(b"DC")
+)")
+                   .isError());
+  HandleScope scope;
+  Bytes self(&scope, moduleAt(&runtime, "__main__", "sep"));
+  Tuple iter(&scope, runtime.newTuple(2));
+  iter.atPut(0, moduleAt(&runtime, "__main__", "ac"));
+  iter.atPut(1, moduleAt(&runtime, "__main__", "dc"));
+  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
+}
+
 TEST(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   Runtime runtime;
   EXPECT_TRUE(raisedWithStr(

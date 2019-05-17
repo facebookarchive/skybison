@@ -1,5 +1,6 @@
 #include "marshal-module.h"
 
+#include "bytes-builtins.h"
 #include "frame.h"
 #include "frozen-modules.h"
 #include "globals.h"
@@ -22,11 +23,11 @@ RawObject MarshalModule::loads(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object bytes_obj(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
-  if (!bytes_obj.isBytes()) {
+  if (!runtime->isInstanceOfBytes(*bytes_obj)) {
     // TODO(T38902048): Load from buffer protocol objects
     UNIMPLEMENTED("marshal.loads with non-bytes objects");
   }
-  Bytes bytes(&scope, *bytes_obj);
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   word length = bytes.length();
   // TODO(T38902583): Use updated Marshal reader to read from Bytes object
   // directly

@@ -2479,6 +2479,20 @@ x = X()
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
+TEST(IntBuiltinsTest, FromBytesWithBytesSubclassReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class X(bytes): pass
+x = X(b"*")
+)")
+                   .isError());
+  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+  Str byteorder(&scope, runtime.newStrFromCStr("little"));
+  Object result(&scope, runBuiltin(IntBuiltins::fromBytes, x, byteorder));
+  EXPECT_TRUE(isIntEqualsWord(*result, 42));
+}
+
 TEST(IntBuiltinsTest, FromBytesWithBigEndianReturnsLargeInt) {
   Runtime runtime;
   HandleScope scope;

@@ -425,7 +425,7 @@ static RawObject fromBytesImpl(Thread* thread, const Object& bytes_obj,
                                   &maybe_bytes);
     }
   }
-  Bytes bytes(&scope, *maybe_bytes);
+  Bytes bytes(&scope, bytesUnderlying(thread, maybe_bytes));
 
   if (!runtime->isInstanceOfStr(*byteorder_obj)) {
     return thread->raiseWithFmt(
