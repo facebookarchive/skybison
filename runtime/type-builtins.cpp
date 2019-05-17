@@ -269,7 +269,8 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Object instance(&scope, Interpreter::callEx(
                               thread, frame, CallFunctionExFlag::VAR_KEYWORDS));
   if (instance.isError()) return *instance;
-  if (!runtime->isInstance(instance, metaclass)) {
+  Type type(&scope, runtime->typeOf(*instance));
+  if (!runtime->isSubclass(type, metaclass)) {
     return *instance;
   }
 

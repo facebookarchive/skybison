@@ -288,7 +288,6 @@ class Runtime;
   V(IsDisjoint, "isdisjoint")                                                  \
   V(IsFrozen, "is_frozen")                                                     \
   V(IsFrozenPackage, "is_frozen_package")                                      \
-  V(IsInstance, "isinstance")                                                  \
   V(Items, "items")                                                            \
   V(Itertools, "itertools")                                                    \
   V(Join, "join")                                                              \

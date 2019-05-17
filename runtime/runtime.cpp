@@ -3638,12 +3638,6 @@ bool Runtime::isSubclass(const Type& subclass, const Type& superclass) {
   return false;
 }
 
-bool Runtime::isInstance(const Object& obj, const Type& type) {
-  HandleScope scope;
-  Type obj_class(&scope, typeOf(*obj));
-  return isSubclass(obj_class, type);
-}
-
 RawObject Runtime::newClassMethod() { return heap()->create<RawClassMethod>(); }
 
 RawObject Runtime::newSuper() { return heap()->create<RawSuper>(); }

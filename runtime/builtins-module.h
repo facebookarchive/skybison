@@ -25,7 +25,6 @@ class BuiltinsModule {
   static RawObject exec(Thread* thread, Frame* frame, word nargs);
   static RawObject getattr(Thread* thread, Frame* frame, word nargs);
   static RawObject hasattr(Thread* thread, Frame* frame, word nargs);
-  static RawObject isinstance(Thread* thread, Frame* frame, word nargs);
   static RawObject ord(Thread* thread, Frame* frame, word nargs);
   static RawObject print(Thread* thread, Frame* frame, word nargs);
   static RawObject printKw(Thread* thread, Frame* frame, word nargs);

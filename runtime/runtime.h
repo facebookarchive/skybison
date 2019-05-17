@@ -631,9 +631,6 @@ class Runtime {
   // Return true if subclass is a subclass of superclass
   bool isSubclass(const Type& subclass, const Type& superclass);
 
-  // Return true if obj is an instance of a subclass of type
-  bool isInstance(const Object& obj, const Type& type);
-
   // For commonly-subclassed builtin types, define isInstanceOfFoo(RawObject)
   // that does a check including subclasses (unlike RawObject::isFoo(), which
   // only gets exact types).

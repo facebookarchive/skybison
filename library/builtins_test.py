@@ -367,6 +367,119 @@ class IntTests(unittest.TestCase):
         self.assertIs(int(), 0)
 
 
+class IsInstanceTests(unittest.TestCase):
+    def test_isinstance_with_same_types_returns_true(self):
+        self.assertIs(isinstance(1, int), True)
+
+    def test_isinstance_with_subclass_returns_true(self):
+        self.assertIs(isinstance(False, int), True)
+
+    def test_isinstance_with_superclass_returns_false(self):
+        self.assertIs(isinstance(2, bool), False)
+
+    def test_isinstance_with_type_and_metaclass_returns_true(self):
+        self.assertIs(isinstance(list, type), True)
+
+    def test_isinstance_with_type_returns_true(self):
+        self.assertIs(isinstance(type, type), True)
+
+    def test_isinstance_with_object_type_returns_true(self):
+        self.assertIs(isinstance(object, object), True)
+
+    def test_isinstance_with_int_type_returns_false(self):
+        self.assertIs(isinstance(int, int), False)
+
+    def test_isinstance_with_unrelated_types_returns_false(self):
+        self.assertIs(isinstance(int, (dict, bytes, str)), False)
+
+    def test_isinstance_with_superclass_tuple_returns_true(self):
+        self.assertIs(isinstance(True, (int, "bad - not a type")), True)
+
+    def test_isinstance_with_non_type_superclass_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            isinstance(4, "bad - not a type")
+        self.assertEqual(
+            str(context.exception),
+            "isinstance() arg 2 must be a type or tuple of types",
+        )
+
+    def test_isinstance_with_non_type_in_tuple_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            isinstance(5, ("bad - not a type", int))
+        self.assertEqual(
+            str(context.exception),
+            "isinstance() arg 2 must be a type or tuple of types",
+        )
+
+    def test_isinstance_with_multiple_inheritance_returns_true(self):
+        class A:
+            pass
+
+        class B(A):
+            pass
+
+        class C(A):
+            pass
+
+        class D(B, C):
+            pass
+
+        d = D()
+
+        # D() is an instance of all specified superclasses
+        self.assertIs(isinstance(d, A), True)
+        self.assertIs(isinstance(d, B), True)
+        self.assertIs(isinstance(d, C), True)
+        self.assertIs(isinstance(d, D), True)
+
+        # D() is not an instance of builtin types except object
+        self.assertIs(isinstance(d, object), True)
+        self.assertIs(isinstance(d, list), False)
+
+        # D is an instance type, but D() is not
+        self.assertIs(isinstance(D, type), True)
+        self.assertIs(isinstance(d, type), False)
+
+    def test_isinstance_with_type_checks_instance_type_and_dunder_class(self):
+        class A(int):
+            __class__ = list
+
+        a = A()
+        self.assertIs(isinstance(a, int), True)
+        self.assertIs(isinstance(a, list), True)
+
+    def test_isinstance_with_nontype_checks_dunder_bases_and_dunder_class(self):
+        class A:
+            __bases__ = ()
+
+        a = A()
+
+        class B:
+            __bases__ = (a,)
+
+        b = B()
+
+        class C(int):
+            __class__ = b
+            __bases__ = (int,)
+
+        c = C()
+        self.assertIs(isinstance(c, a), True)
+        self.assertIs(isinstance(c, b), True)
+        self.assertIs(isinstance(c, c), False)
+
+    def test_isinstance_with_non_tuple_dunder_bases_raises_type_error(self):
+        class A:
+            __bases__ = 5
+
+        with self.assertRaises(TypeError) as context:
+            isinstance(5, A())
+        self.assertEqual(
+            str(context.exception),
+            "isinstance() arg 2 must be a type or tuple of types",
+        )
+
+
 class IsSubclassTests(unittest.TestCase):
     def test_issubclass_with_same_types_returns_true(self):
         self.assertIs(issubclass(int, int), True)

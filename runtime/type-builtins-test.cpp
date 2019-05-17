@@ -600,8 +600,8 @@ class A(metaclass=M): pass
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
-  Object result_0(&scope, result.at(0));
-  EXPECT_TRUE(runtime.isInstance(result_0, d));
+  Type result_0_type(&scope, runtime.typeOf(result.at(0)));
+  EXPECT_TRUE(runtime.isSubclass(result_0_type, d));
   EXPECT_EQ(result.at(1), a);
   EXPECT_EQ(result.at(2), m);
 }

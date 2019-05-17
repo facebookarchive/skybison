@@ -544,6 +544,13 @@ def _int_from_str(cls: type, x: str, base: int) -> int:
     pass
 
 
+def _isinstance_type(obj, ty: type, cls: type) -> bool:
+    if ty is cls or _type_issubclass(ty, cls):
+        return True
+    subcls = getattr(obj, "__class__", ty)
+    return subcls is not ty and _type_check(subcls) and _type_issubclass(subcls, cls)
+
+
 def _issubclass(subclass, superclass) -> bool:
     if _type_check(subclass) and _type_check(superclass):
         return _type_issubclass(subclass, superclass)
@@ -2220,9 +2227,26 @@ class int(bootstrap=True):
         pass
 
 
-@_patch
-def isinstance(obj, ty):
-    pass
+def isinstance(obj, type_or_tuple) -> bool:
+    ty = type(obj)
+    if ty is type_or_tuple:
+        return True
+    if _type_check_exact(type_or_tuple):
+        return _isinstance_type(obj, ty, type_or_tuple)
+    if _tuple_check(type_or_tuple):
+        for item in type_or_tuple:
+            if isinstance(obj, item):
+                return True
+        return False
+    # TODO(wmeehan): call __instancecheck__
+    # disabled since we do not support all of ABCMeta.__instancecheck__
+    if _type_check(type_or_tuple):
+        return _isinstance_type(obj, ty, type_or_tuple)
+    _dunder_bases_tuple_check(
+        type_or_tuple, "isinstance() arg 2 must be a type or tuple of types"
+    )
+    subclass = getattr(obj, "__class__", None)
+    return subclass and _issubclass_recursive(subclass, type_or_tuple)
 
 
 def issubclass(cls, type_or_tuple) -> bool:
