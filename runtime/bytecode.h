@@ -268,9 +268,7 @@ namespace python {
   V(UNUSED_BYTECODE_252, 252, doInvalidBytecode)                               \
   V(BINARY_SUBSCR_CACHED, 253, doBinarySubscrCached)                           \
   V(STORE_ATTR_CACHED, 254, doStoreAttrCached)                                 \
-  V(LOAD_ATTR_CACHED, 255, doLoadAttrCached)                                   \
-  V(UNUSED_BYTECODE_256, 256, doInvalidBytecode)                               \
-  V(EXCEPT_HANDLER, 257, doInvalidBytecode)
+  V(LOAD_ATTR_CACHED, 255, doLoadAttrCached)
 
 enum Bytecode {
 #define ENUM(name, value, handler) name = value,
