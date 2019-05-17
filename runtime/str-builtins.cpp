@@ -9,6 +9,7 @@
 #include "slice-builtins.h"
 #include "thread.h"
 #include "trampolines-inl.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
@@ -378,6 +379,76 @@ static void adjustIndices(const Str& str, word* startp, word* endp) {
     }
     *startp = start;
   }
+}
+
+void strInternInTuple(Thread* thread, const Object& items) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfTuple(*items), "items must be a tuple instance");
+  Tuple tuple(&scope, tupleUnderlying(thread, items));
+  Object obj(&scope, NoneType::object());
+  Object result(&scope, NoneType::object());
+  for (word i = 0; i < tuple.length(); i++) {
+    obj = tuple.at(i);
+    CHECK(obj.isStr(), "non-string found in code slot");
+    result = runtime->internStr(thread, obj);
+    if (result.isError()) continue;
+    if (result != obj) {
+      tuple.atPut(i, *result);
+    }
+  }
+}
+
+static bool allNameChars(const Str& str) {
+  for (word i = 0; i < str.length(); i++) {
+    if (!isalnum(str.charAt(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool strInternConstants(Thread* thread, const Object& items) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfTuple(*items), "items must be a tuple instance");
+  Tuple tuple(&scope, tupleUnderlying(thread, items));
+  Object obj(&scope, NoneType::object());
+  Object result(&scope, NoneType::object());
+  bool modified = false;
+  for (word i = 0; i < tuple.length(); i++) {
+    obj = tuple.at(i);
+
+    if (obj.isStr()) {
+      Str str(&scope, *obj);
+      if (allNameChars(str)) {
+        // if all name chars, intern in place
+        result = runtime->internStr(thread, obj);
+        if (result.isError()) continue;
+        if (result != obj) {
+          tuple.atPut(i, *result);
+          modified = true;
+        }
+      }
+    } else if (obj.isTuple()) {
+      strInternConstants(thread, obj);
+    } else if (obj.isFrozenSet()) {
+      FrozenSet set(&scope, *obj);
+      Tuple data(&scope, set.data());
+      Tuple seq(&scope, runtime->newTuple(set.numItems()));
+      for (word j = 0, idx = Set::Bucket::kFirst;
+           Set::Bucket::nextItem(*data, &idx); j++) {
+        seq.atPut(j, Set::Bucket::key(*data, idx));
+      }
+      if (strInternConstants(thread, seq)) {
+        obj = runtime->setUpdate(thread, set, seq);
+        if (obj.isError()) continue;
+        tuple.atPut(i, *obj);
+        modified = true;
+      }
+    }
+  }
+  return modified;
 }
 
 RawObject strFind(const Str& haystack, const Str& needle, word start,

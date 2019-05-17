@@ -3029,6 +3029,106 @@ TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   EXPECT_EQ(cell2arg.at(1), NoneType::object());
 }
 
+TEST(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  word argcount = 3;
+  Tuple varnames(&scope, runtime.newTuple(argcount));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Str foo(&scope, runtime.internStrFromCStr(thread, "foo"));
+  Str bar(&scope, runtime.internStrFromCStr(thread, "bar"));
+  Str baz(&scope, runtime.internStrFromCStr(thread, "baz"));
+  Str foobar(&scope, runtime.internStrFromCStr(thread, "foobar"));
+  varnames.atPut(0, *foo);
+  varnames.atPut(1, *bar);
+  varnames.atPut(2, *baz);
+  cellvars.atPut(0, *baz);
+  cellvars.atPut(1, *foobar);
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_str(&scope, Str::empty());
+  Code code(&scope,
+            runtime.newCode(argcount, 0, 0, 0, 0, none, empty_tuple,
+                            empty_tuple, varnames, empty_tuple, cellvars,
+                            empty_str, empty_str, 0, empty_bytes));
+  EXPECT_FALSE(code.flags() & Code::Flags::NOFREE);
+}
+
+TEST(RuntimeTest, NewCodeWithNoFreevarsOrCellvarsSetsNofreeFlag) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple varnames(&scope, runtime.newTuple(1));
+  varnames.atPut(0, runtime.newStrFromCStr("foobar"));
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_str(&scope, Str::empty());
+  Object code_obj(&scope,
+                  runtime.newCode(0, 0, 0, 0, 0, none, empty_tuple, empty_tuple,
+                                  varnames, empty_tuple, empty_tuple, empty_str,
+                                  empty_str, 0, empty_bytes));
+  ASSERT_TRUE(code_obj.isCode());
+  Code code(&scope, *code_obj);
+  EXPECT_TRUE(code.flags() & Code::Flags::NOFREE);
+}
+
+TEST(RuntimeTest,
+     NewCodeWithArgcountGreaterThanVarnamesLengthRaisesValueError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple varnames(&scope, runtime.newTuple(1));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_str(&scope, Str::empty());
+  EXPECT_TRUE(raisedWithStr(
+      runtime.newCode(/*argcount=*/10, 0, 0, 0, 0, none, empty_tuple,
+                      empty_tuple, varnames, empty_tuple, cellvars, empty_str,
+                      empty_str, 0, empty_bytes),
+      LayoutId::kValueError, "code: varnames is too small"));
+}
+
+TEST(RuntimeTest,
+     NewCodeWithKwonlyargcountGreaterThanVarnamesLengthRaisesValueError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple varnames(&scope, runtime.newTuple(1));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_str(&scope, Str::empty());
+  EXPECT_TRUE(raisedWithStr(
+      runtime.newCode(0, /*kwonlyargcount=*/10, 0, 0, 0, none, empty_tuple,
+                      empty_tuple, varnames, empty_tuple, cellvars, empty_str,
+                      empty_str, 0, empty_bytes),
+      LayoutId::kValueError, "code: varnames is too small"));
+}
+
+TEST(RuntimeTest,
+     NewCodeWithTotalArgsGreaterThanVarnamesLengthRaisesValueError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple varnames(&scope, runtime.newTuple(1));
+  Tuple cellvars(&scope, runtime.newTuple(2));
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime.newTuple(0));
+  Object empty_bytes(&scope, Bytes::empty());
+  Object empty_str(&scope, Str::empty());
+  EXPECT_TRUE(raisedWithStr(
+      runtime.newCode(/*argcount=*/1, /*kwonlyargcount=*/1, 0, 0, 0, none,
+                      empty_tuple, empty_tuple, varnames, empty_tuple, cellvars,
+                      empty_str, empty_str, 0, empty_bytes),
+      LayoutId::kValueError, "code: varnames is too small"));
+}
+
 // Set is not special except that it is a builtin type with sealed attributes.
 TEST(RuntimeTest, SetHasSameSizeCreatedTwoDifferentWays) {
   Runtime runtime;

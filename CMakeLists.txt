@@ -485,6 +485,7 @@ set(
   ext/Objects/bytearrayobject-test.cpp
   ext/Objects/bytesobject-test.cpp
   ext/Objects/classobject-test.cpp
+  ext/Objects/codeobject-test.cpp
   ext/Objects/complexobject-test.cpp
   ext/Objects/descrobject-test.cpp
   ext/Objects/dictobject-test.cpp

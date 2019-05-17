@@ -3995,12 +3995,6 @@ inline word RawCode::flags() const {
 }
 
 inline void RawCode::setFlags(word value) const {
-  if ((kwonlyargcount() == 0) && (value & NOFREE) &&
-      !(value & (VARARGS | VARKEYARGS))) {
-    // Set up shortcut for detecting fast case for calls
-    // TODO(buzbee): move into equivalent of CPython's codeobject.c:PyCode_New()
-    value |= SIMPLE_CALL;
-  }
   instanceVariableAtPut(kFlagsOffset, RawSmallInt::fromWord(value));
 }
 

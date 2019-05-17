@@ -670,6 +670,112 @@ TEST(StrBuiltinsTest, IndexWithSliceWithNegativeTwoStep) {
   EXPECT_TRUE(isStrEqualsCStr(*result, "olh"));
 }
 
+TEST(StrBuiltinsTest, InternStringsInTupleInternsItems) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime.newTuple(3));
+  Str str0(&scope, runtime.newStrFromCStr("a"));
+  Str str1(&scope, runtime.newStrFromCStr("hello world"));
+  Str str2(&scope, runtime.newStrFromCStr("hello world foobar"));
+  EXPECT_TRUE(runtime.isInternedStr(thread, str0));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str1));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str2));
+  tuple.atPut(0, *str0);
+  tuple.atPut(1, *str1);
+  tuple.atPut(2, *str2);
+  strInternInTuple(thread, tuple);
+  str0 = tuple.at(0);
+  str1 = tuple.at(1);
+  str2 = tuple.at(2);
+  EXPECT_TRUE(runtime.isInternedStr(thread, str0));
+  EXPECT_TRUE(runtime.isInternedStr(thread, str1));
+  EXPECT_TRUE(runtime.isInternedStr(thread, str2));
+}
+
+TEST(StrBuiltinsTest, InternStringConstantsInternsAlphanumericStringsInTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple tuple(&scope, runtime.newTuple(3));
+  Str str0(&scope, runtime.newStrFromCStr("_"));
+  Str str1(&scope, runtime.newStrFromCStr("hello world"));
+  Str str2(&scope, runtime.newStrFromCStr("helloworldfoobar"));
+  EXPECT_TRUE(runtime.isInternedStr(thread, str0));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str1));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str2));
+  tuple.atPut(0, *str0);
+  tuple.atPut(1, *str1);
+  tuple.atPut(2, *str2);
+  strInternConstants(thread, tuple);
+  str0 = tuple.at(0);
+  str1 = tuple.at(1);
+  str2 = tuple.at(2);
+  EXPECT_TRUE(runtime.isInternedStr(thread, str0));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str1));
+  EXPECT_TRUE(runtime.isInternedStr(thread, str2));
+}
+
+TEST(StrBuiltinsTest, InternStringConstantsInternsStringsInNestedTuples) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple outer(&scope, runtime.newTuple(3));
+  outer.atPut(0, SmallInt::fromWord(0));
+  outer.atPut(1, SmallInt::fromWord(1));
+  Tuple inner(&scope, runtime.newTuple(3));
+  outer.atPut(2, *inner);
+  Str str0(&scope, runtime.newStrFromCStr("_"));
+  Str str1(&scope, runtime.newStrFromCStr("hello world"));
+  Str str2(&scope, runtime.newStrFromCStr("helloworldfoobar"));
+  EXPECT_TRUE(runtime.isInternedStr(thread, str0));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str1));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str2));
+  inner.atPut(0, *str0);
+  inner.atPut(1, *str1);
+  inner.atPut(2, *str2);
+  strInternConstants(thread, outer);
+  str0 = inner.at(0);
+  str1 = inner.at(1);
+  str2 = inner.at(2);
+  EXPECT_TRUE(runtime.isInternedStr(thread, str0));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str1));
+  EXPECT_TRUE(runtime.isInternedStr(thread, str2));
+}
+
+TEST(StrBuiltinsTest, InternStringConstantsInternsStringsInFrozenSetsInTuples) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple outer(&scope, runtime.newTuple(3));
+  outer.atPut(0, SmallInt::fromWord(0));
+  outer.atPut(1, SmallInt::fromWord(1));
+  FrozenSet inner(&scope, runtime.newFrozenSet());
+  outer.atPut(2, *inner);
+  Str str0(&scope, runtime.newStrFromCStr("alpharomeo"));
+  Str str1(&scope, runtime.newStrFromCStr("hello world"));
+  Str str2(&scope, runtime.newStrFromCStr("helloworldfoobar"));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str0));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str1));
+  EXPECT_FALSE(runtime.isInternedStr(thread, str2));
+  runtime.setAdd(thread, inner, str0);
+  runtime.setAdd(thread, inner, str1);
+  runtime.setAdd(thread, inner, str2);
+  strInternConstants(thread, outer);
+  inner = outer.at(2);
+  Tuple data(&scope, inner.data());
+  bool all_interned = true;
+  bool some_interned = false;
+  for (word idx = Set::Bucket::kFirst; Set::Bucket::nextItem(*data, &idx);) {
+    Str obj(&scope, Set::Bucket::key(*data, idx));
+    bool interned = runtime.isInternedStr(thread, obj);
+    all_interned &= interned;
+    some_interned |= interned;
+  }
+  EXPECT_FALSE(all_interned);
+  EXPECT_TRUE(some_interned);
+}
+
 TEST(StrBuiltinsTest, StartsWithEmptyStringReturnsTrue) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(

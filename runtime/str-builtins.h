@@ -12,6 +12,13 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
 // Look for needle in haystack in the range [start, end]. Return the first
 // index found in that range, or -1 if needle was not found.
 RawObject strFind(const Str& haystack, const Str& needle, word start, word end);
+
+// Intern strings in place in a tuple of strings
+void strInternInTuple(Thread* thread, const Object& items);
+// Intern strings in place in a tuple of nested constant structures (str,
+// tuple, frozenset)
+bool strInternConstants(Thread* thread, const Object& items);
+
 // Look for needle in haystack in the range [start, end]. Return the last
 // index found in that range, or -1 if needle was not found.
 RawObject strRFind(const Str& haystack, const Str& needle, word start,

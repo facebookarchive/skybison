@@ -517,8 +517,8 @@ RawObject Runtime::newEmptyCode(const Object& name) {
 RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
                            word stacksize, word flags, const Object& code,
                            const Object& consts, const Object& names,
-                           const Tuple& varnames, const Tuple& freevars,
-                           const Tuple& cellvars, const Object& filename,
+                           const Object& varnames, const Object& freevars,
+                           const Object& cellvars, const Object& filename,
                            const Object& name, word firstlineno,
                            const Object& lnotab) {
   DCHECK(isInstanceOfTuple(*consts), "expected tuple");
@@ -530,7 +530,23 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
   DCHECK(isInstanceOfStr(*name), "expected str");
   DCHECK(isInstanceOfBytes(*lnotab), "expected bytes");
 
-  HandleScope scope;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Tuple cellvars_tuple(&scope, tupleUnderlying(thread, cellvars));
+  Tuple freevars_tuple(&scope, tupleUnderlying(thread, freevars));
+  if (cellvars_tuple.length() == 0 && freevars_tuple.length() == 0) {
+    flags |= Code::Flags::NOFREE;
+  } else {
+    flags &= ~Code::Flags::NOFREE;
+  }
+
+  if (kwonlyargcount == 0 && (flags & Code::Flags::NOFREE) &&
+      !(flags & (Code::Flags::VARARGS | Code::Flags::VARKEYARGS))) {
+    // Set up shortcut for detecting fast case for calls
+    flags |= Code::Flags::SIMPLE_CALL;
+  }
+
   Code result(&scope, heap()->create<RawCode>());
   result.setArgcount(argcount);
   result.setKwonlyargcount(kwonlyargcount);
@@ -547,6 +563,20 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
   result.setName(*name);
   result.setFirstlineno(firstlineno);
   result.setLnotab(*lnotab);
+
+  Tuple varnames_tuple(&scope, tupleUnderlying(thread, varnames));
+  if (argcount > varnames_tuple.length() ||
+      kwonlyargcount > varnames_tuple.length() ||
+      result.totalArgs() > varnames_tuple.length()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "code: varnames is too small");
+  }
+
+  strInternInTuple(thread, names);
+  strInternInTuple(thread, varnames);
+  strInternInTuple(thread, freevars);
+  strInternInTuple(thread, cellvars);
+  strInternConstants(thread, consts);
 
   // Create mapping between cells and arguments if needed
   if (result.numCellvars() > 0) {
