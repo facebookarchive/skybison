@@ -10,6 +10,208 @@ using namespace testing;
 
 using CodeExtensionApiTest = ExtensionApi;
 
+TEST_F(CodeExtensionApiTest, ConstantKeyWithNoneReturnsTwoTuple) {
+  PyObjectPtr result(_PyCode_ConstantKey(Py_None));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(Py_None)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), Py_None);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithEllipsisReturnsTwoTuple) {
+  PyObjectPtr result(_PyCode_ConstantKey(Py_Ellipsis));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(Py_Ellipsis)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), Py_Ellipsis);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithIntReturnsTwoTuple) {
+  PyObjectPtr obj(PyLong_FromLong(5));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithTrueReturnsTwoTuple) {
+  PyObjectPtr result(_PyCode_ConstantKey(Py_True));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(Py_True)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), Py_True);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithFalseReturnsTwoTuple) {
+  PyObjectPtr result(_PyCode_ConstantKey(Py_False));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(Py_False)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), Py_False);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithBytesReturnsTwoTuple) {
+  PyObjectPtr obj(PyBytes_FromString("hello"));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithCodeReturnsTwoTuple) {
+  PyObjectPtr empty_tuple(PyTuple_New(0));
+  PyObjectPtr empty_bytes(PyBytes_FromString(""));
+  PyObjectPtr empty_str(PyUnicode_FromString(""));
+  PyObjectPtr obj(reinterpret_cast<PyObject*>(PyCode_New(
+      0, 0, 0, 0, 0, empty_bytes, empty_tuple, empty_tuple, empty_tuple,
+      empty_tuple, empty_tuple, empty_str, empty_str, 0, empty_bytes)));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithFloatReturnsTwoTuple) {
+  PyObjectPtr obj(PyFloat_FromDouble(1.0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+}
+
+TEST_F(CodeExtensionApiTest,
+       ConstantKeyWithFloatNegativeZeroReturnsThreeTuple) {
+  PyObjectPtr obj(PyFloat_FromDouble(-0.0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  EXPECT_EQ(PyTuple_GetItem(result, 2), Py_None);
+}
+
+TEST_F(CodeExtensionApiTest,
+       ConstantKeyWithComplexBothNegativeZeroReturnsThreeTuple) {
+  PyObjectPtr obj(PyComplex_FromDoubles(-0.0, -0.0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  EXPECT_EQ(PyTuple_GetItem(result, 2), Py_True);
+}
+
+TEST_F(CodeExtensionApiTest,
+       ConstantKeyWithComplexImagNegativeZeroReturnsThreeTuple) {
+  PyObjectPtr obj(PyComplex_FromDoubles(1.0, -0.0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  EXPECT_EQ(PyTuple_GetItem(result, 2), Py_False);
+}
+
+TEST_F(CodeExtensionApiTest,
+       ConstantKeyWithComplexRealNegativeZeroReturnsThreeTuple) {
+  PyObjectPtr obj(PyComplex_FromDoubles(-0.0, 1.0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 3);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  EXPECT_EQ(PyTuple_GetItem(result, 2), Py_None);
+}
+
+TEST_F(CodeExtensionApiTest,
+       ConstantKeyWithComplexNeitherNegativeZeroReturnsTwoTuple) {
+  PyObjectPtr obj(PyComplex_FromDoubles(1.0, 1.0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 0),
+            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuple) {
+  PyObjectPtr val0(PyLong_FromLong(0));
+  Py_INCREF(val0);
+  PyObjectPtr val1(PyLong_FromLong(1));
+  Py_INCREF(val1);
+  PyObjectPtr val2(PyLong_FromLong(2));
+  Py_INCREF(val2);
+  PyObjectPtr obj(PyTuple_New(3));
+  PyTuple_SetItem(obj, 0, val0);
+  PyTuple_SetItem(obj, 1, val1);
+  PyTuple_SetItem(obj, 2, val2);
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  PyObject* new_tuple = PyTuple_GetItem(result, 0);
+  EXPECT_EQ(PyTuple_Size(new_tuple), PyTuple_Size(obj));
+  EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 0)));
+  EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 1)));
+  EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 2)));
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithFrozenSetReturnsTwoTuple) {
+  PyObjectPtr iterable(PyTuple_Pack(3, PyLong_FromLong(0), PyLong_FromLong(1),
+                                    PyLong_FromLong(2)));
+  PyObjectPtr obj(PyFrozenSet_New(iterable));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  PyObject* new_frozenset = PyTuple_GetItem(result, 0);
+  ASSERT_TRUE(PyFrozenSet_Check(new_frozenset));
+  EXPECT_EQ(PySet_Size(new_frozenset), PySet_Size(obj));
+}
+
+TEST_F(CodeExtensionApiTest, ConstantKeyWithOtherObjectReturnsTwoTupleWithId) {
+  PyObjectPtr obj(PyList_New(0));
+  PyObjectPtr result(_PyCode_ConstantKey(obj));
+  ASSERT_NE(result, nullptr);
+  ASSERT_TRUE(PyTuple_Check(result));
+  ASSERT_EQ(PyTuple_Size(result), 2);
+  PyObject* obj_id = PyTuple_GetItem(result, 0);
+  ASSERT_TRUE(PyLong_Check(obj_id));
+  EXPECT_EQ(PyLong_AsVoidPtr(obj_id), obj.get());
+  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+}
+
 TEST_F(CodeExtensionApiTest, GetNumFreeReturnsNumberOfFreevars) {
   PyObjectPtr freevars(PyTuple_New(3));
   PyTuple_SetItem(freevars, 0, PyUnicode_FromString("foo"));

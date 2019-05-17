@@ -1,9 +1,11 @@
+#include <cmath>
+
+#include "cpython-data.h"
+#include "cpython-func.h"
 #include "runtime.h"
 #include "tuple-builtins.h"
 
 namespace python {
-
-struct PyCodeObject;
 
 PY_EXPORT int PyCode_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isCode();
@@ -79,8 +81,124 @@ PY_EXPORT PyObject* PyCode_GetFreevars_Func(PyObject*) {
   UNIMPLEMENTED("PyCode_GetVars_Func");
 }
 
-PY_EXPORT PyObject* _PyCode_ConstantKey(PyObject*) {
-  UNIMPLEMENTED("_PyCode_ConstantKey");
+static RawObject constantKey(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (obj.isNoneType() || obj.isEllipsis() || obj.isInt() || obj.isBool() ||
+      obj.isBytes() || obj.isCode()) {
+    Tuple key(&scope, runtime->newTuple(2));
+    key.atPut(0, runtime->typeOf(*obj));
+    key.atPut(1, *obj);
+    return *key;
+  }
+  if (obj.isFloat()) {
+    double d = Float::cast(*obj).value();
+    if (d == 0.0 && std::signbit(d)) {
+      Tuple key(&scope, runtime->newTuple(3));
+      key.atPut(0, runtime->typeOf(*obj));
+      key.atPut(1, *obj);
+      key.atPut(2, NoneType::object());
+      return *key;
+    }
+    Tuple key(&scope, runtime->newTuple(2));
+    key.atPut(0, runtime->typeOf(*obj));
+    key.atPut(1, *obj);
+    return *key;
+  }
+  if (obj.isComplex()) {
+    Complex c(&scope, *obj);
+    Py_complex z;
+    z.real = c.real();
+    z.imag = c.imag();
+    // For the complex case we must make complex(x, 0.)
+    // different from complex(x, -0.) and complex(0., y)
+    // different from complex(-0., y), for any x and y.
+    // All four complex zeros must be distinguished.
+    bool real_negzero = z.real == 0.0 && std::signbit(z.real);
+    bool imag_negzero = z.imag == 0.0 && std::signbit(z.imag);
+    // use True, False and None singleton as tags for the real and imag sign,
+    // to make tuples different
+    if (real_negzero && imag_negzero) {
+      Tuple key(&scope, runtime->newTuple(3));
+      key.atPut(0, runtime->typeOf(*obj));
+      key.atPut(1, *obj);
+      key.atPut(2, Bool::trueObj());
+      return *key;
+    }
+    if (imag_negzero) {
+      Tuple key(&scope, runtime->newTuple(3));
+      key.atPut(0, runtime->typeOf(*obj));
+      key.atPut(1, *obj);
+      key.atPut(2, Bool::falseObj());
+      return *key;
+    }
+    if (real_negzero) {
+      Tuple key(&scope, runtime->newTuple(3));
+      key.atPut(0, runtime->typeOf(*obj));
+      key.atPut(1, *obj);
+      key.atPut(2, NoneType::object());
+      return *key;
+    }
+    Tuple key(&scope, runtime->newTuple(2));
+    key.atPut(0, runtime->typeOf(*obj));
+    key.atPut(1, *obj);
+    return *key;
+  }
+  if (obj.isTuple()) {
+    Tuple tuple(&scope, *obj);
+    Tuple result(&scope, runtime->newTuple(tuple.length()));
+    Object item(&scope, NoneType::object());
+    Object item_key(&scope, NoneType::object());
+    for (word i = 0; i < tuple.length(); i++) {
+      item = tuple.at(i);
+      item_key = constantKey(thread, item);
+      if (item_key.isError()) return *item_key;
+      result.atPut(i, *item_key);
+    }
+    Tuple key(&scope, runtime->newTuple(2));
+    key.atPut(0, *result);
+    key.atPut(1, *obj);
+    return *key;
+  }
+  if (obj.isFrozenSet()) {
+    FrozenSet set(&scope, *obj);
+    Tuple data(&scope, set.data());
+    Tuple seq(&scope, runtime->newTuple(set.numItems()));
+    Object item(&scope, NoneType::object());
+    Object item_key(&scope, NoneType::object());
+    for (word j = 0, idx = Set::Bucket::kFirst;
+         Set::Bucket::nextItem(*data, &idx); j++) {
+      item = Set::Bucket::key(*data, idx);
+      item_key = constantKey(thread, item);
+      if (item_key.isError()) return *item_key;
+      seq.atPut(j, *item_key);
+    }
+    FrozenSet result(&scope, runtime->newFrozenSet());
+    result = runtime->setUpdate(thread, result, seq);
+    if (result.isError()) return *result;
+    Tuple key(&scope, runtime->newTuple(2));
+    key.atPut(0, *result);
+    key.atPut(1, *obj);
+    return *key;
+  }
+  PyObject* ptr = ApiHandle::borrowedReference(thread, *obj);
+  Object obj_id(&scope, runtime->newInt(reinterpret_cast<word>(ptr)));
+  Tuple key(&scope, runtime->newTuple(2));
+  key.atPut(0, *obj_id);
+  key.atPut(1, *obj);
+  return *key;
+}
+
+PY_EXPORT PyObject* _PyCode_ConstantKey(PyObject* op) {
+  DCHECK(op != nullptr, "op must not be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, ApiHandle::fromPyObject(op)->asObject());
+  Object result(&scope, constantKey(thread, obj));
+  if (result.isError()) {
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 }  // namespace python
