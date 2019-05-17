@@ -1101,26 +1101,46 @@ bool Interpreter::doBinarySubtract(Context* ctx, word) {
   return doBinaryOperation(BinaryOp::SUB, ctx);
 }
 
-// opcode 25
-bool Interpreter::doBinarySubscr(Context* ctx, word) {
+bool Interpreter::binarySubscrUpdateCache(Context* ctx, word index) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   HandleScope scope(ctx->thread);
-  Runtime* runtime = ctx->thread->runtime();
-  Object key(&scope, ctx->frame->popValue());
-  Object container(&scope, ctx->frame->popValue());
-  Type type(&scope, runtime->typeOf(*container));
-  Object getitem(&scope, typeLookupSymbolInMro(ctx->thread, type,
-                                               SymbolId::kDunderGetitem));
-  if (getitem.isError()) {
-    ctx->thread->raiseWithFmt(LayoutId::kTypeError,
-                              "object does not support indexing");
+  Object container(&scope, frame->peek(1));
+  Type type(&scope, thread->runtime()->typeOf(*container));
+  Object getitem(&scope,
+                 typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetitem));
+  if (getitem.isErrorNotFound()) {
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "object does not support indexing");
     return unwind(ctx);
   }
+  if (index >= 0 && getitem.isFunction()) {
+    icUpdate(thread, ctx->caches, index, container.layoutId(), getitem);
+  }
 
-  Object result(&scope,
-                callMethod2(ctx->thread, ctx->frame, getitem, container, key));
-  if (result.isError()) return unwind(ctx);
-  ctx->frame->pushValue(*result);
-  return false;
+  getitem = resolveDescriptorGet(thread, getitem, container, type);
+  // Tail-call getitem(key)
+  frame->setValueAt(*getitem, 1);
+  return doCallFunction(ctx, 1);
+}
+
+// opcode 25
+bool Interpreter::doBinarySubscr(Context* ctx, word) {
+  return binarySubscrUpdateCache(ctx, -1);
+}
+
+bool Interpreter::doBinarySubscrCached(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  LayoutId container_layout_id = frame->peek(1).layoutId();
+  RawObject cached = icLookup(ctx->caches, arg, container_layout_id);
+  if (cached.isErrorNotFound()) {
+    return binarySubscrUpdateCache(ctx, arg);
+  }
+
+  DCHECK(cached.isFunction(), "Unexpected cached value");
+  // Tail-call cached(container, key)
+  frame->insertValueAt(cached, 2);
+  return doCallFunction(ctx, 2);
 }
 
 // opcode 26

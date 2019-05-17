@@ -132,4 +132,83 @@ TEST(IcTest, IcUpdateUpdatesExistingEntry) {
       "test"));
 }
 
+TEST(IcTest, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
+  Runtime runtime;
+  runtime.enableCache();
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def f(c, k):
+  return c[k]
+
+container = [1, 2, 3]
+getitem = type(container).__getitem__
+result = f(container, 0)
+)")
+                   .isError());
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+
+  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
+  Object getitem(&scope, moduleAt(&runtime, "__main__", "getitem"));
+  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Tuple caches(&scope, f.caches());
+  // Expect that BINARY_SUBSCR is the only cached opcode in f().
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  EXPECT_EQ(icLookup(caches, 0, container.layoutId()), *getitem);
+
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+container2 = [4, 5, 6]
+result2 = f(container2, 1)
+)")
+                   .isError());
+  Object container2(&scope, moduleAt(&runtime, "__main__", "container2"));
+  Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
+  EXPECT_EQ(container2.layoutId(), container.layoutId());
+  EXPECT_TRUE(isIntEqualsWord(*result2, 5));
+}
+
+TEST(IcTest, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {
+  Runtime runtime;
+  runtime.enableCache();
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def f(c, k):
+  return c[k]
+class Container:
+  def get(self):
+    def getitem(key):
+      return key
+    return getitem
+
+  __getitem__ = property(get)
+
+container = Container()
+result = f(container, "hi")
+)")
+                   .isError());
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hi"));
+
+  Object container(&scope, moduleAt(&runtime, "__main__", "container"));
+  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Tuple caches(&scope, f.caches());
+  // Expect that BINARY_SUBSCR is the only cached opcode in f().
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  EXPECT_TRUE(icLookup(caches, 0, container.layoutId()).isErrorNotFound());
+
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+container2 = Container()
+result2 = f(container, "hello there!")
+)")
+                   .isError());
+  Object container2(&scope, moduleAt(&runtime, "__main__", "container2"));
+  Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
+  ASSERT_EQ(container2.layoutId(), container.layoutId());
+  EXPECT_TRUE(isStrEqualsCStr(*result2, "hello there!"));
+}
+
 }  // namespace python

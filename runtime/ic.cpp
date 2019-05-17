@@ -10,7 +10,8 @@ namespace python {
 // The canonical list of bytecode ops that have a _CACHED variant.
 #define CACHED_OPS(X)                                                          \
   X(STORE_ATTR)                                                                \
-  X(LOAD_ATTR)
+  X(LOAD_ATTR)                                                                 \
+  X(BINARY_SUBSCR)
 
 static Bytecode cachedOp(Bytecode bc) {
   switch (bc) {

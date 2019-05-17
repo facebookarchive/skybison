@@ -265,6 +265,7 @@ class Interpreter {
   static bool doBinaryPower(Context* ctx, word arg);
   static bool doBinaryRshift(Context* ctx, word arg);
   static bool doBinarySubscr(Context* ctx, word arg);
+  static bool doBinarySubscrCached(Context* ctx, word arg);
   static bool doBinarySubtract(Context* ctx, word arg);
   static bool doBinaryTrueDivide(Context* ctx, word arg);
   static bool doBinaryXor(Context* ctx, word arg);
@@ -377,6 +378,11 @@ class Interpreter {
   static bool doBinaryOperation(BinaryOp op, Context* ctx);
   static bool doInplaceOperation(BinaryOp op, Context* ctx);
   static bool doUnaryOperation(SymbolId selector, Context* ctx);
+
+  // Slow path for the BINARY_SUBSCR opcode that updates the cache at the given
+  // index when appropriate. May also be used as a non-caching slow path by
+  // passing a negative index.
+  static bool binarySubscrUpdateCache(Context* ctx, word index);
 
   // Given a non-Function object in `callable`, attempt to normalize it to a
   // Function by either unpacking a BoundMethod or looking up the object's
