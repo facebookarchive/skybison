@@ -6,13 +6,31 @@
 
 namespace python {
 
+// Bitset indicating how a cached binary operation needs to be called.
+enum IcBinopFlags : uint8_t {
+  IC_BINOP_NONE = 0,
+  // Swap arguments when calling the method.
+  IC_BINOP_REFLECTED = 1 << 0,
+  // Retry alternative method when method returns `NotImplemented`.  Should try
+  // the non-reflected op if the `IC_BINOP_REFLECTED` flag is set and vice
+  // versa.
+  IC_BINOP_NOTIMPLEMENTED_RETRY = 1 << 1,
+};
+
 // Looks for a cache entry with a `layout_id` key. Returns the cached value.
 // Returns `ErrorNotFound` if none was found.
 RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id);
 
+// Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
+// Returns the cached value comprising of an object reference and flags. Returns
+// `ErrorNotFound` if none was found.
+RawObject icLookupBinop(const Tuple& caches, word index,
+                        LayoutId left_layout_id, LayoutId right_layout_id,
+                        IcBinopFlags* flags_out);
+
 // Returns the original argument of bytecode operations that were rewritten by
 // `rewriteBytecode()`.
-word icOriginalArg(const Function& function, word index);
+word icOriginalArg(const Tuple& original_args, word index);
 
 // Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
 // `function`. It has the arguments of opcodes that use the cache replaced with
@@ -24,6 +42,12 @@ void icRewriteBytecode(Thread* thread, const Function& function);
 // Sets a cache entry to the given `layout_id` as key and `value` as value.
 void icUpdate(Thread* thread, const Tuple& caches, word index,
               LayoutId layout_id, const Object& value);
+
+// Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
+// the given `value` and `flags` as value.
+void icUpdateBinop(Thread* thread, const Tuple& caches, word index,
+                   LayoutId left_layout_id, LayoutId right_layout_id,
+                   const Object& value, IcBinopFlags flags);
 
 // Cache layout:
 //  The caches for the caching opcodes of a function are joined together in a
@@ -52,7 +76,7 @@ const int kIcEntryKeyOffset = 0;
 const int kIcEntryValueOffset = 1;
 
 inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
-  RawSmallInt key = RawSmallInt::fromWord(static_cast<word>(layout_id));
+  RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
     RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
@@ -62,6 +86,31 @@ inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
     // Stop the search if we found an empty entry.
     if (entry_key.isNoneType()) {
       break;
+    }
+  }
+  return Error::notFound();
+}
+
+inline RawObject icLookupBinop(const Tuple& caches, word index,
+                               LayoutId left_layout_id,
+                               LayoutId right_layout_id,
+                               IcBinopFlags* flags_out) {
+  static_assert(Header::kLayoutIdSize * 2 + kBitsPerByte <= SmallInt::kBits,
+                "Two layout ids and flags overflow a SmallInt");
+  word key_high_bits = static_cast<word>(left_layout_id)
+                           << Header::kLayoutIdSize |
+                       static_cast<word>(right_layout_id);
+  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
+       i < end; i += kIcPointersPerEntry) {
+    RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+    // Stop the search if we found an empty entry.
+    if (entry_key.isNoneType()) {
+      break;
+    }
+    word entry_key_value = SmallInt::cast(entry_key).value();
+    if (entry_key_value >> 8 == key_high_bits) {
+      *flags_out = static_cast<IcBinopFlags>(entry_key_value & 0xff);
+      return caches.at(i + kIcEntryValueOffset);
     }
   }
   return Error::notFound();

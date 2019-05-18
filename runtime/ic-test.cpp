@@ -94,6 +94,51 @@ TEST(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
   EXPECT_TRUE(icLookup(caches, 1, LayoutId::kSmallInt).isErrorNotFound());
 }
 
+static RawObject binopKey(LayoutId left, LayoutId right, IcBinopFlags flags) {
+  return SmallInt::fromWord((static_cast<word>(left) << Header::kLayoutIdSize |
+                             static_cast<word>(right))
+                                << kBitsPerByte |
+                            static_cast<word>(flags));
+}
+
+TEST(IcTest, IcLookupBinopReturnsCachedValue) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
+  word cache_offset = kIcPointersPerCache;
+  caches.atPut(
+      cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
+      binopKey(LayoutId::kSmallInt, LayoutId::kNoneType, IC_BINOP_NONE));
+  caches.atPut(
+      cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
+      binopKey(LayoutId::kNoneType, LayoutId::kBytes, IC_BINOP_REFLECTED));
+  caches.atPut(
+      cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
+      binopKey(LayoutId::kSmallInt, LayoutId::kBytes, IC_BINOP_REFLECTED));
+  caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryValueOffset,
+               runtime.newStrFromCStr("xy"));
+
+  IcBinopFlags flags;
+  EXPECT_TRUE(isStrEqualsCStr(
+      icLookupBinop(caches, 1, LayoutId::kSmallInt, LayoutId::kBytes, &flags),
+      "xy"));
+  EXPECT_EQ(flags, IC_BINOP_REFLECTED);
+}
+
+TEST(IcTest, IcLookupBinopReturnsErrorNotFound) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Tuple caches(&scope, runtime.newTuple(kIcPointersPerCache));
+  IcBinopFlags flags;
+  EXPECT_TRUE(
+      icLookupBinop(caches, 0, LayoutId::kSmallInt, LayoutId::kSmallInt, &flags)
+          .isErrorNotFound());
+}
+
 TEST(IcTest, IcUpdateSetsEmptyEntry) {
   Runtime runtime;
   Thread* thread = Thread::current();
@@ -209,6 +254,48 @@ result2 = f(container, "hello there!")
   Object result2(&scope, moduleAt(&runtime, "__main__", "result2"));
   ASSERT_EQ(container2.layoutId(), container.layoutId());
   EXPECT_TRUE(isStrEqualsCStr(*result2, "hello there!"));
+}
+
+TEST(IcTest, IcUpdateBinopSetsEmptyEntry) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Tuple caches(&scope, runtime.newTuple(kIcPointersPerCache));
+  Object value(&scope, runtime.newInt(-44));
+  icUpdateBinop(thread, caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes,
+                value, IC_BINOP_REFLECTED);
+  EXPECT_EQ(
+      caches.at(kIcEntryKeyOffset),
+      binopKey(LayoutId::kSmallStr, LayoutId::kLargeBytes, IC_BINOP_REFLECTED));
+  EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), -44));
+}
+
+TEST(IcTest, IcUpdateBinopSetsExistingEntry) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
+  word cache_offset = kIcPointersPerCache;
+  caches.atPut(
+      cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
+      binopKey(LayoutId::kSmallInt, LayoutId::kLargeInt, IC_BINOP_NONE));
+  caches.atPut(
+      cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
+      binopKey(LayoutId::kLargeInt, LayoutId::kSmallInt, IC_BINOP_REFLECTED));
+  Object value(&scope, runtime.newStrFromCStr("yyy"));
+  icUpdateBinop(thread, caches, 1, LayoutId::kLargeInt, LayoutId::kSmallInt,
+                value, IC_BINOP_NONE);
+  EXPECT_TRUE(
+      caches.at(cache_offset + 0 * kIcPointersPerEntry + kIcEntryValueOffset)
+          .isNoneType());
+  EXPECT_EQ(
+      caches.at(cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset),
+      binopKey(LayoutId::kLargeInt, LayoutId::kSmallInt, IC_BINOP_NONE));
+  EXPECT_TRUE(isStrEqualsCStr(
+      caches.at(cache_offset + 1 * kIcPointersPerEntry + kIcEntryValueOffset),
+      "yyy"));
 }
 
 }  // namespace python

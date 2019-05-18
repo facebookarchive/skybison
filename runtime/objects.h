@@ -503,8 +503,9 @@ class RawSmallInt : public RawObject {
   static const uword kTagMask = (1 << kTagSize) - 1;
 
   // Constants
-  static const word kMinValue = -(1L << (kBitsPerPointer - (kTagSize + 1)));
-  static const word kMaxValue = (1L << (kBitsPerPointer - (kTagSize + 1))) - 1;
+  static const word kBits = kBitsPerPointer - kTagSize;
+  static const word kMinValue = -(1L << (kBits - 1));
+  static const word kMaxValue = (1L << (kBits - 1)) - 1;
 
   RAW_OBJECT_COMMON(SmallInt);
 };

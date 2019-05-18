@@ -109,7 +109,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
 void icUpdate(Thread* thread, const Tuple& caches, word index,
               LayoutId layout_id, const Object& value) {
   HandleScope scope(thread);
-  SmallInt key(&scope, RawSmallInt::fromWord(static_cast<word>(layout_id)));
+  SmallInt key(&scope, SmallInt::fromWord(static_cast<word>(layout_id)));
   Object entry_key(&scope, NoneType::object());
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
@@ -118,6 +118,27 @@ void icUpdate(Thread* thread, const Tuple& caches, word index,
       caches.atPut(i + kIcEntryKeyOffset, *key);
       caches.atPut(i + kIcEntryValueOffset, *value);
       return;
+    }
+  }
+}
+
+void icUpdateBinop(Thread* thread, const Tuple& caches, word index,
+                   LayoutId left_layout_id, LayoutId right_layout_id,
+                   const Object& value, IcBinopFlags flags) {
+  HandleScope scope(thread);
+  word key_high_bits = static_cast<word>(left_layout_id)
+                           << Header::kLayoutIdSize |
+                       static_cast<word>(right_layout_id);
+  Object entry_key(&scope, NoneType::object());
+  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
+       i < end; i += kIcPointersPerEntry) {
+    entry_key = caches.at(i + kIcEntryKeyOffset);
+    if (entry_key.isNoneType() ||
+        SmallInt::cast(*entry_key).value() >> kBitsPerByte == key_high_bits) {
+      caches.atPut(i + kIcEntryKeyOffset,
+                   SmallInt::fromWord(key_high_bits << kBitsPerByte |
+                                      static_cast<word>(flags)));
+      caches.atPut(i + kIcEntryValueOffset, *value);
     }
   }
 }
