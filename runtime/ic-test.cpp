@@ -7,8 +7,9 @@ namespace python {
 
 using namespace testing;
 
-TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
+TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
   Runtime runtime;
+  runtime.enableCache();
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
@@ -16,7 +17,7 @@ TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
   byte bytecode[] = {
       NOP,          99,        EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
       NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
-      EXTENDED_ARG, 3,         STORE_ATTR,   4,    LOAD_ATTR,    77,
+      EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
@@ -25,13 +26,12 @@ TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
   Function function(
       &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
                                         none, globals, builtins));
-
-  icRewriteBytecode(thread, function);
+  // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {
-      NOP,          99,        EXTENDED_ARG,      0, LOAD_ATTR_CACHED, 0,
-      NOP,          LOAD_ATTR, EXTENDED_ARG,      0, EXTENDED_ARG,     0,
-      EXTENDED_ARG, 0,         STORE_ATTR_CACHED, 1, LOAD_ATTR_CACHED, 2,
+      NOP,          99,        EXTENDED_ARG,     0, LOAD_ATTR_CACHED, 0,
+      NOP,          LOAD_ATTR, EXTENDED_ARG,     0, EXTENDED_ARG,     0,
+      EXTENDED_ARG, 0,         LOAD_ATTR_CACHED, 1, LOAD_ATTR_CACHED, 2,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
@@ -43,10 +43,121 @@ TEST(IcTest, IcPrepareBytecodeRewritesLoadAttrOperations) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
 
+  ASSERT_TRUE(function.originalArguments().isTuple());
   Tuple original_args(&scope, function.originalArguments());
   EXPECT_EQ(icOriginalArg(original_args, 0), 0xcafe);
   EXPECT_EQ(icOriginalArg(original_args, 1), 0x01020304);
   EXPECT_EQ(icOriginalArg(original_args, 2), 77);
+}
+
+TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
+  byte bytecode[] = {STORE_ATTR, 48};
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals, builtins));
+  // makeFunction() calls icRewriteBytecode().
+
+  byte expected[] = {STORE_ATTR_CACHED, 0};
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+
+  ASSERT_TRUE(function.originalArguments().isTuple());
+  Tuple original_args(&scope, function.originalArguments());
+  EXPECT_EQ(icOriginalArg(original_args, 0), 48);
+}
+
+TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
+  byte bytecode[] = {
+      BINARY_MATRIX_MULTIPLY,
+      0,
+      BINARY_POWER,
+      0,
+      BINARY_MULTIPLY,
+      0,
+      BINARY_MODULO,
+      0,
+      BINARY_ADD,
+      0,
+      BINARY_SUBTRACT,
+      0,
+      BINARY_FLOOR_DIVIDE,
+      0,
+      BINARY_TRUE_DIVIDE,
+      0,
+      BINARY_LSHIFT,
+      0,
+      BINARY_RSHIFT,
+      0,
+      BINARY_AND,
+      0,
+      BINARY_XOR,
+      0,
+      BINARY_OR,
+      0,
+  };
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals, builtins));
+  // makeFunction() calls icRewriteBytecode().
+
+  byte expected[] = {
+      BINARY_OP_CACHED, 0,  BINARY_OP_CACHED, 1,  BINARY_OP_CACHED, 2,
+      BINARY_OP_CACHED, 3,  BINARY_OP_CACHED, 4,  BINARY_OP_CACHED, 5,
+      BINARY_OP_CACHED, 6,  BINARY_OP_CACHED, 7,  BINARY_OP_CACHED, 8,
+      BINARY_OP_CACHED, 9,  BINARY_OP_CACHED, 10, BINARY_OP_CACHED, 11,
+      BINARY_OP_CACHED, 12,
+  };
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+
+  ASSERT_TRUE(function.originalArguments().isTuple());
+  Tuple original_args(&scope, function.originalArguments());
+  EXPECT_EQ(icOriginalArg(original_args, 0),
+            static_cast<word>(Interpreter::BinaryOp::MATMUL));
+  EXPECT_EQ(icOriginalArg(original_args, 1),
+            static_cast<word>(Interpreter::BinaryOp::POW));
+  EXPECT_EQ(icOriginalArg(original_args, 2),
+            static_cast<word>(Interpreter::BinaryOp::MUL));
+  EXPECT_EQ(icOriginalArg(original_args, 3),
+            static_cast<word>(Interpreter::BinaryOp::MOD));
+  EXPECT_EQ(icOriginalArg(original_args, 4),
+            static_cast<word>(Interpreter::BinaryOp::ADD));
+  EXPECT_EQ(icOriginalArg(original_args, 5),
+            static_cast<word>(Interpreter::BinaryOp::SUB));
+  EXPECT_EQ(icOriginalArg(original_args, 6),
+            static_cast<word>(Interpreter::BinaryOp::FLOORDIV));
+  EXPECT_EQ(icOriginalArg(original_args, 7),
+            static_cast<word>(Interpreter::BinaryOp::TRUEDIV));
+  EXPECT_EQ(icOriginalArg(original_args, 8),
+            static_cast<word>(Interpreter::BinaryOp::LSHIFT));
+  EXPECT_EQ(icOriginalArg(original_args, 9),
+            static_cast<word>(Interpreter::BinaryOp::RSHIFT));
+  EXPECT_EQ(icOriginalArg(original_args, 10),
+            static_cast<word>(Interpreter::BinaryOp::AND));
+  EXPECT_EQ(icOriginalArg(original_args, 11),
+            static_cast<word>(Interpreter::BinaryOp::XOR));
+  EXPECT_EQ(icOriginalArg(original_args, 12),
+            static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
 static RawObject layoutIdAsSmallInt(LayoutId id) {

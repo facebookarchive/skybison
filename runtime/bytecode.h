@@ -265,7 +265,7 @@ namespace python {
   V(UNUSED_BYTECODE_249, 249, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_250, 250, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_251, 251, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_252, 252, doInvalidBytecode)                               \
+  V(BINARY_OP_CACHED, 252, doBinaryOpCached)                                   \
   V(BINARY_SUBSCR_CACHED, 253, doBinarySubscrCached)                           \
   V(STORE_ATTR_CACHED, 254, doStoreAttrCached)                                 \
   V(LOAD_ATTR_CACHED, 255, doLoadAttrCached)

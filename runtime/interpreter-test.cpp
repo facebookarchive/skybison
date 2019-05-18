@@ -353,7 +353,7 @@ a = A()
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
 }
 
-TEST(InterpreterTest, BinaryOperationLookupReverseMethodPropagatesException) {
+TEST(InterpreterTest, BinaryOperationLookupReflectedMethodPropagatesException) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -376,6 +376,264 @@ b = B()
   Object result(&scope, Interpreter::binaryOperation(
                             thread, frame, Interpreter::BinaryOp::MUL, a, b));
   EXPECT_TRUE(raised(*result, LayoutId::kUserWarning));
+}
+
+TEST(InterpreterTest, BinaryOperationSetMethodSetsMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object v0(&scope, runtime.newInt(13));
+  Object v1(&scope, runtime.newInt(42));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationSetMethod(thread, thread->currentFrame(),
+                                            Interpreter::BinaryOp::SUB, v0, v1,
+                                            &method, &flags),
+      -29));
+  EXPECT_TRUE(method.isFunction());
+  EXPECT_EQ(flags, IC_BINOP_NOTIMPLEMENTED_RETRY);
+
+  Object v2(&scope, runtime.newInt(3));
+  Object v3(&scope, runtime.newInt(8));
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationWithMethod(thread, thread->currentFrame(),
+                                             *method, flags, *v2, *v3),
+      -5));
+}
+
+TEST(InterpreterTest,
+     BinaryOperationSetMethodSetsReflectedMethodNotImplementedRetry) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  def __init__(self, x):
+    self.x = x
+  def __sub__(self, other):
+    raise UserWarning("should not be called")
+class ASub(A):
+  def __rsub__(self, other):
+    return (self, other)
+v0 = A(3)
+v1 = ASub(7)
+v2 = A(8)
+v3 = ASub(2)
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v2(&scope, moduleAt(&runtime, "__main__", "v2"));
+  Object v3(&scope, moduleAt(&runtime, "__main__", "v3"));
+
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  Object result_obj(
+      &scope, Interpreter::binaryOperationSetMethod(
+                  thread, thread->currentFrame(), Interpreter::BinaryOp::SUB,
+                  v0, v1, &method, &flags));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), v1);
+  EXPECT_EQ(result.at(1), v0);
+  EXPECT_TRUE(method.isFunction());
+  EXPECT_EQ(flags, IC_BINOP_REFLECTED | IC_BINOP_NOTIMPLEMENTED_RETRY);
+
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  result_obj = Interpreter::binaryOperationWithMethod(
+      thread, thread->currentFrame(), *method, flags, *v2, *v3);
+  ASSERT_TRUE(result.isTuple());
+  result = *result_obj;
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), v3);
+  EXPECT_EQ(result.at(1), v2);
+}
+
+TEST(InterpreterTest, BinaryOperationSetMethodSetsReflectedMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  def __init__(self, x):
+    self.x = x
+class B:
+  def __init__(self, x):
+    self.x = x
+  def __rsub__(self, other):
+    return other.x - self.x
+v0 = A(-4)
+v1 = B(8)
+v2 = A(33)
+v3 = B(-12)
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v2(&scope, moduleAt(&runtime, "__main__", "v2"));
+  Object v3(&scope, moduleAt(&runtime, "__main__", "v3"));
+
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationSetMethod(thread, thread->currentFrame(),
+                                            Interpreter::BinaryOp::SUB, v0, v1,
+                                            &method, &flags),
+      -12));
+  EXPECT_TRUE(method.isFunction());
+  EXPECT_EQ(flags, IC_BINOP_REFLECTED);
+
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationWithMethod(thread, thread->currentFrame(),
+                                             *method, flags, *v2, *v3),
+      45));
+}
+
+TEST(InterpreterTest, BinaryOperationSetMethodSetsMethodNotImplementedRetry) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  def __init__(self, x):
+    self.x = x
+  def __sub__(self, other):
+    return other.x - self.x
+class B:
+  def __init__(self, x):
+    self.x = x
+  def __rsub__(self, other):
+    return self.x - other.x
+v0 = A(4)
+v1 = B(6)
+v2 = A(9)
+v3 = B(1)
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v2(&scope, moduleAt(&runtime, "__main__", "v2"));
+  Object v3(&scope, moduleAt(&runtime, "__main__", "v3"));
+
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationSetMethod(thread, thread->currentFrame(),
+                                            Interpreter::BinaryOp::SUB, v0, v1,
+                                            &method, &flags),
+      2));
+  EXPECT_TRUE(method.isFunction());
+  EXPECT_EQ(flags, IC_BINOP_NOTIMPLEMENTED_RETRY);
+
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationWithMethod(thread, thread->currentFrame(),
+                                             *method, flags, *v2, *v3),
+      -8));
+}
+
+TEST(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
+  Tuple consts(&scope, runtime.newTuple(2));
+  consts.atPut(0, runtime.newInt(7));
+  consts.atPut(1, runtime.newInt(-13));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime.newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
+                                        none, none, globals, builtins));
+
+  // Update inline cache.
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      20));
+
+  ASSERT_TRUE(function.caches().isTuple());
+  Tuple caches(&scope, function.caches());
+  IcBinopFlags dummy;
+  ASSERT_FALSE(
+      icLookupBinop(caches, 0, LayoutId::kSmallInt, LayoutId::kSmallInt, &dummy)
+          .isErrorNotFound());
+  // Call from inline cache.
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      20));
+}
+
+TEST(InterpreterTest, DoBinaryOpWithCacheHitCallsRetry) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class MyInt(int):
+  def __sub__(self, other):
+    return NotImplemented
+  def __rsub__(self, other):
+    return NotImplemented
+v0 = MyInt(3)
+v1 = 7
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
+  Tuple consts(&scope, runtime.newTuple(2));
+  consts.atPut(0, *v0);
+  consts.atPut(1, *v1);
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime.newBytesWithAll(bytecode));
+
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
+                                        none, none, globals, builtins));
+
+  // Update inline cache.
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      -4));
+
+  ASSERT_TRUE(function.caches().isTuple());
+  Tuple caches(&scope, function.caches());
+  IcBinopFlags dummy;
+  ASSERT_FALSE(icLookupBinop(caches, 0, v0.layoutId(), v1.layoutId(), &dummy)
+                   .isErrorNotFound());
+
+  // Should hit the cache for __sub__ and then call binaryOperationRetry().
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), function),
+      -4));
 }
 
 TEST(InterpreterTest, ImportFromWithMissingAttributeRaisesImportError) {

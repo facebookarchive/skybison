@@ -7,46 +7,59 @@
 
 namespace python {
 
-// The canonical list of bytecode ops that have a _CACHED variant.
-#define CACHED_OPS(X)                                                          \
-  X(STORE_ATTR)                                                                \
-  X(LOAD_ATTR)                                                                 \
-  X(BINARY_SUBSCR)
+struct BytecodeArgPair {
+  Bytecode bc;
+  word arg;
+};
 
-static Bytecode cachedOp(Bytecode bc) {
+static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
+  auto cached_binop = [](Interpreter::BinaryOp op) {
+    return BytecodeArgPair{BINARY_OP_CACHED, static_cast<word>(op)};
+  };
   switch (bc) {
-#define CASE(OP)                                                               \
-  case OP:                                                                     \
-    return OP##_CACHED;
-    CACHED_OPS(CASE)
-#undef CASE
-    default:
-      return bc;
-  }
-}
+    // Binary operations.
+    case BINARY_ADD:
+      return cached_binop(Interpreter::BinaryOp::ADD);
+    case BINARY_AND:
+      return cached_binop(Interpreter::BinaryOp::AND);
+    case BINARY_FLOOR_DIVIDE:
+      return cached_binop(Interpreter::BinaryOp::FLOORDIV);
+    case BINARY_LSHIFT:
+      return cached_binop(Interpreter::BinaryOp::LSHIFT);
+    case BINARY_MATRIX_MULTIPLY:
+      return cached_binop(Interpreter::BinaryOp::MATMUL);
+    case BINARY_MODULO:
+      return cached_binop(Interpreter::BinaryOp::MOD);
+    case BINARY_MULTIPLY:
+      return cached_binop(Interpreter::BinaryOp::MUL);
+    case BINARY_OR:
+      return cached_binop(Interpreter::BinaryOp::OR);
+    case BINARY_POWER:
+      return cached_binop(Interpreter::BinaryOp::POW);
+    case BINARY_RSHIFT:
+      return cached_binop(Interpreter::BinaryOp::RSHIFT);
+    case BINARY_SUBSCR:
+      return BytecodeArgPair{BINARY_SUBSCR_CACHED, arg};
+    case BINARY_SUBTRACT:
+      return cached_binop(Interpreter::BinaryOp::SUB);
+    case BINARY_TRUE_DIVIDE:
+      return cached_binop(Interpreter::BinaryOp::TRUEDIV);
+    case BINARY_XOR:
+      return cached_binop(Interpreter::BinaryOp::XOR);
+    // Attribute accessors.
+    case LOAD_ATTR:
+      return BytecodeArgPair{LOAD_ATTR_CACHED, arg};
+    case STORE_ATTR:
+      return BytecodeArgPair{STORE_ATTR_CACHED, arg};
 
-static bool hasCachedOp(Bytecode bc) {
-  switch (bc) {
-#define CASE(OP)                                                               \
-  case OP:                                                                     \
-    return true;
-    CACHED_OPS(CASE)
-#undef CASE
+    case BINARY_OP_CACHED:
+    case LOAD_ATTR_CACHED:
+    case STORE_ATTR_CACHED:
+      UNREACHABLE("should not have cached opcode in input");
     default:
-      return false;
+      break;
   }
-}
-
-static bool isCachedOp(Bytecode bc) {
-  switch (bc) {
-#define CASE(OP)                                                               \
-  case OP##_CACHED:                                                            \
-    return true;
-    CACHED_OPS(CASE)
-#undef CASE
-    default:
-      return false;
-  }
+  return BytecodeArgPair{bc, arg};
 }
 
 void icRewriteBytecode(Thread* thread, const Function& function) {
@@ -56,10 +69,16 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   // Scan bytecode to figure out how many caches we need.
   Bytes bytecode(&scope, Code::cast(function.code()).code());
   word bytecode_length = bytecode.length();
-  for (word i = 0; i < bytecode_length; i += Frame::kCodeUnitSize) {
-    Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i));
-    DCHECK(!isCachedOp(bc), "Rewritten bytecode passed to icRewriteBytecode()");
-    if (hasCachedOp(bc)) {
+  for (word i = 0; i < bytecode_length;) {
+    Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
+    int32_t arg = bytecode.byteAt(i++);
+    while (bc == Bytecode::EXTENDED_ARG) {
+      bc = static_cast<Bytecode>(bytecode.byteAt(i++));
+      arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
+    }
+
+    BytecodeArgPair rewritten = rewriteOperation(bc, arg);
+    if (rewritten.bc != bc) {
       num_caches++;
     }
   }
@@ -80,7 +99,8 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
       arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
     }
 
-    if (hasCachedOp(bc)) {
+    BytecodeArgPair rewritten = rewriteOperation(bc, arg);
+    if (rewritten.bc != bc) {
       // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
       CHECK(cache < 256,
             "more than 256 entries may require bytecode stretching");
@@ -88,11 +108,11 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
         result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         result.byteAtPut(j + 1, 0);
       }
-      result.byteAtPut(i - 2, static_cast<byte>(cachedOp(bc)));
+      result.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
       result.byteAtPut(i - 1, static_cast<byte>(cache));
 
       // Remember original arg.
-      original_arguments.atPut(cache, SmallInt::fromWord(arg));
+      original_arguments.atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
     } else {
       for (word j = begin; j < i; j++) {

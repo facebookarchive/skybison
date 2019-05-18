@@ -4,6 +4,7 @@
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
+#include "ic.h"
 #include "symbols.h"
 #include "trampolines.h"
 
@@ -161,6 +162,36 @@ class Interpreter {
   static RawObject binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
                                    const Object& left, const Object& right);
 
+  // Lookup and invoke a binary operation (like `__add__`, `__sub__`, ...).
+  // Sets `method_out` and `flags_out` to the lookup result if it is possible
+  // to cache it.
+  static RawObject binaryOperationSetMethod(Thread* thread, Frame* caller,
+                                            BinaryOp op, const Object& left,
+                                            const Object& right,
+                                            Object* method_out,
+                                            IcBinopFlags* flags_out);
+
+  // Calls a previously cached binary operation. Note that the caller still
+  // needs to check for a `NotImplemented` result and call
+  // `binaryOperationRetry()` if necessary.
+  static RawObject binaryOperationWithMethod(Thread* thread, Frame* caller,
+                                             RawObject method,
+                                             IcBinopFlags flags, RawObject left,
+                                             RawObject right);
+
+  // Calls the normal binary operation if `flags` has the `IC_BINOP_REFLECTED`
+  // and the `IC_BINOP_NOTIMPLEMENTED_RETRY` bits are set; calls the reflected
+  // operation if just `IC_BINOP_NOTIMPLEMENTED_RETRY` is set. Raises an error
+  // if any of the two operations raised `NotImplemented` or none was called.
+  //
+  // This represents the second half of the binary operation calling mechanism
+  // after we attempted a first lookup and call. It is a separate function so we
+  // can use it independently of the first lookup using inline caching.
+  static RawObject binaryOperationRetry(Thread* thread, Frame* caller,
+                                        BinaryOp op, IcBinopFlags flags,
+                                        const Object& left,
+                                        const Object& right);
+
   static RawObject inplaceOperation(Thread* thread, Frame* caller, BinaryOp op,
                                     const Object& left, const Object& right);
 
@@ -261,6 +292,7 @@ class Interpreter {
   static bool doBinaryMatrixMultiply(Context* ctx, word arg);
   static bool doBinaryModulo(Context* ctx, word arg);
   static bool doBinaryMultiply(Context* ctx, word arg);
+  static bool doBinaryOpCached(Context* ctx, word arg);
   static bool doBinaryOr(Context* ctx, word arg);
   static bool doBinaryPower(Context* ctx, word arg);
   static bool doBinaryRshift(Context* ctx, word arg);
@@ -426,6 +458,8 @@ class Interpreter {
 
   static bool loadAttrUpdateCache(Context* ctx, word arg);
   static bool storeAttrUpdateCache(Context* ctx, word arg);
+
+  static bool binaryOpUpdateCache(Context* ctx, word arg);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
