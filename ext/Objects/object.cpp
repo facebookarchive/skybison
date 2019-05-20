@@ -37,8 +37,6 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
   if (obj->ob_refcnt == 0) _Py_Dealloc_Func(obj);
 }
 
-PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) { return obj->ob_refcnt; }
-
 PY_EXPORT int PyCallable_Check(PyObject* obj) {
   return PyObject_HasAttrString(obj, "__call__");
 }
