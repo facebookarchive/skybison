@@ -1870,6 +1870,133 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthHintWithDunderLengthReturnsValueOfDunderLength) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __len__(self): return 1
+  def __length_hint__(self): return 500
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthHintWithDunderLengthRaisingNonTypeErrorRaisesError) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __len__(self): raise ValueError
+  def __length_hint__(self): return 500
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(
+    AbstractExtensionApiTest,
+    PyObjectLengthHintWithDunderLengthRaisingTypeErrorReturnsDunderLengthHintValue) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __len__(self): raise TypeError
+  def __length_hint__(self): return 500
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), 500);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(
+    AbstractExtensionApiTest,
+    PyObjectLengthHintWithoutDunderLengthAndDunderLengthHintReturnsDefaultValue) {
+  PyRun_SimpleString(R"(
+class Bar: pass
+
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), 234);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(
+    AbstractExtensionApiTest,
+    PyObjectLengthHintWithNotImplementedDunderLengthHintReturnsDefaultValue) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __length_hint__(self): return NotImplemented
+
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), 234);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(
+    AbstractExtensionApiTest,
+    PyObjectLengthHintWithDunderLengthHintRaisingExceptionReturnsNegativeValue) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __length_hint__(self): raise ValueError
+
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyObjectLengthHintWithDunderLengthHintReturningNonIntRaisesTypeError) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __length_hint__(self): return "not int"
+
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(
+    AbstractExtensionApiTest,
+    PyObjectLengthHintWithDunderLengthHintReturningLargeIntNotFitInWordRaisesOverflowError) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __length_hint__(self): return 13843149871348971349871398471389473
+
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(
+    AbstractExtensionApiTest,
+    PyObjectLengthHintWithDunderLengthHintReturningNegativeNumberRaisesValueError) {
+  PyRun_SimpleString(R"(
+class Bar:
+  def __length_hint__(self): return -1
+
+obj = Bar()
+  )");
+  PyObjectPtr obj(moduleGet("__main__", "obj"));
+  EXPECT_EQ(PyObject_LengthHint(obj, 234), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
 TEST_F(AbstractExtensionApiTest, PyObjectLengthWithNonIntLenRaisesTypeError) {
   PyRun_SimpleString(R"(
 class Foo:

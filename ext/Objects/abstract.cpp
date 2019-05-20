@@ -954,9 +954,51 @@ PY_EXPORT Py_ssize_t PyObject_Length(PyObject* pyobj) {
   return objectLength(pyobj);
 }
 
-PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* /* o */,
-                                         Py_ssize_t /* defaultvalue */) {
-  UNIMPLEMENTED("PyObject_LengthHint");
+PY_EXPORT Py_ssize_t PyObject_LengthHint(PyObject* obj,
+                                         Py_ssize_t default_value) {
+  Py_ssize_t res = objectLength(obj);
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  if (res < 0 && thread->hasPendingException()) {
+    Object given_obj(&scope, thread->pendingExceptionType());
+    Object exc_obj(&scope, runtime->typeAt(LayoutId::kTypeError));
+    if (!givenExceptionMatches(thread, given_obj, exc_obj)) {
+      return -1;
+    }
+    // Catch TypeError when obj does not have __len__.
+    thread->clearPendingException();
+  } else {
+    return res;
+  }
+
+  Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Object length_hint(
+      &scope, thread->invokeMethod1(object, SymbolId::kDunderLengthHint));
+  if (length_hint.isErrorNotFound() || length_hint.isNotImplementedType()) {
+    return default_value;
+  }
+  if (length_hint.isError()) {
+    return -1;
+  }
+  if (!thread->runtime()->isInstanceOfInt(*length_hint)) {
+    thread->raiseWithFmt(LayoutId::kTypeError,
+                         "__length_hint__ must be an integer, not %T",
+                         &length_hint);
+    return -1;
+  }
+  Int index(&scope, intUnderlying(thread, length_hint));
+  if (!index.isSmallInt()) {
+    thread->raiseWithFmt(LayoutId::kOverflowError,
+                         "cannot fit '%T' into an index-sized integer",
+                         &length_hint);
+    return -1;
+  }
+  if (index.isNegative()) {
+    thread->raiseWithFmt(LayoutId::kValueError, "__len__() should return >= 0");
+    return -1;
+  }
+  return index.asWord();
 }
 
 PY_EXPORT int PyObject_SetItem(PyObject* obj, PyObject* key, PyObject* value) {

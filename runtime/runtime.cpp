@@ -3621,17 +3621,33 @@ RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
       continue;
     }
     Object key(&scope, names.at(arg));
+    Str key_str(&scope, *key);
+    char* key_cstr = key_str.toCStr();
+    bool var = false;
+    if (!strcmp(key_cstr, "a") && strlen(key_cstr) == 1) {
+      var = true;
+    }
+    if (var) {
+      printf("a is found\n");
+    }
+    free(key_cstr);
     RawObject value = dictAt(thread, globals, key);
     if (value.isError()) {
+      if (var) printf("not global\n");
       value = dictAt(thread, builtins, key);
       if (value.isError()) {
+        if (var) printf("not builtin\n");
         // insert a place holder to allow {STORE|DELETE}_GLOBAL
         Object handle(&scope, value);
         value = dictAtPutInValueCell(thread, builtins, key, handle);
         ValueCell::cast(value).makeUnbound();
+      } else {
+        if (var) printf("builtin\n");
       }
       Object handle(&scope, value);
       value = dictAtPutInValueCell(thread, globals, key, handle);
+    } else {
+      if (var) printf("global\n");
     }
     DCHECK(value.isValueCell(), "not  value cell");
     fast_globals.atPut(arg, value);
