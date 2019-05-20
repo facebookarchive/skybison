@@ -3774,8 +3774,6 @@ inline void RawType::sealAttributes() const {
 // RawArray
 
 inline word RawArray::length() const {
-  DCHECK(isMutableBytes() || isLargeBytes() || isTuple() || isLargeStr(),
-         "invalid array type");
   return headerCountOrOverflow();
 }
 
