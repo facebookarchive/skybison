@@ -383,7 +383,7 @@
 
 /* Define if we can use gcc inline assembler to get and set x87 control word
    */
-#define HAVE_GCC_ASM_FOR_X87 1
+/* #undef HAVE_GCC_ASM_FOR_X87 */
 
 /* Define if your compiler provides __uint128_t */
 #define HAVE_GCC_UINT128_T 1
