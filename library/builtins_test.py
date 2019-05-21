@@ -16,10 +16,10 @@ class BytesTest(unittest.TestCase):
             bytes("foo")
 
     def test_dunder_new_with_str_and_encoding_returns_bytes(self):
-        self.assertEquals(bytes("foo", "ascii"), b"foo")
+        self.assertEqual(bytes("foo", "ascii"), b"foo")
 
     def test_dunder_new_with_ignore_errors_returns_bytes(self):
-        self.assertEquals(bytes("fo\x80o", "ascii", "ignore"), b"foo")
+        self.assertEqual(bytes("fo\x80o", "ascii", "ignore"), b"foo")
 
 
 class DictTests(unittest.TestCase):
