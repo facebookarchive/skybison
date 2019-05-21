@@ -16,6 +16,9 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
   auto cached_binop = [](Interpreter::BinaryOp op) {
     return BytecodeArgPair{BINARY_OP_CACHED, static_cast<word>(op)};
   };
+  auto cached_inplace = [](Interpreter::BinaryOp op) {
+    return BytecodeArgPair{INPLACE_OP_CACHED, static_cast<word>(op)};
+  };
   switch (bc) {
     // Binary operations.
     case BINARY_ADD:
@@ -46,6 +49,33 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
       return cached_binop(Interpreter::BinaryOp::TRUEDIV);
     case BINARY_XOR:
       return cached_binop(Interpreter::BinaryOp::XOR);
+    // Inplace operations.
+    case INPLACE_ADD:
+      return cached_inplace(Interpreter::BinaryOp::ADD);
+    case INPLACE_AND:
+      return cached_inplace(Interpreter::BinaryOp::AND);
+    case INPLACE_FLOOR_DIVIDE:
+      return cached_inplace(Interpreter::BinaryOp::FLOORDIV);
+    case INPLACE_LSHIFT:
+      return cached_inplace(Interpreter::BinaryOp::LSHIFT);
+    case INPLACE_MATRIX_MULTIPLY:
+      return cached_inplace(Interpreter::BinaryOp::MATMUL);
+    case INPLACE_MODULO:
+      return cached_inplace(Interpreter::BinaryOp::MOD);
+    case INPLACE_MULTIPLY:
+      return cached_inplace(Interpreter::BinaryOp::MUL);
+    case INPLACE_OR:
+      return cached_inplace(Interpreter::BinaryOp::OR);
+    case INPLACE_POWER:
+      return cached_inplace(Interpreter::BinaryOp::POW);
+    case INPLACE_RSHIFT:
+      return cached_inplace(Interpreter::BinaryOp::RSHIFT);
+    case INPLACE_SUBTRACT:
+      return cached_inplace(Interpreter::BinaryOp::SUB);
+    case INPLACE_TRUE_DIVIDE:
+      return cached_inplace(Interpreter::BinaryOp::TRUEDIV);
+    case INPLACE_XOR:
+      return cached_inplace(Interpreter::BinaryOp::XOR);
     // Attribute accessors.
     case LOAD_ATTR:
       return BytecodeArgPair{LOAD_ATTR_CACHED, arg};
@@ -53,6 +83,7 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
       return BytecodeArgPair{STORE_ATTR_CACHED, arg};
 
     case BINARY_OP_CACHED:
+    case INPLACE_OP_CACHED:
     case LOAD_ATTR_CACHED:
     case STORE_ATTR_CACHED:
       UNREACHABLE("should not have cached opcode in input");

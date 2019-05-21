@@ -195,6 +195,12 @@ class Interpreter {
   static RawObject inplaceOperation(Thread* thread, Frame* caller, BinaryOp op,
                                     const Object& left, const Object& right);
 
+  static RawObject inplaceOperationSetMethod(Thread* thread, Frame* caller,
+                                             BinaryOp op, const Object& left,
+                                             const Object& right,
+                                             Object* method_out,
+                                             IcBinopFlags* flags_out);
+
   static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
                                     const Object& left, const Object& right);
 
@@ -330,6 +336,7 @@ class Interpreter {
   static bool doInplaceMatrixMultiply(Context* ctx, word arg);
   static bool doInplaceModulo(Context* ctx, word arg);
   static bool doInplaceMultiply(Context* ctx, word arg);
+  static bool doInplaceOpCached(Context* ctx, word arg);
   static bool doInplaceOr(Context* ctx, word arg);
   static bool doInplacePower(Context* ctx, word arg);
   static bool doInplaceRshift(Context* ctx, word arg);
@@ -460,6 +467,7 @@ class Interpreter {
   static bool storeAttrUpdateCache(Context* ctx, word arg);
 
   static bool binaryOpUpdateCache(Context* ctx, word arg);
+  static bool inplaceOpUpdateCache(Context* ctx, word arg);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };

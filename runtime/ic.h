@@ -15,6 +15,9 @@ enum IcBinopFlags : uint8_t {
   // the non-reflected op if the `IC_BINOP_REFLECTED` flag is set and vice
   // versa.
   IC_BINOP_NOTIMPLEMENTED_RETRY = 1 << 1,
+  // This flag is set when the cached method is an in-place operation (such as
+  // __iadd__).
+  IC_INPLACE_BINOP_RETRY = 1 << 2,
 };
 
 // Looks for a cache entry with a `layout_id` key. Returns the cached value.

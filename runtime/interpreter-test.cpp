@@ -752,6 +752,78 @@ right = C()
   EXPECT_EQ(result.at(3), *right);
 }
 
+TEST(InterpreterTest, InplaceOperationSetMethodSetsMethodFlagsBinopRetry) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class MyInt(int):
+  def __isub__(self, other):
+    return int(self) - other - 2
+v0 = MyInt(9)
+v1 = MyInt(-11)
+v2 = MyInt(-3)
+v3 = MyInt(7)
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v2(&scope, moduleAt(&runtime, "__main__", "v2"));
+  Object v3(&scope, moduleAt(&runtime, "__main__", "v3"));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::inplaceOperationSetMethod(thread, thread->currentFrame(),
+                                             Interpreter::BinaryOp::SUB, v0, v1,
+                                             &method, &flags),
+      18));
+  EXPECT_EQ(flags, IC_INPLACE_BINOP_RETRY);
+
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationWithMethod(thread, thread->currentFrame(),
+                                             *method, flags, *v2, *v3),
+      -12));
+}
+
+TEST(InterpreterTest, InplaceOperationSetMethodSetsMethodFlagsReverseRetry) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class MyInt(int):
+  pass
+class MyIntSub(MyInt):
+  def __rpow__(self, other):
+    return int(other) ** int(self) - 7
+v0 = MyInt(3)
+v1 = MyIntSub(3)
+v2 = MyInt(-4)
+v3 = MyIntSub(4)
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v2(&scope, moduleAt(&runtime, "__main__", "v2"));
+  Object v3(&scope, moduleAt(&runtime, "__main__", "v3"));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::inplaceOperationSetMethod(thread, thread->currentFrame(),
+                                             Interpreter::BinaryOp::POW, v0, v1,
+                                             &method, &flags),
+      20));
+  EXPECT_EQ(flags, IC_BINOP_REFLECTED | IC_BINOP_NOTIMPLEMENTED_RETRY);
+
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::binaryOperationWithMethod(thread, thread->currentFrame(),
+                                             *method, flags, *v2, *v3),
+      249));
+}
+
 // To a rich comparison on two instances of the same type.  In each case, the
 // method on the left side of the comparison should be used.
 TEST(InterpreterTest, CompareOpSameType) {

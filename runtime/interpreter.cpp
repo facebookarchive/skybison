@@ -534,27 +534,50 @@ HANDLER_INLINE bool Interpreter::doBinaryOperation(BinaryOp op, Context* ctx) {
   return false;
 }
 
-RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
-                                        BinaryOp op, const Object& self,
-                                        const Object& other) {
+RawObject Interpreter::inplaceOperationSetMethod(
+    Thread* thread, Frame* caller, BinaryOp op, const Object& left,
+    const Object& right, Object* method_out, IcBinopFlags* flags_out) {
   HandleScope scope(thread);
-  SymbolId selector = thread->runtime()->inplaceOperationSelector(op);
-  Object method(&scope, lookupMethod(thread, caller, self, selector));
+  Runtime* runtime = thread->runtime();
+  SymbolId selector = runtime->inplaceOperationSelector(op);
+  Type left_type(&scope, runtime->typeOf(*left));
+  Object method(&scope, typeLookupSymbolInMro(thread, left_type, selector));
   if (!method.isError()) {
-    RawObject result = callMethod2(thread, caller, method, self, other);
+    if (method.isFunction()) {
+      if (method_out != nullptr) {
+        *method_out = *method;
+        *flags_out = IC_INPLACE_BINOP_RETRY;
+      }
+    } else {
+      method = resolveDescriptorGet(thread, method, left, left_type);
+      if (method.isError()) return *method;
+    }
+
+    // Make sure we do not put a possible 2nd method call (from
+    // binaryOperationSetMethod() down below) into the cache.
+    method_out = nullptr;
+    Object result(&scope, callMethod2(thread, caller, method, left, right));
     if (result != NotImplementedType::object()) {
-      return result;
+      return *result;
     }
   }
-  return binaryOperation(thread, caller, op, self, other);
+  return binaryOperationSetMethod(thread, caller, op, left, right, method_out,
+                                  flags_out);
+}
+
+RawObject Interpreter::inplaceOperation(Thread* thread, Frame* caller,
+                                        BinaryOp op, const Object& left,
+                                        const Object& right) {
+  return inplaceOperationSetMethod(thread, caller, op, left, right, nullptr,
+                                   nullptr);
 }
 
 HANDLER_INLINE bool Interpreter::doInplaceOperation(BinaryOp op, Context* ctx) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
-  Object other(&scope, ctx->frame->popValue());
-  Object self(&scope, ctx->frame->popValue());
-  RawObject result = inplaceOperation(thread, ctx->frame, op, self, other);
+  Object right(&scope, ctx->frame->popValue());
+  Object left(&scope, ctx->frame->popValue());
+  RawObject result = inplaceOperation(thread, ctx->frame, op, left, right);
   if (result.isError()) return unwind(ctx);
   ctx->frame->pushValue(result);
   return false;
@@ -3008,6 +3031,72 @@ HANDLER_INLINE void Interpreter::doBuildString(Context* ctx, word arg) {
       break;
     }
   }
+}
+
+bool Interpreter::inplaceOpUpdateCache(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Frame* frame = ctx->frame;
+  Object right(&scope, frame->popValue());
+  Object left(&scope, frame->popValue());
+  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  RawObject result = inplaceOperationSetMethod(thread, frame, op, left, right,
+                                               &method, &flags);
+  if (!method.isNoneType()) {
+    LayoutId left_layout_id = left.layoutId();
+    LayoutId right_layout_id = right.layoutId();
+    icUpdateBinop(thread, ctx->caches, arg, left_layout_id, right_layout_id,
+                  method, flags);
+  }
+  if (result.isError()) return unwind(ctx);
+  frame->pushValue(result);
+  return false;
+}
+
+bool Interpreter::doInplaceOpCached(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  RawObject left_raw = frame->peek(1);
+  RawObject right_raw = frame->peek(0);
+  LayoutId left_layout_id = left_raw.layoutId();
+  LayoutId right_layout_id = right_raw.layoutId();
+  IcBinopFlags flags;
+  RawObject method =
+      icLookupBinop(ctx->caches, arg, left_layout_id, right_layout_id, &flags);
+  if (method.isErrorNotFound()) {
+    return inplaceOpUpdateCache(ctx, arg);
+  }
+
+  // Fast-path: Call cached method and return if possible.
+  RawObject result = binaryOperationWithMethod(ctx->thread, frame, method,
+                                               flags, left_raw, right_raw);
+  if (result.isError()) return unwind(ctx);
+  if (!result.isNotImplementedType()) {
+    frame->dropValues(1);
+    frame->setTopValue(result);
+    return false;
+  }
+
+  // Slow-path: We may need to try other ways to resolve things when the first
+  // call returned `NotImplemented`.
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
+  Object right(&scope, frame->popValue());
+  Object left(&scope, frame->popValue());
+  if (flags & IC_INPLACE_BINOP_RETRY) {
+    // The cached operation was an in-place operation we have to try to the
+    // usual binary operation mechanics now.
+    result = binaryOperation(thread, frame, op, left, right);
+  } else {
+    // The cached operation was already a binary operation (e.g. __add__ or
+    // __radd__) so we have to invoke `binaryOperationRetry`.
+    result = binaryOperationRetry(thread, frame, op, flags, left, right);
+  }
+  if (result.isError()) return unwind(ctx);
+  frame->pushValue(result);
+  return false;
 }
 
 bool Interpreter::binaryOpUpdateCache(Context* ctx, word arg) {
