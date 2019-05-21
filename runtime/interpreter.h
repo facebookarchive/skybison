@@ -290,7 +290,6 @@ class Interpreter {
 
   // Pseudo-opcodes
   static void doInvalidBytecode(Context* ctx, word arg);
-  static void doNotImplemented(Context* ctx, word arg);
 
  private:
   // Opcode handlers

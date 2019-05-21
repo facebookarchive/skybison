@@ -1181,11 +1181,6 @@ HANDLER_INLINE void Interpreter::doInvalidBytecode(Context* ctx, word) {
   UNREACHABLE("bytecode '%s'", kBytecodeNames[bc]);
 }
 
-HANDLER_INLINE void Interpreter::doNotImplemented(Context* ctx, word) {
-  Bytecode bc = currentBytecode(ctx);
-  UNIMPLEMENTED("bytecode '%s'", kBytecodeNames[bc]);
-}
-
 HANDLER_INLINE void Interpreter::doPopTop(Context* ctx, word) {
   ctx->frame->popValue();
 }
