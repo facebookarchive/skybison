@@ -18,6 +18,91 @@
 
 namespace python {
 
+enum class ExtensionSlot {
+  kFlags,
+  kBasicSize,
+  kItemSize,
+  kMapAssSubscript,
+  kMapLength,
+  kMapSubscript,
+  kNumberAbsolute,
+  kNumberAdd,
+  kNumberAnd,
+  kNumberBool,
+  kNumberDivmod,
+  kNumberFloat,
+  kNumberFloorDivide,
+  kNumberIndex,
+  kNumberInplaceAdd,
+  kNumberInplaceAnd,
+  kNumberInplaceFloorDivide,
+  kNumberInplaceLshift,
+  kNumberInplaceMultiply,
+  kNumberInplaceOr,
+  kNumberInplacePower,
+  kNumberInplaceRemainder,
+  kNumberInplaceRshift,
+  kNumberInplaceSubtract,
+  kNumberInplaceTrueDivide,
+  kNumberInplaceXor,
+  kNumberInt,
+  kNumberInvert,
+  kNumberLshift,
+  kNumberMultiply,
+  kNumberNegative,
+  kNumberOr,
+  kNumberPositive,
+  kNumberPower,
+  kNumberRemainder,
+  kNumberRshift,
+  kNumberSubtract,
+  kNumberTrueDivide,
+  kNumberXor,
+  kSequenceAssItem,
+  kSequenceConcat,
+  kSequenceContains,
+  kSequenceInplaceConcat,
+  kSequenceInplaceRepeat,
+  kSequenceItem,
+  kSequenceLength,
+  kSequenceRepeat,
+  kAlloc,
+  kBase,
+  kBases,
+  kCall,
+  kClear,
+  kDealloc,
+  kDel,
+  kDescrGet,
+  kDescrSet,
+  kDoc,
+  kGetattr,
+  kGetattro,
+  kHash,
+  kInit,
+  kIsGc,
+  kIter,
+  kIternext,
+  kMethods,
+  kNew,
+  kRepr,
+  kRichcompare,
+  kSetattr,
+  kSetattro,
+  kStr,
+  kTraverse,
+  kMembers,
+  kGetset,
+  kFree,
+  kNumberMatrixMultiply,
+  kNumberInplaceMatrixMultiply,
+  kAsyncAwait,
+  kAsyncAiter,
+  kAsyncAnext,
+  kFinalize,
+  kEnd,
+};
+
 PY_EXPORT int PyType_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isType();
 }
@@ -27,12 +112,12 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-static RawObject extensionSlot(const Type& type, Type::ExtensionSlot slot_id) {
+static RawObject extensionSlot(const Type& type, ExtensionSlot slot_id) {
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
   return Tuple::cast(type.extensionSlots()).at(static_cast<word>(slot_id));
 }
 
-static void setExtensionSlot(const Type& type, Type::ExtensionSlot slot_id,
+static void setExtensionSlot(const Type& type, ExtensionSlot slot_id,
                              RawObject slot) {
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not an extension");
   return Tuple::cast(type.extensionSlots())
@@ -55,170 +140,170 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
     UNIMPLEMENTED("GetFlags from types initialized through Python code");
   }
 
-  Int flags(&scope, extensionSlot(type, Type::ExtensionSlot::kFlags));
+  Int flags(&scope, extensionSlot(type, ExtensionSlot::kFlags));
   return flags.asWord();
 }
 
-static Type::ExtensionSlot slotToTypeSlot(int slot) {
+static ExtensionSlot slotToTypeSlot(int slot) {
   switch (slot) {
     case Py_mp_ass_subscript:
-      return Type::ExtensionSlot::kMapAssSubscript;
+      return ExtensionSlot::kMapAssSubscript;
     case Py_mp_length:
-      return Type::ExtensionSlot::kMapLength;
+      return ExtensionSlot::kMapLength;
     case Py_mp_subscript:
-      return Type::ExtensionSlot::kMapSubscript;
+      return ExtensionSlot::kMapSubscript;
     case Py_nb_absolute:
-      return Type::ExtensionSlot::kNumberAbsolute;
+      return ExtensionSlot::kNumberAbsolute;
     case Py_nb_add:
-      return Type::ExtensionSlot::kNumberAdd;
+      return ExtensionSlot::kNumberAdd;
     case Py_nb_and:
-      return Type::ExtensionSlot::kNumberAnd;
+      return ExtensionSlot::kNumberAnd;
     case Py_nb_bool:
-      return Type::ExtensionSlot::kNumberBool;
+      return ExtensionSlot::kNumberBool;
     case Py_nb_divmod:
-      return Type::ExtensionSlot::kNumberDivmod;
+      return ExtensionSlot::kNumberDivmod;
     case Py_nb_float:
-      return Type::ExtensionSlot::kNumberFloat;
+      return ExtensionSlot::kNumberFloat;
     case Py_nb_floor_divide:
-      return Type::ExtensionSlot::kNumberFloorDivide;
+      return ExtensionSlot::kNumberFloorDivide;
     case Py_nb_index:
-      return Type::ExtensionSlot::kNumberIndex;
+      return ExtensionSlot::kNumberIndex;
     case Py_nb_inplace_add:
-      return Type::ExtensionSlot::kNumberInplaceAdd;
+      return ExtensionSlot::kNumberInplaceAdd;
     case Py_nb_inplace_and:
-      return Type::ExtensionSlot::kNumberInplaceAnd;
+      return ExtensionSlot::kNumberInplaceAnd;
     case Py_nb_inplace_floor_divide:
-      return Type::ExtensionSlot::kNumberInplaceFloorDivide;
+      return ExtensionSlot::kNumberInplaceFloorDivide;
     case Py_nb_inplace_lshift:
-      return Type::ExtensionSlot::kNumberInplaceLshift;
+      return ExtensionSlot::kNumberInplaceLshift;
     case Py_nb_inplace_multiply:
-      return Type::ExtensionSlot::kNumberInplaceMultiply;
+      return ExtensionSlot::kNumberInplaceMultiply;
     case Py_nb_inplace_or:
-      return Type::ExtensionSlot::kNumberInplaceOr;
+      return ExtensionSlot::kNumberInplaceOr;
     case Py_nb_inplace_power:
-      return Type::ExtensionSlot::kNumberInplacePower;
+      return ExtensionSlot::kNumberInplacePower;
     case Py_nb_inplace_remainder:
-      return Type::ExtensionSlot::kNumberInplaceRemainder;
+      return ExtensionSlot::kNumberInplaceRemainder;
     case Py_nb_inplace_rshift:
-      return Type::ExtensionSlot::kNumberInplaceRshift;
+      return ExtensionSlot::kNumberInplaceRshift;
     case Py_nb_inplace_subtract:
-      return Type::ExtensionSlot::kNumberInplaceSubtract;
+      return ExtensionSlot::kNumberInplaceSubtract;
     case Py_nb_inplace_true_divide:
-      return Type::ExtensionSlot::kNumberInplaceTrueDivide;
+      return ExtensionSlot::kNumberInplaceTrueDivide;
     case Py_nb_inplace_xor:
-      return Type::ExtensionSlot::kNumberInplaceXor;
+      return ExtensionSlot::kNumberInplaceXor;
     case Py_nb_int:
-      return Type::ExtensionSlot::kNumberInt;
+      return ExtensionSlot::kNumberInt;
     case Py_nb_invert:
-      return Type::ExtensionSlot::kNumberInvert;
+      return ExtensionSlot::kNumberInvert;
     case Py_nb_lshift:
-      return Type::ExtensionSlot::kNumberLshift;
+      return ExtensionSlot::kNumberLshift;
     case Py_nb_multiply:
-      return Type::ExtensionSlot::kNumberMultiply;
+      return ExtensionSlot::kNumberMultiply;
     case Py_nb_negative:
-      return Type::ExtensionSlot::kNumberNegative;
+      return ExtensionSlot::kNumberNegative;
     case Py_nb_or:
-      return Type::ExtensionSlot::kNumberOr;
+      return ExtensionSlot::kNumberOr;
     case Py_nb_positive:
-      return Type::ExtensionSlot::kNumberPositive;
+      return ExtensionSlot::kNumberPositive;
     case Py_nb_power:
-      return Type::ExtensionSlot::kNumberPower;
+      return ExtensionSlot::kNumberPower;
     case Py_nb_remainder:
-      return Type::ExtensionSlot::kNumberRemainder;
+      return ExtensionSlot::kNumberRemainder;
     case Py_nb_rshift:
-      return Type::ExtensionSlot::kNumberRshift;
+      return ExtensionSlot::kNumberRshift;
     case Py_nb_subtract:
-      return Type::ExtensionSlot::kNumberSubtract;
+      return ExtensionSlot::kNumberSubtract;
     case Py_nb_true_divide:
-      return Type::ExtensionSlot::kNumberTrueDivide;
+      return ExtensionSlot::kNumberTrueDivide;
     case Py_nb_xor:
-      return Type::ExtensionSlot::kNumberXor;
+      return ExtensionSlot::kNumberXor;
     case Py_sq_ass_item:
-      return Type::ExtensionSlot::kSequenceAssItem;
+      return ExtensionSlot::kSequenceAssItem;
     case Py_sq_concat:
-      return Type::ExtensionSlot::kSequenceConcat;
+      return ExtensionSlot::kSequenceConcat;
     case Py_sq_contains:
-      return Type::ExtensionSlot::kSequenceContains;
+      return ExtensionSlot::kSequenceContains;
     case Py_sq_inplace_concat:
-      return Type::ExtensionSlot::kSequenceInplaceConcat;
+      return ExtensionSlot::kSequenceInplaceConcat;
     case Py_sq_inplace_repeat:
-      return Type::ExtensionSlot::kSequenceInplaceRepeat;
+      return ExtensionSlot::kSequenceInplaceRepeat;
     case Py_sq_item:
-      return Type::ExtensionSlot::kSequenceItem;
+      return ExtensionSlot::kSequenceItem;
     case Py_sq_length:
-      return Type::ExtensionSlot::kSequenceLength;
+      return ExtensionSlot::kSequenceLength;
     case Py_sq_repeat:
-      return Type::ExtensionSlot::kSequenceRepeat;
+      return ExtensionSlot::kSequenceRepeat;
     case Py_tp_alloc:
-      return Type::ExtensionSlot::kAlloc;
+      return ExtensionSlot::kAlloc;
     case Py_tp_base:
-      return Type::ExtensionSlot::kBase;
+      return ExtensionSlot::kBase;
     case Py_tp_bases:
-      return Type::ExtensionSlot::kBases;
+      return ExtensionSlot::kBases;
     case Py_tp_call:
-      return Type::ExtensionSlot::kCall;
+      return ExtensionSlot::kCall;
     case Py_tp_clear:
-      return Type::ExtensionSlot::kClear;
+      return ExtensionSlot::kClear;
     case Py_tp_dealloc:
-      return Type::ExtensionSlot::kDealloc;
+      return ExtensionSlot::kDealloc;
     case Py_tp_del:
-      return Type::ExtensionSlot::kDel;
+      return ExtensionSlot::kDel;
     case Py_tp_descr_get:
-      return Type::ExtensionSlot::kDescrGet;
+      return ExtensionSlot::kDescrGet;
     case Py_tp_descr_set:
-      return Type::ExtensionSlot::kDescrSet;
+      return ExtensionSlot::kDescrSet;
     case Py_tp_doc:
-      return Type::ExtensionSlot::kDoc;
+      return ExtensionSlot::kDoc;
     case Py_tp_getattr:
-      return Type::ExtensionSlot::kGetattr;
+      return ExtensionSlot::kGetattr;
     case Py_tp_getattro:
-      return Type::ExtensionSlot::kGetattro;
+      return ExtensionSlot::kGetattro;
     case Py_tp_hash:
-      return Type::ExtensionSlot::kHash;
+      return ExtensionSlot::kHash;
     case Py_tp_init:
-      return Type::ExtensionSlot::kInit;
+      return ExtensionSlot::kInit;
     case Py_tp_is_gc:
-      return Type::ExtensionSlot::kIsGc;
+      return ExtensionSlot::kIsGc;
     case Py_tp_iter:
-      return Type::ExtensionSlot::kIter;
+      return ExtensionSlot::kIter;
     case Py_tp_iternext:
-      return Type::ExtensionSlot::kIternext;
+      return ExtensionSlot::kIternext;
     case Py_tp_methods:
-      return Type::ExtensionSlot::kMethods;
+      return ExtensionSlot::kMethods;
     case Py_tp_new:
-      return Type::ExtensionSlot::kNew;
+      return ExtensionSlot::kNew;
     case Py_tp_repr:
-      return Type::ExtensionSlot::kRepr;
+      return ExtensionSlot::kRepr;
     case Py_tp_richcompare:
-      return Type::ExtensionSlot::kRichcompare;
+      return ExtensionSlot::kRichcompare;
     case Py_tp_setattr:
-      return Type::ExtensionSlot::kSetattr;
+      return ExtensionSlot::kSetattr;
     case Py_tp_setattro:
-      return Type::ExtensionSlot::kSetattro;
+      return ExtensionSlot::kSetattro;
     case Py_tp_str:
-      return Type::ExtensionSlot::kStr;
+      return ExtensionSlot::kStr;
     case Py_tp_traverse:
-      return Type::ExtensionSlot::kTraverse;
+      return ExtensionSlot::kTraverse;
     case Py_tp_members:
-      return Type::ExtensionSlot::kMembers;
+      return ExtensionSlot::kMembers;
     case Py_tp_getset:
-      return Type::ExtensionSlot::kGetset;
+      return ExtensionSlot::kGetset;
     case Py_tp_free:
-      return Type::ExtensionSlot::kFree;
+      return ExtensionSlot::kFree;
     case Py_nb_matrix_multiply:
-      return Type::ExtensionSlot::kNumberMatrixMultiply;
+      return ExtensionSlot::kNumberMatrixMultiply;
     case Py_nb_inplace_matrix_multiply:
-      return Type::ExtensionSlot::kNumberInplaceMatrixMultiply;
+      return ExtensionSlot::kNumberInplaceMatrixMultiply;
     case Py_am_await:
-      return Type::ExtensionSlot::kAsyncAwait;
+      return ExtensionSlot::kAsyncAwait;
     case Py_am_aiter:
-      return Type::ExtensionSlot::kAsyncAiter;
+      return ExtensionSlot::kAsyncAiter;
     case Py_am_anext:
-      return Type::ExtensionSlot::kAsyncAnext;
+      return ExtensionSlot::kAsyncAnext;
     case Py_tp_finalize:
-      return Type::ExtensionSlot::kFinalize;
+      return ExtensionSlot::kFinalize;
     default:
-      return Type::ExtensionSlot::kEnd;
+      return ExtensionSlot::kEnd;
   }
 }
 
@@ -653,7 +738,7 @@ struct SlotDef {
   SymbolId name;
 
   // Our equivalent of the slot id from PyType_Slot.
-  Type::ExtensionSlot id;
+  ExtensionSlot id;
 
   // The wrapper function for this slot.
   Function::Entry wrapper;
@@ -671,9 +756,9 @@ struct SlotDef {
 // method, along with logic to update slots as needed when a user assigns to a
 // type dict.
 #define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC)                             \
-  { SymbolId::NAME, Type::ExtensionSlot::SLOT, WRAPPER, false, DOC }
+  { SymbolId::NAME, ExtensionSlot::SLOT, WRAPPER, false, DOC }
 #define KWSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC)                             \
-  { SymbolId::NAME, Type::ExtensionSlot::SLOT, WRAPPER, true, DOC }
+  { SymbolId::NAME, ExtensionSlot::SLOT, WRAPPER, true, DOC }
 #define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
   TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, C_NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
@@ -923,7 +1008,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // __new__ is the one special-case static method, so wrap it
     // appropriately.
     Object func_obj(&scope, *func);
-    if (slot.id == Type::ExtensionSlot::kNew) {
+    if (slot.id == ExtensionSlot::kNew) {
       func_obj = thread->invokeFunction1(SymbolId::kBuiltins,
                                          SymbolId::kStaticMethod, func);
       if (func_obj.isError()) return *func_obj;
@@ -960,8 +1045,8 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   }
 
   // Extension module requesting slot from a future version
-  Type::ExtensionSlot field_id = slotToTypeSlot(slot);
-  if (field_id >= Type::ExtensionSlot::kEnd) {
+  ExtensionSlot field_id = slotToTypeSlot(slot);
+  if (field_id >= ExtensionSlot::kEnd) {
     return nullptr;
   }
 
@@ -1319,7 +1404,7 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
 
 RawObject addMembers(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Object slot_value(&scope, extensionSlot(type, Type::ExtensionSlot::kMembers));
+  Object slot_value(&scope, extensionSlot(type, ExtensionSlot::kMembers));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto members = bit_cast<PyMemberDef*>(Int::cast(*slot_value).asCPtr());
@@ -1340,7 +1425,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
 
 RawObject addGetSet(Thread* thread, const Type& type) {
   HandleScope scope(thread);
-  Object slot_value(&scope, extensionSlot(type, Type::ExtensionSlot::kGetset));
+  Object slot_value(&scope, extensionSlot(type, ExtensionSlot::kGetset));
   if (slot_value.isNoneType()) return NoneType::object();
   DCHECK(slot_value.isInt(), "unexpected slot type");
   auto getsets = bit_cast<PyGetSetDef*>(Int::cast(*slot_value).asCPtr());
@@ -1395,15 +1480,15 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   // Initialize the extension slots tuple
   Object extension_slots(
-      &scope, runtime->newTuple(static_cast<int>(Type::ExtensionSlot::kEnd)));
+      &scope, runtime->newTuple(static_cast<int>(ExtensionSlot::kEnd)));
   type.setExtensionSlots(*extension_slots);
 
   // Set the type slots
   for (PyType_Slot* slot = spec->slots; slot->slot; slot++) {
     void* slot_ptr = slot->pfunc;
     Object field(&scope, runtime->newIntFromCPtr(slot_ptr));
-    Type::ExtensionSlot field_id = slotToTypeSlot(slot->slot);
-    if (field_id >= Type::ExtensionSlot::kEnd) {
+    ExtensionSlot field_id = slotToTypeSlot(slot->slot);
+    if (field_id >= ExtensionSlot::kEnd) {
       thread->raiseWithFmt(LayoutId::kRuntimeError, "invalid slot offset");
       return nullptr;
     }
@@ -1413,17 +1498,16 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   // Set size
   Object basic_size(&scope, runtime->newInt(spec->basicsize));
   Object item_size(&scope, runtime->newInt(spec->itemsize));
-  setExtensionSlot(type, Type::ExtensionSlot::kBasicSize, *basic_size);
-  setExtensionSlot(type, Type::ExtensionSlot::kItemSize, *item_size);
+  setExtensionSlot(type, ExtensionSlot::kBasicSize, *basic_size);
+  setExtensionSlot(type, ExtensionSlot::kItemSize, *item_size);
 
   // Set the class flags
   Object flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY));
-  setExtensionSlot(type, Type::ExtensionSlot::kFlags, *flags);
+  setExtensionSlot(type, ExtensionSlot::kFlags, *flags);
 
   if (addOperators(thread, type).isError()) return nullptr;
 
-  Object methods_ptr(&scope,
-                     extensionSlot(type, Type::ExtensionSlot::kMethods));
+  Object methods_ptr(&scope, extensionSlot(type, ExtensionSlot::kMethods));
   if (!methods_ptr.isNoneType()) {
     PyMethodDef* methods =
         reinterpret_cast<PyMethodDef*>(Int::cast(*methods_ptr).asCPtr());
@@ -1457,8 +1541,8 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
          "Type is unmanaged. Please initialize using PyType_FromSpec");
   DCHECK(!type.extensionSlots().isNoneType(),
          "GenericAlloc from types initialized through Python code");
-  Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
-  Int item_size(&scope, extensionSlot(type, Type::ExtensionSlot::kItemSize));
+  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
+  Int item_size(&scope, extensionSlot(type, ExtensionSlot::kItemSize));
   Py_ssize_t size = Utils::roundUp(
       nitems * item_size.asWord() + basic_size.asWord(), kWordSize);
 
@@ -1475,15 +1559,15 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
 PY_EXPORT Py_ssize_t _PyObject_SIZE_Func(PyObject* obj) {
   HandleScope scope;
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
+  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
   return basic_size.asWord();
 }
 
 PY_EXPORT Py_ssize_t _PyObject_VAR_SIZE_Func(PyObject* obj, Py_ssize_t nitems) {
   HandleScope scope;
   Type type(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  Int basic_size(&scope, extensionSlot(type, Type::ExtensionSlot::kBasicSize));
-  Int item_size(&scope, extensionSlot(type, Type::ExtensionSlot::kItemSize));
+  Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
+  Int item_size(&scope, extensionSlot(type, ExtensionSlot::kItemSize));
   return Utils::roundUp(nitems * item_size.asWord() + basic_size.asWord(),
                         kWordSize);
 }
