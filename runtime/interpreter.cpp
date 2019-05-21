@@ -2552,7 +2552,7 @@ HANDLER_INLINE void Interpreter::pushFrame(Context* ctx,
                                            const Function& function,
                                            const Code& code,
                                            RawObject* post_call_sp) {
-  Frame* callee_frame = pushCallee(ctx->thread, function);
+  Frame* callee_frame = ctx->thread->pushCallFrame(function);
   // Pop the arguments off of the caller's stack now that the callee "owns"
   // them.
   ctx->frame->setValueStackTop(post_call_sp);

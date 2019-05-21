@@ -165,6 +165,7 @@ Frame* Thread::pushCallFrame(const Function& function) {
   Dict builtins_dict(&scope, *builtins);
   Frame* result = pushFrame(function, globals, builtins_dict);
   result->setVirtualPC(0);
+  result->setFastGlobals(function.fastGlobals());
   return result;
 }
 
@@ -173,10 +174,6 @@ Frame* Thread::pushClassFunctionFrame(const Function& function,
   HandleScope scope(this);
   Frame* result = pushCallFrame(function);
   Code code(&scope, function.code());
-  Dict globals(&scope, result->globals());
-  Dict builtins(&scope, result->builtins());
-  result->setFastGlobals(
-      runtime()->computeFastGlobals(code, globals, builtins));
   result->setImplicitGlobals(*dict);
 
   word num_locals = code.nlocals();
@@ -250,7 +247,6 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
                                         globals, builtins_dict));
   currentFrame()->pushValue(*function);
   Frame* frame = pushCallFrame(function);
-  frame->setFastGlobals(function.fastGlobals());
   frame->setImplicitGlobals(*locals);
   Object result(&scope, Interpreter::execute(this, frame, function));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");

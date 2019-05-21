@@ -11,14 +11,6 @@
 
 namespace python {
 
-// Pushes a frame for the callee and initializes it
-Frame* pushCallee(Thread* thread, const Function& function) {
-  // Set up the new frame
-  Frame* callee_frame = thread->pushCallFrame(function);
-  callee_frame->setFastGlobals(function.fastGlobals());
-  return callee_frame;
-}
-
 // Populate the free variable and cell variable arguments.
 void processFreevarsAndCellvars(Thread* thread, const Function& function,
                                 Frame* callee_frame, const Code& code) {
@@ -486,7 +478,7 @@ RawObject generatorTrampoline(Thread* thread, Frame* caller, word arg) {
   if (error.isError()) {
     return error;
   }
-  pushCallee(thread, function);
+  thread->pushCallFrame(function);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, code, qualname);
 }
@@ -501,7 +493,7 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* caller, word argc) {
   if (error.isError()) {
     return error;
   }
-  pushCallee(thread, function);
+  thread->pushCallFrame(function);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, code, qualname);
 }
@@ -517,7 +509,7 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
   if (error.isError()) {
     return error;
   }
-  pushCallee(thread, function);
+  thread->pushCallFrame(function);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, code, qualname);
 }
@@ -530,7 +522,7 @@ RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word arg) {
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, code, qualname);
@@ -547,7 +539,7 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, code, qualname);
@@ -565,7 +557,7 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
   Str qualname(&scope, function.qualname());
   return createGenerator(thread, code, qualname);
@@ -579,7 +571,7 @@ RawObject interpreterTrampoline(Thread* thread, Frame* caller, word argc) {
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   return Interpreter::execute(thread, callee_frame, function);
 }
 
@@ -593,7 +585,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller, word argc) {
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   return Interpreter::execute(thread, callee_frame, function);
 }
 
@@ -608,7 +600,7 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word arg) {
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   return Interpreter::execute(thread, callee_frame, function);
 }
 
@@ -621,7 +613,7 @@ RawObject interpreterClosureTrampoline(Thread* thread, Frame* caller,
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
   return Interpreter::execute(thread, callee_frame, function);
 }
@@ -637,7 +629,7 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
   return Interpreter::execute(thread, callee_frame, function);
 }
@@ -654,7 +646,7 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
   if (error.isError()) {
     return error;
   }
-  Frame* callee_frame = pushCallee(thread, function);
+  Frame* callee_frame = thread->pushCallFrame(function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
   return Interpreter::execute(thread, callee_frame, function);
 }

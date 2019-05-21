@@ -17,7 +17,6 @@ RawObject prepareKeywordCall(Thread* thread, const Function& function,
                              const Code& code, Frame* caller, word argc);
 RawObject prepareExplodeCall(Thread* thread, const Function& function,
                              const Code& code, Frame* caller, word arg);
-Frame* pushCallee(Thread* thread, const Function& function);
 void processFreevarsAndCellvars(Thread* thread, const Function& function,
                                 Frame* callee_frame, const Code& code);
 
