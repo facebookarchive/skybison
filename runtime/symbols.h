@@ -579,6 +579,7 @@ class Runtime;
   V(ValueError, "ValueError")                                                  \
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
+  V(WarnExplicit, "warn_explicit")                                             \
   V(Warning, "Warning")                                                        \
   V(Warnings, "warnings")                                                      \
   V(Write, "write")                                                            \

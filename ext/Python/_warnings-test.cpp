@@ -52,4 +52,32 @@ TEST_F(UnderWarningsExtensionApiTest,
   EXPECT_EQ(streams.err(), "sys:1: RuntimeWarning: bar\n");
 }
 
+TEST_F(UnderWarningsExtensionApiTest,
+       WarnExplicitObjectWithNoneModuleDoesNothing) {
+  CaptureStdStreams streams;
+  PyObjectPtr message(PyUnicode_FromString("foo"));
+  PyObjectPtr filename(PyUnicode_FromString("bar"));
+  EXPECT_EQ(PyErr_WarnExplicitObject(PyExc_RuntimeWarning, message, filename,
+                                     /*lineno=*/1, /*module=*/Py_None,
+                                     /*registry=*/Py_None),
+            0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(streams.err(), "");
+  EXPECT_EQ(streams.out(), "");
+}
+
+TEST_F(UnderWarningsExtensionApiTest,
+       WarnExplicitObjectWithNullCategoryPrintsRuntimeWarning) {
+  CaptureStdStreams streams;
+  PyObjectPtr message(PyUnicode_FromString("foo"));
+  PyObjectPtr filename(PyUnicode_FromString("bar"));
+  PyObjectPtr module(PyUnicode_FromString("baz"));
+  EXPECT_EQ(PyErr_WarnExplicitObject(/*category=*/nullptr, message, filename,
+                                     /*lineno=*/1, module,
+                                     /*registry=*/Py_None),
+            0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(streams.err(), "bar:1: RuntimeWarning: foo\n");
+}
+
 }  // namespace python

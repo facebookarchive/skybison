@@ -371,6 +371,17 @@ RawObject Thread::invokeFunction5(SymbolId module, SymbolId name,
                                     arg4, arg5);
 }
 
+RawObject Thread::invokeFunction6(SymbolId module, SymbolId name,
+                                  const Object& arg1, const Object& arg2,
+                                  const Object& arg3, const Object& arg4,
+                                  const Object& arg5, const Object& arg6) {
+  HandleScope scope(this);
+  Object func(&scope, runtime()->lookupNameInModule(this, module, name));
+  if (func.isError()) return *func;
+  return Interpreter::callFunction6(this, currentFrame_, func, arg1, arg2, arg3,
+                                    arg4, arg5, arg6);
+}
+
 RawObject Thread::raise(LayoutId type, RawObject value) {
   DCHECK(!hasPendingException(), "unhandled exception lingering");
   setPendingExceptionType(runtime()->typeAt(type));

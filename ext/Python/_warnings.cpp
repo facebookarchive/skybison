@@ -68,12 +68,45 @@ PY_EXPORT int PyErr_WarnExplicit(PyObject* /* y */, const char* /* t */,
   UNIMPLEMENTED("PyErr_WarnExplicit");
 }
 
-PY_EXPORT int PyErr_WarnExplicitObject(PyObject* /* category */,
-                                       PyObject* /* message */,
-                                       PyObject* /* filename */,
-                                       int /* lineno */, PyObject* /* module */,
-                                       PyObject* /* registry */) {
-  UNIMPLEMENTED("PyErr_WarnExplicitObject");
+PY_EXPORT int PyErr_WarnExplicitObject(PyObject* category, PyObject* message,
+                                       PyObject* filename, int lineno,
+                                       PyObject* module, PyObject* registry) {
+  // module can be None if a warning is emitted late during Python shutdown.
+  // In this case, the Python warnings module was probably unloaded, so filters
+  // are no longer available to choose as actions. It is safer to ignore the
+  // warning and do nothing.
+  if (module == Py_None) {
+    return 0;
+  }
+  if (category == nullptr) {
+    category = PyExc_RuntimeWarning;
+  }
+  if (module == nullptr) {
+    // Signal to Python implementation that the module should be derived from
+    // the filename.
+    module = Py_None;
+  }
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  DCHECK(category != nullptr, "category cannot be null");
+  Object category_obj(&scope, ApiHandle::fromPyObject(category)->asObject());
+  DCHECK(message != nullptr, "message cannot be null");
+  Object message_obj(&scope, ApiHandle::fromPyObject(message)->asObject());
+  DCHECK(filename != nullptr, "filename cannot be null");
+  Object filename_obj(&scope, ApiHandle::fromPyObject(filename)->asObject());
+  Int lineno_obj(&scope, thread->runtime()->newInt(lineno));
+  DCHECK(module != nullptr, "module cannot be null");
+  Object module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
+  DCHECK(registry != nullptr, "registry cannot be null");
+  Object registry_obj(&scope, ApiHandle::fromPyObject(registry)->asObject());
+  if (thread
+          ->invokeFunction6(SymbolId::kWarnings, SymbolId::kWarnExplicit,
+                            message_obj, category_obj, filename_obj, lineno_obj,
+                            module_obj, registry_obj)
+          .isError()) {
+    return -1;
+  }
+  return 0;
 }
 
 PY_EXPORT int PyErr_WarnFormat(PyObject* category, Py_ssize_t stack_level,
