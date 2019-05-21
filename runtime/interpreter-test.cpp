@@ -824,6 +824,19 @@ v3 = MyIntSub(4)
       249));
 }
 
+TEST(InterpreterDeathTest, InvalidOpcode) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
+  const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_202, 17, NOP, 7};
+  code.setCode(runtime.newBytesWithAll(bytecode));
+
+  ASSERT_DEATH(thread->run(code), "bytecode 'UNUSED_BYTECODE_202'");
+}
+
 // To a rich comparison on two instances of the same type.  In each case, the
 // method on the left side of the comparison should be used.
 TEST(InterpreterTest, CompareOpSameType) {

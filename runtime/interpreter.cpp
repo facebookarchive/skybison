@@ -1165,15 +1165,9 @@ HANDLER_INLINE void Interpreter::popFrame(Context* ctx) {
   ctx->pc = caller_frame->virtualPC();
 }
 
-static Bytecode currentBytecode(const Interpreter::Context* ctx) {
-  RawBytes code = Bytes::cast(Code::cast(ctx->frame->code()).code());
-  word pc = ctx->pc;
-  word result;
-  do {
-    pc -= 2;
-    result = code.byteAt(pc);
-  } while (result == Bytecode::EXTENDED_ARG);
-  return static_cast<Bytecode>(result);
+static Bytecode currentBytecode(Interpreter::Context* ctx) {
+  word pc = ctx->pc - 2;
+  return static_cast<Bytecode>(ctx->bytecode.byteAt(pc));
 }
 
 HANDLER_INLINE void Interpreter::doInvalidBytecode(Context* ctx, word) {
