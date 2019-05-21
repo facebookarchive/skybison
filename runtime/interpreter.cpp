@@ -1813,7 +1813,7 @@ HANDLER_INLINE bool Interpreter::doPopExcept(Context* ctx, word) {
 HANDLER_INLINE void Interpreter::doStoreName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject names = Code::cast(frame->code()).names();
   Object key(&scope, Tuple::cast(names).at(arg));
@@ -1824,7 +1824,7 @@ HANDLER_INLINE void Interpreter::doStoreName(Context* ctx, word arg) {
 HANDLER_INLINE void Interpreter::doDeleteName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject names = Code::cast(frame->code()).names();
   Object key(&scope, Tuple::cast(names).at(arg));
@@ -2072,7 +2072,7 @@ HANDLER_INLINE bool Interpreter::doStoreAttr(Context* ctx, word arg) {
 
 HANDLER_INLINE bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Object receiver(&scope, ctx->frame->popValue());
   auto names = Code::cast(ctx->frame->code()).names();
   Object name(&scope, Tuple::cast(names).at(arg));
@@ -2090,7 +2090,7 @@ HANDLER_INLINE void Interpreter::doStoreGlobal(Context* ctx, word arg) {
 HANDLER_INLINE void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   ValueCell value_cell(
       &scope, ValueCell::cast(Tuple::cast(frame->fastGlobals()).at(arg)));
   CHECK(!value_cell.value().isValueCell(), "Unbound Globals");
@@ -2177,7 +2177,7 @@ HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
 
 HANDLER_INLINE void Interpreter::doBuildTuple(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple tuple(&scope, thread->runtime()->newTuple(arg));
   for (word i = arg - 1; i >= 0; i--) {
     tuple.atPut(i, ctx->frame->popValue());
@@ -2187,7 +2187,7 @@ HANDLER_INLINE void Interpreter::doBuildTuple(Context* ctx, word arg) {
 
 HANDLER_INLINE void Interpreter::doBuildList(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple array(&scope, thread->runtime()->newTuple(arg));
   for (word i = arg - 1; i >= 0; i--) {
     array.atPut(i, ctx->frame->popValue());
@@ -2200,7 +2200,7 @@ HANDLER_INLINE void Interpreter::doBuildList(Context* ctx, word arg) {
 
 HANDLER_INLINE void Interpreter::doBuildSet(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Set set(&scope, Set::cast(runtime->newSet()));
   for (word i = arg - 1; i >= 0; i--) {
@@ -2227,7 +2227,7 @@ HANDLER_INLINE bool Interpreter::doBuildMap(Context* ctx, word arg) {
 
 HANDLER_INLINE bool Interpreter::doLoadAttr(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Object receiver(&scope, ctx->frame->topValue());
   auto names = Code::cast(ctx->frame->code()).names();
   Object name(&scope, Tuple::cast(names).at(arg));
@@ -2665,7 +2665,7 @@ HANDLER_INLINE bool Interpreter::doCallFunction(Context* ctx, word argc) {
 HANDLER_INLINE void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Object qualname(&scope, frame->popValue());
   Code code(&scope, frame->popValue());
   Object closure(&scope, NoneType::object());
@@ -3057,7 +3057,7 @@ HANDLER_INLINE bool Interpreter::doFormatValue(Context* ctx, word flags) {
 
 HANDLER_INLINE void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
-  HandleScope scope;
+  HandleScope scope(thread);
   Tuple keys(&scope, ctx->frame->popValue());
   Dict dict(&scope, thread->runtime()->newDictWithSize(keys.length()));
   for (word i = arg - 1; i >= 0; i--) {
