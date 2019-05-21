@@ -205,6 +205,17 @@ class Interpreter {
                                              Object* method_out,
                                              IcBinopFlags* flags_out);
 
+  static RawObject compareOperationRetry(Thread* thread, Frame* caller,
+                                         CompareOp op, IcBinopFlags flags,
+                                         const Object& left,
+                                         const Object& right);
+
+  static RawObject compareOperationSetMethod(Thread* thread, Frame* caller,
+                                             CompareOp op, const Object& left,
+                                             const Object& right,
+                                             Object* method_out,
+                                             IcBinopFlags* flags_out);
+
   static RawObject compareOperation(Thread* thread, Frame* caller, CompareOp op,
                                     const Object& left, const Object& right);
 
@@ -321,6 +332,7 @@ class Interpreter {
   static bool doCallFunctionEx(Context* ctx, word arg);
   static bool doCallFunctionKw(Context* ctx, word arg);
   static bool doCompareOp(Context* ctx, word arg);
+  static bool doCompareOpCached(Context* ctx, word arg);
   static bool doDeleteAttr(Context* ctx, word arg);
   static bool doDeleteSubscr(Context* ctx, word arg);
   static bool doEndFinally(Context* ctx, word arg);
@@ -468,8 +480,19 @@ class Interpreter {
   static bool loadAttrUpdateCache(Context* ctx, word arg);
   static bool storeAttrUpdateCache(Context* ctx, word arg);
 
+  using OpcodeHandler = bool (*)(Context* ctx, word arg);
+  using BinopFallbackHandler = bool (*)(Context* ctx, word arg,
+                                        IcBinopFlags flags);
+  static bool cachedBinaryOpImpl(Context* ctx, word arg,
+                                 OpcodeHandler update_cache,
+                                 BinopFallbackHandler fallback);
+
   static bool binaryOpUpdateCache(Context* ctx, word arg);
+  static bool binaryOpFallback(Context* ctx, word arg, IcBinopFlags flags);
+  static bool compareOpUpdateCache(Context* ctx, word arg);
+  static bool compareOpFallback(Context* ctx, word arg, IcBinopFlags flags);
   static bool inplaceOpUpdateCache(Context* ctx, word arg);
+  static bool inplaceOpFallback(Context* ctx, word arg, IcBinopFlags flags);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };

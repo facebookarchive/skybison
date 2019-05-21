@@ -49,6 +49,17 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
       return cached_binop(Interpreter::BinaryOp::TRUEDIV);
     case BINARY_XOR:
       return cached_binop(Interpreter::BinaryOp::XOR);
+    case COMPARE_OP:
+      switch (arg) {
+        case CompareOp::LT:
+        case CompareOp::LE:
+        case CompareOp::EQ:
+        case CompareOp::NE:
+        case CompareOp::GT:
+        case CompareOp::GE:
+          return BytecodeArgPair{COMPARE_OP_CACHED, arg};
+      }
+      break;
     // Inplace operations.
     case INPLACE_ADD:
       return cached_inplace(Interpreter::BinaryOp::ADD);
@@ -83,6 +94,7 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
       return BytecodeArgPair{STORE_ATTR_CACHED, arg};
 
     case BINARY_OP_CACHED:
+    case COMPARE_OP_CACHED:
     case INPLACE_OP_CACHED:
     case LOAD_ATTR_CACHED:
     case STORE_ATTR_CACHED:

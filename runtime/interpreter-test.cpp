@@ -979,6 +979,122 @@ c = C()
   EXPECT_TRUE(isStrEqualsCStr(*called, "C"));
 }
 
+TEST(InterpreterTest, CompareOpSetMethodSetsMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object v0(&scope, runtime.newInt(39));
+  Object v1(&scope, runtime.newInt(11));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  EXPECT_EQ(Interpreter::compareOperationSetMethod(
+                thread, thread->currentFrame(), CompareOp::LT, v0, v1, &method,
+                &flags),
+            Bool::falseObj());
+  EXPECT_TRUE(method.isFunction());
+  EXPECT_EQ(flags, IC_BINOP_NOTIMPLEMENTED_RETRY);
+
+  Object v2(&scope, runtime.newInt(3));
+  Object v3(&scope, runtime.newInt(8));
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  EXPECT_EQ(Interpreter::binaryOperationWithMethod(
+                thread, thread->currentFrame(), *method, flags, *v2, *v3),
+            Bool::trueObj());
+}
+
+TEST(InterpreterTest, CompareOpSetMethodSetsReverseMethod) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  def __init__(self, x):
+    self.x = x
+class ASub(A):
+  def __ge__(self, other):
+    return (self, other)
+v0 = A(3)
+v1 = ASub(7)
+v2 = A(8)
+v3 = ASub(2)
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v2(&scope, moduleAt(&runtime, "__main__", "v2"));
+  Object v3(&scope, moduleAt(&runtime, "__main__", "v3"));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  Object result_obj(&scope, Interpreter::compareOperationSetMethod(
+                                thread, thread->currentFrame(), CompareOp::LE,
+                                v0, v1, &method, &flags));
+  EXPECT_TRUE(method.isFunction());
+  EXPECT_EQ(flags, IC_BINOP_REFLECTED);
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), v1);
+  EXPECT_EQ(result.at(1), v0);
+
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  result_obj = Interpreter::binaryOperationWithMethod(
+      thread, thread->currentFrame(), *method, flags, *v2, *v3);
+  ASSERT_TRUE(result_obj.isTuple());
+  result = *result_obj;
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), v3);
+  EXPECT_EQ(result.at(1), v2);
+}
+
+TEST(InterpreterTest, CompareOpSetMethodSetsReverseMethodNotImplementedRetry) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  def __init__(self, x):
+    self.x = x
+  def __le__(self, other):
+    raise UserWarning("should not be called")
+class ASub(A):
+  def __ge__(self, other):
+    return (self, other)
+v0 = A(3)
+v1 = ASub(7)
+v2 = A(8)
+v3 = ASub(2)
+)")
+                   .isError());
+  Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
+  Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
+  Object v2(&scope, moduleAt(&runtime, "__main__", "v2"));
+  Object v3(&scope, moduleAt(&runtime, "__main__", "v3"));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  Object result_obj(&scope, Interpreter::compareOperationSetMethod(
+                                thread, thread->currentFrame(), CompareOp::LE,
+                                v0, v1, &method, &flags));
+  EXPECT_TRUE(method.isFunction());
+  EXPECT_EQ(flags, IC_BINOP_REFLECTED | IC_BINOP_NOTIMPLEMENTED_RETRY);
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), v1);
+  EXPECT_EQ(result.at(1), v0);
+
+  ASSERT_EQ(v0.layoutId(), v2.layoutId());
+  ASSERT_EQ(v1.layoutId(), v3.layoutId());
+  result_obj = Interpreter::binaryOperationWithMethod(
+      thread, thread->currentFrame(), *method, flags, *v2, *v3);
+  ASSERT_TRUE(result_obj.isTuple());
+  result = *result_obj;
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_EQ(result.at(0), v3);
+  EXPECT_EQ(result.at(1), v2);
+}
+
 TEST(InterpreterTest, SequenceContains) {
   Runtime runtime;
   Thread* thread = Thread::current();

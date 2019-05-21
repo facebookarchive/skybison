@@ -244,6 +244,56 @@ TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
             static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
+TEST(IcTest, IcRewriteBytecodeRewritesCompareOpOpcodes) {
+  Runtime runtime;
+  runtime.enableCache();
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, runtime.newEmptyCode(name));
+  byte bytecode[] = {
+      COMPARE_OP, CompareOp::LT,        COMPARE_OP, CompareOp::LE,
+      COMPARE_OP, CompareOp::EQ,        COMPARE_OP, CompareOp::NE,
+      COMPARE_OP, CompareOp::GT,        COMPARE_OP, CompareOp::GE,
+      COMPARE_OP, CompareOp::IN,        COMPARE_OP, CompareOp::NOT_IN,
+      COMPARE_OP, CompareOp::IS,        COMPARE_OP, CompareOp::IS_NOT,
+      COMPARE_OP, CompareOp::EXC_MATCH,
+  };
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Dict builtins(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals, builtins));
+  // makeFunction() calls icRewriteBytecode().
+
+  byte expected[] = {
+      COMPARE_OP_CACHED, 0,
+      COMPARE_OP_CACHED, 1,
+      COMPARE_OP_CACHED, 2,
+      COMPARE_OP_CACHED, 3,
+      COMPARE_OP_CACHED, 4,
+      COMPARE_OP_CACHED, 5,
+      COMPARE_OP,        CompareOp::IN,
+      COMPARE_OP,        CompareOp::NOT_IN,
+      COMPARE_OP,        CompareOp::IS,
+      COMPARE_OP,        CompareOp::IS_NOT,
+      COMPARE_OP,        CompareOp::EXC_MATCH,
+  };
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+
+  ASSERT_TRUE(function.originalArguments().isTuple());
+  Tuple original_args(&scope, function.originalArguments());
+  EXPECT_EQ(icOriginalArg(original_args, 0), static_cast<word>(CompareOp::LT));
+  EXPECT_EQ(icOriginalArg(original_args, 1), static_cast<word>(CompareOp::LE));
+  EXPECT_EQ(icOriginalArg(original_args, 2), static_cast<word>(CompareOp::EQ));
+  EXPECT_EQ(icOriginalArg(original_args, 3), static_cast<word>(CompareOp::NE));
+  EXPECT_EQ(icOriginalArg(original_args, 4), static_cast<word>(CompareOp::GT));
+  EXPECT_EQ(icOriginalArg(original_args, 5), static_cast<word>(CompareOp::GE));
+}
+
 static RawObject layoutIdAsSmallInt(LayoutId id) {
   return SmallInt::fromWord(static_cast<word>(id));
 }

@@ -463,6 +463,28 @@ static RawObject binaryOperationLookupReflected(Thread* thread,
   return *right_reversed_method;
 }
 
+static RawObject executeAndCacheBinop(Thread* thread, Frame* caller,
+                                      const Object& method, IcBinopFlags flags,
+                                      const Object& left, const Object& right,
+                                      Object* method_out,
+                                      IcBinopFlags* flags_out) {
+  if (method.isErrorNotFound()) {
+    return NotImplementedType::object();
+  }
+
+  if (method_out != nullptr) {
+    DCHECK(method.isFunction(), "must be a plain function");
+    *method_out = *method;
+    *flags_out = flags;
+    return Interpreter::binaryOperationWithMethod(thread, caller, *method,
+                                                  flags, *left, *right);
+  }
+  if (flags & IC_BINOP_REFLECTED) {
+    return Interpreter::callMethod2(thread, caller, method, right, left);
+  }
+  return Interpreter::callMethod2(thread, caller, method, left, right);
+}
+
 RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* caller,
                                                 BinaryOp op, const Object& left,
                                                 const Object& right,
@@ -506,24 +528,10 @@ RawObject Interpreter::binaryOperationSetMethod(Thread* thread, Frame* caller,
     }
   }
 
-  if (!method.isErrorNotFound()) {
-    Object result(&scope, NoneType::object());
-    if (method_out != nullptr) {
-      DCHECK(method.isFunction(), "must be a plain function");
-      *method_out = *method;
-      *flags_out = flags;
-      result = binaryOperationWithMethod(thread, caller, *method, flags, *left,
-                                         *right);
-    } else if (flags & IC_BINOP_REFLECTED) {
-      result = callMethod2(thread, caller, method, right, left);
-    } else {
-      result = callMethod2(thread, caller, method, left, right);
-    }
-    if (result.isError()) return *result;
-    if (!result.isNotImplementedType()) {
-      return *result;
-    }
-  }
+  Object result(&scope,
+                executeAndCacheBinop(thread, caller, method, flags, left, right,
+                                     method_out, flags_out));
+  if (!result.isNotImplementedType()) return *result;
 
   // Invoke a 2nd method (normal or reverse depends on what we did the first
   // time) or report an error.
@@ -598,47 +606,83 @@ HANDLER_INLINE bool Interpreter::doInplaceOperation(BinaryOp op, Context* ctx) {
   return false;
 }
 
-RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
-                                        CompareOp op, const Object& left,
-                                        const Object& right) {
+RawObject Interpreter::compareOperationSetMethod(
+    Thread* thread, Frame* caller, CompareOp op, const Object& left,
+    const Object& right, Object* method_out, IcBinopFlags* flags_out) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  SymbolId selector = runtime->comparisonSelector(op);
+  Type left_type(&scope, runtime->typeOf(*left));
+  Type right_type(&scope, runtime->typeOf(*right));
+  Object left_method(&scope,
+                     typeLookupSymbolInMro(thread, left_type, selector));
+
+  // Figure out whether we want to run the normal or the reverse operation
+  // first and set `flags` accordingly.
+  Object method(&scope, *left_method);
+  IcBinopFlags flags = IC_BINOP_NONE;
+  if (left_type != right_type && (left_method.isErrorNotFound() ||
+                                  runtime->isSubclass(right_type, left_type))) {
+    SymbolId reverse_selector = runtime->swappedComparisonSelector(op);
+    method = typeLookupSymbolInMro(thread, right_type, reverse_selector);
+    if (!method.isError()) {
+      flags = IC_BINOP_REFLECTED;
+      if (!left_method.isErrorNotFound()) {
+        flags =
+            static_cast<IcBinopFlags>(flags | IC_BINOP_NOTIMPLEMENTED_RETRY);
+      }
+      if (!method.isFunction()) {
+        method_out = nullptr;
+        method = resolveDescriptorGet(thread, method, right, right_type);
+        if (method.isError()) return *method;
+      }
+    }
+  }
+  if (flags == IC_BINOP_NONE) {
+    flags = IC_BINOP_NOTIMPLEMENTED_RETRY;
+    method = *left_method;
+    if (!method.isFunction() && !method.isError()) {
+      method_out = nullptr;
+      method = resolveDescriptorGet(thread, method, left, left_type);
+      if (method.isError()) return *method;
+    }
+  }
+
+  Object result(&scope,
+                executeAndCacheBinop(thread, caller, method, flags, left, right,
+                                     method_out, flags_out));
+  if (!result.isNotImplementedType()) return *result;
+
+  return compareOperationRetry(thread, caller, op, flags, left, right);
+}
+
+RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* caller,
+                                             CompareOp op, IcBinopFlags flags,
+                                             const Object& left,
+                                             const Object& right) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
-  Type left_type(&scope, runtime->typeOf(*left));
-  Type right_type(&scope, runtime->typeOf(*right));
+  if (flags & IC_BINOP_NOTIMPLEMENTED_RETRY) {
+    // If we tried reverse first, try normal now and vice versa.
+    SymbolId selector = flags & IC_BINOP_REFLECTED
+                            ? runtime->comparisonSelector(op)
+                            : runtime->swappedComparisonSelector(op);
+    Object method(&scope, lookupMethod(thread, caller, right, selector));
+    if (method.isError()) {
+      if (method.isErrorException()) return *method;
+      DCHECK(method.isErrorNotFound(), "expected not found");
+    } else {
+      Object result(&scope, NoneType::object());
+      if (flags & IC_BINOP_REFLECTED) {
+        result = callMethod2(thread, caller, method, left, right);
+      } else {
+        result = callMethod2(thread, caller, method, right, left);
+      }
+      if (!result.isNotImplementedType()) return *result;
+    }
+  }
 
-  bool try_swapped = true;
-  bool has_different_type = (*left_type != *right_type);
-  if (has_different_type && runtime->isSubclass(right_type, left_type)) {
-    try_swapped = false;
-    SymbolId selector = runtime->swappedComparisonSelector(op);
-    Object method(&scope, lookupMethod(thread, caller, right, selector));
-    if (!method.isError()) {
-      RawObject result = callMethod2(thread, caller, method, right, left);
-      if (result != NotImplementedType::object()) {
-        return result;
-      }
-    }
-  } else {
-    SymbolId selector = runtime->comparisonSelector(op);
-    Object method(&scope, lookupMethod(thread, caller, left, selector));
-    if (!method.isError()) {
-      RawObject result = callMethod2(thread, caller, method, left, right);
-      if (result != NotImplementedType::object()) {
-        return result;
-      }
-    }
-  }
-  if (has_different_type && try_swapped) {
-    SymbolId selector = runtime->swappedComparisonSelector(op);
-    Object method(&scope, lookupMethod(thread, caller, right, selector));
-    if (!method.isError()) {
-      RawObject result = callMethod2(thread, caller, method, right, left);
-      if (result != NotImplementedType::object()) {
-        return result;
-      }
-    }
-  }
   if (op == CompareOp::EQ) {
     return Bool::fromBool(*left == *right);
   }
@@ -678,7 +722,10 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* caller,
     if (flags & IC_BINOP_REFLECTED) {
       SymbolId selector = runtime->binaryOperationSelector(op);
       Object method(&scope, lookupMethod(thread, caller, right, selector));
-      if (!method.isErrorNotFound()) {
+      if (method.isError()) {
+        if (method.isErrorException()) return *method;
+        DCHECK(method.isErrorNotFound(), "expected not found");
+      } else {
         Object result(&scope, callMethod2(thread, caller, method, left, right));
         if (!result.isNotImplementedType()) return *result;
       }
@@ -700,6 +747,13 @@ RawObject Interpreter::binaryOperationRetry(Thread* thread, Frame* caller,
 
   SymbolId op_symbol = runtime->binaryOperationSelector(op);
   return thread->raiseUnsupportedBinaryOperation(left, right, op_symbol);
+}
+
+RawObject Interpreter::compareOperation(Thread* thread, Frame* caller,
+                                        CompareOp op, const Object& left,
+                                        const Object& right) {
+  return compareOperationSetMethod(thread, caller, op, left, right, nullptr,
+                                   nullptr);
 }
 
 RawObject Interpreter::sequenceIterSearch(Thread* thread, Frame* caller,
@@ -3048,6 +3102,77 @@ HANDLER_INLINE void Interpreter::doBuildString(Context* ctx, word arg) {
   }
 }
 
+HANDLER_INLINE bool Interpreter::cachedBinaryOpImpl(
+    Context* ctx, word arg, OpcodeHandler update_cache,
+    BinopFallbackHandler fallback) {
+  Frame* frame = ctx->frame;
+  RawObject left_raw = frame->peek(1);
+  RawObject right_raw = frame->peek(0);
+  LayoutId left_layout_id = left_raw.layoutId();
+  LayoutId right_layout_id = right_raw.layoutId();
+  IcBinopFlags flags;
+  RawObject method =
+      icLookupBinop(ctx->caches, arg, left_layout_id, right_layout_id, &flags);
+  if (method.isErrorNotFound()) {
+    return update_cache(ctx, arg);
+  }
+
+  // Fast-path: Call cached method and return if possible.
+  RawObject result = binaryOperationWithMethod(ctx->thread, frame, method,
+                                               flags, left_raw, right_raw);
+  if (result.isErrorException()) return unwind(ctx);
+  if (!result.isNotImplementedType()) {
+    frame->dropValues(1);
+    frame->setTopValue(result);
+    return false;
+  }
+
+  return fallback(ctx, arg, flags);
+}
+
+bool Interpreter::compareOpUpdateCache(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  HandleScope scope(thread);
+  Frame* frame = ctx->frame;
+  Object right(&scope, frame->popValue());
+  Object left(&scope, frame->popValue());
+  CompareOp op = static_cast<CompareOp>(icOriginalArg(ctx->original_args, arg));
+  Object method(&scope, NoneType::object());
+  IcBinopFlags flags;
+  RawObject result = compareOperationSetMethod(thread, frame, op, left, right,
+                                               &method, &flags);
+  if (result.isError()) return unwind(ctx);
+  if (!method.isNoneType()) {
+    LayoutId left_layout_id = left.layoutId();
+    LayoutId right_layout_id = right.layoutId();
+    icUpdateBinop(thread, ctx->caches, arg, left_layout_id, right_layout_id,
+                  method, flags);
+  }
+  frame->pushValue(result);
+  return false;
+}
+
+bool Interpreter::compareOpFallback(Context* ctx, word arg,
+                                    IcBinopFlags flags) {
+  // Slow-path: We may need to call the reversed op when the first method
+  // returned `NotImplemented`.
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  CompareOp op = static_cast<CompareOp>(icOriginalArg(ctx->original_args, arg));
+  Object right(&scope, frame->popValue());
+  Object left(&scope, frame->popValue());
+  Object result(&scope,
+                compareOperationRetry(thread, frame, op, flags, left, right));
+  if (result.isError()) return unwind(ctx);
+  frame->pushValue(*result);
+  return false;
+}
+
+bool Interpreter::doCompareOpCached(Context* ctx, word arg) {
+  return cachedBinaryOpImpl(ctx, arg, compareOpUpdateCache, compareOpFallback);
+}
+
 bool Interpreter::inplaceOpUpdateCache(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -3070,36 +3195,17 @@ bool Interpreter::inplaceOpUpdateCache(Context* ctx, word arg) {
   return false;
 }
 
-bool Interpreter::doInplaceOpCached(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
-  LayoutId left_layout_id = left_raw.layoutId();
-  LayoutId right_layout_id = right_raw.layoutId();
-  IcBinopFlags flags;
-  RawObject method =
-      icLookupBinop(ctx->caches, arg, left_layout_id, right_layout_id, &flags);
-  if (method.isErrorNotFound()) {
-    return inplaceOpUpdateCache(ctx, arg);
-  }
-
-  // Fast-path: Call cached method and return if possible.
-  RawObject result = binaryOperationWithMethod(ctx->thread, frame, method,
-                                               flags, left_raw, right_raw);
-  if (result.isError()) return unwind(ctx);
-  if (!result.isNotImplementedType()) {
-    frame->dropValues(1);
-    frame->setTopValue(result);
-    return false;
-  }
-
+bool Interpreter::inplaceOpFallback(Context* ctx, word arg,
+                                    IcBinopFlags flags) {
   // Slow-path: We may need to try other ways to resolve things when the first
   // call returned `NotImplemented`.
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   HandleScope scope(thread);
   BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
+  Object result(&scope, NoneType::object());
   if (flags & IC_INPLACE_BINOP_RETRY) {
     // The cached operation was an in-place operation we have to try to the
     // usual binary operation mechanics now.
@@ -3110,8 +3216,12 @@ bool Interpreter::doInplaceOpCached(Context* ctx, word arg) {
     result = binaryOperationRetry(thread, frame, op, flags, left, right);
   }
   if (result.isError()) return unwind(ctx);
-  frame->pushValue(result);
+  frame->pushValue(*result);
   return false;
+}
+
+bool Interpreter::doInplaceOpCached(Context* ctx, word arg) {
+  return cachedBinaryOpImpl(ctx, arg, inplaceOpUpdateCache, inplaceOpFallback);
 }
 
 bool Interpreter::binaryOpUpdateCache(Context* ctx, word arg) {
@@ -3134,40 +3244,24 @@ bool Interpreter::binaryOpUpdateCache(Context* ctx, word arg) {
   return false;
 }
 
-bool Interpreter::doBinaryOpCached(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
-  RawObject left_raw = frame->peek(1);
-  RawObject right_raw = frame->peek(0);
-  LayoutId left_layout_id = left_raw.layoutId();
-  LayoutId right_layout_id = right_raw.layoutId();
-  IcBinopFlags flags;
-  RawObject method =
-      icLookupBinop(ctx->caches, arg, left_layout_id, right_layout_id, &flags);
-  if (method.isErrorNotFound()) {
-    return binaryOpUpdateCache(ctx, arg);
-  }
-
-  // Fast-path: Call cached method and return if possible.
-  RawObject result = binaryOperationWithMethod(ctx->thread, frame, method,
-                                               flags, left_raw, right_raw);
-  if (result.isErrorException()) return unwind(ctx);
-  if (!result.isNotImplementedType()) {
-    frame->dropValues(1);
-    frame->setTopValue(result);
-    return false;
-  }
-
+bool Interpreter::binaryOpFallback(Context* ctx, word arg, IcBinopFlags flags) {
   // Slow-path: We may need to call the reversed op when the first method
   // returned `NotImplemented`.
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   HandleScope scope(thread);
   BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  result = binaryOperationRetry(thread, frame, op, flags, left, right);
+  Object result(&scope,
+                binaryOperationRetry(thread, frame, op, flags, left, right));
   if (result.isErrorException()) return unwind(ctx);
-  frame->pushValue(result);
+  frame->pushValue(*result);
   return false;
+}
+
+bool Interpreter::doBinaryOpCached(Context* ctx, word arg) {
+  return cachedBinaryOpImpl(ctx, arg, binaryOpUpdateCache, binaryOpFallback);
 }
 
 // Bytecode handlers that might raise an exception return bool rather than
