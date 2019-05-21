@@ -431,10 +431,12 @@ def func(arg0, arg1):
   Frame* root = thread->currentFrame();
   root->setVirtualPC(8);
   root->pushValue(NoneType::object());
+  Function function(&scope, makeTestFunction(thread));
+  root->pushValue(*function);
   ASSERT_EQ(root->previousFrame(), nullptr);
 
   Frame* frame0 = thread->openAndLinkFrame(0, 2, 1);
-  frame0->setCode(makeTestCode(thread));
+  frame0->setCode(function.code());
   frame0->setVirtualPC(42);
   frame0->setLocal(0, runtime.newStrFromCStr("foo bar"));
   frame0->setLocal(1, runtime.newStrFromCStr("bar foo"));
@@ -448,19 +450,23 @@ def func(arg0, arg1):
 
   std::stringstream ss;
   ss << thread->currentFrame();
-  EXPECT_EQ(ss.str(), R"(- pc: 8
-  - stack:
-    0: None
-- pc: 42 ("filename0":0)
+  EXPECT_EQ(ss.str(), R"(- initial frame
+  pc: 8
+  stack:
+    1: None
+    0: <function "footype.baz">
+- function: <function "footype.baz">
   code: "name0"
-  - locals:
+  pc: 42 ("filename0":0)
+  locals:
     0 "variable0": "foo bar"
     1: "bar foo"
-  - stack:
+  stack:
     0: <function "func">
-- pc: 4 ("<test string>":4)
-  function: <function "func">
-  - locals:
+- function: <function "func">
+  code: "func"
+  pc: 4 ("<test string>":4)
+  locals:
     0 "arg0": -9
     1 "arg1": 17
     2 "hello": "world"

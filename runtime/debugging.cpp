@@ -366,41 +366,44 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   HandleScope scope(thread);
 
   Tuple var_names(&scope, thread->runtime()->newTuple(0));
-  Object code_obj(&scope, frame->code());
-  if (code_obj.isCode()) {
-    Object names_raw(&scope, Code::cast(*code_obj).varnames());
-    if (names_raw.isTuple()) {
-      var_names = *names_raw;
+  bool output_pc = true;
+  if (frame->previousFrame() == nullptr) {
+    os << "- initial frame\n";
+  } else if (!frame->function().isFunction()) {
+    os << "- function: <invalid>\n";
+  } else {
+    Function function(&scope, frame->function());
+    os << "- function: " << function << '\n';
+    if (function.code().isCode()) {
+      Code code(&scope, function.code());
+      os << "  code: " << code.name() << '\n';
+      os << "  pc: " << frame->virtualPC();
+
+      // Print filename and line number, if possible.
+      os << " (" << code.filename();
+      if (code.lnotab().isBytes()) {
+        os << ":"
+           << thread->runtime()->codeOffsetToLineNum(thread, code,
+                                                     frame->virtualPC());
+      }
+      os << ")";
+      os << '\n';
+      output_pc = false;
+
+      Object names_obj(&scope, code.varnames());
+      if (names_obj.isTuple()) {
+        var_names = *names_obj;
+      }
     }
   }
-
-  os << "- pc: " << frame->virtualPC();
-
-  // Print filename and line number, if possible.
-  if (code_obj.isCode()) {
-    Code code(&scope, *code_obj);
-    os << " (" << code.filename();
-    if (code.lnotab().isBytes()) {
-      os << ":"
-         << thread->runtime()->codeOffsetToLineNum(thread, code,
-                                                   frame->virtualPC());
-    }
-    os << ")";
-  }
-  os << '\n';
-
-  Object function(&scope, frame->function());
-  if (!function.isError()) {
-    os << "  function: " << function << '\n';
-  } else if (code_obj.isCode()) {
-    Code code(&scope, *code_obj);
-    os << "  code: " << code.name() << '\n';
+  if (output_pc) {
+    os << "  pc: " << frame->virtualPC() << '\n';
   }
 
   // TODO(matthiasb): Also dump the block stack.
   word var_names_length = var_names.length();
   word num_locals = frame->numLocals();
-  if (num_locals > 0) os << "  - locals:\n";
+  if (num_locals > 0) os << "  locals:\n";
   for (word l = 0; l < num_locals; l++) {
     os << "    " << l;
     if (l < var_names_length) {
@@ -410,7 +413,7 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   }
 
   word stack_size = frame->valueStackSize();
-  if (stack_size > 0) os << "  - stack:\n";
+  if (stack_size > 0) os << "  stack:\n";
   for (word i = stack_size - 1; i >= 0; i--) {
     os << "    " << i << ": " << frame->peek(i) << '\n';
   }
