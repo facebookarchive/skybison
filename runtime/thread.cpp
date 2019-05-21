@@ -125,11 +125,13 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
   return frame;
 }
 
-Frame* Thread::pushFrame(const Code& code, const Dict& globals,
+Frame* Thread::pushFrame(const Function& function, const Dict& globals,
                          const Dict& builtins) {
+  RawCode code = Code::cast(function.code());
   Frame* frame =
       openAndLinkFrame(code.totalArgs(), code.totalVars(), code.stacksize());
-  frame->setCode(*code);
+  frame->setCode(function.code());
+  // TODO(T36407403) We should be able to not set globals and builtins.
   frame->setGlobals(*globals);
   frame->setBuiltins(*builtins);
   return frame;
@@ -160,29 +162,9 @@ Frame* Thread::pushCallFrame(const Function& function) {
       runtime()->moduleDictAtPut(this, builtins_dict, none_name, none);
     }
   }
-  Code code(&scope, function.code());
   Dict builtins_dict(&scope, *builtins);
-  Frame* result = pushFrame(code, globals, builtins_dict);
+  Frame* result = pushFrame(function, globals, builtins_dict);
   result->setVirtualPC(0);
-  return result;
-}
-
-Frame* Thread::pushExecFrame(const Code& code, const Dict& globals,
-                             const Object& locals) {
-  HandleScope scope(this);
-  Str dunder_builtins_name(&scope, runtime()->symbols()->DunderBuiltins());
-  Object builtins_obj(
-      &scope, runtime()->typeDictAt(this, globals, dunder_builtins_name));
-  if (builtins_obj.isError()) {  // couldn't find __builtins__ in globals
-    builtins_obj = runtime()->findModuleById(SymbolId::kBuiltins);
-    runtime()->typeDictAtPut(this, globals, dunder_builtins_name, builtins_obj);
-  }
-  Module builtins_module(&scope, *builtins_obj);
-  Dict builtins(&scope, builtins_module.dict());
-  Frame* result = pushFrame(code, globals, builtins);
-  result->setFastGlobals(
-      runtime()->computeFastGlobals(code, globals, builtins));
-  result->setImplicitGlobals(*locals);
   return result;
 }
 
@@ -239,19 +221,46 @@ RawObject Thread::run(const Code& code) {
   HandleScope scope(this);
   Dict globals(&scope, runtime()->newDict());
   Dict builtins(&scope, runtime()->newDict());
-  Frame* frame = pushFrame(code, globals, builtins);
-  return Interpreter::execute(this, frame);
+  return exec(code, globals, builtins);
 }
 
 RawObject Thread::exec(const Code& code, const Dict& globals,
                        const Object& locals) {
-  Frame* frame = pushExecFrame(code, globals, locals);
-  return Interpreter::execute(this, frame);
+  HandleScope scope(this);
+  Object qualname(&scope, Str::empty());
+  Object empty_tuple(&scope, runtime()->emptyTuple());
+  Dict empty_dict(&scope, runtime()->newDict());
+
+  Runtime* runtime = this->runtime();
+  Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
+  Object builtins_module_obj(
+      &scope, runtime->moduleDictAt(this, globals, dunder_builtins_name));
+  if (builtins_module_obj.isErrorNotFound()) {
+    builtins_module_obj = runtime->findModuleById(SymbolId::kBuiltins);
+    DCHECK(builtins_module_obj.isModule(), "invalid builtins module");
+    runtime->moduleDictAtPut(this, globals, dunder_builtins_name,
+                             builtins_module_obj);
+  }
+  Module builtins_module(&scope, *builtins_module_obj);
+  Dict builtins_dict(&scope, builtins_module.dict());
+
+  Function function(
+      &scope, Interpreter::makeFunction(this, qualname, code, empty_tuple,
+                                        empty_dict, empty_dict, empty_tuple,
+                                        globals, builtins_dict));
+  currentFrame()->pushValue(*function);
+  Frame* frame = pushCallFrame(function);
+  frame->setFastGlobals(function.fastGlobals());
+  frame->setImplicitGlobals(*locals);
+  Object result(&scope, Interpreter::execute(this, frame, function));
+  DCHECK(currentFrame()->topValue() == function, "stack mismatch");
+  currentFrame()->dropValues(1);
+  return *result;
 }
 
 RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
   Frame* frame = pushClassFunctionFrame(function, dict);
-  return Interpreter::execute(this, frame);
+  return Interpreter::execute(this, frame, function);
 }
 
 RawObject Thread::invokeMethod1(const Object& receiver, SymbolId selector) {

@@ -79,9 +79,8 @@ class Interpreter {
     DISALLOW_HEAP_ALLOCATION();
   };
 
-  static RawObject execute(Thread* thread, Frame* frame);
-  static RawObject executeWithCaching(Thread* thread, Frame* frame,
-                                      const Function& function);
+  static RawObject execute(Thread* thread, Frame* frame,
+                           const Function& function);
 
   static RawObject call(Thread* thread, Frame* frame, word nargs);
   static RawObject callKw(Thread* thread, Frame* frame, word nargs);
@@ -460,8 +459,6 @@ class Interpreter {
   // Pop the current Frame, restoring the execution context of the previous
   // Frame.
   static void popFrame(Context* ctx);
-
-  static RawObject executeWithContext(Interpreter::Context* ctx);
 
   static bool loadAttrUpdateCache(Context* ctx, word arg);
   static bool storeAttrUpdateCache(Context* ctx, word arg);

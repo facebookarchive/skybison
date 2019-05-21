@@ -3174,10 +3174,16 @@ ALWAYS_INLINE bool wrapHandler(Interpreter::Context* ctx, word arg) {
   return op(ctx, arg);
 }
 
-inline RawObject Interpreter::executeWithContext(Interpreter::Context* ctx) {
-  auto do_return = [ctx] {
-    RawObject return_val = ctx->frame->popValue();
-    ctx->thread->popFrame();
+RawObject Interpreter::execute(Thread* thread, Frame* frame,
+                               const Function& function) {
+  HandleScope scope(thread);
+  DCHECK(frame->code() == function.code(), "function should match code");
+  Context ctx(&scope, thread, frame, function.rewrittenBytecode(),
+              function.caches(), function.originalArguments());
+
+  auto do_return = [&ctx] {
+    RawObject return_val = ctx.frame->popValue();
+    ctx.thread->popFrame();
     return return_val;
   };
 
@@ -3187,11 +3193,11 @@ inline RawObject Interpreter::executeWithContext(Interpreter::Context* ctx) {
   // down, we should restructure it to take advantage of this fact, likely by
   // adding an alternate entry point that always throws (and asserts that an
   // exception is pending).
-  if (ctx->thread->hasPendingException()) {
-    DCHECK(Code::cast(ctx->frame->code()).hasCoroutineOrGenerator(),
+  if (ctx.thread->hasPendingException()) {
+    DCHECK(Code::cast(ctx.frame->code()).hasCoroutineOrGenerator(),
            "Entered dispatch loop with a pending exception outside of "
            "generator/coroutine");
-    if (Interpreter::unwind(ctx)) return do_return();
+    if (Interpreter::unwind(&ctx)) return do_return();
   }
 
   // Silence warnings about computed goto
@@ -3208,9 +3214,9 @@ inline RawObject Interpreter::executeWithContext(Interpreter::Context* ctx) {
   Bytecode bc;
   int32_t arg;
   auto next_label = [&]() __attribute__((always_inline)) {
-    ctx->frame->setVirtualPC(ctx->pc);
-    bc = static_cast<Bytecode>(ctx->bytecode.byteAt(ctx->pc++));
-    arg = ctx->bytecode.byteAt(ctx->pc++);
+    ctx.frame->setVirtualPC(ctx.pc);
+    bc = static_cast<Bytecode>(ctx.bytecode.byteAt(ctx.pc++));
+    arg = ctx.bytecode.byteAt(ctx.pc++);
     return dispatch_table[bc];
   };
 
@@ -3218,36 +3224,17 @@ inline RawObject Interpreter::executeWithContext(Interpreter::Context* ctx) {
 
 extendedArg:
   do {
-    bc = static_cast<Bytecode>(ctx->bytecode.byteAt(ctx->pc++));
-    arg = (arg << 8) | ctx->bytecode.byteAt(ctx->pc++);
+    bc = static_cast<Bytecode>(ctx.bytecode.byteAt(ctx.pc++));
+    arg = (arg << 8) | ctx.bytecode.byteAt(ctx.pc++);
   } while (bc == EXTENDED_ARG);
   goto* dispatch_table[bc];
 
 #define OP(name, id, handler)                                                  \
-  handle##name : if (wrapHandler<handler>(ctx, arg)) return do_return();       \
+  handle##name : if (wrapHandler<handler>(&ctx, arg)) return do_return();      \
   goto* next_label();
   FOREACH_BYTECODE(OP)
 #undef OP
 #pragma GCC diagnostic pop
-}
-
-RawObject Interpreter::execute(Thread* thread, Frame* frame) {
-  HandleScope scope(thread);
-  Code code(&scope, frame->code());
-  Tuple empty_tuple(&scope, thread->runtime()->emptyTuple());
-  Context ctx(&scope, thread, frame, code.code(), *empty_tuple, *empty_tuple);
-
-  return executeWithContext(&ctx);
-}
-
-RawObject Interpreter::executeWithCaching(Thread* thread, Frame* frame,
-                                          const Function& function) {
-  HandleScope scope(thread);
-  DCHECK(frame->code() == function.code(), "function should match code");
-  Context ctx(&scope, thread, frame, function.rewrittenBytecode(),
-              function.caches(), function.originalArguments());
-
-  return executeWithContext(&ctx);
 }
 
 }  // namespace python

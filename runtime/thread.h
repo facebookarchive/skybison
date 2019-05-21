@@ -55,13 +55,12 @@ class Thread {
 
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   Frame* linkFrame(Frame* frame);
-  Frame* pushFrame(const Handle<RawCode>& code, const Handle<RawDict>& globals,
+  // Private method. Call pushCallFrame() or pushNativeFrame() isntead.
+  Frame* pushFrame(const Handle<RawFunction>& function,
+                   const Handle<RawDict>& globals,
                    const Handle<RawDict>& builtins);
   Frame* pushCallFrame(const Handle<RawFunction>& function);
   Frame* pushNativeFrame(void* fn, word nargs);
-  Frame* pushExecFrame(const Handle<RawCode>& code,
-                       const Handle<RawDict>& globals,
-                       const Handle<RawObject>& locals);
   Frame* pushClassFunctionFrame(const Handle<RawFunction>& function,
                                 const Handle<RawDict>& dict);
   void checkStackOverflow(word max_size);

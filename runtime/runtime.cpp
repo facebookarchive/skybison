@@ -673,7 +673,8 @@ RawObject Runtime::newHeapFrame(const Code& code) {
 
   word num_args = code.totalArgs();
   word num_vars = code.totalVars();
-  word extra_words = num_args + num_vars + code.stacksize();
+  // +1 for the function pointer.
+  word extra_words = num_args + num_vars + code.stacksize() + 1;
   HandleScope scope;
   HeapFrame frame(
       &scope, heap()->createInstance(LayoutId::kHeapFrame,
@@ -3252,7 +3253,9 @@ RawObject Runtime::genSend(Thread* thread, const GeneratorBase& gen,
   ExceptionState exc_state(&scope, gen.exceptionState());
   exc_state.setPrevious(thread->caughtExceptionState());
   thread->setCaughtExceptionState(*exc_state);
-  Object result(&scope, Interpreter::execute(thread, live_frame));
+
+  Function function(&scope, live_frame->function());
+  Object result(&scope, Interpreter::execute(thread, live_frame, function));
   thread->setCaughtExceptionState(exc_state.previous());
   exc_state.setPrevious(NoneType::object());
   return *result;

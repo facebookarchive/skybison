@@ -580,7 +580,7 @@ RawObject interpreterTrampoline(Thread* thread, Frame* caller, word argc) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function);
-  return Interpreter::executeWithCaching(thread, callee_frame, function);
+  return Interpreter::execute(thread, callee_frame, function);
 }
 
 RawObject interpreterTrampolineKw(Thread* thread, Frame* caller, word argc) {
@@ -594,7 +594,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller, word argc) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function);
-  return Interpreter::executeWithCaching(thread, callee_frame, function);
+  return Interpreter::execute(thread, callee_frame, function);
 }
 
 RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word arg) {
@@ -609,7 +609,7 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word arg) {
     return error;
   }
   Frame* callee_frame = pushCallee(thread, function);
-  return Interpreter::executeWithCaching(thread, callee_frame, function);
+  return Interpreter::execute(thread, callee_frame, function);
 }
 
 RawObject interpreterClosureTrampoline(Thread* thread, Frame* caller,
@@ -623,7 +623,7 @@ RawObject interpreterClosureTrampoline(Thread* thread, Frame* caller,
   }
   Frame* callee_frame = pushCallee(thread, function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
-  return Interpreter::executeWithCaching(thread, callee_frame, function);
+  return Interpreter::execute(thread, callee_frame, function);
 }
 
 RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
@@ -639,7 +639,7 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
   }
   Frame* callee_frame = pushCallee(thread, function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
-  return Interpreter::executeWithCaching(thread, callee_frame, function);
+  return Interpreter::execute(thread, callee_frame, function);
 }
 
 RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
@@ -656,7 +656,7 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
   }
   Frame* callee_frame = pushCallee(thread, function);
   processFreevarsAndCellvars(thread, function, callee_frame, code);
-  return Interpreter::executeWithCaching(thread, callee_frame, function);
+  return Interpreter::execute(thread, callee_frame, function);
 }
 
 // method no args
