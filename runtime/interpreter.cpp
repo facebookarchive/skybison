@@ -2133,17 +2133,20 @@ HANDLER_INLINE void Interpreter::doBuildSet(Context* ctx, word arg) {
   ctx->frame->pushValue(*set);
 }
 
-HANDLER_INLINE void Interpreter::doBuildMap(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doBuildMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
-  HandleScope scope;
+  HandleScope scope(thread);
   Dict dict(&scope, runtime->newDictWithSize(arg));
   for (word i = 0; i < arg; i++) {
     Object value(&scope, ctx->frame->popValue());
     Object key(&scope, ctx->frame->popValue());
-    runtime->dictAtPut(thread, dict, key, value);
+    Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
+    if (key_hash.isError()) return unwind(ctx);
+    runtime->dictAtPutWithHash(thread, dict, key, value, key_hash);
   }
   ctx->frame->pushValue(*dict);
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doLoadAttr(Context* ctx, word arg) {

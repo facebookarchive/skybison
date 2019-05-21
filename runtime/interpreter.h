@@ -302,6 +302,7 @@ class Interpreter {
   static bool doBinaryTrueDivide(Context* ctx, word arg);
   static bool doBinaryXor(Context* ctx, word arg);
   static bool doBuildListUnpack(Context* ctx, word arg);
+  static bool doBuildMap(Context* ctx, word arg);
   static bool doBuildMapUnpack(Context* ctx, word arg);
   static bool doBuildMapUnpackWithCall(Context* ctx, word arg);
   static bool doBuildSetUnpack(Context* ctx, word arg);
@@ -360,7 +361,6 @@ class Interpreter {
   static void doBreakLoop(Context* ctx, word arg);
   static void doBuildConstKeyMap(Context* ctx, word arg);
   static void doBuildList(Context* ctx, word arg);
-  static void doBuildMap(Context* ctx, word arg);
   static void doBuildSet(Context* ctx, word arg);
   static void doBuildSlice(Context* ctx, word arg);
   static void doBuildString(Context* ctx, word arg);

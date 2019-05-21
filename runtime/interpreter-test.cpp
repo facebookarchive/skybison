@@ -1699,6 +1699,17 @@ l = [1, 2, 3, 4]
   EXPECT_TRUE(isIntEqualsWord(*c, 4));
 }
 
+TEST(InterpreterTest, BuildMapCallsDunderHashAndPropagatesException) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class C:
+  def __hash__(self):
+    raise ValueError('foo')
+d = {C(): 4}
+)"),
+                            LayoutId::kValueError, "foo"));
+}
+
 TEST(InterpreterTest, BuildMapUnpackWithDict) {
   Runtime runtime;
   Thread* thread = Thread::current();
