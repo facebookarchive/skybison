@@ -255,8 +255,13 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
 }
 
 RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
+  HandleScope scope(this);
+  currentFrame()->pushValue(*function);
   Frame* frame = pushClassFunctionFrame(function, dict);
-  return Interpreter::execute(this, frame, function);
+  Object result(&scope, Interpreter::execute(this, frame, function));
+  DCHECK(currentFrame()->topValue() == function, "stack mismatch");
+  currentFrame()->dropValues(1);
+  return *result;
 }
 
 RawObject Thread::invokeMethod1(const Object& receiver, SymbolId selector) {

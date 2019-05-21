@@ -1154,15 +1154,10 @@ HANDLER_INLINE void Interpreter::popFrame(Context* ctx) {
   // execute it. We can clean this up once we merge Code and Function
   // and store a Function directly in the Frame.
   HandleScope scope(ctx->thread);
-  Object caller_obj(&scope, caller_frame->function());
-  if (caller_obj.isError()) {
-    Code caller_code(&scope, caller_frame->code());
-    ctx->bytecode = caller_code.code();
-    RawObject empty_tuple = ctx->thread->runtime()->emptyTuple();
-    ctx->caches = empty_tuple;
-    ctx->original_args = empty_tuple;
-  } else {
-    Function caller_func(&scope, *caller_obj);
+
+  // Reset context for previous frame except when returning to initial frame).
+  if (caller_frame->previousFrame() != nullptr) {
+    Function caller_func(&scope, caller_frame->function());
     ctx->bytecode = caller_func.rewrittenBytecode();
     ctx->caches = caller_func.caches();
     ctx->original_args = caller_func.originalArguments();
