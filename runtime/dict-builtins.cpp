@@ -262,6 +262,7 @@ RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter) {
 const BuiltinAttribute DictBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, RawDict::kNumItemsOffset},
     {SymbolId::kInvalid, RawDict::kDataOffset},
+    {SymbolId::kInvalid, RawDict::kNumUsableItemsOffset},
     {SymbolId::kSentinelId, -1},
 };
 

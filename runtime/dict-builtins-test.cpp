@@ -1027,4 +1027,12 @@ TEST(DictBuiltinsTest, nextBucketProbesAllBuckets) {
   EXPECT_TRUE(all_probed);
 }
 
+TEST(DictBuiltinsTest, NumAttributesMatchesObjectSize) {
+  Runtime runtime;
+  HandleScope scope;
+  Layout layout(&scope, runtime.layoutAt(LayoutId::kDict));
+  EXPECT_EQ(layout.numInObjectAttributes(),
+            (RawDict::kSize - RawHeapObject::kSize) / kPointerSize);
+}
+
 }  // namespace python
