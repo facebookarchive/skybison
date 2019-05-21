@@ -2169,6 +2169,17 @@ d = {**Foo(), 'd': 4}
                             LayoutId::kTypeError, "keys() is not iterable"));
 }
 
+TEST(InterpreterTest, BuildSetCallsDunderHashAndPropagatesException) {
+  Runtime runtime;
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class C:
+  def __hash__(self):
+    raise ValueError('foo')
+s = {C()}
+)"),
+                            LayoutId::kValueError, "foo"));
+}
+
 TEST(InterpreterTest, UnpackSequenceExWithTooFewObjectsBefore) {
   Runtime runtime;
   const char* src = R"(

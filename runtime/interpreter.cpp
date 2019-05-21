@@ -2198,15 +2198,19 @@ HANDLER_INLINE void Interpreter::doBuildList(Context* ctx, word arg) {
   ctx->frame->pushValue(list);
 }
 
-HANDLER_INLINE void Interpreter::doBuildSet(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doBuildSet(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Set set(&scope, Set::cast(runtime->newSet()));
+  Set set(&scope, runtime->newSet());
   for (word i = arg - 1; i >= 0; i--) {
-    runtime->setAdd(thread, set, Object(&scope, ctx->frame->popValue()));
+    Object key(&scope, ctx->frame->popValue());
+    Object key_hash(&scope, thread->invokeMethod1(key, SymbolId::kDunderHash));
+    if (key_hash.isError()) return unwind(ctx);
+    runtime->setAddWithHash(thread, set, key, key_hash);
   }
   ctx->frame->pushValue(*set);
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doBuildMap(Context* ctx, word arg) {
