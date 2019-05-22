@@ -1825,9 +1825,9 @@ class RawModule : public RawHeapObject {
  * Invariant: bytes() is empty (upon initialization) or a mutable LargeBytes.
  *
  * RawLayout:
- *   [RawType pointer]
- *   [Bytes          ] - Pointer to a RawBytes with the underlying data.
- *   [NumItems       ] - Number of bytes currently in the array.
+ *   [Header  ]
+ *   [Bytes   ] - Pointer to a RawBytes with the underlying data.
+ *   [NumItems] - Number of bytes currently in the array.
  */
 class RawByteArray : public RawHeapObject {
  public:
@@ -1863,8 +1863,9 @@ class RawByteArray : public RawHeapObject {
  * Invariant: The allocated code units form valid UTF-8.
  *
  * RawLayout:
- *   [Items          ] - Pointer to a RawMutableBytes with the underlying data.
- *   [NumItems       ] - Number of bytes currently in the array.
+ *   [Header  ]
+ *   [Items   ] - Pointer to a RawMutableBytes with the underlying data.
+ *   [NumItems] - Number of bytes currently in the array.
  */
 class RawStrArray : public RawHeapObject {
  public:
@@ -1893,10 +1894,11 @@ class RawStrArray : public RawHeapObject {
  *
  * RawLayout:
  *
- *   [NumItems       ] - Number of items currently in the dict
- *   [Items          ] - Pointer to an RawTuple that stores the underlying
+ *   [Header        ]
+ *   [NumItems      ] - Number of items currently in the dict
+ *   [Items         ] - Pointer to an RawTuple that stores the underlying
  * data.
- *   [NumUsableItems ] - Usable items for insertion.
+ *   [NumUsableItems] - Usable items for insertion.
  *
  * RawDict entries are stored in buckets as a triple of (hash, key, value).
  * Empty buckets are stored as (RawNoneType, RawNoneType, RawNoneType).
@@ -2197,9 +2199,9 @@ class RawSetBase::Bucket {
  *
  * RawLayout:
  *
- *   [RawType pointer]
- *   [Length       ] - Number of elements currently in the list
- *   [Elems        ] - Pointer to an RawTuple that contains list elements
+ *   [Header]
+ *   [Length] - Number of elements currently in the list
+ *   [Elems ] - Pointer to an RawTuple that contains list elements
  */
 class RawList : public RawHeapObject {
  public:
