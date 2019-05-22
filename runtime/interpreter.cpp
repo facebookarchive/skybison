@@ -1160,7 +1160,6 @@ HANDLER_INLINE void Interpreter::popFrame(Context* ctx) {
     Function caller_func(&scope, caller_frame->function());
     ctx->bytecode = caller_func.rewrittenBytecode();
     ctx->caches = caller_func.caches();
-    ctx->original_args = caller_func.originalArguments();
   }
   ctx->pc = caller_frame->virtualPC();
 }
@@ -2021,9 +2020,9 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
 }
 
 bool Interpreter::storeAttrUpdateCache(Context* ctx, word arg) {
-  word original_arg = icOriginalArg(ctx->original_args, arg);
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
+  word original_arg = icOriginalArg(frame->function(), arg);
   HandleScope scope(thread);
   Object receiver(&scope, frame->popValue());
   Object name(&scope,
@@ -2264,10 +2263,10 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
 }
 
 bool Interpreter::loadAttrUpdateCache(Context* ctx, word arg) {
-  word original_arg = icOriginalArg(ctx->original_args, arg);
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
+  word original_arg = icOriginalArg(frame->function(), arg);
   Object receiver(&scope, frame->topValue());
   Object name(&scope,
               Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
@@ -2623,7 +2622,6 @@ HANDLER_INLINE void Interpreter::pushFrame(Context* ctx,
   ctx->pc = callee_frame->virtualPC();
   ctx->bytecode = function.rewrittenBytecode();
   ctx->caches = function.caches();
-  ctx->original_args = function.originalArguments();
 }
 
 bool Interpreter::callTrampoline(Context* ctx, Function::Entry entry, word argc,
@@ -3124,7 +3122,7 @@ bool Interpreter::compareOpUpdateCache(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  CompareOp op = static_cast<CompareOp>(icOriginalArg(ctx->original_args, arg));
+  CompareOp op = static_cast<CompareOp>(icOriginalArg(frame->function(), arg));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   RawObject result = compareOperationSetMethod(thread, frame, op, left, right,
@@ -3147,7 +3145,7 @@ bool Interpreter::compareOpFallback(Context* ctx, word arg,
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
-  CompareOp op = static_cast<CompareOp>(icOriginalArg(ctx->original_args, arg));
+  CompareOp op = static_cast<CompareOp>(icOriginalArg(frame->function(), arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   Object result(&scope,
@@ -3167,7 +3165,7 @@ bool Interpreter::inplaceOpUpdateCache(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
+  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   RawObject result = inplaceOperationSetMethod(thread, frame, op, left, right,
@@ -3190,7 +3188,7 @@ bool Interpreter::inplaceOpFallback(Context* ctx, word arg,
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
+  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   Object result(&scope, NoneType::object());
@@ -3218,7 +3216,7 @@ bool Interpreter::binaryOpUpdateCache(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
+  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
   Object method(&scope, NoneType::object());
   IcBinopFlags flags;
   Object result(&scope, binaryOperationSetMethod(thread, frame, op, left, right,
@@ -3238,7 +3236,7 @@ bool Interpreter::binaryOpFallback(Context* ctx, word arg, IcBinopFlags flags) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
-  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(ctx->original_args, arg));
+  BinaryOp op = static_cast<BinaryOp>(icOriginalArg(frame->function(), arg));
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   Object result(&scope,
@@ -3276,7 +3274,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   DCHECK(frame->code() == function.code(), "function should match code");
   Context ctx(&scope, thread, frame, function.rewrittenBytecode(),
-              function.caches(), function.originalArguments());
+              function.caches());
 
   auto do_return = [&ctx] {
     RawObject return_val = ctx.frame->popValue();

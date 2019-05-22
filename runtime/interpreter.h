@@ -52,13 +52,11 @@ class Interpreter {
     // returns, this is the same as thread->currentFrame().
     Frame* frame;
 
-    // The bytecode, caches, and original opcode arguments for the current
-    // function. If caching is disabled or we're executing a Code object without
-    // a Function (like a module body), caches and original_args will be empty
-    // tuples.
+    // The bytecode for the current function.
     Bytes bytecode;
+
+    // The caches for the current function.
     Tuple caches;
-    Tuple original_args;
 
     // The current program counter. Since it's updated as we decode an
     // instruction, it usually points to the next instruction to execute while
@@ -66,14 +64,12 @@ class Interpreter {
     word pc;
 
     Context(HandleScope* scope, Thread* thread_in, Frame* frame_in,
-            RawObject bytecode_in, RawObject caches_in,
-            RawObject original_args_in)
+            RawObject bytecode_in, RawObject caches_in)
         : thread(thread_in),
           entry_frame(frame_in),
           frame(frame_in),
           bytecode(scope, bytecode_in),
           caches(scope, caches_in),
-          original_args(scope, original_args_in),
           pc(frame->virtualPC()) {}
 
     DISALLOW_HEAP_ALLOCATION();

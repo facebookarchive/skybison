@@ -33,7 +33,7 @@ RawObject icLookupBinop(const Tuple& caches, word index,
 
 // Returns the original argument of bytecode operations that were rewritten by
 // `rewriteBytecode()`.
-word icOriginalArg(const Tuple& original_args, word index);
+word icOriginalArg(RawFunction function, word index);
 
 // Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
 // `function`. It has the arguments of opcodes that use the cache replaced with
@@ -119,8 +119,9 @@ inline RawObject icLookupBinop(const Tuple& caches, word index,
   return Error::notFound();
 }
 
-inline word icOriginalArg(const Tuple& original_args, word index) {
-  return SmallInt::cast(original_args.at(index)).value();
+inline word icOriginalArg(RawFunction function, word index) {
+  return SmallInt::cast(RawTuple::cast(function.originalArguments()).at(index))
+      .value();
 }
 
 }  // namespace python

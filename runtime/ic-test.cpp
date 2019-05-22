@@ -43,11 +43,9 @@ TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
 
-  ASSERT_TRUE(function.originalArguments().isTuple());
-  Tuple original_args(&scope, function.originalArguments());
-  EXPECT_EQ(icOriginalArg(original_args, 0), 0xcafe);
-  EXPECT_EQ(icOriginalArg(original_args, 1), 0x01020304);
-  EXPECT_EQ(icOriginalArg(original_args, 2), 77);
+  EXPECT_EQ(icOriginalArg(*function, 0), 0xcafe);
+  EXPECT_EQ(icOriginalArg(*function, 1), 0x01020304);
+  EXPECT_EQ(icOriginalArg(*function, 2), 77);
 }
 
 TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
@@ -71,9 +69,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
 
-  ASSERT_TRUE(function.originalArguments().isTuple());
-  Tuple original_args(&scope, function.originalArguments());
-  EXPECT_EQ(icOriginalArg(original_args, 0), 48);
+  EXPECT_EQ(icOriginalArg(*function, 0), 48);
 }
 
 TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
@@ -130,33 +126,31 @@ TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
 
-  ASSERT_TRUE(function.originalArguments().isTuple());
-  Tuple original_args(&scope, function.originalArguments());
-  EXPECT_EQ(icOriginalArg(original_args, 0),
+  EXPECT_EQ(icOriginalArg(*function, 0),
             static_cast<word>(Interpreter::BinaryOp::MATMUL));
-  EXPECT_EQ(icOriginalArg(original_args, 1),
+  EXPECT_EQ(icOriginalArg(*function, 1),
             static_cast<word>(Interpreter::BinaryOp::POW));
-  EXPECT_EQ(icOriginalArg(original_args, 2),
+  EXPECT_EQ(icOriginalArg(*function, 2),
             static_cast<word>(Interpreter::BinaryOp::MUL));
-  EXPECT_EQ(icOriginalArg(original_args, 3),
+  EXPECT_EQ(icOriginalArg(*function, 3),
             static_cast<word>(Interpreter::BinaryOp::MOD));
-  EXPECT_EQ(icOriginalArg(original_args, 4),
+  EXPECT_EQ(icOriginalArg(*function, 4),
             static_cast<word>(Interpreter::BinaryOp::ADD));
-  EXPECT_EQ(icOriginalArg(original_args, 5),
+  EXPECT_EQ(icOriginalArg(*function, 5),
             static_cast<word>(Interpreter::BinaryOp::SUB));
-  EXPECT_EQ(icOriginalArg(original_args, 6),
+  EXPECT_EQ(icOriginalArg(*function, 6),
             static_cast<word>(Interpreter::BinaryOp::FLOORDIV));
-  EXPECT_EQ(icOriginalArg(original_args, 7),
+  EXPECT_EQ(icOriginalArg(*function, 7),
             static_cast<word>(Interpreter::BinaryOp::TRUEDIV));
-  EXPECT_EQ(icOriginalArg(original_args, 8),
+  EXPECT_EQ(icOriginalArg(*function, 8),
             static_cast<word>(Interpreter::BinaryOp::LSHIFT));
-  EXPECT_EQ(icOriginalArg(original_args, 9),
+  EXPECT_EQ(icOriginalArg(*function, 9),
             static_cast<word>(Interpreter::BinaryOp::RSHIFT));
-  EXPECT_EQ(icOriginalArg(original_args, 10),
+  EXPECT_EQ(icOriginalArg(*function, 10),
             static_cast<word>(Interpreter::BinaryOp::AND));
-  EXPECT_EQ(icOriginalArg(original_args, 11),
+  EXPECT_EQ(icOriginalArg(*function, 11),
             static_cast<word>(Interpreter::BinaryOp::XOR));
-  EXPECT_EQ(icOriginalArg(original_args, 12),
+  EXPECT_EQ(icOriginalArg(*function, 12),
             static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
@@ -214,33 +208,31 @@ TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
 
-  ASSERT_TRUE(function.originalArguments().isTuple());
-  Tuple original_args(&scope, function.originalArguments());
-  EXPECT_EQ(icOriginalArg(original_args, 0),
+  EXPECT_EQ(icOriginalArg(*function, 0),
             static_cast<word>(Interpreter::BinaryOp::MATMUL));
-  EXPECT_EQ(icOriginalArg(original_args, 1),
+  EXPECT_EQ(icOriginalArg(*function, 1),
             static_cast<word>(Interpreter::BinaryOp::POW));
-  EXPECT_EQ(icOriginalArg(original_args, 2),
+  EXPECT_EQ(icOriginalArg(*function, 2),
             static_cast<word>(Interpreter::BinaryOp::MUL));
-  EXPECT_EQ(icOriginalArg(original_args, 3),
+  EXPECT_EQ(icOriginalArg(*function, 3),
             static_cast<word>(Interpreter::BinaryOp::MOD));
-  EXPECT_EQ(icOriginalArg(original_args, 4),
+  EXPECT_EQ(icOriginalArg(*function, 4),
             static_cast<word>(Interpreter::BinaryOp::ADD));
-  EXPECT_EQ(icOriginalArg(original_args, 5),
+  EXPECT_EQ(icOriginalArg(*function, 5),
             static_cast<word>(Interpreter::BinaryOp::SUB));
-  EXPECT_EQ(icOriginalArg(original_args, 6),
+  EXPECT_EQ(icOriginalArg(*function, 6),
             static_cast<word>(Interpreter::BinaryOp::FLOORDIV));
-  EXPECT_EQ(icOriginalArg(original_args, 7),
+  EXPECT_EQ(icOriginalArg(*function, 7),
             static_cast<word>(Interpreter::BinaryOp::TRUEDIV));
-  EXPECT_EQ(icOriginalArg(original_args, 8),
+  EXPECT_EQ(icOriginalArg(*function, 8),
             static_cast<word>(Interpreter::BinaryOp::LSHIFT));
-  EXPECT_EQ(icOriginalArg(original_args, 9),
+  EXPECT_EQ(icOriginalArg(*function, 9),
             static_cast<word>(Interpreter::BinaryOp::RSHIFT));
-  EXPECT_EQ(icOriginalArg(original_args, 10),
+  EXPECT_EQ(icOriginalArg(*function, 10),
             static_cast<word>(Interpreter::BinaryOp::AND));
-  EXPECT_EQ(icOriginalArg(original_args, 11),
+  EXPECT_EQ(icOriginalArg(*function, 11),
             static_cast<word>(Interpreter::BinaryOp::XOR));
-  EXPECT_EQ(icOriginalArg(original_args, 12),
+  EXPECT_EQ(icOriginalArg(*function, 12),
             static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
@@ -284,14 +276,12 @@ TEST(IcTest, IcRewriteBytecodeRewritesCompareOpOpcodes) {
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
 
-  ASSERT_TRUE(function.originalArguments().isTuple());
-  Tuple original_args(&scope, function.originalArguments());
-  EXPECT_EQ(icOriginalArg(original_args, 0), static_cast<word>(CompareOp::LT));
-  EXPECT_EQ(icOriginalArg(original_args, 1), static_cast<word>(CompareOp::LE));
-  EXPECT_EQ(icOriginalArg(original_args, 2), static_cast<word>(CompareOp::EQ));
-  EXPECT_EQ(icOriginalArg(original_args, 3), static_cast<word>(CompareOp::NE));
-  EXPECT_EQ(icOriginalArg(original_args, 4), static_cast<word>(CompareOp::GT));
-  EXPECT_EQ(icOriginalArg(original_args, 5), static_cast<word>(CompareOp::GE));
+  EXPECT_EQ(icOriginalArg(*function, 0), static_cast<word>(CompareOp::LT));
+  EXPECT_EQ(icOriginalArg(*function, 1), static_cast<word>(CompareOp::LE));
+  EXPECT_EQ(icOriginalArg(*function, 2), static_cast<word>(CompareOp::EQ));
+  EXPECT_EQ(icOriginalArg(*function, 3), static_cast<word>(CompareOp::NE));
+  EXPECT_EQ(icOriginalArg(*function, 4), static_cast<word>(CompareOp::GT));
+  EXPECT_EQ(icOriginalArg(*function, 5), static_cast<word>(CompareOp::GE));
 }
 
 static RawObject layoutIdAsSmallInt(LayoutId id) {

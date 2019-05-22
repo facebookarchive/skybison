@@ -169,9 +169,9 @@ class Frame {
   RawObject local(word idx);
   void setLocal(word idx, RawObject local);
 
-  RawObject function() {
+  RawFunction function() {
     DCHECK(previousFrame() != nullptr, "must not be called on initial frame");
-    return *(locals() + 1);
+    return Function::cast(*(locals() + 1));
   }
 
   void setNumLocals(word num_locals);
