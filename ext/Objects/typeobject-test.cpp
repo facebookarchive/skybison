@@ -175,6 +175,42 @@ TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   EXPECT_EQ(Py_SIZE(result.get()), item_size);
 }
 
+TEST_F(TypeExtensionApiTest, GetSlotTpNewOnManagedTypeReturnsSlot) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+class Foo:
+  def __new__(ty, a, b, c, d):
+    obj = super().__new__(ty)
+    obj.args = (a, b, c, d)
+    return obj
+)"),
+            0);
+
+  PyObjectPtr foo(moduleGet("__main__", "Foo"));
+  auto new_slot =
+      reinterpret_cast<newfunc>(PyType_GetSlot(foo.asTypeObject(), Py_tp_new));
+  ASSERT_NE(new_slot, nullptr);
+  PyObjectPtr one(PyLong_FromLong(1));
+  PyObjectPtr two(PyLong_FromLong(2));
+  PyObjectPtr cee(PyUnicode_FromString("cee"));
+  PyObjectPtr dee(PyUnicode_FromString("dee"));
+  PyObjectPtr args(PyTuple_Pack(2, one.get(), two.get()));
+  PyObjectPtr kwargs(PyDict_New());
+  PyDict_SetItemString(kwargs, "d", dee);
+  PyDict_SetItemString(kwargs, "c", cee);
+
+  PyObjectPtr result(new_slot(foo.asTypeObject(), args, kwargs));
+  ASSERT_NE(result, nullptr);
+  ASSERT_EQ(PyObject_IsInstance(result, foo), 1);
+  PyObjectPtr obj_args(PyObject_GetAttrString(result, "args"));
+  ASSERT_NE(obj_args, nullptr);
+  ASSERT_EQ(PyTuple_CheckExact(obj_args), 1);
+  ASSERT_EQ(PyTuple_Size(obj_args), 4);
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(obj_args, 0), 1));
+  EXPECT_TRUE(isLongEqualsLong(PyTuple_GetItem(obj_args, 1), 2));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(obj_args, 2), "cee"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(PyTuple_GetItem(obj_args, 3), "dee"));
+}
+
 TEST_F(TypeExtensionApiTest, IsSubtypeWithSameTypeReturnsTrue) {
   PyObjectPtr pylong(PyLong_FromLong(10));
   PyObjectPtr pylong_type(PyObject_Type(pylong));
@@ -228,62 +264,10 @@ class Foo:
   ASSERT_TRUE(PyType_CheckExact(foo_type));
   EXPECT_DEATH(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()),
                               Py_tp_init),
-               "Get slots from types initialized through Python code");
+               "Unsupported default slot");
 }
 
-TEST_F(TypeExtensionApiDeathTest, InitSlotWrapperReturnsInstancePyro) {
-  PyRun_SimpleString(R"(
-class Foo(object):
-    def __init__(self):
-        self.bar = 3
-  )");
-
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
-  ASSERT_TRUE(PyType_CheckExact(foo_type));
-  EXPECT_DEATH(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()),
-                              Py_tp_new),
-               "Get slots from types initialized through Python code");
-}
-
-TEST_F(TypeExtensionApiDeathTest, CallSlotsWithDescriptorsReturnsInstancePyro) {
-  PyRun_SimpleString(R"(
-def custom_get(self, instance, value):
-    return self
-
-def custom_new(type):
-    type.baz = 5
-    return object.__new__(type)
-
-def custom_init(self):
-    self.bar = 3
-
-class Foo(object): pass
-Foo.__new__ = custom_new
-Foo.__init__ = custom_init
-  )");
-
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
-  ASSERT_TRUE(PyType_CheckExact(foo_type));
-  EXPECT_DEATH(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()),
-                              Py_tp_new),
-               "Get slots from types initialized through Python code");
-}
-
-TEST_F(TypeExtensionApiDeathTest, SlotWrapperWithArgumentsAbortsPyro) {
-  PyRun_SimpleString(R"(
-class Foo:
-    def __new__(self, value):
-        self.bar = value
-  )");
-
-  PyObjectPtr foo_type(testing::moduleGet("__main__", "Foo"));
-  ASSERT_TRUE(PyType_CheckExact(foo_type));
-  EXPECT_DEATH(PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()),
-                              Py_tp_new),
-               "Get slots from types initialized through Python code");
-}
-
-TEST_F(TypeExtensionApiTest, GetNonExistentSlotFromManagedTypeAbortsPyro) {
+TEST_F(TypeExtensionApiTest, GetUnsupportedSlotFromManagedTypeAbortsPyro) {
   PyRun_SimpleString(R"(
 class Foo: pass
   )");
@@ -292,7 +276,7 @@ class Foo: pass
   ASSERT_TRUE(PyType_CheckExact(foo_type));
   EXPECT_DEATH(
       PyType_GetSlot(reinterpret_cast<PyTypeObject*>(foo_type.get()), Py_nb_or),
-      "Get slots from types initialized through Python code");
+      "Unsupported default slot");
 }
 
 TEST_F(TypeExtensionApiTest, GetSlotFromNegativeSlotRaisesSystemError) {

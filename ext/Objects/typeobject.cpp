@@ -14,6 +14,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "trampolines.h"
+#include "tuple-builtins.h"
 #include "utils.h"
 
 namespace python {
@@ -1021,6 +1022,59 @@ RawObject addOperators(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
+// tp_new slot implementation that delegates to a Type's __new__ attribute.
+PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+
+  Object type_obj(&scope, ApiHandle::fromPyObject(type)->asObject());
+  Object args_obj(&scope, ApiHandle::fromPyObject(args)->asObject());
+  DCHECK(runtime->isInstanceOfTuple(*args_obj),
+         "Slot __new__ expected tuple args");
+  Object kwargs_obj(&scope, kwargs ? ApiHandle::fromPyObject(kwargs)->asObject()
+                                   : NoneType::object());
+  DCHECK(kwargs == nullptr || runtime->isInstanceOfDict(*kwargs_obj),
+         "Slot __new__ expected nullptr or dict kwargs");
+
+  // Construct a new args tuple with type at the front.
+  Tuple args_tuple(&scope, tupleUnderlying(thread, args_obj));
+  Tuple new_args(&scope, runtime->newTuple(args_tuple.length() + 1));
+  new_args.atPut(0, *type_obj);
+  new_args.replaceFromWith(1, *args_tuple);
+
+  // Call type.__new__(type, *args, **kwargs)
+  Object dunder_new(
+      &scope, runtime->attributeAtId(thread, type_obj, SymbolId::kDunderNew));
+  if (dunder_new.isError()) return nullptr;
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(*dunder_new);
+  frame->pushValue(*new_args);
+  word flags = 0;
+  if (kwargs != nullptr) {
+    frame->pushValue(*kwargs_obj);
+    flags = CallFunctionExFlag::VAR_KEYWORDS;
+  }
+  Object result(&scope, Interpreter::callEx(thread, frame, flags));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
+}
+
+// Return a default slot wrapper for the given slot, or abort if it's not yet
+// supported.
+//
+// This performs similar duties to update_one_slot() in CPython, but it's
+// drastically simpler. This is intentional, and will only change if a real C
+// extension exercises slots in a way that exposes the differences.
+void* defaultSlot(ExtensionSlot slot) {
+  switch (slot) {
+    case ExtensionSlot::kNew:
+      return bit_cast<void*>(&slotTpNew);
+    default:
+      UNIMPLEMENTED("Unsupported default slot %d", static_cast<int>(slot));
+  }
+}
+
 }  // namespace
 
 PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
@@ -1051,7 +1105,9 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot) {
   }
 
   if (type.extensionSlots().isNoneType()) {
-    UNIMPLEMENTED("Get slots from types initialized through Python code");
+    // The Type was not created by PyType_FromSpec(), so return a default slot
+    // implementation that delegates to managed methods.
+    return defaultSlot(field_id);
   }
 
   DCHECK(!type.extensionSlots().isNoneType(), "Type is not extension type");

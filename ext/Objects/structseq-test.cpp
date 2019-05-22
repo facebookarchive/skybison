@@ -498,4 +498,25 @@ TEST_F(StructSeqExtensionApiTest, SetItemWithInvalidIndexRaisesIndexPyro) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
 }
 
+TEST_F(StructSeqExtensionApiTest, GetSlotNewOnStructSeqReturnsSlot) {
+  PyObjectPtr type(PyStructSequence_NewType(&desc));
+  ASSERT_NE(type, nullptr);
+
+  auto slot_new =
+      reinterpret_cast<newfunc>(PyType_GetSlot(type.asTypeObject(), Py_tp_new));
+  ASSERT_NE(slot_new, nullptr);
+  PyObjectPtr tuple(PyTuple_New(3));
+  PyTuple_SetItem(tuple, 0, PyLong_FromLong(111));
+  PyTuple_SetItem(tuple, 1, PyLong_FromLong(222));
+  PyTuple_SetItem(tuple, 2, PyLong_FromLong(333));
+  PyObjectPtr args(PyTuple_Pack(1, tuple.get()));
+  PyObjectPtr seq(slot_new(type.asTypeObject(), args, nullptr));
+  ASSERT_NE(seq, nullptr);
+  ASSERT_EQ(PyObject_IsInstance(seq, type), 1);
+  EXPECT_TRUE(isLongEqualsLong(PyStructSequence_GetItem(seq, 0), 111));
+  EXPECT_TRUE(isLongEqualsLong(PyStructSequence_GetItem(seq, 1), 222));
+  PyObjectPtr third(PyObject_GetAttrString(seq, "third"));
+  EXPECT_TRUE(isLongEqualsLong(third, 333));
+}
+
 }  // namespace python
