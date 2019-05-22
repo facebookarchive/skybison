@@ -243,28 +243,28 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object metaclass_obj(&scope, args.get(0));
+  Object self_obj(&scope, args.get(0));
   Tuple pargs(&scope, args.get(1));
   Dict kwargs(&scope, args.get(2));
   // Shortcut for type(x) calls.
   if (pargs.length() == 1 && kwargs.numItems() == 0 &&
-      metaclass_obj == runtime->typeAt(LayoutId::kType)) {
+      self_obj == runtime->typeAt(LayoutId::kType)) {
     Object obj(&scope, pargs.at(0));
     return userVisibleTypeOf(thread, obj);
   }
 
-  if (!runtime->isInstanceOfType(*metaclass_obj)) {
+  if (!runtime->isInstanceOfType(*self_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "self must be a type instance");
   }
-  Type metaclass(&scope, *metaclass_obj);
+  Type self(&scope, *self_obj);
 
-  Object dunder_new(
-      &scope, runtime->attributeAtId(thread, metaclass, SymbolId::kDunderNew));
-  CHECK(!dunder_new.isError(), "metaclass must have __new__");
+  Object dunder_new(&scope,
+                    runtime->attributeAtId(thread, self, SymbolId::kDunderNew));
+  CHECK(!dunder_new.isError(), "self must have __new__");
   frame->pushValue(*dunder_new);
   Tuple call_args(&scope, runtime->newTuple(pargs.length() + 1));
-  call_args.atPut(0, *metaclass);
+  call_args.atPut(0, *self);
   for (word i = 0, length = pargs.length(); i < length; i++) {
     call_args.atPut(i + 1, pargs.at(i));
   }
@@ -274,13 +274,13 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
                               thread, frame, CallFunctionExFlag::VAR_KEYWORDS));
   if (instance.isError()) return *instance;
   Type type(&scope, runtime->typeOf(*instance));
-  if (!runtime->isSubclass(type, metaclass)) {
+  if (!runtime->isSubclass(type, self)) {
     return *instance;
   }
 
   Object dunder_init(
-      &scope, runtime->attributeAtId(thread, metaclass, SymbolId::kDunderInit));
-  CHECK(!dunder_init.isError(), "metaclass must have __init__");
+      &scope, runtime->attributeAtId(thread, self, SymbolId::kDunderInit));
+  CHECK(!dunder_init.isError(), "self must have __init__");
   frame->pushValue(*dunder_init);
   call_args.atPut(0, *instance);
   frame->pushValue(*call_args);
@@ -289,7 +289,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
                                             CallFunctionExFlag::VAR_KEYWORDS));
   if (result.isError()) return *result;
   if (!result.isNoneType()) {
-    Object type_name(&scope, metaclass.name());
+    Object type_name(&scope, self.name());
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "%S.__init__ returned non None", &type_name);
   }
