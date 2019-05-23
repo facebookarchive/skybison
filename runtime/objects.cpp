@@ -17,7 +17,8 @@ RawObject RawSmallBytes::fromBytes(View<byte> data) {
   for (word i = length - 1; i >= 0; i--) {
     result = (result << kBitsPerByte) | data.get(i);
   }
-  return RawObject{result << kBitsPerByte | length << kTagSize | kTag};
+  return RawObject{result << kBitsPerByte | length << kImmediateTagBits |
+                   kSmallBytesTag};
 }
 
 // RawSmallStr
@@ -27,7 +28,7 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
   uword cp = static_cast<uword>(code_point);
   // 0xxxxxxx
   if (cp <= kMaxASCII) {  // 01111111
-    return RawObject{cp << 8 | (1 << kTagSize) | kTag};
+    return RawObject{cp << 8 | (1 << kImmediateTagBits) | kSmallStrTag};
   }
   uword result = cp & 0x3F;  // 00111111
   cp >>= 6;
@@ -37,7 +38,7 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
     result |= cp;
     result |= 0x80C0;  // 10xxxxxx 110xxxxx
     result <<= kBitsPerByte;
-    return RawObject{result | (2 << kTagSize) | kTag};
+    return RawObject{result | (2 << kImmediateTagBits) | kSmallStrTag};
   }
 
   result |= cp & 0x3F;  // 00111111
@@ -48,7 +49,7 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
     result |= cp;
     result |= 0x8080E0;  // 10xxxxxx 10xxxxxx 1110xxxx
     result <<= kBitsPerByte;
-    return RawObject{result | (3 << kTagSize) | kTag};
+    return RawObject{result | (3 << kImmediateTagBits) | kSmallStrTag};
   }
   result |= cp & 0x3F;  // 00111111
   cp >>= 6;
@@ -57,7 +58,7 @@ RawObject RawSmallStr::fromCodePoint(int32_t code_point) {
   result |= cp;
   result |= 0x808080F0;  // 10xxxxxx 10xxxxxx 10xxxxxx 11110xxx
   result <<= kBitsPerByte;
-  return RawObject{result | (4 << kTagSize) | kTag};
+  return RawObject{result | (4 << kImmediateTagBits) | kSmallStrTag};
 }
 
 RawObject RawSmallStr::fromCStr(const char* value) {
@@ -72,7 +73,8 @@ RawObject RawSmallStr::fromBytes(View<byte> data) {
   for (word i = length - 1; i >= 0; i--) {
     result = (result << kBitsPerByte) | data.get(i);
   }
-  return RawObject{result << kBitsPerByte | length << kTagSize | kTag};
+  return RawObject{result << kBitsPerByte | length << kImmediateTagBits |
+                   kSmallStrTag};
 }
 
 char* RawSmallStr::toCStr() const {

@@ -330,7 +330,7 @@ TEST(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
 }
 
 static RawObject binopKey(LayoutId left, LayoutId right, IcBinopFlags flags) {
-  return SmallInt::fromWord((static_cast<word>(left) << Header::kLayoutIdSize |
+  return SmallInt::fromWord((static_cast<word>(left) << Header::kLayoutIdBits |
                              static_cast<word>(right))
                                 << kBitsPerByte |
                             static_cast<word>(flags));

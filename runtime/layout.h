@@ -32,9 +32,9 @@ class AttributeInfo {
     value_ = value.raw();
   }
 
-  AttributeInfo() : value_(RawSmallInt::kTag) {}
+  AttributeInfo() : value_(RawObject::kSmallIntTag) {}
 
-  AttributeInfo(word offset, word flags) : value_(RawSmallInt::kTag) {
+  AttributeInfo(word offset, word flags) : value_(RawObject::kSmallIntTag) {
     DCHECK(isValidOffset(offset), "offset %ld too large (max is %ld)", offset,
            kMaxOffset);
     value_ |= (offset << kOffsetOffset);
@@ -72,7 +72,7 @@ class AttributeInfo {
 
   // Tags.
   static const int kOffsetSize = 30;
-  static const int kOffsetOffset = RawSmallInt::kTagSize;
+  static const int kOffsetOffset = RawObject::kSmallIntTagBits;
   static const uword kOffsetMask = (1 << kOffsetSize) - 1;
 
   static const int kFlagsSize = 33;
@@ -80,7 +80,7 @@ class AttributeInfo {
   static const uword kFlagsMask = (1UL << kFlagsSize) - 1;
 
   static_assert(
-      RawSmallInt::kTagSize + kOffsetSize + kFlagsSize == kBitsPerPointer,
+      RawObject::kSmallIntTagBits + kOffsetSize + kFlagsSize == kBitsPerPointer,
       "Number of bits used by AttributeInfo must fit in a RawSmallInt");
 
   // Constants

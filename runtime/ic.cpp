@@ -190,7 +190,7 @@ void icUpdateBinop(Thread* thread, const Tuple& caches, word index,
                    const Object& value, IcBinopFlags flags) {
   HandleScope scope(thread);
   word key_high_bits = static_cast<word>(left_layout_id)
-                           << Header::kLayoutIdSize |
+                           << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
   Object entry_key(&scope, NoneType::object());
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;

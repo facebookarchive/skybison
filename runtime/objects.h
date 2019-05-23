@@ -339,9 +339,29 @@ class RawObject {
 
   // Constants
 
-  // The bottom five bits of immediate objects are used as the class id when
-  // indexing into the class table in the runtime.
-  static const uword kImmediateTypeTableIndexMask = (1 << 5) - 1;
+  // Tags.
+  static const uword kSmallIntTag = 0;         // 0b****0
+  static const uword kHeapObjectTag = 1;       // 0b**001
+  static const uword kHeaderTag = 3;           // 0b**011
+  static const uword kSmallBytesTag = 5;       // 0b00101
+  static const uword kSmallStrTag = 13;        // 0b01101
+  static const uword kErrorTag = 21;           // 0b10101
+                                               // 0b11101 is unused
+  static const uword kBoolTag = 7;             // 0b00111
+  static const uword kNotImplementedTag = 15;  // 0b01111
+  static const uword kUnboundTag = 23;         // 0b10111
+  static const uword kNoneTag = 31;            // 0b11111
+
+  // Up to the five least significant bits are used to tag the object's layout.
+  // The three low bits make up a primary tag, used to differentiate Header and
+  // HeapObject from immediate objects. All even tags map to SmallInt, which is
+  // optimized by checking only the lowest bit for parity.
+  static const uword kSmallIntTagBits = 1;
+  static const uword kPrimaryTagBits = 3;
+  static const uword kImmediateTagBits = 5;
+  static const uword kSmallIntTagMask = (1 << kSmallIntTagBits) - 1;
+  static const uword kPrimaryTagMask = (1 << kPrimaryTagBits) - 1;
+  static const uword kImmediateTagMask = (1 << kImmediateTagBits) - 1;
 
   RAW_OBJECT_COMMON(Object);
 
@@ -497,13 +517,8 @@ class RawSmallInt : public RawObject {
   template <typename T>
   static RawSmallInt fromFunctionPointer(T pointer);
 
-  // Tags.
-  static const int kTag = 0;
-  static const int kTagSize = 1;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
-  // Constants
-  static const word kBits = kBitsPerPointer - kTagSize;
+  // Constants.
+  static const word kBits = kBitsPerPointer - kSmallIntTagBits;
   static const word kMinValue = -(1L << (kBits - 1));
   static const word kMaxValue = (1L << (kBits - 1)) - 1;
 
@@ -561,34 +576,30 @@ class RawHeader : public RawObject {
   static RawHeader from(word count, word hash, LayoutId layout_id,
                         ObjectFormat format);
 
-  // Tags.
-  static const int kTag = 3;
-  static const int kTagSize = 3;
-  static const uword kTagMask = (1 << kTagSize) - 1;
+  // Layout.
+  static const int kFormatBits = 3;
+  static const int kFormatOffset = kPrimaryTagBits;
+  static const uword kFormatMask = (1 << kFormatBits) - 1;
 
-  static const int kFormatSize = 3;
-  static const int kFormatOffset = 3;
-  static const uword kFormatMask = (1 << kFormatSize) - 1;
+  static const int kLayoutIdBits = 20;
+  static const int kLayoutIdOffset = kFormatOffset + kFormatBits;
+  static const uword kLayoutIdMask = (1 << kLayoutIdBits) - 1;
 
-  static const int kLayoutIdSize = 20;
-  static const int kLayoutIdOffset = 6;
-  static const uword kLayoutIdMask = (1 << kLayoutIdSize) - 1;
+  static const int kHashCodeBits = 30;
+  static const int kHashCodeOffset = kLayoutIdOffset + kLayoutIdBits;
+  static const uword kHashCodeMask = (1 << kHashCodeBits) - 1U;
 
-  static const int kHashCodeOffset = 26;
-  static const int kHashCodeSize = 30;
-  static const uword kHashCodeMask = (1 << kHashCodeSize) - 1U;
+  static const int kCountBits = 8;
+  static const int kCountOffset = kHashCodeOffset + kHashCodeBits;
+  static const uword kCountMask = (1 << kCountBits) - 1;
 
-  static const int kCountOffset = 56;
-  static const int kCountSize = 8;
-  static const uword kCountMask = (1 << kCountSize) - 1;
-
-  static const int kCountOverflowFlag = (1 << kCountSize) - 1;
+  static const int kCountOverflowFlag = (1 << kCountBits) - 1;
   static const int kCountMax = kCountOverflowFlag - 1;
 
   static const int kSize = kPointerSize;
 
   // Constants
-  static const word kMaxLayoutId = (1L << (kLayoutIdSize + 1)) - 1;
+  static const word kMaxLayoutId = (1L << (kLayoutIdBits + 1)) - 1;
   static const word kUninitializedHash = 0;
 
   RAW_OBJECT_COMMON(Header);
@@ -599,11 +610,7 @@ class RawSmallBytes : public RawObject {
   // Conversion.
   static RawObject fromBytes(View<byte> data);
 
-  // Tagging.
-  static const int kTag = 5;  // 0b00101
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
+  // Constants.
   static const word kMaxLength = kWordSize - 1;
 
   RAW_OBJECT_COMMON(SmallBytes);
@@ -628,11 +635,7 @@ class RawSmallStr : public RawObject {
   static RawObject fromCStr(const char* value);
   static RawObject fromBytes(View<byte> data);
 
-  // Tagging.
-  static const int kTag = 13;  // 0b01101
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
+  // Constants.
   static const word kMaxLength = kWordSize - 1;
 
   RAW_OBJECT_COMMON(SmallStr);
@@ -709,13 +712,10 @@ class RawError : public RawObject {
   // Kind.
   ErrorKind kind() const;
 
-  // Tagging.
-  static const int kTag = 21;  // 0b10101
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1U << kTagSize) - 1;
-  static const int kKindOffset = kTagSize;
-  static const int kKindSize = 3;
-  static const uword kKindMask = (1U << kKindSize) - 1;
+  // Layout.
+  static const int kKindOffset = kImmediateTagBits;
+  static const int kKindBits = 3;
+  static const uword kKindMask = (1U << kKindBits) - 1;
 
   RAW_OBJECT_COMMON(Error);
 
@@ -743,11 +743,6 @@ class RawBool : public RawObject {
   static RawBool fromBool(bool value);
   static RawBool negate(RawObject value);
 
-  // Tags.
-  static const int kTag = 7;  // 0b00111
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
   RAW_OBJECT_COMMON(Bool);
 };
 
@@ -755,11 +750,6 @@ class RawNotImplementedType : public RawObject {
  public:
   // Singletons.
   static RawNotImplementedType object();
-
-  // Tags.
-  static const int kTag = 15;  // 0b01111
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
 
   RAW_OBJECT_COMMON(NotImplementedType);
 };
@@ -769,11 +759,6 @@ class RawUnbound : public RawObject {
   // Singletons.
   static RawUnbound object();
 
-  // Tags.
-  static const int kTag = 23;  // 0b10111
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
-
   RAW_OBJECT_COMMON(Unbound);
 };
 
@@ -781,11 +766,6 @@ class RawNoneType : public RawObject {
  public:
   // Singletons.
   static RawNoneType object();
-
-  // Tags.
-  static const int kTag = 31;  // 0b11111
-  static const int kTagSize = 5;
-  static const uword kTagMask = (1 << kTagSize) - 1;
 
   RAW_OBJECT_COMMON(NoneType);
 };
@@ -821,11 +801,6 @@ class RawHeapObject : public RawObject {
   // use more specific getter methods in the subclasses.
   RawObject instanceVariableAt(word offset) const;
   void instanceVariableAtPut(word offset, RawObject value) const;
-
-  // Tags.
-  static const int kTag = 1;
-  static const int kTagSize = 3;
-  static const uword kTagMask = (1 << kTagSize) - 1;
 
   static const uword kIsForwarded = static_cast<uword>(-3);
 
@@ -2643,15 +2618,15 @@ inline LayoutId RawObject::layoutId() const {
   if (isSmallInt()) {
     return LayoutId::kSmallInt;
   }
-  return static_cast<LayoutId>(raw() & kImmediateTypeTableIndexMask);
+  return static_cast<LayoutId>(raw() & kImmediateTagMask);
 }
 
 inline bool RawObject::isBool() const {
-  return (raw() & RawBool::kTagMask) == RawBool::kTag;
+  return (raw() & kImmediateTagMask) == kBoolTag;
 }
 
 inline bool RawObject::isError() const {
-  return (raw() & RawError::kTagMask) == RawError::kTag;
+  return (raw() & kImmediateTagMask) == kErrorTag;
 }
 
 inline bool RawObject::isErrorException() const {
@@ -2675,36 +2650,35 @@ inline bool RawObject::isErrorNoMoreItems() const {
 }
 
 inline bool RawObject::isHeader() const {
-  return (raw() & RawHeader::kTagMask) == RawHeader::kTag;
+  return (raw() & kPrimaryTagMask) == kHeaderTag;
 }
 
 inline bool RawObject::isNoneType() const {
-  return (raw() & RawNoneType::kTagMask) == RawNoneType::kTag;
+  return (raw() & kImmediateTagMask) == kNoneTag;
 }
 
 inline bool RawObject::isNotImplementedType() const {
-  return (raw() & RawNotImplementedType::kTagMask) ==
-         RawNotImplementedType::kTag;
+  return (raw() & kImmediateTagMask) == kNotImplementedTag;
 }
 
 inline bool RawObject::isSmallBytes() const {
-  return (raw() & RawSmallBytes::kTagMask) == RawSmallBytes::kTag;
+  return (raw() & kImmediateTagMask) == kSmallBytesTag;
 }
 
 inline bool RawObject::isSmallInt() const {
-  return (raw() & RawSmallInt::kTagMask) == RawSmallInt::kTag;
+  return (raw() & kSmallIntTagMask) == kSmallIntTag;
 }
 
 inline bool RawObject::isSmallStr() const {
-  return (raw() & RawSmallStr::kTagMask) == RawSmallStr::kTag;
+  return (raw() & kImmediateTagMask) == kSmallStrTag;
 }
 
 inline bool RawObject::isUnbound() const {
-  return (raw() & RawUnbound::kTagMask) == RawUnbound::kTag;
+  return (raw() & kImmediateTagMask) == kUnboundTag;
 }
 
 inline bool RawObject::isHeapObject() const {
-  return (raw() & RawHeapObject::kTagMask) == RawHeapObject::kTag;
+  return (raw() & kPrimaryTagMask) == kHeapObjectTag;
 }
 
 inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
@@ -3002,7 +2976,7 @@ T RawObject::rawCast() const {
 // RawBytes
 
 inline RawBytes RawBytes::empty() {
-  return RawObject{RawSmallBytes::kTag}.rawCast<RawBytes>();
+  return RawObject{kSmallBytesTag}.rawCast<RawBytes>();
 }
 
 inline word RawBytes::length() const {
@@ -3141,7 +3115,7 @@ inline uword RawInt::digitAt(word index) const {
 // RawSmallInt
 
 inline word RawSmallInt::value() const {
-  return static_cast<word>(raw()) >> kTagSize;
+  return static_cast<word>(raw()) >> kSmallIntTagBits;
 }
 
 inline void* RawSmallInt::asCPtr() const {
@@ -3173,11 +3147,11 @@ if_unsigned_t<T, OptInt<T>> RawSmallInt::asInt() const {
 
 inline RawSmallInt RawSmallInt::fromWord(word value) {
   DCHECK(RawSmallInt::isValid(value), "invalid cast");
-  return cast(RawObject{static_cast<uword>(value) << kTagSize});
+  return cast(RawObject{static_cast<uword>(value) << kSmallIntTagBits});
 }
 
 inline RawSmallInt RawSmallInt::fromWordTruncated(word value) {
-  return cast(RawObject{static_cast<uword>(value) << kTagSize});
+  return cast(RawObject{static_cast<uword>(value) << kSmallIntTagBits});
 }
 
 template <typename T>
@@ -3229,7 +3203,7 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
   DCHECK(
       (count >= 0) && ((count <= kCountMax) || (count == kCountOverflowFlag)),
       "bounds violation, %ld not in 0..%d", count, kCountMax);
-  uword result = kTag;
+  uword result = kHeaderTag;
   result |= ((count > kCountMax) ? kCountOverflowFlag : count) << kCountOffset;
   result |= hash << kHashCodeOffset;
   result |= static_cast<uword>(id) << kLayoutIdOffset;
@@ -3240,7 +3214,7 @@ inline RawHeader RawHeader::from(word count, word hash, LayoutId id,
 // RawSmallBytes
 
 inline word RawSmallBytes::length() const {
-  return (raw() >> kTagSize) & kMaxLength;
+  return (raw() >> kImmediateTagBits) & kMaxLength;
 }
 
 inline byte RawSmallBytes::byteAt(word index) const {
@@ -3276,7 +3250,7 @@ inline uint32_t RawSmallBytes::uint32At(word index) const {
 // RawSmallStr
 
 inline word RawSmallStr::length() const {
-  return (raw() >> kTagSize) & kMaxLength;
+  return (raw() >> kImmediateTagBits) & kMaxLength;
 }
 
 inline byte RawSmallStr::charAt(word index) const {
@@ -3294,7 +3268,7 @@ inline void RawSmallStr::copyTo(byte* dst, word length) const {
 // RawError
 
 inline RawError::RawError(ErrorKind kind)
-    : RawObject{(static_cast<uword>(kind) << kKindOffset) | kTag} {}
+    : RawObject{(static_cast<uword>(kind) << kKindOffset) | kErrorTag} {}
 
 inline RawError RawError::error() { return RawError{ErrorKind::kNone}; }
 
@@ -3332,23 +3306,24 @@ inline RawBool RawBool::negate(RawObject value) {
 }
 
 inline RawBool RawBool::fromBool(bool value) {
-  return cast(RawObject{(static_cast<uword>(value) << kTagSize) | kTag});
+  return cast(
+      RawObject{(static_cast<uword>(value) << kImmediateTagBits) | kBoolTag});
 }
 
 inline bool RawBool::value() const {
-  return (raw() >> kTagSize) ? true : false;
+  return (raw() >> kImmediateTagBits) ? true : false;
 }
 
 // RawNotImplementedType
 
 inline RawNotImplementedType RawNotImplementedType::object() {
-  return RawObject{kTag}.rawCast<RawNotImplementedType>();
+  return RawObject{kNotImplementedTag}.rawCast<RawNotImplementedType>();
 }
 
 // RawUnbound
 
 inline RawUnbound RawUnbound::object() {
-  return RawObject{kTag}.rawCast<RawUnbound>();
+  return RawObject{kUnboundTag}.rawCast<RawUnbound>();
 }
 
 // RawNoneType
@@ -3359,7 +3334,7 @@ inline RawNoneType RawNoneType::object() {
 
 // RawHeapObject
 
-inline uword RawHeapObject::address() const { return raw() - kTag; }
+inline uword RawHeapObject::address() const { return raw() - kHeapObjectTag; }
 
 inline uword RawHeapObject::baseAddress() const {
   uword result = address() - RawHeader::kSize;
@@ -3393,8 +3368,9 @@ inline void RawHeapObject::setHeaderAndOverflow(word count, word hash,
 }
 
 inline RawHeapObject RawHeapObject::fromAddress(uword address) {
-  DCHECK((address & kTagMask) == 0, "invalid cast, expected heap address");
-  return cast(RawObject{address + kTag});
+  DCHECK((address & kPrimaryTagMask) == 0,
+         "invalid cast, expected heap address");
+  return cast(RawObject{address + kHeapObjectTag});
 }
 
 inline word RawHeapObject::headerCountOrOverflow() const {
@@ -3690,9 +3666,7 @@ inline void RawType::sealAttributes() const {
 
 // RawArray
 
-inline word RawArray::length() const {
-  return headerCountOrOverflow();
-}
+inline word RawArray::length() const { return headerCountOrOverflow(); }
 
 // RawHeapBytes
 
@@ -4657,7 +4631,7 @@ inline void RawModule::setDef(RawObject dict) const {
 // RawStr
 
 inline RawStr RawStr::empty() {
-  return RawObject{RawSmallStr::kTag}.rawCast<RawStr>();
+  return RawObject{kSmallStrTag}.rawCast<RawStr>();
 }
 
 inline byte RawStr::charAt(word index) const {

@@ -69,7 +69,7 @@ class TryBlock {
 
   uword value_;
 
-  static const int kKindOffset = RawSmallInt::kTagSize;
+  static const int kKindOffset = RawObject::kSmallIntTagBits;
   static const int kKindSize = 2;
   static const uword kKindMask = (1 << kKindSize) - 1;
 

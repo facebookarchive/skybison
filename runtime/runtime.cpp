@@ -1193,11 +1193,8 @@ RawObject Runtime::immediateHash(RawObject object) {
   if (object.isBool()) {
     return convertBoolToInt(object);
   }
-  if (object.isSmallBytes()) {
-    return SmallInt::fromWord(object.raw() >> RawSmallBytes::kTagSize);
-  }
-  if (object.isSmallStr()) {
-    return SmallInt::fromWord(object.raw() >> RawSmallStr::kTagSize);
+  if (object.isSmallBytes() || object.isSmallStr()) {
+    return SmallInt::fromWord(object.raw() >> Object::kImmediateTagBits);
   }
   return SmallInt::fromWord(object.raw());
 }

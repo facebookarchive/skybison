@@ -98,10 +98,10 @@ inline RawObject icLookupBinop(const Tuple& caches, word index,
                                LayoutId left_layout_id,
                                LayoutId right_layout_id,
                                IcBinopFlags* flags_out) {
-  static_assert(Header::kLayoutIdSize * 2 + kBitsPerByte <= SmallInt::kBits,
+  static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
                 "Two layout ids and flags overflow a SmallInt");
   word key_high_bits = static_cast<word>(left_layout_id)
-                           << Header::kLayoutIdSize |
+                           << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
