@@ -92,7 +92,9 @@ const BuiltinMethod FunctionBuiltins::kBuiltinMethods[] = {
 };
 
 const BuiltinAttribute FunctionBuiltins::kAttributes[] = {
-    {SymbolId::kDunderCode, RawFunction::kCodeOffset},
+    // TODO(T44845145) Support assignment to __code__.
+    {SymbolId::kDunderCode, RawFunction::kCodeOffset,
+     AttributeFlags::kReadOnly},
     {SymbolId::kDunderDoc, RawFunction::kDocOffset},
     {SymbolId::kDunderGlobals, RawFunction::kGlobalsOffset,
      AttributeFlags::kReadOnly},

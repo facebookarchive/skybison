@@ -24,18 +24,16 @@ code = foo.__code__
 TEST(FunctionBuiltinsTest,
      ChangingCodeOfFunctionObjectChangesFunctionBehavior) {
   Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
 def foo(x):
   return x + 1
 def bar(x):
   return x + 5
 foo.__code__ = bar.__code__
 a = foo(5)
-)")
-                   .isError());
-  HandleScope scope;
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  EXPECT_TRUE(isIntEqualsWord(*a, 10));
+)"),
+                            LayoutId::kAttributeError,
+                            "'__code__' attribute is read-only"));
 }
 
 TEST(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
