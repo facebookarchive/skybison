@@ -86,9 +86,7 @@ class SmallIntBuiltins : public Builtins<SmallIntBuiltins, SymbolId::kSmallInt,
 class LargeIntBuiltins : public Builtins<LargeIntBuiltins, SymbolId::kLargeInt,
                                          LayoutId::kLargeInt, LayoutId::kInt> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeIntBuiltins);

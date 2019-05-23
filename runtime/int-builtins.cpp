@@ -13,6 +13,35 @@
 
 namespace python {
 
+void IntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  new_type.setBuiltinBase(LayoutId::kInt);
+  runtime->typeAddNativeFunctionKw(new_type, SymbolId::kFromBytes,
+                                   nativeTrampoline<fromBytes>,
+                                   nativeTrampolineKw<fromBytesKw>);
+}
+
+void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+  runtime->setSmallIntType(new_type);
+  Layout::cast(new_type.instanceLayout())
+      .setDescribedType(runtime->typeAt(kSuperType));
+  // We want to lookup the class of an immediate type by using the 5-bit tag
+  // value as an index into the class table.  Replicate the class object for
+  // SmallInt to all locations that decode to a SmallInt tag.
+  for (word i = 2; i < (1 << Object::kImmediateTagBits); i += 2) {
+    DCHECK(runtime->layoutAt(static_cast<LayoutId>(i)) == NoneType::object(),
+           "list collision");
+    runtime->layoutAtPut(static_cast<LayoutId>(i), *new_type);
+  }
+}
+
+void LargeIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+  runtime->setLargeIntType(new_type);
+  Layout::cast(new_type.instanceLayout())
+      .setDescribedType(runtime->typeAt(kSuperType));
+}
+
 // Used only for UserIntBase as a heap-allocated object.
 const BuiltinAttribute IntBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, UserIntBase::kValueOffset},
@@ -58,13 +87,6 @@ const BuiltinMethod IntBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-void IntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  new_type.setBuiltinBase(LayoutId::kInt);
-  runtime->typeAddNativeFunctionKw(new_type, SymbolId::kFromBytes,
-                                   nativeTrampoline<fromBytes>,
-                                   nativeTrampolineKw<fromBytesKw>);
-}
-
 RawObject convertBoolToInt(RawObject object) {
   DCHECK(object.isBool(), "conversion from bool to int requires a bool object");
   return RawSmallInt::fromWord(object == RawBool::trueObj() ? 1 : 0);
@@ -108,19 +130,6 @@ RawObject IntBuiltins::dunderInt(Thread* t, Frame* frame, word nargs) {
     }
     return *self;
   });
-}
-
-void SmallIntBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
-  new_type.setBuiltinBase(kSuperType);
-  // We want to lookup the class of an immediate type by using the 5-bit tag
-  // value as an index into the class table.  Replicate the class object for
-  // SmallInt to all locations that decode to a SmallInt tag.
-  for (word i = 1; i < 16; i++) {
-    DCHECK(
-        runtime->layoutAt(static_cast<LayoutId>(i << 1)) == NoneType::object(),
-        "list collision");
-    runtime->layoutAtPut(static_cast<LayoutId>(i << 1), *new_type);
-  }
 }
 
 RawObject IntBuiltins::bitLength(Thread* t, Frame* frame, word nargs) {

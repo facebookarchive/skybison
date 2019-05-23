@@ -19,24 +19,20 @@ RawObject bytesReprSmartQuotes(Thread* thread, const Bytes& self);
 RawObject bytesUnderlying(Thread* thread, const Object& obj);
 
 class SmallBytesBuiltins
-    : public Builtins<SmallBytesBuiltins, SymbolId::kBytes,
+    : public Builtins<SmallBytesBuiltins, SymbolId::kSmallBytes,
                       LayoutId::kSmallBytes, LayoutId::kBytes> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallBytesBuiltins);
 };
 
 class LargeBytesBuiltins
-    : public Builtins<LargeBytesBuiltins, SymbolId::kBytes,
+    : public Builtins<LargeBytesBuiltins, SymbolId::kLargeBytes,
                       LayoutId::kLargeBytes, LayoutId::kBytes> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeBytesBuiltins);

@@ -1035,7 +1035,7 @@ PY_EXPORT PyObject* PyObject_Type(PyObject* pyobj) {
 
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  return ApiHandle::newReference(thread, userVisibleTypeOf(thread, obj));
+  return ApiHandle::newReference(thread, thread->runtime()->typeOf(*obj));
 }
 
 PY_EXPORT const char* PyObject_TypeName(PyObject* /* obj */) {

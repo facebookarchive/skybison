@@ -59,9 +59,7 @@ RawObject strUnderlying(Thread* thread, const Object& obj);
 class SmallStrBuiltins : public Builtins<SmallStrBuiltins, SymbolId::kSmallStr,
                                          LayoutId::kSmallStr, LayoutId::kStr> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SmallStrBuiltins);
@@ -70,9 +68,7 @@ class SmallStrBuiltins : public Builtins<SmallStrBuiltins, SymbolId::kSmallStr,
 class LargeStrBuiltins : public Builtins<LargeStrBuiltins, SymbolId::kLargeStr,
                                          LayoutId::kLargeStr, LayoutId::kStr> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static void postInitialize(Runtime* runtime, const Type& new_type);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(LargeStrBuiltins);

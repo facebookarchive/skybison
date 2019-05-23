@@ -71,7 +71,7 @@ foo = Foo(b"foo")
   Object str(&scope, runtime.newStrWithAll(view));
   auto const type_err = isBytesEqualsBytes(str, view);
   EXPECT_FALSE(type_err);
-  const char* type_msg = "is a 'smallstr'";
+  const char* type_msg = "is a 'str'";
   EXPECT_STREQ(type_err.message(), type_msg);
 
   Object err(&scope, Error::error());
@@ -108,7 +108,7 @@ i = 123456
   auto const bad_type = AssertPyListEqual("not_list", "", not_list, {});
   ASSERT_FALSE(bad_type);
   const char* type_msg = R"( Type of: not_list
-  Actual: smallint
+  Actual: int
 Expected: list)";
   EXPECT_STREQ(bad_type.message(), type_msg);
 

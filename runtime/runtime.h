@@ -311,6 +311,20 @@ class Runtime {
   NODISCARD RawObject importModuleFromBuffer(const char* buffer,
                                              const Object& name);
 
+  // Gets the internal notion of type, rather than the user-visible type.
+  RawObject concreteTypeAt(LayoutId id);
+  inline RawObject concreteTypeOf(RawObject object) {
+    return concreteTypeAt(object.layoutId());
+  }
+
+  // Sets the internal type for layouts with a different describedType.
+  void setLargeBytesType(const Type& type);
+  void setLargeIntType(const Type& type);
+  void setLargeStrType(const Type& type);
+  void setSmallBytesType(const Type& type);
+  void setSmallIntType(const Type& type);
+  void setSmallStrType(const Type& type);
+
   RawObject typeOf(RawObject object) {
     return Layout::cast(layoutAt(object.layoutId())).describedType();
   }
@@ -944,6 +958,14 @@ class Runtime {
 
   // A List of Layout objects, indexed by layout id.
   RawObject layouts_;
+
+  // Internal-only types, for which the Layout has a different described type
+  RawObject large_bytes_;
+  RawObject large_int_;
+  RawObject large_str_;
+  RawObject small_bytes_;
+  RawObject small_int_;
+  RawObject small_str_;
 
   // Cached instances
   RawObject build_class_;

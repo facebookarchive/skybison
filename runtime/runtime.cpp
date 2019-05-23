@@ -1021,7 +1021,7 @@ RawObject Runtime::strFormat(Thread* thread, char* dst, word size,
       } break;
       case 'T': {
         Object obj(&scope, **va_arg(args, Object*));
-        Type type(&scope, userVisibleTypeOf(thread, obj));
+        Type type(&scope, typeOf(*obj));
         Str value(&scope, type.name());
         if (dst == nullptr) {
           len--;
@@ -1714,6 +1714,14 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit layouts
   visitor->visitPointer(&layouts_);
 
+  // Visit internal types that are not described by a layout
+  visitor->visitPointer(&large_bytes_);
+  visitor->visitPointer(&large_int_);
+  visitor->visitPointer(&large_str_);
+  visitor->visitPointer(&small_bytes_);
+  visitor->visitPointer(&small_int_);
+  visitor->visitPointer(&small_str_);
+
   // Visit instances
   visitor->visitPointer(&build_class_);
   visitor->visitPointer(&display_hook_);
@@ -1858,6 +1866,37 @@ void Runtime::initializeApiData() {
   api_handles_ = newDict();
   api_caches_ = newDict();
 }
+
+RawObject Runtime::concreteTypeAt(LayoutId layout_id) {
+  switch (layout_id) {
+    case LayoutId::kLargeBytes:
+      return large_bytes_;
+    case LayoutId::kLargeInt:
+      return large_int_;
+    case LayoutId::kLargeStr:
+      return large_str_;
+    case LayoutId::kSmallBytes:
+      return small_bytes_;
+    case LayoutId::kSmallInt:
+      return small_int_;
+    case LayoutId::kSmallStr:
+      return small_str_;
+    default:
+      return Layout::cast(layoutAt(layout_id)).describedType();
+  }
+}
+
+void Runtime::setLargeBytesType(const Type& type) { large_bytes_ = *type; }
+
+void Runtime::setLargeIntType(const Type& type) { large_int_ = *type; }
+
+void Runtime::setLargeStrType(const Type& type) { large_str_ = *type; }
+
+void Runtime::setSmallBytesType(const Type& type) { small_bytes_ = *type; }
+
+void Runtime::setSmallIntType(const Type& type) { small_int_ = *type; }
+
+void Runtime::setSmallStrType(const Type& type) { small_str_ = *type; }
 
 void Runtime::layoutAtPut(LayoutId layout_id, RawObject object) {
   List::cast(layouts_).atPut(static_cast<word>(layout_id), object);

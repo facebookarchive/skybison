@@ -221,24 +221,6 @@ void TypeBuiltins::postInitialize(Runtime* /* runtime */,
   layout.setOverflowAttributes(SmallInt::fromWord(RawType::kDictOffset));
 }
 
-RawObject userVisibleTypeOf(Thread* thread, const Object& obj) {
-  LayoutId id = obj.layoutId();
-  // Hide our size-specific type implementations from the user.
-  switch (id) {
-    case LayoutId::kSmallStr:
-    case LayoutId::kLargeStr:
-      id = LayoutId::kStr;
-      break;
-    case LayoutId::kSmallInt:
-    case LayoutId::kLargeInt:
-      id = LayoutId::kInt;
-      break;
-    default:
-      break;
-  }
-  return thread->runtime()->typeAt(id);
-}
-
 RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -249,8 +231,7 @@ RawObject TypeBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
   // Shortcut for type(x) calls.
   if (pargs.length() == 1 && kwargs.numItems() == 0 &&
       self_obj == runtime->typeAt(LayoutId::kType)) {
-    Object obj(&scope, pargs.at(0));
-    return userVisibleTypeOf(thread, obj);
+    return runtime->typeOf(pargs.at(0));
   }
 
   if (!runtime->isInstanceOfType(*self_obj)) {
@@ -331,8 +312,7 @@ RawObject TypeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   // argument.
   if (args.get(2).isUnbound() && args.get(3).isUnbound() &&
       metaclass_id == LayoutId::kType) {
-    Object arg(&scope, args.get(1));
-    return userVisibleTypeOf(thread, arg);
+    return thread->runtime()->typeOf(args.get(1));
   }
   Str name(&scope, args.get(1));
   Tuple bases(&scope, args.get(2));

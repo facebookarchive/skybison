@@ -301,6 +301,7 @@ class Runtime;
   V(Len, "len")                                                                \
   V(Length, "length")                                                          \
   V(LStrip, "lstrip")                                                          \
+  V(LargeBytes, "largebytes")                                                  \
   V(LargeInt, "largeint")                                                      \
   V(LargeStr, "largestr")                                                      \
   V(LastType, "last_type")                                                     \
@@ -391,6 +392,7 @@ class Runtime;
   V(Signed, "signed")                                                          \
   V(Size, "size")                                                              \
   V(Slice, "slice")                                                            \
+  V(SmallBytes, "smallbytes")                                                  \
   V(SmallInt, "smallint")                                                      \
   V(SmallStr, "smallstr")                                                      \
   V(Split, "split")                                                            \

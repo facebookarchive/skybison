@@ -88,6 +88,22 @@ RawObject bytesUnderlying(Thread* thread, const Object& obj) {
   return user_bytes.value();
 }
 
+void SmallBytesBuiltins::postInitialize(Runtime* runtime,
+                                        const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+  runtime->setSmallBytesType(new_type);
+  Layout::cast(new_type.instanceLayout())
+      .setDescribedType(runtime->typeAt(kSuperType));
+}
+
+void LargeBytesBuiltins::postInitialize(Runtime* runtime,
+                                        const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+  runtime->setLargeBytesType(new_type);
+  Layout::cast(new_type.instanceLayout())
+      .setDescribedType(runtime->typeAt(kSuperType));
+}
+
 // Used only for UserBytesBase as a heap-allocated object.
 const BuiltinAttribute BytesBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, UserBytesBase::kValueOffset},

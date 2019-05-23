@@ -238,6 +238,20 @@ RawObject strUnderlying(Thread* thread, const Object& obj) {
   return user_str.value();
 }
 
+void SmallStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+  runtime->setSmallStrType(new_type);
+  Layout::cast(new_type.instanceLayout())
+      .setDescribedType(runtime->typeAt(kSuperType));
+}
+
+void LargeStrBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+  runtime->setLargeStrType(new_type);
+  Layout::cast(new_type.instanceLayout())
+      .setDescribedType(runtime->typeAt(kSuperType));
+}
+
 const BuiltinAttribute StrBuiltins::kAttributes[] = {
     {SymbolId::kInvalid, UserStrBase::kValueOffset},
     {SymbolId::kSentinelId, 0},

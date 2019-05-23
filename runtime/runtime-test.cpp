@@ -167,7 +167,7 @@ TEST_P(BuiltinTypeIdsTest, HasTypeObject) {
   LayoutId id = GetParam();
   ASSERT_EQ(runtime.layoutAt(id).layoutId(), LayoutId::kLayout)
       << "Bad RawLayout for " << layoutIdName(id);
-  Object elt(&scope, runtime.typeAt(id));
+  Object elt(&scope, runtime.concreteTypeAt(id));
   ASSERT_TRUE(elt.isType());
   Type cls(&scope, *elt);
   Layout layout(&scope, cls.instanceLayout());
@@ -182,6 +182,21 @@ static const LayoutId kBuiltinHeapTypeIds[] = {
 
 INSTANTIATE_TEST_CASE_P(BuiltinTypeIdsParameters, BuiltinTypeIdsTest,
                         ::testing::ValuesIn(kBuiltinHeapTypeIds), );
+
+TEST(RuntimeTest, ConcreteTypeBaseIsUserType) {
+  Runtime runtime;
+  HandleScope scope;
+  Object smallint(&scope, SmallInt::fromWord(42));
+  Object largeint(&scope, runtime.newIntFromUnsigned(kMaxUword));
+  Type smallint_type(&scope, runtime.concreteTypeOf(*smallint));
+  Type largeint_type(&scope, runtime.concreteTypeOf(*largeint));
+  EXPECT_EQ(smallint_type.instanceLayout(),
+            runtime.layoutAt(LayoutId::kSmallInt));
+  EXPECT_EQ(largeint_type.instanceLayout(),
+            runtime.layoutAt(LayoutId::kLargeInt));
+  EXPECT_EQ(smallint_type.builtinBase(), LayoutId::kInt);
+  EXPECT_EQ(largeint_type.builtinBase(), LayoutId::kInt);
+}
 
 TEST(RuntimeByteArrayTest, EnsureCapacity) {
   Runtime runtime;
@@ -1376,11 +1391,11 @@ TEST(RuntimeTest, TypeIds) {
   EXPECT_TRUE(
       isStrEqualsCStr(className(&runtime, NoneType::object()), "NoneType"));
   EXPECT_TRUE(isStrEqualsCStr(
-      className(&runtime, runtime.newStrFromCStr("abc")), "smallstr"));
-
+      className(&runtime, runtime.newStrFromCStr("abc")), "str"));
   for (word i = 0; i < 16; i++) {
-    auto small_int = SmallInt::fromWord(i);
-    EXPECT_TRUE(isStrEqualsCStr(className(&runtime, small_int), "smallint"));
+    EXPECT_TRUE(
+        isStrEqualsCStr(className(&runtime, SmallInt::fromWord(i)), "int"))
+        << i;
   }
 }
 
