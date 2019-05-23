@@ -89,7 +89,7 @@ class type(bootstrap=True):
         if not isinstance(self, type):
             raise TypeError(
                 f"'__dir__' requires a 'type' object "
-                "but received a '{type(self).__name__}'"
+                "but received a '{_type(self).__name__}'"
             )
         result = set()
         type._merge_class_dict_keys(self, result)
@@ -127,7 +127,7 @@ class type(bootstrap=True):
 class object(bootstrap=True):  # noqa: E999
     @property
     def __class__(self):
-        return type(self)
+        return _type(self)
 
     @__class__.setter  # noqa: F811
     def __class__(self, value):
@@ -156,7 +156,7 @@ class object(bootstrap=True):  # noqa: E999
         pass
 
     def __ne__(self, other):
-        res = type(self).__eq__(self, other)
+        res = _type(self).__eq__(self, other)
         if res is NotImplemented:
             return NotImplemented
         return not res
@@ -167,7 +167,7 @@ class object(bootstrap=True):  # noqa: E999
     def __repr__(self):
         # TODO(T32655200): Replace with #x when formatting language is
         # implemented
-        return f"<{type(self).__name__} object at {_address(self)}>"
+        return f"<{_type(self).__name__} object at {_address(self)}>"
 
     def __setattr__(self, name, value):
         pass
@@ -176,7 +176,7 @@ class object(bootstrap=True):  # noqa: E999
         pass
 
     def __str__(self):
-        return type(self).__repr__(self)
+        return _type(self).__repr__(self)
 
 
 # End: Early definitions
@@ -249,17 +249,17 @@ class UnicodeDecodeError(UnicodeError, bootstrap=True):
     def __init__(self, encoding, obj, start, end, reason):
         super(UnicodeDecodeError, self).__init__(encoding, obj, start, end, reason)
         if not _str_check(encoding):
-            raise TypeError(f"argument 1 must be str, not {type(encoding).__name__}")
+            raise TypeError(f"argument 1 must be str, not {_type(encoding).__name__}")
         self.encoding = encoding
         self.start = _index(start)
         self.end = _index(end)
         if not _str_check(reason):
-            raise TypeError(f"argument 5 must be str, not {type(reason).__name__}")
+            raise TypeError(f"argument 5 must be str, not {_type(reason).__name__}")
         self.reason = reason
         # TODO(T38246066): Replace with a check for the buffer protocol
         if not isinstance(obj, (bytes, bytearray)):
             raise TypeError(
-                f"a bytes-like object is required, not '{type(obj).__name__}'"
+                f"a bytes-like object is required, not '{_type(obj).__name__}'"
             )
         self.object = obj
 
@@ -268,15 +268,15 @@ class UnicodeEncodeError(UnicodeError, bootstrap=True):
     def __init__(self, encoding, obj, start, end, reason):
         super(UnicodeEncodeError, self).__init__(encoding, obj, start, end, reason)
         if not _str_check(encoding):
-            raise TypeError(f"argument 1 must be str, not {type(encoding).__name__}")
+            raise TypeError(f"argument 1 must be str, not {_type(encoding).__name__}")
         self.encoding = encoding
         if not _str_check(obj):
-            raise TypeError(f"argument 2 must be str, not '{type(obj).__name__}'")
+            raise TypeError(f"argument 2 must be str, not '{_type(obj).__name__}'")
         self.object = obj
         self.start = _index(start)
         self.end = _index(end)
         if not _str_check(reason):
-            raise TypeError(f"argument 5 must be str, not {type(reason).__name__}")
+            raise TypeError(f"argument 5 must be str, not {_type(reason).__name__}")
         self.reason = reason
 
 
@@ -289,12 +289,12 @@ class UnicodeTranslateError(UnicodeError, bootstrap=True):
     def __init__(self, obj, start, end, reason):
         super(UnicodeTranslateError, self).__init__(obj, start, end, reason)
         if not _str_check(obj):
-            raise TypeError(f"argument 1 must be str, not {type(obj).__name__}")
+            raise TypeError(f"argument 1 must be str, not {_type(obj).__name__}")
         self.object = obj
         self.start = _index(start)
         self.end = _index(end)
         if not _str_check(reason):
-            raise TypeError(f"argument 4 must be str, not {type(reason).__name__}")
+            raise TypeError(f"argument 4 must be str, not {_type(reason).__name__}")
         self.reason = reason
 
 
@@ -364,7 +364,7 @@ def _bytes_new(source) -> bytes:
     try:
         iterator = iter(source)
     except TypeError:
-        raise TypeError(f"cannot convert '{type(source).__name__}' object to bytes")
+        raise TypeError(f"cannot convert '{_type(source).__name__}' object to bytes")
     return _bytes_from_ints([_index(x) for x in iterator])
 
 
@@ -498,22 +498,22 @@ def _index(obj) -> int:
         result = obj.__index__()
         if _int_check(result):
             return result
-        raise TypeError(f"__index__ returned non-int (type {type(result).__name__})")
+        raise TypeError(f"__index__ returned non-int (type {_type(result).__name__})")
     except AttributeError:
         raise TypeError(
-            f"'{type(obj).__name__}' object cannot be interpreted as an integer"
+            f"'{_type(obj).__name__}' object cannot be interpreted as an integer"
         )
 
 
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
-    obj_type = type(obj)
+    obj_type = _type(obj)
     if obj_type is int:
         return obj
     if not hasattr(obj, "__int__"):
         raise TypeError(f"an integer is required (got type {obj_type.__name__})")
     result = obj.__int__()
-    result_type = type(result)
+    result_type = _type(result)
     if result_type is int:
         return result
     raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
@@ -848,7 +848,7 @@ class _strarray(bootstrap=True):  # noqa: F821
         pass
 
     def __repr__(self) -> str:
-        if type(self) is not _strarray:
+        if _type(self) is not _strarray:
             raise TypeError("'__repr__' requires a '_strarray' object")
         return f"_strarray('{self.__str__()}')"
 
@@ -876,7 +876,7 @@ def _structseq_getattr(obj, name):
 
 
 def _structseq_getitem(self, pos):
-    if pos < 0 or pos >= type(self).n_fields:
+    if pos < 0 or pos >= _type(self).n_fields:
         raise IndexError("index out of bounds")
     if pos < len(self):
         return self[pos]
@@ -924,7 +924,7 @@ def _structseq_repr(self):
         raise TypeError("__repr__(): self is not a self")
     # TODO(T40273054): Iterate attributes and return field names
     tuple_values = ", ".join([i.__repr__() for i in self])
-    return f"{type(self).__name__}({tuple_values})"
+    return f"{_type(self).__name__}({tuple_values})"
 
 
 @_patch
@@ -934,6 +934,11 @@ def _structseq_setattr(obj, name, value):
 
 @_patch
 def _tuple_check(obj) -> bool:
+    pass
+
+
+@_patch
+def _type(obj):
     pass
 
 
@@ -1246,7 +1251,7 @@ class bytes(bootstrap=True):
         if not _bytes_check(self):
             raise TypeError(
                 "'__getitem__' requires a 'bytes' object but received a "
-                f"'{type(self).__name__}'"
+                f"'{_type(self).__name__}'"
             )
         if _int_check(key):
             return _bytes_getitem(self, key)
@@ -1256,7 +1261,7 @@ class bytes(bootstrap=True):
             return _bytes_getitem(self, _index(key))
         except TypeError:
             raise TypeError(
-                f"byte indices must be integers or slice, not {type(key).__name__}"
+                f"byte indices must be integers or slice, not {_type(key).__name__}"
             )
 
     def __gt__(self, other):
@@ -1289,7 +1294,7 @@ class bytes(bootstrap=True):
     def __new__(cls, source=_Unbound, encoding=_Unbound, errors=_Unbound):  # noqa: C901
         if not _type_check(cls):
             raise TypeError(
-                f"bytes.__new__(X): X is not a type object ({type(cls).__name__})"
+                f"bytes.__new__(X): X is not a type object ({_type(cls).__name__})"
             )
         if not issubclass(cls, bytes):
             raise TypeError(
@@ -1316,7 +1321,7 @@ class bytes(bootstrap=True):
             result = source.__bytes__()
             if not _bytes_check(result):
                 raise TypeError(
-                    f"__bytes__ returned non-bytes (type {type(result).__name__})"
+                    f"__bytes__ returned non-bytes (type {_type(result).__name__})"
                 )
             return result
         if _str_check(source):
@@ -1414,11 +1419,11 @@ class bytes(bootstrap=True):
     def maketrans(frm, to) -> bytes:
         if not _bytes_check(frm) and not _bytearray_check(frm):
             raise TypeError(
-                f"a bytes-like object is required, not '{type(frm).__name__}'"
+                f"a bytes-like object is required, not '{_type(frm).__name__}'"
             )
         if not _bytes_check(to) and not _bytearray_check(to):
             raise TypeError(
-                f"a bytes-like object is required, not '{type(to).__name__}'"
+                f"a bytes-like object is required, not '{_type(to).__name__}'"
             )
         if len(frm) != len(to):
             raise ValueError("maketrans arguments must have same length")
@@ -1576,7 +1581,7 @@ class dict(bootstrap=True):
 
     def copy(self):
         if not _dict_check(self):
-            raise TypeError(f"expected 'dict' instance but got {type(self).__name__}")
+            raise TypeError(f"expected 'dict' instance but got {_type(self).__name__}")
         return dict(self)
 
     def get(self, key, default=None):
@@ -1598,7 +1603,7 @@ class dict(bootstrap=True):
 
     def setdefault(self, key, default=None):
         if not _dict_check(self):
-            raise TypeError("setdefault expected 'dict' but got {type(self).__name__}")
+            raise TypeError("setdefault expected 'dict' but got {_type(self).__name__}")
         value = dict.get(self, key, _Unbound)
         if value is _Unbound:
             dict.__setitem__(self, key, default)
@@ -1607,7 +1612,7 @@ class dict(bootstrap=True):
 
     def update(self, seq=_Unbound):
         if not _dict_check(self):
-            raise TypeError("update expected 'dict' but got {type(self).__name__}")
+            raise TypeError("update expected 'dict' but got {_type(self).__name__}")
         if seq is _Unbound:
             return
         if hasattr(seq, "keys"):
@@ -1680,7 +1685,7 @@ def dir(obj=_Unbound):
     if obj is _Unbound:
         names = locals().keys()
     else:
-        names = type(obj).__dir__(obj)
+        names = _type(obj).__dir__(obj)
     return sorted(names)
 
 
@@ -1825,12 +1830,12 @@ class float(bootstrap=True):
 def format(obj, fmt_spec):
     if not _str_check(fmt_spec):
         raise TypeError(
-            f"fmt_spec must be str instance, not '{type(fmt_spec).__name__}'"
+            f"fmt_spec must be str instance, not '{_type(fmt_spec).__name__}'"
         )
     result = obj.__format__(fmt_spec)
     if not _str_check(result):
         raise TypeError(
-            f"__format__ must return str instance, not '{type(result).__name__}'"
+            f"__format__ must return str instance, not '{_type(result).__name__}'"
         )
     return result
 
@@ -1911,11 +1916,11 @@ def hasattr(obj, name):
 
 
 def hash(obj):
-    dunder_hash = type(obj).__hash__
+    dunder_hash = _type(obj).__hash__
     try:
         result = dunder_hash(obj)
     except TypeError:
-        raise TypeError(f"unhashable type: '{type(obj).__name__}'")
+        raise TypeError(f"unhashable type: '{_type(obj).__name__}'")
     if not _int_check(result):
         raise TypeError("__hash__ method should return an integer")
     # TODO(djang): This needs to be cast to the exact int type.
@@ -2008,7 +2013,7 @@ class int(bootstrap=True):
     def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
         if not _type_check(cls):
             raise TypeError(
-                f"int.__new__(X): X is not a type object ({type(cls).__name__})"
+                f"int.__new__(X): X is not a type object ({_type(cls).__name__})"
             )
         if not issubclass(cls, int):
             raise TypeError(
@@ -2019,13 +2024,13 @@ class int(bootstrap=True):
                 return _int_from_int(cls, 0)
             raise TypeError("int() missing string argument")
         if base is _Unbound:
-            if type(x) is int:
+            if _type(x) is int:
                 return _int_from_int(cls, x)
             if hasattr(x, "__int__"):
                 return _int_from_int(cls, _int(x))
             if hasattr(x, "__trunc__"):
                 trunc_result = x.__trunc__()
-                result_type = type(trunc_result)
+                result_type = _type(trunc_result)
                 if result_type is int:
                     return _int_from_int(cls, trunc_result)
                 if not hasattr(trunc_result, "__int__"):
@@ -2042,7 +2047,7 @@ class int(bootstrap=True):
                 return _int_from_bytearray(cls, x, 10)
             raise TypeError(
                 f"int() argument must be a string, a bytes-like object "
-                f"or a number, not {type(x).__name__}"
+                f"or a number, not {_type(x).__name__}"
             )
         base = _index(base)
         if base > 36 or (base < 2 and base != 0):
@@ -2065,7 +2070,7 @@ class int(bootstrap=True):
         # TODO(T42359066): Re-write this in C++ if we need a speed boost.
         if not _int_check(self):
             raise TypeError(
-                f"'__pow__' requires an 'int' object but got '{type(self).__name__}'"
+                f"'__pow__' requires an 'int' object but got '{_type(self).__name__}'"
             )
         if not _int_check(power):
             return NotImplemented
@@ -2228,7 +2233,7 @@ class int(bootstrap=True):
 
 
 def isinstance(obj, type_or_tuple) -> bool:
-    ty = type(obj)
+    ty = _type(obj)
     if ty is type_or_tuple:
         return True
     if _type_check_exact(type_or_tuple):
@@ -2266,9 +2271,9 @@ def issubclass(cls, type_or_tuple) -> bool:
 def iter(obj, sentinel=None):
     if sentinel is None:
         try:
-            dunder_iter = type(obj).__iter__
+            dunder_iter = _type(obj).__iter__
         except AttributeError:
-            raise TypeError(f"'{type(obj).__name__}' object is not iterable")
+            raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
         return dunder_iter(obj)
 
     class CallIter:
@@ -2318,7 +2323,7 @@ class list(bootstrap=True):
     def __delitem__(self, key) -> None:
         if not _list_check(self):
             raise TypeError(
-                f"'__delitem__' requires 'list' but received a '{type(self).__name__}'"
+                f"'__delitem__' requires 'list' but received a '{_type(self).__name__}'"
             )
         if _int_check(key):
             return _list_delitem(self, key)
@@ -2333,7 +2338,7 @@ class list(bootstrap=True):
     def __eq__(self, other):
         if not _list_check(self):
             raise TypeError(
-                f"'__eq__' requires 'list' but received a '{type(self).__name__}'"
+                f"'__eq__' requires 'list' but received a '{_type(self).__name__}'"
             )
         if not _list_check(other):
             return NotImplemented
@@ -2388,7 +2393,7 @@ class list(bootstrap=True):
 
     def copy(self):
         if not _list_check(self):
-            raise TypeError(f"expected 'list' instance but got {type(self).__name__}")
+            raise TypeError(f"expected 'list' instance but got {_type(self).__name__}")
         return list(self)
 
     def extend(self, other):
@@ -2418,7 +2423,7 @@ class list(bootstrap=True):
 
     def sort(self, key=None, reverse=False):
         if not _list_check(self):
-            raise TypeError(f"sort expected 'list' but got {type(self).__name__}")
+            raise TypeError(f"sort expected 'list' but got {_type(self).__name__}")
         if reverse:
             list.reverse(self)
         if key:
@@ -2582,7 +2587,7 @@ class module(bootstrap=True):
         if not isinstance(self, module):
             raise TypeError(
                 f"'__dir__' requires a 'module' object "
-                "but received a '{type(self).__name__}'"
+                "but received a '{_type(self).__name__}'"
             )
         return list(self.__dict__.keys())
 
@@ -2604,7 +2609,7 @@ class module(bootstrap=True):
 def next(iterator, default=_Unbound):
     try:
         dunder_next = _Unbound
-        dunder_next = type(iterator).__next__
+        dunder_next = _type(iterator).__next__
         return dunder_next(iterator)
     except StopIteration:
         if default is _Unbound:
@@ -2612,7 +2617,7 @@ def next(iterator, default=_Unbound):
         return default
     except AttributeError:
         if dunder_next is _Unbound:
-            raise TypeError(f"'{type(iterator).__name__}' object is not iterable")
+            raise TypeError(f"'{_type(iterator).__name__}' object is not iterable")
         raise
 
 
@@ -2689,7 +2694,7 @@ class range_iterator(bootstrap=True):
 
 
 def repr(obj):
-    result = type(obj).__repr__(obj)
+    result = _type(obj).__repr__(obj)
     if not _str_check(result):
         raise TypeError("__repr__ returned non-string")
     return result
@@ -2700,7 +2705,7 @@ class reversed:
         return self
 
     def __new__(cls, seq, **kwargs):
-        seq_cls = type(seq)
+        seq_cls = _type(seq)
         if hasattr(seq_cls, "__reversed__"):
             meth = seq_cls.__reversed__
             if meth is None:
@@ -2785,10 +2790,10 @@ class set(bootstrap=True):
 
     def __repr__(self):
         if _repr_enter(self):
-            return f"{type(self).__name__}(...)"
+            return f"{_type(self).__name__}(...)"
         if len(self) == 0:
             _repr_leave(self)
-            return f"{type(self).__name__}()"
+            return f"{_type(self).__name__}()"
         result = f"{{{', '.join([item.__repr__() for item in self])}}}"
         _repr_leave(self)
         return result
@@ -2842,7 +2847,7 @@ class slice(bootstrap=True):
         if not _slice_check(self):
             raise TypeError(
                 "'indices' requires a 'slice' object but received a "
-                f"'{type(self).__name__}'"
+                f"'{_type(self).__name__}'"
             )
         length = _index(length)
         if length < 0:
@@ -2904,9 +2909,11 @@ class str(bootstrap=True):
 
     def __contains__(self, other):
         if not _str_check(self):
-            raise TypeError(f"expected a 'str' instance but got {type(self).__name__}")
+            raise TypeError(f"expected a 'str' instance but got {_type(self).__name__}")
         if not _str_check(other):
-            raise TypeError(f"expected a 'str' instance but got {type(other).__name__}")
+            raise TypeError(
+                f"expected a 'str' instance but got {_type(other).__name__}"
+            )
         return str.find(self, other) != -1
 
     def __eq__(self, other):
@@ -2953,24 +2960,24 @@ class str(bootstrap=True):
         if obj is _Unbound:
             return _str_from_str(cls, "")
         if encoding is _Unbound and errors is _Unbound:
-            if type(obj) is str:
+            if _type(obj) is str:
                 return _str_from_str(cls, obj)
             try:
-                result = type(obj).__str__(obj)
+                result = _type(obj).__str__(obj)
                 if not _str_check(result):
                     raise TypeError(
-                        "__str__ returned non-string '{type(obj).__name__}'"
+                        "__str__ returned non-string '{_type(obj).__name__}'"
                     )
                 return _str_from_str(cls, result)
             except AttributeError:
-                return _str_from_str(cls, type(obj).__repr__(obj))
+                return _str_from_str(cls, _type(obj).__repr__(obj))
         if _str_check(obj):
             raise TypeError("decoding str is not supported")
         # TODO(T38246066): Replace with a check for the buffer protocol
         if not isinstance(obj, (bytes, bytearray)):
             raise TypeError(
                 "decoding to str: need a bytes-like object, "
-                f"'{type(obj).__name__}' found"
+                f"'{_type(obj).__name__}' found"
             )
         import _codecs
 
@@ -2996,7 +3003,7 @@ class str(bootstrap=True):
 
     def capitalize(self):
         if not _str_check(self):
-            self_type = type(self).__name__
+            self_type = _type(self).__name__
             raise TypeError(
                 f"'capitalize' requires a 'str' instance but got '{self_type}'"
             )
@@ -3072,11 +3079,11 @@ class str(bootstrap=True):
     def find(self, sub, start=None, end=None):
         if not _str_check(self):
             raise TypeError(
-                f"find requires a 'str' instance but got {type(self).__name__}"
+                f"find requires a 'str' instance but got {_type(self).__name__}"
             )
         if not _str_check(sub):
             raise TypeError(
-                f"find requires a 'str' instance but got {type(sub).__name__}"
+                f"find requires a 'str' instance but got {_type(sub).__name__}"
             )
         if start is not None:
             start = _index(start)
@@ -3101,7 +3108,7 @@ class str(bootstrap=True):
     def isalnum(self):
         # TODO(T41626152): Support non-ASCII
         if not _str_check(self):
-            raise TypeError(f"isalnum expected 'str' but got {type(self).__name__}")
+            raise TypeError(f"isalnum expected 'str' but got {_type(self).__name__}")
         if self is "":  # noqa: P202
             return False
         num = range(ord("0"), ord("9") + 1)
@@ -3127,7 +3134,7 @@ class str(bootstrap=True):
     def isidentifier(self):
         if not _str_check(self):
             raise TypeError(
-                f"'isidentifier' expected 'str' but got '{type(self).__name__}'"
+                f"'isidentifier' expected 'str' but got '{_type(self).__name__}'"
             )
         if not self:
             return False
@@ -3147,7 +3154,7 @@ class str(bootstrap=True):
     def islower(self):
         # TODO(T42050373): Support non-ASCII
         if not _str_check(self):
-            raise TypeError(f"islower expected 'str' but got {type(self).__name__}")
+            raise TypeError(f"islower expected 'str' but got {_type(self).__name__}")
         if self is "":  # noqa: P202
             return False
         lower = range(ord("a"), ord("z") + 1)
@@ -3167,7 +3174,7 @@ class str(bootstrap=True):
 
     def isspace(self):
         if not _str_check(self):
-            raise TypeError(f"expected 'str' but got {type(self).__name__}")
+            raise TypeError(f"expected 'str' but got {_type(self).__name__}")
         if not self:
             return False
         for ch in str.__iter__(self):
@@ -3187,7 +3194,7 @@ class str(bootstrap=True):
     def isupper(self):
         # TODO(T41626183): Support non-ASCII
         if not _str_check(self):
-            raise TypeError(f"isupper expected 'str' but got {type(self).__name__}")
+            raise TypeError(f"isupper expected 'str' but got {_type(self).__name__}")
         if self is "":  # noqa: P202
             return False
         upper = range(ord("A"), ord("Z") + 1)
@@ -3219,10 +3226,10 @@ class str(bootstrap=True):
         if not _str_check(self):
             raise TypeError(
                 f"descriptor 'partition' requires a 'str' object "
-                f"but received a {type(self).__name__}"
+                f"but received a {_type(self).__name__}"
             )
         if not _str_check(sep):
-            raise TypeError(f"must be str, not {type(sep).__name__}")
+            raise TypeError(f"must be str, not {_type(sep).__name__}")
         sep_len = len(sep)
         if not sep_len:
             raise ValueError("empty separator")
@@ -3244,15 +3251,15 @@ class str(bootstrap=True):
     def replace(self, old, new, count=None):
         if not _str_check(self):
             raise TypeError(
-                f"replace requires a 'str' instance but got {type(self).__name__}"
+                f"replace requires a 'str' instance but got {_type(self).__name__}"
             )
         if not _str_check(old):
             raise TypeError(
-                f"replace requires a 'str' instance but got {type(old).__name__}"
+                f"replace requires a 'str' instance but got {_type(old).__name__}"
             )
         if not _str_check(new):
             raise TypeError(
-                f"replace requires a 'str' instance but got {type(new).__name__}"
+                f"replace requires a 'str' instance but got {_type(new).__name__}"
             )
         if count:
             count = _index(count)
@@ -3264,11 +3271,11 @@ class str(bootstrap=True):
     def rfind(self, sub, start=None, end=None):
         if not _str_check(self):
             raise TypeError(
-                f"rfind requires a 'str' instance but got {type(self).__name__}"
+                f"rfind requires a 'str' instance but got {_type(self).__name__}"
             )
         if not _str_check(sub):
             raise TypeError(
-                f"rfind requires a 'str' instance but got {type(sub).__name__}"
+                f"rfind requires a 'str' instance but got {_type(sub).__name__}"
             )
         if start is not None:
             start = _index(start)
@@ -3296,7 +3303,7 @@ class str(bootstrap=True):
 
     def split(self, sep=None, maxsplit=-1):  # noqa: C901
         if not _str_check(self):
-            raise TypeError(f"expected a 'str' instance but got {type(self).__name__}")
+            raise TypeError(f"expected a 'str' instance but got {_type(self).__name__}")
         # If the separator is not specified, split on all whitespace characters.
         if sep is None:
             return _str_split_whitespace(self, maxsplit)
@@ -3347,7 +3354,7 @@ class str(bootstrap=True):
     def splitlines(self, keepends=False):
         if not _str_check(self):
             raise TypeError(
-                f"'splitlines' requires a 'str' but got '{type(self).__name__}'"
+                f"'splitlines' requires a 'str' but got '{_type(self).__name__}'"
             )
         if _float_check(keepends):
             raise TypeError("integer argument expected, got float")
@@ -3480,9 +3487,9 @@ class tuple(bootstrap=True):
 
     def __lt__(self, other):
         if not _tuple_check(self):
-            raise TypeError(f"__lt__ expected 'tuple' but got {type(self).__name__}")
+            raise TypeError(f"__lt__ expected 'tuple' but got {_type(self).__name__}")
         if not _tuple_check(other):
-            raise TypeError(f"__lt__ expected 'tuple' but got {type(other).__name__}")
+            raise TypeError(f"__lt__ expected 'tuple' but got {_type(other).__name__}")
         len_self = tuple.__len__(self)
         len_other = tuple.__len__(other)
         # TODO(T42050051): Use builtin.min when it's developed

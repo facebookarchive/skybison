@@ -7,6 +7,7 @@ _int_check = _int_check  # noqa: F821
 _index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_type = _type  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
@@ -45,7 +46,7 @@ def lookup(encoding):
 
 def _lookup_text(encoding, alternate_command):
     codec = lookup(encoding)
-    if type(codec) != tuple:
+    if _type(codec) != tuple:
         try:
             if not codec._is_text_encoding:
                 raise LookupError(
@@ -104,11 +105,13 @@ def _ascii_decode(data: str, errors: str, index: int, out: bytearray):
 
 def ascii_decode(data: bytes, errors: str = "strict"):
     if not _bytes_check(data):
-        raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
+        raise TypeError(
+            f"a bytes-like object is required, not '{_type(data).__name__}'"
+        )
     if not _str_check(errors):
         raise TypeError(
             "ascii_decode() argument 2 must be str or None, not "
-            f"'{type(errors).__name__}'"
+            f"'{_type(errors).__name__}'"
         )
     result = bytearray()
     i = 0
@@ -140,12 +143,12 @@ def _ascii_encode(data: str, errors: str, index: int, out: bytearray):
 def ascii_encode(data: str, errors: str = "strict"):
     if not _str_check(data):
         raise TypeError(
-            f"ascii_encode() argument 1 must be str, not {type(data).__name__}"
+            f"ascii_encode() argument 1 must be str, not {_type(data).__name__}"
         )
     if not _str_check(errors):
         raise TypeError(
             "ascii_encode() argument 2 must be str or None, not "
-            f"{type(errors).__name__}"
+            f"{_type(errors).__name__}"
         )
     result = bytearray()
     i = 0
@@ -189,12 +192,12 @@ def _latin_1_encode(data: str, errors: str, index: int, out: bytearray):
 def latin_1_encode(data: str, errors: str = "strict"):
     if not _str_check(data):
         raise TypeError(
-            f"latin_1_encode() argument 1 must be str, not {type(data).__name__}"
+            f"latin_1_encode() argument 1 must be str, not {_type(data).__name__}"
         )
     if not _str_check(errors):
         raise TypeError(
             "latin_1_encode() argument 2 must be str or None, not "
-            f"{type(errors).__name__}"
+            f"{_type(errors).__name__}"
         )
     result = bytearray()
     i = 0
@@ -238,12 +241,12 @@ def _utf_8_encode(data: str, errors: str, index: int, out: bytearray):
 def utf_8_encode(data: str, errors: str = "strict"):
     if not _str_check(data):
         raise TypeError(
-            f"utf_8_encode() argument 1 must be str, not {type(data).__name__}"
+            f"utf_8_encode() argument 1 must be str, not {_type(data).__name__}"
         )
     if not _str_check(errors):
         raise TypeError(
             "utf_8_encode() argument 2 must be str or None, not "
-            f"{type(errors).__name__}"
+            f"{_type(errors).__name__}"
         )
     result = bytearray()
     i = 0
@@ -290,12 +293,12 @@ def utf_16_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
         u_encoding = "utf_16"
     if not _str_check(data):
         raise TypeError(
-            f"{u_encoding}_encode() argument 1 must be str, not {type(data).__name__}"
+            f"{u_encoding}_encode() argument 1 must be str, not {_type(data).__name__}"
         )
     if not _str_check(errors):
         raise TypeError(
             f"{u_encoding}_encode() argument 2 must be str or None, not "
-            f"{type(errors).__name__}"
+            f"{_type(errors).__name__}"
         )
     result = bytearray()
     if byteorder == 0:
@@ -359,12 +362,12 @@ def utf_32_encode(data: str, errors: str = "strict", byteorder: int = 0):  # noq
         uEncoding = "utf_32"
     if not _str_check(data):
         raise TypeError(
-            f"{uEncoding}_encode() argument 1 must be str, not {type(data).__name__}"
+            f"{uEncoding}_encode() argument 1 must be str, not {_type(data).__name__}"
         )
     if not _str_check(errors):
         raise TypeError(
             f"{uEncoding}_encode() argument 2 must be str or None, not "
-            f"{type(errors).__name__}"
+            f"{_type(errors).__name__}"
         )
     result = bytearray()
     if byteorder == 0:
@@ -448,7 +451,7 @@ def strict_errors(error):
 def ignore_errors(error):
     if not isinstance(error, UnicodeError):
         raise TypeError(
-            f"don't know how to handle {type(error).__name__} in error callback"
+            f"don't know how to handle {_type(error).__name__} in error callback"
         )
     return ("", error.end)
 
@@ -456,7 +459,7 @@ def ignore_errors(error):
 def lookup_error(error: str):
     if not _str_check(error):
         raise TypeError(
-            f"lookup_error() argument must be str, not {type(error).__name__}"
+            f"lookup_error() argument must be str, not {_type(error).__name__}"
         )
     try:
         return _codec_error_registry[error]
@@ -467,7 +470,7 @@ def lookup_error(error: str):
 def register_error(name: str, error_func):
     if not _str_check(name):
         raise TypeError(
-            f"register_error() argument 1 must be str, not {type(name).__name__}"
+            f"register_error() argument 1 must be str, not {_type(name).__name__}"
         )
     if not callable(error_func):
         raise TypeError("handler must be callable")

@@ -553,6 +553,7 @@ class Runtime;
   V(UnderStructseqSetAttr, "_structseq_setattr")                               \
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
+  V(UnderType, "_type")                                                        \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \

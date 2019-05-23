@@ -140,6 +140,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
     {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
+    {SymbolId::kUnderType, underType},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
@@ -1495,6 +1496,11 @@ RawObject BuiltinsModule::underTupleCheck(Thread* thread, Frame* frame,
                                           word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfTuple(args.get(0)));
+}
+
+RawObject BuiltinsModule::underType(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  return thread->runtime()->typeOf(args.get(0));
 }
 
 RawObject BuiltinsModule::underTypeCheck(Thread* thread, Frame* frame,

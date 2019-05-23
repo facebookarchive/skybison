@@ -100,6 +100,7 @@ class BuiltinsModule {
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underType(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
                                        word nargs);
