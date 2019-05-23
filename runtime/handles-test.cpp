@@ -196,8 +196,6 @@ TEST(HandlesTest, NestedScopes) {
         EXPECT_TRUE(visitor.hasVisited(o2));
         EXPECT_FALSE(visitor.hasVisited(o3));
       }
-      // Verify abort if handle is created with s1.
-      EXPECT_DEBUG_DEATH(USE(Object(&s1, o3)), "unexpected");
     }
     // (Scope 2 is now popped.)
     {
@@ -250,7 +248,6 @@ class HandleBenchmark : public benchmark::Fixture {
 };
 
 BENCHMARK_F(HandleBenchmark, CreationDestruction)(benchmark::State& state) {
-  Handles handles;
   HandleScope scope(Thread::current());
 
   RawObject o1{0xFEEDFACEL};

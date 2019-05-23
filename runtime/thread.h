@@ -17,30 +17,24 @@ class Runtime;
 
 class Handles {
  public:
-  static const int kInitialSize = 10;
+  Handles() = default;
 
-  Handles();
+  Handle<RawObject>* head() const { return head_; }
+
+  Handle<RawObject>* push(Handle<RawObject>* new_head) {
+    Handle<RawObject>* old_head = head_;
+    head_ = new_head;
+    return old_head;
+  }
+
+  void pop(Handle<RawObject>* new_head) { head_ = new_head; }
 
   void visitPointers(PointerVisitor* visitor);
 
- private:
-  void push(HandleScope* scope) { scopes_.push_back(scope); }
-
-  void pop() {
-    DCHECK(!scopes_.empty(), "pop on empty");
-    scopes_.pop_back();
-  }
-
-  HandleScope* top() {
-    DCHECK(!scopes_.empty(), "top on empty");
-    return scopes_.back();
-  }
-
-  Vector<HandleScope*> scopes_;
-
-  friend class HandleScope;
-
   DISALLOW_COPY_AND_ASSIGN(Handles);
+
+ private:
+  Handle<RawObject>* head_ = nullptr;
 };
 
 class Thread {

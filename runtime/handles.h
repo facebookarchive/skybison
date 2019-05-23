@@ -12,44 +12,12 @@ class WARN_UNUSED HandleScope {
  public:
   explicit HandleScope() : HandleScope(Thread::current()) {}
 
-  explicit HandleScope(Thread* thread) : list_(nullptr), thread_(thread) {
-    handles()->push(this);
-  }
+  explicit HandleScope(Thread* thread) : handles_(thread->handles()) {}
 
-  ~HandleScope() {
-    DCHECK(this == handles()->top(), "unexpected this");
-    handles()->pop();
-  }
-
-  template <typename T>
-  Handle<RawObject>* push(Handle<T>* handle) {
-    DCHECK(this == handles()->top(), "unexpected this");
-    Handle<RawObject>* result = list_;
-    list_ = reinterpret_cast<Handle<RawObject>*>(handle);
-    return result;
-  }
+  Handles* handles() const { return handles_; }
 
  private:
-  Handle<RawObject>* list() { return list_; }
-  Handles* handles() { return thread()->handles(); }
-  Thread* thread() { return thread_; }
-
-  Handle<RawObject>* list_;
-  Thread* thread_;
-
-  friend class Handles;
-  template <typename>
-  friend class Handle;
-
-  // TODO(jeethu): use FRIEND_TEST
-  friend class HandlesTest_UpCastTest_Test;
-  friend class HandlesTest_DownCastTest_Test;
-  friend class HandlesTest_IllegalCastRunTimeTest_Test;
-  friend class HandlesTest_VisitEmptyScope_Test;
-  friend class HandlesTest_VisitOneHandle_Test;
-  friend class HandlesTest_VisitTwoHandles_Test;
-  friend class HandlesTest_VisitObjectInNestedScope_Test;
-  friend class HandlesTest_NestedScopes_Test;
+  Handles* const handles_;
 
   DISALLOW_COPY_AND_ASSIGN(HandleScope);
 };
@@ -58,7 +26,9 @@ template <typename T>
 class WARN_UNUSED Handle : public T {
  public:
   Handle(HandleScope* scope, RawObject obj)
-      : T(obj.rawCast<T>()), next_(scope->push(this)), scope_(scope) {
+      : T(obj.rawCast<T>()),
+        handles_(scope->handles()),
+        next_(handles_->push(pointer())) {
     DCHECK(isValidType(), "Invalid Handle construction");
   }
 
@@ -68,12 +38,9 @@ class WARN_UNUSED Handle : public T {
   Handle(HandleScope*, const Handle<S>&) = delete;
 
   ~Handle() {
-    DCHECK(scope_->list_ == reinterpret_cast<Handle<RawObject>*>(this),
-           "unexpected this");
-    scope_->list_ = next_;
+    DCHECK(handles_->head() == pointer(), "unexpected this");
+    handles_->pop(next_);
   }
-
-  RawObject* pointer() { return this; }
 
   Handle<RawObject>* nextHandle() const { return next_; }
 
@@ -106,13 +73,14 @@ class WARN_UNUSED Handle : public T {
   DISALLOW_HEAP_ALLOCATION();
 
  private:
-  template <typename>
-  friend class Handle;
-
   bool isValidType() const;
 
-  Handle<RawObject>* next_;
-  HandleScope* scope_;
+  Handle<RawObject>* pointer() {
+    return reinterpret_cast<Handle<RawObject>*>(this);
+  }
+
+  Handles* const handles_;
+  Handle<RawObject>* const next_;
 };
 
 // TODO(T34683229): This macro and its uses are temporary as part of an
