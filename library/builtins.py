@@ -1935,8 +1935,9 @@ def hex(number):
     _unimplemented()
 
 
+@_patch
 def id(obj):
-    _unimplemented()
+    pass
 
 
 def input(prompt=None):

@@ -80,6 +80,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kExec, exec},
     {SymbolId::kGetattr, getattr},
     {SymbolId::kHasattr, hasattr},
+    {SymbolId::kId, id},
     {SymbolId::kOrd, ord},
     {SymbolId::kSetattr, setattr},
     {SymbolId::kUnderAddress, underAddress},
@@ -632,6 +633,16 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   }
   Dict globals(&scope, *globals_obj);
   return thread->exec(code, globals, locals);
+}
+
+RawObject BuiltinsModule::id(Thread* thread, Frame* frame_frame, word nargs) {
+  Arguments args(frame_frame, nargs);
+  // NOTE: An ID must be unique for the lifetime of an object. If we ever free
+  // an unreferenced API handle before its referent becomes garbage, this code
+  // will need to provide an additional signal to keep the handle alive as long
+  // as its referent is alive.
+  return thread->runtime()->newIntFromCPtr(
+      ApiHandle::borrowedReference(thread, args.get(0)));
 }
 
 RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {

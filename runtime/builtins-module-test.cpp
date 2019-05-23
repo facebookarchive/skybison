@@ -192,6 +192,35 @@ TEST(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
   EXPECT_EQ(moduleAt(&runtime, "builtins", "Ellipsis"), runtime.ellipsis());
 }
 
+TEST(BuiltinsModuleTest, IdReturnsInt) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, runtime.newInt(12345));
+  EXPECT_TRUE(runBuiltin(BuiltinsModule::id, obj).isInt());
+}
+
+TEST(BuiltinsModuleTest, IdDoesNotChangeAfterGC) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj(&scope, runtime.newStrFromCStr("hello world foobar"));
+  Object id_before(&scope, runBuiltin(BuiltinsModule::id, obj));
+  runtime.collectGarbage();
+  Object id_after(&scope, runBuiltin(BuiltinsModule::id, obj));
+  EXPECT_EQ(*id_before, *id_after);
+}
+
+TEST(BuiltinsModuleTest, IdReturnsDifferentValueForDifferentObject) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj1(&scope, runtime.newStrFromCStr("hello world foobar"));
+  Object obj2(&scope, runtime.newStrFromCStr("hello world foobarbaz"));
+  EXPECT_NE(runBuiltin(BuiltinsModule::id, obj1),
+            runBuiltin(BuiltinsModule::id, obj2));
+}
+
 TEST(BuiltinsModuleTest, BuiltinLen) {
   Runtime runtime;
   std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");

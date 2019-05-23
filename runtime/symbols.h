@@ -260,6 +260,7 @@ class Runtime;
   V(Iadd, "iadd")                                                              \
   V(Iand, "iand")                                                              \
   V(Iconcat, "iconcat")                                                        \
+  V(Id, "id")                                                                  \
   V(Ifloordiv, "ifloordiv")                                                    \
   V(Ignore, "ignore")                                                          \
   V(Ilshift, "ilshift")                                                        \
