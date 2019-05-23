@@ -1663,8 +1663,8 @@ class RawFunction : public RawHeapObject {
 
   // Returns the entry to be used when the function is invoked via
   // CALL_FUNCTION_EX
-  inline Entry entryEx() const;
-  inline void setEntryEx(Entry thunk) const;
+  Entry entryEx() const;
+  void setEntryEx(Entry thunk) const;
 
   // The dict that holds this function's global namespace. User-code
   // cannot change this
@@ -4426,13 +4426,13 @@ inline void RawFunction::setEntryKw(RawFunction::Entry thunk) const {
   instanceVariableAtPut(kEntryKwOffset, object);
 }
 
-RawFunction::Entry RawFunction::entryEx() const {
+inline RawFunction::Entry RawFunction::entryEx() const {
   RawObject object = instanceVariableAt(kEntryExOffset);
   DCHECK(object.isSmallInt(), "entryEx address must look like a RawSmallInt");
   return bit_cast<RawFunction::Entry>(object);
 }
 
-void RawFunction::setEntryEx(RawFunction::Entry thunk) const {
+inline void RawFunction::setEntryEx(RawFunction::Entry thunk) const {
   auto object = RawSmallInt::fromFunctionPointer(thunk);
   instanceVariableAtPut(kEntryExOffset, object);
 }
