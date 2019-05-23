@@ -564,7 +564,7 @@ static uword dwordUDiv(uword dividend_low, uword dividend_high, uword divisor,
 
   // Performs some arithmetic with no more than half the bits of a `uword`.
   int half_bits = kBitsPerWord / 2;
-  uword half_mask = (static_cast<uword>(1) << half_bits) - 1;
+  uword half_mask = (uword{1} << half_bits) - 1;
 
   // Normalize divisor by shifting the highest bit left as much as possible.
   static_assert(sizeof(divisor) == sizeof(long), "choose right builtin");

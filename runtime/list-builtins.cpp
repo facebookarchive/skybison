@@ -84,8 +84,7 @@ void listInsert(Thread* thread, const List& list, const Object& value,
   if (index < 0) {
     index = last_index + index;
   }
-  index =
-      Utils::maximum(static_cast<word>(0), Utils::minimum(last_index, index));
+  index = Utils::maximum(word{0}, Utils::minimum(last_index, index));
   for (word i = last_index; i > index; i--) {
     list.atPut(i, list.at(i - 1));
   }

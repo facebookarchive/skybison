@@ -79,8 +79,7 @@ static RawObject processDefaultArguments(Thread* thread,
   if ((new_argc > code.argcount()) || code.hasVarargs()) {
     // VARARGS - spill extra positional args into the varargs tuple.
     if (code.hasVarargs()) {
-      word len =
-          Utils::maximum(static_cast<word>(0), new_argc - code.argcount());
+      word len = Utils::maximum(word{0}, new_argc - code.argcount());
       Tuple varargs(&scope, thread->runtime()->newTuple(len));
       for (word i = (len - 1); i >= 0; i--) {
         varargs.atPut(i, caller->topValue());

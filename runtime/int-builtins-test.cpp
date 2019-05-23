@@ -1222,7 +1222,7 @@ TEST(IntBuiltinsTest, DunderFloatWithOneDigitLargeIntReturnsFloat) {
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
   ASSERT_TRUE(result.isFloat());
-  EXPECT_EQ(Float::cast(*result).value(), static_cast<double>(kMinWord));
+  EXPECT_EQ(Float::cast(*result).value(), double{kMinWord});
 }
 
 TEST(IntBuiltinsTest, DunderFloatWithLargeIntReturnsFloat) {
@@ -1267,7 +1267,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedDownReturnsFloat) {
 
   // Produce a 1 so that all of the mantissa lies in the high digit but the bit
   // triggering the rounding is in the low digit.
-  uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
+  uword mantissa_high_bit = uword{1} << kDoubleMantissaBits;
   const uword digits[] = {0, mantissa_high_bit};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
@@ -1291,8 +1291,7 @@ TEST(IntBuiltinsTest, DunderFloatWithLargeIntRoundedUpToEvenReturnsFloat) {
   Runtime runtime;
   HandleScope scope;
 
-  uword mantissa_high_bit_plus_one =
-      (static_cast<uword>(1) << kDoubleMantissaBits) + 1;
+  uword mantissa_high_bit_plus_one = (uword{1} << kDoubleMantissaBits) + 1;
   const uword digits[] = {kHighbitUword, mantissa_high_bit_plus_one};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
@@ -1306,7 +1305,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
 
-  uword mantissa_high_bit = static_cast<uword>(1) << kDoubleMantissaBits;
+  uword mantissa_high_bit = uword{1} << kDoubleMantissaBits;
   const uword digits[] = {0, kHighbitUword, ~mantissa_high_bit};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
@@ -1319,8 +1318,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
 
-  uword mantissa_high_bit_plus_one =
-      (static_cast<uword>(1) << kDoubleMantissaBits) | 1;
+  uword mantissa_high_bit_plus_one = (uword{1} << kDoubleMantissaBits) | 1;
   const uword digits[] = {0, kHighbitUword, ~mantissa_high_bit_plus_one};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
@@ -1334,8 +1332,7 @@ TEST(IntBuiltinsTest,
   Runtime runtime;
   HandleScope scope;
 
-  uword mantissa_all_one =
-      (static_cast<uword>(1) << (kDoubleMantissaBits + 1)) - 1;
+  uword mantissa_all_one = (uword{1} << (kDoubleMantissaBits + 1)) - 1;
   const uword digits[] = {kHighbitUword, mantissa_all_one};
   Int num(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderFloat, num));
@@ -2797,7 +2794,7 @@ TEST(IntBuiltinsTest, DunderReprWithLargeIntManyZerosReturnsStr) {
 TEST(IntBuiltinsTest, DunderReprWithLargeIntCarriesReturnsStr) {
   Runtime runtime;
   HandleScope scope;
-  const uword digits[] = {kMaxUword, static_cast<uword>(kMaxWord), kMaxUword};
+  const uword digits[] = {kMaxUword, uword{kMaxWord}, kMaxUword};
   Object num(&scope, runtime.newIntWithDigits(digits));
   Object result(&scope, runBuiltin(IntBuiltins::dunderRepr, num));
   EXPECT_TRUE(
@@ -3093,8 +3090,7 @@ TEST(IntBuiltinsTest, DunderSubWithNegativeLargeIntsBorrowingReturnsLargeInt) {
   const uword digits_right[] = {1};
   Int right(&scope, newIntWithDigits(&runtime, digits_right));
   Object result(&scope, runBuiltin(IntBuiltins::dunderSub, left, right));
-  const uword expected_digits[] = {kMaxUword, static_cast<uword>(kMaxWord),
-                                   kMaxUword};
+  const uword expected_digits[] = {kMaxUword, uword{kMaxWord}, kMaxUword};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 

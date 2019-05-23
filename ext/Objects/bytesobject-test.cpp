@@ -265,7 +265,7 @@ TEST_F(BytesExtensionApiTest, FromFormatLDParsesLongDecimal) {
 }
 
 TEST_F(BytesExtensionApiTest, FromFormatZDParsesPySsizeT) {
-  PyObjectPtr bytes(PyBytes_FromFormat("%zd", static_cast<Py_ssize_t>(42)));
+  PyObjectPtr bytes(PyBytes_FromFormat("%zd", Py_ssize_t{42}));
   EXPECT_STREQ(PyBytes_AsString(bytes), "42");
 }
 
@@ -280,7 +280,7 @@ TEST_F(BytesExtensionApiTest, FromFormatLUParsesNumberTypes) {
 }
 
 TEST_F(BytesExtensionApiTest, FromFormatZUParsesSizeT) {
-  PyObjectPtr bytes(PyBytes_FromFormat("%zu", static_cast<size_t>(42)));
+  PyObjectPtr bytes(PyBytes_FromFormat("%zu", size_t{42}));
   EXPECT_STREQ(PyBytes_AsString(bytes), "42");
 }
 

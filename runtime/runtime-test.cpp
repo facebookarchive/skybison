@@ -1045,7 +1045,7 @@ TEST(RuntimeTest, HashCodeSizeCheck) {
   // create a high-magnitude result from Runtime::random
   // which is truncated to 0 for storage in the header and
   // replaced with "1" so no hash code has value 0.
-  uword high = static_cast<uword>(1) << (8 * sizeof(uword) - 1);
+  uword high = uword{1} << (8 * sizeof(uword) - 1);
   uword state[2] = {0, high};
   uword secret[2] = {0, 0};
   runtime.seedRandom(state, secret);
@@ -2532,8 +2532,7 @@ TEST(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
                           static_cast<uword>(-1)};
   Int right(&scope, newIntWithDigits(&runtime, digits));
   Object result(&scope, runtime.intBinaryXor(Thread::current(), left, right));
-  const uword expected_digits[] = {0x29, ~static_cast<uword>(0xF0),
-                                   ~static_cast<uword>(0x2), 0};
+  const uword expected_digits[] = {0x29, ~uword{0xF0}, ~uword{0x2}, 0};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 

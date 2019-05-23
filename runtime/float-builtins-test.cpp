@@ -999,14 +999,14 @@ TEST(
   ASSERT_TRUE(result_obj.isLargeInt());
   LargeInt result(&scope, *result_obj);
   EXPECT_TRUE(result.isNegative());
-  const uword expected_digits[] = {static_cast<uword>(0x8000000000000000)};
+  const uword expected_digits[] = {uword{0x8000000000000000}};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
 TEST(FloatBuiltinsTest, DunderIntWithSmallIntMinValueReturnsSmallInt) {
   Runtime runtime;
   HandleScope scope;
-  double input_value = static_cast<double>(SmallInt::kMinValue);
+  double input_value = double{SmallInt::kMinValue};
   // Make sure that the converted double value can fit in SmallInt if
   // it gets converted back to word.
   EXPECT_EQ(static_cast<word>(input_value), SmallInt::kMinValue);
@@ -1088,8 +1088,8 @@ TEST(FloatBuiltinsTest, DunderIntWithLargeNegativeDoubleReturnsLargeInt) {
   EXPECT_TRUE(result.isNegative());
   // Represented as a two's complement, so 1 is added only to the lowest digit
   // as long as it doesn't creat a carry.
-  const uword expected_digits[] = {static_cast<uword>(~0x85b3f6fb00000000) + 1,
-                                   static_cast<uword>(~0x129ef6)};
+  const uword expected_digits[] = {~uword{0x85b3f6fb00000000} + 1,
+                                   ~uword{0x129ef6}};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 

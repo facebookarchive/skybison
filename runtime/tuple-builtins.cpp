@@ -272,7 +272,7 @@ RawObject TupleBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
     DCHECK(hash_result_obj.isSmallInt(), "hash result must be smallint");
     word hash_result = SmallInt::cast(*hash_result_obj).value();
     result = (result ^ hash_result) * mult;
-    mult += static_cast<word>(82520UL + len + len);
+    mult += word{82520} + len + len;
   }
   result += 97531UL;
   if (result == kMaxUword) {
