@@ -73,12 +73,22 @@ PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {
   return freevars.length();
 }
 
-PY_EXPORT PyObject* PyCode_GetName_Func(PyObject*) {
-  UNIMPLEMENTED("PyCode_GetName_Func");
+PY_EXPORT PyObject* PyCode_GetName_Func(PyObject* code) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object code_obj(&scope, ApiHandle::fromPyObject(code)->asObject());
+  DCHECK(code_obj.isCode(), "code should be a code object");
+  Code code_code(&scope, *code_obj);
+  return ApiHandle::newReference(thread, code_code.name());
 }
 
-PY_EXPORT PyObject* PyCode_GetFreevars_Func(PyObject*) {
-  UNIMPLEMENTED("PyCode_GetVars_Func");
+PY_EXPORT PyObject* PyCode_GetFreevars_Func(PyObject* code) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object code_obj(&scope, ApiHandle::fromPyObject(code)->asObject());
+  DCHECK(code_obj.isCode(), "code should be a code object");
+  Code code_code(&scope, *code_obj);
+  return ApiHandle::newReference(thread, code_code.freevars());
 }
 
 static RawObject constantKey(Thread* thread, const Object& obj) {

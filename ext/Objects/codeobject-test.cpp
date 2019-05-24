@@ -212,6 +212,39 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithOtherObjectReturnsTwoTupleWithId) {
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
 }
 
+TEST_F(CodeExtensionApiTest, GetFreevarsReturnsFreevars) {
+  PyObjectPtr freevars(PyTuple_New(3));
+  PyTuple_SetItem(freevars, 0, PyUnicode_FromString("foo"));
+  PyTuple_SetItem(freevars, 1, PyUnicode_FromString("bar"));
+  PyTuple_SetItem(freevars, 2, PyUnicode_FromString("baz"));
+  PyObjectPtr empty_tuple(PyTuple_New(0));
+  PyObjectPtr empty_bytes(PyBytes_FromString(""));
+  PyObjectPtr empty_str(PyUnicode_FromString(""));
+  PyCodeObject* code = PyCode_New(
+      0, 0, 0, 0, 0, empty_bytes, empty_tuple, empty_tuple, empty_tuple,
+      freevars, empty_tuple, empty_str, empty_str, 0, empty_bytes);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(code, nullptr);
+  PyObjectPtr result(PyCode_GetFreevars(reinterpret_cast<PyObject*>(code)));
+  EXPECT_EQ(result, freevars);
+  Py_DECREF(code);
+}
+
+TEST_F(CodeExtensionApiTest, GetNameReturnsName) {
+  PyObjectPtr empty_tuple(PyTuple_New(0));
+  PyObjectPtr empty_bytes(PyBytes_FromString(""));
+  PyObjectPtr empty_str(PyUnicode_FromString(""));
+  PyObjectPtr name(PyUnicode_FromString("foobar"));
+  PyCodeObject* code = PyCode_New(0, 0, 0, 0, 0, empty_bytes, empty_tuple,
+                                  empty_tuple, empty_tuple, empty_tuple,
+                                  empty_tuple, empty_str, name, 0, empty_bytes);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(code, nullptr);
+  PyObjectPtr result(PyCode_GetName(reinterpret_cast<PyObject*>(code)));
+  EXPECT_EQ(result, name);
+  Py_DECREF(code);
+}
+
 TEST_F(CodeExtensionApiTest, GetNumFreeReturnsNumberOfFreevars) {
   PyObjectPtr freevars(PyTuple_New(3));
   PyTuple_SetItem(freevars, 0, PyUnicode_FromString("foo"));
