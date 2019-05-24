@@ -54,7 +54,7 @@ class Thread {
                    const Handle<RawDict>& globals,
                    const Handle<RawDict>& builtins);
   Frame* pushCallFrame(const Handle<RawFunction>& function);
-  Frame* pushNativeFrame(void* fn, word nargs);
+  Frame* pushNativeFrame(word nargs);
   Frame* pushClassFunctionFrame(const Handle<RawFunction>& function,
                                 const Handle<RawDict>& dict);
   void checkStackOverflow(word max_size);

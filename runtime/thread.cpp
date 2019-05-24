@@ -108,7 +108,7 @@ void Thread::checkStackOverflow(word max_size) {
   CHECK(sp - max_size >= start_, "stack overflow");
 }
 
-Frame* Thread::pushNativeFrame(void* fn, word nargs) {
+Frame* Thread::pushNativeFrame(word nargs) {
   // TODO(T36407290): native frames push arguments onto the stack when calling
   // back into the interpreter, but we can't statically know how much stack
   // space they will need. We may want to extend the api for such native calls
@@ -116,7 +116,6 @@ Frame* Thread::pushNativeFrame(void* fn, word nargs) {
   // limited use right now since we can't detect an "overflow" of a frame
   // anyway.
   Frame* frame = openAndLinkFrame(nargs, 0, 0);
-  frame->makeNativeFrame(runtime()->newIntFromCPtr(fn));
   return frame;
 }
 
@@ -125,7 +124,6 @@ Frame* Thread::pushFrame(const Function& function, const Dict& globals,
   RawCode code = Code::cast(function.code());
   Frame* frame =
       openAndLinkFrame(code.totalArgs(), code.totalVars(), code.stacksize());
-  frame->setCode(function.code());
   // TODO(T36407403) We should be able to not set globals and builtins.
   frame->setGlobals(*globals);
   frame->setBuiltins(*builtins);

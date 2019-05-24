@@ -200,9 +200,8 @@ class Frame {
   RawObject fastGlobals();
   void setFastGlobals(RawObject fast_globals);
 
-  // The code object
+  // Returns the code object of the current function.
   RawObject code();
-  void setCode(RawObject code);
 
   // A pointer to the previous frame or nullptr if this is the first frame
   Frame* previousFrame();
@@ -244,7 +243,6 @@ class Frame {
 
   bool isNativeFrame();
   void* nativeFunctionPointer();
-  void makeNativeFrame(RawObject fn_pointer_as_int);
 
   // Versions of valueStackTop() and popValue() for a Frame that's had
   // stashInternalPointers() called on it.
@@ -386,9 +384,7 @@ inline void Frame::setFastGlobals(RawObject fast_globals) {
   atPut(kFastGlobalsOffset, fast_globals);
 }
 
-inline RawObject Frame::code() { return at(kCodeOffset); }
-
-inline void Frame::setCode(RawObject code) { atPut(kCodeOffset, code); }
+inline RawObject Frame::code() { return function().code(); }
 
 inline RawObject* Frame::locals() {
   return reinterpret_cast<RawObject*>(at(kLocalsOffset).raw());
@@ -509,11 +505,6 @@ inline void* Frame::nativeFunctionPointer() {
 }
 
 inline bool Frame::isNativeFrame() { return code().isInt(); }
-
-inline void Frame::makeNativeFrame(RawObject fn_pointer_as_int) {
-  DCHECK(fn_pointer_as_int.isInt(), "expected integer");
-  setCode(fn_pointer_as_int);
-}
 
 inline RawObject* Frame::stashedValueStackTop() {
   auto depth = reinterpret_cast<word>(valueStackTop());

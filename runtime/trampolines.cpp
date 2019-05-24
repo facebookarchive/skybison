@@ -1126,7 +1126,7 @@ static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller, word argc,
   if (result.isError()) return *result;
   argc = code.totalArgs();
   void* entry = SmallInt::cast(code.code()).asCPtr();
-  Frame* frame = thread->pushNativeFrame(entry, argc);
+  Frame* frame = thread->pushNativeFrame(argc);
   result = bit_cast<Function::Entry>(entry)(thread, frame, argc);
   DCHECK(thread->isErrorValueOk(*result), "error/exception mismatch");
   thread->popFrame();
@@ -1163,7 +1163,6 @@ RawObject slotTrampoline(Thread* thread, Frame* caller, word argc) {
   Code code(&scope, func.code());
   auto fn = bit_cast<Function::Entry>(Int::cast(code.code()).asCPtr());
   Frame* frame = thread->openAndLinkFrame(argc, 0, 0);
-  frame->setCode(*code);
   Object result(&scope, fn(thread, frame, argc));
   thread->popFrame();
   return *result;

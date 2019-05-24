@@ -2499,6 +2499,10 @@ class RawHeapFrame : public RawHeapObject {
   word maxStackSize() const;
   void setMaxStackSize(word offset) const;
 
+  // Returns the function of a heap frame.
+  // Note that using `frame()->function()` does not work for this!
+  RawObject function() const;
+
   // Sizing.
   static word numAttributes(word extra_words);
 
@@ -5003,6 +5007,11 @@ inline word RawHeapFrame::maxStackSize() const {
 
 inline void RawHeapFrame::setMaxStackSize(word offset) const {
   instanceVariableAtPut(kMaxStackSizeOffset, RawSmallInt::fromWord(offset));
+}
+
+inline RawObject RawHeapFrame::function() const {
+  return instanceVariableAt(kFrameOffset +
+                            (numFrameWords() - 1) * kPointerSize);
 }
 
 }  // namespace python

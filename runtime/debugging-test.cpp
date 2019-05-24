@@ -436,14 +436,12 @@ def func(arg0, arg1):
   ASSERT_EQ(root->previousFrame(), nullptr);
 
   Frame* frame0 = thread->openAndLinkFrame(0, 2, 1);
-  frame0->setCode(function.code());
   frame0->setVirtualPC(42);
   frame0->setLocal(0, runtime.newStrFromCStr("foo bar"));
   frame0->setLocal(1, runtime.newStrFromCStr("bar foo"));
   frame0->pushValue(*func);
   Frame* frame1 = thread->openAndLinkFrame(0, 3, 2);
   frame1->setVirtualPC(4);
-  frame1->setCode(func.code());
   frame1->setLocal(0, runtime.newInt(-9));
   frame1->setLocal(1, runtime.newInt(17));
   frame1->setLocal(2, runtime.newStrFromCStr("world"));

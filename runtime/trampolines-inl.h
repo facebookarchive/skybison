@@ -15,7 +15,7 @@ namespace python {
 template <Function::Entry Fn>
 RawObject nativeTrampoline(Thread* thread, Frame* /*caller_frame*/, word argc) {
   HandleScope scope(thread);
-  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc);
+  Frame* frame = thread->pushNativeFrame(argc);
   Object result(&scope, Fn(thread, frame, argc));
   DCHECK(thread->isErrorValueOk(*result), "error/exception mismatch");
   thread->popFrame();
@@ -26,7 +26,7 @@ template <Function::Entry Fn>
 RawObject nativeTrampolineKw(Thread* thread, Frame* /*caller_frame*/,
                              word argc) {
   HandleScope scope(thread);
-  Frame* frame = thread->pushNativeFrame(bit_cast<void*>(Fn), argc + 1);
+  Frame* frame = thread->pushNativeFrame(argc + 1);
   Object result(&scope, Fn(thread, frame, argc + 1));
   DCHECK(thread->isErrorValueOk(*result), "error/exception mismatch");
   thread->popFrame();

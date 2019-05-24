@@ -190,7 +190,7 @@ std::string callFunctionToString(const Function& func, const Tuple& args) {
   CHECK(out != nullptr, "fmemopen failed");
   FILE* prev_stdout = runtime->stdoutFile();
   runtime->setStdoutFile(out);
-  thread->pushNativeFrame(bit_cast<void*>(&callFunctionToString), 0);
+  thread->pushNativeFrame(0);
   callFunction(func, args);
   thread->popFrame();
   fclose(out);
@@ -203,8 +203,7 @@ RawObject callFunction(const Function& func, const Tuple& args) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Code code(&scope, func.code());
-  Frame* frame =
-      thread->pushNativeFrame(bit_cast<void*>(&callFunction), args.length());
+  Frame* frame = thread->pushNativeFrame(args.length());
   frame->pushValue(*func);
   for (word i = 0; i < args.length(); i++) {
     frame->pushValue(args.at(i));

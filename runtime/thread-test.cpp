@@ -284,12 +284,12 @@ TEST(ThreadTest, PushPopFrame) {
       &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
                                         none, globals, builtins));
 
+  thread->currentFrame()->pushValue(*function);
   byte* prev_sp = thread->stackPtr();
   Frame* frame = thread->pushFrame(function, globals, builtins);
 
   // Verify frame invariants post-push
   EXPECT_EQ(frame->previousFrame(), thread->initialFrame());
-  EXPECT_EQ(frame->code(), *code);
   EXPECT_EQ(frame->valueStackTop(), reinterpret_cast<RawObject*>(frame));
   EXPECT_EQ(frame->valueStackBase(), frame->valueStackTop());
   EXPECT_EQ(frame->numLocals(), 2);

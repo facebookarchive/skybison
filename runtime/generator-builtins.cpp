@@ -65,7 +65,7 @@ static RawObject findYieldFrom(Thread* thread, const GeneratorBase& gen) {
   HeapFrame hf(&scope, gen.heapFrame());
   word pc = hf.frame()->virtualPC();
   if (pc == Frame::kFinishedGeneratorPC) return NoneType::object();
-  Code code(&scope, hf.frame()->code());
+  Code code(&scope, Function::cast(hf.function()).code());
   Bytes bytecode(&scope, code.code());
   if (bytecode.byteAt(pc) != Bytecode::YIELD_FROM) return NoneType::object();
   return hf.frame()->stashedValueStackTop()[0];
