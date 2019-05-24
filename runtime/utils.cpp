@@ -17,54 +17,60 @@ class TracebackPrinter : public FrameVisitor {
  public:
   bool visit(Frame* frame) {
     std::stringstream line;
-
-    if (frame->code().isInt()) {
-      void* ptr = Int::cast(frame->code()).asCPtr();
-      line << "  <native function at " << ptr << " (";
-
-      Dl_info info = Dl_info();
-      if (dladdr(ptr, &info) && info.dli_sname != nullptr) {
-        line << info.dli_sname;
-      } else {
-        line << "no symbol found";
-      }
-      line << ")>";
-      lines_.emplace_back(line.str());
-      return true;
-    }
-    if (!frame->code().isCode()) {
-      lines_.emplace_back("  <unknown>");
-      return true;
-    }
-
     Thread* thread = Thread::current();
     HandleScope scope(thread);
-    Code code(&scope, frame->code());
-
-    // Extract filename
-    if (code.filename().isStr()) {
-      char* filename = Str::cast(code.filename()).toCStr();
-      line << "  File '" << filename << "', ";
-      std::free(filename);
-    } else {
-      line << "  File '<unknown>',  ";
+    DCHECK(!frame->isSentinelFrame(), "should not be called for sentinel");
+    Object function_obj(&scope, frame->function());
+    if (!function_obj.isFunction()) {
+      lines_.emplace_back("  <invalid function>\n");
+      return true;
     }
 
-    // Extract line number
-    if (code.lnotab().isBytes()) {
-      Runtime* runtime = thread->runtime();
-      word linenum =
-          runtime->codeOffsetToLineNum(thread, code, frame->virtualPC());
-      line << "line " << linenum << ", ";
+    Function function(&scope, *function_obj);
+    Object code_obj(&scope, function.code());
+    if (code_obj.isCode()) {
+      Code code(&scope, *code_obj);
+
+      // Extract filename
+      if (code.filename().isStr()) {
+        char* filename = Str::cast(code.filename()).toCStr();
+        line << "  File '" << filename << "', ";
+        std::free(filename);
+      } else {
+        line << "  File '<unknown>',  ";
+      }
+
+      // Extract line number
+      if (code.lnotab().isBytes()) {
+        Runtime* runtime = thread->runtime();
+        word linenum =
+            runtime->codeOffsetToLineNum(thread, code, frame->virtualPC());
+        line << "line " << linenum << ", ";
+      }
     }
 
-    // Extract function
-    if (code.name().isStr()) {
-      char* name = Str::cast(code.name()).toCStr();
-      line << "in " << name;
-      std::free(name);
+    Object name(&scope, function.name());
+    if (name.isStr()) {
+      unique_c_ptr<char> name_cstr(Str::cast(*name).toCStr());
+      line << "in " << name_cstr.get();
     } else {
-      line << "in <unknown>";
+      line << "in <invalid name>";
+    }
+
+    if (code_obj.isCode()) {
+      Code code(&scope, *code_obj);
+      if (code.code().isInt()) {
+        void* fptr = Int::cast(code.code()).asCPtr();
+        line << "  <native function at " << fptr << " (";
+
+        Dl_info info = Dl_info();
+        if (dladdr(fptr, &info) && info.dli_sname != nullptr) {
+          line << info.dli_sname;
+        } else {
+          line << "no symbol found";
+        }
+        line << ")>";
+      }
     }
 
     lines_.emplace_back(line.str());

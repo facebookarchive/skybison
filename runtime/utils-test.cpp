@@ -1,8 +1,17 @@
 #include "gtest/gtest.h"
 
+#include <dlfcn.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <sstream>
+
+#include "test-utils.h"
 #include "utils.h"
 
 namespace python {
+
+using namespace testing;
 
 TEST(UtilsTest, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 0), 0x0000000000000001ULL);
@@ -69,6 +78,68 @@ TEST(UtilsTest, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 61), 0x2000000000000000ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 62), 0x4000000000000000ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 63), 0x8000000000000000ULL);
+}
+
+static RawObject testPrintStacktrace(Thread* thread, Frame*, word) {
+  size_t buffer_size = 16384;
+  std::unique_ptr<char[]> buffer(new char[buffer_size]);
+  memset(buffer.get(), 0, buffer_size);
+  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
+  CHECK(out != nullptr, "fmemopen failed");
+  Utils::printTraceback(out);
+  buffer[buffer_size - 1] = '\0';
+  std::fclose(out);
+
+  return thread->runtime()->newStrFromCStr(buffer.get());
+}
+
+TEST(UtilsTest, PrintTracebackPrintsTraceback) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  // Create main module.
+  ASSERT_FALSE(runFromCStr(&runtime, "").isError());
+  Object main_obj(&scope, runtime.findModuleById(SymbolId::kDunderMain));
+  ASSERT_TRUE(main_obj.isModule());
+  Module main(&scope, *main_obj);
+
+  runtime.moduleAddBuiltinFunction(main, SymbolId::kTraceback,
+                                   testPrintStacktrace);
+
+  ASSERT_FALSE(runFromCStr(&runtime, R"(@_patch
+def traceback():
+  pass
+def foo(x, y):
+  # emptyline
+  result = bar(y, x)
+  return result
+def bar(y, x):
+  local = 42
+  return traceback()
+result = foo('a', 99)
+)")
+                   .isError());
+
+  void* fptr = bit_cast<void*>(&testPrintStacktrace);
+  Dl_info info = Dl_info();
+  std::stringstream expected;
+  expected << R"(Traceback (most recent call last)
+  File '<test string>', line 11, in <module>
+  File '<test string>', line 6, in foo
+  File '<test string>', line 10, in bar
+  File '<test string>', line 3, in traceback  <native function at )"
+           << fptr << " (";
+  if (dladdr(fptr, &info) && info.dli_sname != nullptr) {
+    EXPECT_NE(std::strstr(info.dli_sname, "testPrintStacktrace"), nullptr);
+    expected << info.dli_sname;
+  } else {
+    expected << "no symbol found";
+  }
+  expected << ")>\n";
+
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isStrEqualsCStr(*result, expected.str().c_str()));
 }
 
 }  // namespace python
