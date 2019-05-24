@@ -35,10 +35,10 @@ RawObject underStructseqSetAttr(Thread* thread, Frame* frame, word nargs) {
 
 RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
   Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
 
   if (seq.isTuple()) return *seq;
   if (runtime->isInstanceOfList(*seq)) {
+    HandleScope scope(thread);
     List list(&scope, *seq);
     word len = list.numItems();
     Tuple ret(&scope, runtime->newTuple(len));
@@ -48,8 +48,7 @@ RawObject sequenceAsTuple(Thread* thread, const Object& seq) {
     return *ret;
   }
 
-  // TODO(T40263865): Support arbitrary iterables.
-  UNIMPLEMENTED("arbitrary iterables in sequenceAsTuple");
+  return thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kTuple, seq);
 }
 
 RawObject tupleIteratorNext(Thread* thread, const TupleIterator& iter) {

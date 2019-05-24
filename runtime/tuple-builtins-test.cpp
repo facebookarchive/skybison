@@ -955,4 +955,44 @@ tuple.__lt__(t1, t2)
   EXPECT_FALSE(Thread::current()->hasPendingException());
 }
 
+TEST(TupleBuiltinsTest, SequenceAsTupleWithIterableReturnsTuple) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self._current = 0
+    self._limit = 3
+
+  def __iter__(self):
+    return self
+
+  def __next__(self):
+    if self._current == self._limit:
+      raise StopIteration
+    value = self._current
+    self._current += 1
+    return value
+c = C()
+)")
+                   .isError());
+
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result_obj(&scope, sequenceAsTuple(thread, c));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 2));
+}
+
+TEST(TupleBuiltinsTest, SequenceAsTupleWithNonIterableRaises) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object integer(&scope, runtime.newInt(12345));
+  EXPECT_TRUE(raised(sequenceAsTuple(thread, integer), LayoutId::kTypeError));
+}
+
 }  // namespace python

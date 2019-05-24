@@ -3408,19 +3408,25 @@ result = f(*args)
   EXPECT_PYLIST_EQ(result, {"b", "a"});
 }
 
-TEST(InterpreterDeathTest, ExplodeWithIterableDies) {
+TEST(InterpreterDeathTest, ExplodeWithIterableCalls) {
   Runtime runtime;
-  // TODO(bsimmers): Change this to inspect result once sequenceAsTuple() is
-  // fixed.
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
-def f():
-  pass
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+def f(a, b):
+  return (b, a)
 def gen():
   yield 1
   yield 2
 result = f(*gen())
-)")),
-               "unimplemented: arbitrary iterables in sequenceAsTuple");
+)")
+                   .isError());
+
+  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
 }
 
 TEST(InterpreterTest, FormatValueCallsDunderStr) {
