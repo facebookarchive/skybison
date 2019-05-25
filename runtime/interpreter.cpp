@@ -76,6 +76,15 @@ RawObject Interpreter::prepareCallable(Thread* thread, Frame* frame,
 
 RawObject Interpreter::prepareCallableCall(Thread* thread, Frame* frame,
                                            word callable_idx, word* nargs) {
+  RawObject callable_raw = frame->peek(callable_idx);
+  if (callable_raw.isBoundMethod()) {
+    RawBoundMethod method = BoundMethod::cast(callable_raw);
+    frame->setValueAt(method.function(), callable_idx);
+    frame->insertValueAt(method.self(), callable_idx);
+    *nargs += 1;
+    return method.function();
+  }
+
   HandleScope scope(thread);
   Object callable(&scope, frame->peek(callable_idx));
   Object self(&scope, NoneType::object());
@@ -2608,7 +2617,7 @@ HANDLER_INLINE void Interpreter::pushFrame(Context* ctx,
                                            const Function& function,
                                            const Code& code,
                                            RawObject* post_call_sp) {
-  Frame* callee_frame = ctx->thread->pushCallFrame(function);
+  Frame* callee_frame = ctx->thread->pushCallFrame(*function);
   // Pop the arguments off of the caller's stack now that the callee "owns"
   // them.
   ctx->frame->setValueStackTop(post_call_sp);

@@ -1330,7 +1330,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   callee.setDefaults(*defaults);
 
   // Create a caller frame
-  Frame* frame = thread->pushCallFrame(callee);
+  Frame* frame = thread->pushCallFrame(*callee);
 
   // Save starting value stack top
   RawObject* value_stack_start = frame->valueStackTop();
@@ -1387,7 +1387,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   callee.setDefaults(*defaults);
 
   // Create a caller frame
-  Frame* frame = thread->pushCallFrame(callee);
+  Frame* frame = thread->pushCallFrame(*callee);
 
   // Save starting value stack top
   RawObject* value_stack_start = frame->valueStackTop();
@@ -1451,7 +1451,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   callee.setDefaults(*defaults);
 
   // Create a caller frame
-  Frame* frame = thread->pushCallFrame(callee);
+  Frame* frame = thread->pushCallFrame(*callee);
 
   // Save starting value stack top
   RawObject* value_stack_start = frame->valueStackTop();
