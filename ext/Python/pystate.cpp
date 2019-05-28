@@ -4,7 +4,12 @@ namespace python {
 
 typedef enum { PyGILState_LOCKED, PyGILState_UNLOCKED } PyGILState_STATE;
 
-PY_EXPORT int PyGILState_Check() { UNIMPLEMENTED("PyGILState_Check"); }
+PY_EXPORT int PyGILState_Check() {
+  // TODO(T44861733): Make this do something intelligent
+  CHECK(Thread::current()->next() == nullptr,
+        "PyGILState_Check doesn't currently work with more than one thread");
+  return 1;
+}
 
 PY_EXPORT PyGILState_STATE PyGILState_Ensure() {
   UNIMPLEMENTED("PyGILState_Ensure");
