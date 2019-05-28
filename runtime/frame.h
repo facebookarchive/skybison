@@ -153,7 +153,6 @@ class BlockStack {
  *     | Builtins                      |
  *     | Implicit globals              |
  *     | Globals                       |
- *     | Code object                   |
  *     | Value stack top --------------|--+
  *     | Previous frame ptr            |<-+ <--Frame pointer
  *     +-------------------------------+
@@ -262,8 +261,7 @@ class Frame {
 
   static const int kPreviousFrameOffset = 0;
   static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
-  static const int kCodeOffset = kValueStackTopOffset + kPointerSize;
-  static const int kGlobalsOffset = kCodeOffset + kPointerSize;
+  static const int kGlobalsOffset = kValueStackTopOffset + kPointerSize;
   static const int kImplicitGlobalsOffset = kGlobalsOffset + kPointerSize;
   static const int kBuiltinsOffset = kImplicitGlobalsOffset + kPointerSize;
   static const int kVirtualPCOffset = kBuiltinsOffset + kPointerSize;
