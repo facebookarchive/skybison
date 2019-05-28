@@ -418,6 +418,25 @@ class BadException(Exception):
   Py_DECREF(exc);
 }
 
+TEST_F(ErrorsExtensionApiTest, ProgramTextObjectWithNullFilenameReturnsNull) {
+  EXPECT_EQ(PyErr_ProgramTextObject(nullptr, 5), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ErrorsExtensionApiTest,
+       ProgramTextObjectWithNonPositiveLinenoReturnsNull) {
+  PyObjectPtr filename(PyUnicode_FromString("filename"));
+  EXPECT_EQ(PyErr_ProgramTextObject(filename, -5), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ErrorsExtensionApiTest,
+       ProgramTextObjectWithNonExistentFileReturnsNull) {
+  PyObjectPtr filename(PyUnicode_FromString("foobarbazquux"));
+  EXPECT_EQ(PyErr_ProgramTextObject(filename, 5), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ErrorsExtensionApiTest, SetExcInfoValuesRetrievedByGetExcInfo) {
   PyObjectPtr type(PyExc_TypeError);
   PyObjectPtr val(PyUnicode_FromString("some str"));

@@ -6,6 +6,7 @@
 #include "cpython-func.h"
 
 #include "exception-builtins.h"
+#include "fileutils.h"
 #include "runtime.h"
 #include "sys-module.h"
 
@@ -473,8 +474,54 @@ PY_EXPORT void _PyErr_BadInternalCall(const char* filename, int lineno) {
                                   filename, lineno);
 }
 
-PY_EXPORT PyObject* PyErr_ProgramTextObject(PyObject* /* e */, int /* o */) {
-  UNIMPLEMENTED("PyErr_ProgramTextObject");
+// Attempt to load the line of text that the exception refers to. If it fails,
+// it will return nullptr but will not set an exception.
+//
+// XXX The functionality of this function is quite similar to the functionality
+// in tb_displayline() in traceback.c.
+static PyObject* err_programtext(FILE* fp, int lineno) {
+  if (fp == nullptr) {
+    return nullptr;
+  }
+  int i;
+  char linebuf[1000];
+  for (i = 0; i < lineno; i++) {
+    char* plastchar = &linebuf[sizeof(linebuf) - 2];
+    do {
+      *plastchar = '\0';
+      if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf, fp, nullptr) ==
+          nullptr) {
+        break;
+      }
+      // fgets read *something*:
+      // * if it didn't get as far as plastchar, it must have found a newline or
+      //   hit the end of the file;
+      // * if plastchar is \n, it obviously found a newline;
+      // * else we haven't yet seen a newline, so must continue
+    } while (*plastchar != '\0' && *plastchar != '\n');
+  }
+  fclose(fp);
+  if (i == lineno) {
+    PyObject* res = PyUnicode_FromString(linebuf);
+    if (res == nullptr) {
+      PyErr_Clear();
+    }
+    return res;
+  }
+  return nullptr;
+}
+
+// TODO(T44862285): This should be re-written in managed code
+PY_EXPORT PyObject* PyErr_ProgramTextObject(PyObject* filename, int lineno) {
+  if (filename == nullptr || lineno <= 0) {
+    return nullptr;
+  }
+  FILE* fp = _Py_fopen_obj(filename, "rb");
+  if (fp == nullptr) {
+    PyErr_Clear();
+    return nullptr;
+  }
+  return err_programtext(fp, lineno);
 }
 
 PY_EXPORT void PyErr_Restore(PyObject* type, PyObject* value,
