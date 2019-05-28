@@ -1767,7 +1767,7 @@ class float(bootstrap=True):
     def __gt__(self, n: float) -> bool:
         pass
 
-    def __int__(self, n: float) -> int:
+    def __int__(self) -> int:
         pass
 
     def __le__(self, n: float) -> bool:
