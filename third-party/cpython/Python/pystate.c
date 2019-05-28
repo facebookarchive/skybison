@@ -546,6 +546,10 @@ PyThreadState_Get(void)
     return tstate;
 }
 
+int
+_PyThreadState_GetRecursionDepth(PyThreadState *ts) {
+  return ts->recursion_depth;
+}
 
 PyThreadState *
 PyThreadState_Swap(PyThreadState *newts)

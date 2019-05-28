@@ -79,6 +79,20 @@ PY_EXPORT int Py_GetRecursionLimit() {
   return Thread::current()->recursionLimit();
 }
 
+PY_EXPORT int Py_EnterRecursiveCall_Func(const char* where) {
+  Thread* thread = Thread::current();
+  if (thread->increaseRecursionDepth() >= thread->recursionLimit()) {
+    thread->raiseWithFmt(LayoutId::kRecursionError,
+                         "maximum recursion depth exceeded %s", where);
+    return -1;
+  }
+  return 0;
+}
+
+PY_EXPORT void Py_LeaveRecursiveCall_Func() {
+  Thread::current()->decreaseRecursionDepth();
+}
+
 PY_EXPORT int Py_MakePendingCalls() { UNIMPLEMENTED("Py_MakePendingCalls"); }
 
 PY_EXPORT void Py_SetRecursionLimit(int limit) {

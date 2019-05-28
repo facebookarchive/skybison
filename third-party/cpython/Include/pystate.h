@@ -227,6 +227,8 @@ PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
 #  define PyThreadState_GET() PyThreadState_Get()
 #endif
 
+PyAPI_FUNC(int) _PyThreadState_GetRecursionDepth(PyThreadState *);
+
 typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}
         PyGILState_STATE;

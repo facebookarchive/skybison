@@ -636,6 +636,7 @@ PyAPI_FUNC(PyThreadState*) PyThreadState_New(PyInterpreterState*);
 PyAPI_FUNC(PyThreadState*) _PyThreadState_Prealloc(PyInterpreterState*);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject*);
 PyAPI_FUNC(PyThreadState*) PyThreadState_Swap(PyThreadState*);
+PyAPI_FUNC(int) _PyThreadState_GetRecursionDepth(PyThreadState*);
 PyAPI_FUNC(int) PyTraceBack_Here(PyFrameObject*);
 PyAPI_FUNC(int) PyTraceBack_Print(PyObject*, PyObject*);
 PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
@@ -948,6 +949,8 @@ PyAPI_FUNC(PyObject*)
     _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key, Py_hash_t hash);
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
                                           PyObject* value, Py_hash_t hash);
+PyAPI_FUNC(int) Py_EnterRecursiveCall_Func(const char*);
+PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 
 /* Macros */
 #define _Py_Dealloc (*_Py_Dealloc_Func)
@@ -1089,6 +1092,9 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject* pydict, PyObject* key,
 #define Py_TOUPPER(c) (_Py_ctype_toupper[Py_CHARMASK(c)])
 
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+
+#define Py_EnterRecursiveCall(where) Py_EnterRecursiveCall_Func(where)
+#define Py_LeaveRecursiveCall() Py_LeaveRecursiveCall_Func()
 
 #ifdef __cplusplus
 }

@@ -263,8 +263,18 @@ class Thread {
   RawObject reprEnter(const Handle<RawObject>& obj);
   void reprLeave(const Handle<RawObject>& obj);
 
-  int recursionLimit();
-  void setRecursionLimit(int limit);
+  int recursionLimit() { return recursion_limit_; }
+  int recursionDepth() { return recursion_depth_; }
+  int increaseRecursionDepth() {
+    DCHECK(recursion_depth_ <= recursion_limit_,
+           "recursion depth can't be more than the recursion limit");
+    return recursion_depth_++;
+  }
+  void decreaseRecursionDepth() {
+    DCHECK(recursion_depth_ > 0, "recursion depth can't be less than 0");
+    recursion_depth_--;
+  }
+  void setRecursionLimit(int limit) { recursion_limit_ = limit; }
 
  private:
   void pushInitialFrame();
@@ -298,8 +308,11 @@ class Thread {
 
   RawObject api_repr_list_;
 
-  // Recursion limit as set from C-API via Py_SetRecursionLimit.
-  int recursion_limit_;
+  // C-API current recursion depth used via _PyThreadState_GetRecursionDepth
+  int recursion_depth_ = 0;
+
+  // C-API recursion limit as set via Py_SetRecursionLimit.
+  int recursion_limit_ = 1000;  // CPython's default: Py_DEFAULT_RECURSION_LIMIT
 
   static thread_local Thread* current_thread_;
 

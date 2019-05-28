@@ -111,4 +111,35 @@ TEST_F(PystateExtensionApiTest, FindModuleWithNonExistentModuleReturnsNull) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+static int recurseUntilLimit(PyThreadState* tstate, int limit) {
+  if (Py_EnterRecursiveCall("") != 0) {
+    return -1;
+  }
+
+  int result = 0;
+  if (_PyThreadState_GetRecursionDepth(tstate) != limit) {
+    result = recurseUntilLimit(tstate, limit);
+  }
+  Py_LeaveRecursiveCall();
+  return result;
+}
+
+TEST_F(PystateExtensionApiTest, RecursionDepthStopsInfiniteRecursion) {
+  PyThreadState* tstate = PyThreadState_Get();
+  Py_SetRecursionLimit(50);
+  int limit = Py_GetRecursionLimit() - 1;
+  EXPECT_EQ(recurseUntilLimit(tstate, limit), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(PystateExtensionApiTest,
+       RecursionDepthExceedingLimitRaisesRecursionError) {
+  PyThreadState* tstate = PyThreadState_Get();
+  Py_SetRecursionLimit(50);
+  int limit = Py_GetRecursionLimit() + 1;
+  EXPECT_EQ(recurseUntilLimit(tstate, limit), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_RecursionError));
+}
+
 }  // namespace python

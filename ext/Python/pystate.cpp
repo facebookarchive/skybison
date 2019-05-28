@@ -97,7 +97,7 @@ PY_EXPORT void PyThreadState_DeleteCurrent() {
 }
 
 PY_EXPORT PyThreadState* PyThreadState_Get() {
-  UNIMPLEMENTED("PyThreadState_Get");
+  return reinterpret_cast<PyThreadState*>(Thread::current());
 }
 
 PY_EXPORT PyObject* PyThreadState_GetDict() {
@@ -145,6 +145,11 @@ PY_EXPORT PyThreadState* PyInterpreterState_ThreadHead(
 
 PY_EXPORT void _PyState_ClearModules() {
   UNIMPLEMENTED("_PyState_ClearModules");
+}
+
+PY_EXPORT int _PyThreadState_GetRecursionDepth(PyThreadState* ts) {
+  Thread* thread = reinterpret_cast<Thread*>(ts);
+  return thread->recursionDepth();
 }
 
 }  // namespace python
