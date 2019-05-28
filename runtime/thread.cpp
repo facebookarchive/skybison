@@ -560,7 +560,7 @@ RawObject Thread::reprEnter(const Object& obj) {
   }
   List list(&scope, api_repr_list_);
   for (word i = list.numItems() - 1; i >= 0; i--) {
-    if (list.at(i).raw() == obj.raw()) {
+    if (list.at(i) == *obj) {
       return RawBool::trueObj();
     }
   }
@@ -573,7 +573,7 @@ void Thread::reprLeave(const Object& obj) {
   HandleScope scope(this);
   List list(&scope, api_repr_list_);
   for (word i = list.numItems() - 1; i >= 0; i--) {
-    if (list.at(i).raw() == obj.raw()) {
+    if (list.at(i) == *obj) {
       list.atPut(i, Unbound::object());
       break;
     }
