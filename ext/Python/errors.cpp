@@ -329,9 +329,80 @@ PY_EXPORT void PyErr_SyntaxLocation(const char* /* e */, int /* o */) {
   UNIMPLEMENTED("PyErr_SyntaxLocation");
 }
 
-PY_EXPORT void PyErr_SyntaxLocationEx(const char* /* e */, int /* o */,
-                                      int /* t */) {
-  UNIMPLEMENTED("PyErr_SyntaxLocationEx");
+PY_EXPORT void PyErr_SyntaxLocationEx(const char* filename, int lineno,
+                                      int col_offset) {
+  PyObject* fileobj;
+  if (filename != nullptr) {
+    fileobj = PyUnicode_DecodeFSDefault(filename);
+    if (fileobj == nullptr) {
+      PyErr_Clear();
+    }
+  } else {
+    fileobj = nullptr;
+  }
+  PyErr_SyntaxLocationObject(fileobj, lineno, col_offset);
+  Py_XDECREF(fileobj);
+}
+
+PY_EXPORT void PyErr_SyntaxLocationObject(PyObject* filename, int lineno,
+                                          int col_offset) {
+  PyObject *exc, *val, *tb;
+  // Add attributes for the line number and filename for the error
+  PyErr_Fetch(&exc, &val, &tb);
+  PyErr_NormalizeException(&exc, &val, &tb);
+  // XXX check that it is, indeed, a syntax error. It might not be, though.
+  PyObject* lineno_obj = PyLong_FromLong(lineno);
+  if (lineno_obj == nullptr) {
+    PyErr_Clear();
+  } else {
+    if (PyObject_SetAttrString(val, "lineno", lineno_obj)) {
+      PyErr_Clear();
+    }
+    Py_DECREF(lineno_obj);
+  }
+  PyObject* col_obj = nullptr;
+  if (col_offset >= 0) {
+    col_obj = PyLong_FromLong(col_offset);
+    if (col_obj == nullptr) {
+      PyErr_Clear();
+    }
+  }
+  if (PyObject_SetAttrString(val, "offset", col_obj ? col_obj : Py_None)) {
+    PyErr_Clear();
+  }
+  Py_XDECREF(col_obj);
+  if (filename != nullptr) {
+    if (PyObject_SetAttrString(val, "filename", filename)) {
+      PyErr_Clear();
+    }
+
+    PyObject* text_obj = PyErr_ProgramTextObject(filename, lineno);
+    if (text_obj) {
+      if (PyObject_SetAttrString(val, "text", text_obj)) {
+        PyErr_Clear();
+      }
+      Py_DECREF(text_obj);
+    }
+  }
+  if (exc != PyExc_SyntaxError) {
+    if (!PyObject_HasAttrString(val, "msg")) {
+      PyObject* msg_obj = PyObject_Str(val);
+      if (msg_obj) {
+        if (PyObject_SetAttrString(val, "msg", msg_obj)) {
+          PyErr_Clear();
+        }
+        Py_DECREF(msg_obj);
+      } else {
+        PyErr_Clear();
+      }
+    }
+    if (!PyObject_HasAttrString(val, "print_file_and_line")) {
+      if (PyObject_SetAttrString(val, "print_file_and_line", Py_None)) {
+        PyErr_Clear();
+      }
+    }
+  }
+  PyErr_Restore(exc, val, tb);
 }
 
 static RawObject fileWriteObjectStrUnraisable(Thread* thread,

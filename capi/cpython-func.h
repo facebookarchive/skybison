@@ -249,6 +249,7 @@ PyAPI_FUNC(void) PyErr_SetObject(PyObject*, PyObject*);
 PyAPI_FUNC(void) PyErr_SetString(PyObject*, const char*);
 PyAPI_FUNC(void) PyErr_SyntaxLocation(const char*, int);
 PyAPI_FUNC(void) PyErr_SyntaxLocationEx(const char*, int, int);
+PyAPI_FUNC(void) PyErr_SyntaxLocationObject(PyObject*, int, int);
 PyAPI_FUNC(int) PyErr_WarnEx(PyObject*, const char*, Py_ssize_t);
 PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject*, const char*, const char*, int,
                                    const char*, PyObject*);
