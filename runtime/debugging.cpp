@@ -34,8 +34,21 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
                                const char* indent) {
   HandleScope scope;
   Code code(&scope, value);
-  os << "code " << code.name() << ":\n"
-     << indent << "  argcount: " << code.argcount() << '\n'
+  os << "code " << code.name() << ":\n" << indent << "  flags:";
+  word flags = code.flags();
+  if (flags & Code::OPTIMIZED) os << " optimized";
+  if (flags & Code::NEWLOCALS) os << " newlocals";
+  if (flags & Code::VARARGS) os << " varargs";
+  if (flags & Code::VARKEYARGS) os << " varkeyargs";
+  if (flags & Code::NESTED) os << " nested";
+  if (flags & Code::GENERATOR) os << " generator";
+  if (flags & Code::NOFREE) os << " nofree";
+  if (flags & Code::COROUTINE) os << " coroutine";
+  if (flags & Code::ITERABLE_COROUTINE) os << " iterable_coroutine";
+  if (flags & Code::ASYNC_GENERATOR) os << " async_generator";
+  if (flags & Code::SIMPLE_CALL) os << " simple_call";
+  os << '\n';
+  os << indent << "  argcount: " << code.argcount() << '\n'
      << indent << "  kwonlyargcount: " << code.kwonlyargcount() << '\n'
      << indent << "  nlocals: " << code.nlocals() << '\n'
      << indent << "  stacksize: " << code.stacksize() << '\n'

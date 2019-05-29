@@ -21,8 +21,10 @@ static RawObject makeTestCode(Thread* thread) {
   consts.atPut(0, runtime->newStrFromCStr("const0"));
   Tuple names(&scope, runtime->newTuple(1));
   names.atPut(0, runtime->newStrFromCStr("name0"));
-  Tuple varnames(&scope, runtime->newTuple(1));
+  Tuple varnames(&scope, runtime->newTuple(3));
   varnames.atPut(0, runtime->newStrFromCStr("variable0"));
+  varnames.atPut(1, runtime->newStrFromCStr("variable1"));
+  varnames.atPut(2, runtime->newStrFromCStr("variable2"));
   Tuple freevars(&scope, runtime->newTuple(1));
   freevars.atPut(0, runtime->newStrFromCStr("freevar0"));
   Tuple cellvars(&scope, runtime->newTuple(1));
@@ -30,7 +32,9 @@ static RawObject makeTestCode(Thread* thread) {
   Str filename(&scope, runtime->newStrFromCStr("filename0"));
   Str name(&scope, runtime->newStrFromCStr("name0"));
   Object lnotab(&scope, Bytes::empty());
-  return runtime->newCode(1, 0, 0, 1, 0, bytes, consts, names, varnames,
+  word flags = Code::NESTED | Code::OPTIMIZED | Code::NEWLOCALS |
+               Code::VARARGS | Code::VARKEYARGS;
+  return runtime->newCode(1, 0, 0, 1, flags, bytes, consts, names, varnames,
                           freevars, cellvars, filename, name, 0, lnotab);
 }
 
@@ -75,6 +79,7 @@ TEST(DebuggingTests, DumpExtendedCode) {
   dumpExtended(ss, *code);
   EXPECT_EQ(ss.str(),
             R"(code "name0":
+  flags: optimized newlocals varargs varkeyargs nested
   argcount: 1
   kwonlyargcount: 0
   nlocals: 0
@@ -84,7 +89,7 @@ TEST(DebuggingTests, DumpExtendedCode) {
   names: ("name0",)
   cellvars: ("cellvar0",)
   freevars: ("freevar0",)
-  varnames: ("variable0",)
+  varnames: ("variable0", "variable1", "variable2")
      0 LOAD_CONST 0
      2 LOAD_ATTR 0
      4 RETURN_VALUE 0
@@ -108,6 +113,7 @@ TEST(DebuggingTests, DumpExtendedFunction) {
   kwdefaults: {"name0": None}
   dict: {"funcattr0": 4}
   code: code "name0":
+    flags: optimized newlocals varargs varkeyargs nested
     argcount: 1
     kwonlyargcount: 0
     nlocals: 0
@@ -117,7 +123,7 @@ TEST(DebuggingTests, DumpExtendedFunction) {
     names: ("name0",)
     cellvars: ("cellvar0",)
     freevars: ("freevar0",)
-    varnames: ("variable0",)
+    varnames: ("variable0", "variable1", "variable2")
        0 LOAD_CONST 0
        2 LOAD_ATTR 0
        4 RETURN_VALUE 0
@@ -458,7 +464,7 @@ def func(arg0, arg1):
   pc: 42 ("filename0":0)
   locals:
     0 "variable0": "foo bar"
-    1: "bar foo"
+    1 "variable1": "bar foo"
   stack:
     0: <function "func">
 - function: <function "func">
