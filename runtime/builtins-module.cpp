@@ -1537,7 +1537,7 @@ RawObject BuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
 
 RawObject BuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
                                              word) {
-  python::Utils::printTraceback();
+  python::Utils::printTracebackToStderr();
 
   // Attempt to identify the calling function.
   HandleScope scope(thread);

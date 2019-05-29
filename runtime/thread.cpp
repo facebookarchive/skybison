@@ -488,7 +488,7 @@ void Thread::ignorePendingException() {
   }
   fprintf(stderr, "\n");
   clearPendingException();
-  Utils::printTraceback(stderr);
+  Utils::printTracebackToStderr();
 }
 
 void Thread::clearPendingException() {

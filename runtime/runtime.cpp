@@ -1630,7 +1630,7 @@ RawObject Runtime::printTraceback(Thread* /* thread */,
                                   const Object& /* file */) {
   // TODO(T42602699): Replace this with an actual traceback printer
   // TODO(T42602545): Write to given file object
-  Utils::printTraceback(stderr);
+  Utils::printTracebackToStderr();
   return NoneType::object();
 }
 

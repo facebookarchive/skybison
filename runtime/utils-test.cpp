@@ -81,16 +81,9 @@ TEST(UtilsTest, RotateLeft) {
 }
 
 static RawObject testPrintStacktrace(Thread* thread, Frame*, word) {
-  size_t buffer_size = 16384;
-  std::unique_ptr<char[]> buffer(new char[buffer_size]);
-  memset(buffer.get(), 0, buffer_size);
-  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
-  CHECK(out != nullptr, "fmemopen failed");
-  Utils::printTraceback(out);
-  buffer[buffer_size - 1] = '\0';
-  std::fclose(out);
-
-  return thread->runtime()->newStrFromCStr(buffer.get());
+  std::ostringstream stream;
+  Utils::printTraceback(&stream);
+  return thread->runtime()->newStrFromCStr(stream.str().c_str());
 }
 
 TEST(UtilsTest, PrintTracebackPrintsTraceback) {
