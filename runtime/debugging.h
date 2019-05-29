@@ -45,6 +45,7 @@ std::ostream& operator<<(std::ostream& os, Frame* frame);
 void dump(RawObject object);
 void dump(const Object& object);
 void dump(Frame* frame);
+void dumpSingleFrame(Frame* frame);
 
 void initializeDebugging();
 

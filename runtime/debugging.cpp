@@ -448,6 +448,10 @@ __attribute__((used)) void dump(const Object& object) {
 
 __attribute__((used)) void dump(Frame* frame) { std::cerr << frame; }
 
+__attribute__((used)) void dumpSingleFrame(Frame* frame) {
+  dumpSingleFrame(Thread::current(), std::cerr, frame);
+}
+
 void initializeDebugging() {
   // This function must be called even though it is empty. If it is not called
   // then there is no reference from another file left and the linker will not
