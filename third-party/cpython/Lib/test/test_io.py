@@ -3319,8 +3319,7 @@ class TextIOWrapperTest(unittest.TestCase):
     def test_create_at_shutdown_without_encoding(self):
         rc, out, err = self._check_create_at_shutdown()
         if err:
-            # Can error out with a RuntimeError if the module state
-            # isn't found.
+            # Errors out with LookupError when encoding is unknown
             self.assertIn(self.shutdown_error, err.decode())
         else:
             self.assertEqual("ok", out.decode().strip())
@@ -3391,7 +3390,7 @@ def _to_memoryview(buf):
 
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
-    shutdown_error = "RuntimeError: could not find io module state"
+    shutdown_error = "LookupError: unknown encoding: ascii"
 
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")

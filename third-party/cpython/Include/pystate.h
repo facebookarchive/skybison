@@ -182,6 +182,8 @@ PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
 PyAPI_FUNC(void) _PyState_ClearModules(void);
 #endif
 
+PyAPI_FUNC(int) _PyThreadState_GetRecursionDepth(PyThreadState *);
+
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
@@ -226,8 +228,6 @@ PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
 #else
 #  define PyThreadState_GET() PyThreadState_Get()
 #endif
-
-PyAPI_FUNC(int) _PyThreadState_GetRecursionDepth(PyThreadState *);
 
 typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}

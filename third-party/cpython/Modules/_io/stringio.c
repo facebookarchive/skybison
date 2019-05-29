@@ -13,37 +13,9 @@
 
 /*[clinic input]
 module _io
-class _io.StringIO "stringio *" "&PyStringIO_Type"
+class _io.StringIO "stringio *" "(PyTypeObject *)IO_MOD_STATE_GLOBAL->PyStringIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c17bc0f42165cd7d]*/
-
-typedef struct {
-    PyObject_HEAD
-    Py_UCS4 *buf;
-    Py_ssize_t pos;
-    Py_ssize_t string_size;
-    size_t buf_size;
-
-    /* The stringio object can be in two states: accumulating or realized.
-       In accumulating state, the internal buffer contains nothing and
-       the contents are given by the embedded _PyAccu structure.
-       In realized state, the internal buffer is meaningful and the
-       _PyAccu is destroyed.
-    */
-    int state;
-    _PyAccu accu;
-
-    char ok; /* initialized? */
-    char closed;
-    char readuniversal;
-    char readtranslate;
-    PyObject *decoder;
-    PyObject *readnl;
-    PyObject *writenl;
-
-    PyObject *dict;
-    PyObject *weakreflist;
-} stringio;
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=06bdd962f0dcb08e]*/
 
 static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs);
 
@@ -191,7 +163,7 @@ write_str(stringio *self, PyObject *obj)
     }
     if (self->writenl) {
         PyObject *translated = PyUnicode_Replace(
-            decoded, _PyIO_str_nl, self->writenl, -1);
+            decoded, IO_MOD_STATE_GLOBAL->nl, self->writenl, -1);
         Py_DECREF(decoded);
         decoded = translated;
     }
@@ -331,7 +303,7 @@ _io_StringIO_read_impl(stringio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
+                     _PyType_Name(Py_TYPE(arg)));
         return NULL;
     }
 
@@ -413,7 +385,7 @@ _io_StringIO_readline_impl(stringio *self, PyObject *arg)
     }
     else if (arg != Py_None) {
         PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
+                     _PyType_Name(Py_TYPE(arg)));
         return NULL;
     }
     return _stringio_readline(self, limit);
@@ -428,18 +400,18 @@ stringio_iternext(stringio *self)
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    if (Py_TYPE(self) == &PyStringIO_Type) {
+    if (Py_TYPE(self) == (PyTypeObject *)IO_MOD_STATE_GLOBAL->PyStringIO_Type) {
         /* Skip method call overhead for speed */
         line = _stringio_readline(self, -1);
     }
     else {
         /* XXX is subclassing StringIO really supported? */
         line = PyObject_CallMethodObjArgs((PyObject *)self,
-                                           _PyIO_str_readline, NULL);
+                                           IO_MOD_STATE_GLOBAL->readline, NULL);
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_IOError,
                          "readline() should have returned a str object, "
-                         "not '%.200s'", Py_TYPE(line)->tp_name);
+                         "not '%.200s'", _PyType_Name(Py_TYPE(line)));
             Py_DECREF(line);
             return NULL;
         }
@@ -489,7 +461,7 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
+                     _PyType_Name(Py_TYPE(arg)));
         return NULL;
     }
 
@@ -582,7 +554,7 @@ _io_StringIO_write(stringio *self, PyObject *obj)
     CHECK_INITIALIZED(self);
     if (!PyUnicode_Check(obj)) {
         PyErr_Format(PyExc_TypeError, "string argument expected, got '%s'",
-                     Py_TYPE(obj)->tp_name);
+                     _PyType_Name(Py_TYPE(obj)));
         return NULL;
     }
     if (PyUnicode_READY(obj))
@@ -705,7 +677,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         if (!PyUnicode_Check(newline_obj)) {
             PyErr_Format(PyExc_TypeError,
                          "newline must be str or None, not %.200s",
-                         Py_TYPE(newline_obj)->tp_name);
+                         _PyType_Name(Py_TYPE(newline_obj)));
             return -1;
         }
         newline = PyUnicode_AsUTF8(newline_obj);
@@ -724,7 +696,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
     if (value && value != Py_None && !PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "initial_value must be str or None, not %.200s",
-                     Py_TYPE(value)->tp_name);
+                     _PyType_Name(Py_TYPE(value)));
         return -1;
     }
 
@@ -758,7 +730,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
 
     if (self->readuniversal) {
         self->decoder = PyObject_CallFunction(
-            (PyObject *)&PyIncrementalNewlineDecoder_Type,
+            IO_MOD_STATE_GLOBAL->PyIncrementalNewlineDecoder_Type,
             "Oi", Py_None, (int) self->readtranslate);
         if (self->decoder == NULL)
             return -1;
@@ -900,7 +872,7 @@ stringio_setstate(stringio *self, PyObject *state)
     if (!PyTuple_Check(state) || Py_SIZE(state) < 4) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__setstate__ argument should be 4-tuple, got %.200s",
-                     Py_TYPE(self)->tp_name, Py_TYPE(state)->tp_name);
+                     _PyType_Name(Py_TYPE(self)), _PyType_Name(Py_TYPE(state)));
         return NULL;
     }
 
@@ -947,7 +919,7 @@ stringio_setstate(stringio *self, PyObject *state)
     if (!PyLong_Check(position_obj)) {
         PyErr_Format(PyExc_TypeError,
                      "third item of state must be an integer, got %.200s",
-                     Py_TYPE(position_obj)->tp_name);
+                     _PyType_Name(Py_TYPE(position_obj)));
         return NULL;
     }
     pos = PyLong_AsSsize_t(position_obj);
@@ -966,7 +938,7 @@ stringio_setstate(stringio *self, PyObject *state)
         if (!PyDict_Check(dict)) {
             PyErr_Format(PyExc_TypeError,
                          "fourth item of state should be a dict, got a %.200s",
-                         Py_TYPE(dict)->tp_name);
+                         _PyType_Name(Py_TYPE(dict)));
             return NULL;
         }
         if (self->dict) {
@@ -993,6 +965,35 @@ stringio_closed(stringio *self, void *context)
 }
 
 static PyObject *
+stringio_dunder_dict(stringio *self, void *context)
+{
+    if (self->dict == NULL) {
+        self->dict = PyDict_New();
+    }
+    Py_INCREF(self->dict);
+    return self->dict;
+}
+
+static PyObject *
+stringio_getattro(stringio *self, PyObject *name)
+{
+    if (self->dict == NULL) {
+        self->dict = PyDict_New();
+    }
+    return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, self->dict);
+}
+
+static int
+stringio_setattro(stringio *self, PyObject *name, PyObject *value)
+{
+    if (self->dict == NULL) {
+        self->dict = PyDict_New();
+    }
+    return _PyObject_GenericSetAttrWithDict((PyObject *)self, name, value, self->dict);
+}
+
+
+static PyObject *
 stringio_line_buffering(stringio *self, void *context)
 {
     CHECK_INITIALIZED(self);
@@ -1007,7 +1008,7 @@ stringio_newlines(stringio *self, void *context)
     CHECK_CLOSED(self);
     if (self->decoder == NULL)
         Py_RETURN_NONE;
-    return PyObject_GetAttr(self->decoder, _PyIO_str_newlines);
+    return PyObject_GetAttr(self->decoder, IO_MOD_STATE_GLOBAL->newlines);
 }
 
 #include "clinic/stringio.c.h"
@@ -1032,6 +1033,7 @@ static struct PyMethodDef stringio_methods[] = {
 };
 
 static PyGetSetDef stringio_getset[] = {
+    {"__dict__",       (getter)stringio_dunder_dict, NULL, NULL},
     {"closed",         (getter)stringio_closed,         NULL, NULL},
     {"newlines",       (getter)stringio_newlines,       NULL, NULL},
     /*  (following comments straight off of the original Python wrapper:)
@@ -1044,44 +1046,25 @@ static PyGetSetDef stringio_getset[] = {
     {NULL}
 };
 
-PyTypeObject PyStringIO_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.StringIO",                            /*tp_name*/
-    sizeof(stringio),                    /*tp_basicsize*/
-    0,                                         /*tp_itemsize*/
-    (destructor)stringio_dealloc,              /*tp_dealloc*/
-    0,                                         /*tp_print*/
-    0,                                         /*tp_getattr*/
-    0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
-    0,                                         /*tp_repr*/
-    0,                                         /*tp_as_number*/
-    0,                                         /*tp_as_sequence*/
-    0,                                         /*tp_as_mapping*/
-    0,                                         /*tp_hash*/
-    0,                                         /*tp_call*/
-    0,                                         /*tp_str*/
-    0,                                         /*tp_getattro*/
-    0,                                         /*tp_setattro*/
-    0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-                       | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    _io_StringIO___init____doc__,              /*tp_doc*/
-    (traverseproc)stringio_traverse,           /*tp_traverse*/
-    (inquiry)stringio_clear,                   /*tp_clear*/
-    0,                                         /*tp_richcompare*/
-    offsetof(stringio, weakreflist),            /*tp_weaklistoffset*/
-    0,                                         /*tp_iter*/
-    (iternextfunc)stringio_iternext,           /*tp_iternext*/
-    stringio_methods,                          /*tp_methods*/
-    0,                                         /*tp_members*/
-    stringio_getset,                           /*tp_getset*/
-    0,                                         /*tp_base*/
-    0,                                         /*tp_dict*/
-    0,                                         /*tp_descr_get*/
-    0,                                         /*tp_descr_set*/
-    offsetof(stringio, dict),                  /*tp_dictoffset*/
-    _io_StringIO___init__,                     /*tp_init*/
-    0,                                         /*tp_alloc*/
-    stringio_new,                              /*tp_new*/
+PyType_Slot PyStringIO_Type_slots[] = {
+    {Py_tp_dealloc, stringio_dealloc},
+    {Py_tp_getattro, stringio_getattro},
+    {Py_tp_setattro, stringio_setattro},
+    {Py_tp_doc, _io_StringIO___init____doc__},
+    {Py_tp_traverse, stringio_traverse},
+    {Py_tp_clear, stringio_clear},
+    {Py_tp_iternext, stringio_iternext},
+    {Py_tp_methods, stringio_methods},
+    {Py_tp_getset, stringio_getset},
+    {Py_tp_init, _io_StringIO___init__},
+    {Py_tp_new, stringio_new},
+    {0, 0},
+};
+
+PyType_Spec PyStringIO_Type_spec = {
+    "_io.StringIO",
+    sizeof(stringio),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    PyStringIO_Type_slots
 };

@@ -65,9 +65,6 @@ PyInit__symtable(void)
 {
     PyObject *m;
 
-    if (PyType_Ready(&PySTEntry_Type) < 0)
-        return NULL;
-
     m = PyModule_Create(&symtablemodule);
     if (m == NULL)
         return NULL;

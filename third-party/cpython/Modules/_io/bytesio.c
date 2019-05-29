@@ -4,19 +4,9 @@
 
 /*[clinic input]
 module _io
-class _io.BytesIO "bytesio *" "&PyBytesIO_Type"
+class _io.BytesIO "bytesio *" "(PyTypeObject *)IO_MOD_STATE_GLOBAL->PyBytesIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7f50ec034f5c0b26]*/
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *buf;
-    Py_ssize_t pos;
-    Py_ssize_t string_size;
-    PyObject *dict;
-    PyObject *weakreflist;
-    Py_ssize_t exports;
-} bytesio;
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a22585f5c711ae23]*/
 
 typedef struct {
     PyObject_HEAD
@@ -211,6 +201,34 @@ bytesio_get_closed(bytesio *self, void *Py_UNUSED(ignored))
     }
 }
 
+static PyObject *
+bytesio_dunder_dict(bytesio *self, void *Py_UNUSED(ignored))
+{
+    if (self->dict == NULL) {
+        self->dict = PyDict_New();
+    }
+    Py_INCREF(self->dict);
+    return self->dict;
+}
+
+static PyObject *
+bytesio_getattro(bytesio *self, PyObject *name)
+{
+    if (self->dict == NULL) {
+        self->dict = PyDict_New();
+    }
+    return _PyObject_GenericGetAttrWithDict((PyObject *)self, name, self->dict);
+}
+
+static int
+bytesio_setattro(bytesio *self, PyObject *name, PyObject *value)
+{
+    if (self->dict == NULL) {
+        self->dict = PyDict_New();
+    }
+    return _PyObject_GenericSetAttrWithDict((PyObject *)self, name, value, self->dict);
+}
+
 /*[clinic input]
 _io.BytesIO.readable
 
@@ -402,7 +420,7 @@ _io_BytesIO_read_impl(bytesio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
+                     _PyType_Name(Py_TYPE(arg)));
         return NULL;
     }
 
@@ -467,7 +485,7 @@ _io_BytesIO_readline_impl(bytesio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
+                     _PyType_Name(Py_TYPE(arg)));
         return NULL;
     }
 
@@ -509,7 +527,7 @@ _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
+                     _PyType_Name(Py_TYPE(arg)));
         return NULL;
     }
 
@@ -608,7 +626,7 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError, "integer argument expected, got '%s'",
-                     Py_TYPE(arg)->tp_name);
+                     _PyType_Name(Py_TYPE(arg)));
         return NULL;
     }
 
@@ -846,7 +864,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
     if (!PyTuple_Check(state) || Py_SIZE(state) < 3) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s.__setstate__ argument should be 3-tuple, got %.200s",
-                     Py_TYPE(self)->tp_name, Py_TYPE(state)->tp_name);
+                     _PyType_Name(Py_TYPE(self)), _PyType_Name(Py_TYPE(state)));
         return NULL;
     }
     CHECK_EXPORTS(self);
@@ -869,7 +887,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
     if (!PyLong_Check(position_obj)) {
         PyErr_Format(PyExc_TypeError,
                      "second item of state must be an integer, not %.200s",
-                     Py_TYPE(position_obj)->tp_name);
+                     _PyType_Name(Py_TYPE(position_obj)));
         return NULL;
     }
     pos = PyLong_AsSsize_t(position_obj);
@@ -888,7 +906,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
         if (!PyDict_Check(dict)) {
             PyErr_Format(PyExc_TypeError,
                          "third item of state should be a dict, got a %.200s",
-                         Py_TYPE(dict)->tp_name);
+                         _PyType_Name(Py_TYPE(dict)));
             return NULL;
         }
         if (self->dict) {
@@ -1012,6 +1030,7 @@ bytesio_clear(bytesio *self)
 #include "clinic/bytesio.c.h"
 
 static PyGetSetDef bytesio_getsetlist[] = {
+    {"__dict__", (getter)bytesio_dunder_dict, NULL, NULL},
     {"closed",  (getter)bytesio_get_closed, NULL,
      "True if the file is closed."},
     {NULL},            /* sentinel */
@@ -1042,46 +1061,28 @@ static struct PyMethodDef bytesio_methods[] = {
     {NULL, NULL}        /* sentinel */
 };
 
-PyTypeObject PyBytesIO_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.BytesIO",                             /*tp_name*/
-    sizeof(bytesio),                     /*tp_basicsize*/
-    0,                                         /*tp_itemsize*/
-    (destructor)bytesio_dealloc,               /*tp_dealloc*/
-    0,                                         /*tp_print*/
-    0,                                         /*tp_getattr*/
-    0,                                         /*tp_setattr*/
-    0,                                         /*tp_reserved*/
-    0,                                         /*tp_repr*/
-    0,                                         /*tp_as_number*/
-    0,                                         /*tp_as_sequence*/
-    0,                                         /*tp_as_mapping*/
-    0,                                         /*tp_hash*/
-    0,                                         /*tp_call*/
-    0,                                         /*tp_str*/
-    0,                                         /*tp_getattro*/
-    0,                                         /*tp_setattro*/
-    0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-    Py_TPFLAGS_HAVE_GC,                        /*tp_flags*/
-    _io_BytesIO___init____doc__,               /*tp_doc*/
-    (traverseproc)bytesio_traverse,            /*tp_traverse*/
-    (inquiry)bytesio_clear,                    /*tp_clear*/
-    0,                                         /*tp_richcompare*/
-    offsetof(bytesio, weakreflist),      /*tp_weaklistoffset*/
-    PyObject_SelfIter,                         /*tp_iter*/
-    (iternextfunc)bytesio_iternext,            /*tp_iternext*/
-    bytesio_methods,                           /*tp_methods*/
-    0,                                         /*tp_members*/
-    bytesio_getsetlist,                        /*tp_getset*/
-    0,                                         /*tp_base*/
-    0,                                         /*tp_dict*/
-    0,                                         /*tp_descr_get*/
-    0,                                         /*tp_descr_set*/
-    offsetof(bytesio, dict),             /*tp_dictoffset*/
-    _io_BytesIO___init__,                      /*tp_init*/
-    0,                                         /*tp_alloc*/
-    bytesio_new,                               /*tp_new*/
+PyType_Slot PyBytesIO_Type_slots[] = {
+    {Py_tp_dealloc, bytesio_dealloc},
+    {Py_tp_getattro, bytesio_getattro},
+    {Py_tp_setattro, bytesio_setattro},
+    {Py_tp_doc, _io_BytesIO___init____doc__},
+    {Py_tp_traverse, bytesio_traverse},
+    {Py_tp_clear, bytesio_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, bytesio_iternext},
+    {Py_tp_methods, bytesio_methods},
+    {Py_tp_getset, bytesio_getsetlist},
+    {Py_tp_init, _io_BytesIO___init__},
+    {Py_tp_new, bytesio_new},
+    {0, 0},
+};
+
+PyType_Spec PyBytesIO_Type_spec = {
+    "_io.BytesIO",
+    sizeof(bytesio),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    PyBytesIO_Type_slots
 };
 
 

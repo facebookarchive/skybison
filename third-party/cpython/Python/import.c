@@ -425,8 +425,6 @@ PyImport_Cleanup(void)
     if (PyDict_Update(interp->builtins, interp->builtins_copy))
         PyErr_Clear();
     Py_XDECREF(dict);
-    /* Clear module dict copies stored in the interpreter state */
-    _PyState_ClearModules();
     /* Collect references */
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings

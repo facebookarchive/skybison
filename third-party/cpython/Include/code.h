@@ -139,8 +139,8 @@ PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
 PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 #endif
 
-PyAPI_FUNC(PyObject*) PyCode_GetFreevars(PyObject *code);
-PyAPI_FUNC(PyObject*) PyCode_GetName(PyObject *code);
+PyAPI_FUNC(PyObject *) PyCode_GetFreevars(PyObject *code);
+PyAPI_FUNC(PyObject *) PyCode_GetName(PyObject *code);
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);
 

@@ -1962,40 +1962,6 @@ exit:
 
 #endif /* defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER) */
 
-#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM))
-
-PyDoc_STRVAR(os_sched_param__doc__,
-"sched_param(sched_priority)\n"
-"--\n"
-"\n"
-"Current has only one field: sched_priority\");\n"
-"\n"
-"  sched_priority\n"
-"    A scheduling parameter.");
-
-static PyObject *
-os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority);
-
-static PyObject *
-os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sched_priority", NULL};
-    static _PyArg_Parser _parser = {"O:sched_param", _keywords, 0};
-    PyObject *sched_priority;
-
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &sched_priority)) {
-        goto exit;
-    }
-    return_value = os_sched_param_impl(type, sched_priority);
-
-exit:
-    return return_value;
-}
-
-#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETSCHEDULER) || defined(HAVE_SCHED_SETPARAM)) */
-
 #if defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER)
 
 PyDoc_STRVAR(os_sched_setscheduler__doc__,

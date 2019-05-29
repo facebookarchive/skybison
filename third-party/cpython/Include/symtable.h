@@ -66,7 +66,7 @@ typedef struct _symtable_entry {
 
 PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 
-#define PySTEntry_Check(op) (Py_TYPE(op) == &PySTEntry_Type)
+#define PySTEntry_Check(op) (Py_TYPE(op) == (PyTypeObject *)stentrystate_global->PySTEntry_Type)
 
 PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 

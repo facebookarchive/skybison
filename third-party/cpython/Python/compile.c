@@ -213,7 +213,6 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -268,21 +267,26 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar)
         maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
 
-    result = PyUnicode_New(1 + nlen + plen, maxchar);
-    if (!result)
-        return 0;
     /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
-    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
-    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
-        Py_DECREF(result);
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    if (_PyUnicodeWriter_Prepare(&writer, 1 + nlen + plen, maxchar) < 0) {
+        _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
-    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
-        Py_DECREF(result);
+    if (_PyUnicodeWriter_WriteChar(&writer, '_') < 0) {
+        _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
+    if (_PyUnicodeWriter_WriteSubstring(&writer, privateobj, ipriv, plen) < 0) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        return NULL;
+    }
+    if (_PyUnicodeWriter_WriteStr(&writer, ident) < 0) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        return NULL;
+    }
+    return _PyUnicodeWriter_Finish(&writer);
 }
 
 static int
@@ -293,6 +297,14 @@ compiler_init(struct compiler *c)
     c->c_stack = PyList_New(0);
     if (!c->c_stack)
         return 0;
+
+    if (PyImport_ImportModule("_stentry") == NULL) {
+        return 0;
+    }
+
+    if (PyImport_ImportModule("_myreadline") == NULL) {
+        return 0;
+    }
 
     return 1;
 }
@@ -305,12 +317,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags;
     int merged;
-
-    if (!__doc__) {
-        __doc__ = PyUnicode_InternFromString("__doc__");
-        if (!__doc__)
-            return NULL;
-    }
 
     if (!compiler_init(&c))
         return NULL;
@@ -560,12 +566,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        _Py_IDENTIFIER(__class__);
         PyObject *tuple, *name, *zero;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         assert(PyDict_Size(u->u_cellvars) == 0);
-        name = _PyUnicode_FromId(&PyId___class__);
+        name = PyUnicode_InternFromString("__class__");
         if (!name) {
             compiler_unit_free(u);
             return 0;
@@ -672,8 +677,6 @@ compiler_exit_scope(struct compiler *c)
 static int
 compiler_set_qualname(struct compiler *c)
 {
-    _Py_static_string(dot, ".");
-    _Py_static_string(dot_locals, ".<locals>");
     Py_ssize_t stack_size;
     struct compiler_unit *u = c->u;
     PyObject *name, *base, *dot_str, *dot_locals_str;
@@ -708,7 +711,7 @@ compiler_set_qualname(struct compiler *c)
             if (parent->u_scope_type == COMPILER_SCOPE_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA) {
-                dot_locals_str = _PyUnicode_FromId(&dot_locals);
+                dot_locals_str = PyUnicode_InternFromString(".<locals>");
                 if (dot_locals_str == NULL)
                     return 0;
                 base = PyUnicode_Concat(parent->u_qualname, dot_locals_str);
@@ -723,7 +726,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        dot_str = _PyUnicode_FromId(&dot);
+        dot_str = PyUnicode_InternFromString(".");
         if (dot_str == NULL) {
             Py_DECREF(base);
             return 0;
@@ -1440,6 +1443,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
 {
     int i = 0;
     stmt_ty st;
+    PyObject *doc;
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -1461,7 +1465,10 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
         /* don't generate docstrings if -OO */
         i = 1;
         VISIT(c, expr, st->v.Expr.value);
-        if (!compiler_nameop(c, __doc__, Store))
+        doc = PyUnicode_InternFromString("__doc__");
+        if (doc == NULL)
+            return 0;
+        if (!compiler_nameop(c, doc, Store))
             return 0;
     }
     for (; i < asdl_seq_LEN(stmts); i++)
@@ -1474,12 +1481,10 @@ compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    static PyObject *module;
-    if (!module) {
-        module = PyUnicode_InternFromString("<module>");
-        if (!module)
-            return NULL;
-    }
+    PyObject *module;
+    module = PyUnicode_InternFromString("<module>");
+    if (!module)
+        return NULL;
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
     if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 0))
         return NULL;
@@ -1565,16 +1570,18 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 static int
 compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, PyObject *qualname)
 {
+    PyObject *freevars = PyCode_GetFreevars((PyObject *)co);
+    PyObject *code_name = PyCode_GetName((PyObject *)co);
     Py_ssize_t i, free = PyCode_GetNumFree(co);
     if (qualname == NULL)
-        qualname = co->co_name;
+        qualname = code_name;
 
     if (free) {
         for (i = 0; i < free; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
-            PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+            PyObject *name = PyTuple_GET_ITEM(freevars, i);
             int arg, reftype;
 
             /* Special case: If a class contains a method with a
@@ -1595,8 +1602,8 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                     PyUnicode_AsUTF8(PyObject_Repr(name)),
                     PyUnicode_AsUTF8(c->u->u_name),
                     reftype, arg,
-                    PyUnicode_AsUTF8(co->co_name),
-                    PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
+                    PyUnicode_AsUTF8(code_name),
+                    PyUnicode_AsUTF8(PyObject_Repr(freevars)));
                 Py_FatalError("compiler_make_closure()");
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
@@ -1607,6 +1614,8 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
     ADDOP_O(c, LOAD_CONST, (PyObject*)co, consts);
     ADDOP_O(c, LOAD_CONST, qualname, consts);
     ADDOP_I(c, MAKE_FUNCTION, flags);
+    Py_DECREF(freevars);
+    Py_DECREF(code_name);
     return 1;
 }
 
@@ -1729,7 +1738,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
        Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
        */
-    static identifier return_str;
+    identifier return_str;
     PyObject *names;
     Py_ssize_t len;
     names = PyList_New(0);
@@ -1749,11 +1758,9 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
                                      args->kwarg->annotation, names))
         goto error;
 
-    if (!return_str) {
-        return_str = PyUnicode_InternFromString("return");
-        if (!return_str)
-            goto error;
-    }
+    return_str = PyUnicode_InternFromString("return");
+    if (!return_str)
+        goto error;
     if (!compiler_visit_argannotation(c, return_str, returns, names)) {
         goto error;
     }
@@ -2066,16 +2073,14 @@ compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
     PyObject *qualname;
-    static identifier name;
+    identifier name;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
 
-    if (!name) {
-        name = PyUnicode_InternFromString("<lambda>");
-        if (!name)
-            return 0;
-    }
+    name = PyUnicode_InternFromString("<lambda>");
+    if (!name)
+        return 0;
 
     funcflags = compiler_default_arguments(c, args);
     if (funcflags == -1) {
@@ -2186,12 +2191,10 @@ compiler_for(struct compiler *c, stmt_ty s)
 static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
-    _Py_IDENTIFIER(StopAsyncIteration);
-
     basicblock *try, *except, *end, *after_try, *try_cleanup,
                *after_loop_else;
 
-    PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
+    PyObject *stop_aiter_error = PyUnicode_InternFromString("StopAsyncIteration");
     if (stop_aiter_error == NULL) {
         return 0;
     }
@@ -2662,13 +2665,11 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
     PyObject *level, *names;
-    static PyObject *empty_string;
+    PyObject *empty_string;
 
-    if (!empty_string) {
-        empty_string = PyUnicode_FromString("");
-        if (!empty_string)
-            return 0;
-    }
+    empty_string = PyUnicode_FromString("");
+    if (!empty_string)
+        return 0;
 
     level = PyLong_FromLong(s->v.ImportFrom.level);
     if (!level) {
@@ -2728,17 +2729,15 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 static int
 compiler_assert(struct compiler *c, stmt_ty s)
 {
-    static PyObject *assertion_error = NULL;
+    PyObject *assertion_error = NULL;
     basicblock *end;
     PyObject* msg;
 
     if (c->c_optimize)
         return 1;
-    if (assertion_error == NULL) {
-        assertion_error = PyUnicode_InternFromString("AssertionError");
-        if (assertion_error == NULL)
-            return 0;
-    }
+    assertion_error = PyUnicode_InternFromString("AssertionError");
+    if (assertion_error == NULL)
+        return 0;
     if (s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
         msg = PyUnicode_FromString("assertion is always true, "
@@ -3735,14 +3734,12 @@ compiler_async_comprehension_generator(struct compiler *c,
                                       asdl_seq *generators, int gen_index,
                                       expr_ty elt, expr_ty val, int type)
 {
-    _Py_IDENTIFIER(StopAsyncIteration);
-
     comprehension_ty gen;
     basicblock *if_cleanup, *try,
                *after_try, *except, *try_cleanup;
     Py_ssize_t i, n;
 
-    PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
+    PyObject *stop_aiter_error = PyUnicode_InternFromString("StopAsyncIteration");
     if (stop_aiter_error == NULL) {
         return 0;
     }
@@ -3956,12 +3953,10 @@ error:
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_FromString("<genexpr>");
-        if (!name)
-            return 0;
-    }
+    identifier name;
+    name = PyUnicode_FromString("<genexpr>");
+    if (!name)
+        return 0;
     assert(e->kind == GeneratorExp_kind);
     return compiler_comprehension(c, e, COMP_GENEXP, name,
                                   e->v.GeneratorExp.generators,
@@ -3971,12 +3966,10 @@ compiler_genexp(struct compiler *c, expr_ty e)
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_FromString("<listcomp>");
-        if (!name)
-            return 0;
-    }
+    identifier name;
+    name = PyUnicode_FromString("<listcomp>");
+    if (!name)
+        return 0;
     assert(e->kind == ListComp_kind);
     return compiler_comprehension(c, e, COMP_LISTCOMP, name,
                                   e->v.ListComp.generators,
@@ -3986,12 +3979,10 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_FromString("<setcomp>");
-        if (!name)
-            return 0;
-    }
+    identifier name;
+    name = PyUnicode_FromString("<setcomp>");
+    if (!name)
+        return 0;
     assert(e->kind == SetComp_kind);
     return compiler_comprehension(c, e, COMP_SETCOMP, name,
                                   e->v.SetComp.generators,
@@ -4002,12 +3993,10 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_FromString("<dictcomp>");
-        if (!name)
-            return 0;
-    }
+    identifier name;
+    name = PyUnicode_FromString("<dictcomp>");
+    if (!name)
+        return 0;
     assert(e->kind == DictComp_kind);
     return compiler_comprehension(c, e, COMP_DICTCOMP, name,
                                   e->v.DictComp.generators,

@@ -25,6 +25,40 @@
 
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
+typedef struct {
+    PyObject *PySTEntry_Type;
+} stentrystate;
+
+#define stentrystate(o) ((stentrystate *)PyModule_GetState(o))
+
+#define stentrystate_global ((stentrystate *)PyModule_GetState(PyState_FindModule(&stentrymodule)))
+
+static int symtable_clear(PyObject *module) {
+    Py_CLEAR(stentrystate(module)->PySTEntry_Type);
+    return 0;
+}
+
+static int symtable_traverse(PyObject *module, visitproc visit, void* arg) {
+    Py_VISIT(stentrystate(module)->PySTEntry_Type);
+    return 0;
+}
+
+static void symtable_free(void *module) {
+    symtable_clear((PyObject *)module);
+}
+
+static struct PyModuleDef stentrymodule = {
+    PyModuleDef_HEAD_INIT,
+    "_stentry",
+    NULL,
+    sizeof(stentrystate),
+    NULL,
+    NULL,
+    symtable_traverse,
+    symtable_clear,
+    symtable_free,
+};
+
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
         void *key, int lineno, int col_offset)
@@ -35,7 +69,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     k = PyLong_FromVoidPtr(key);
     if (k == NULL)
         goto fail;
-    ste = PyObject_New(PySTEntryObject, &PySTEntry_Type);
+
+    ste = PyObject_New(PySTEntryObject, (PyTypeObject *)stentrystate_global->PySTEntry_Type);
     if (ste == NULL) {
         Py_DECREF(k);
         goto fail;
@@ -91,6 +126,14 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 }
 
 static PyObject *
+ste_managed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+            "cannot create '%.100s' instances", _PyType_Name(type));
+    return NULL;
+}
+
+static PyObject *
 ste_repr(PySTEntryObject *ste)
 {
     return PyUnicode_FromFormat("<symtable entry %U(%ld), line %d>",
@@ -101,6 +144,7 @@ ste_repr(PySTEntryObject *ste)
 static void
 ste_dealloc(PySTEntryObject *ste)
 {
+    PyObject *type = (PyObject *)Py_TYPE(ste);
     ste->ste_table = NULL;
     Py_XDECREF(ste->ste_id);
     Py_XDECREF(ste->ste_name);
@@ -109,6 +153,7 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
     PyObject_Del(ste);
+    Py_DECREF(type);
 }
 
 #define OFF(x) offsetof(PySTEntryObject, x)
@@ -125,46 +170,68 @@ static PyMemberDef ste_memberlist[] = {
     {NULL}
 };
 
-PyTypeObject PySTEntry_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+static PyObject *
+PySTEntry___reduce___impl(PySTEntryObject *self)
+{
+    PyErr_Format(PyExc_TypeError,
+            "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
+}
+
+static PyObject *
+PySTEntry___reduce_ex___impl(PySTEntryObject *self)
+{
+    return PySTEntry___reduce___impl(self);
+}
+
+
+static PyMethodDef ste_methodlist[] = {
+    {"__reduce__", (PyCFunction)PySTEntry___reduce___impl,
+        METH_NOARGS,
+        "returns null and raises an exception to avoid pickling"},
+    {"__reduce_ex__", (PyCFunction)PySTEntry___reduce_ex___impl,
+        METH_NOARGS,
+        "returns null and raises an exception to avoid pickling"},
+    {NULL}
+};
+
+static PyType_Slot PySTEntry_Type_slots[] = {
+    {Py_tp_new, ste_managed_new},
+    {Py_tp_repr, ste_repr},
+    {Py_tp_dealloc, ste_dealloc},
+    {Py_tp_members, ste_memberlist},
+    {Py_tp_methods, ste_methodlist},
+    {0, 0},
+};
+
+static PyType_Spec PySTEntry_Type_spec = {
     "symtable entry",
     sizeof(PySTEntryObject),
     0,
-    (destructor)ste_dealloc,                /* tp_dealloc */
-    0,                                      /* tp_print */
-    0,                                         /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    (reprfunc)ste_repr,                         /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    ste_memberlist,                             /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
+    Py_TPFLAGS_DEFAULT,
+    PySTEntry_Type_slots,
 };
+
+PyMODINIT_FUNC PyInit__stentry(void) {
+    PyObject *mod;
+    PyTypeObject *PySTEntry_Type;
+
+    mod = PyState_FindModule(&stentrymodule);
+    if (mod != NULL) {
+        return mod;
+    }
+    mod = PyModule_Create(&stentrymodule);
+    if (mod == NULL) {
+        return NULL;
+    }
+    PySTEntry_Type = (PyTypeObject*)PyType_FromSpec(&PySTEntry_Type_spec);
+    if (PySTEntry_Type == NULL) {
+        return NULL;
+    }
+    Py_INCREF(PySTEntry_Type);
+    stentrystate(mod)->PySTEntry_Type = (PyObject*)PySTEntry_Type;
+    return mod;
+}
 
 static int symtable_analyze(struct symtable *st);
 static int symtable_enter_block(struct symtable *st, identifier name,
@@ -190,12 +257,7 @@ static int symtable_visit_annotations(struct symtable *st, stmt_ty s, arguments_
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 
 
-static identifier top = NULL, lambda = NULL, genexpr = NULL,
-    listcomp = NULL, setcomp = NULL, dictcomp = NULL,
-    __class__ = NULL;
-
-#define GET_IDENTIFIER(VAR) \
-    ((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
+#define GET_IDENTIFIER(VAR) PyUnicode_InternFromString(# VAR)
 
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%U' in function definition"
@@ -258,20 +320,21 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     st->st_future = future;
 
     /* Setup recursion depth check counters */
-    tstate = PyThreadState_GET();
+    tstate = PyThreadState_Get();
     if (!tstate) {
         PySymtable_Free(st);
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    st->recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    int pystate_recursion_depth = _PyThreadState_GetRecursionDepth(tstate);
+    st->recursion_depth = (pystate_recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        pystate_recursion_depth * COMPILER_STACK_FRAME_SCALE : pystate_recursion_depth;
     st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
         recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
 
     /* Make the initial symbol information gathering pass */
     if (!GET_IDENTIFIER(top) ||
-        !symtable_enter_block(st, top, ModuleBlock, (void *)mod, 0, 0)) {
+        !symtable_enter_block(st, GET_IDENTIFIER(top), ModuleBlock, (void *)mod, 0, 0)) {
         PySymtable_Free(st);
         return NULL;
     }
@@ -583,9 +646,10 @@ static int
 drop_class_free(PySTEntryObject *ste, PyObject *free)
 {
     int res;
-    if (!GET_IDENTIFIER(__class__))
+    PyObject *dunder_class = GET_IDENTIFIER(__class__);
+    if (!dunder_class)
         return 0;
-    res = PySet_Discard(free, __class__);
+    res = PySet_Discard(free, dunder_class);
     if (res < 0)
         return 0;
     if (res)
@@ -795,9 +859,10 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
     else {
         /* Special-case __class__ */
-        if (!GET_IDENTIFIER(__class__))
+        PyObject *dunder_class = GET_IDENTIFIER(__class__);
+        if (!dunder_class)
             goto error;
-        if (PySet_Add(newbound, __class__) < 0)
+        if (PySet_Add(newbound, dunder_class) < 0)
             goto error;
     }
 
@@ -1413,7 +1478,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
-        if (!symtable_enter_block(st, lambda,
+        if (!symtable_enter_block(st, GET_IDENTIFIER(lambda),
                                   FunctionBlock, (void *)e, e->lineno,
                                   e->col_offset))
             VISIT_QUIT(st, 0);
@@ -1509,7 +1574,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             st->st_cur->ste_type == FunctionBlock &&
             _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
             if (!GET_IDENTIFIER(__class__) ||
-                !symtable_add_def(st, __class__, USE))
+                !symtable_add_def(st, GET_IDENTIFIER(__class__), USE))
                 VISIT_QUIT(st, 0);
         }
         break;

@@ -103,24 +103,21 @@ intern_string_constants(PyObject *tuple)
     return modified;
 }
 
-
 PyObject *
 PyCode_GetFreevars(PyObject *code) {
   assert(PyCode_Check(code));
-  PyObject *freevars = ((PyCodeObject*)code)->co_freevars;
+  PyObject *freevars = ((PyCodeObject *)code)->co_freevars;
   Py_INCREF(freevars);
   return freevars;
 }
 
-
 PyObject *
 PyCode_GetName(PyObject *code) {
   assert(PyCode_Check(code));
-  PyObject *name = ((PyCodeObject*)code)->co_name;
+  PyObject *name = ((PyCodeObject *)code)->co_name;
   Py_INCREF(name);
   return name;
 }
-
 
 PyCodeObject *
 PyCode_New(int argcount, int kwonlyargcount,

@@ -133,12 +133,15 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
     Py_CLEAR(interp->modules);
-    Py_CLEAR(interp->modules_by_index);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
+    /* Up to this point, module states are still required to destroy all the
+     * initialized types. Clear them once they are not required anymore */
+    _PyState_ClearModules();
+    Py_CLEAR(interp->modules_by_index);
 }
 
 
@@ -550,6 +553,7 @@ int
 _PyThreadState_GetRecursionDepth(PyThreadState *ts) {
   return ts->recursion_depth;
 }
+
 
 PyThreadState *
 PyThreadState_Swap(PyThreadState *newts)

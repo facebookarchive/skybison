@@ -942,9 +942,6 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
     memset(obj, '\0', size);
 
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-        Py_INCREF(type);
-
     if (type->tp_itemsize == 0)
         (void)PyObject_INIT(obj, type);
     else
@@ -2905,6 +2902,16 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
  fail:
     Py_DECREF(res);
     return NULL;
+}
+
+const char *
+_PyType_Name(PyTypeObject *type)
+{
+    if (type == NULL || !PyType_Check(type)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    return type->tp_name;
 }
 
 PyObject *

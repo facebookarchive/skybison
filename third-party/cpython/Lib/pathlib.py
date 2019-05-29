@@ -6,7 +6,7 @@ import os
 import posixpath
 import re
 import sys
-from collections.abc import Sequence
+from collections import Sequence
 from contextlib import contextmanager
 from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter

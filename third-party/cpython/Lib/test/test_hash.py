@@ -8,7 +8,7 @@ import os
 import sys
 import unittest
 from test.support.script_helper import assert_python_ok
-from collections.abc import Hashable
+from collections import Hashable
 
 IS_64BIT = sys.maxsize > 2**32
 
