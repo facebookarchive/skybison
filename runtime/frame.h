@@ -46,27 +46,22 @@ class TryBlock {
     value_ = value.raw();
   }
 
-  TryBlock(Kind kind, word handler, word level) : value_(0) {
-    setKind(kind);
-    setHandler(handler);
-    setLevel(level);
+  TryBlock(Kind kind, word handler, word level) {
+    DCHECK((handler & ~kHandlerMask) == 0, "handler too big");
+    DCHECK((level & ~kLevelMask) == 0, "level too big");
+    value_ = static_cast<uword>(kind) << kKindOffset |
+             handler << kHandlerOffset | level << kLevelOffset;
   }
 
   RawObject asSmallInt() const;
 
   Kind kind() const;
-  void setKind(Kind kind);
 
   word handler() const;
-  void setHandler(word handler);
 
   word level() const;
-  void setLevel(word level);
 
  private:
-  word valueBits(uword offset, uword mask) const;
-  void setValueBits(uword offset, uword mask, word value);
-
   uword value_;
 
   static const int kKindOffset = RawObject::kSmallIntTagBits;
@@ -536,36 +531,15 @@ inline RawObject TryBlock::asSmallInt() const {
 }
 
 inline TryBlock::Kind TryBlock::kind() const {
-  return static_cast<Kind>(valueBits(kKindOffset, kKindMask));
-}
-
-inline void TryBlock::setKind(Kind kind) {
-  setValueBits(kKindOffset, kKindMask, kind);
+  return static_cast<Kind>((value_ >> kKindOffset) & kKindMask);
 }
 
 inline word TryBlock::handler() const {
-  return valueBits(kHandlerOffset, kHandlerMask);
-}
-
-inline void TryBlock::setHandler(word handler) {
-  setValueBits(kHandlerOffset, kHandlerMask, handler);
+  return (value_ >> kHandlerOffset) & kHandlerMask;
 }
 
 inline word TryBlock::level() const {
-  return valueBits(kLevelOffset, kLevelMask);
-}
-
-inline void TryBlock::setLevel(word level) {
-  setValueBits(kLevelOffset, kLevelMask, level);
-}
-
-inline word TryBlock::valueBits(uword offset, uword mask) const {
-  return (value_ >> offset) & mask;
-}
-
-inline void TryBlock::setValueBits(uword offset, uword mask, word value) {
-  DCHECK((value & ~mask) == 0, "Invalid value");
-  value_ |= (value & mask) << offset;
+  return (value_ >> kLevelOffset) & kLevelMask;
 }
 
 inline uword BlockStack::address() { return reinterpret_cast<uword>(this); }

@@ -1672,8 +1672,8 @@ HANDLER_INLINE bool Interpreter::doWithCleanupStart(Context* ctx, word) {
     TryBlock block = frame->blockStack()->pop();
     DCHECK(block.kind() == TryBlock::kExceptHandler,
            "Unexpected TryBlock Kind");
-    block.setLevel(block.level() - 1);
-    frame->blockStack()->push(block);
+    frame->blockStack()->push(
+        TryBlock(block.kind(), block.handler(), block.level() - 1));
   }
 
   // Regardless of what happened above, exc should be put back at the new top of

@@ -4,6 +4,23 @@ import unittest
 
 
 class SysTests(unittest.TestCase):
+    class Mgr:
+        def __enter__(self):
+            pass
+
+        def __exit__(self, type, value, tb):
+            return True
+
+    def test_exc_info_with_context_manager(self):
+        try:
+            raise RuntimeError()
+        except RuntimeError:
+            info1 = sys.exc_info()
+            with self.Mgr():
+                raise ValueError()
+            info2 = sys.exc_info()
+            self.assertEqual(info1, info2)
+
     def test_getsizeof_without_dunder_sizeof_raises_type_error(self):
         class M(type):
             def mro(cls):
