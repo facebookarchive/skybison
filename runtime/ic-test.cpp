@@ -533,4 +533,71 @@ TEST(IcTest, IcUpdateBinopSetsExistingEntry) {
       "yyy"));
 }
 
+TEST(IcTest, ForIterUpdateCacheWithFunctionUpdatesCache) {
+  Runtime runtime;
+  runtime.enableCache();
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def f(container):
+  for i in container:
+    return i
+
+container = [1, 2, 3]
+iterator = iter(container)
+iter_next = type(iterator).__next__
+result = f(container)
+)")
+                   .isError());
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+
+  Object iterator(&scope, moduleAt(&runtime, "__main__", "iterator"));
+  Object iter_next(&scope, moduleAt(&runtime, "__main__", "iter_next"));
+  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Tuple caches(&scope, f.caches());
+  // Expect that FOR_ITER is the only cached opcode in f().
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  EXPECT_EQ(icLookup(caches, 0, iterator.layoutId()), *iter_next);
+}
+
+TEST(IcTest, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
+  Runtime runtime;
+  runtime.enableCache();
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+def f(container):
+  for i in container:
+    return i
+
+class Iter:
+  def get(self):
+    def next():
+      return 123
+    return next
+  __next__ = property(get)
+
+class Container:
+  def __iter__(self):
+    return Iter()
+
+container = Container()
+iterator = iter(container)
+result = f(container)
+)")
+                   .isError());
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
+
+  Object iterator(&scope, moduleAt(&runtime, "__main__", "iterator"));
+  Function f(&scope, moduleAt(&runtime, "__main__", "f"));
+  Tuple caches(&scope, f.caches());
+  // Expect that FOR_ITER is the only cached opcode in f().
+  ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
+  EXPECT_TRUE(icLookup(caches, 0, iterator.layoutId()).isErrorNotFound());
+}
+
 }  // namespace python

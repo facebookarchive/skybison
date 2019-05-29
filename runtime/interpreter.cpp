@@ -1893,25 +1893,64 @@ HANDLER_INLINE bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doForIter(Context* ctx, word arg) {
+  return forIterUpdateCache(ctx, arg, -1);
+}
+
+bool Interpreter::forIterUpdateCache(Context* ctx, word arg, word index) {
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   HandleScope scope(thread);
-  Object iterator(&scope, ctx->frame->topValue());
-  Object next_method(&scope, lookupMethod(thread, ctx->frame, iterator,
-                                          SymbolId::kDunderNext));
-  if (next_method.isError()) {
+  Object iter(&scope, frame->topValue());
+  Type type(&scope, thread->runtime()->typeOf(*iter));
+  Object next(&scope,
+              typeLookupSymbolInMro(thread, type, SymbolId::kDunderNext));
+  if (next.isErrorNotFound()) {
     thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
     return unwind(ctx);
   }
-  Object value(&scope, callMethod1(thread, ctx->frame, next_method, iterator));
-  if (value.isError()) {
+
+  if (index >= 0 && next.isFunction()) {
+    icUpdate(thread, ctx->caches, index, iter.layoutId(), next);
+  }
+
+  next = resolveDescriptorGet(thread, next, iter, type);
+  Object result(&scope, callFunction0(thread, frame, next));
+  if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
-      ctx->frame->popValue();
+      frame->popValue();
       ctx->pc += arg;
       return false;
     }
     return unwind(ctx);
   }
-  ctx->frame->pushValue(*value);
+  frame->pushValue(*result);
+  return false;
+}
+
+HANDLER_INLINE bool Interpreter::doForIterCached(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  RawObject iter = frame->topValue();
+  LayoutId iter_layout_id = iter.layoutId();
+  RawObject cached = icLookup(ctx->caches, arg, iter_layout_id);
+  if (cached.isErrorNotFound()) {
+    return forIterUpdateCache(ctx, icOriginalArg(frame->function(), arg), arg);
+  }
+
+  DCHECK(cached.isFunction(), "Unexpected cached value");
+  frame->pushValue(cached);
+  frame->pushValue(iter);
+  RawObject result = call(ctx->thread, frame, 1);
+  if (result.isErrorException()) {
+    if (ctx->thread->clearPendingStopIteration()) {
+      frame->popValue();
+      // TODO(bsimmers): icOriginalArg() is only meant for slow paths, but we
+      // currently have no other way of getting this information.
+      ctx->pc += icOriginalArg(frame->function(), arg);
+      return false;
+    }
+    return unwind(ctx);
+  }
+  frame->pushValue(result);
   return false;
 }
 

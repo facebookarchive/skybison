@@ -333,6 +333,7 @@ class Interpreter {
   static bool doDeleteSubscr(Context* ctx, word arg);
   static bool doEndFinally(Context* ctx, word arg);
   static bool doForIter(Context* ctx, word arg);
+  static bool doForIterCached(Context* ctx, word arg);
   static bool doFormatValue(Context* ctx, word arg);
   static bool doGetAiter(Context* ctx, word arg);
   static bool doGetAnext(Context* ctx, word arg);
@@ -433,6 +434,11 @@ class Interpreter {
   // index when appropriate. May also be used as a non-caching slow path by
   // passing a negative index.
   static bool binarySubscrUpdateCache(Context* ctx, word index);
+
+  // Slow path for the FOR_ITER opcode that updates the cache at the given index
+  // when appropriate. May also be used as a non-caching slow path by passing a
+  // negative index.
+  static bool forIterUpdateCache(Context* ctx, word arg, word index);
 
   // Given a non-Function object in `callable`, attempt to normalize it to a
   // Function by either unpacking a BoundMethod or looking up the object's

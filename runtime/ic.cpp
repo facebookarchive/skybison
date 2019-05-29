@@ -92,12 +92,16 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
       return BytecodeArgPair{LOAD_ATTR_CACHED, arg};
     case STORE_ATTR:
       return BytecodeArgPair{STORE_ATTR_CACHED, arg};
+    // Other opcodes.
+    case FOR_ITER:
+      return BytecodeArgPair{FOR_ITER_CACHED, arg};
 
     case BINARY_OP_CACHED:
     case COMPARE_OP_CACHED:
     case INPLACE_OP_CACHED:
     case LOAD_ATTR_CACHED:
     case STORE_ATTR_CACHED:
+    case FOR_ITER_CACHED:
       UNREACHABLE("should not have cached opcode in input");
     default:
       break;
