@@ -127,7 +127,8 @@ class Runtime {
   // Helper for Interpreter::makeFunction(); do not call directly.
   RawObject newInterpreterFunction(
       Thread* thread, const Object& name, const Object& qualname,
-      const Code& code, const Object& closure, const Object& annotations,
+      const Code& code, word flags, word argcount, word total_args,
+      const Object& closure, const Object& annotations,
       const Object& kw_defaults, const Object& defaults, const Dict& globals,
       Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex,
       bool is_interpreted);
@@ -138,7 +139,7 @@ class Runtime {
 
   RawObject newGenerator();
 
-  RawObject newHeapFrame(const Code& code);
+  RawObject newHeapFrame(const Function& function);
 
   RawObject newInstance(const Layout& layout);
 

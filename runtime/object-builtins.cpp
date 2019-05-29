@@ -247,6 +247,8 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
       &scope, runtime->typeDictAt(thread, type_dict, dunder_getattribute_name));
   Code code(&scope, dunder_getattribute.code());
   code.setArgcount(2);
+  dunder_getattribute.setArgcount(2);
+  dunder_getattribute.setTotalArgs(2);
 }
 
 RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,

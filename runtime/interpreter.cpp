@@ -903,10 +903,11 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   }
   Object name(&scope, code.name());
   Function function(
-      &scope, runtime->newInterpreterFunction(
-                  thread, name, qualname_str, code, closure_tuple,
-                  annotations_dict, kw_defaults_dict, defaults_tuple, globals,
-                  entry, entry_kw, entry_ex, is_interpreted));
+      &scope,
+      runtime->newInterpreterFunction(
+          thread, name, qualname_str, code, code.flags(), code.argcount(),
+          code.totalArgs(), closure_tuple, annotations_dict, kw_defaults_dict,
+          defaults_tuple, globals, entry, entry_kw, entry_ex, is_interpreted));
 
   Object dunder_name(&scope, runtime->symbols()->at(SymbolId::kDunderName));
   Object value_cell(&scope, runtime->dictAt(thread, globals, dunder_name));
@@ -1054,7 +1055,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
 
 // If the current frame is executing a Generator, mark it as finished.
 static void finishCurrentGenerator(Interpreter::Context* ctx) {
-  if (!Code::cast(ctx->frame->code()).hasGenerator()) return;
+  if (!ctx->frame->function().hasGenerator()) return;
 
   // Write to the Generator's HeapFrame directly so we don't have to save the
   // live frame to it one last time.
@@ -1499,8 +1500,8 @@ HANDLER_INLINE bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
   if (iterable.isGenerator()) return false;
 
   if (iterable.isCoroutine()) {
-    Code code(&scope, frame->code());
-    if (code.hasCoroutine() || code.hasIterableCoroutine()) {
+    Function function(&scope, frame->function());
+    if (function.hasCoroutine() || function.hasIterableCoroutine()) {
       thread->raiseWithFmt(
           LayoutId::kTypeError,
           "cannot 'yield from' a coroutine object in a non-coroutine "
@@ -2654,15 +2655,14 @@ HANDLER_INLINE bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
 
 HANDLER_INLINE void Interpreter::pushFrame(Context* ctx,
                                            const Function& function,
-                                           const Code& code,
                                            RawObject* post_call_sp) {
   Frame* callee_frame = ctx->thread->pushCallFrame(*function);
   // Pop the arguments off of the caller's stack now that the callee "owns"
   // them.
   ctx->frame->setValueStackTop(post_call_sp);
 
-  if (code.hasFreevarsOrCellvars()) {
-    processFreevarsAndCellvars(ctx->thread, function, callee_frame, code);
+  if (function.hasFreevarsOrCellvars()) {
+    processFreevarsAndCellvars(ctx->thread, function, callee_frame);
   }
 
   ctx->frame->setVirtualPC(ctx->pc);
@@ -2699,12 +2699,11 @@ bool Interpreter::handleCall(Context* ctx, word argc, word callable_idx,
     return callTrampoline(ctx, (function.*get_entry)(), argc, post_call_sp);
   }
 
-  Code code(&scope, function.code());
-  if (prepare_args(thread, function, code, frame, argc).isError()) {
+  if (prepare_args(thread, function, frame, argc).isError()) {
     return unwind(ctx);
   }
 
-  pushFrame(ctx, function, code, post_call_sp);
+  pushFrame(ctx, function, post_call_sp);
   return false;
 }
 
@@ -2810,12 +2809,11 @@ HANDLER_INLINE bool Interpreter::doCallFunctionEx(Context* ctx, word arg) {
     return callTrampoline(ctx, function.entryEx(), arg, post_call_sp);
   }
 
-  Code code(&scope, function.code());
-  if (prepareExplodeCall(thread, function, code, frame, arg).isError()) {
+  if (prepareExplodeCall(thread, function, frame, arg).isError()) {
     return unwind(ctx);
   }
 
-  pushFrame(ctx, function, code, post_call_sp);
+  pushFrame(ctx, function, post_call_sp);
   return false;
 }
 
@@ -3337,7 +3335,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
   // adding an alternate entry point that always throws (and asserts that an
   // exception is pending).
   if (ctx.thread->hasPendingException()) {
-    DCHECK(Code::cast(ctx.frame->code()).hasCoroutineOrGenerator(),
+    DCHECK(ctx.frame->function().hasCoroutineOrGenerator(),
            "Entered dispatch loop with a pending exception outside of "
            "generator/coroutine");
     if (Interpreter::unwind(&ctx)) return do_return();

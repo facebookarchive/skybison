@@ -1525,6 +1525,9 @@ class RawCode : public RawHeapObject {
   void setFreevars(RawObject value) const;
   word numFreevars() const;
 
+  bool hasCoroutineOrGenerator() const;
+  bool hasFreevarsOrCellvars() const;
+
   word kwonlyargcount() const;
   void setKwonlyargcount(word value) const;
 
@@ -1549,30 +1552,6 @@ class RawCode : public RawHeapObject {
 
   RawObject varnames() const;
   void setVarnames(RawObject value) const;
-
-  // Returns true if the code is for a coroutine.
-  bool hasCoroutine() const;
-
-  // Returns true if the code is for a generator function.
-  bool hasGenerator() const;
-
-  // Returns true if the code is for an iterable coroutine.
-  bool hasIterableCoroutine() const;
-
-  // Returns true if the code is for a coroutine or a generator function.
-  bool hasCoroutineOrGenerator() const;
-
-  // Returns true if the code has free variables or cell variables.
-  bool hasFreevarsOrCellvars() const;
-
-  // Returns true if the code has varargs.
-  bool hasVarargs() const;
-
-  // Returns true if the code has varkeyword arguments.
-  bool hasVarkeyargs() const;
-
-  // Returns true if the code has varargs or varkeyword arguments.
-  bool hasVarargsOrVarkeyargs() const;
 
   // Layout.
   static const int kArgcountOffset = RawHeapObject::kSize;
@@ -1632,6 +1611,10 @@ class RawFunction : public RawHeapObject {
   RawObject annotations() const;
   void setAnnotations(RawObject annotations) const;
 
+  // The number of positional arguments.
+  word argcount() const;
+  void setArgcount(word value) const;
+
   // The code object backing this function or None
   RawObject code() const;
   void setCode(RawObject code) const;
@@ -1666,10 +1649,41 @@ class RawFunction : public RawHeapObject {
   Entry entryEx() const;
   void setEntryEx(Entry thunk) const;
 
+  // Returns the function flags.
+  word flags() const;
+  void setFlags(word value) const;
+
   // The dict that holds this function's global namespace. User-code
   // cannot change this
   RawObject globals() const;
   void setGlobals(RawObject globals) const;
+
+  // Returns true if the function is a coroutine.
+  bool hasCoroutine() const;
+
+  // Returns true if the function is a coroutine or a generator function.
+  bool hasCoroutineOrGenerator() const;
+
+  // Returns true if the function has free variables or cell variables.
+  bool hasFreevarsOrCellvars() const;
+
+  // Returns true if the function is a generator.
+  bool hasGenerator() const;
+
+  // Returns true if the function is an iterable coroutine.
+  bool hasIterableCoroutine() const;
+
+  // Returns true if the function has a simple calling convention.
+  bool hasSimpleCall() const;
+
+  // Returns true if the function has varargs.
+  bool hasVarargs() const;
+
+  // Returns true if the function has varargs or varkeyword arguments.
+  bool hasVarargsOrVarkeyargs() const;
+
+  // Returns true if the function has varkeyword arguments.
+  bool hasVarkeyargs() const;
 
   // A dict containing defaults for keyword-only parameters
   RawObject kwDefaults() const;
@@ -1704,6 +1718,10 @@ class RawFunction : public RawHeapObject {
   RawObject originalArguments() const;
   void setOriginalArguments(RawObject originall_arguments) const;
 
+  // Precomputed value of RawCode::totalArgs().
+  word totalArgs() const;
+  void setTotalArgs(word value) const;
+
   // The function's dictionary
   RawObject dict() const;
   void setDict(RawObject dict) const;
@@ -1714,13 +1732,16 @@ class RawFunction : public RawHeapObject {
   void setIsInterpreted(bool interpreted) const;
 
   // Layout.
-  static const int kDocOffset = RawHeapObject::kSize;
+  static const int kCodeOffset = RawHeapObject::kSize;
+  static const int kFlagsOffset = kCodeOffset + kPointerSize;
+  static const int kArgcountOffset = kFlagsOffset + kPointerSize;
+  static const int kTotalArgsOffset = kArgcountOffset + kPointerSize;
+  static const int kDocOffset = kTotalArgsOffset + kPointerSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
   static const int kQualnameOffset = kNameOffset + kPointerSize;
   static const int kModuleOffset = kQualnameOffset + kPointerSize;
   static const int kDefaultsOffset = kModuleOffset + kPointerSize;
-  static const int kCodeOffset = kDefaultsOffset + kPointerSize;
-  static const int kAnnotationsOffset = kCodeOffset + kPointerSize;
+  static const int kAnnotationsOffset = kDefaultsOffset + kPointerSize;
   static const int kKwDefaultsOffset = kAnnotationsOffset + kPointerSize;
   static const int kClosureOffset = kKwDefaultsOffset + kPointerSize;
   static const int kGlobalsOffset = kClosureOffset + kPointerSize;
@@ -3969,30 +3990,12 @@ inline void RawCode::setVarnames(RawObject value) const {
   instanceVariableAtPut(kVarnamesOffset, value);
 }
 
-inline bool RawCode::hasCoroutine() const { return (flags() & COROUTINE) != 0; }
-
 inline bool RawCode::hasCoroutineOrGenerator() const {
-  return hasCoroutine() || hasGenerator();
+  return flags() & (Flags::COROUTINE | Flags::GENERATOR);
 }
 
 inline bool RawCode::hasFreevarsOrCellvars() const {
-  return (flags() & NOFREE) == 0;
-}
-
-inline bool RawCode::hasGenerator() const { return (flags() & GENERATOR) != 0; }
-
-inline bool RawCode::hasIterableCoroutine() const {
-  return (flags() & ITERABLE_COROUTINE) != 0;
-}
-
-inline bool RawCode::hasVarargs() const { return (flags() & VARARGS) != 0; }
-
-inline bool RawCode::hasVarkeyargs() const {
-  return (flags() & VARKEYARGS) != 0;
-}
-
-inline bool RawCode::hasVarargsOrVarkeyargs() const {
-  return hasVarargs() || hasVarkeyargs();
+  return !(flags() & Flags::NOFREE);
 }
 
 // RawLargeInt
@@ -4372,6 +4375,14 @@ inline void RawFunction::setAnnotations(RawObject annotations) const {
   instanceVariableAtPut(kAnnotationsOffset, annotations);
 }
 
+inline word RawFunction::argcount() const {
+  return RawSmallInt::cast(instanceVariableAt(kArgcountOffset)).value();
+}
+
+inline void RawFunction::setArgcount(word value) const {
+  instanceVariableAtPut(kArgcountOffset, RawSmallInt::fromWord(value));
+}
+
 inline RawObject RawFunction::closure() const {
   return instanceVariableAt(kClosureOffset);
 }
@@ -4441,12 +4452,56 @@ inline void RawFunction::setEntryEx(RawFunction::Entry thunk) const {
   instanceVariableAtPut(kEntryExOffset, object);
 }
 
+inline word RawFunction::flags() const {
+  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value();
+}
+
+inline void RawFunction::setFlags(word value) const {
+  instanceVariableAtPut(kFlagsOffset, RawSmallInt::fromWord(value));
+}
+
 inline RawObject RawFunction::globals() const {
   return instanceVariableAt(kGlobalsOffset);
 }
 
 inline void RawFunction::setGlobals(RawObject globals) const {
   instanceVariableAtPut(kGlobalsOffset, globals);
+}
+
+inline bool RawFunction::hasCoroutine() const {
+  return flags() & RawCode::Flags::COROUTINE;
+}
+
+inline bool RawFunction::hasCoroutineOrGenerator() const {
+  return flags() & (RawCode::Flags::COROUTINE | RawCode::Flags::GENERATOR);
+}
+
+inline bool RawFunction::hasFreevarsOrCellvars() const {
+  return !(flags() & RawCode::Flags::NOFREE);
+}
+
+inline bool RawFunction::hasGenerator() const {
+  return flags() & RawCode::Flags::GENERATOR;
+}
+
+inline bool RawFunction::hasIterableCoroutine() const {
+  return flags() & RawCode::Flags::ITERABLE_COROUTINE;
+}
+
+inline bool RawFunction::hasSimpleCall() const {
+  return flags() & RawCode::Flags::SIMPLE_CALL;
+}
+
+inline bool RawFunction::hasVarargs() const {
+  return flags() & RawCode::Flags::VARARGS;
+}
+
+inline bool RawFunction::hasVarkeyargs() const {
+  return flags() & RawCode::Flags::VARKEYARGS;
+}
+
+inline bool RawFunction::hasVarargsOrVarkeyargs() const {
+  return flags() & (RawCode::Flags::VARARGS | RawCode::Flags::VARKEYARGS);
 }
 
 inline RawObject RawFunction::kwDefaults() const {
@@ -4479,6 +4534,14 @@ inline RawObject RawFunction::qualname() const {
 
 inline void RawFunction::setQualname(RawObject qualname) const {
   instanceVariableAtPut(kQualnameOffset, qualname);
+}
+
+inline word RawFunction::totalArgs() const {
+  return RawSmallInt::cast(instanceVariableAt(kTotalArgsOffset)).value();
+}
+
+inline void RawFunction::setTotalArgs(word value) const {
+  instanceVariableAtPut(kTotalArgsOffset, RawSmallInt::fromWord(value));
 }
 
 inline RawObject RawFunction::fastGlobals() const {

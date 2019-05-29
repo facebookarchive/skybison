@@ -603,6 +603,9 @@ RawObject Runtime::newNativeFunction(SymbolId name, const Str& qualname,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Function result(&scope, heap()->create<RawFunction>());
+  result.setFlags(0);
+  result.setArgcount(-1);
+  result.setTotalArgs(-1);
   result.setName(symbols()->at(name));
   result.setQualname(internStr(thread, qualname));
   result.setEntry(entry);
@@ -627,15 +630,18 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
 
 RawObject Runtime::newInterpreterFunction(
     Thread* thread, const Object& name, const Object& qualname,
-    const Code& code, const Object& closure, const Object& annotations,
-    const Object& kw_defaults, const Object& defaults, const Dict& globals,
-    Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex,
-    bool is_interpreted) {
+    const Code& code, word flags, word argcount, word total_args,
+    const Object& closure, const Object& annotations, const Object& kw_defaults,
+    const Object& defaults, const Dict& globals, Function::Entry entry,
+    Function::Entry entry_kw, Function::Entry entry_ex, bool is_interpreted) {
   HandleScope scope(thread);
   Function function(&scope, heap()->create<RawFunction>());
+  function.setCode(*code);
+  function.setFlags(flags);
+  function.setArgcount(argcount);
+  function.setTotalArgs(total_args);
   function.setName(*name);
   function.setQualname(*qualname);
-  function.setCode(*code);
   function.setGlobals(*globals);
   function.setClosure(*closure);
   function.setAnnotations(*annotations);
@@ -655,6 +661,8 @@ RawObject Runtime::newExceptionState() {
 RawObject Runtime::newFunction() {
   HandleScope scope;
   Function result(&scope, heap()->create<RawFunction>());
+  result.setFlags(0);
+  result.setArgcount(-1);
   result.setEntry(unimplementedTrampoline);
   result.setEntryKw(unimplementedTrampoline);
   result.setEntryEx(unimplementedTrampoline);
@@ -667,15 +675,16 @@ RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
 
 RawObject Runtime::newGenerator() { return heap()->create<RawGenerator>(); }
 
-RawObject Runtime::newHeapFrame(const Code& code) {
-  DCHECK(code.hasCoroutineOrGenerator(),
+RawObject Runtime::newHeapFrame(const Function& function) {
+  DCHECK(function.hasCoroutineOrGenerator(),
          "expected a RawGenerator/RawCoroutine code object");
 
-  word num_args = code.totalArgs();
+  HandleScope scope;
+  Code code(&scope, function.code());
+  word num_args = function.totalArgs();
   word num_vars = code.totalVars();
   // +1 for the function pointer.
   word extra_words = num_args + num_vars + code.stacksize() + 1;
-  HandleScope scope;
   HeapFrame frame(
       &scope, heap()->createInstance(LayoutId::kHeapFrame,
                                      HeapFrame::numAttributes(extra_words)));

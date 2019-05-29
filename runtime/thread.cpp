@@ -122,8 +122,8 @@ Frame* Thread::pushNativeFrame(word nargs) {
 Frame* Thread::pushFrame(RawFunction function, RawDict globals,
                          RawDict builtins) {
   RawCode code = Code::cast(function.code());
-  Frame* frame =
-      openAndLinkFrame(code.totalArgs(), code.totalVars(), code.stacksize());
+  Frame* frame = openAndLinkFrame(function.totalArgs(), code.totalVars(),
+                                  code.stacksize());
   // TODO(T36407403) We should be able to not set globals and builtins.
   frame->setGlobals(globals);
   frame->setBuiltins(builtins);

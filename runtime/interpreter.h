@@ -472,7 +472,7 @@ class Interpreter {
   // After a callable is prepared and all arguments are processed, push a frame
   // for the callee and update the Context to begin executing it.
   static void pushFrame(Context* ctx, const Function& function,
-                        const Code& code, RawObject* post_call_sp);
+                        RawObject* post_call_sp);
 
   // Pop the current Frame, restoring the execution context of the previous
   // Frame.

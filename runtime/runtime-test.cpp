@@ -2907,12 +2907,13 @@ def gen():
   Runtime runtime;
   HandleScope scope;
   ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Object gen(&scope, moduleAt(&runtime, "__main__", "gen"));
-  ASSERT_TRUE(gen.isFunction());
-  Code code(&scope, Function::cast(*gen).code());
-  Object frame_obj(&scope, runtime.newHeapFrame(code));
+  Object gen_obj(&scope, moduleAt(&runtime, "__main__", "gen"));
+  ASSERT_TRUE(gen_obj.isFunction());
+  Function gen(&scope, *gen_obj);
+  Object frame_obj(&scope, runtime.newHeapFrame(gen));
   ASSERT_TRUE(frame_obj.isHeapFrame());
   HeapFrame heap_frame(&scope, *frame_obj);
+  Code code(&scope, gen.code());
   EXPECT_EQ(heap_frame.maxStackSize(), code.stacksize());
 }
 
