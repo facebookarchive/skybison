@@ -154,6 +154,8 @@ RawObject runBuiltinImpl(NativeMethodType method,
 
 RawObject runBuiltin(NativeMethodType method);
 
+NODISCARD RawObject runCode(const Code& code);
+
 // Helper to compile and run a snippet of Python code.
 NODISCARD RawObject runFromCStr(Runtime* runtime, const char* c_str);
 

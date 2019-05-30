@@ -829,7 +829,8 @@ TEST(InterpreterDeathTest, InvalidOpcode) {
   const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_202, 17, NOP, 7};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  ASSERT_DEATH(thread->run(code), "bytecode 'UNUSED_BYTECODE_202'");
+  ASSERT_DEATH(static_cast<void>(runCode(code)),
+               "bytecode 'UNUSED_BYTECODE_202'");
 }
 
 // To a rich comparison on two instances of the same type.  In each case, the
@@ -1687,7 +1688,7 @@ sys.displayhook = my_displayhook
                            LOAD_CONST, 1, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  ASSERT_TRUE(thread->run(code).isNoneType());
+  ASSERT_TRUE(runCode(code).isNoneType());
 
   Module sys(&scope, findModule(&runtime, "sys"));
   Object displayhook(&scope, moduleAt(&runtime, sys, "displayhook"));
@@ -1722,7 +1723,7 @@ a = AsyncIterable()
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
@@ -1737,7 +1738,7 @@ TEST(InterpreterTest, GetAiterOnNonIterable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1804,7 +1805,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
       POP_BLOCK,  0, RETURN_VALUE, 0,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
-  EXPECT_EQ(thread->run(code), SmallInt::fromWord(42));
+  EXPECT_EQ(runCode(code), SmallInt::fromWord(42));
 }
 
 TEST(InterpreterTest, UnpackSequenceEx) {
@@ -2351,7 +2352,7 @@ a = AsyncIterator()
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_EQ(*a, *result);
   Object anext(&scope, moduleAt(&runtime, main, "anext_called"));
   EXPECT_EQ(*a, *anext);
@@ -2370,7 +2371,7 @@ TEST(InterpreterTest, GetAnextOnNonIterable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2396,7 +2397,7 @@ a = AsyncIterator()
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2423,7 +2424,7 @@ a = Awaitable()
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
@@ -2438,7 +2439,7 @@ TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -2912,7 +2913,7 @@ foo = Foo()
   code.setCode(runtime.newBytesWithAll(bytecode));
 
   // Confirm that the returned value is the iterator of Foo
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   Type result_type(&scope, runtime.typeOf(*result));
   EXPECT_TRUE(isStrEqualsCStr(result_type.name(), "FooIterator"));
 }
@@ -3382,7 +3383,7 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   code.setStacksize(1);
 
   // Execute the code and make sure to get the unwinded Error
-  EXPECT_TRUE(thread->run(code).isError());
+  EXPECT_TRUE(runCode(code).isError());
 }
 
 TEST(InterpreterTest, ExplodeCallAcceptsList) {

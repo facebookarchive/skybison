@@ -172,14 +172,6 @@ void Thread::popFrame() {
   currentFrame_ = frame->previousFrame();
 }
 
-RawObject Thread::run(const Code& code) {
-  DCHECK(currentFrame_ == initialFrame_, "thread must be inactive");
-  HandleScope scope(this);
-  Dict globals(&scope, runtime()->newDict());
-  Dict builtins(&scope, runtime()->newDict());
-  return exec(code, globals, builtins);
-}
-
 RawObject Thread::exec(const Code& code, const Dict& globals,
                        const Object& locals) {
   HandleScope scope(this);

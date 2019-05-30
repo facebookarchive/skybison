@@ -638,7 +638,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalArgument) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -684,7 +684,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   ASSERT_TRUE(result.isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 2);
@@ -742,7 +742,7 @@ TEST(TrampolinesTest,
   code.setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   ASSERT_TRUE(result.isTuple());
   Tuple tuple(&scope, result);
   ASSERT_EQ(tuple.length(), 3);
@@ -922,7 +922,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
@@ -952,7 +952,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(raisedWithStr(thread->run(code), LayoutId::kTypeError,
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kTypeError,
                             "function takes no arguments"));
 }
 
@@ -961,7 +961,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
 
   Runtime runtime;
   Thread* thread = Thread::current();
-  HandleScope scope;
+  HandleScope scope(thread);
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
@@ -978,7 +978,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(raisedWithStr(thread->run(code), LayoutId::kSystemError,
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kSystemError,
                             "NULL return without exception set"));
 }
 
@@ -1012,7 +1012,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(raised(Thread::current()->run(code), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runCode(code), LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
@@ -1043,7 +1043,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
@@ -1076,7 +1076,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(raised(Thread::current()->run(code), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runCode(code), LayoutId::kTypeError));
 }
 
 TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
@@ -1107,7 +1107,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
@@ -1134,7 +1134,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1161,7 +1161,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1190,7 +1190,7 @@ TEST(TrampolinesTest,
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1217,7 +1217,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kSystemError));
 }
 
@@ -1248,7 +1248,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndZeroKwArgsReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1283,7 +1283,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1314,7 +1314,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1323,7 +1323,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
 
   Runtime runtime;
   Thread* thread = Thread::current();
-  HandleScope scope;
+  HandleScope scope(thread);
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
@@ -1348,7 +1348,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = thread->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1387,7 +1387,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1414,7 +1414,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
@@ -1445,7 +1445,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1454,7 +1454,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
 
   Runtime runtime;
   Thread* thread = Thread::current();
-  HandleScope scope;
+  HandleScope scope(thread);
   Str mod_name(&scope, runtime.newStrFromCStr("foobar"));
   Function callee(&scope, runtime.newFunction());
   callee.setModule(runtime.newModule(mod_name));
@@ -1471,7 +1471,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  EXPECT_TRUE(raisedWithStr(thread->run(code), LayoutId::kSystemError,
+  EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kSystemError,
                             "NULL return without exception set"));
 }
 
@@ -1506,7 +1506,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1541,7 +1541,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1576,7 +1576,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1614,7 +1614,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1654,7 +1654,7 @@ TEST(TrampolinesTest,
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
@@ -1681,7 +1681,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 123));
 }
 
@@ -1712,7 +1712,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1739,7 +1739,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   code.setStacksize(1);
 
   // Execute the code and make sure we get back the result we expect
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kSystemError,
                             "NULL return without exception set"));
 }
@@ -1781,7 +1781,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -1820,7 +1820,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   code.setStacksize(5);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 456));
 }
 
@@ -1862,7 +1862,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
   code.setStacksize(4);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 5678));
 }
 
@@ -1897,7 +1897,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   code.setStacksize(2);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 10));
 }
 
@@ -1942,7 +1942,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect
-  RawObject result = Thread::current()->run(code);
+  RawObject result = runCode(code);
   EXPECT_TRUE(isIntEqualsWord(result, 1111));
 }
 
@@ -2090,7 +2090,7 @@ TEST(TrampolinesTest, SlotTrampolineKwAllowsCallWithNoKwargs) {
   code.setStacksize(3);
 
   // Execute the code and make sure we get back the result we expect.
-  Object result(&scope, Thread::current()->run(code));
+  Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 1234));
 }
 

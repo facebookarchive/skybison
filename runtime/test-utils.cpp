@@ -356,6 +356,20 @@ RawObject runBuiltin(NativeMethodType method) {
                         View<std::reference_wrapper<const Object>>{nullptr, 0});
 }
 
+RawObject runCode(const Code& code) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict globals(&scope, runtime->newDict());
+  Object qualname(&scope, Str::empty());
+  Dict empty_dict(&scope, runtime->newDict());
+  Object empty_tuple(&scope, runtime->emptyTuple());
+  Function function(&scope, Interpreter::makeFunction(
+                                thread, qualname, code, empty_tuple, empty_dict,
+                                empty_dict, empty_tuple, globals));
+  return Interpreter::callFunction0(thread, thread->currentFrame(), function);
+}
+
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

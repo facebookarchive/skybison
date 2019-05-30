@@ -58,10 +58,6 @@ class Thread {
 
   void popFrame();
 
-  // Runs a code object on the current thread.  Assumes that the initial frame
-  // is at the top of the stack. Only used for testing.
-  RawObject run(const Handle<RawCode>& code);
-
   // Runs a code object on the current thread.
   RawObject exec(const Handle<RawCode>& code, const Handle<RawDict>& globals,
                  const Handle<RawObject>& locals);
