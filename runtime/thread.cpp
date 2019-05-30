@@ -124,7 +124,6 @@ Frame* Thread::pushCallFrame(RawFunction function) {
   Frame* result =
       openAndLinkFrame(code.totalArgs(), code.totalVars(), code.stacksize());
   result->setVirtualPC(0);
-  result->setFastGlobals(function.fastGlobals());
   return result;
 }
 

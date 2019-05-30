@@ -2131,7 +2131,7 @@ HANDLER_INLINE bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE void Interpreter::doStoreGlobal(Context* ctx, word arg) {
-  ValueCell::cast(Tuple::cast(ctx->frame->fastGlobals()).at(arg))
+  ValueCell::cast(Tuple::cast(ctx->frame->function().fastGlobals()).at(arg))
       .setValue(ctx->frame->popValue());
 }
 
@@ -2140,7 +2140,8 @@ HANDLER_INLINE void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   ValueCell value_cell(
-      &scope, ValueCell::cast(Tuple::cast(frame->fastGlobals()).at(arg)));
+      &scope,
+      ValueCell::cast(Tuple::cast(frame->function().fastGlobals()).at(arg)));
   CHECK(!value_cell.value().isValueCell(), "Unbound Globals");
   Object key(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
   Dict globals(&scope, frame->function().globals());
@@ -2543,7 +2544,8 @@ HANDLER_INLINE bool Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
 
 HANDLER_INLINE void Interpreter::doLoadGlobal(Context* ctx, word arg) {
   RawObject value =
-      ValueCell::cast(Tuple::cast(ctx->frame->fastGlobals()).at(arg)).value();
+      ValueCell::cast(Tuple::cast(ctx->frame->function().fastGlobals()).at(arg))
+          .value();
   if (value.isValueCell()) {
     CHECK(!ValueCell::cast(value).isUnbound(), "Unbound global '%s'",
           Str::cast(Tuple::cast(Code::cast(ctx->frame->code()).names()).at(arg))

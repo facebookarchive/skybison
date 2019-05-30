@@ -135,7 +135,6 @@ class BlockStack {
  *     ...                                                    |
  *     Locals N                                               |
  *     +-------------------------------+ Frame (fixed size)   |
- *     | Fast globals                  |                      |
  *     | Locals -----------------------|----------------------+
  *     | Num locals                    |
  *     |+----------------+ BlockStack  |
@@ -178,11 +177,6 @@ class Frame {
   // The implicit globals namespace (a Dict)
   RawObject implicitGlobals();
   void setImplicitGlobals(RawObject implicit_globals);
-
-  // The pre-computed object array provided fast globals access.
-  // fastGlobals[arg] == globals[names[arg]]
-  RawObject fastGlobals();
-  void setFastGlobals(RawObject fast_globals);
 
   // Returns the code object of the current function.
   RawObject code();
@@ -251,8 +245,7 @@ class Frame {
   static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
   static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
   static const int kLocalsOffset = kNumLocalsOffset + kPointerSize;
-  static const int kFastGlobalsOffset = kLocalsOffset + kPointerSize;
-  static const int kSize = kFastGlobalsOffset + kPointerSize;
+  static const int kSize = kLocalsOffset + kPointerSize;
 
   static const word kFinishedGeneratorPC = RawSmallInt::kMinValue;
   static const word kCodeUnitSize = 2;
@@ -345,12 +338,6 @@ inline RawObject Frame::implicitGlobals() { return at(kImplicitGlobalsOffset); }
 
 inline void Frame::setImplicitGlobals(RawObject implicit_globals) {
   atPut(kImplicitGlobalsOffset, implicit_globals);
-}
-
-inline RawObject Frame::fastGlobals() { return at(kFastGlobalsOffset); }
-
-inline void Frame::setFastGlobals(RawObject fast_globals) {
-  atPut(kFastGlobalsOffset, fast_globals);
 }
 
 inline RawObject Frame::code() { return function().code(); }
