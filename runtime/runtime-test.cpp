@@ -1395,7 +1395,7 @@ TEST(RuntimeTest, VerifySymbols) {
     SymbolId id = static_cast<SymbolId>(i);
     value = symbols->at(id);
     ASSERT_TRUE(value.isStr());
-    const char* expected = symbols->literalAt(id);
+    const char* expected = Symbols::predefinedSymbolAt(id);
     EXPECT_TRUE(runtime.isInternedStr(thread, value))
         << "at symbol " << expected;
     EXPECT_TRUE(Str::cast(*value).equalsCStr(expected))

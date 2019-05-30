@@ -36,7 +36,7 @@ static PyObject* doUnaryOp(SymbolId op, PyObject* obj) {
 static PyObject* doBinaryOp(SymbolId op, PyObject* left, PyObject* right) {
   Thread* thread = Thread::current();
   DCHECK(left != nullptr && right != nullptr, "null argument to binary op %s",
-         thread->runtime()->symbols()->literalAt(op));
+         Symbols::predefinedSymbolAt(op));
   HandleScope scope(thread);
   Object left_obj(&scope, ApiHandle::fromPyObject(left)->asObject());
   Object right_obj(&scope, ApiHandle::fromPyObject(right)->asObject());

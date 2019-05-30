@@ -6,10 +6,10 @@
 namespace python {
 
 // clang-format off
-static const char* kPredefinedSymbolLiterals[] = {
-#define DEFINE_SYMBOL_LITERAL(symbol, value) value,
-  FOREACH_SYMBOL(DEFINE_SYMBOL_LITERAL)
-#undef DEFINE_SYMBOL_VALUE
+static const char* kPredefinedSymbols[] = {
+#define DEFINE_SYMBOL(symbol, value) value,
+  FOREACH_SYMBOL(DEFINE_SYMBOL)
+#undef DEFINE_SYMBOL
 };
 // clang-format on
 
@@ -30,10 +30,10 @@ void Symbols::visit(PointerVisitor* visitor) {
   }
 }
 
-const char* Symbols::literalAt(SymbolId id) {
+const char* Symbols::predefinedSymbolAt(SymbolId id) {
   int index = static_cast<int>(id);
   DCHECK_INDEX(index, static_cast<int>(SymbolId::kMaxId));
-  return kPredefinedSymbolLiterals[index];
+  return kPredefinedSymbols[index];
 }
 
 }  // namespace python

@@ -622,7 +622,7 @@ class Symbols {
     return symbols_[index];
   }
 
-  const char* literalAt(SymbolId id);
+  static const char* predefinedSymbolAt(SymbolId id);
 
  private:
   // TODO(T25010996) - Benchmark whether this is faster than an Tuple
