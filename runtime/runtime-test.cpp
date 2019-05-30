@@ -19,8 +19,7 @@ RawObject makeTestFunction() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object name(&scope, runtime->newStrFromCStr("foo"));
-  Code code(&scope, runtime->newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime->newBytesWithAll(bytecode));
   Tuple consts(&scope, runtime->newTuple(1));
@@ -1058,9 +1057,7 @@ TEST(RuntimeTest, TrackObjectAndUnTrackObject) {
 
 TEST(RuntimeTest, HashCodeSizeCheck) {
   Runtime runtime;
-  HandleScope scope;
-  Object name(&scope, Str::empty());
-  RawObject code = runtime.newEmptyCode(name);
+  RawObject code = newEmptyCode();
   ASSERT_TRUE(code.isHeapObject());
   EXPECT_EQ(HeapObject::cast(code).header().hashCode(), 0);
   // Verify that large-magnitude random numbers are properly
@@ -1229,8 +1226,7 @@ TEST(RuntimeTest, CollectAttributes) {
   consts.atPut(2, SmallInt::fromWord(300));
   consts.atPut(3, NoneType::object());
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setNames(*names);
   // Bytecode for the snippet:
   //
@@ -1296,8 +1292,7 @@ TEST(RuntimeTest, CollectAttributesWithExtendedArg) {
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, NoneType::object());
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setNames(*names);
   // Bytecode for the snippet:
   //

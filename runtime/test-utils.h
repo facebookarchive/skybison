@@ -129,6 +129,8 @@ RawObject moduleAt(Runtime* runtime, const char* module_name, const char* name);
 // Get the name of the type of the given object.
 std::string typeName(Runtime* runtime, RawObject obj);
 
+RawCode newEmptyCode();
+
 // Helper to allow construction from initializer list, like
 // newIntFromDigits(runtime, {-1, 1})
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits);

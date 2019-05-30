@@ -204,8 +204,8 @@ bound_method = C().foo
 TEST(DebuggingTests, FormatCode) {
   Runtime runtime;
   HandleScope scope;
-  Object name(&scope, runtime.newStrFromCStr("foobar"));
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
+  code.setName(runtime.newStrFromCStr("foobar"));
   std::stringstream ss;
   ss << code;
   EXPECT_EQ(ss.str(), "<code \"foobar\">");

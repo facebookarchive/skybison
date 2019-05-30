@@ -269,6 +269,32 @@ std::string typeName(Runtime* runtime, RawObject obj) {
   return result;
 }
 
+RawCode newEmptyCode() {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object none(&scope, NoneType::object());
+  Tuple empty_tuple(&scope, runtime->emptyTuple());
+  Object empty_string(&scope, Str::empty());
+  Object empty_bytes(&scope, Bytes::empty());
+  return Code::cast(runtime->newCode(0,             // argcount
+                                     0,             // kwonlyargcount
+                                     0,             // nlocals
+                                     0,             // stacksize
+                                     0,             // flags
+                                     none,          // code
+                                     empty_tuple,   // consts
+                                     empty_tuple,   // names
+                                     empty_tuple,   // varnames
+                                     empty_tuple,   // freevars
+                                     empty_tuple,   // cellvars
+                                     empty_string,  // filename
+                                     empty_string,  // name
+                                     0,             // firlineno
+                                     empty_bytes    // lnotab
+                                     ));
+}
+
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
   return runtime->newIntWithDigits(View<uword>(digits.data(), digits.length()));
 }

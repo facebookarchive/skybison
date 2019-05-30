@@ -627,8 +627,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalArgument) {
   callee.setEntry(nativeTrampoline<firstArg>);
 
   // Set up a code object that calls the builtin with a single argument.
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -668,8 +667,7 @@ TEST(TrampolinesTest, CallNativeFunctionReceivesPositionalAndKeywordArgument) {
   callee.setEntryKw(nativeTrampolineKw<returnsPositionalAndKeywordArgument>);
 
   // Set up a code object that calls the builtin with (1234, foo='bar')
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(4));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1234));
@@ -724,8 +722,7 @@ TEST(TrampolinesTest,
       nativeTrampolineKw<returnsPositionalAndTwoKeywordArguments>);
 
   // Code object that calls func with (1234, (foo='foo_val', bar='bar_val'))
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(5));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1234));
@@ -916,8 +913,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   callee.setEntry(moduleTrampolineNoArgs);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
@@ -945,8 +941,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   callee.setEntry(moduleTrampolineNoArgs);
 
   // Set up a code object that calls the function with a single argument.
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -974,8 +969,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   callee.setEntry(moduleTrampolineNoArgs);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
@@ -1002,8 +996,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
   callee.setEntryKw(moduleTrampolineNoArgsKw);
 
   // Set up a code object that calls the builtin with (foo='bar')
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, runtime.newStrFromCStr("bar"));
@@ -1036,8 +1029,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   callee.setEntryKw(moduleTrampolineNoArgsKw);
 
   // Set up a code object that calls the builtin with (foo='bar')
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   Tuple kw_tuple(&scope, runtime.newTuple(0));
@@ -1069,8 +1061,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsRaisesTypeError) {
   callee.setEntryEx(moduleTrampolineNoArgsEx);
 
   // Set up a code object that calls with (*(10))
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1102,8 +1093,7 @@ TEST(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   callee.setEntryEx(moduleTrampolineNoArgsEx);
 
   // Set up a code object that calls with (*())
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(0));
@@ -1135,8 +1125,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
   callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
@@ -1161,8 +1150,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
   callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function with a single argument.
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1190,8 +1178,7 @@ TEST(TrampolinesTest,
   callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function with (123, 456)
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(123));
@@ -1219,8 +1206,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
   callee.setEntry(moduleTrampolineOneArg);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1247,8 +1233,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndZeroKwArgsReturns) {
   callee.setEntryKw(moduleTrampolineOneArgKw);
 
   // Set up a code object that calls the builtin with (1111, {})
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1281,8 +1266,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
   callee.setEntryKw(moduleTrampolineOneArgKw);
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(4));
   consts.atPut(0, *callee);
   Tuple kw_tuple(&scope, runtime.newTuple(1));
@@ -1315,8 +1299,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
   callee.setEntryEx(moduleTrampolineOneArgEx);
 
   // Set up a code object that calls with (*(10))
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1348,8 +1331,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
   callee.setEntryEx(moduleTrampolineOneArgEx);
 
   // Set up a code object that calls with (*(10), {})
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1385,8 +1367,7 @@ TEST(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndKwRaisesTypeError) {
   callee.setEntryEx(moduleTrampolineOneArgEx);
 
   // Set up a code object that calls with (*(10), {2:3})
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1424,8 +1405,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   callee.setEntry(moduleTrampolineVarArgs);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
@@ -1454,8 +1434,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   callee.setEntry(moduleTrampolineVarArgs);
 
   // Set up a code object that calls the function with a single argument.
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1483,8 +1462,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   callee.setEntry(moduleTrampolineVarArgs);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
@@ -1513,8 +1491,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   callee.setEntryKw(moduleTrampolineVarArgsKw);
 
   // Set up a code object that calls the builtin with (1111, {})
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1547,8 +1524,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
   callee.setEntryKw(moduleTrampolineVarArgsKw);
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(4));
   consts.atPut(0, *callee);
   Tuple kw_tuple(&scope, runtime.newTuple(1));
@@ -1585,8 +1561,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
   callee.setEntryEx(moduleTrampolineVarArgsEx);
 
   // Set up a code object that calls with (*(10))
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1622,8 +1597,7 @@ TEST(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   callee.setEntryEx(moduleTrampolineVarArgsEx);
 
   // Set up a code object that calls with (*(10), {})
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1660,8 +1634,7 @@ TEST(TrampolinesTest,
   callee.setEntryEx(moduleTrampolineVarArgsEx);
 
   // Set up a code object that calls with (*(10), {})
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1699,8 +1672,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   callee.setEntry(moduleTrampolineKeywords);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
@@ -1729,8 +1701,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   callee.setEntry(moduleTrampolineKeywords);
 
   // Set up a code object that calls the function with a single argument.
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1759,8 +1730,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   callee.setEntry(moduleTrampolineKeywords);
 
   // Set up a code object that calls the function without arguments
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *callee);
   code.setConsts(*consts);
@@ -1794,8 +1764,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   callee.setEntryKw(moduleTrampolineKeywordsKw);
 
   // Set up a code object that calls the builtin with ("bar", foo=1111)
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(4));
   consts.atPut(0, *callee);
   consts.atPut(1, runtime.newStrFromCStr("bar"));
@@ -1832,8 +1801,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   callee.setEntryKw(moduleTrampolineKeywordsKw);
 
   // Set up a code object that calls the builtin with (123, 456, foo=789)
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(5));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(123));
@@ -1876,8 +1844,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleKwArgsReturns) {
   callee.setEntryKw(moduleTrampolineKeywordsKw);
 
   // Set up a code object that calls the builtin with ("foo"=1234, "bar"=5678)
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(4));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1234));
@@ -1915,8 +1882,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   callee.setEntryEx(moduleTrampolineKeywordsEx);
 
   // Set up a code object that calls with (*(10))
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -1956,8 +1922,7 @@ TEST(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableKwArgsReturns) {
   callee.setEntryEx(moduleTrampolineKeywordsEx);
 
   // Set up a code object that calls with (*(10), **{"foo":1111})
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   Tuple arg_tuple(&scope, runtime.newTuple(1));
@@ -2103,17 +2068,15 @@ TEST(TrampolinesTest, SlotTrampolineKwAllowsCallWithNoKwargs) {
 
   Runtime runtime;
   HandleScope scope;
-  Object name(&scope, runtime.newStrFromCStr("callee"));
   Function callee(&scope, runtime.newFunction());
   callee.setEntryKw(slotTrampolineKw);
-  Code callee_code(&scope, runtime.newEmptyCode(name));
+  Code callee_code(&scope, newEmptyCode());
   callee_code.setCode(runtime.newIntFromCPtr(bit_cast<void*>(func)));
   callee.setCode(*callee_code);
 
   // Set up a code object that calls the function with one positional arg and an
   // empty keyword names tuple.
-  Object code_name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(code_name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, runtime.newInt(1234));

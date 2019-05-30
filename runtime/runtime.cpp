@@ -489,31 +489,6 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
               .isError();
 }
 
-RawObject Runtime::newEmptyCode(const Object& name) {
-  HandleScope scope;
-  Object none(&scope, NoneType::object());
-  Tuple empty_tuple(&scope, newTuple(0));
-  Object empty_string(&scope, Str::empty());
-  Object empty_bytes(&scope, Bytes::empty());
-
-  return newCode(0,             // argcount
-                 0,             // kwonlyargcount
-                 0,             // nlocals
-                 0,             // stacksize
-                 0,             // flags
-                 none,          // code
-                 empty_tuple,   // consts
-                 empty_tuple,   // names
-                 empty_tuple,   // varnames
-                 empty_tuple,   // freevars
-                 empty_tuple,   // cellvars
-                 empty_string,  // filename
-                 name,          // name
-                 0,             // firlineno
-                 empty_bytes    // lnotab
-  );
-}
-
 RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
                            word stacksize, word flags, const Object& code,
                            const Object& consts, const Object& names,
@@ -621,10 +596,29 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
   Function function(
       &scope, newNativeFunction(name, qualname, builtinTrampoline,
                                 builtinTrampolineKw, builtinTrampolineEx));
+
+  Object code_code(&scope, newInt(bit_cast<uword>(entry)));
+  Tuple empty_tuple(&scope, newTuple(0));
+  Object empty_string(&scope, Str::empty());
+  Object empty_bytes(&scope, Bytes::empty());
   Object name_str(&scope, symbols()->at(name));
-  function.setCode(newEmptyCode(name_str));
-  Code code(&scope, function.code());
-  code.setCode(newInt(bit_cast<uword>(entry)));
+  Code code(&scope, newCode(0,             // argcount
+                            0,             // kwonlyargcount
+                            0,             // nlocals
+                            0,             // stacksize
+                            0,             // flags
+                            code_code,     // code
+                            empty_tuple,   // consts
+                            empty_tuple,   // names
+                            empty_tuple,   // varnames
+                            empty_tuple,   // freevars
+                            empty_tuple,   // cellvars
+                            empty_string,  // filename
+                            name_str,      // name
+                            0,             // firlineno
+                            empty_bytes    // lnotab
+                            ));
+  function.setCode(*code);
   return *function;
 }
 

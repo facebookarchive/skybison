@@ -218,7 +218,7 @@ TEST(ThreadTest, OverlappingFrames) {
 
   // Push a frame for a code object with space for 3 items on the value stack
   Object name(&scope, Str::empty());
-  Code caller_code(&scope, runtime.newEmptyCode(name));
+  Code caller_code(&scope, newEmptyCode());
   caller_code.setCode(Bytes::empty());
   caller_code.setStacksize(3);
 
@@ -238,7 +238,7 @@ TEST(ThreadTest, OverlappingFrames) {
 
   // Push a frame for a code object that expects 3 arguments and needs space
   // for 3 local variables
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   code.setArgcount(3);
   code.setNlocals(3);
@@ -272,7 +272,7 @@ TEST(ThreadTest, PushPopFrame) {
   HandleScope scope(thread);
 
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   code.setNlocals(2);
   code.setStacksize(3);
@@ -304,7 +304,7 @@ TEST(ThreadTest, PushFrameWithNoCellVars) {
   HandleScope scope(thread);
 
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   code.setCellvars(NoneType::object());
   code.setFreevars(runtime.newTuple(0));
@@ -325,7 +325,7 @@ TEST(ThreadTest, PushFrameWithNoFreeVars) {
   HandleScope scope(thread);
 
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   code.setFreevars(NoneType::object());
   code.setCellvars(runtime.newTuple(0));
@@ -412,8 +412,7 @@ TEST(ThreadTest, CallFunction) {
   //     def noop(a, b):
   //         return 2222
   //
-  Object name(&scope, Str::empty());
-  Code callee_code(&scope, runtime.newEmptyCode(name));
+  Code callee_code(&scope, newEmptyCode());
   callee_code.setArgcount(2);
   callee_code.setStacksize(1);
   callee_code.setConsts(runtime.newTuple(1));
@@ -430,7 +429,7 @@ TEST(ThreadTest, CallFunction) {
                                             none, none, none, globals));
 
   // Build a code object to call the function defined above
-  Code caller_code(&scope, runtime.newEmptyCode(name));
+  Code caller_code(&scope, newEmptyCode());
   caller_code.setStacksize(3);
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *callee);
@@ -462,8 +461,7 @@ TEST(ThreadTest, ExtendedArg) {
     constants.atPut(i, zero);
   }
   constants.atPut(num_consts - 1, non_zero);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setConsts(*constants);
   code.setCode(runtime.newBytesWithAll(bytecode));
   code.setStacksize(2);
@@ -492,8 +490,7 @@ TEST(ThreadTest, ExecuteDupTop) {
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(1111));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setStacksize(2);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, DUP_TOP, 0, RETURN_VALUE, 0};
@@ -510,8 +507,7 @@ TEST(ThreadTest, ExecuteDupTopTwo) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, SmallInt::fromWord(2222));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setStacksize(2);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,  0, LOAD_CONST,   1,
@@ -529,8 +525,7 @@ TEST(ThreadTest, ExecuteRotTwo) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, SmallInt::fromWord(2222));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setStacksize(2);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1,
@@ -549,8 +544,7 @@ TEST(ThreadTest, ExecuteRotThree) {
   consts.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, SmallInt::fromWord(2222));
   consts.atPut(2, SmallInt::fromWord(3333));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setStacksize(3);
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST,   1, LOAD_CONST, 2,
@@ -568,8 +562,7 @@ TEST(ThreadTest, ExecuteJumpAbsolute) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, SmallInt::fromWord(2222));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setStacksize(2);
   code.setConsts(*consts);
   const byte bytecode[] = {JUMP_ABSOLUTE, 4, LOAD_CONST,   0,
@@ -587,8 +580,7 @@ TEST(ThreadTest, ExecuteJumpForward) {
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(1111));
   consts.atPut(1, SmallInt::fromWord(2222));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setStacksize(2);
   code.setConsts(*consts);
   const byte bytecode[] = {JUMP_FORWARD, 2, LOAD_CONST,   0,
@@ -603,8 +595,7 @@ TEST(ThreadTest, ExecuteStoreLoadFast) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(1111));
   code.setConsts(*consts);
@@ -621,8 +612,7 @@ TEST(ThreadTest, LoadGlobal) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
   names.atPut(0, *key);
@@ -754,8 +744,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -780,8 +769,7 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -808,8 +796,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -835,8 +822,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
@@ -862,8 +848,7 @@ TEST(ThreadTest, LoadNameFromGlobals) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
@@ -885,8 +870,7 @@ TEST(ThreadTest, LoadNameFromLocals) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple names(&scope, runtime.newTuple(1));
   Object key(&scope, runtime.newStrFromCStr("foo"));
@@ -911,12 +895,12 @@ TEST(ThreadTest, MakeFunction) {
   HandleScope scope(thread);
 
   Object name(&scope, runtime.newStrFromCStr("hello"));
-  Code func_code(&scope, runtime.newEmptyCode(name));
+  Code func_code(&scope, newEmptyCode());
+  func_code.setName(*name);
   func_code.setCode(runtime.newBytes(0, 0));
   func_code.setFlags(Code::Flags::NOFREE);
 
-  Object empty_str(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(empty_str));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, *func_code);
@@ -950,8 +934,7 @@ TEST(ThreadTest, BuildList) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, SmallInt::fromWord(111));
@@ -977,8 +960,7 @@ TEST(ThreadTest, BuildSetEmpty) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   const byte bytecode[] = {BUILD_SET, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
@@ -992,8 +974,7 @@ TEST(ThreadTest, BuildSetWithOneItem) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, runtime.newInt(111));
@@ -1016,8 +997,7 @@ TEST(ThreadTest, BuildSet) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(4));
 
@@ -1073,8 +1053,7 @@ TEST(ThreadTest, SetupLoopAndPopBlock) {
   const byte bytecode[] = {LOAD_CONST,    1, SETUP_LOOP, 6, LOAD_CONST, 0,
                            CALL_FUNCTION, 0, POP_TOP,    0, POP_BLOCK,  0,
                            RETURN_VALUE,  0};
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setCode(runtime.newBytesWithAll(bytecode));
   code.setConsts(*consts);
   code.setStacksize(4);
@@ -1087,8 +1066,7 @@ TEST(ThreadTest, PopJumpIfFalse) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, Bool::trueObj());
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1116,8 +1094,7 @@ TEST(ThreadTest, PopJumpIfTrue) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(3));
   consts.atPut(0, Bool::falseObj());
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1145,8 +1122,7 @@ TEST(ThreadTest, JumpIfFalseOrPop) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, Bool::falseObj());
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1171,8 +1147,7 @@ TEST(ThreadTest, JumpIfTrueOrPop) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, Bool::trueObj());
   consts.atPut(1, SmallInt::fromWord(1111));
@@ -1197,8 +1172,7 @@ TEST(ThreadTest, UnaryNot) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, Bool::trueObj());
   code.setConsts(*consts);
@@ -1312,8 +1286,7 @@ TEST(ThreadTest, NativeExceptions) {
   Function fn(&scope, runtime.newFunction());
   fn.setEntry(nativeTrampoline<nativeExceptionTest>);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *fn);
   code.setConsts(*consts);
@@ -1938,8 +1911,7 @@ TEST(BuildString, buildStringEmpty) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   const byte bytecode[] = {BUILD_STRING, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
@@ -1951,8 +1923,7 @@ TEST(BuildString, buildStringSingle) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   Object str(&scope, SmallStr::fromCStr("foo"));
@@ -1969,8 +1940,7 @@ TEST(BuildString, buildStringMultiSmall) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(2));
   Object str(&scope, SmallStr::fromCStr("foo"));
@@ -1990,8 +1960,7 @@ TEST(BuildString, buildStringMultiLarge) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(3));
   Object str(&scope, SmallStr::fromCStr("hello"));
@@ -2330,8 +2299,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
   HandleScope scope(thread);
 
   Tuple consts(&scope, runtime.newTuple(4));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   consts.atPut(0, SmallInt::fromWord(0));
   consts.atPut(1, SmallInt::fromWord(1));
   consts.atPut(2, SmallInt::fromWord(3));
@@ -2411,8 +2379,7 @@ TEST(ThreadTest, ContinueLoopRangeLoopByteCode) {
   HandleScope scope(thread);
 
   Tuple consts(&scope, runtime.newTuple(5));
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   consts.atPut(0, SmallInt::fromWord(0));
   consts.atPut(1, SmallInt::fromWord(4));
   consts.atPut(2, SmallInt::fromWord(1));
@@ -2840,8 +2807,7 @@ TEST(ThreadTest, LoadTypeDerefFromLocal) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(1111));
   Tuple freevars(&scope, runtime.newTuple(1));
@@ -2865,8 +2831,7 @@ TEST(TrampolinesTest, PushCallFrameWithSameGlobalsPropagatesBuiltins) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   code.setNames(runtime.newTuple(0));
 
@@ -2887,8 +2852,7 @@ TEST(ThreadTest, ExecSetsMissingDunderBuiltins) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, NoneType::object());
   code.setConsts(*consts);

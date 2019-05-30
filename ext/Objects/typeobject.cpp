@@ -960,6 +960,34 @@ const SlotDef kSlotdefs[] = {
            "__imul__($self, value, /)\n--\n\nImplement self*=value."),
 };
 
+static RawObject newExtCode(Thread* thread, const Object& name, void* fptr,
+                            const Object& slot_value) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object code_code(&scope, runtime->newIntFromCPtr(fptr));
+  Tuple empty_tuple(&scope, runtime->emptyTuple());
+  Object filename(&scope, Str::empty());
+  Object lnotab(&scope, Bytes::empty());
+  Tuple consts(&scope, runtime->newTuple(1));
+  consts.atPut(0, *slot_value);
+  return runtime->newCode(0,            // argcount
+                          0,            // kwonlyargcount
+                          0,            // nlocals
+                          0,            // stacksize
+                          0,            // flags
+                          code_code,    // code
+                          consts,       // consts
+                          empty_tuple,  // names
+                          empty_tuple,  // varnames
+                          empty_tuple,  // freevars
+                          empty_tuple,  // cellvars
+                          filename,     // filename
+                          name,         // name
+                          0,            // firlineno
+                          lnotab        // lnotab
+  );
+}
+
 // For every entry in kSlotdefs with a non-null wrapper function, a slot id
 // that was provided by the user, and no preexisting entry in the type dict, add
 // a wrapper function to call the slot from Python.
@@ -993,11 +1021,8 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // Create the wrapper function.
     Str qualname(&scope,
                  runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
-    Code code(&scope, runtime->newEmptyCode(slot_name));
-    code.setCode(runtime->newIntFromCPtr(bit_cast<void*>(slot.wrapper)));
-    Tuple consts(&scope, runtime->newTuple(1));
-    consts.atPut(0, *slot_value);
-    code.setConsts(*consts);
+    Object code(&scope, newExtCode(thread, slot_name,
+                                   bit_cast<void*>(slot.wrapper), slot_value));
     Function func(
         &scope, runtime->newNativeFunction(
                     slot.name, qualname,
@@ -1426,12 +1451,9 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
     Object doc(&scope, runtime->newStrFromCStr(def.doc));
     function.setDoc(*doc);
   }
-  Code code(&scope, runtime->newEmptyCode(name));
-  code.setCode(runtime->newIntFromCPtr(bit_cast<void*>(&getterWrapper)));
-  Tuple consts(&scope, runtime->newTuple(1));
-  consts.atPut(0, runtime->newIntFromCPtr(bit_cast<void*>(def.get)));
-  code.setConsts(*consts);
-  function.setCode(*code);
+  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.get)));
+  function.setCode(
+      newExtCode(thread, name, bit_cast<void*>(&getterWrapper), value));
   return *function;
 }
 
@@ -1449,12 +1471,9 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
     Object doc(&scope, runtime->newStrFromCStr(def.doc));
     function.setDoc(*doc);
   }
-  Code code(&scope, runtime->newEmptyCode(name));
-  code.setCode(runtime->newIntFromCPtr(bit_cast<void*>(&setterWrapper)));
-  Tuple consts(&scope, runtime->newTuple(1));
-  consts.atPut(0, runtime->newIntFromCPtr(bit_cast<void*>(def.set)));
-  code.setConsts(*consts);
-  function.setCode(*code);
+  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.set)));
+  function.setCode(
+      newExtCode(thread, name, bit_cast<void*>(&setterWrapper), value));
   return *function;
 }
 

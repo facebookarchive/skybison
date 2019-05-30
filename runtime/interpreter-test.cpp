@@ -546,8 +546,7 @@ TEST(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, runtime.newInt(7));
   consts.atPut(1, runtime.newInt(-13));
@@ -599,8 +598,7 @@ v1 = 7
   Object v0(&scope, moduleAt(&runtime, "__main__", "v0"));
   Object v1(&scope, moduleAt(&runtime, "__main__", "v1"));
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *v0);
   consts.atPut(1, *v1);
@@ -827,8 +825,7 @@ TEST(InterpreterDeathTest, InvalidOpcode) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_202, 17, NOP, 7};
   code.setCode(runtime.newBytesWithAll(bytecode));
 
@@ -1297,8 +1294,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -1353,8 +1349,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -1412,8 +1407,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   // ex and default argument expansion
   //
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
 
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -1683,8 +1677,7 @@ sys.displayhook = my_displayhook
 
   Object unique(&scope, runtime.newTuple(1));  // unique object
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, *unique);
   consts.atPut(1, NoneType::object());
@@ -1722,8 +1715,7 @@ a = AsyncIterable()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -1738,8 +1730,7 @@ TEST(InterpreterTest, GetAiterOnNonIterable) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(123));
   code.setConsts(*consts);
@@ -1775,8 +1766,7 @@ manager = M()
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   code.setNlocals(0);
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(42));
@@ -1803,8 +1793,7 @@ TEST(InterpreterTest, SetupAsyncWithPushesBlock) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(2));
   consts.atPut(0, SmallInt::fromWord(42));
   consts.atPut(1, NoneType::object());
@@ -2355,8 +2344,7 @@ a = AsyncIterator()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -2375,8 +2363,7 @@ TEST(InterpreterTest, GetAnextOnNonIterable) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, SmallInt::fromWord(123));
   code.setConsts(*consts);
@@ -2402,8 +2389,7 @@ a = AsyncIterator()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -2430,8 +2416,7 @@ a = Awaitable()
   Module main(&scope, findModule(&runtime, "__main__"));
   Object a(&scope, moduleAt(&runtime, main, "a"));
 
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *a);
   code.setConsts(*consts);
@@ -2446,8 +2431,7 @@ TEST(InterpreterTest, GetAwaitableOnNonAwaitable) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, runtime.newStrFromCStr("foo"));
   code.setConsts(*consts);
@@ -2911,8 +2895,7 @@ foo = Foo()
   Object foo(&scope, moduleAt(&runtime, main, "foo"));
 
   // Create a code object and set the foo instance as a const
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));
   consts.atPut(0, *foo);
   code.setConsts(*consts);
@@ -3387,8 +3370,7 @@ TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   HandleScope scope(thread);
 
   // Set up a code object that runs: {}.foo
-  Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   Tuple names(&scope, runtime.newTuple(1));
   Str foo(&scope, runtime.newStrFromCStr("foo"));
   names.atPut(0, *foo);

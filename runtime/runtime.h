@@ -88,7 +88,6 @@ class Runtime {
 
   RawObject newClassMethod();
 
-  RawObject newEmptyCode(const Object& name_str);
   RawObject newCode(word argcount, word kwonlyargcount, word nlocals,
                     word stacksize, word flags, const Object& code,
                     const Object& consts, const Object& names,

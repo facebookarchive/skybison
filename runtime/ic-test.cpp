@@ -13,7 +13,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   byte bytecode[] = {
       NOP,          99,        EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
       NOP,          LOAD_ATTR, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
@@ -53,7 +53,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   byte bytecode[] = {STORE_ATTR, 48};
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
@@ -76,7 +76,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   byte bytecode[] = {
       BINARY_MATRIX_MULTIPLY,
       0,
@@ -157,7 +157,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   byte bytecode[] = {
       INPLACE_MATRIX_MULTIPLY,
       0,
@@ -238,7 +238,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesCompareOpOpcodes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
-  Code code(&scope, runtime.newEmptyCode(name));
+  Code code(&scope, newEmptyCode());
   byte bytecode[] = {
       COMPARE_OP, CompareOp::LT,        COMPARE_OP, CompareOp::LE,
       COMPARE_OP, CompareOp::EQ,        COMPARE_OP, CompareOp::NE,
