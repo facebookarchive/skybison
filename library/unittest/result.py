@@ -185,8 +185,9 @@ class TestResult(object):
         """Converts a sys.exc_info()-style tuple of values into a string."""
         exctype, value, tb = err
         # Skip test runner traceback levels
-        while tb and self._is_relevant_tb_level(tb):
-            tb = tb.tb_next
+        # TODO(T42595911): traceback module
+        # while tb and self._is_relevant_tb_level(tb):
+        #    tb = tb.tb_next
 
         # TODO(T42595911): traceback module
         # if exctype is test.failureException:
@@ -197,7 +198,9 @@ class TestResult(object):
         # tb_e = traceback.TracebackException(
         #     exctype, value, tb, limit=length, capture_locals=self.tb_locals)
         # msgLines = list(tb_e.format())
-        msgLines = []
+        msgLines = [str(value) + "\n"]
+        if tb is not None:
+            msgLines.append(tb)
 
         if self.buffer:
             output = sys.stdout.getvalue()

@@ -49,4 +49,4 @@ else
     TEST_RUNNER=(xargs -t -P "$NUM_CPUS")
 fi
 find "$PYRO_BUILD_DIR/tests/" -name "$FIND_FILTER" -print0 |
-    "${TEST_RUNNER[@]}" -0 -n1 "$PYTHON_BIN"
+    PYRO_RECORD_TRACEBACKS=1 "${TEST_RUNNER[@]}" -0 -n1 "$PYTHON_BIN"

@@ -994,8 +994,7 @@ HANDLER_INLINE void Interpreter::raise(Context* ctx, RawObject raw_exc,
   // exception instance here, but in the API call case it may be any object
   // (most commonly a str). This discrepancy is cleaned up by
   // normalizeException() in unwind().
-  ctx->thread->setPendingExceptionType(*type);
-  ctx->thread->setPendingExceptionValue(*value);
+  ctx->thread->raiseWithType(*type, *value);
 }
 
 HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread,

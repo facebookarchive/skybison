@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <sstream>
 
 #include "builtins-module.h"
 #include "frame.h"
@@ -343,10 +344,29 @@ RawObject Thread::invokeFunction6(SymbolId module, SymbolId name,
 }
 
 RawObject Thread::raise(LayoutId type, RawObject value) {
+  return raiseWithType(runtime()->typeAt(type), value);
+}
+
+const bool kRecordTracebacks = std::getenv("PYRO_RECORD_TRACEBACKS") != nullptr;
+
+RawObject Thread::raiseWithType(RawObject type_raw, RawObject value_raw) {
   DCHECK(!hasPendingException(), "unhandled exception lingering");
-  setPendingExceptionType(runtime()->typeAt(type));
-  setPendingExceptionValue(value);
-  setPendingExceptionTraceback(NoneType::object());
+  HandleScope scope(this);
+  Type type(&scope, type_raw);
+  Object value(&scope, value_raw);
+  Object traceback(&scope, NoneType::object());
+
+  if (UNLIKELY(kRecordTracebacks)) {
+    // TODO(T39919701): This is a temporary, off-by-default hack until we have
+    // proper traceback support.
+    std::ostringstream tb;
+    Utils::printTraceback(&tb);
+    traceback = runtime()->newStrFromCStr(tb.str().c_str());
+  }
+
+  setPendingExceptionType(*type);
+  setPendingExceptionValue(*value);
+  setPendingExceptionTraceback(*traceback);
   return Error::exception();
 }
 

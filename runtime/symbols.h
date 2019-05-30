@@ -125,6 +125,7 @@ class Runtime;
   V(DunderStr, "__str__")                                                      \
   V(DunderSub, "__sub__")                                                      \
   V(DunderSuppressContext, "__suppress_context__")                             \
+  V(DunderTraceback, "__traceback__")                                          \
   V(DunderTruediv, "__truediv__")                                              \
   V(DunderTrunc, "__trunc__")                                                  \
   V(DunderValues, "__values__")                                                \

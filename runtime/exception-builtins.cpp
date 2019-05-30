@@ -509,7 +509,7 @@ void handleSystemExit(Thread* thread) {
 
 const BuiltinAttribute BaseExceptionBuiltins::kAttributes[] = {
     {SymbolId::kArgs, RawBaseException::kArgsOffset},
-    {SymbolId::kTraceback, RawBaseException::kTracebackOffset},
+    {SymbolId::kDunderTraceback, RawBaseException::kTracebackOffset},
     {SymbolId::kDunderContext, RawBaseException::kContextOffset},
     {SymbolId::kDunderCause, RawBaseException::kCauseOffset},
     {SymbolId::kDunderSuppressContext,

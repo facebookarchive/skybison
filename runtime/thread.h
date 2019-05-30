@@ -151,6 +151,7 @@ class Thread {
   // Raises an exception with the given type and returns an Error that must be
   // returned up the stack by the caller.
   RawObject raise(LayoutId type, RawObject value);
+  RawObject raiseWithType(RawObject type, RawObject value);
   RawObject raiseWithFmt(LayoutId type, const char* fmt, ...);
   RawObject raiseWithId(LayoutId type, SymbolId msg);
 
