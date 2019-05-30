@@ -13,8 +13,8 @@
 
 namespace python {
 
-static RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
-                                           const Object& name_str) {
+RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
+                                    const Object& name_str) {
   return thread->raiseWithFmt(LayoutId::kAttributeError,
                               "'%T' object has no attribute '%S'", &object,
                               &name_str);

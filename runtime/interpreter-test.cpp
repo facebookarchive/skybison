@@ -3364,6 +3364,23 @@ i = C()
   EXPECT_TRUE(to_cache.isNoneType());
 }
 
+TEST(InterpreterTest, LoadAttrSetLocationWithNoAttributeRaisesAttributeError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+obj = object()
+)")
+                   .isError());
+
+  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+  Str name(&scope, runtime.newStrFromCStr("nonexistent_attr"));
+  EXPECT_TRUE(raisedWithStr(
+      Interpreter::loadAttrSetLocation(thread, obj, name, nullptr),
+      LayoutId::kAttributeError,
+      "'object' object has no attribute 'nonexistent_attr'"));
+}
+
 TEST(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   Runtime runtime;
   Thread* thread = Thread::current();

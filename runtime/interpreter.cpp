@@ -1091,6 +1091,8 @@ HANDLER_INLINE void Interpreter::handleLoopExit(Context* ctx, TryBlock::Why why,
 }
 
 bool Interpreter::unwind(Context* ctx) {
+  DCHECK(ctx->thread->hasPendingException(),
+         "unwind() called without a pending exception");
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
 
@@ -2305,6 +2307,9 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
     if (result.isErrorNotFound()) {
       result =
           thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
+      if (result.isErrorNotFound()) {
+        return objectRaiseAttributeError(thread, object, name_str);
+      }
     }
     return *result;
   }
