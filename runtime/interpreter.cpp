@@ -870,7 +870,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
                                     const Object& annotations_dict,
                                     const Object& kw_defaults_dict,
                                     const Object& defaults_tuple,
-                                    const Dict& globals, const Dict& builtins) {
+                                    const Dict& globals) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
 
@@ -922,7 +922,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
       function.setDoc(consts.at(0));
     }
   }
-  function.setFastGlobals(runtime->computeFastGlobals(code, globals, builtins));
+  function.setFastGlobals(runtime->computeFastGlobals(thread, code, globals));
   if (runtime->isCacheEnabled()) {
     icRewriteBytecode(thread, function);
   } else {
@@ -2143,8 +2143,9 @@ HANDLER_INLINE void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
       &scope, ValueCell::cast(Tuple::cast(frame->fastGlobals()).at(arg)));
   CHECK(!value_cell.value().isValueCell(), "Unbound Globals");
   Object key(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
-  Dict builtins(&scope, frame->builtins());
+  Dict globals(&scope, frame->function().globals());
   Runtime* runtime = thread->runtime();
+  Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
   Object value_in_builtin(&scope, runtime->dictAt(thread, builtins, key));
   if (value_in_builtin.isError()) {
     value_in_builtin =
@@ -2190,9 +2191,9 @@ HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
 
   // In the module body, globals == implicit_globals, so no need to check
   // twice. However in class body, it is a different dict.
-  if (frame->implicitGlobals() != frame->globals()) {
+  Dict globals(&scope, frame->function().globals());
+  if (frame->implicitGlobals() != globals) {
     // 2. globals
-    Dict globals(&scope, frame->globals());
     value = runtime->dictAt(thread, globals, key);
   }
   if (value.isValueCell()) {
@@ -2208,7 +2209,7 @@ HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
   }
 
   // 3b. not found; check builtins -- one layer of indirection
-  Dict builtins(&scope, frame->builtins());
+  Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
   value = runtime->dictAt(thread, builtins, key);
   if (value.isValueCell()) {
     DCHECK(!ValueCell::cast(value).isUnbound(), "unbound builtins");
@@ -2429,29 +2430,31 @@ HANDLER_INLINE bool Interpreter::doImportName(Context* ctx, word arg) {
   Object name(&scope, Tuple::cast(code.names()).at(arg));
   Object fromlist(&scope, frame->popValue());
   Object level(&scope, frame->popValue());
-  Dict globals(&scope, runtime->newDict());
+  Dict dict_no_value_cells(&scope, runtime->newDict());
   // TODO(T41326706) Pass in a real globals dict here. For now create a small
   // dict with just the things needed by importlib.
-  Dict frame_globals(&scope, thread->currentFrame()->globals());
+  Dict globals(&scope, frame->function().globals());
   Object key(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
   for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                       SymbolId::kDunderName}) {
     key = runtime->symbols()->at(id);
-    value = runtime->moduleDictAt(thread, frame_globals, key);
-    runtime->dictAtPut(thread, globals, key, value);
+    value = runtime->moduleDictAt(thread, globals, key);
+    runtime->dictAtPut(thread, dict_no_value_cells, key, value);
   }
   // TODO(T41634372) Pass in a dict that is similar to what `builtins.locals`
   // returns. Use `None` for now since the default importlib behavior is to
   // ignore the value and this only matters if `__import__` is replaced.
   Object locals(&scope, NoneType::object());
 
-  // Call builtins.__import__(name, globals, locals, fromlist, level).
+  // Call builtins.__import__(name, dict_no_value_cells, locals, fromlist,
+  //                          level).
   ValueCell dunder_import_cell(&scope, runtime->dunderImport());
   DCHECK(!dunder_import_cell.isUnbound(), "builtins module not initialized");
   Object dunder_import(&scope, dunder_import_cell.value());
-  Object result(&scope, callFunction5(thread, frame, dunder_import, name,
-                                      globals, locals, fromlist, level));
+  Object result(&scope,
+                callFunction5(thread, frame, dunder_import, name,
+                              dict_no_value_cells, locals, fromlist, level));
   if (result.isError()) return unwind(ctx);
   frame->pushValue(*result);
   return false;
@@ -2725,10 +2728,9 @@ HANDLER_INLINE void Interpreter::doMakeFunction(Context* ctx, word arg) {
   if (arg & MakeFunctionFlag::ANNOTATION_DICT) annotations = frame->popValue();
   if (arg & MakeFunctionFlag::DEFAULT_KW) kw_defaults = frame->popValue();
   if (arg & MakeFunctionFlag::DEFAULT) defaults = frame->popValue();
-  Dict globals(&scope, frame->globals());
-  Dict builtins(&scope, frame->builtins());
+  Dict globals(&scope, frame->function().globals());
   frame->pushValue(makeFunction(thread, qualname, code, closure, annotations,
-                                kw_defaults, defaults, globals, builtins));
+                                kw_defaults, defaults, globals));
 }
 
 HANDLER_INLINE void Interpreter::doBuildSlice(Context* ctx, word arg) {

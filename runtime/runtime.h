@@ -298,6 +298,10 @@ class Runtime {
                          const Object& key);
   RawObject moduleDictAtPut(Thread* thread, const Dict& dict, const Object& key,
                             const Object& value);
+  // Returns `__builtins__` of a module dict. Returns a new dict with a single
+  // `{"None": None}` entry if `__builtins__` does not exist.
+  RawDict moduleDictBuiltins(Thread* thread, const Dict& dict);
+
   RawObject moduleAt(const Module& module, const Object& key);
   RawObject moduleAtById(const Module& module, SymbolId key);
   void moduleAtPut(const Module& module, const Object& key,
@@ -614,8 +618,8 @@ class Runtime {
                                   const Object& name);
 
   // Pre-computes fast_globals for functions.
-  RawObject computeFastGlobals(const Code& code, const Dict& globals,
-                               const Dict& builtins);
+  RawObject computeFastGlobals(Thread* thread, const Code& code,
+                               const Dict& globals);
 
   RawObject computeBuiltinBase(Thread* thread, const Type& type);
 

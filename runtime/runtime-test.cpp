@@ -29,9 +29,8 @@ RawObject makeTestFunction() {
   Object qualname(&scope, runtime->newStrFromCStr("foo"));
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime->newDict());
-  Dict builtins(&scope, runtime->newDict());
   return Interpreter::makeFunction(thread, qualname, code, none, none, none,
-                                   none, globals, builtins);
+                                   none, globals);
 }
 
 TEST(RuntimeTest, CollectGarbage) {
@@ -134,6 +133,32 @@ c = C()
   Object foo(&scope, runtime.newStrFromCStr("foo"));
   EXPECT_TRUE(
       raised(runtime.attributeAt(thread, c, foo), LayoutId::kUserWarning));
+}
+
+TEST(RuntimeTest, ModuleDictBuiltinsReturnsDunderBuiltins) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Dict globals(&scope, runtime.newDict());
+  Object name(&scope, runtime.newStrFromCStr("mybuiltins"));
+  Module module(&scope, runtime.newModule(name));
+  Object dunder_builtins_name(&scope, runtime.newStrFromCStr("__builtins__"));
+  runtime.moduleDictAtPut(thread, globals, dunder_builtins_name, module);
+
+  Dict result(&scope, runtime.moduleDictBuiltins(thread, globals));
+  EXPECT_EQ(result, module.dict());
+}
+
+TEST(RuntimeTest, ModuleDictBuiltinsReturnsMinimalDict) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Dict globals(&scope, runtime.newDict());
+  Dict result(&scope, runtime.moduleDictBuiltins(thread, globals));
+  EXPECT_EQ(result.numItems(), 1);
+  Object none_name(&scope, runtime.newStrFromCStr("None"));
+  EXPECT_EQ(runtime.moduleDictAt(thread, result, none_name),
+            NoneType::object());
 }
 
 // Return the raw name of a builtin LayoutId, or "<invalid>" for user-defined or

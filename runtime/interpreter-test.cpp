@@ -560,10 +560,9 @@ TEST(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
   Object qualname(&scope, Str::empty());
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function function(
       &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
-                                        none, none, globals, builtins));
+                                        none, none, globals));
 
   // Update inline cache.
   EXPECT_TRUE(isIntEqualsWord(
@@ -614,10 +613,9 @@ v1 = 7
   Object qualname(&scope, Str::empty());
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function function(
       &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
-                                        none, none, globals, builtins));
+                                        none, none, globals));
 
   // Update inline cache.
   EXPECT_TRUE(isIntEqualsWord(
@@ -1319,10 +1317,9 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   Object qualname(&scope, Str::empty());
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function callee(&scope,
                   Interpreter::makeFunction(thread, qualname, code, none, none,
-                                            none, none, globals, builtins));
+                                            none, none, globals));
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -1376,10 +1373,9 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   Object qualname(&scope, Str::empty());
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function callee(&scope,
                   Interpreter::makeFunction(thread, qualname, code, none, none,
-                                            none, none, globals, builtins));
+                                            none, none, globals));
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));
@@ -1440,10 +1436,9 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   Object qualname(&scope, Str::empty());
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function callee(&scope,
                   Interpreter::makeFunction(thread, qualname, code, none, none,
-                                            none, none, globals, builtins));
+                                            none, none, globals));
   Tuple defaults(&scope, runtime.newTuple(2));
 
   defaults.atPut(0, SmallInt::fromWord(1));

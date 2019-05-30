@@ -228,7 +228,7 @@ class Interpreter {
                                 const Object& annotations_dict,
                                 const Object& kw_defaults_dict,
                                 const Object& defaults_tuple,
-                                const Dict& globals, const Dict& builtins);
+                                const Dict& globals);
 
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);

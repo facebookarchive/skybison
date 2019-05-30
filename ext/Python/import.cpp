@@ -144,14 +144,16 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
 
   Object name_obj(&scope, ApiHandle::fromPyObject(module_name)->asObject());
   Dict globals_obj(&scope, runtime->newDict());
-  if (thread->currentFrame()->globals().isDict()) {
-    Dict frame_globals(&scope, thread->currentFrame()->globals());
+  Frame* current_frame = thread->currentFrame();
+  if (!current_frame->isSentinelFrame() &&
+      current_frame->function().globals().isDict()) {
+    Dict globals(&scope, current_frame->function().globals());
     Object key(&scope, NoneType::object());
     Object value(&scope, NoneType::object());
     for (SymbolId id : {SymbolId::kDunderPackage, SymbolId::kDunderSpec,
                         SymbolId::kDunderName}) {
       key = runtime->symbols()->at(id);
-      value = runtime->moduleDictAt(thread, frame_globals, key);
+      value = runtime->moduleDictAt(thread, globals, key);
       runtime->dictAtPut(thread, globals_obj, key, value);
     }
   }

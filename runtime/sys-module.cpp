@@ -274,7 +274,7 @@ RawObject SysModule::underGetframeGlobals(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
   }
-  return frame->globals();
+  return frame->function().globals();
 }
 
 RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,

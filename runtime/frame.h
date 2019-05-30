@@ -145,9 +145,7 @@ class BlockStack {
  *     || . entries      | | growth    |
  *     |+----------------+             |
  *     | Virtual PC                    |
- *     | Builtins                      |
  *     | Implicit globals              |
- *     | Globals                       |
  *     | Value stack top --------------|--+
  *     | Previous frame ptr            |<-+ <--Frame pointer
  *     +-------------------------------+
@@ -176,14 +174,6 @@ class Frame {
   // Index in the bytecode array of the last instruction that was executed
   word virtualPC();
   void setVirtualPC(word pc);
-
-  // The builtins namespace (a Dict)
-  RawObject builtins();
-  void setBuiltins(RawObject builtins);
-
-  // The (explicit) globals namespace (a Dict)
-  RawObject globals();
-  void setGlobals(RawObject globals);
 
   // The implicit globals namespace (a Dict)
   RawObject implicitGlobals();
@@ -256,10 +246,8 @@ class Frame {
 
   static const int kPreviousFrameOffset = 0;
   static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
-  static const int kGlobalsOffset = kValueStackTopOffset + kPointerSize;
-  static const int kImplicitGlobalsOffset = kGlobalsOffset + kPointerSize;
-  static const int kBuiltinsOffset = kImplicitGlobalsOffset + kPointerSize;
-  static const int kVirtualPCOffset = kBuiltinsOffset + kPointerSize;
+  static const int kImplicitGlobalsOffset = kValueStackTopOffset + kPointerSize;
+  static const int kVirtualPCOffset = kImplicitGlobalsOffset + kPointerSize;
   static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
   static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
   static const int kLocalsOffset = kNumLocalsOffset + kPointerSize;
@@ -351,18 +339,6 @@ inline word Frame::virtualPC() {
 
 inline void Frame::setVirtualPC(word pc) {
   atPut(kVirtualPCOffset, SmallInt::fromWord(pc));
-}
-
-inline RawObject Frame::builtins() { return at(kBuiltinsOffset); }
-
-inline void Frame::setBuiltins(RawObject builtins) {
-  atPut(kBuiltinsOffset, builtins);
-}
-
-inline RawObject Frame::globals() { return at(kGlobalsOffset); }
-
-inline void Frame::setGlobals(RawObject globals) {
-  atPut(kGlobalsOffset, globals);
 }
 
 inline RawObject Frame::implicitGlobals() { return at(kImplicitGlobalsOffset); }

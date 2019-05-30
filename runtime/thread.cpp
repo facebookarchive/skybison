@@ -119,51 +119,10 @@ Frame* Thread::pushNativeFrame(word nargs) {
   return frame;
 }
 
-Frame* Thread::pushFrame(RawFunction function, RawDict globals,
-                         RawDict builtins) {
+Frame* Thread::pushCallFrame(RawFunction function) {
   RawCode code = Code::cast(function.code());
-  Frame* frame = openAndLinkFrame(function.totalArgs(), code.totalVars(),
-                                  code.stacksize());
-  // TODO(T36407403) We should be able to not set globals and builtins.
-  frame->setGlobals(globals);
-  frame->setBuiltins(builtins);
-  return frame;
-}
-
-Frame* Thread::pushCallFrame(RawFunction function_raw) {
-  // Fast-path: When the globals dict stays the same we can keep the same
-  // builtins dict.
-  Frame* current_frame = currentFrame();
-  if (function_raw.globals() == current_frame->globals()) {
-    RawDict globals = Dict::cast(function_raw.globals());
-    RawDict builtins_dict = Dict::cast(current_frame->builtins());
-    Frame* result = pushFrame(function_raw, globals, builtins_dict);
-    result->setVirtualPC(0);
-    result->setFastGlobals(function_raw.fastGlobals());
-    return result;
-  }
-
-  HandleScope scope(this);
-  Function function(&scope, function_raw);
-  Dict globals(&scope, function.globals());
-  // Otherwise get the `__builtins__` module from the global namespace.
-  // TODO(T36407403): Set builtins appropriately.
-  Object dunder_builtins_name(&scope, runtime()->symbols()->DunderBuiltins());
-  Object builtins_module(
-      &scope, runtime()->moduleDictAt(this, globals, dunder_builtins_name));
-  Object builtins(&scope, NoneType::object());
-  if (builtins_module.isModule()) {
-    builtins = Module::cast(*builtins_module).dict();
-  } else {
-    // Create a minimal builtins dictionary with just `{'None': None}`.
-    builtins = runtime()->newDict();
-    Object none_name(&scope, runtime()->symbols()->None());
-    Object none(&scope, NoneType::object());
-    Dict builtins_dict(&scope, *builtins);
-    runtime()->moduleDictAtPut(this, builtins_dict, none_name, none);
-  }
-
-  Frame* result = pushFrame(*function, *globals, Dict::cast(*builtins));
+  Frame* result =
+      openAndLinkFrame(code.totalArgs(), code.totalVars(), code.stacksize());
   result->setVirtualPC(0);
   result->setFastGlobals(function.fastGlobals());
   return result;
@@ -238,13 +197,10 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
     runtime->moduleDictAtPut(this, globals, dunder_builtins_name,
                              builtins_module_obj);
   }
-  Module builtins_module(&scope, *builtins_module_obj);
-  Dict builtins_dict(&scope, builtins_module.dict());
 
-  Function function(
-      &scope, Interpreter::makeFunction(this, qualname, code, empty_tuple,
-                                        empty_dict, empty_dict, empty_tuple,
-                                        globals, builtins_dict));
+  Function function(&scope, Interpreter::makeFunction(
+                                this, qualname, code, empty_tuple, empty_dict,
+                                empty_dict, empty_tuple, globals));
   currentFrame()->pushValue(*function);
   Frame* frame = pushCallFrame(*function);
   frame->setImplicitGlobals(*locals);

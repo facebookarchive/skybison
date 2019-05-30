@@ -55,10 +55,9 @@ static RawObject makeTestFunction(Thread* thread) {
   Tuple defaults(&scope, runtime->newTuple(1));
   defaults.atPut(0, runtime->newInt(-9));
   Dict globals(&scope, runtime->newDict());
-  Dict builtins(&scope, runtime->newDict());
   Function func(&scope, Interpreter::makeFunction(
                             thread, qualname, code, closure, annotations,
-                            kw_defaults, defaults, globals, builtins));
+                            kw_defaults, defaults, globals));
   func.setModule(runtime->newStrFromCStr("barmodule"));
   func.setName(runtime->newStrFromCStr("baz"));
   Dict attrs(&scope, runtime->newDict());

@@ -50,7 +50,6 @@ class Thread {
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   Frame* linkFrame(Frame* frame);
   // Private method. Call pushCallFrame() or pushNativeFrame() isntead.
-  Frame* pushFrame(RawFunction function, RawDict globals, RawDict builtins);
   Frame* pushCallFrame(RawFunction function);
   Frame* pushNativeFrame(word nargs);
   Frame* pushClassFunctionFrame(const Handle<RawFunction>& function,

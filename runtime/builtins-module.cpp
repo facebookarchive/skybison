@@ -374,7 +374,7 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
   if (bootstrap == Bool::trueObj()) {
     // A bootstrap class initialization uses the existing class dictionary.
     CHECK(frame->previousFrame() != nullptr, "must have a caller frame");
-    Dict globals(&scope, frame->previousFrame()->globals());
+    Dict globals(&scope, frame->previousFrame()->function().globals());
     Object type_obj(&scope, runtime->moduleDictAt(thread, globals, name));
     CHECK(type_obj.isType(),
           "Name '%s' is not bound to a type object. "
@@ -591,10 +591,10 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   if (globals_obj.isNoneType() &&
       locals.isNoneType()) {  // neither globals nor locals are provided
     Frame* caller_frame = frame->previousFrame();
-    globals_obj = caller_frame->globals();
+    globals_obj = caller_frame->function().globals();
     DCHECK(globals_obj.isDict(),
            "Expected caller_frame->globals() to be dict in 'exec'");
-    if (caller_frame->globals() != caller_frame->implicitGlobals()) {
+    if (globals_obj != caller_frame->implicitGlobals()) {
       // TODO(T37888835): Fix 1 argument case
       // globals == implicitGlobals when code is being executed in a module
       // context. If we're not in a module context, this case is unimplemented.

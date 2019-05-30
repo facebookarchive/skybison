@@ -22,10 +22,9 @@ TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function function(
       &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals, builtins));
+                                        none, globals));
   // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {
@@ -59,10 +58,9 @@ TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function function(
       &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals, builtins));
+                                        none, globals));
   // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {STORE_ATTR_CACHED, 0};
@@ -110,10 +108,9 @@ TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function function(
       &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals, builtins));
+                                        none, globals));
   // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {
@@ -192,10 +189,9 @@ TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function function(
       &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals, builtins));
+                                        none, globals));
   // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {
@@ -254,10 +250,9 @@ TEST(IcTest, IcRewriteBytecodeRewritesCompareOpOpcodes) {
   code.setCode(runtime.newBytesWithAll(bytecode));
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function function(
       &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals, builtins));
+                                        none, globals));
   // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {

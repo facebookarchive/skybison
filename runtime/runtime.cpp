@@ -3650,11 +3650,28 @@ void Runtime::strArrayAddStr(Thread* thread, const StrArray& array,
   array.setNumItems(new_length);
 }
 
-RawObject Runtime::computeFastGlobals(const Code& code, const Dict& globals,
-                                      const Dict& builtins) {
-  Thread* thread = Thread::current();
+RawDict Runtime::moduleDictBuiltins(Thread* thread, const Dict& dict) {
+  HandleScope scope(thread);
+  Object dunder_builtins_name(&scope, symbols()->DunderBuiltins());
+  Object builtins_module(&scope,
+                         moduleDictAt(thread, dict, dunder_builtins_name));
+  if (!builtins_module.isErrorNotFound()) {
+    CHECK(builtins_module.isModule(), "expected builtins module");
+    return RawDict::cast(Module::cast(*builtins_module).dict());
+  }
+  // Create a minimal builtins dictionary with just `{'None': None}`.
+  Dict builtins(&scope, newDict());
+  Object none_name(&scope, symbols()->None());
+  Object none(&scope, NoneType::object());
+  moduleDictAtPut(thread, builtins, none_name, none);
+  return *builtins;
+}
+
+RawObject Runtime::computeFastGlobals(Thread* thread, const Code& code,
+                                      const Dict& globals) {
   HandleScope scope(thread);
   Bytes bytes(&scope, code.code());
+  Dict builtins(&scope, moduleDictBuiltins(thread, globals));
   Tuple names(&scope, code.names());
   Tuple fast_globals(&scope, newTuple(names.length()));
   for (word i = 0; i < bytes.length(); i += 2) {

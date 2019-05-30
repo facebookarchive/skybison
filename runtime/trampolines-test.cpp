@@ -821,10 +821,9 @@ TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   closure_tuple.atPut(0, runtime.newInt(99));
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Dict builtins(&scope, runtime.newDict());
   Function foo(&scope,
                Interpreter::makeFunction(thread, qualname, code, closure_tuple,
-                                         none, none, none, globals, builtins));
+                                         none, none, none, globals));
 
   Object argument(&scope, runtime.newInt(3));
   EXPECT_TRUE(isIntEqualsWord(
