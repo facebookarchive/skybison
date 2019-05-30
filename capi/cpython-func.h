@@ -944,6 +944,7 @@ PyAPI_FUNC(Py_UCS4) PyUnicode_READ_Func(int, void*, Py_ssize_t);
 PyAPI_FUNC(Py_UCS4) PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t);
 PyAPI_FUNC(void)
     PyUnicode_WRITE_Func(enum PyUnicode_Kind, void*, Py_ssize_t, Py_UCS4);
+PyAPI_FUNC(int) PyUnicode_IS_ASCII_Func(PyObject*);
 
 PyAPI_FUNC(PyObject*)
     _PyDict_GetItem_KnownHash(PyObject* pydict, PyObject* key, Py_hash_t hash);
@@ -1031,6 +1032,7 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 #define PyUnicode_READY(op) 0
 #define PyUnicode_WRITE(kind, data, index, value)                              \
   PyUnicode_WRITE_Func(kind, data, index, value)
+#define PyUnicode_IS_ASCII(op) PyUnicode_IS_ASCII_Func((PyObject*)op)
 
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))

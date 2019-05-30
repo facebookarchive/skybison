@@ -1830,6 +1830,16 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t) {
   UNIMPLEMENTED("PyUnicode_READ_CHAR_Func");
 }
 
+PY_EXPORT int PyUnicode_IS_ASCII_Func(PyObject* obj) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  DCHECK(thread->runtime()->isInstanceOfStr(*str_obj),
+         "strIsASCII must receive a unicode object");
+  Str str(&scope, strUnderlying(thread, str_obj));
+  return strIsASCII(str) ? 1 : 0;
+}
+
 PY_EXPORT int _Py_normalize_encoding(const char* encoding, char* lower,
                                      size_t lower_len) {
   char* buffer = lower;

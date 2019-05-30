@@ -1996,4 +1996,14 @@ TEST_F(UnicodeExtensionApiTest, EncodeUTF32WithReplaceReturnsBytes) {
             0);
 }
 
+TEST_F(UnicodeExtensionApiTest, IsAsciiWithAsciiOnlyCharsReturnsOne) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyUnicode_IS_ASCII(unicode.get()), 1);
+}
+
+TEST_F(UnicodeExtensionApiTest, IsAsciiWithNonAsciiCharsReturnsZero) {
+  PyObjectPtr unicode(PyUnicode_FromString("fo\u00e4o"));
+  EXPECT_EQ(PyUnicode_IS_ASCII(unicode.get()), 0);
+}
+
 }  // namespace python

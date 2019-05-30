@@ -19,6 +19,9 @@ void strInternInTuple(Thread* thread, const Object& items);
 // tuple, frozenset)
 bool strInternConstants(Thread* thread, const Object& items);
 
+// Returns true if the string is composed of only ascii characters
+bool strIsASCII(const Str& str);
+
 // Look for needle in haystack in the range [start, end]. Return the last
 // index found in that range, or -1 if needle was not found.
 RawObject strRFind(const Str& haystack, const Str& needle, word start,

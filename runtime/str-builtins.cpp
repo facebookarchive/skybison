@@ -465,6 +465,16 @@ bool strInternConstants(Thread* thread, const Object& items) {
   return modified;
 }
 
+bool strIsASCII(const Str& str) {
+  // TODO(T45148575): Check multiple bytes at once
+  for (word i = 0; i < str.length(); i++) {
+    if (str.charAt(i) > kMaxASCII) {
+      return false;
+    }
+  }
+  return true;
+}
+
 RawObject strFind(const Str& haystack, const Str& needle, word start,
                   word end) {
   if (end < 0 || start < 0) {
