@@ -1779,6 +1779,7 @@ manager = M()
   const byte bytecode[] = {LOAD_CONST, 1, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
                            LOAD_CONST, 0, RETURN_VALUE,      0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, main.dict());
   Dict locals(&scope, runtime.newDict());

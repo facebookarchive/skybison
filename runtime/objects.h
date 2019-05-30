@@ -1481,7 +1481,12 @@ class RawCode : public RawHeapObject {
  public:
   // Matching CPython
   enum Flags {
+    // Local variables are organized in an array and LOAD_FAST/STORE_FAST are
+    // used when this flag is set. Otherwise local variable accesses use
+    // LOAD_NAME/STORE_NAME to modify a dictionary ("implicit globals").
     OPTIMIZED = 0x0001,
+    // Local variables start in an uninitialized state. If this is not set then
+    // the variables are initialized with the values in the implicit globals.
     NEWLOCALS = 0x0002,
     VARARGS = 0x0004,
     VARKEYARGS = 0x0008,
@@ -1527,6 +1532,8 @@ class RawCode : public RawHeapObject {
 
   bool hasCoroutineOrGenerator() const;
   bool hasFreevarsOrCellvars() const;
+  bool hasOptimizedAndNewLocals() const;
+  bool hasOptimizedOrNewLocals() const;
 
   word kwonlyargcount() const;
   void setKwonlyargcount(word value) const;
@@ -1672,6 +1679,9 @@ class RawFunction : public RawHeapObject {
 
   // Returns true if the function is an iterable coroutine.
   bool hasIterableCoroutine() const;
+
+  // Returns true if the function has the optimized or newlocals flag.
+  bool hasOptimizedOrNewLocals() const;
 
   // Returns true if the function has a simple calling convention.
   bool hasSimpleCall() const;
@@ -3998,6 +4008,15 @@ inline bool RawCode::hasFreevarsOrCellvars() const {
   return !(flags() & Flags::NOFREE);
 }
 
+inline bool RawCode::hasOptimizedAndNewLocals() const {
+  return (flags() & (Flags::OPTIMIZED | Flags::NEWLOCALS)) ==
+         (Flags::OPTIMIZED | Flags::NEWLOCALS);
+}
+
+inline bool RawCode::hasOptimizedOrNewLocals() const {
+  return flags() & (Flags::OPTIMIZED | Flags::NEWLOCALS);
+}
+
 // RawLargeInt
 
 inline word RawLargeInt::asWord() const {
@@ -4486,6 +4505,10 @@ inline bool RawFunction::hasGenerator() const {
 
 inline bool RawFunction::hasIterableCoroutine() const {
   return flags() & RawCode::Flags::ITERABLE_COROUTINE;
+}
+
+inline bool RawFunction::hasOptimizedOrNewLocals() const {
+  return flags() & (RawCode::Flags::OPTIMIZED | RawCode::Flags::NEWLOCALS);
 }
 
 inline bool RawFunction::hasSimpleCall() const {

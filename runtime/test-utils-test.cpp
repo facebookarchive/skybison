@@ -173,7 +173,8 @@ TEST(TestUtils, NewEmptyCode) {
   EXPECT_TRUE(code.consts().isTuple());
   EXPECT_TRUE(code.filename().isStr());
   EXPECT_EQ(code.firstlineno(), 0);
-  EXPECT_EQ(code.flags(), Code::Flags::NOFREE | Code::Flags::SIMPLE_CALL);
+  EXPECT_EQ(code.flags(), Code::Flags::NOFREE | Code::Flags::SIMPLE_CALL |
+                              Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS);
   ASSERT_TRUE(code.freevars().isTuple());
   EXPECT_EQ(Tuple::cast(code.freevars()).length(), 0);
   EXPECT_EQ(code.kwonlyargcount(), 0);

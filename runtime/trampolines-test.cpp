@@ -807,10 +807,11 @@ TEST(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   Tuple empty_tuple(&scope, runtime.newTuple(0));
   Object empty_str(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
+  word flags = Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
   Code code(&scope,
-            runtime.newCode(1, 0, nlocals, 0, 0, bc, empty_tuple, empty_tuple,
-                            varnames, empty_tuple, cellvars, empty_str,
-                            empty_str, 0, empty_bytes));
+            runtime.newCode(1, 0, nlocals, 0, flags, bc, empty_tuple,
+                            empty_tuple, varnames, empty_tuple, cellvars,
+                            empty_str, empty_str, 0, empty_bytes));
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   Object qualname(&scope, runtime.newStrFromCStr("foo"));

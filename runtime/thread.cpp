@@ -179,6 +179,9 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
   Object empty_tuple(&scope, runtime()->emptyTuple());
   Dict empty_dict(&scope, runtime()->newDict());
 
+  CHECK(!code.hasOptimizedOrNewLocals(),
+        "exec() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
+
   Runtime* runtime = this->runtime();
   Object dunder_builtins_name(&scope, runtime->symbols()->DunderBuiltins());
   Object builtins_module_obj(
@@ -203,6 +206,9 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
 }
 
 RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
+  CHECK(!function.hasOptimizedOrNewLocals(),
+        "runClassFunction() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
+
   HandleScope scope(this);
   currentFrame()->pushValue(*function);
   Frame* frame = pushClassFunctionFrame(function, dict);

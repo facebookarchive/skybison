@@ -878,7 +878,14 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   Function::Entry entry_kw;
   Function::Entry entry_ex;
   bool is_interpreted;
-  if (code.hasCoroutineOrGenerator()) {
+  if (!code.hasOptimizedAndNewLocals()) {
+    // We do not support calling non-optimized functions directly. We only allow
+    // them in Thread::exec() and Thread::runClassFunction().
+    entry = unimplementedTrampoline;
+    entry_kw = unimplementedTrampoline;
+    entry_ex = unimplementedTrampoline;
+    is_interpreted = false;
+  } else if (code.hasCoroutineOrGenerator()) {
     if (code.hasFreevarsOrCellvars()) {
       entry = generatorClosureTrampoline;
       entry_kw = generatorClosureTrampolineKw;

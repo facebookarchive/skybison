@@ -25,26 +25,13 @@ TEST(ThreadTest, RunEmptyFunction) {
   Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  const char* buffer =
-      "\x33\x0D\x0D\x0A\x3B\x5B\xB8\x59\x05\x00\x00\x00\xE3\x00\x00\x00\x00\x00"
-      "\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x40\x00\x00\x00\x73\x04\x00"
-      "\x00\x00\x64\x00\x53\x00\x29\x01\x4E\xA9\x00\x72\x01\x00\x00\x00\x72\x01"
-      "\x00\x00\x00\x72\x01\x00\x00\x00\xFA\x07\x70\x61\x73\x73\x2E\x70\x79\xDA"
-      "\x08\x3C\x6D\x6F\x64\x75\x6C\x65\x3E\x01\x00\x00\x00\x73\x00\x00\x00"
-      "\x00";
-  Marshal::Reader reader(&scope, &runtime, buffer);
 
-  int32_t magic = reader.readLong();
-  EXPECT_EQ(magic, 0x0A0D0D33);
-  int32_t mtime = reader.readLong();
-  EXPECT_EQ(mtime, 0x59B85B3B);
-  int32_t size = reader.readLong();
-  EXPECT_EQ(size, 5);
-
-  Object code_obj(&scope, reader.readObject());
-  ASSERT_TRUE(code_obj.isCode());
-  Code code(&scope, *code_obj);
-  EXPECT_EQ(code.argcount(), 0);
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime.newTuple(1));
+  consts.atPut(0, NoneType::object());
+  code.setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
+  code.setCode(runtime.newBytesWithAll(bytecode));
 
   Thread thread2(1 * kKiB);
   thread2.setRuntime(&runtime);
@@ -624,6 +611,7 @@ TEST(ThreadTest, LoadGlobal) {
 
   const byte bytecode[] = {LOAD_GLOBAL, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Object value(&scope, runtime.newInt(1234));
@@ -762,6 +750,7 @@ TEST(ThreadTest, StoreGlobalCreateValueCell) {
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   EXPECT_TRUE(isIntEqualsWord(thread->exec(code, globals, globals), 42));
@@ -787,6 +776,7 @@ TEST(ThreadTest, StoreGlobalReuseValueCell) {
   const byte bytecode[] = {LOAD_CONST, 0, STORE_GLOBAL, 0,
                            LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Object value(&scope, runtime.newInt(99));
@@ -814,6 +804,7 @@ TEST(ThreadTest, StoreNameCreateValueCell) {
   const byte bytecode[] = {LOAD_CONST, 0, STORE_NAME,   0,
                            LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Dict locals(&scope, runtime.newDict());
@@ -835,6 +826,7 @@ TEST(ThreadTest, LoadNameInModuleBodyFromBuiltins) {
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Object module_name(&scope, runtime.symbols()->Builtins());
@@ -861,6 +853,7 @@ TEST(ThreadTest, LoadNameFromGlobals) {
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Object value(&scope, runtime.newInt(321));
@@ -883,6 +876,7 @@ TEST(ThreadTest, LoadNameFromLocals) {
 
   const byte bytecode[] = {LOAD_NAME, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Object globals_value(&scope, runtime.newInt(456));
@@ -902,7 +896,8 @@ TEST(ThreadTest, MakeFunction) {
   Code func_code(&scope, newEmptyCode());
   func_code.setName(*name);
   func_code.setCode(runtime.newBytes(0, 0));
-  func_code.setFlags(Code::Flags::NOFREE);
+  func_code.setFlags(Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS |
+                     Code::Flags::NOFREE);
 
   Code code(&scope, newEmptyCode());
 
@@ -919,6 +914,7 @@ TEST(ThreadTest, MakeFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST, 1, MAKE_FUNCTION, 0,
                            STORE_NAME, 0, LOAD_CONST, 2, RETURN_VALUE,  0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(0);
 
   Dict globals(&scope, runtime.newDict());
   Dict locals(&scope, runtime.newDict());
@@ -2329,6 +2325,7 @@ TEST(ThreadTest, BreakLoopWhileLoopBytecode) {
                            LOAD_CONST,        3,  // None
                            RETURN_VALUE,      0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Dict locals(&scope, runtime.newDict());
@@ -2825,6 +2822,7 @@ TEST(ThreadTest, LoadTypeDerefFromLocal) {
                            LOAD_CLASSDEREF, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
   code.setStacksize(2);
+  code.setFlags(Code::Flags::NOFREE);
 
   Dict globals(&scope, runtime.newDict());
   Dict locals(&scope, runtime.newDict());
@@ -2862,6 +2860,7 @@ TEST(ThreadTest, ExecSetsMissingDunderBuiltins) {
   code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setFlags(Code::Flags::NOFREE);
   Dict globals(&scope, runtime.newDict());
 
   thread->exec(code, globals, globals);
