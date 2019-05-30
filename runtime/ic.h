@@ -86,10 +86,6 @@ inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
     if (entry_key == key) {
       return caches.at(i + kIcEntryValueOffset);
     }
-    // Stop the search if we found an empty entry.
-    if (entry_key.isNoneType()) {
-      break;
-    }
   }
   return Error::notFound();
 }
