@@ -3007,6 +3007,7 @@ TEST(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   HandleScope scope(thread);
   word argcount = 3;
   word kwargcount = 0;
+  word nlocals = 3;
   Tuple varnames(&scope, runtime.newTuple(argcount + kwargcount));
   Tuple cellvars(&scope, runtime.newTuple(2));
   Str foo(&scope, runtime.internStrFromCStr(thread, "foo"));
@@ -3024,9 +3025,9 @@ TEST(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
-            runtime.newCode(argcount, kwargcount, 0, 0, 0, none, empty_tuple,
-                            empty_tuple, varnames, empty_tuple, cellvars,
-                            empty_str, empty_str, 0, empty_bytes));
+            runtime.newCode(argcount, kwargcount, nlocals, 0, 0, none,
+                            empty_tuple, empty_tuple, varnames, empty_tuple,
+                            cellvars, empty_str, empty_str, 0, empty_bytes));
   EXPECT_TRUE(code.cell2arg().isNoneType());
 }
 
@@ -3036,6 +3037,7 @@ TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   HandleScope scope(thread);
   word argcount = 3;
   word kwargcount = 0;
+  word nlocals = 3;
   Tuple varnames(&scope, runtime.newTuple(argcount + kwargcount));
   Tuple cellvars(&scope, runtime.newTuple(2));
   Str foo(&scope, runtime.internStrFromCStr(thread, "foo"));
@@ -3052,9 +3054,9 @@ TEST(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
-            runtime.newCode(argcount, kwargcount, 0, 0, 0, none, empty_tuple,
-                            empty_tuple, varnames, empty_tuple, cellvars,
-                            empty_str, empty_str, 0, empty_bytes));
+            runtime.newCode(argcount, kwargcount, nlocals, 0, 0, none,
+                            empty_tuple, empty_tuple, varnames, empty_tuple,
+                            cellvars, empty_str, empty_str, 0, empty_bytes));
   ASSERT_FALSE(code.cell2arg().isNoneType());
   Tuple cell2arg(&scope, code.cell2arg());
   ASSERT_EQ(cell2arg.length(), 2);
@@ -3069,6 +3071,7 @@ TEST(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   word argcount = 3;
+  word nlocals = 3;
   Tuple varnames(&scope, runtime.newTuple(argcount));
   Tuple cellvars(&scope, runtime.newTuple(2));
   Str foo(&scope, runtime.internStrFromCStr(thread, "foo"));
@@ -3085,7 +3088,7 @@ TEST(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
-            runtime.newCode(argcount, 0, 0, 0, 0, none, empty_tuple,
+            runtime.newCode(argcount, 0, nlocals, 0, 0, none, empty_tuple,
                             empty_tuple, varnames, empty_tuple, cellvars,
                             empty_str, empty_str, 0, empty_bytes));
   EXPECT_FALSE(code.flags() & Code::Flags::NOFREE);

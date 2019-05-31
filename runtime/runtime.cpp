@@ -568,6 +568,7 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
     if (value_set) result.setCell2arg(*cell2arg);
   }
 
+  DCHECK(result.totalArgs() <= result.nlocals(), "invalid nlocals count");
   return *result;
 }
 

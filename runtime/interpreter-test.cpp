@@ -1306,6 +1306,7 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   names.atPut(0, *key);
   code.setNames(*names);
   code.setArgcount(2);
+  code.setNlocals(2);
   code.setStacksize(1);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
@@ -1361,6 +1362,7 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   names.atPut(0, *key);
   code.setNames(*names);
   code.setArgcount(2);
+  code.setNlocals(2);
   code.setStacksize(1);
 
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
@@ -1419,6 +1421,7 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   names.atPut(0, *key);
   code.setNames(*names);
   code.setArgcount(2);
+  code.setNlocals(2);
   code.setStacksize(1);
   Tuple var_names(&scope, runtime.newTuple(2));
   var_names.atPut(0, runtime.newStrFromCStr("a"));

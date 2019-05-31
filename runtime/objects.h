@@ -1555,7 +1555,7 @@ class RawCode : public RawHeapObject {
   void setNlocals(word value) const;
 
   // The total number of variables in this code object: normal locals, cell
-  // variables, and free variables.
+  // variables, and free variables. Does not include arguments.
   word totalVars() const;
 
   word stacksize() const;
@@ -3985,7 +3985,7 @@ inline void RawCode::setNlocals(word value) const {
 }
 
 inline word RawCode::totalVars() const {
-  return nlocals() + numCellvars() + numFreevars();
+  return nlocals() - totalArgs() + numCellvars() + numFreevars();
 }
 
 inline word RawCode::stacksize() const {

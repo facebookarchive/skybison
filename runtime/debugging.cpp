@@ -393,7 +393,9 @@ std::ostream& operator<<(std::ostream& os, RawType value) {
 static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   HandleScope scope(thread);
 
-  Tuple var_names(&scope, thread->runtime()->newTuple(0));
+  Tuple var_names(&scope, thread->runtime()->emptyTuple());
+  Tuple freevar_names(&scope, thread->runtime()->emptyTuple());
+  Tuple cellvar_names(&scope, thread->runtime()->emptyTuple());
   bool output_pc = true;
   if (frame->previousFrame() == nullptr) {
     os << "- initial frame\n";
@@ -418,9 +420,14 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
       os << '\n';
       output_pc = false;
 
-      Object names_obj(&scope, code.varnames());
-      if (names_obj.isTuple()) {
-        var_names = *names_obj;
+      if (code.varnames().isTuple()) {
+        var_names = code.varnames();
+      }
+      if (code.cellvars().isTuple()) {
+        cellvar_names = code.cellvars();
+      }
+      if (code.freevars().isTuple()) {
+        freevar_names = code.freevars();
       }
     }
   }
@@ -430,12 +437,20 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
 
   // TODO(matthiasb): Also dump the block stack.
   word var_names_length = var_names.length();
+  word cellvar_names_length = cellvar_names.length();
+  word freevar_names_length = freevar_names.length();
   word num_locals = frame->numLocals();
   if (num_locals > 0) os << "  locals:\n";
   for (word l = 0; l < num_locals; l++) {
     os << "    " << l;
     if (l < var_names_length) {
       os << ' ' << var_names.at(l);
+    } else if (l < var_names_length + freevar_names_length) {
+      os << ' ' << freevar_names.at(l - var_names_length);
+    } else if (l <
+               var_names_length + freevar_names_length + cellvar_names_length) {
+      os << ' '
+         << cellvar_names.at(l - var_names_length - cellvar_names_length);
     }
     os << ": " << frame->local(l) << '\n';
   }

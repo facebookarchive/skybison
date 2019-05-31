@@ -405,6 +405,7 @@ TEST(ThreadTest, CallFunction) {
   //
   Code callee_code(&scope, newEmptyCode());
   callee_code.setArgcount(2);
+  callee_code.setNlocals(2);
   callee_code.setStacksize(1);
   callee_code.setConsts(runtime.newTuple(1));
   Tuple::cast(callee_code.consts()).atPut(0, runtime.newInt(2222));

@@ -265,6 +265,7 @@ TEST_F(CodeExtensionApiTest, GetNumFreeReturnsNumberOfFreevars) {
 TEST_F(CodeExtensionApiTest, NewWithValidArgsReturnsCodeObject) {
   int argcount = 3;
   int kwargcount = 0;
+  int nlocals = 3;
   PyObjectPtr varnames(PyTuple_New(argcount + kwargcount));
   PyTuple_SetItem(varnames, 0, PyUnicode_FromString("foo"));
   PyTuple_SetItem(varnames, 1, PyUnicode_FromString("bar"));
@@ -275,9 +276,10 @@ TEST_F(CodeExtensionApiTest, NewWithValidArgsReturnsCodeObject) {
   PyObjectPtr empty_tuple(PyTuple_New(0));
   PyObjectPtr empty_bytes(PyBytes_FromString(""));
   PyObjectPtr empty_str(PyUnicode_FromString(""));
-  PyObjectPtr result(reinterpret_cast<PyObject*>(PyCode_New(
-      argcount, kwargcount, 0, 0, 0, empty_bytes, empty_tuple, empty_tuple,
-      varnames, empty_tuple, cellvars, empty_str, empty_str, 0, empty_bytes)));
+  PyObjectPtr result(reinterpret_cast<PyObject*>(
+      PyCode_New(argcount, kwargcount, nlocals, 0, 0, empty_bytes, empty_tuple,
+                 empty_tuple, varnames, empty_tuple, cellvars, empty_str,
+                 empty_str, 0, empty_bytes)));
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   ASSERT_NE(result, nullptr);
   EXPECT_TRUE(PyCode_Check(result));

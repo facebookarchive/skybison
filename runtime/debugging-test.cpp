@@ -21,10 +21,11 @@ static RawObject makeTestCode(Thread* thread) {
   consts.atPut(0, runtime->newStrFromCStr("const0"));
   Tuple names(&scope, runtime->newTuple(1));
   names.atPut(0, runtime->newStrFromCStr("name0"));
-  Tuple varnames(&scope, runtime->newTuple(3));
-  varnames.atPut(0, runtime->newStrFromCStr("variable0"));
-  varnames.atPut(1, runtime->newStrFromCStr("variable1"));
-  varnames.atPut(2, runtime->newStrFromCStr("variable2"));
+  Tuple varnames(&scope, runtime->newTuple(4));
+  varnames.atPut(0, runtime->newStrFromCStr("argument0"));
+  varnames.atPut(1, runtime->newStrFromCStr("varargs"));
+  varnames.atPut(2, runtime->newStrFromCStr("varkeyargs"));
+  varnames.atPut(3, runtime->newStrFromCStr("variable0"));
   Tuple freevars(&scope, runtime->newTuple(1));
   freevars.atPut(0, runtime->newStrFromCStr("freevar0"));
   Tuple cellvars(&scope, runtime->newTuple(1));
@@ -32,10 +33,15 @@ static RawObject makeTestCode(Thread* thread) {
   Str filename(&scope, runtime->newStrFromCStr("filename0"));
   Str name(&scope, runtime->newStrFromCStr("name0"));
   Object lnotab(&scope, Bytes::empty());
+  word argcount = 1;
+  word kwonlyargcount = 0;
+  word nlocals = 4;
+  word stacksize = 1;
   word flags = Code::NESTED | Code::OPTIMIZED | Code::NEWLOCALS |
                Code::VARARGS | Code::VARKEYARGS;
-  return runtime->newCode(1, 0, 0, 1, flags, bytes, consts, names, varnames,
-                          freevars, cellvars, filename, name, 0, lnotab);
+  return runtime->newCode(argcount, kwonlyargcount, nlocals, stacksize, flags,
+                          bytes, consts, names, varnames, freevars, cellvars,
+                          filename, name, 0, lnotab);
 }
 
 static RawObject makeTestFunction(Thread* thread) {
@@ -81,14 +87,14 @@ TEST(DebuggingTests, DumpExtendedCode) {
   flags: optimized newlocals varargs varkeyargs nested
   argcount: 1
   kwonlyargcount: 0
-  nlocals: 0
+  nlocals: 4
   stacksize: 1
   filename: "filename0"
   consts: ("const0",)
   names: ("name0",)
   cellvars: ("cellvar0",)
   freevars: ("freevar0",)
-  varnames: ("variable0", "variable1", "variable2")
+  varnames: ("argument0", "varargs", "varkeyargs", "variable0")
      0 LOAD_CONST 0
      2 LOAD_ATTR 0
      4 RETURN_VALUE 0
@@ -115,14 +121,14 @@ TEST(DebuggingTests, DumpExtendedFunction) {
     flags: optimized newlocals varargs varkeyargs nested
     argcount: 1
     kwonlyargcount: 0
-    nlocals: 0
+    nlocals: 4
     stacksize: 1
     filename: "filename0"
     consts: ("const0",)
     names: ("name0",)
     cellvars: ("cellvar0",)
     freevars: ("freevar0",)
-    varnames: ("variable0", "variable1", "variable2")
+    varnames: ("argument0", "varargs", "varkeyargs", "variable0")
        0 LOAD_CONST 0
        2 LOAD_ATTR 0
        4 RETURN_VALUE 0
@@ -438,17 +444,19 @@ def func(arg0, arg1):
   root->pushValue(NoneType::object());
   Function function(&scope, makeTestFunction(thread));
   root->pushValue(*function);
+  root->pushValue(runtime.newStrFromCStr("foo bar"));
+  root->pushValue(runtime.newTuple(0));
+  root->pushValue(runtime.newDict());
   ASSERT_EQ(root->previousFrame(), nullptr);
 
-  Frame* frame0 = thread->openAndLinkFrame(0, 2, 1);
+  Frame* frame0 = thread->pushCallFrame(*function);
   frame0->setVirtualPC(42);
-  frame0->setLocal(0, runtime.newStrFromCStr("foo bar"));
-  frame0->setLocal(1, runtime.newStrFromCStr("bar foo"));
+  frame0->setLocal(3, runtime.newStrFromCStr("bar foo"));
   frame0->pushValue(*func);
-  Frame* frame1 = thread->openAndLinkFrame(0, 3, 2);
+  frame0->pushValue(runtime.newInt(-9));
+  frame0->pushValue(runtime.newInt(17));
+  Frame* frame1 = thread->pushCallFrame(*func);
   frame1->setVirtualPC(4);
-  frame1->setLocal(0, runtime.newInt(-9));
-  frame1->setLocal(1, runtime.newInt(17));
   frame1->setLocal(2, runtime.newStrFromCStr("world"));
 
   std::stringstream ss;
@@ -456,16 +464,25 @@ def func(arg0, arg1):
   EXPECT_EQ(ss.str(), R"(- initial frame
   pc: 8
   stack:
-    1: None
-    0: <function "footype.baz">
+    4: None
+    3: <function "footype.baz">
+    2: "foo bar"
+    1: ()
+    0: {}
 - function: <function "footype.baz">
   code: "name0"
   pc: 42 ("filename0":0)
   locals:
-    0 "variable0": "foo bar"
-    1 "variable1": "bar foo"
+    0 "argument0": "foo bar"
+    1 "varargs": ()
+    2 "varkeyargs": {}
+    3 "variable0": "bar foo"
+    4 "freevar0": 0
+    5 "cellvar0": 0
   stack:
-    0: <function "func">
+    2: <function "func">
+    1: -9
+    0: 17
 - function: <function "func">
   code: "func"
   pc: 4 ("<test string>":4)
