@@ -933,7 +933,9 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   if (runtime->isCacheEnabled()) {
     icRewriteBytecode(thread, function);
   } else {
-    function.setRewrittenBytecode(code.code());
+    Bytes bytecode(&scope, code.code());
+    function.setRewrittenBytecode(
+        runtime->mutableBytesFromBytes(thread, bytecode));
     function.setCaches(runtime->newTuple(0));
     function.setOriginalArguments(runtime->newTuple(0));
   }
@@ -3371,8 +3373,11 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
   int32_t arg;
   auto next_label = [&]() __attribute__((always_inline)) {
     ctx.frame->setVirtualPC(ctx.pc);
-    bc = static_cast<Bytecode>(ctx.bytecode.byteAt(ctx.pc++));
-    arg = ctx.bytecode.byteAt(ctx.pc++);
+    static_assert(endian::native == endian::little, "big endian unsupported");
+    arg = ctx.bytecode.uint16At(ctx.pc);
+    ctx.pc += 2;
+    bc = static_cast<Bytecode>(arg & 0xFF);
+    arg >>= 8;
     return dispatch_table[bc];
   };
 
@@ -3380,8 +3385,11 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
 
 extendedArg:
   do {
-    bc = static_cast<Bytecode>(ctx.bytecode.byteAt(ctx.pc++));
-    arg = (arg << 8) | ctx.bytecode.byteAt(ctx.pc++);
+    static_assert(endian::native == endian::little, "big endian unsupported");
+    uint16_t bytes_at = ctx.bytecode.uint16At(ctx.pc);
+    ctx.pc += 2;
+    bc = static_cast<Bytecode>(bytes_at & 0xFF);
+    arg = (arg << 8) | (bytes_at >> 8);
   } while (bc == EXTENDED_ARG);
   goto* dispatch_table[bc];
 

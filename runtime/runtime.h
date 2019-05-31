@@ -167,6 +167,8 @@ class Runtime {
 
   RawObject newModule(const Object& name);
 
+  RawObject newMutableBytesUninitialized(word length);
+
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
 
@@ -501,6 +503,9 @@ class Runtime {
   RawObject dictItems(Thread* thread, const Dict& dict);
   RawObject dictKeys(Thread* thread, const Dict& dict);
   RawObject dictValues(Thread* thread, const Dict& dict);
+
+  // Create a MutableBytes object from a given Bytes
+  RawObject mutableBytesFromBytes(Thread* thread, const Bytes& bytes);
 
   // Set related function, based on dict.
   // Add a value to set and return the object in set.

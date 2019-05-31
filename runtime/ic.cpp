@@ -134,9 +134,8 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   Tuple original_arguments(&scope, runtime->newTuple(num_caches));
 
   // Rewrite bytecode.
-  ByteArray result(&scope, runtime->newByteArray());
-  runtime->byteArrayEnsureCapacity(thread, result, bytecode_length);
-  result.setNumItems(bytecode_length);
+  MutableBytes result(&scope,
+                      runtime->newMutableBytesUninitialized(bytecode_length));
   for (word i = 0, cache = 0; i < bytecode_length;) {
     word begin = i;
     Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
@@ -169,7 +168,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   }
 
   function.setCaches(runtime->newTuple(num_caches * kIcPointersPerCache));
-  function.setRewrittenBytecode(byteArrayAsBytes(thread, runtime, result));
+  function.setRewrittenBytecode(*result);
   function.setOriginalArguments(*original_arguments);
 }
 

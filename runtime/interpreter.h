@@ -53,7 +53,7 @@ class Interpreter {
     Frame* frame;
 
     // The bytecode for the current function.
-    Bytes bytecode;
+    MutableBytes bytecode;
 
     // The caches for the current function.
     Tuple caches;

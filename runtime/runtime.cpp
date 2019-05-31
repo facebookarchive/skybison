@@ -804,6 +804,21 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& buffer,
   return *result;
 }
 
+RawObject Runtime::newMutableBytesUninitialized(word size) {
+  if (size == 0) {
+    return empty_mutable_bytes_;
+  }
+  return heap()->createMutableBytes(size);
+}
+
+RawObject Runtime::mutableBytesFromBytes(Thread* thread, const Bytes& bytes) {
+  HandleScope scope(thread);
+  word len = bytes.length();
+  MutableBytes mb(&scope, heap()->createMutableBytes(len));
+  bytes.copyTo(reinterpret_cast<byte*>(mb.address()), len);
+  return *mb;
+}
+
 RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }

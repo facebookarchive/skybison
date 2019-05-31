@@ -33,7 +33,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
       EXTENDED_ARG, 0,         LOAD_ATTR_CACHED, 1, LOAD_ATTR_CACHED, 2,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
@@ -65,7 +65,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
 
   byte expected[] = {STORE_ATTR_CACHED, 0};
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 
   EXPECT_EQ(icOriginalArg(*function, 0), 48);
 }
@@ -121,7 +121,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
       BINARY_OP_CACHED, 12,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 
   EXPECT_EQ(icOriginalArg(*function, 0),
             static_cast<word>(Interpreter::BinaryOp::MATMUL));
@@ -202,7 +202,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
       INPLACE_OP_CACHED, 12,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 
   EXPECT_EQ(icOriginalArg(*function, 0),
             static_cast<word>(Interpreter::BinaryOp::MATMUL));
@@ -269,7 +269,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesCompareOpOpcodes) {
       COMPARE_OP,        CompareOp::EXC_MATCH,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
-  EXPECT_TRUE(isBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
 
   EXPECT_EQ(icOriginalArg(*function, 0), static_cast<word>(CompareOp::LT));
   EXPECT_EQ(icOriginalArg(*function, 1), static_cast<word>(CompareOp::LE));

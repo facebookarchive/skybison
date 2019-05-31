@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 
+#include "bytearray-builtins.h"
 #include "bytecode.h"
 #include "bytes-builtins.h"
 #include "dict-builtins.h"
@@ -19,6 +20,20 @@ static const char* kOpNames[] = {
 
 std::ostream& dumpBytecode(std::ostream& os, const Bytes& bytecode,
                            const char* indent) {
+  for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
+    byte op = bytecode.byteAt(i);
+    byte arg = bytecode.byteAt(i + 1);
+    std::ios_base::fmtflags saved_flags = os.flags();
+    os << indent << "  " << std::setw(4) << std::hex << i << ' ';
+    os.flags(saved_flags);
+    os << kOpNames[op] << " " << static_cast<unsigned>(arg) << '\n';
+  }
+  return os;
+}
+
+std::ostream& dumpMutableBytecode(std::ostream& os,
+                                  const MutableBytes& bytecode,
+                                  const char* indent) {
   for (word i = 0, length = bytecode.length(); i + 1 < length; i += 2) {
     byte op = bytecode.byteAt(i);
     byte arg = bytecode.byteAt(i + 1);
@@ -81,10 +96,10 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
      << "  code: ";
   if (function.code().isCode()) {
     dumpExtendedCode(os, Code::cast(function.code()), "  ");
-    if (function.rewrittenBytecode().isBytes()) {
-      Bytes bytecode(&scope, function.rewrittenBytecode());
+    if (function.rewrittenBytecode().isMutableBytes()) {
+      MutableBytes bytecode(&scope, function.rewrittenBytecode());
       os << "  Rewritten bytecode:\n";
-      dumpBytecode(os, bytecode, "");
+      dumpMutableBytecode(os, bytecode, "");
     }
   } else {
     os << function.code() << '\n';

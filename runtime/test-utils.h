@@ -185,6 +185,9 @@ RawObject listFromRange(word start, word stop);
 ::testing::AssertionResult isBytesEqualsBytes(const Object& result,
                                               View<byte> expected);
 
+::testing::AssertionResult isMutableBytesEqualsBytes(const Object& result,
+                                                     View<byte> expected);
+
 ::testing::AssertionResult isBytesEqualsCStr(const Object& result,
                                              const char* str);
 

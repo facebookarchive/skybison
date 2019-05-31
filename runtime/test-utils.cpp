@@ -464,6 +464,32 @@ RawObject listFromRange(word start, word stop) {
   return ::testing::AssertionSuccess();
 }
 
+::testing::AssertionResult isMutableBytesEqualsBytes(const Object& result,
+                                                     View<byte> expected) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (result.isError()) {
+    if (result.isErrorException()) {
+      Type type(&scope, thread->pendingExceptionType());
+      unique_c_ptr<char> name(Str::cast(type.name()).toCStr());
+      return ::testing::AssertionFailure()
+             << "pending '" << name.get() << "' exception";
+    }
+    return ::testing::AssertionFailure() << "is an " << result;
+  }
+  if (!result.isMutableBytes()) {
+    return ::testing::AssertionFailure()
+           << "is a '" << typeName(runtime, *result) << "'";
+  }
+  MutableBytes result_mutable(&scope, *result);
+  if (result_mutable.compareWithBytes(expected) != 0) {
+    return ::testing::AssertionFailure()
+           << result_mutable << " is not equal to " << expected.data();
+  }
+  return ::testing::AssertionSuccess();
+}
+
 ::testing::AssertionResult isBytesEqualsCStr(const Object& result,
                                              const char* expected) {
   return isBytesEqualsBytes(
