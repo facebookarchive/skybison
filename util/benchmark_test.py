@@ -36,6 +36,31 @@ class TestBenchmark(unittest.TestCase):
         self.assertIn("time_sec", single_result)
         self.assertIn("version", single_result)
 
+    def test_choose_single_benchmark(self):
+        arguments = ["-i", "fbcode-python", "-b", "richards", "--json"]
+        json_output = json.loads(benchmark.main(arguments))
+        self.assertEqual(len(json_output), 1)
+        single_result = json_output[0]
+        self.assertEqual(single_result["benchmark"], "richards")
+
+    def test_choose_multiple_benchmarks(self):
+        arguments = [
+            "-i",
+            "fbcode-python",
+            "-b",
+            "richards",
+            "-b",
+            "deltablue",
+            "--json",
+        ]
+        json_output = json.loads(benchmark.main(arguments))
+        self.assertEqual(len(json_output), 2)
+        expected_results = ["deltablue", "richards"]
+        result1 = json_output[0]
+        result2 = json_output[1]
+        results = sorted([result1["benchmark"], result2["benchmark"]])
+        self.assertListEqual(expected_results, results)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -18,10 +18,12 @@ class BenchmarkRunner:
         self.benchmarks = []
         self.tools = []
 
-    def register_benchmarks(self, benchmarks_path):
+    def register_benchmarks(self, benchmarks_path, names):
         for f in os.listdir(benchmarks_path):
             if os.path.isfile(f"{benchmarks_path}/{f}") and f.endswith(".py"):
                 name = f.split(".")[0]
+                if name not in names:
+                    continue
                 benchmark = Benchmark(benchmarks_path, name)
                 self.benchmarks.append(benchmark)
 
@@ -46,18 +48,21 @@ class BenchmarkRunner:
 
 def main():
     # TODO(eelizondo): Add argparse support
-    args = {"tools": []}
+    args = {"tools": [], "benchmarks": []}
     i = 1
     while i < len(sys.argv):
         if sys.argv[i] == "tool":
             args["tools"].append(sys.argv[i + 1])
+        elif sys.argv[i] == "benchmark":
+            args["benchmarks"].append(sys.argv[i + 1])
         else:
             args[sys.argv[i]] = sys.argv[i + 1]
         i += 2
 
     path = sys.argv[0].rsplit("/", 1)[0]
     runner = BenchmarkRunner(path)
-    runner.register_benchmarks(args["benchmarks_path"])
+    benchmarks_path = f"{path.rsplit('/', 1)[0]}/benchmarks"
+    runner.register_benchmarks(benchmarks_path, args["benchmarks"])
     runner.register_measurement_tools(args)
     results = runner.run_benchmarks()
 

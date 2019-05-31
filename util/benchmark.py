@@ -49,12 +49,9 @@ def print_table(results):
 # in an easily parsable way.
 def create_benchmark_runner_command(binary, arguments):
     runner_path = os.path.dirname(os.path.abspath(__file__))
-    command = [
-        binary,
-        f"{runner_path}/_benchmark_runner.py",
-        "benchmarks_path",
-        arguments["benchmarks_path"],
-    ]
+    command = [binary, f"{runner_path}/_benchmark_runner.py"]
+    benchmarks = "benchmark " + " benchmark ".join(arguments["benchmarks"])
+    command.extend(benchmarks.split(" "))
     tools = "tool " + " tool".join(arguments["tools"])
     command.extend(tools.split(" "))
     command.extend(
@@ -113,6 +110,16 @@ class Interpreter:
         return benchmark_results
 
 
+def list_of_benchmarks():
+    benchmarks = []
+    benchmarks_path = f"{repo_root()}/fbcode/pyro/benchmarks"
+    for f in os.listdir(benchmarks_path):
+        if os.path.isfile(f"{benchmarks_path}/{f}") and f.endswith(".py"):
+            name = f.split(".")[0]
+            benchmarks.append(name)
+    return benchmarks
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
         description="Pyro benchmark suite",
@@ -141,17 +148,23 @@ Default: fbcode-python ./build/python (if existing)
         default=[],
         help=interpreter_help,
     )
-    benchmark_help = """Path to a directory with Python benchmarks
-Default: pyro/benchmarks
+    benchmark_help = f"""The benchmark that you wish to run. Use repeatedly
+to select more than one benchmark.
+
+Options: {list_of_benchmarks()}
+
+Default: all
 
 """
     parser.add_argument(
-        "--benchmarks_path",
+        "--benchmark",
         "-b",
-        metavar="BENCHMARKS_PATH",
-        default="",
+        metavar="BENCHMARK",
+        dest="benchmarks",
         type=str,
-        action="store",
+        action="append",
+        default=[],
+        choices=list_of_benchmarks(),
         help=benchmark_help,
     )
     parser = add_tools_arguments(parser)
@@ -162,9 +175,9 @@ Default: pyro/benchmarks
 
     print_json = args.json
 
-    # Set the default pyro/benchmarks path
-    if not args.benchmarks_path:
-        args.benchmarks_path = f"{repo_root()}/fbcode/pyro/benchmarks"
+    # If no benchmark is defined, add all of them
+    if not args.benchmarks:
+        args.benchmarks = list_of_benchmarks()
 
     # Specify a default if no interpreters were set
     if not args.interpreters:
