@@ -48,6 +48,6 @@ def fannkuch(n):
             return max_flips
 
 
-if __name__ == "__main__":
+def run():
     arg = DEFAULT_ARG
-    fannkuch(DEFAULT_ARG)
+    fannkuch(arg)

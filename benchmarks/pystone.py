@@ -40,10 +40,8 @@ Version History:
                 making the benchmark an integer benchmark again.
 
 """
-from time import time
-
-
 LOOPS = 50000
+
 
 __version__ = "1.2"
 
@@ -68,14 +66,8 @@ TRUE = 1
 FALSE = 0
 
 
-def main(loops=LOOPS):
-    benchtime, stones = pystones(loops)
-    print("Pystone(%s) time for %d passes = %g" % (__version__, loops, benchtime))
-    print("This machine benchmarks at %g pystones/second" % stones)
-
-
 def pystones(loops=LOOPS):
-    return Proc0(loops)
+    Proc0(loops)
 
 
 IntGlob = 0
@@ -98,10 +90,8 @@ def Proc0(loops=LOOPS):
     global PtrGlb
     global PtrGlbNext
 
-    starttime = time()
     for _i in range(loops):
         pass
-    nulltime = time() - starttime
 
     PtrGlbNext = Record()
     PtrGlb = Record()
@@ -112,8 +102,6 @@ def Proc0(loops=LOOPS):
     PtrGlb.StringComp = "DHRYSTONE PROGRAM, SOME STRING"
     String1Loc = "DHRYSTONE PROGRAM, 1'ST STRING"
     Array2Glob[8][7] = 10
-
-    starttime = time()
 
     for _i in range(loops):
         Proc5()
@@ -138,13 +126,6 @@ def Proc0(loops=LOOPS):
         IntLoc2 = IntLoc3 // IntLoc1
         IntLoc2 = 7 * (IntLoc3 - IntLoc2) - IntLoc1
         IntLoc1 = Proc2(IntLoc1)
-
-    benchtime = time() - starttime - nulltime
-    if benchtime == 0.0:
-        loopsPerBenchtime = 0.0
-    else:
-        loopsPerBenchtime = loops / benchtime
-    return benchtime, loopsPerBenchtime
 
 
 def Proc1(PtrParIn):
@@ -277,6 +258,6 @@ def Func3(EnumParIn):
     return FALSE
 
 
-if __name__ == "__main__":
+def run():
     loops = LOOPS
-    main(loops)
+    pystones(loops)
