@@ -286,6 +286,17 @@ enum PyUnicode_Kind {
 struct _Py_Identifier;
 struct _node;
 
+typedef struct {
+  unsigned char* heap_buffer;       // byte*
+  unsigned char* ptr;               // byte*
+  Py_ssize_t allocated;             // word
+  Py_ssize_t min_size;              // word
+  int overallocate;                 // bool
+  int use_bytearray;                // bool
+  int use_heap_buffer;              // bool
+  unsigned char stack_buffer[128];  // byte[128]
+} _PyBytesWriter;
+
 // The following types are intentionally incomplete to make it impossible to
 // dereference the objects
 typedef struct _arena PyArena;

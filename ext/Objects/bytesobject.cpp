@@ -379,4 +379,152 @@ PY_EXPORT int _PyBytes_Resize(PyObject** pyobj, Py_ssize_t newsize) {
   return 0;
 }
 
+// _PyBytesWriter API
+
+// Returns the beginning of the buffer currently used for writing.
+static byte* writerBufferStart(_PyBytesWriter* writer) {
+  return writer->use_heap_buffer ? writer->heap_buffer : writer->stack_buffer;
+}
+
+// Checks internal consistency of the writer struct. This function should only
+// be called in a DCHECK. Always returns true, but does checks of its own.
+static bool writerIsConsistent(_PyBytesWriter* writer) {
+  if (writer->use_heap_buffer) {
+    CHECK(writer->heap_buffer, "heap buffer is not allocated");
+  } else {
+    CHECK(!writer->heap_buffer, "heap buffer was allocated too early");
+  }
+  if (writer->use_bytearray) {
+    CHECK(!writer->overallocate, "ByteArray has its own overallocation scheme");
+  }
+  CHECK(0 <= writer->allocated, "allocated size must be non-negative");
+  CHECK_BOUND(writer->min_size, writer->allocated);
+
+  const byte* start = writerBufferStart(writer);
+  const byte* end = start + writer->allocated;
+  CHECK(*end == 0, "byte string must be null-terminated");
+  CHECK(writer->ptr, "current pointer cannot be null");
+  CHECK(start <= writer->ptr, "pointer is before the start of the buffer");
+  CHECK(writer->ptr <= end, "pointer is past the end of the buffer");
+  return true;
+}
+
+// Allocates the writer and prepares it to write the specified number of bytes.
+// Uses the small stack buffer if possible.
+PY_EXPORT void* _PyBytesWriter_Alloc(_PyBytesWriter* writer, Py_ssize_t size) {
+  DCHECK(writer->min_size == 0 && writer->heap_buffer == nullptr,
+         "writer has already been allocated");
+  writer->allocated = sizeof(writer->stack_buffer) - 1;
+  return _PyBytesWriter_Prepare(writer, writer->stack_buffer, size);
+}
+
+// Frees the writer's heap-allocated buffer.
+PY_EXPORT void _PyBytesWriter_Dealloc(_PyBytesWriter* writer) {
+  if (writer->heap_buffer) std::free(writer->heap_buffer);
+}
+
+// Converts the memory written to the writer into a Bytes or ByteArray object.
+// Assumes that str points to the end of the written data. Frees all memory
+// that was allocated by malloc.
+PY_EXPORT PyObject* _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str) {
+  writer->ptr = reinterpret_cast<byte*>(str);
+  DCHECK(writerIsConsistent(writer), "invariants broken");
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  const byte* start = writerBufferStart(writer);
+  word size = writer->ptr - start;
+  if (size == 0) {
+    _PyBytesWriter_Dealloc(writer);
+    return ApiHandle::newReference(thread, writer->use_bytearray
+                                               ? runtime->newByteArray()
+                                               : Bytes::empty());
+  }
+  if (writer->use_bytearray) {
+    HandleScope scope(thread);
+    ByteArray result(&scope, runtime->newByteArray());
+    runtime->byteArrayExtend(thread, result, View<byte>{start, size});
+    _PyBytesWriter_Dealloc(writer);
+    return ApiHandle::newReference(thread, *result);
+  }
+  PyObject* result = ApiHandle::newReference(
+      thread, runtime->newBytesWithAll(View<byte>{start, size}));
+  _PyBytesWriter_Dealloc(writer);
+  return result;
+}
+
+// Initializes the _PyBytesWriter struct.
+PY_EXPORT void _PyBytesWriter_Init(_PyBytesWriter* writer) {
+  // Unlike CPython, zero out the stack buffer as well.
+  std::memset(writer, 0, sizeof(*writer));
+}
+
+// Prepares the writer for the specified number of bytes. Reallocates if the new
+// size exceeds the currently allocated buffer. Returns the current pointer into
+// the buffer if the allocation succeeds. Returns null with a MemoryError set
+// if growing would exceed SmallInt::kMaxValue.
+PY_EXPORT void* _PyBytesWriter_Prepare(_PyBytesWriter* writer, void* str,
+                                       Py_ssize_t growth) {
+  writer->ptr = reinterpret_cast<byte*>(str);
+  DCHECK(writerIsConsistent(writer), "invariants broken");
+  if (growth == 0) return str;
+  DCHECK(growth > 0, "size must be non-negative");
+  if (growth > SmallInt::kMaxValue - writer->min_size) {
+    PyErr_NoMemory();
+    _PyBytesWriter_Dealloc(writer);
+    return nullptr;
+  }
+  word new_min_size = writer->min_size + growth;
+  if (new_min_size > writer->allocated) {
+    str = _PyBytesWriter_Resize(writer, str, new_min_size);
+  }
+  writer->min_size = new_min_size;
+  writer->ptr = reinterpret_cast<byte*>(str);
+  return str;
+}
+
+static const word kOverallocateFactor = 4;
+
+// Grows the writer to at least the provided size. Overallocates by 1/4 if
+// writer->overallocate or writer->use_bytearray is set.
+PY_EXPORT void* _PyBytesWriter_Resize(_PyBytesWriter* writer, void* str,
+                                      Py_ssize_t new_size) {
+  writer->ptr = reinterpret_cast<byte*>(str);
+  DCHECK(writerIsConsistent(writer), "invariants broken");
+  DCHECK(writer->allocated < new_size, "resize should only be called to grow");
+  DCHECK_BOUND(new_size, SmallInt::kMaxValue);
+  if ((writer->overallocate || writer->use_bytearray) &&
+      new_size <= SmallInt::kMaxValue - new_size / kOverallocateFactor) {
+    new_size += new_size / kOverallocateFactor;
+  }
+
+  word len;
+  byte* new_buffer = reinterpret_cast<byte*>(std::malloc(new_size + 1));
+  if (writer->use_heap_buffer) {
+    len = writer->ptr - writer->heap_buffer;
+    std::memcpy(new_buffer, writer->heap_buffer, len);
+    std::free(writer->heap_buffer);
+  } else {
+    len = writer->ptr - writer->stack_buffer;
+    std::memcpy(new_buffer, writer->stack_buffer, len);
+  }
+  new_buffer[new_size] = '\0';
+
+  writer->allocated = new_size;
+  writer->heap_buffer = new_buffer;
+  writer->ptr = new_buffer + len;
+  writer->use_heap_buffer = true;
+  return writer->ptr;
+}
+
+// Writes the specified bytes. Grows writer.min_size by the specified length.
+// Do not use to write into memory already allocated by _PyBytesWriter_Prepare.
+PY_EXPORT void* _PyBytesWriter_WriteBytes(_PyBytesWriter* writer, void* str,
+                                          const void* bytes, Py_ssize_t len) {
+  str = _PyBytesWriter_Prepare(writer, str, len);
+  if (str == nullptr) return nullptr;
+  std::memcpy(str, bytes, len);
+  writer->ptr = reinterpret_cast<byte*>(str) + len;
+  return writer->ptr;
+}
+
 }  // namespace python

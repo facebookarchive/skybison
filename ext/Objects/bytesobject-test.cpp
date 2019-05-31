@@ -11,6 +11,7 @@ namespace python {
 using namespace testing;
 
 using BytesExtensionApiTest = ExtensionApi;
+using BytesWriterExtensionApiTest = ExtensionApi;
 
 TEST_F(BytesExtensionApiTest,
        AsStringFromNonBytesReturnsNullAndRaisesTypeError) {
@@ -678,6 +679,177 @@ foo = Foo(b"foo")
   PyObjectPtr foo(moduleGet("__main__", "foo"));
   EXPECT_EQ(PyBytes_Size(empty), 0);
   EXPECT_EQ(PyBytes_Size(foo), 3);
+}
+
+// _PyBytesWriter API
+
+TEST_F(BytesWriterExtensionApiTest, AllocSetsUpBuffer) {
+  Py_ssize_t size = 10;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  EXPECT_NE(_PyBytesWriter_Alloc(&writer, size), nullptr);
+  EXPECT_GT(writer.allocated, size);
+  EXPECT_EQ(writer.min_size, size);
+}
+
+TEST_F(BytesWriterExtensionApiTest, FinishWithEmptyWriterReturnsEmptyBytes) {
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, 0);
+  ASSERT_NE(str, nullptr);
+  PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  EXPECT_TRUE(PyBytes_CheckExact(result));
+  EXPECT_EQ(PyBytes_Size(result), 0);
+}
+
+TEST_F(BytesWriterExtensionApiTest,
+       FinishWithEmptyWriterUseByteArrayReturnsEmptyByteArray) {
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, 0);
+  ASSERT_NE(str, nullptr);
+  writer.use_bytearray = true;
+  PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  EXPECT_TRUE(PyByteArray_CheckExact(result));
+  EXPECT_EQ(PyByteArray_Size(result), 0);
+}
+
+TEST_F(BytesWriterExtensionApiTest, FinishReturnsBytes) {
+  Py_ssize_t size = 10;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  char* str = reinterpret_cast<char*>(_PyBytesWriter_Alloc(&writer, 0));
+  ASSERT_NE(str, nullptr);
+  for (char c = 'a'; c < 'a' + size; c++) {
+    *str++ = c;
+  }
+  PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  EXPECT_TRUE(PyBytes_CheckExact(result));
+  EXPECT_EQ(PyBytes_Size(result), size);
+  EXPECT_STREQ(PyBytes_AsString(result), "abcdefghij");
+}
+
+TEST_F(BytesWriterExtensionApiTest, FinishUseByteArrayReturnsByteArray) {
+  Py_ssize_t size = 10;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  char* str = reinterpret_cast<char*>(_PyBytesWriter_Alloc(&writer, 0));
+  ASSERT_NE(str, nullptr);
+  for (char c = 'a'; c < 'a' + size; c++) {
+    *str++ = c;
+  }
+  writer.use_bytearray = true;
+  PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  EXPECT_TRUE(PyByteArray_CheckExact(result));
+  EXPECT_EQ(PyByteArray_Size(result), size);
+  EXPECT_STREQ(PyByteArray_AsString(result), "abcdefghij");
+}
+
+TEST_F(BytesWriterExtensionApiTest, InitSetsFieldsToZero) {
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  EXPECT_EQ(writer.allocated, 0);
+  EXPECT_EQ(writer.min_size, 0);
+  EXPECT_FALSE(writer.overallocate);
+  EXPECT_FALSE(writer.use_bytearray);
+}
+
+TEST_F(BytesWriterExtensionApiTest, PrepareWithZeroReturnsSamePointer) {
+  Py_ssize_t initial_size = 10;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, initial_size);
+  ASSERT_NE(str, nullptr);
+  ASSERT_EQ(writer.min_size, initial_size);
+  EXPECT_EQ(_PyBytesWriter_Prepare(&writer, str, 0), str);
+  EXPECT_EQ(writer.min_size, initial_size);
+}
+
+TEST_F(BytesWriterExtensionApiTest, PrepareWithNonZeroIncreasesMinSize) {
+  Py_ssize_t initial_size = 10;
+  Py_ssize_t growth = 20;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, initial_size);
+  ASSERT_NE(str, nullptr);
+  ASSERT_EQ(writer.min_size, initial_size);
+  EXPECT_NE(_PyBytesWriter_Prepare(&writer, str, growth), nullptr);
+  EXPECT_EQ(writer.min_size, initial_size + growth);
+}
+
+TEST_F(BytesWriterExtensionApiTest, PrepareWithLargeIntRaisesMemoryError) {
+  Py_ssize_t initial_size = 10;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, initial_size);
+  ASSERT_NE(str, nullptr);
+  EXPECT_EQ(_PyBytesWriter_Prepare(&writer, str, PY_SSIZE_T_MAX), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_MemoryError));
+}
+
+TEST_F(BytesWriterExtensionApiTest, ResizeAllocatesNewBuffer) {
+  Py_ssize_t initial_size = 10;
+  Py_ssize_t new_size = 1000;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, initial_size);
+  ASSERT_NE(str, nullptr);
+  ASSERT_LT(writer.allocated, new_size);
+  void* new_str = _PyBytesWriter_Resize(&writer, str, new_size);
+  EXPECT_NE(new_str, nullptr);
+  EXPECT_NE(new_str, str);  // buffer has been reallocated
+  EXPECT_EQ(writer.allocated, new_size);
+  _PyBytesWriter_Dealloc(&writer);
+}
+
+TEST_F(BytesWriterExtensionApiTest, ResizeWithOverallocateAllocatesOversized) {
+  Py_ssize_t initial_size = 10;
+  Py_ssize_t new_size = 1000;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, initial_size);
+  ASSERT_NE(str, nullptr);
+  ASSERT_LT(writer.allocated, new_size);
+  writer.overallocate = true;
+  void* new_str = _PyBytesWriter_Resize(&writer, str, new_size);
+  EXPECT_NE(new_str, nullptr);
+  EXPECT_NE(new_str, str);  // buffer has been reallocated
+  EXPECT_GT(writer.allocated, new_size);
+  _PyBytesWriter_Dealloc(&writer);
+}
+
+TEST_F(BytesWriterExtensionApiTest,
+       ResizeWithUseByteArrayAllocatesOversizedPyro) {
+  Py_ssize_t initial_size = 10;
+  Py_ssize_t new_size = 1000;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, initial_size);
+  ASSERT_NE(str, nullptr);
+  ASSERT_LT(writer.allocated, new_size);
+  writer.use_bytearray = true;
+  void* new_str = _PyBytesWriter_Resize(&writer, str, new_size);
+  EXPECT_NE(new_str, nullptr);
+  EXPECT_NE(new_str, str);  // buffer has been reallocated
+  EXPECT_GT(writer.allocated, new_size);
+  _PyBytesWriter_Dealloc(&writer);
+}
+
+TEST_F(BytesWriterExtensionApiTest, WriteBytesGrowsAndWrites) {
+  Py_ssize_t initial_size = 10;
+  Py_ssize_t growth = 5;
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, initial_size);
+  ASSERT_NE(str, nullptr);
+  ASSERT_EQ(writer.min_size, initial_size);
+  str = _PyBytesWriter_WriteBytes(&writer, str, "Hello world!", growth);
+  ASSERT_NE(str, nullptr);
+  EXPECT_EQ(writer.min_size, initial_size + growth);
+  PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  ASSERT_TRUE(PyBytes_CheckExact(result));
+  EXPECT_EQ(PyBytes_Size(result), 5);
+  EXPECT_STREQ(PyBytes_AsString(result), "Hello");
 }
 
 }  // namespace python
