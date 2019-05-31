@@ -1389,6 +1389,19 @@ result = _str_from_str(Sub, 'value')
   EXPECT_TRUE(isStrEqualsCStr(*result, "value"));
 }
 
+TEST(StrArrayBuiltinsTest, UnderStrArrayIaddWithStrReturnsStrArray) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  StrArray self(&scope, runtime.newStrArray());
+  const char* test_str = "hello";
+  Str other(&scope, runtime.newStrFromCStr(test_str));
+  StrArray result(&scope,
+                  runBuiltin(BuiltinsModule::underStrArrayIadd, self, other));
+  EXPECT_TRUE(isStrEqualsCStr(runtime.strFromStrArray(result), test_str));
+  EXPECT_EQ(self, result);
+}
+
 TEST(BuiltinsModuleTest, AllOnListWithOnlyTrueReturnsTrue) {
   Runtime runtime;
   ASSERT_FALSE(runFromCStr(&runtime, R"(

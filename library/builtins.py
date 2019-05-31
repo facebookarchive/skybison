@@ -838,9 +838,6 @@ def _str_splitlines(self, keepends):
 
 
 class _strarray(bootstrap=True):  # noqa: F821
-    def __iadd__(self, other):
-        pass
-
     def __init__(self, source=_Unbound) -> None:
         pass
 
@@ -854,6 +851,11 @@ class _strarray(bootstrap=True):  # noqa: F821
 
     def __str__(self) -> str:  # noqa: T484
         pass
+
+
+@_patch
+def _strarray_iadd(self, other):
+    pass
 
 
 class _structseq_field:

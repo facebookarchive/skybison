@@ -131,6 +131,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSetMemberPyObject, underSetMemberPyObject},
     {SymbolId::kUnderSetCheck, underSetCheck},
     {SymbolId::kUnderSliceCheck, underSliceCheck},
+    {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
@@ -1385,6 +1386,17 @@ RawObject BuiltinsModule::underSetCheck(Thread* thread, Frame* frame,
 RawObject BuiltinsModule::underSliceCheck(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isSlice());
+}
+
+RawObject BuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  StrArray self(&scope, args.get(0));
+  Object other_obj(&scope, args.get(1));
+  Str other(&scope, strUnderlying(thread, other_obj));
+  thread->runtime()->strArrayAddStr(thread, self, other);
+  return *self;
 }
 
 RawObject BuiltinsModule::underStrCheck(Thread* thread, Frame* frame,

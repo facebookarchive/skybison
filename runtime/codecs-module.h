@@ -22,8 +22,6 @@ class UnderCodecsModule
                                          word nargs);
   static RawObject underByteArrayStringAppend(Thread* thread, Frame* frame,
                                               word nargs);
-  static RawObject underByteArrayToString(Thread* thread, Frame* frame,
-                                          word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const char* const kFrozenData;

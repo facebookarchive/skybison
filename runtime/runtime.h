@@ -820,12 +820,13 @@ class Runtime {
   RawObject strReplace(Thread* thread, const Str& src, const Str& oldstr,
                        const Str& newstr, word count);
 
+  void strArrayAddASCII(Thread* thread, const StrArray& array, byte code_point);
+  void strArrayAddStr(Thread* thread, const StrArray& array, const Str& str);
+
   // Ensures that the str array has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
   void strArrayEnsureCapacity(Thread* thread, const StrArray& array,
                               word min_capacity);
-
-  void strArrayAddStr(Thread* thread, const StrArray& array, const Str& str);
 
   // Generate a unique number for successively initialized native modules. We
   // don't index modules the same way as CPython, but we keep this to get a

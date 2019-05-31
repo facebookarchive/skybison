@@ -30,37 +30,7 @@ static SymbolId lookupSymbolForErrorHandler(const Str& error) {
   return SymbolId::kInvalid;
 }
 
-// Encodes a codepoint into a UTF-8 encoded byte array and returns the number
-// of bytes used in the encoding.
-// It assumes that it was passed in a byte array at least 4 bytes long
-// It returns -1 if the codepoint fails a bounds check
-static int encodeUTF8CodePoint(int32_t codepoint, byte* byte_pattern) {
-  if (codepoint < 0 || codepoint > kMaxUnicode) {
-    return -1;
-  }
-  if (codepoint <= kMaxASCII) {
-    byte_pattern[0] = codepoint;
-    return 1;
-  }
-  if (codepoint <= 0x7ff) {
-    byte_pattern[0] = (0xc0 | ((codepoint >> 6) & 0x1f));
-    byte_pattern[1] = (0x80 | (codepoint & 0x3f));
-    return 2;
-  }
-  if (codepoint <= 0xffff) {
-    byte_pattern[0] = (0xe0 | ((codepoint >> 12) & 0x0f));
-    byte_pattern[1] = (0x80 | ((codepoint >> 6) & 0x3f));
-    byte_pattern[2] = (0x80 | (codepoint & 0x3f));
-    return 3;
-  }
-  byte_pattern[0] = (0xf0 | ((codepoint >> 18) & 0x07));
-  byte_pattern[1] = (0x80 | ((codepoint >> 12) & 0x3f));
-  byte_pattern[2] = (0x80 | ((codepoint >> 6) & 0x3f));
-  byte_pattern[3] = (0x80 | (codepoint & 0x3f));
-  return 4;
-}
-
-static int asciiDecode(Thread* thread, const ByteArray& dst, const Bytes& src,
+static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
                        int index) {
   // TODO(T41032331): Implement a fastpass to read longs instead of chars
   Runtime* runtime = thread->runtime();
@@ -69,7 +39,7 @@ static int asciiDecode(Thread* thread, const ByteArray& dst, const Bytes& src,
     if (byte & 0x80) {
       break;
     }
-    byteArrayAdd(thread, runtime, dst, byte);
+    runtime->strArrayAddASCII(thread, dst, byte);
   }
   return index;
 }
@@ -82,7 +52,6 @@ const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderUtf32Encode, underUtf32Encode},
     {SymbolId::kUnderUtf8Encode, underUtf8Encode},
     {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
-    {SymbolId::kUnderByteArrayToString, underByteArrayToString},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -103,19 +72,19 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
          "Second arg to _ascii_decode must be str");
   DCHECK(runtime->isInstanceOfInt(*index_obj),
          "Third arg to _ascii_decode must be int");
-  DCHECK(runtime->isInstanceOfByteArray(*output_obj),
-         "Fourth arg to _ascii_decode must be bytearray");
+  DCHECK(output_obj.isStrArray(),
+         "Fourth arg to _ascii_decode must be _strarray");
   Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
   Str errors(&scope, strUnderlying(thread, errors_obj));
   Int index(&scope, intUnderlying(thread, index_obj));
-  ByteArray dst(&scope, *output_obj);
+  StrArray dst(&scope, *output_obj);
 
   Tuple result(&scope, runtime->newTuple(2));
   word length = bytes.length();
-  runtime->byteArrayEnsureCapacity(thread, dst, length);
+  runtime->strArrayEnsureCapacity(thread, dst, length);
   word outpos = asciiDecode(thread, dst, bytes, index.asWord());
   if (outpos == length) {
-    result.atPut(0, runtime->newStrFromByteArray(dst));
+    result.atPut(0, runtime->strFromStrArray(dst));
     result.atPut(1, runtime->newInt(length));
     return *result;
   }
@@ -124,21 +93,20 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
   while (outpos < length) {
     byte c = bytes.byteAt(outpos);
     if (c < 128) {
-      byteArrayAdd(thread, runtime, dst, c);
+      runtime->strArrayAddASCII(thread, dst, c);
       ++outpos;
       continue;
     }
     switch (error_id) {
       case SymbolId::kReplace: {
-        byte chars[] = {0xEF, 0xBF, 0xBD};
-        runtime->byteArrayExtend(thread, dst, View<byte>(chars, 3));
+        Str temp(&scope, SmallStr::fromCodePoint(0xFFFD));
+        runtime->strArrayAddStr(thread, dst, temp);
         ++outpos;
         break;
       }
       case SymbolId::kSurrogateescape: {
-        byte chars[4];
-        int num_bytes = encodeUTF8CodePoint(kLowSurrogateStart + c, chars);
-        runtime->byteArrayExtend(thread, dst, View<byte>(chars, num_bytes));
+        Str temp(&scope, SmallStr::fromCodePoint(kLowSurrogateStart + c));
+        runtime->strArrayAddStr(thread, dst, temp);
         ++outpos;
         break;
       }
@@ -151,7 +119,7 @@ RawObject UnderCodecsModule::underAsciiDecode(Thread* thread, Frame* frame,
         return *result;
     }
   }
-  result.atPut(0, runtime->newStrFromByteArray(dst));
+  result.atPut(0, runtime->strFromStrArray(dst));
   result.atPut(1, runtime->newIntFromUnsigned(length));
   return *result;
 }
@@ -569,15 +537,6 @@ RawObject UnderCodecsModule::underByteArrayStringAppend(Thread* thread,
     byteArrayAdd(thread, thread->runtime(), dst, data.charAt(i));
   }
   return NoneType::object();
-}
-
-// Takes a ByteArray and returns the call to newStrFromByteArray
-RawObject UnderCodecsModule::underByteArrayToString(Thread* thread,
-                                                    Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  ByteArray src(&scope, args.get(3));
-  return thread->runtime()->newStrFromByteArray(src);
 }
 
 }  // namespace python

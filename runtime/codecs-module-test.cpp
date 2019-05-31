@@ -13,12 +13,12 @@ TEST(CodecsModuleTest, DecodeASCIIWithWellFormedASCIIReturnsString) {
   Runtime runtime;
   HandleScope scope;
   byte encoded[] = {'h', 'e', 'l', 'l', 'o'};
-  Bytes bytes(&scope, runtime.newBytesWithAll(encoded));
-  Str errors(&scope, runtime.newStrFromCStr("strict"));
-  Int index(&scope, runtime.newInt(0));
-  ByteArray bytearray(&scope, runtime.newByteArray());
+  Object bytes(&scope, runtime.newBytesWithAll(encoded));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object strarray(&scope, runtime.newStrArray());
   Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, bytearray));
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -32,12 +32,12 @@ TEST(CodecsModuleTest, DecodeASCIIWithIgnoreErrorHandlerReturnsStr) {
   Runtime runtime;
   HandleScope scope;
   byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
-  Bytes bytes(&scope, runtime.newBytesWithAll(encoded));
-  Str errors(&scope, runtime.newStrFromCStr("ignore"));
-  Int index(&scope, runtime.newInt(0));
-  ByteArray bytearray(&scope, runtime.newByteArray());
+  Object bytes(&scope, runtime.newBytesWithAll(encoded));
+  Object errors(&scope, runtime.newStrFromCStr("ignore"));
+  Object index(&scope, runtime.newInt(0));
+  Object strarray(&scope, runtime.newStrArray());
   Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, bytearray));
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -51,12 +51,12 @@ TEST(CodecsModuleTest, DecodeASCIIWithReplaceErrorHandlerReturnsStr) {
   Runtime runtime;
   HandleScope scope;
   byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
-  Bytes bytes(&scope, runtime.newBytesWithAll(encoded));
-  Str errors(&scope, runtime.newStrFromCStr("replace"));
-  Int index(&scope, runtime.newInt(0));
-  ByteArray bytearray(&scope, runtime.newByteArray());
+  Object bytes(&scope, runtime.newBytesWithAll(encoded));
+  Object errors(&scope, runtime.newStrFromCStr("replace"));
+  Object index(&scope, runtime.newInt(0));
+  Object strarray(&scope, runtime.newStrArray());
   Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, bytearray));
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -71,12 +71,12 @@ TEST(CodecsModuleTest, DecodeASCIIWithSurroogateescapeErrorHandlerReturnsStr) {
   Runtime runtime;
   HandleScope scope;
   byte encoded[] = {'h', 'e', 'l', 'l', 0x80, 'o'};
-  Bytes bytes(&scope, runtime.newBytesWithAll(encoded));
-  Str errors(&scope, runtime.newStrFromCStr("surrogateescape"));
-  Int index(&scope, runtime.newInt(0));
-  ByteArray bytearray(&scope, runtime.newByteArray());
+  Object bytes(&scope, runtime.newBytesWithAll(encoded));
+  Object errors(&scope, runtime.newStrFromCStr("surrogateescape"));
+  Object index(&scope, runtime.newInt(0));
+  Object strarray(&scope, runtime.newStrArray());
   Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, bytearray));
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -95,12 +95,12 @@ class Foo(bytes): pass
 encoded = Foo(b"hello")
 )")
                    .isError());
-  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "encoded"));
-  Str errors(&scope, runtime.newStrFromCStr("strict"));
-  Int index(&scope, runtime.newInt(0));
-  ByteArray bytearray(&scope, runtime.newByteArray());
+  Object bytes(&scope, moduleAt(&runtime, "__main__", "encoded"));
+  Object errors(&scope, runtime.newStrFromCStr("strict"));
+  Object index(&scope, runtime.newInt(0));
+  Object strarray(&scope, runtime.newStrArray());
   Object result_obj(&scope, runBuiltin(UnderCodecsModule::underAsciiDecode,
-                                       bytes, errors, index, bytearray));
+                                       bytes, errors, index, strarray));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);

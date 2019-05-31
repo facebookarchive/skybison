@@ -6,6 +6,8 @@ _bytes_check = _bytes_check  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
+_strarray = _strarray  # noqa: F821
+_strarray_iadd = _strarray_iadd  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _type = _type  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
@@ -99,7 +101,7 @@ def encode(data, encoding: str = "utf-8", errors: str = _Unbound) -> bytes:
 
 
 @_patch
-def _ascii_decode(data: str, errors: str, index: int, out: bytearray):
+def _ascii_decode(data: str, errors: str, index: int, out: _strarray):
     pass
 
 
@@ -113,7 +115,7 @@ def ascii_decode(data: bytes, errors: str = "strict"):
             "ascii_decode() argument 2 must be str or None, not "
             f"'{_type(errors).__name__}'"
         )
-    result = bytearray()
+    result = _strarray()
     i = 0
     encoded = ""
     length = len(data)
@@ -126,7 +128,7 @@ def ascii_decode(data: bytes, errors: str = "strict"):
     if _str_check(encoded):
         return encoded, i
     # The error handler was the last to write to the result
-    return _bytearray_to_string(result), i
+    return str(result), i
 
 
 @_patch
@@ -480,7 +482,7 @@ def register_error(name: str, error_func):
 def _call_decode_errorhandler(
     errors: str,
     input: bytes,
-    output: bytearray,
+    output: _strarray,
     reason: str,
     encoding: str,
     start: int,
@@ -491,7 +493,7 @@ def _call_decode_errorhandler(
     Creates a UnicodeDecodeError, looks up an error handler, and calls the
     error handler with the UnicodeDecodeError.
     Makes sure the error handler returns a (str, int) tuple and returns it and
-    writes the str to the output bytearray passed in.
+    writes the str to the output _strarray passed in.
     Since the error handler can change the object that's being decoded by
     replacing the object of the UnicodeDecodeError, this function returns the
     Error's object field, along with the integer returned from the function
@@ -523,7 +525,7 @@ def _call_decode_errorhandler(
         pos += len(input)
     if not 0 <= pos <= len(input):
         raise IndexError(f"position {pos} from error handler out of bounds")
-    _bytearray_string_append(output, replacement)
+    _strarray_iadd(output, replacement)
 
     return (input, pos)
 
@@ -568,10 +570,4 @@ _codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
 
 @_patch
 def _bytearray_string_append(dst: bytearray, data: str):
-    pass
-
-
-# TODO(T42244617): Replace with a _strarray type
-@_patch
-def _bytearray_to_string(src: bytearray) -> str:
     pass

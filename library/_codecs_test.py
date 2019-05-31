@@ -4,6 +4,11 @@ import unittest
 import _codecs
 
 
+# These values are injected by our boot process. flake8 has no knowledge about
+# their definitions and will complain without this gross circular helper here.
+_strarray = _strarray  # noqa: F821
+
+
 class CodecsTests(unittest.TestCase):
     def test_register_error_with_non_string_first_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -554,12 +559,12 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
     def test_call_decode_error_with_strict_raises_unicode_decode_error(self):
         with self.assertRaises(UnicodeDecodeError):
             _codecs._call_decode_errorhandler(
-                "strict", b"bad input", bytearray(), "reason", "encoding", 0, 0
+                "strict", b"bad input", _strarray(), "reason", "encoding", 0, 0
             )
 
     def test_call_decode_error_with_ignore_returns_tuple(self):
         new_input, new_pos = _codecs._call_decode_errorhandler(
-            "ignore", b"bad_input", bytearray(), "reason", "encoding", 1, 2
+            "ignore", b"bad_input", _strarray(), "reason", "encoding", 1, 2
         )
         self.assertEqual(new_input, b"bad_input")
         self.assertEqual(new_pos, 2)
@@ -571,7 +576,7 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
         _codecs.register_error("not-a-tuple", error_function)
         with self.assertRaises(TypeError):
             _codecs._call_decode_errorhandler(
-                "not-a-tuple", b"bad_input", bytearray(), "reason", "encoding", 1, 2
+                "not-a-tuple", b"bad_input", _strarray(), "reason", "encoding", 1, 2
             )
 
     def test_call_decode_error_with_small_tuple_return_raises_type_error(self):
@@ -581,7 +586,7 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
         _codecs.register_error("small-tuple", error_function)
         with self.assertRaises(TypeError):
             _codecs._call_decode_errorhandler(
-                "small-tuple", b"bad_input", bytearray(), "reason", "encoding", 1, 2
+                "small-tuple", b"bad_input", _strarray(), "reason", "encoding", 1, 2
             )
 
     def test_call_decode_error_with_int_first_tuple_return_raises_type_error(self):
@@ -591,7 +596,7 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
         _codecs.register_error("int-first", error_function)
         with self.assertRaises(TypeError):
             _codecs._call_decode_errorhandler(
-                "int-first", b"bad_input", bytearray(), "reason", "encoding", 1, 2
+                "int-first", b"bad_input", _strarray(), "reason", "encoding", 1, 2
             )
 
     def test_call_decode_error_with_string_second_tuple_return_raises_type_error(self):
@@ -601,7 +606,7 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
         _codecs.register_error("str-second", error_function)
         with self.assertRaises(TypeError):
             _codecs._call_decode_errorhandler(
-                "str-second", b"bad_input", bytearray(), "reason", "encoding", 1, 2
+                "str-second", b"bad_input", _strarray(), "reason", "encoding", 1, 2
             )
 
     def test_call_decode_error_with_non_bytes_changed_input_returns_error(self):
@@ -614,7 +619,7 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
             _codecs._call_decode_errorhandler(
                 "change-input-to-int",
                 b"bad_input",
-                bytearray(),
+                _strarray(),
                 "reason",
                 "encoding",
                 1,
@@ -630,7 +635,7 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
             _codecs._call_decode_errorhandler(
                 "out-of-bounds-pos",
                 b"bad_input",
-                bytearray(),
+                _strarray(),
                 "reason",
                 "encoding",
                 1,
@@ -643,7 +648,7 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
 
         _codecs.register_error("negative-pos", error_function)
         new_input, new_pos = _codecs._call_decode_errorhandler(
-            "negative-pos", b"bad_input", bytearray(), "reason", "encoding", 1, 2
+            "negative-pos", b"bad_input", _strarray(), "reason", "encoding", 1, 2
         )
         self.assertEqual(new_input, b"bad_input")
         self.assertEqual(new_pos, 8)
@@ -653,11 +658,11 @@ class GeneralizedErrorHandlerTests(unittest.TestCase):
             return "str_to_append", exc.end
 
         _codecs.register_error("well-behaved-test", error_function)
-        result = bytearray()
+        result = _strarray()
         _codecs._call_decode_errorhandler(
             "well-behaved-test", b"bad_input", result, "reason", "encoding", 1, 2
         )
-        self.assertEqual(bytes(result), b"str_to_append")
+        self.assertEqual(str(result), "str_to_append")
 
     def test_call_encode_error_with_strict_calls_function(self):
         with self.assertRaises(UnicodeEncodeError):

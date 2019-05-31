@@ -92,6 +92,7 @@ class BuiltinsModule {
   static RawObject underSetMemberPyObject(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);

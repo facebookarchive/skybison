@@ -7,36 +7,6 @@ namespace python {
 
 using namespace testing;
 
-TEST(StrArrayBuiltinsTest, DunderIaddWithNonStrArraySelfRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "_strarray.__iadd__(b'', None)"),
-      LayoutId::kTypeError,
-      "'__iadd__' requires a '_strarray' object but got 'bytes'"));
-}
-
-TEST(StrArrayBuiltinsTest, DunderIaddWithNonStrsLikeRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
-builder = _strarray()
-builder += None)"),
-                            LayoutId::kTypeError,
-                            "can only concatenate str to _strarray"));
-}
-
-TEST(StrArrayBuiltinsTest, DunderIaddWithStrReturnsStrArray) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  StrArray self(&scope, runtime.newStrArray());
-  const char* test_str = "hello";
-  Str other(&scope, runtime.newStrFromCStr(test_str));
-  StrArray result(&scope,
-                  runBuiltin(StrArrayBuiltins::dunderIadd, self, other));
-  EXPECT_TRUE(isStrEqualsCStr(runtime.strFromStrArray(result), test_str));
-  EXPECT_EQ(self, result);
-}
-
 TEST(StrArrayBuiltinsTest, DunderNewAndDunderInitCreateStrArray) {
   Runtime runtime;
   Thread* thread = Thread::current();

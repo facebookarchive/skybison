@@ -3553,4 +3553,16 @@ TEST(RuntimeStrArrayTest, AppendStrAppendsValidUTF8) {
                               "a\xC3\xA9\xE2\xB3\x80\xF0\x9F\x86\x92"));
 }
 
+TEST(RuntimeStrArrayTest, AddASCIIAppendsASCII) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  StrArray array(&scope, runtime.newStrArray());
+  runtime.strArrayAddASCII(thread, array, 'h');
+  runtime.strArrayAddASCII(thread, array, 'i');
+  EXPECT_EQ(array.numItems(), 2);
+  EXPECT_TRUE(isStrEqualsCStr(runtime.strFromStrArray(array), "hi"));
+}
+
 }  // namespace python

@@ -3629,6 +3629,29 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
 
 // StrArray
 
+void Runtime::strArrayAddASCII(Thread* thread, const StrArray& array,
+                               byte code_point) {
+  CHECK(code_point <= kMaxASCII, "can only add ASCII in strArrayAddASCII");
+  word num_items = array.numItems();
+  word new_length = num_items + 1;
+  strArrayEnsureCapacity(thread, array, new_length);
+  array.setNumItems(new_length);
+  MutableBytes::cast(array.items()).byteAtPut(num_items, code_point);
+}
+
+void Runtime::strArrayAddStr(Thread* thread, const StrArray& array,
+                             const Str& str) {
+  word length = str.length();
+  if (length == 0) return;
+  word num_items = array.numItems();
+  word new_length = length + num_items;
+  strArrayEnsureCapacity(thread, array, new_length);
+  byte* dst =
+      reinterpret_cast<byte*>(MutableBytes::cast(array.items()).address());
+  str.copyTo(dst + num_items, length);
+  array.setNumItems(new_length);
+}
+
 void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
                                      word min_capacity) {
   DCHECK_BOUND(min_capacity, SmallInt::kMaxValue);
@@ -3642,21 +3665,6 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   array.copyTo(dst, old_length);
   std::memset(dst + old_length, 0, new_capacity - old_length);
   array.setItems(*new_bytes);
-}
-
-void Runtime::strArrayAddStr(Thread* thread, const StrArray& array,
-                             const Str& str) {
-  word length = str.length();
-  if (length == 0) return;
-  word num_items = array.numItems();
-  word new_length;
-  bool did_overflow = __builtin_add_overflow(length, num_items, &new_length);
-  DCHECK(!did_overflow, "string is too large to concat");
-  strArrayEnsureCapacity(thread, array, new_length);
-  byte* dst =
-      reinterpret_cast<byte*>(MutableBytes::cast(array.items()).address());
-  str.copyTo(dst + num_items, length);
-  array.setNumItems(new_length);
 }
 
 RawDict Runtime::moduleDictBuiltins(Thread* thread, const Dict& dict) {

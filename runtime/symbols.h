@@ -443,7 +443,6 @@ class Runtime;
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
-  V(UnderByteArrayToString, "_bytearray_to_string")                            \
   V(UnderBytesCheck, "_bytes_check")                                           \
   V(UnderBytesFromInts, "_bytes_from_ints")                                    \
   V(UnderBytesGetitem, "_bytes_getitem")                                       \
@@ -539,6 +538,7 @@ class Runtime;
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStdoutFd, "_stdout_fd")                                               \
   V(UnderStrArray, "_strarray")                                                \
+  V(UnderStrArrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
