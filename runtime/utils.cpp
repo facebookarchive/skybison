@@ -17,16 +17,16 @@ class TracebackPrinter : public FrameVisitor {
  public:
   bool visit(Frame* frame) {
     std::stringstream line;
-    Thread* thread = Thread::current();
-    HandleScope scope(thread);
-    DCHECK(!frame->isSentinelFrame(), "should not be called for sentinel");
-    Object function_obj(&scope, frame->function());
-    if (!function_obj.isFunction()) {
-      lines_.emplace_back("  <invalid function>\n");
-      return true;
+    if (const char* invalid_frame = frame->isInvalid()) {
+      line << "  Invalid frame (" << invalid_frame << ")";
+      lines_.emplace_back(line.str());
+      return false;
     }
 
-    Function function(&scope, *function_obj);
+    DCHECK(!frame->isSentinelFrame(), "should not be called for sentinel");
+    Thread* thread = Thread::current();
+    HandleScope scope(thread);
+    Function function(&scope, frame->function());
     Object code_obj(&scope, function.code());
     if (code_obj.isCode()) {
       Code code(&scope, *code_obj);

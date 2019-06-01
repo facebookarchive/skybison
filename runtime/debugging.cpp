@@ -391,6 +391,11 @@ std::ostream& operator<<(std::ostream& os, RawType value) {
 }
 
 static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
+  if (const char* invalid = frame->isInvalid()) {
+    os << "- invalid frame (" << invalid << ")\n";
+    return;
+  }
+
   HandleScope scope(thread);
 
   Tuple var_names(&scope, thread->runtime()->emptyTuple());

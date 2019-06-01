@@ -135,4 +135,32 @@ result = foo('a', 99)
   EXPECT_TRUE(isStrEqualsCStr(*result, expected.str().c_str()));
 }
 
+TEST(UtilsTest, PrintTracebackPrintsInvalidFrame) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+
+  // Thrash the frame with invalid data.
+  memset(bit_cast<char*>(thread->currentFrame()), -33, Frame::kSize);
+
+  std::ostringstream stream;
+  Utils::printTraceback(&stream);
+  EXPECT_EQ(stream.str(), R"(Traceback (most recent call last)
+  Invalid frame (bad previousFrame field)
+)");
+}
+
+TEST(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+
+  // Open a frame without putting a function on the stack first.
+  thread->openAndLinkFrame(0, 0, 0);
+
+  std::ostringstream stream;
+  Utils::printTraceback(&stream);
+  EXPECT_EQ(stream.str(), R"(Traceback (most recent call last)
+  Invalid frame (bad function)
+)");
+}
+
 }  // namespace python

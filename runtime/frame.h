@@ -238,6 +238,9 @@ class Frame {
   // Compute the total space required for a frame object
   static word allocationSize(RawObject code);
 
+  // Returns nullptr if the frame is well formed, otherwise an error message.
+  const char* isInvalid();
+
   static const int kPreviousFrameOffset = 0;
   static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
   static const int kImplicitGlobalsOffset = kValueStackTopOffset + kPointerSize;
@@ -453,7 +456,11 @@ inline RawObject Frame::peek(word offset) {
   return *(valueStackTop() + offset);
 }
 
-inline bool Frame::isSentinelFrame() { return previousFrame() == nullptr; }
+inline bool Frame::isSentinelFrame() {
+  // This is the same as `previousFrame() == nullptr` but will not fail
+  // assertion checks if the field is not a SmallInt.
+  return at(kPreviousFrameOffset) == SmallInt::fromWord(0);
+}
 
 inline void* Frame::nativeFunctionPointer() {
   DCHECK(isNativeFrame(), "not native frame");
