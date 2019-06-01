@@ -190,9 +190,7 @@ std::string callFunctionToString(const Function& func, const Tuple& args) {
   CHECK(out != nullptr, "fmemopen failed");
   FILE* prev_stdout = runtime->stdoutFile();
   runtime->setStdoutFile(out);
-  thread->pushNativeFrame(0);
   callFunction(func, args);
-  thread->popFrame();
   fclose(out);
   runtime->setStdoutFile(prev_stdout);
   buffer[buffer_size - 1] = '\0';
@@ -201,16 +199,13 @@ std::string callFunctionToString(const Function& func, const Tuple& args) {
 
 RawObject callFunction(const Function& func, const Tuple& args) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Code code(&scope, func.code());
-  Frame* frame = thread->pushNativeFrame(args.length());
+  Frame* frame = thread->currentFrame();
   frame->pushValue(*func);
-  for (word i = 0; i < args.length(); i++) {
+  word args_length = args.length();
+  for (word i = 0; i < args_length; i++) {
     frame->pushValue(args.at(i));
   }
-  Object result(&scope, func.entry()(thread, frame, code.argcount()));
-  thread->popFrame();
-  return *result;
+  return Interpreter::call(thread, frame, args_length);
 }
 
 bool tupleContains(const Tuple& object_array, const Object& key) {

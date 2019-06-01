@@ -94,12 +94,14 @@ Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   frame->setNumLocals(num_args + num_vars);
 
   // return a pointer to the base of the frame
-  return linkFrame(frame);
+  linkFrame(frame);
+  DCHECK(frame->isInvalid() == nullptr, "invalid frame");
+  return frame;
 }
 
-Frame* Thread::linkFrame(Frame* frame) {
+void Thread::linkFrame(Frame* frame) {
   frame->setPreviousFrame(currentFrame_);
-  return currentFrame_ = frame;
+  currentFrame_ = frame;
 }
 
 void Thread::checkStackOverflow(word max_size) {

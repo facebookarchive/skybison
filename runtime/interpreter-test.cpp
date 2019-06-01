@@ -1324,10 +1324,8 @@ TEST(InterpreterTest, StackCleanupAfterCallFunction) {
   defaults.atPut(1, SmallInt::fromWord(2));
   callee.setDefaults(*defaults);
 
-  // Create a caller frame
-  Frame* frame = thread->pushCallFrame(*callee);
-
   // Save starting value stack top
+  Frame* frame = thread->currentFrame();
   RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
@@ -1380,10 +1378,8 @@ TEST(InterpreterTest, StackCleanupAfterCallExFunction) {
   defaults.atPut(1, SmallInt::fromWord(2));
   callee.setDefaults(*defaults);
 
-  // Create a caller frame
-  Frame* frame = thread->pushCallFrame(*callee);
-
   // Save starting value stack top
+  Frame* frame = thread->currentFrame();
   RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument
@@ -1443,10 +1439,8 @@ TEST(InterpreterTest, StackCleanupAfterCallKwFunction) {
   defaults.atPut(1, SmallInt::fromWord(2));
   callee.setDefaults(*defaults);
 
-  // Create a caller frame
-  Frame* frame = thread->pushCallFrame(*callee);
-
   // Save starting value stack top
+  Frame* frame = thread->currentFrame();
   RawObject* value_stack_start = frame->valueStackTop();
 
   // Push function pointer and argument

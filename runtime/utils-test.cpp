@@ -152,9 +152,23 @@ TEST(UtilsTest, PrintTracebackPrintsInvalidFrame) {
 TEST(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
   Runtime runtime;
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
 
-  // Open a frame without putting a function on the stack first.
-  thread->openAndLinkFrame(0, 0, 0);
+  Code code(&scope, newEmptyCode());
+  code.setCode(Bytes::empty());
+  Object qualname(&scope, Str::empty());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
+                                        none, none, globals));
+
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(*function);
+  thread->pushCallFrame(*function);
+
+  // Destroy function on frame.
+  frame->setValueAt(NoneType::object(), 0);
 
   std::ostringstream stream;
   Utils::printTraceback(&stream);
