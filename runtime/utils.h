@@ -16,8 +16,7 @@
               __func__, #expr);                                                \
       fprintf(stderr, __VA_ARGS__);                                            \
       fputc('\n', stderr);                                                     \
-      python::Utils::printTracebackToStderr();                                 \
-      std::abort();                                                            \
+      python::Utils::printDebugInfoAndAbort();                                 \
     }                                                                          \
   } while (0)
 
@@ -29,8 +28,7 @@
               __LINE__, __func__, static_cast<word>(index),                    \
               static_cast<word>(high) - 1);                                    \
       fputc('\n', stderr);                                                     \
-      python::Utils::printTracebackToStderr();                                 \
-      std::abort();                                                            \
+      python::Utils::printDebugInfoAndAbort();                                 \
     }                                                                          \
   } while (0)
 
@@ -42,8 +40,7 @@
               __LINE__, __func__, static_cast<word>(val),                      \
               static_cast<word>(high));                                        \
       fputc('\n', stderr);                                                     \
-      python::Utils::printTracebackToStderr();                                 \
-      std::abort();                                                            \
+      python::Utils::printDebugInfoAndAbort();                                 \
     }                                                                          \
   } while (0)
 
@@ -72,8 +69,7 @@
             __func__);                                                         \
     fprintf(stderr, __VA_ARGS__);                                              \
     fputc('\n', stderr);                                                       \
-    python::Utils::printTracebackToStderr();                                   \
-    std::abort();                                                              \
+    python::Utils::printDebugInfoAndAbort();                                   \
   } while (0)
 
 #define UNREACHABLE(...)                                                       \
@@ -81,8 +77,7 @@
     fprintf(stderr, "%s:%d %s: unreachable: ", __FILE__, __LINE__, __func__);  \
     fprintf(stderr, __VA_ARGS__);                                              \
     fputc('\n', stderr);                                                       \
-    python::Utils::printTracebackToStderr();                                   \
-    std::abort();                                                              \
+    python::Utils::printDebugInfoAndAbort();                                   \
   } while (0)
 
 namespace python {
@@ -157,6 +152,10 @@ class Utils {
   // Prints a python level stack trace to stderr or the stream of your choice.
   static void printTracebackToStderr();
   static void printTraceback(std::ostream* os);
+
+  // Print the current traceback, information about the pending exception, if
+  // one is set, and call std::abort().
+  [[noreturn]] static void printDebugInfoAndAbort();
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(Utils);

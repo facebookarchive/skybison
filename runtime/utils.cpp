@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include "debugging.h"
 #include "frame.h"
 #include "handles.h"
 #include "runtime.h"
@@ -95,6 +96,27 @@ void Utils::printTraceback(std::ostream* os) {
   TracebackPrinter printer;
   Thread::current()->visitFrames(&printer);
   printer.print(os);
+}
+
+void Utils::printDebugInfoAndAbort() {
+  static thread_local bool aborting = false;
+  if (aborting) {
+    std::cerr << "Attempting to abort while already aborting. Not printing "
+                 "another traceback.\n";
+    std::abort();
+  }
+  aborting = true;
+
+  printTracebackToStderr();
+  Thread* thread = Thread::current();
+  if (thread && thread->hasPendingException()) {
+    std::cerr << "Pending exception\n  Type      : "
+              << thread->pendingExceptionType()
+              << "\n  Value     : " << thread->pendingExceptionValue()
+              << "\n  Traceback : " << thread->pendingExceptionTraceback()
+              << "\n";
+  }
+  std::abort();
 }
 
 }  // namespace python
