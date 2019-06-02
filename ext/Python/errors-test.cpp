@@ -76,7 +76,8 @@ TEST_F(ErrorsExtensionApiTest, BadArgumentRaisesTypeError) {
   ASSERT_TRUE(PyUnicode_Check(message));
   EXPECT_EQ(_PyUnicode_EQ(value, message), 1);
 
-  EXPECT_EQ(traceback, nullptr);
+  // TODO(T42241510): Traceback support isn't implemented yet. Once it's ready,
+  // inspect the traceback here.
 
   Py_DECREF(type);
   Py_DECREF(value);
@@ -92,7 +93,8 @@ TEST_F(ErrorsExtensionApiTest, NoMemoryRaisesMemoryError) {
   PyErr_Fetch(&type, &value, &traceback);
   EXPECT_EQ(type, PyExc_MemoryError);
   EXPECT_EQ(value, nullptr);
-  EXPECT_EQ(traceback, nullptr);
+  // TODO(T42241510): Traceback support isn't implemented yet. Once it's ready,
+  // inspect the traceback here.
 
   Py_DECREF(type);
 }
@@ -115,7 +117,8 @@ TEST_F(ErrorsExtensionApiTest, BadInternalCallRaisesSystemErrorPyro) {
   ASSERT_TRUE(PyUnicode_Check(message));
   EXPECT_EQ(_PyUnicode_EQ(value, message), 1);
 
-  EXPECT_EQ(traceback, nullptr);
+  // TODO(T42241510): Traceback support isn't implemented yet. Once it's ready,
+  // inspect the traceback here.
 
   Py_DECREF(type);
   Py_DECREF(value);
@@ -137,7 +140,8 @@ TEST_F(ErrorsExtensionApiTest, UnderBadInternalCallRaisesSystemError) {
   ASSERT_TRUE(PyUnicode_Check(message));
   EXPECT_EQ(_PyUnicode_EQ(value, message), 1);
 
-  EXPECT_EQ(traceback, nullptr);
+  // TODO(T42241510): Traceback support isn't implemented yet. Once it's ready,
+  // inspect the traceback here.
 
   Py_DECREF(type);
   Py_DECREF(value);

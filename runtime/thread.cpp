@@ -347,7 +347,15 @@ RawObject Thread::raise(LayoutId type, RawObject value) {
   return raiseWithType(runtime()->typeAt(type), value);
 }
 
+// TODO(T39919701): This is a temporary, off-by-default (in Release builds) hack
+// until we have proper traceback support. It has no mapping to actual
+// tracebacks as understood by Python code; see its usage in
+// Thread::raiseWithType() below for details.
+#ifdef NDEBUG
 const bool kRecordTracebacks = std::getenv("PYRO_RECORD_TRACEBACKS") != nullptr;
+#else
+const bool kRecordTracebacks = true;
+#endif
 
 RawObject Thread::raiseWithType(RawObject type_raw, RawObject value_raw) {
   DCHECK(!hasPendingException(), "unhandled exception lingering");
@@ -357,8 +365,6 @@ RawObject Thread::raiseWithType(RawObject type_raw, RawObject value_raw) {
   Object traceback(&scope, NoneType::object());
 
   if (UNLIKELY(kRecordTracebacks)) {
-    // TODO(T39919701): This is a temporary, off-by-default hack until we have
-    // proper traceback support.
     std::ostringstream tb;
     Utils::printTraceback(&tb);
     traceback = runtime()->newStrFromCStr(tb.str().c_str());

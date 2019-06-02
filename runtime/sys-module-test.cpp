@@ -85,9 +85,8 @@ except:
   ASSERT_EQ(value_args.length(), 1);
   EXPECT_EQ(value_args.at(0), SmallInt::fromWord(4));
 
-  // TODO(T42241510): Traceback is unimplemented yet. Once it's implemented,
-  // add a EXPECT_EQ(result.at(2), traceback).
-  EXPECT_EQ(result.at(2), NoneType::object());
+  // TODO(T42241510): Traceback support isn't implemented yet. Once it's ready,
+  // inspect result.at(2) here.
 }
 
 TEST(SysModuleTest, ExcInfoReturnsInfoOfExceptionCurrentlyBeingHandled) {
@@ -120,9 +119,8 @@ except:
   ASSERT_EQ(value_args.length(), 1);
   EXPECT_EQ(value_args.at(0), SmallInt::fromWord(5));
 
-  // TODO(T42241510): Traceback is unimplemented yet. Once it's implemented,
-  // add a EXPECT_EQ(result.at(2), traceback).
-  EXPECT_EQ(result.at(2), NoneType::object());
+  // TODO(T42241510): Traceback support isn't implemented yet. Once it's ready,
+  // inspect result.at(2) here.
 }
 
 TEST(SysModuleTest, ExecutableIsValid) {
