@@ -1821,8 +1821,8 @@ RawObject Runtime::moduleDictAt(Thread* thread, const Dict& dict,
   if (value_cell.isError()) {
     return Error::notFound();
   }
-  CHECK(value_cell.isValueCell(),
-        "dict in moduleDictAt should return ValueCell");
+  DCHECK(value_cell.isValueCell(),
+         "dict in moduleDictAt should return ValueCell");
   return ValueCell::cast(*value_cell).value();
 }
 
@@ -1928,7 +1928,8 @@ RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
   if (value_cell.isError()) {
     return Error::notFound();
   }
-  CHECK(value_cell.isValueCell(), "dict in typeDictAt should return ValueCell");
+  DCHECK(value_cell.isValueCell(),
+         "dict in typeDictAt should return ValueCell");
   return ValueCell::cast(*value_cell).value();
 }
 
@@ -3628,7 +3629,7 @@ RawObject Runtime::strSubstr(Thread* thread, const Str& str, word start,
 
 void Runtime::strArrayAddASCII(Thread* thread, const StrArray& array,
                                byte code_point) {
-  CHECK(code_point <= kMaxASCII, "can only add ASCII in strArrayAddASCII");
+  DCHECK(code_point <= kMaxASCII, "can only add ASCII in strArrayAddASCII");
   word num_items = array.numItems();
   word new_length = num_items + 1;
   strArrayEnsureCapacity(thread, array, new_length);

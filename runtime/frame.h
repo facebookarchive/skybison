@@ -279,7 +279,7 @@ class Arguments {
   }
 
   RawObject get(word n) const {
-    CHECK(n < num_args_, "index out of range");
+    DCHECK(n < num_args_, "index out of range");
     return frame_->local(n);
   }
 

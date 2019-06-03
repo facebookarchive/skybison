@@ -81,7 +81,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
 
     bool found =
         runtime->layoutFindAttribute(thread, layout, name_interned, &info);
-    CHECK(found, "couldn't find attribute on new layout");
+    DCHECK(found, "couldn't find attribute on new layout");
   }
 
   if (info.isReadOnly()) {
