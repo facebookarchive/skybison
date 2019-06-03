@@ -205,7 +205,7 @@ RawObject IntBuiltins::dunderDivmod(Thread* t, Frame* frame, word nargs) {
 RawObject IntBuiltins::dunderFloat(Thread* t, Frame* frame, word nargs) {
   return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
     HandleScope scope(thread);
-    double value;
+    double value = 0.0;
     Object maybe_error(&scope, convertIntToDouble(thread, self, &value));
     if (!maybe_error.isNoneType()) return *maybe_error;
     return thread->runtime()->newFloat(value);

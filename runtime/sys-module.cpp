@@ -165,7 +165,7 @@ RawObject SysModule::underFdFlush(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object fd(&scope, args.get(0));
-  FILE* file;
+  FILE* file = nullptr;
   Object file_from_fd_result(&scope, fileFromFd(thread, fd, &file));
   if (file_from_fd_result.isError()) return *file_from_fd_result;
   int res = fflush(file);
@@ -177,7 +177,7 @@ RawObject SysModule::underFdWrite(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object fd(&scope, args.get(0));
-  FILE* file;
+  FILE* file = nullptr;
   Object file_from_fd_result(&scope, fileFromFd(thread, fd, &file));
   if (file_from_fd_result.isError()) return *file_from_fd_result;
 
