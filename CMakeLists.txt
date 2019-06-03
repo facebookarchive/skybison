@@ -156,7 +156,6 @@ target_include_directories(
 set(
   FROZEN_MODULE_INPUT
   library/_codecs.py
-  library/_functools.py
   library/_imp.py
   library/_io.py
   library/_namedtuple.py
@@ -165,7 +164,6 @@ set(
   library/builtins.py
   library/importlib/_bootstrap.py
   library/importlib/_bootstrap_external.py
-  library/itertools.py
   library/marshal.py
   library/operator.py
   library/sys.py
@@ -243,8 +241,6 @@ add_library(
   runtime/frame.cpp
   runtime/frame.h
   runtime/function-builtins.cpp
-  runtime/functools-module.cpp
-  runtime/functools-module.h
   runtime/generator-builtins.cpp
   runtime/globals.h
   runtime/handles.cpp
@@ -261,8 +257,6 @@ add_library(
   runtime/interpreter.h
   runtime/io-module.cpp
   runtime/io-module.h
-  runtime/itertools-module.cpp
-  runtime/itertools-module.h
   runtime/layout.h
   runtime/list-builtins.cpp
   runtime/list-builtins.h
@@ -427,7 +421,6 @@ add_library(
   runtime/int-builtins-test.cpp
   runtime/interpreter-test.cpp
   runtime/io-module-test.cpp
-  runtime/itertools-module-test.cpp
   runtime/layout-test.cpp
   runtime/list-builtins-test.cpp
   runtime/marshal-module-test.cpp

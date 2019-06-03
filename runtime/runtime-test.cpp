@@ -3334,16 +3334,6 @@ TEST(RuntimeTest, ModuleBuiltinsExists) {
   ASSERT_FALSE(moduleAt(&runtime, "builtins", "__name__").isError());
 }
 
-TEST(RuntimeTest, ModuleItertoolsExists) {
-  Runtime runtime;
-  ASSERT_FALSE(moduleAt(&runtime, "itertools", "__name__").isError());
-}
-
-TEST(RuntimeTest, ModuleUnderFunctoolsExists) {
-  Runtime runtime;
-  ASSERT_FALSE(moduleAt(&runtime, "_functools", "__name__").isError());
-}
-
 TEST(RuntimeTest, NewBuiltinFunctionAddsQualname) {
   Runtime runtime;
   HandleScope scope;

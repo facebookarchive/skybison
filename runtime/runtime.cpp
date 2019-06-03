@@ -26,7 +26,6 @@
 #include "frame.h"
 #include "frozen-modules.h"
 #include "function-builtins.h"
-#include "functools-module.h"
 #include "generator-builtins.h"
 #include "globals.h"
 #include "handles.h"
@@ -35,7 +34,6 @@
 #include "int-builtins.h"
 #include "interpreter.h"
 #include "io-module.h"
-#include "itertools-module.h"
 #include "layout.h"
 #include "list-builtins.h"
 #include "marshal-module.h"
@@ -1862,10 +1860,8 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},
     {SymbolId::kMarshal, &MarshalModule::initialize},
-    {SymbolId::kUnderFunctools, &UnderFunctoolsModule::initialize},
     {SymbolId::kUnderWarnings, &UnderWarningsModule::initialize},
     {SymbolId::kUnderWeakRef, &UnderWeakrefModule::initialize},
-    {SymbolId::kItertools, &ItertoolsModule::initialize},
     {SymbolId::kOperator, &OperatorModule::initialize},
     {SymbolId::kWarnings, &WarningsModule::initialize},
     {SymbolId::kSentinelId, nullptr},
