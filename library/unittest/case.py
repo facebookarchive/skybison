@@ -156,9 +156,13 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
         _BaseTestCaseContext.__init__(self, test_case)
         self.expected = expected
         self.test_case = test_case
-        if expected_regex is not None:
-            expected_regex = re.compile(expected_regex)
-        self.expected_regex = expected_regex
+
+        # TODO(T38780562): Apparently requires re._patern_type which is disbaled
+        # in re.py with the same task number.
+        #if expected_regex is not None:
+        #    expected_regex = re.compile(expected_regex)
+        #self.expected_regex = expected_regex
+        self.expected_regex = None
         self.obj_name = None
         self.msg = None
 
