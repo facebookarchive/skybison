@@ -21,12 +21,12 @@ static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
   }
   // If the generator has finished and we're not already sending an exception,
   // raise StopIteration.
-  if (heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC &&
-      !thread->hasPendingException()) {
+  word pc = heap_frame.virtualPC();
+  if (pc == Frame::kFinishedGeneratorPC && !thread->hasPendingException()) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
   // Don't allow sending non-None values before the generator is primed.
-  if (heap_frame.frame()->virtualPC() == 0 && !value.isNoneType()) {
+  if (pc == 0 && !value.isNoneType()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError, "can't send non-None value to a just-started %T",
         &gen);
@@ -37,7 +37,7 @@ static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,
   gen.setRunning(Bool::falseObj());
 
   if (!result.isError() &&
-      heap_frame.frame()->virtualPC() == Frame::kFinishedGeneratorPC) {
+      heap_frame.virtualPC() == Frame::kFinishedGeneratorPC) {
     // The generator finished normally. Forward its return value in a
     // StopIteration.
     return thread->raise(LayoutId::kStopIteration, *result);
@@ -63,12 +63,12 @@ static RawObject findYieldFrom(Thread* thread, const GeneratorBase& gen) {
   HandleScope scope(thread);
   if (gen.running() == Bool::trueObj()) return NoneType::object();
   HeapFrame hf(&scope, gen.heapFrame());
-  word pc = hf.frame()->virtualPC();
+  word pc = hf.virtualPC();
   if (pc == Frame::kFinishedGeneratorPC) return NoneType::object();
-  Code code(&scope, Function::cast(hf.function()).code());
-  Bytes bytecode(&scope, code.code());
+  Function function(&scope, hf.function());
+  MutableBytes bytecode(&scope, function.rewrittenBytecode());
   if (bytecode.byteAt(pc) != Bytecode::YIELD_FROM) return NoneType::object();
-  return hf.frame()->stashedValueStackTop()[0];
+  return hf.valueStackTop()[0];
 }
 
 // Validate the given exception and send it to gen.
@@ -166,9 +166,9 @@ static RawObject genThrowYieldFrom(Thread* thread, const GeneratorBase& gen,
     // that's running.
     DCHECK(gen.running() == Bool::falseObj(), "Generator shouldn't be running");
     HeapFrame hf(&scope, gen.heapFrame());
-    Object subiter(&scope, hf.frame()->stashedPopValue());
+    Object subiter(&scope, hf.popValue());
     DCHECK(*subiter == *yf, "Unexpected subiter on generator stack");
-    hf.frame()->setVirtualPC(hf.frame()->virtualPC() + Frame::kCodeUnitSize);
+    hf.setVirtualPC(hf.virtualPC() + Frame::kCodeUnitSize);
 
     Object subiter_value(&scope, NoneType::object());
     if (thread->hasPendingStopIteration()) {

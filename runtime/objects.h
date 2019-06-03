@@ -2523,9 +2523,6 @@ class RawSuper : public RawHeapObject {
  */
 class RawHeapFrame : public RawHeapObject {
  public:
-  // The Frame contained in this HeapFrame.
-  Frame* frame() const;
-
   // The size of the embedded frame + stack and locals, in words.
   word numFrameWords() const;
 
@@ -2538,6 +2535,14 @@ class RawHeapFrame : public RawHeapObject {
   // Note that using `frame()->function()` does not work for this!
   RawObject function() const;
 
+  // Accessors to the contained frame.
+  RawObject popValue() const;
+  void setVirtualPC(word value) const;
+  RawObject* valueStackTop() const;
+  word virtualPC() const;
+
+  void stashInternalPointers(Frame* original_frame) const;
+
   // Sizing.
   static word numAttributes(word extra_words);
 
@@ -2549,6 +2554,10 @@ class RawHeapFrame : public RawHeapObject {
   static const int kNumOverheadWords = kFrameOffset / kPointerSize;
 
   RAW_OBJECT_COMMON(HeapFrame);
+
+ private:
+  // The Frame contained in this HeapFrame.
+  Frame* frame() const;
 };
 
 /**

@@ -637,4 +637,20 @@ word RawHeapFrame::numAttributes(word extra_words) {
   return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
 }
 
+word RawHeapFrame::virtualPC() const { return frame()->virtualPC(); }
+
+void RawHeapFrame::setVirtualPC(word value) const {
+  return frame()->setVirtualPC(value);
+}
+
+RawObject* RawHeapFrame::valueStackTop() const {
+  return frame()->stashedValueStackTop();
+}
+
+RawObject RawHeapFrame::popValue() const { return frame()->stashedPopValue(); }
+
+void RawHeapFrame::stashInternalPointers(Frame* original_frame) const {
+  frame()->stashInternalPointers(original_frame);
+}
+
 }  // namespace python

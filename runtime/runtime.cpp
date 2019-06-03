@@ -3324,7 +3324,7 @@ static void copyStackFrameToHeapFrame(Frame* live_frame,
   RawObject* src_base =
       live_frame->valueStackBase() - heap_frame.maxStackSize();
   std::memcpy(dest_base, src_base, heap_frame.numFrameWords() * kPointerSize);
-  heap_frame.frame()->stashInternalPointers(live_frame);
+  heap_frame.stashInternalPointers(live_frame);
 }
 
 void Runtime::genSave(Thread* thread, const GeneratorBase& gen) {

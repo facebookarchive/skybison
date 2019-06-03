@@ -1071,7 +1071,7 @@ static void finishCurrentGenerator(Interpreter::Context* ctx) {
   GeneratorBase gen(&scope,
                     ctx->thread->runtime()->genFromStackFrame(ctx->frame));
   HeapFrame heap_frame(&scope, gen.heapFrame());
-  heap_frame.frame()->setVirtualPC(Frame::kFinishedGeneratorPC);
+  heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
 }
 
 bool Interpreter::handleReturn(Context* ctx, const Object& retval) {
