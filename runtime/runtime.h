@@ -35,11 +35,6 @@ using AtExitFn = void (*)();
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
                                        word nargs);
 
-struct NativeMethod {
-  SymbolId name;
-  NativeMethodType address;
-};
-
 struct BuiltinMethod {
   SymbolId name;
   NativeMethodType address;
