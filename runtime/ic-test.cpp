@@ -8,8 +8,7 @@ namespace python {
 using namespace testing;
 
 TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
@@ -48,8 +47,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
 }
 
 TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
@@ -71,8 +69,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
 }
 
 TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
@@ -152,8 +149,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
 }
 
 TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
@@ -233,8 +229,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
 }
 
 TEST(IcTest, IcRewriteBytecodeRewritesCompareOpOpcodes) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
@@ -408,8 +403,7 @@ TEST(IcTest, IcUpdateUpdatesExistingEntry) {
 }
 
 TEST(IcTest, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(c, k):
   return c[k]
@@ -445,8 +439,7 @@ result2 = f(container2, 1)
 }
 
 TEST(IcTest, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(c, k):
   return c[k]
@@ -529,8 +522,7 @@ TEST(IcTest, IcUpdateBinopSetsExistingEntry) {
 }
 
 TEST(IcTest, ForIterUpdateCacheWithFunctionUpdatesCache) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(container):
   for i in container:
@@ -558,8 +550,7 @@ result = f(container)
 }
 
 TEST(IcTest, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(container):
   for i in container:

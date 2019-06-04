@@ -44,7 +44,7 @@ TEST(RuntimeTest, AllocateAndCollectGarbage) {
   const word array_length = 1024;
   const word allocation_size = LargeBytes::allocationSize(array_length);
   const word total_allocation_size = heap_size * 10;
-  Runtime runtime(heap_size);
+  Runtime runtime(heap_size, /*cache_enabled=*/false);
   ASSERT_TRUE(runtime.heap()->verify());
   for (word i = 0; i < total_allocation_size; i += allocation_size) {
     runtime.newBytes(array_length, 0);

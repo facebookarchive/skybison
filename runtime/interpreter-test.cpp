@@ -541,8 +541,7 @@ v3 = B(1)
 }
 
 TEST(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(true /* cache_enabled */);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
@@ -581,8 +580,7 @@ TEST(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
 }
 
 TEST(InterpreterTest, DoBinaryOpWithCacheHitCallsRetry) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(true /* cache_enabled */);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -3281,8 +3279,7 @@ TEST(InterpreterTest, RaiseWithNoActiveExceptionRaisesRuntimeError) {
 }
 
 TEST(InterpreterTest, LoadAttrSetLocationSetsLocation) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(true /* cache_enabled */);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -3303,8 +3300,7 @@ i = C()
 }
 
 TEST(InterpreterTest, LoadAttrSetLocationWithCustomGetAttributeSetsNoLocation) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(true /* cache_enabled */);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -3324,8 +3320,7 @@ i = C()
 }
 
 TEST(InterpreterTest, LoadAttrSetLocationCallsDunderGetattr) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(true /* cache_enabled */);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(

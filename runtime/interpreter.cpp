@@ -931,6 +931,8 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   }
   function.setFastGlobals(runtime->computeFastGlobals(thread, code, globals));
   if (runtime->isCacheEnabled()) {
+    // TODO(T45382423): Move this into a separate function to be called by a
+    // relevant opcode during opcode execution.
     icRewriteBytecode(thread, function);
   } else {
     Bytes bytecode(&scope, code.code());

@@ -102,8 +102,7 @@ TEST(DebuggingTests, DumpExtendedCode) {
 }
 
 TEST(DebuggingTests, DumpExtendedFunction) {
-  Runtime runtime;
-  runtime.enableCache();
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object func(&scope, makeTestFunction(thread));

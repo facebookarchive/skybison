@@ -11,12 +11,13 @@ int main(int argc, const char** argv) {
   if (argc < 2) {
     return EXIT_FAILURE;
   }
-  python::Runtime runtime;
-  // TODO(T43657667) Add code that can decide what we can cache and remove this.
+  bool cache_enabled = false;
   const char* enable_cache = std::getenv("PYRO_ENABLE_CACHE");
   if (enable_cache != nullptr && enable_cache[0] != '\0') {
-    runtime.enableCache();
+    cache_enabled = true;
   }
+  // TODO(T43657667) Add code that can decide what we can cache and remove this.
+  python::Runtime runtime(cache_enabled);
   python::Thread* thread = python::Thread::current();
   runtime.setArgv(thread, argc, argv);
   const char* file_name = argv[1];

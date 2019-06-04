@@ -97,9 +97,10 @@ static const SymbolId kComparisonSelector[] = {
     SymbolId::kDunderLt, SymbolId::kDunderLe, SymbolId::kDunderEq,
     SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe};
 
-Runtime::Runtime(word heap_size)
+Runtime::Runtime(word heap_size, bool cache_enabled)
     : heap_(heap_size),
       new_value_cell_callback_(this),
+      cache_enabled_(cache_enabled),
       stderr_file_(stderr),
       stdout_file_(stdout) {
   initializeDebugging();
@@ -115,7 +116,8 @@ Runtime::Runtime(word heap_size)
   initializeModules();
 }
 
-Runtime::Runtime() : Runtime(64 * kMiB) {}
+Runtime::Runtime() : Runtime(64 * kMiB, false) {}
+Runtime::Runtime(bool cache_enabled) : Runtime(64 * kMiB, cache_enabled) {}
 
 Runtime::~Runtime() {
   // TODO(T30392425): This is an ugly and fragile workaround for having multiple

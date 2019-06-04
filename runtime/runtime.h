@@ -67,7 +67,8 @@ class Runtime {
   };
 
   Runtime();
-  explicit Runtime(word size);
+  explicit Runtime(bool cache_enabled);
+  Runtime(word heap_size, bool cache_enabled);
   ~Runtime();
 
   RawObject newBoundMethod(const Object& function, const Object& self);
@@ -377,7 +378,6 @@ class Runtime {
   Symbols* symbols() { return symbols_; }
 
   bool isCacheEnabled() { return cache_enabled_; }
-  void enableCache() { cache_enabled_ = true; }
 
   // Provides a growth strategy for mutable sequences. Grows by a factor of 1.5,
   // scaling up to the requested capacity if the initial factor is insufficient.
