@@ -68,11 +68,12 @@ class BuiltinsModule {
   static RawObject underGetMemberUShort(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntFromByteArray(Thread* thread, Frame* frame,
-                                         word nargs);
-  static RawObject underIntFromBytes(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntFromInt(Thread* thread, Frame* frame, word nargs);
-  static RawObject underIntFromStr(Thread* thread, Frame* frame, word nargs);
+  static RawObject underIntNewFromByteArray(Thread* thread, Frame* frame,
+                                            word nargs);
+  static RawObject underIntNewFromBytes(Thread* thread, Frame* frame,
+                                        word nargs);
+  static RawObject underIntNewFromInt(Thread* thread, Frame* frame, word nargs);
+  static RawObject underIntNewFromStr(Thread* thread, Frame* frame, word nargs);
   static RawObject underListCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underListDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);

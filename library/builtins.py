@@ -525,22 +525,22 @@ def _int_check(obj) -> bool:
 
 
 @_patch
-def _int_from_bytearray(cls: type, x: bytearray, base: int) -> int:
+def _int_new_from_bytearray(cls: type, x: bytearray, base: int) -> int:
     pass
 
 
 @_patch
-def _int_from_bytes(cls: type, x: bytes, base: int) -> int:
+def _int_new_from_bytes(cls: type, x: bytes, base: int) -> int:
     pass
 
 
 @_patch
-def _int_from_int(cls: type, value: int) -> int:
+def _int_new_from_int(cls: type, value: int) -> int:
     pass
 
 
 @_patch
-def _int_from_str(cls: type, x: str, base: int) -> int:
+def _int_new_from_str(cls: type, x: str, base: int) -> int:
     pass
 
 
@@ -2024,30 +2024,30 @@ class int(bootstrap=True):
             )
         if x is _Unbound:
             if base is _Unbound:
-                return _int_from_int(cls, 0)
+                return _int_new_from_int(cls, 0)
             raise TypeError("int() missing string argument")
         if base is _Unbound:
             if _type(x) is int:
-                return _int_from_int(cls, x)
+                return _int_new_from_int(cls, x)
             if hasattr(x, "__int__"):
-                return _int_from_int(cls, _int(x))
+                return _int_new_from_int(cls, _int(x))
             if hasattr(x, "__trunc__"):
                 trunc_result = x.__trunc__()
                 result_type = _type(trunc_result)
                 if result_type is int:
-                    return _int_from_int(cls, trunc_result)
+                    return _int_new_from_int(cls, trunc_result)
                 if not hasattr(trunc_result, "__int__"):
                     raise TypeError(
                         "__trunc__ returned non-Integral "
                         f"(type {result_type.__name__})"
                     )
-                return _int_from_int(cls, _int(trunc_result))
+                return _int_new_from_int(cls, _int(trunc_result))
             if _str_check(x):
-                return _int_from_str(cls, x, 10)
+                return _int_new_from_str(cls, x, 10)
             if _bytes_check(x):
-                return _int_from_bytes(cls, x, 10)
+                return _int_new_from_bytes(cls, x, 10)
             if _bytearray_check(x):
-                return _int_from_bytearray(cls, x, 10)
+                return _int_new_from_bytearray(cls, x, 10)
             raise TypeError(
                 f"int() argument must be a string, a bytes-like object "
                 f"or a number, not {_type(x).__name__}"
@@ -2056,11 +2056,11 @@ class int(bootstrap=True):
         if base > 36 or (base < 2 and base != 0):
             raise ValueError("int() base must be >= 2 and <= 36")
         if _str_check(x):
-            return _int_from_str(cls, x, base)
+            return _int_new_from_str(cls, x, base)
         if _bytes_check(x):
-            return _int_from_bytes(cls, x, base)
+            return _int_new_from_bytes(cls, x, base)
         if _bytearray_check(x):
-            return _int_from_bytearray(cls, x, base)
+            return _int_new_from_bytearray(cls, x, base)
         raise TypeError("int() can't convert non-string with explicit base")
 
     def __or__(self, n: int) -> int:

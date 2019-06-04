@@ -114,10 +114,10 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberULong, underGetMemberULong},
     {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
     {SymbolId::kUnderIntCheck, underIntCheck},
-    {SymbolId::kUnderIntFromBytes, underIntFromBytes},
-    {SymbolId::kUnderIntFromByteArray, underIntFromByteArray},
-    {SymbolId::kUnderIntFromInt, underIntFromInt},
-    {SymbolId::kUnderIntFromStr, underIntFromStr},
+    {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
+    {SymbolId::kUnderIntNewFromByteArray, underIntNewFromByteArray},
+    {SymbolId::kUnderIntNewFromInt, underIntNewFromInt},
+    {SymbolId::kUnderIntNewFromStr, underIntNewFromStr},
     {SymbolId::kUnderListCheck, underListCheck},
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
@@ -1027,8 +1027,8 @@ static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
   UNIMPLEMENTED("LargeInt from bytes-like");
 }
 
-RawObject BuiltinsModule::underIntFromByteArray(Thread* thread, Frame* frame,
-                                                word nargs) {
+RawObject BuiltinsModule::underIntNewFromByteArray(Thread* thread, Frame* frame,
+                                                   word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -1050,8 +1050,8 @@ RawObject BuiltinsModule::underIntFromByteArray(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject BuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
-                                            word nargs) {
+RawObject BuiltinsModule::underIntNewFromBytes(Thread* thread, Frame* frame,
+                                               word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -1071,8 +1071,8 @@ RawObject BuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, result);
 }
 
-RawObject BuiltinsModule::underIntFromInt(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject BuiltinsModule::underIntNewFromInt(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
@@ -1105,8 +1105,8 @@ static RawObject intFromStr(Thread* /* t */, const Str& str, word base) {
   UNIMPLEMENTED("LargeInt from str");
 }
 
-RawObject BuiltinsModule::underIntFromStr(Thread* thread, Frame* frame,
-                                          word nargs) {
+RawObject BuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Type type(&scope, args.get(0));
