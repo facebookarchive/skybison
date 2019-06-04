@@ -127,6 +127,7 @@ class BlockStack {
  * After the prologue, and immediately before the interpreter is re-invoked,
  * the stack looks like:
  *
+ *     Implicit Globals[1]
  *     Function
  *     Arg 0 <------------------------------------------------+
  *     ...                                                    |
@@ -144,7 +145,6 @@ class BlockStack {
  *     || . entries      | | growth    |
  *     |+----------------+             |
  *     | Virtual PC                    |
- *     | Implicit globals              |
  *     | Value stack top --------------|--+
  *     | Previous frame ptr            |<-+ <--Frame pointer
  *     +-------------------------------+
@@ -153,6 +153,10 @@ class BlockStack {
  *     . Value stack      |            .
  *     .                  v            .
  *     +...............................+
+ *
+ * [1] Implicit Globals are only available for non-optimized functions started
+ * via `Thread::runClassFunction()` or `Thread::exec()` such as module- or
+ * class-bodies.
  */
 class Frame {
  public:
@@ -160,10 +164,7 @@ class Frame {
   RawObject local(word idx);
   void setLocal(word idx, RawObject local);
 
-  RawFunction function() {
-    DCHECK(previousFrame() != nullptr, "must not be called on initial frame");
-    return Function::cast(*(locals() + 1));
-  }
+  RawFunction function();
 
   void setNumLocals(word num_locals);
   word numLocals();
@@ -174,9 +175,9 @@ class Frame {
   word virtualPC();
   void setVirtualPC(word pc);
 
-  // The implicit globals namespace (a Dict)
+  // The implicit globals namespace (a Dict). This is only available when the
+  // code does not have OPTIMIZED and NEWLOCALS flags set.
   RawObject implicitGlobals();
-  void setImplicitGlobals(RawObject implicit_globals);
 
   // Returns the code object of the current function.
   RawObject code();
@@ -243,12 +244,14 @@ class Frame {
 
   static const int kPreviousFrameOffset = 0;
   static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
-  static const int kImplicitGlobalsOffset = kValueStackTopOffset + kPointerSize;
-  static const int kVirtualPCOffset = kImplicitGlobalsOffset + kPointerSize;
+  static const int kVirtualPCOffset = kValueStackTopOffset + kPointerSize;
   static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
   static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
   static const int kLocalsOffset = kNumLocalsOffset + kPointerSize;
   static const int kSize = kLocalsOffset + kPointerSize;
+
+  static const int kFunctionOffsetFromLocals = 1;
+  static const int kImplicitGlobalsOffsetFromLocals = 2;
 
   static const word kFinishedGeneratorPC = RawSmallInt::kMinValue;
   static const word kCodeUnitSize = 2;
@@ -329,6 +332,11 @@ inline BlockStack* Frame::blockStack() {
   return reinterpret_cast<BlockStack*>(address() + kBlockStackOffset);
 }
 
+inline RawFunction Frame::function() {
+  DCHECK(previousFrame() != nullptr, "must not be called on initial frame");
+  return Function::cast(*(locals() + kFunctionOffsetFromLocals));
+}
+
 inline word Frame::virtualPC() {
   return SmallInt::cast(at(kVirtualPCOffset)).value();
 }
@@ -337,10 +345,12 @@ inline void Frame::setVirtualPC(word pc) {
   atPut(kVirtualPCOffset, SmallInt::fromWord(pc));
 }
 
-inline RawObject Frame::implicitGlobals() { return at(kImplicitGlobalsOffset); }
-
-inline void Frame::setImplicitGlobals(RawObject implicit_globals) {
-  atPut(kImplicitGlobalsOffset, implicit_globals);
+inline RawObject Frame::implicitGlobals() {
+  DCHECK(previousFrame() != nullptr, "must not be called on initial frame");
+  DCHECK(!function().hasOptimizedOrNewLocals(),
+         "implicit globals not available");
+  // Thread::exec() and Thread::runClassFunction() place implicit globals there.
+  return *(locals() + kImplicitGlobalsOffsetFromLocals);
 }
 
 inline RawObject Frame::code() { return function().code(); }

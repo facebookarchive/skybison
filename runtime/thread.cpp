@@ -130,12 +130,10 @@ Frame* Thread::pushCallFrame(RawFunction function) {
   return result;
 }
 
-Frame* Thread::pushClassFunctionFrame(const Function& function,
-                                      const Dict& dict) {
+Frame* Thread::pushClassFunctionFrame(const Function& function) {
   HandleScope scope(this);
   Frame* result = pushCallFrame(*function);
   Code code(&scope, function.code());
-  result->setImplicitGlobals(*dict);
 
   word num_locals = code.nlocals();
   word num_cellvars = code.numCellvars();
@@ -198,12 +196,14 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
   Function function(&scope, Interpreter::makeFunction(
                                 this, qualname, code, empty_tuple, empty_dict,
                                 empty_dict, empty_tuple, globals));
+  // Push implicit globals and function.
+  currentFrame()->pushValue(*locals);
   currentFrame()->pushValue(*function);
   Frame* frame = pushCallFrame(*function);
-  frame->setImplicitGlobals(*locals);
   Object result(&scope, Interpreter::execute(this, frame, function));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");
-  currentFrame()->dropValues(1);
+  DCHECK(currentFrame()->peek(1) == *locals, "stack mismatch");
+  currentFrame()->dropValues(2);
   return *result;
 }
 
@@ -212,11 +212,14 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
         "runClassFunction() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
 
   HandleScope scope(this);
+  // Push implicit globals and function.
+  currentFrame()->pushValue(*dict);
   currentFrame()->pushValue(*function);
-  Frame* frame = pushClassFunctionFrame(function, dict);
+  Frame* frame = pushClassFunctionFrame(function);
   Object result(&scope, Interpreter::execute(this, frame, function));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");
-  currentFrame()->dropValues(1);
+  DCHECK(currentFrame()->peek(1) == *dict, "stack mismatch");
+  currentFrame()->dropValues(2);
   return *result;
 }
 

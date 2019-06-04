@@ -52,8 +52,7 @@ class Thread {
   // Private method. Call pushCallFrame() or pushNativeFrame() isntead.
   Frame* pushCallFrame(RawFunction function);
   Frame* pushNativeFrame(word nargs);
-  Frame* pushClassFunctionFrame(const Handle<RawFunction>& function,
-                                const Handle<RawDict>& dict);
+  Frame* pushClassFunctionFrame(const Handle<RawFunction>& function);
   void checkStackOverflow(word max_size);
 
   void popFrame();
