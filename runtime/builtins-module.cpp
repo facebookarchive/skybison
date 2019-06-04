@@ -1316,10 +1316,6 @@ RawObject BuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
 RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "_patch expects 1 argument");
-  }
 
   Object patch_fn_obj(&scope, args.get(0));
   if (!patch_fn_obj.isFunction()) {

@@ -2067,10 +2067,20 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   build_class_ = moduleAddBuiltinFunction(module, SymbolId::kDunderBuildClass,
                                           BuiltinsModule::dunderBuildClass);
 
-  // _patch is not patched because that would cause a circularity problem.
-  moduleAddNativeFunction(module, SymbolId::kUnderPatch,
-                          nativeTrampoline<BuiltinsModule::underPatch>,
-                          unimplementedTrampoline, unimplementedTrampoline);
+  // We have to patch _patch manually.
+  ValueCell under_patch(&scope,
+                        moduleAddBuiltinFunction(module, SymbolId::kUnderPatch,
+                                                 BuiltinsModule::underPatch));
+  {
+    Function function(&scope, under_patch.value());
+    function.setFlags(Code::Flags::SIMPLE_CALL);
+    function.setArgcount(1);
+    function.setTotalArgs(1);
+    function.setModule(newStrFromCStr("builtins"));
+    Code code(&scope, function.code());
+    code.setArgcount(1);
+    code.setNlocals(1);
+  }
 
   Object not_implemented(&scope, NotImplementedType::object());
   moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
