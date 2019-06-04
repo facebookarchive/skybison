@@ -1050,7 +1050,7 @@ static RawObject inspect_block(Thread*, Frame* frame, word) ALIGN_16;
 // frame->callerFrame instead of directly inspecting the frame.
 static RawObject inspect_block(Thread*, Frame* frame, word) {
   // SETUP_LOOP should have pushed an entry onto the block stack.
-  TryBlock block = frame->blockStack()->peek();
+  TryBlock block = frame->previousFrame()->blockStack()->peek();
   EXPECT_EQ(block.kind(), TryBlock::kLoop);
   EXPECT_EQ(block.handler(), 4 + 6);  // offset after SETUP_LOOP + loop size
   EXPECT_EQ(block.level(), 1);
@@ -1065,9 +1065,13 @@ TEST(ThreadTest, SetupLoopAndPopBlock) {
   Tuple consts(&scope, runtime.newTuple(2));
   // inspect_block is meant to be called raw, without any trampoline.
   Str dummy(&scope, runtime.symbols()->Dummy());
-  consts.atPut(0, runtime.newNativeFunction(
-                      SymbolId::kDummy, dummy, inspect_block,
-                      unimplementedTrampoline, unimplementedTrampoline));
+  Function inspect_block_func(
+      &scope,
+      runtime.newBuiltinFunction(SymbolId::kDummy, dummy, inspect_block));
+  Code::cast(inspect_block_func.code()).setArgcount(0);
+  inspect_block_func.setArgcount(0);
+  inspect_block_func.setTotalArgs(0);
+  consts.atPut(0, *inspect_block_func);
   consts.atPut(1, runtime.newInt(-55));
   const byte bytecode[] = {LOAD_CONST,    1, SETUP_LOOP, 6, LOAD_CONST, 0,
                            CALL_FUNCTION, 0, POP_TOP,    0, POP_BLOCK,  0,

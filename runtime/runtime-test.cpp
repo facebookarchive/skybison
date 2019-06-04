@@ -3338,9 +3338,8 @@ TEST(RuntimeTest, NewBuiltinFunctionAddsQualname) {
   Runtime runtime;
   HandleScope scope;
   Str name(&scope, runtime.newStrFromCStr("Foo.bar"));
-  Function fn(&scope, runtime.newNativeFunction(
-                          SymbolId::kDummy, name, unimplementedTrampoline,
-                          unimplementedTrampoline, unimplementedTrampoline));
+  Function fn(&scope, runtime.newBuiltinFunction(SymbolId::kDummy, name,
+                                                 unimplementedTrampoline));
   EXPECT_EQ(fn.qualname(), *name);
 }
 

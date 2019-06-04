@@ -570,38 +570,16 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
   return *result;
 }
 
-RawObject Runtime::newNativeFunction(SymbolId name, const Str& qualname,
-                                     Function::Entry entry,
-                                     Function::Entry entry_kw,
-                                     Function::Entry entry_ex) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Function result(&scope, heap()->create<RawFunction>());
-  result.setFlags(0);
-  result.setArgcount(-1);
-  result.setTotalArgs(-1);
-  result.setName(symbols()->at(name));
-  result.setQualname(internStr(thread, qualname));
-  result.setEntry(entry);
-  result.setEntryKw(entry_kw);
-  result.setEntryEx(entry_ex);
-  result.setIsInterpreted(false);
-  return *result;
-}
-
 RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
                                       Function::Entry entry) {
-  HandleScope scope;
-  Function function(
-      &scope, newNativeFunction(name, qualname, builtinTrampoline,
-                                builtinTrampolineKw, builtinTrampolineEx));
-
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Object code_code(&scope, newInt(bit_cast<uword>(entry)));
   Tuple empty_tuple(&scope, newTuple(0));
   Object empty_string(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
   Object name_str(&scope, symbols()->at(name));
-  Code code(&scope, newCode(0,             // argcount
+  Code code(&scope, newCode(-1,            // argcount
                             0,             // kwonlyargcount
                             0,             // nlocals
                             0,             // stacksize
@@ -617,6 +595,17 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
                             0,             // firlineno
                             empty_bytes    // lnotab
                             ));
+
+  Function function(&scope, heap()->create<RawFunction>());
+  function.setFlags(0);
+  function.setArgcount(-1);
+  function.setTotalArgs(-1);
+  function.setName(symbols()->at(name));
+  function.setQualname(internStr(thread, qualname));
+  function.setEntry(builtinTrampoline);
+  function.setEntryKw(builtinTrampolineKw);
+  function.setEntryEx(builtinTrampolineEx);
+  function.setIsInterpreted(false);
   function.setCode(*code);
   return *function;
 }
@@ -695,19 +684,6 @@ RawObject Runtime::newInstance(const Layout& layout) {
   return instance;
 }
 
-void Runtime::typeAddNativeFunction(const Type& type, SymbolId name,
-                                    Function::Entry entry) {
-  typeAddNativeFunctionKwEx(type, name, entry, unimplementedTrampoline,
-                            unimplementedTrampoline);
-}
-
-void Runtime::typeAddNativeFunctionKw(const Type& type, SymbolId name,
-                                      Function::Entry entry,
-                                      Function::Entry entry_kw) {
-  typeAddNativeFunctionKwEx(type, name, entry, entry_kw,
-                            unimplementedTrampoline);
-}
-
 RawObject Runtime::newQualname(Thread* thread, const Type& type,
                                SymbolId name) {
   // TODO(T40440499): Clean this mess up with a helper or string formatting
@@ -717,21 +693,6 @@ RawObject Runtime::newQualname(Thread* thread, const Type& type,
   parts.atPut(1, symbols()->at(name));
   Str sep(&scope, newStrFromCStr("."));
   return strJoin(thread, sep, parts, 2);
-}
-
-void Runtime::typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
-                                        Function::Entry entry,
-                                        Function::Entry entry_kw,
-                                        Function::Entry entry_ex) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Str qualname(&scope, newQualname(thread, type, name));
-  Function function(
-      &scope, newNativeFunction(name, qualname, entry, entry_kw, entry_ex));
-  Object key(&scope, symbols()->at(name));
-  Object value(&scope, *function);
-  Dict dict(&scope, type.dict());
-  dictAtPutInValueCell(thread, dict, key, value);
 }
 
 void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
@@ -2009,18 +1970,6 @@ RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
   Str key(&scope, symbols()->at(name));
   Dict dict(&scope, module.dict());
   Function value(&scope, newBuiltinFunction(name, key, entry));
-  return dictAtPutInValueCell(thread, dict, key, value);
-}
-
-RawObject Runtime::moduleAddNativeFunction(const Module& module, SymbolId name,
-                                           Function::Entry entry,
-                                           Function::Entry entry_kw,
-                                           Function::Entry entry_ex) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Str key(&scope, symbols()->at(name));
-  Dict dict(&scope, module.dict());
-  Object value(&scope, newNativeFunction(name, key, entry, entry_kw, entry_ex));
   return dictAtPutInValueCell(thread, dict, key, value);
 }
 

@@ -1023,12 +1023,12 @@ RawObject addOperators(Thread* thread, const Type& type) {
                  runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
     Object code(&scope, newExtCode(thread, slot_name,
                                    bit_cast<void*>(slot.wrapper), slot_value));
-    Function func(
-        &scope, runtime->newNativeFunction(
-                    slot.name, qualname,
-                    slot.is_varkw ? varkwSlotTrampoline : slotTrampoline,
-                    slot.is_varkw ? varkwSlotTrampolineKw : slotTrampolineKw,
-                    slot.is_varkw ? varkwSlotTrampolineEx : slotTrampolineEx));
+    Function func(&scope, runtime->newFunction());
+    func.setName(*slot_name);
+    func.setQualname(*qualname);
+    func.setEntry(slot.is_varkw ? varkwSlotTrampoline : slotTrampoline);
+    func.setEntryKw(slot.is_varkw ? varkwSlotTrampolineKw : slotTrampolineKw);
+    func.setEntryEx(slot.is_varkw ? varkwSlotTrampolineEx : slotTrampolineEx);
     func.setCode(*code);
 
     // __new__ is the one special-case static method, so wrap it

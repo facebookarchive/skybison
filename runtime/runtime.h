@@ -111,10 +111,6 @@ class Runtime {
   RawObject emptyFrozenSet();
   RawObject newFrozenSet();
 
-  RawObject newNativeFunction(SymbolId name, const Str& qualname,
-                              Function::Entry entry, Function::Entry entry_kw,
-                              Function::Entry entry_ex);
-
   RawObject newBuiltinFunction(SymbolId name, const Str& qualname,
                                Function::Entry entry);
 
@@ -279,11 +275,6 @@ class Runtime {
 
   RawObject moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                      Function::Entry entry);
-
-  RawObject moduleAddNativeFunction(const Module& module, SymbolId name,
-                                    Function::Entry entry,
-                                    Function::Entry entry_kw,
-                                    Function::Entry entry_ex);
 
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);
@@ -621,23 +612,6 @@ class Runtime {
                                const Dict& globals);
 
   RawObject computeBuiltinBase(Thread* thread, const Type& type);
-
-  // Adds a builtin function with a positional entry point definition
-  // using the default keyword and splatting entry points.
-  void typeAddNativeFunction(const Type& type, SymbolId name,
-                             Function::Entry entry);
-
-  // Adds a builtin function with positional and keyword entry point
-  // definitions, using the default splatting entry point.
-  void typeAddNativeFunctionKw(const Type& type, SymbolId name,
-                               Function::Entry entry, Function::Entry entry_kw);
-
-  // Adds a builtin function with positional, keyword & splatting entry point
-  // definitions
-  void typeAddNativeFunctionKwEx(const Type& type, SymbolId name,
-                                 Function::Entry entry,
-                                 Function::Entry entry_kw,
-                                 Function::Entry entry_ex);
 
   void typeAddBuiltinFunction(const Type& type, SymbolId name,
                               Function::Entry entry);
