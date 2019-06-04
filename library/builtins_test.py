@@ -306,6 +306,38 @@ class IntTests(unittest.TestCase):
     def test_dunder_pow_with_non_int_power_returns_not_implemented(self):
         self.assertEqual(int.__pow__(1, None), NotImplemented)
 
+    def test_from_bytes_returns_int(self):
+        self.assertEqual(int.from_bytes(b"\xca\xfe", "little"), 0xFECA)
+
+    def test_from_bytes_with_kwargs_returns_int(self):
+        self.assertEqual(
+            int.from_bytes(bytes=b"\xca\xfe", byteorder="big", signed=True), -13570
+        )
+
+    def test_from_bytes_with_bytes_convertible_returns_int(self):
+        class C:
+            def __bytes__(self):
+                return b"*"
+
+        i = C()
+        self.assertEqual(int.from_bytes(i, "big"), 42)
+
+    def test_from_bytes_with_invalid_bytes_raises_type_error(self):
+        with self.assertRaisesRegex(TypeError, "cannot convert 'str' object to bytes"):
+            int.from_bytes("not a bytes object", "big")
+
+    def test_from_bytes_with_invalid_byteorder_raises_value_error(self):
+        with self.assertRaisesRegex(
+            ValueError, "byteorder must be either 'little' or 'big'"
+        ):
+            int.from_bytes(b"*", byteorder="medium")
+
+    def test_from_bytes_with_invalid_byteorder_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "from_bytes\\(\\) argument 2 must be str, not int"
+        ):
+            int.from_bytes(b"*", byteorder=42)
+
     def test_new_with_base_without_str_raises_type_error(self):
         with self.assertRaises(TypeError):
             int(base=8)

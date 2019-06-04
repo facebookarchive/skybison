@@ -525,6 +525,11 @@ def _int_check(obj) -> bool:
 
 
 @_patch
+def _int_from_bytes(cls: type, bytes: bytes, byteorder_big: bool, signed: bool) -> int:
+    pass
+
+
+@_patch
 def _int_new_from_bytearray(cls: type, x: bytearray, base: int) -> int:
     pass
 
@@ -2222,6 +2227,45 @@ class int(bootstrap=True):
     @property
     def denominator(self) -> int:
         return 1  # noqa: T484
+
+    @classmethod
+    def from_bytes(
+        cls: type, bytes: bytes, byteorder: str, *, signed: bool = False
+    ) -> int:
+        if not _type_check(cls):
+            raise TypeError(
+                f"'from_bytes' requires a 'type' object "
+                f"but received a '{type(cls).__name__}'"
+            )
+        if not _type_issubclass(cls, int):
+            raise TypeError(f"'from_bytes' {cls.__name__} is not a subtype of int")
+        if not _bytes_check(bytes):
+            try:
+                dunder_bytes = bytes.__bytes__
+            except AttributeError:
+                raise TypeError(
+                    f"'from_bytes' bytes argument requires a "
+                    f"'bytes' object but received a "
+                    f"'{type(bytes).__name__}'"
+                )
+            bytes = dunder_bytes()
+            if not _bytes_check(bytes):
+                raise TypeError(
+                    f"__bytes__ returned non-bytes (type {type(bytes).__name__})"
+                )
+        if not _str_check(byteorder):
+            raise TypeError(
+                f"from_bytes() argument 2 must be str, not "
+                f"{type(byteorder).__name__}"
+            )
+        if str.__eq__(byteorder, "little"):
+            byteorder_big = False
+        elif str.__eq__(byteorder, "big"):
+            byteorder_big = True
+        else:
+            raise ValueError("byteorder must be either 'little' or 'big'")
+        signed_bool = True if signed else False
+        return _int_from_bytes(cls, bytes, byteorder_big, signed_bool)
 
     @property
     def imag(self) -> int:

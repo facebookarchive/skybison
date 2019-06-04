@@ -229,6 +229,295 @@ TEST(BuiltinsModuleTest, BuiltinLen) {
                             LayoutId::kTypeError, "object has no len()"));
 }
 
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  const byte bytes_array[] = {0xca, 0xfe};
+  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bool byteorder_big(&scope, Bool::falseObj());
+  Bool signed_arg(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
+                                   bytes, byteorder_big, signed_arg));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xfeca));
+}
+
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
+                              0x45, 0x67, 0x89, 0xab, 0xcd};
+  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bool byteorder_big(&scope, Bool::falseObj());
+  Bool signed_arg(&scope, Bool::falseObj());
+  Int result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
+                                bytes, byteorder_big, signed_arg));
+  ASSERT_EQ(result.numDigits(), 2);
+  EXPECT_EQ(result.digitAt(0), 0x67452301bebafecaU);
+  EXPECT_EQ(result.digitAt(1), 0xcdab89U);
+}
+
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  const byte bytes_array[] = {0xca, 0xfe};
+  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bool byteorder_big(&scope, Bool::trueObj());
+  Bool signed_arg(&scope, Bool::falseObj());
+  Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
+                                   bytes, byteorder_big, signed_arg));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xcafe));
+}
+
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
+                              0x45, 0x67, 0x89, 0xab, 0xcd};
+  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bool byteorder_big(&scope, Bool::trueObj());
+  Bool signed_arg(&scope, Bool::falseObj());
+  Int result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
+                                bytes, byteorder_big, signed_arg));
+  ASSERT_EQ(result.numDigits(), 2);
+  EXPECT_EQ(result.digitAt(0), 0xbe0123456789abcdU);
+  EXPECT_EQ(result.digitAt(1), 0xcafebaU);
+}
+
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithEmptyBytes) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime.newBytesWithAll(View<byte>(nullptr, 0)));
+  Bool bo_big_false(&scope, Bool::falseObj());
+  Bool signed_arg(&scope, Bool::falseObj());
+  Object result_little(
+      &scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type, bytes,
+                         bo_big_false, signed_arg));
+  EXPECT_TRUE(isIntEqualsWord(*result_little, 0));
+
+  Bool bo_big_true(&scope, Bool::trueObj());
+  Object result_big(
+      &scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type, bytes,
+                         bo_big_true, signed_arg));
+  EXPECT_TRUE(isIntEqualsWord(*result_big, 0));
+}
+
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithNumberWithDigitHighBitSet) {
+  Runtime runtime;
+  HandleScope scope;
+
+  // Test special case where a positive number having a high bit set at the end
+  // of a "digit" needs an extra digit in the LargeInt representation.
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime.newBytes(kWordSize, 0xff));
+  Bool byteorder_big(&scope, Bool::falseObj());
+  Bool signed_arg(&scope, Bool::falseObj());
+  Int result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
+                                bytes, byteorder_big, signed_arg));
+  const uword expected_digits[] = {kMaxUword, 0};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
+}
+
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  const byte bytes_array[] = {0xff};
+  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bool byteorder_big(&scope, Bool::falseObj());
+  Bool signed_arg(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
+                                   bytes, byteorder_big, signed_arg));
+  EXPECT_TRUE(isIntEqualsWord(*result, -1));
+}
+
+TEST(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsLargeInt) {
+  Runtime runtime;
+  HandleScope scope;
+
+  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
+                              0x45, 0x67, 0x89, 0xab, 0xcd};
+  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bool byteorder_big(&scope, Bool::trueObj());
+  Bool signed_arg(&scope, Bool::trueObj());
+  Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
+                                   bytes, byteorder_big, signed_arg));
+  const uword expected_digits[] = {0xbe0123456789abcd, 0xffffffffffcafeba};
+  EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromByteArrayWithZeroBaseReturnsCodeLiteral) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte view[] = {'0', 'x', 'b', 'a', '5', 'e'};
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, array, view);
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(BuiltinsModule::underIntNewFromByteArray,
+                                   type, array, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xba5e));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromByteArrayWithInvalidByteRaisesValueError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte view[] = {'$'};
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, array, view);
+  Int base(&scope, SmallInt::fromWord(36));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::underIntNewFromByteArray, type, array, base),
+      LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromByteArrayWithInvalidLiteraRaisesValueError) {
+  Runtime runtime;
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  const byte view[] = {'a'};
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime.newByteArray());
+  runtime.byteArrayExtend(thread, array, view);
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::underIntNewFromByteArray, type, array, base),
+      LayoutId::kValueError, "invalid literal for int() with base 10: b'a'"));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromBytesWithZeroBaseReturnsCodeLiteral) {
+  Runtime runtime;
+  HandleScope scope;
+  const byte view[] = {'0', '4', '3'};
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(BuiltinsModule::underIntNewFromBytes, type,
+                                   bytes, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 043));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromBytesWithInvalidByteRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  const byte view[] = {'$'};
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Int base(&scope, SmallInt::fromWord(36));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromBytesWithInvalidLiteralRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  const byte view[] = {'8', '6'};
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Int base(&scope, SmallInt::fromWord(7));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
+      LayoutId::kValueError, "invalid literal for int() with base 7: b'86'"));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromBytesWithBytesSubclassReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class Foo(bytes): pass
+foo = Foo(b"42")
+)")
+                   .isError());
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Int base(&scope, SmallInt::fromWord(21));
+  EXPECT_EQ(runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
+            SmallInt::fromWord(86));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromIntWithBoolReturnsSmallInt) {
+  Runtime runtime;
+  HandleScope scope;
+  Object type(&scope, runtime.typeAt(LayoutId::kInt));
+  Object fls(&scope, Bool::falseObj());
+  Object tru(&scope, Bool::trueObj());
+  Object false_result(
+      &scope, runBuiltin(BuiltinsModule::underIntNewFromInt, type, fls));
+  Object true_result(&scope,
+                     runBuiltin(BuiltinsModule::underIntNewFromInt, type, tru));
+  EXPECT_EQ(false_result, SmallInt::fromWord(0));
+  EXPECT_EQ(true_result, SmallInt::fromWord(1));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromIntWithSubClassReturnsValueOfSubClass) {
+  Runtime runtime;
+  ASSERT_FALSE(runFromCStr(&runtime, R"(
+class SubInt(int):
+  def __new__(cls, value):
+      self = super(SubInt, cls).__new__(cls, value)
+      self.name = "subint instance"
+      return self
+
+result = SubInt(50)
+)")
+                   .isError());
+  HandleScope scope;
+  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  EXPECT_FALSE(result.isInt());
+  EXPECT_TRUE(isIntEqualsWord(*result, 50));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromStrWithZeroBaseReturnsCodeLiteral) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = "1985";
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(
+      &scope, runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1985));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromStrWithInvalidCharRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = "$";
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(36));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 36: '$'"));
+}
+
+TEST(BuiltinsModuleTest, IntNewFromStrWithInvalidLiteralRaisesValueError) {
+  Runtime runtime;
+  HandleScope scope;
+  const char* src = "305";
+  Type type(&scope, runtime.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(4));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 4: '305'"));
+}
+
 TEST(ThreadTest, BuiltinLenGetLenFromDict) {
   Runtime runtime;
 

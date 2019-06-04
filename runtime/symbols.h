@@ -484,6 +484,7 @@ class Runtime;
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
   V(UnderIntCheck, "_int_check")                                               \
+  V(UnderIntFromBytes, "_int_from_bytes")                                      \
   V(UnderIntNewFromByteArray, "_int_new_from_bytearray")                       \
   V(UnderIntNewFromBytes, "_int_new_from_bytes")                               \
   V(UnderIntNewFromInt, "_int_new_from_int")                                   \

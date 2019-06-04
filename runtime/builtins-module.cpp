@@ -114,8 +114,10 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberULong, underGetMemberULong},
     {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
     {SymbolId::kUnderIntCheck, underIntCheck},
+    {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
     {SymbolId::kUnderIntNewFromByteArray, underIntNewFromByteArray},
+    {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
     {SymbolId::kUnderIntNewFromInt, underIntNewFromInt},
     {SymbolId::kUnderIntNewFromStr, underIntNewFromStr},
     {SymbolId::kUnderListCheck, underListCheck},
@@ -1103,6 +1105,22 @@ static RawObject intFromStr(Thread* /* t */, const Str& str, word base) {
     return SmallInt::fromWord(res);
   }
   UNIMPLEMENTED("LargeInt from str");
+}
+
+RawObject BuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Runtime* runtime = thread->runtime();
+
+  Type type(&scope, args.get(0));
+  Bytes bytes(&scope, args.get(1));
+  Bool byteorder_big(&scope, args.get(2));
+  endian endianness = byteorder_big.value() ? endian::big : endian::little;
+  Bool signed_arg(&scope, args.get(3));
+  bool is_signed = signed_arg == Bool::trueObj();
+  Int value(&scope, runtime->bytesToInt(thread, bytes, endianness, is_signed));
+  return intOrUserSubclass(thread, type, value);
 }
 
 RawObject BuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,

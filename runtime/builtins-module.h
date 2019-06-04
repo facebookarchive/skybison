@@ -68,6 +68,7 @@ class BuiltinsModule {
   static RawObject underGetMemberUShort(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underIntFromBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntNewFromByteArray(Thread* thread, Frame* frame,
                                             word nargs);
   static RawObject underIntNewFromBytes(Thread* thread, Frame* frame,

@@ -63,8 +63,6 @@ class IntBuiltins
   static RawObject dunderSub(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderTrueDiv(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderXor(Thread* thread, Frame* frame, word nargs);
-  static RawObject fromBytes(Thread* thread, Frame* frame, word nargs);
-  static RawObject fromBytesKw(Thread* thread, Frame* frame, word nargs);
   static RawObject toBytes(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
