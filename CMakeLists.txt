@@ -308,7 +308,6 @@ add_library(
   runtime/thread.h
   runtime/time-module.cpp
   runtime/time-module.h
-  runtime/trampolines-inl.h
   runtime/trampolines.cpp
   runtime/trampolines.h
   runtime/tuple-builtins.cpp

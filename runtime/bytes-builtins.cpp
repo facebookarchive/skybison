@@ -5,7 +5,6 @@
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
-#include "trampolines-inl.h"
 
 namespace python {
 

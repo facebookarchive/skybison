@@ -5,7 +5,6 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
-#include "trampolines-inl.h"
 #include "type-builtins.h"
 
 char* PyStructSequence_UnnamedField = const_cast<char*>("unnamed field");

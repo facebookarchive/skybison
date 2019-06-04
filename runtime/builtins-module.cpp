@@ -19,7 +19,6 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "thread.h"
-#include "trampolines-inl.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 

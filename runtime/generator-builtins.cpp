@@ -2,7 +2,6 @@
 
 #include "exception-builtins.h"
 #include "frame.h"
-#include "trampolines-inl.h"
 
 #include <string>
 

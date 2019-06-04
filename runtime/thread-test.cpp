@@ -10,7 +10,6 @@
 #include "runtime.h"
 #include "test-utils.h"
 #include "thread.h"
-#include "trampolines-inl.h"
 
 namespace python {
 using namespace testing;
@@ -1306,8 +1305,12 @@ TEST(ThreadTest, NativeExceptions) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Function fn(&scope, runtime.newFunction());
-  fn.setEntry(nativeTrampoline<nativeExceptionTest>);
+  Str name(&scope, runtime.newStrFromCStr("fn"));
+  Function fn(&scope, runtime.newBuiltinFunction(SymbolId::kDummy, name,
+                                                 nativeExceptionTest));
+  Code::cast(fn.code()).setArgcount(0);
+  fn.setArgcount(0);
+  fn.setTotalArgs(0);
 
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime.newTuple(1));

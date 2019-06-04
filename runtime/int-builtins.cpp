@@ -9,7 +9,6 @@
 #include "globals.h"
 #include "objects.h"
 #include "thread.h"
-#include "trampolines-inl.h"
 
 namespace python {
 

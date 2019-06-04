@@ -3,7 +3,6 @@
 #include "frame.h"
 #include "objects.h"
 #include "runtime.h"
-#include "trampolines-inl.h"
 
 namespace python {
 

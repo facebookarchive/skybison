@@ -9,7 +9,6 @@
 #include "runtime.h"
 #include "slice-builtins.h"
 #include "thread.h"
-#include "trampolines-inl.h"
 #include "type-builtins.h"
 
 namespace python {

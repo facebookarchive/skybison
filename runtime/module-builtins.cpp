@@ -6,7 +6,6 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
-#include "trampolines-inl.h"
 
 namespace python {
 

@@ -5,7 +5,6 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
-#include "trampolines-inl.h"
 #include "tuple-builtins.h"
 
 namespace python {

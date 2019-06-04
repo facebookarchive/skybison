@@ -53,13 +53,6 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
 RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
                                        word argc) ALIGN_16;
 
-// Force 16-byte alignment on trampoline addresses to disguise them as
-// SmallInts to avoid GC issues
-template <RawObject (*Fn)(Thread*, Frame*, word)>
-RawObject nativeTrampoline(Thread* thread, Frame* caller, word argc) ALIGN_16;
-template <RawObject (*Fn)(Thread*, Frame*, word)>
-RawObject nativeTrampolineKw(Thread* thread, Frame* caller, word argc) ALIGN_16;
-
 // method trampolines
 
 RawObject methodTrampolineNoArgs(Thread* thread, Frame* caller,

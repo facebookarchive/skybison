@@ -3,7 +3,6 @@
 #include "builtins-module.h"
 #include "scavenger.h"
 #include "test-utils.h"
-#include "trampolines-inl.h"
 #include "trampolines.h"
 
 namespace python {
@@ -235,8 +234,12 @@ def g(ref, b=2):
   Object ref2(&scope, NoneType::object());
   {
     Tuple array1(&scope, runtime.newTuple(10));
-    Function collect(&scope, runtime.newFunction());
-    collect.setEntry(nativeTrampoline<doGarbageCollection>);
+    Str name(&scope, runtime.newStrFromCStr("collect"));
+    Function collect(&scope, runtime.newBuiltinFunction(SymbolId::kDummy, name,
+                                                        doGarbageCollection));
+    Code::cast(collect.code()).setArgcount(0);
+    collect.setArgcount(0);
+    collect.setTotalArgs(0);
 
     WeakRef ref1_inner(&scope, runtime.newWeakRef(thread, array1, collect));
     ref1 = *ref1_inner;
