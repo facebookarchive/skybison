@@ -392,11 +392,11 @@ inline RawObject* Frame::valueStackBase() {
 
 inline RawObject* Frame::valueStackTop() {
   RawObject top = at(kValueStackTopOffset);
-  return static_cast<RawObject*>(SmallInt::cast(top).asCPtr());
+  return static_cast<RawObject*>(SmallInt::cast(top).asAlignedCPtr());
 }
 
 inline void Frame::setValueStackTop(RawObject* top) {
-  atPut(kValueStackTopOffset, SmallInt::fromWord(reinterpret_cast<uword>(top)));
+  atPut(kValueStackTopOffset, SmallInt::fromAlignedCPtr(top));
 }
 
 inline word Frame::valueStackSize() {
@@ -470,7 +470,7 @@ inline void* Frame::nativeFunctionPointer() {
 inline bool Frame::isNativeFrame() { return code().isInt(); }
 
 inline RawObject* Frame::stashedValueStackTop() {
-  auto depth = reinterpret_cast<word>(valueStackTop());
+  word depth = SmallInt::cast(at(kValueStackTopOffset)).value();
   return valueStackBase() - depth;
 }
 
@@ -478,15 +478,16 @@ inline RawObject Frame::stashedPopValue() {
   RawObject result = *stashedValueStackTop();
   // valueStackTop() contains the stack depth as a RawSmallInt rather than a
   // pointer, so decrement it by 1.
-  setValueStackTop(reinterpret_cast<RawObject*>(
-      reinterpret_cast<word>(valueStackTop()) - 1));
+  word depth = SmallInt::cast(at(kValueStackTopOffset)).value();
+  atPut(kValueStackTopOffset, SmallInt::fromWord(depth - 1));
   return result;
 }
 
 inline void Frame::stashInternalPointers(Frame* old_frame) {
   // Replace ValueStackTop with the stack depth while this Frame is on the heap,
   // to survive being moved by the GC.
-  setValueStackTop(reinterpret_cast<RawObject*>(old_frame->valueStackSize()));
+  word depth = old_frame->valueStackSize();
+  atPut(kValueStackTopOffset, SmallInt::fromWord(depth));
 }
 
 inline void Frame::unstashInternalPointers() {
