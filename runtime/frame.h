@@ -346,7 +346,8 @@ inline void Frame::setImplicitGlobals(RawObject implicit_globals) {
 inline RawObject Frame::code() { return function().code(); }
 
 inline RawObject* Frame::locals() {
-  return reinterpret_cast<RawObject*>(at(kLocalsOffset).raw());
+  return static_cast<RawObject*>(
+      SmallInt::cast(at(kLocalsOffset)).asAlignedCPtr());
 }
 
 inline RawObject Frame::local(word idx) {
@@ -366,10 +367,9 @@ inline void Frame::setNumLocals(word num_locals) {
 
 inline void Frame::resetLocals(word num_locals) {
   // Bias locals by 1 word to avoid doing so during {get,set}Local
-  RawObject locals{address() + Frame::kSize +
-                   ((num_locals - 1) * kPointerSize)};
-  DCHECK(locals.isSmallInt(), "expected small integer");
-  atPut(kLocalsOffset, locals);
+  RawObject* locals = reinterpret_cast<RawObject*>(
+      address() + Frame::kSize + ((num_locals - 1) * kPointerSize));
+  atPut(kLocalsOffset, SmallInt::fromAlignedCPtr(locals));
 }
 
 inline word Frame::numLocals() {

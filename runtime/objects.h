@@ -500,6 +500,8 @@ class RawSmallInt : public RawObject {
   // Getters and setters.
   word value() const;
   void* asCPtr() const;
+  // Converts a `SmallInt` created by `fromAlignedCPtr()` back to a pointer.
+  void* asAlignedCPtr() const;
 
   // If this fits in T, get its value as a T. If not, indicate what went wrong.
   template <typename T>
@@ -510,12 +512,15 @@ class RawSmallInt : public RawObject {
   // Conversion.
   static RawSmallInt fromWord(word value);
   static RawSmallInt fromWordTruncated(word value);
+  // Create a `SmallInt` from an aligned C pointer.
+  // This is slightly faster than `Runtime::newIntFromCPtr()` but only works for
+  // pointers with an alignment of at least `2**kSmallIntTagBits`.
+  // Use `toAlignedCPtr()` to reverse this operation; `toCPtr()` will not work
+  // correctly.
+  static RawSmallInt fromAlignedCPtr(void* ptr);
   static constexpr bool isValid(word value) {
     return (value >= kMinValue) && (value <= kMaxValue);
   }
-
-  template <typename T>
-  static RawSmallInt fromFunctionPointer(T pointer);
 
   // Constants.
   static const word kBits = kBitsPerPointer - kSmallIntTagBits;
@@ -3170,6 +3175,10 @@ inline void* RawSmallInt::asCPtr() const {
   return reinterpret_cast<void*>(value());
 }
 
+inline void* RawSmallInt::asAlignedCPtr() const {
+  return reinterpret_cast<void*>(raw());
+}
+
 template <typename T>
 if_signed_t<T, OptInt<T>> RawSmallInt::asInt() const {
   static_assert(sizeof(T) <= sizeof(word), "T must not be larger than word");
@@ -3202,11 +3211,9 @@ inline RawSmallInt RawSmallInt::fromWordTruncated(word value) {
   return cast(RawObject{static_cast<uword>(value) << kSmallIntTagBits});
 }
 
-template <typename T>
-inline RawSmallInt RawSmallInt::fromFunctionPointer(T pointer) {
-  // The bit pattern for a function pointer object must be indistinguishable
-  // from that of a small integer object.
-  return cast(RawObject{reinterpret_cast<uword>(pointer)});
+inline RawSmallInt RawSmallInt::fromAlignedCPtr(void* ptr) {
+  uword raw = reinterpret_cast<uword>(ptr);
+  return cast(RawObject(raw));
 }
 
 // RawHeader
@@ -4453,34 +4460,34 @@ inline void RawFunction::setDoc(RawObject doc) const {
 
 inline RawFunction::Entry RawFunction::entry() const {
   RawObject object = instanceVariableAt(kEntryOffset);
-  DCHECK(object.isSmallInt(), "entry address must look like a RawSmallInt");
-  return bit_cast<RawFunction::Entry>(object);
+  return reinterpret_cast<Entry>(RawSmallInt::cast(object).asAlignedCPtr());
 }
 
 inline void RawFunction::setEntry(RawFunction::Entry thunk) const {
-  auto object = RawSmallInt::fromFunctionPointer(thunk);
+  RawObject object =
+      RawSmallInt::fromAlignedCPtr(reinterpret_cast<void*>(thunk));
   instanceVariableAtPut(kEntryOffset, object);
 }
 
 inline RawFunction::Entry RawFunction::entryKw() const {
   RawObject object = instanceVariableAt(kEntryKwOffset);
-  DCHECK(object.isSmallInt(), "entryKw address must look like a RawSmallInt");
-  return bit_cast<RawFunction::Entry>(object);
+  return reinterpret_cast<Entry>(RawSmallInt::cast(object).asAlignedCPtr());
 }
 
 inline void RawFunction::setEntryKw(RawFunction::Entry thunk) const {
-  auto object = RawSmallInt::fromFunctionPointer(thunk);
+  RawObject object =
+      RawSmallInt::fromAlignedCPtr(reinterpret_cast<void*>(thunk));
   instanceVariableAtPut(kEntryKwOffset, object);
 }
 
 inline RawFunction::Entry RawFunction::entryEx() const {
   RawObject object = instanceVariableAt(kEntryExOffset);
-  DCHECK(object.isSmallInt(), "entryEx address must look like a RawSmallInt");
-  return bit_cast<RawFunction::Entry>(object);
+  return reinterpret_cast<Entry>(RawSmallInt::cast(object).asAlignedCPtr());
 }
 
 inline void RawFunction::setEntryEx(RawFunction::Entry thunk) const {
-  auto object = RawSmallInt::fromFunctionPointer(thunk);
+  RawObject object =
+      RawSmallInt::fromAlignedCPtr(reinterpret_cast<void*>(thunk));
   instanceVariableAtPut(kEntryExOffset, object);
 }
 
