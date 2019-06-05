@@ -1151,7 +1151,7 @@ RawObject slotTrampoline(Thread* thread, Frame* caller, word argc) {
   Function func(&scope, caller->peek(argc));
   Code code(&scope, func.code());
   auto fn = bit_cast<Function::Entry>(Int::cast(code.code()).asCPtr());
-  Frame* frame = thread->openAndLinkFrame(argc, 0, 0);
+  Frame* frame = thread->pushNativeFrame(argc);
   Object result(&scope, fn(thread, frame, argc));
   thread->popFrame();
   return *result;

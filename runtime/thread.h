@@ -47,7 +47,6 @@ class Thread {
   static Thread* current();
   static void setCurrentThread(Thread* thread);
 
-  Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
   void linkFrame(Frame* frame);
   // Private method. Call pushCallFrame() or pushNativeFrame() isntead.
   Frame* pushCallFrame(RawFunction function);
@@ -273,6 +272,7 @@ class Thread {
 
  private:
   void pushInitialFrame();
+  Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
 
   Handles handles_;
 

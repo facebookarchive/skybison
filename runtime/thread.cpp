@@ -73,8 +73,8 @@ byte* Thread::stackPtr() {
   return reinterpret_cast<byte*>(currentFrame_->valueStackTop());
 }
 
-Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
-                                word stack_depth) {
+inline Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
+                                       word stack_depth) {
   DCHECK(num_args >= 0, "must have 0 or more arguments");
   DCHECK(num_vars >= 0, "must have 0 or more locals");
   DCHECK(stack_depth >= 0, "stack depth cannot be negative");

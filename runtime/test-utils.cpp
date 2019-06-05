@@ -335,16 +335,22 @@ RawObject runBuiltinImpl(NativeMethodType method,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   // Push an empty function so we have one at the expected place in the stack.
-  Function function(&scope, thread->runtime()->newFunction());
-  thread->currentFrame()->pushValue(*function);
+  Str qualname(&scope, Str::empty());
+  Function function(&scope, thread->runtime()->newBuiltinFunction(
+                                SymbolId::kAnonymous, qualname, method));
+  word args_length = args.length();
+  function.setArgcount(args_length);
+  function.setTotalArgs(args_length);
+  Code code(&scope, function.code());
+  code.setArgcount(args_length);
+  code.setNlocals(args_length);
 
-  Frame* frame = thread->openAndLinkFrame(0, args.length(), 0);
-  for (word i = 0; i < args.length(); i++) {
-    frame->setLocal(i, *args.get(i).get());
+  Frame* frame = thread->currentFrame();
+  frame->pushValue(*function);
+  for (word i = 0; i < args_length; i++) {
+    frame->pushValue(*args.get(i).get());
   }
-  Object result(&scope, method(thread, frame, args.length()));
-  thread->popFrame();
-  return *result;
+  return Interpreter::call(thread, frame, args_length);
 }
 
 RawObject runBuiltin(NativeMethodType method) {
