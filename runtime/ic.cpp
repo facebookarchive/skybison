@@ -90,6 +90,8 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
     // Attribute accessors.
     case LOAD_ATTR:
       return BytecodeArgPair{LOAD_ATTR_CACHED, arg};
+    case LOAD_METHOD:
+      return BytecodeArgPair{LOAD_METHOD_CACHED, arg};
     case STORE_ATTR:
       return BytecodeArgPair{STORE_ATTR_CACHED, arg};
     // Other opcodes.

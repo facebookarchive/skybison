@@ -3644,4 +3644,117 @@ del a
   EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
 }
 
+TEST_F(InterpreterTest, LoadMethodLoadingMethodFollowedByCallMethod) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __init__(self):
+    self.val = 40
+
+  def compute(self, arg0, arg1):
+    return self.val + arg0 + arg1
+
+def test():
+  return c.compute(10, 20)
+
+c = C()
+)")
+                   .isError());
+  Function test_function(&scope, moduleAt(&runtime_, "__main__", "test"));
+  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
+  bytecode.byteAtPut(2, LOAD_METHOD);
+  bytecode.byteAtPut(8, CALL_METHOD);
+
+  EXPECT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction0(
+                          thread_, thread_->currentFrame(), test_function),
+                      70));
+}
+
+TEST(InterpreterTestNoFixture,
+     LoadMethodCachedCachingNonFunctionFollowedByCallMethod) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.val = 40
+
+def foo(a, b): return a + b
+c = C()
+c.compute = foo
+def test():
+  return c.compute(10, 20)
+)")
+                   .isError());
+  Function test_function(&scope, moduleAt(&runtime, "__main__", "test"));
+  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
+  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
+  bytecode.byteAtPut(8, CALL_METHOD);
+
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  LayoutId layout_id = c.layoutId();
+  Tuple caches(&scope, test_function.caches());
+  // Cache miss.
+  ASSERT_TRUE(
+      icLookup(caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
+      30));
+
+  // Cache hit.
+  ASSERT_TRUE(icLookup(caches, bytecode.byteAt(3), layout_id).isSmallInt());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
+      30));
+}
+
+TEST(InterpreterTestNoFixture,
+     LoadMethodCachedCachingFunctionFollowedByCallMethod) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.val = 40
+
+  def compute(self, arg0, arg1):
+    return self.val + arg0 + arg1
+
+def test():
+  return c.compute(10, 20)
+
+c = C()
+)")
+                   .isError());
+  Function test_function(&scope, moduleAt(&runtime, "__main__", "test"));
+  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
+  ASSERT_EQ(bytecode.byteAt(2), LOAD_ATTR_CACHED);
+  ASSERT_EQ(bytecode.byteAt(8), CALL_FUNCTION);
+  bytecode.byteAtPut(2, LOAD_METHOD_CACHED);
+  bytecode.byteAtPut(8, CALL_METHOD);
+
+  // Cache miss.
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  LayoutId layout_id = c.layoutId();
+  Tuple caches(&scope, test_function.caches());
+  ASSERT_TRUE(
+      icLookup(caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
+      70));
+
+  // Cache hit.
+  ASSERT_TRUE(icLookup(caches, bytecode.byteAt(3), layout_id).isFunction());
+  EXPECT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
+      70));
+}
+
 }  // namespace python

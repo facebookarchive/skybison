@@ -331,6 +331,7 @@ class Interpreter {
   static bool doCallFunction(Context* ctx, word arg);
   static bool doCallFunctionEx(Context* ctx, word arg);
   static bool doCallFunctionKw(Context* ctx, word arg);
+  static bool doCallMethod(Context* ctx, word arg);
   static bool doCompareOp(Context* ctx, word arg);
   static bool doCompareOpCached(Context* ctx, word arg);
   static bool doDeleteAttr(Context* ctx, word arg);
@@ -364,6 +365,8 @@ class Interpreter {
   static bool doLoadAttrCached(Context* ctx, word arg);
   static bool doLoadDeref(Context* ctx, word arg);
   static bool doLoadFast(Context* ctx, word arg);
+  static bool doLoadMethod(Context* ctx, word arg);
+  static bool doLoadMethodCached(Context* ctx, word arg);
   static bool doLoadName(Context* ctx, word arg);
   static bool doPopExcept(Context* ctx, word arg);
   static bool doRaiseVarargs(Context* ctx, word arg);
@@ -468,7 +471,7 @@ class Interpreter {
   // Perform a positional or keyword call. Used by doCallFunction() and
   // doCallFunctionKw().
   static bool handleCall(Context* ctx, word argc, word callable_idx,
-                         PrepareCallFunc prepare_args,
+                         word num_extra_pop, PrepareCallFunc prepare_args,
                          Function::Entry (Function::*get_entry)() const);
 
   // Call a function through its trampoline, pushing the result on the stack.

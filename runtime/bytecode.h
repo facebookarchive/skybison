@@ -173,8 +173,8 @@ namespace python {
   V(BUILD_STRING, 157, doBuildString)                                          \
   V(BUILD_TUPLE_UNPACK_WITH_CALL, 158, doBuildTupleUnpack)                     \
   V(UNUSED_BYTECODE_159, 159, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_160, 160, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_161, 161, doInvalidBytecode)                               \
+  V(LOAD_METHOD, 160, doLoadMethod)                                            \
+  V(CALL_METHOD, 161, doCallMethod)                                            \
   V(UNUSED_BYTECODE_162, 162, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_163, 163, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_164, 164, doInvalidBytecode)                               \
@@ -259,7 +259,7 @@ namespace python {
   V(UNUSED_BYTECODE_243, 243, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_244, 244, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_245, 245, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_246, 246, doInvalidBytecode)                               \
+  V(LOAD_METHOD_CACHED, 246, doLoadMethodCached)                               \
   V(STORE_GLOBAL_CACHED, 247, doStoreGlobalCached)                             \
   V(LOAD_GLOBAL_CACHED, 248, doLoadGlobalCached)                               \
   V(FOR_ITER_CACHED, 249, doForIterCached)                                     \

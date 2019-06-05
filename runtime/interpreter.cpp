@@ -2789,13 +2789,15 @@ bool Interpreter::callTrampoline(Context* ctx, Function::Entry entry, word argc,
   return false;
 }
 
-bool Interpreter::handleCall(Context* ctx, word argc, word callable_idx,
-                             PrepareCallFunc prepare_args,
-                             Function::Entry (Function::*get_entry)() const) {
+HANDLER_INLINE bool Interpreter::handleCall(
+    Context* ctx, word argc, word callable_idx, word num_extra_pop,
+    PrepareCallFunc prepare_args,
+    Function::Entry (Function::*get_entry)() const) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
-  RawObject* post_call_sp = frame->valueStackTop() + callable_idx + 1;
+  RawObject* post_call_sp =
+      frame->valueStackTop() + callable_idx + 1 + num_extra_pop;
   Object callable(&scope, frame->peek(callable_idx));
   if (!callable.isFunction()) {
     callable = prepareCallableCall(thread, frame, callable_idx, &argc);
@@ -2816,7 +2818,8 @@ bool Interpreter::handleCall(Context* ctx, word argc, word callable_idx,
 }
 
 HANDLER_INLINE bool Interpreter::doCallFunction(Context* ctx, word argc) {
-  return handleCall(ctx, argc, argc, preparePositionalCall, &Function::entry);
+  return handleCall(ctx, argc, argc, 0, preparePositionalCall,
+                    &Function::entry);
 }
 
 HANDLER_INLINE void Interpreter::doMakeFunction(Context* ctx, word arg) {
@@ -2900,7 +2903,7 @@ HANDLER_INLINE void Interpreter::doDeleteDeref(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doCallFunctionKw(Context* ctx, word argc) {
-  return handleCall(ctx, argc, argc + 1, prepareKeywordCall,
+  return handleCall(ctx, argc, argc + 1, 0, prepareKeywordCall,
                     &Function::entryKw);
 }
 
@@ -3241,6 +3244,68 @@ HANDLER_INLINE void Interpreter::doBuildString(Context* ctx, word arg) {
       break;
     }
   }
+}
+
+// LOAD_METHOD shapes the stack as follows:
+//
+//     Unbound
+//     callable <- Top of stack / lower memory addresses
+//
+// LOAD_METHOD is paired with a CALL_METHOD, and the matching CALL_METHOD
+// falls back to the behavior of CALL_FUNCTION in this shape of the stack.
+HANDLER_INLINE bool Interpreter::doLoadMethod(Context* ctx, word arg) {
+  ctx->frame->insertValueAt(Unbound::object(), 1);
+  return doLoadAttr(ctx, arg);
+}
+
+// LOAD_METHOD_CACHED shapes the stack in case of cache hit as follows:
+//
+//     Function
+//     Receiver <- Top of stack / lower memory addresses
+//
+// LOAD_METHOD_CACHED is paired with a CALL_METHOD, and the matching CALL_METHOD
+// bind Receiver to the self parameter to call Function to avoid creating
+// a BoundMethod object.
+//
+// In case of cache miss, LOAD_METHOD_CACHED shapes the stack in the same way as
+// LOAD_METHOD.
+bool Interpreter::doLoadMethodCached(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  RawObject receiver = frame->topValue();
+  LayoutId layout_id = receiver.layoutId();
+  RawObject cached = icLookup(ctx->caches, arg, layout_id);
+  // A function object is cached only when LOAD_ATTR_CACHED is guaranteed to
+  // push a BoundMethod with the function via objectGetAttributeSetLocation().
+  // Otherwise, LOAD_ATTR_CACHED caches only attribute's offsets.
+  // Therefore, it's safe to push function/receiver pair to avoid BoundMethod
+  // creation.
+  if (cached.isFunction()) {
+    frame->insertValueAt(cached, 1);
+    return false;
+  }
+
+  frame->insertValueAt(Unbound::object(), 1);
+  if (cached.isErrorNotFound()) {
+    return loadAttrUpdateCache(ctx, arg);
+  }
+  RawObject result = loadAttrWithLocation(ctx->thread, receiver, cached);
+  frame->setTopValue(result);
+  return false;
+}
+
+HANDLER_INLINE bool Interpreter::doCallMethod(Context* ctx, word arg) {
+  RawObject maybe_method = ctx->frame->peek(arg + 1);
+  if (maybe_method.isUnbound()) {
+    // Need to pop the extra Unbound.
+    return handleCall(ctx, arg, arg, 1, preparePositionalCall,
+                      &Function::entry);
+  }
+  DCHECK(maybe_method.isFunction(),
+         "The pushed method should be either a function or Unbound");
+  // Add one to bind receiver to the self argument. See doLoadMethod()
+  // for details on the stack's shape.
+  return handleCall(ctx, arg + 1, arg + 1, 0, preparePositionalCall,
+                    &Function::entry);
 }
 
 HANDLER_INLINE bool Interpreter::cachedBinaryOpImpl(
