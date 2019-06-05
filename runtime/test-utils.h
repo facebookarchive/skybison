@@ -1,11 +1,12 @@
 #pragma once
 
+#include <functional>
+#include <string>
+
 #include "handles.h"
 #include "objects.h"
 #include "runtime.h"
 
-#include <functional>
-#include <string>
 #include "gtest/gtest.h"
 
 // Define EXPECT_DEBUG_ONLY_DEATH, which is like gtest's
@@ -26,9 +27,15 @@
 #endif
 
 namespace python {
-class Runtime;
 
 namespace testing {
+
+class RuntimeFixture : public ::testing::Test {
+ protected:
+  void SetUp() override { thread_ = Thread::current(); }
+  Runtime runtime_;
+  Thread* thread_;
+};
 
 // Compile the supplied python snippet, run it, and return stdout or stderr
 std::string compileAndRunToString(Runtime* runtime, const char* src);

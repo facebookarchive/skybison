@@ -8,9 +8,12 @@ namespace python {
 
 using namespace testing;
 
-TEST(SetBuiltinsTest, SetPopException) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+using FrozenSetBuiltinsTest = RuntimeFixture;
+using SetBuiltinsTest = RuntimeFixture;
+using SetIteratorBuiltinsTest = RuntimeFixture;
+
+TEST_F(SetBuiltinsTest, SetPopException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 s = {1}
 s.pop()
 s.pop()
@@ -18,106 +21,99 @@ s.pop()
                             LayoutId::kKeyError, "pop from an empty set"));
 }
 
-TEST(SetBuiltinsTest, SetPop) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetPop) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 s = {1}
 a = s.pop()
 b = len(s)
 )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1));
   EXPECT_TRUE(isIntEqualsWord(*b, 0));
 }
 
-TEST(SetBuiltinsTest, InitializeByTypeCall) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, InitializeByTypeCall) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 s = set()
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
+  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
   EXPECT_TRUE(s.isSet());
   EXPECT_EQ(Set::cast(*s).numItems(), 0);
 }
 
-TEST(SetBuiltinsTest, SetAdd) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetAdd) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 s = set()
 s.add(1)
 s.add("Hello, World")
 )")
                    .isError());
-  Set s(&scope, moduleAt(&runtime, "__main__", "s"));
-  Object one(&scope, runtime.newInt(1));
-  Object hello_world(&scope, runtime.newStrFromCStr("Hello, World"));
+  Set s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Object one(&scope, runtime_.newInt(1));
+  Object hello_world(&scope, runtime_.newStrFromCStr("Hello, World"));
   EXPECT_EQ(s.numItems(), 2);
-  EXPECT_TRUE(runtime.setIncludes(thread, s, one));
-  EXPECT_TRUE(runtime.setIncludes(thread, s, hello_world));
+  EXPECT_TRUE(runtime_.setIncludes(thread, s, one));
+  EXPECT_TRUE(runtime_.setIncludes(thread, s, hello_world));
 }
 
-TEST(SetBuiltinsTest, DunderIterReturnsSetIterator) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderIterReturnsSetIterator) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set empty_set(&scope, runtime.newSet());
+  Set empty_set(&scope, runtime_.newSet());
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, empty_set));
   ASSERT_TRUE(iter.isSetIterator());
 }
 
-TEST(SetBuiltinsTest, DunderAnd) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderAnd) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Set set1(&scope, runtime.newSet());
-  Set set2(&scope, runtime.newSet());
+  Set set1(&scope, runtime_.newSet());
+  Set set2(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(1));
-  runtime.setAdd(thread, set1, key);
+  runtime_.setAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
-  runtime.setAdd(thread, set1, key);
+  runtime_.setAdd(thread, set1, key);
   Object result1(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
   ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(Set::cast(*result1).numItems(), 0);
 
   key = SmallInt::fromWord(1);
-  runtime.setAdd(thread, set2, key);
+  runtime_.setAdd(thread, set2, key);
   Object result2(&scope, runBuiltin(SetBuiltins::dunderAnd, set1, set2));
   ASSERT_TRUE(result2.isSet());
   Set set(&scope, *result2);
   EXPECT_EQ(set.numItems(), 1);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, DunderAndWithNonSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderAndWithNonSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object empty_set(&scope, runtime.newSet());
+  Object empty_set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, empty_set, none));
   ASSERT_TRUE(result.isNotImplementedType());
 }
 
-TEST(SetBuiltinsTest, DunderIand) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderIand) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Set set1(&scope, runtime.newSet());
-  Set set2(&scope, runtime.newSet());
+  Set set1(&scope, runtime_.newSet());
+  Set set2(&scope, runtime_.newSet());
   Object key(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
   ASSERT_TRUE(result.isSet());
@@ -125,41 +121,39 @@ TEST(SetBuiltinsTest, DunderIand) {
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 
   key = SmallInt::fromWord(1);
-  runtime.setAdd(thread, set1, key);
+  runtime_.setAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
-  runtime.setAdd(thread, set1, key);
+  runtime_.setAdd(thread, set1, key);
   Object result1(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
   ASSERT_TRUE(result1.isSet());
   EXPECT_EQ(*result1, *set1);
   EXPECT_EQ(Set::cast(*result1).numItems(), 0);
 
-  set1 = runtime.newSet();
+  set1 = runtime_.newSet();
   key = SmallInt::fromWord(1);
-  runtime.setAdd(thread, set1, key);
+  runtime_.setAdd(thread, set1, key);
   key = SmallInt::fromWord(2);
-  runtime.setAdd(thread, set1, key);
-  runtime.setAdd(thread, set2, key);
+  runtime_.setAdd(thread, set1, key);
+  runtime_.setAdd(thread, set2, key);
   Object result2(&scope, runBuiltin(SetBuiltins::dunderIand, set1, set2));
   ASSERT_TRUE(result2.isSet());
   EXPECT_EQ(*result2, *set1);
   Set set(&scope, *result2);
   EXPECT_EQ(set.numItems(), 1);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, DunderIandWithNonSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderIandWithNonSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Object empty_set(&scope, runtime.newSet());
+  Object empty_set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderIand, empty_set, none));
   ASSERT_TRUE(result.isNotImplementedType());
 }
 
-TEST(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
@@ -171,15 +165,14 @@ TEST(SetBuiltinsTest, SetIntersectionWithNoArgsReturnsCopy) {
   EXPECT_EQ(set.numItems(), 3);
 
   Object key(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
@@ -193,13 +186,12 @@ TEST(SetBuiltinsTest, SetIntersectionWithOneArgumentReturnsIntersection) {
   EXPECT_EQ(set.numItems(), 2);
   Object key(&scope, SmallInt::fromWord(0));
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
@@ -214,16 +206,15 @@ TEST(SetBuiltinsTest, SetIntersectionWithTwoArgumentsReturnsIntersection) {
   EXPECT_EQ(set.numItems(), 1);
   Object key(&scope, SmallInt::fromWord(0));
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, SetIntersectionWithEmptySetReturnsEmptySet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIntersectionWithEmptySetReturnsEmptySet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 2));
-  Set set2(&scope, runtime.newSet());
+  Set set2(&scope, runtime_.newSet());
 
   // set.intersect() with 2 arguments
   Object result(&scope, runBuiltin(SetBuiltins::intersection, set, set1, set2));
@@ -232,82 +223,75 @@ TEST(SetBuiltinsTest, SetIntersectionWithEmptySetReturnsEmptySet) {
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 }
 
-TEST(SetBuiltinsTest, SetIntersectionWithEmptyIterableReturnsEmptySet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIntersectionWithEmptyIterableReturnsEmptySet) {
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
-  List list(&scope, runtime.newList());
+  List list(&scope, runtime_.newList());
   Object result(&scope, runBuiltin(SetBuiltins::intersection, set, list));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 0);
 }
 
-TEST(SetBuiltinsTest, SetIntersectionWithIterableReturnsIntersection) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIntersectionWithIterableReturnsIntersection) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
-  List list(&scope, runtime.newList());
+  List list(&scope, runtime_.newList());
   Object key(&scope, SmallInt::fromWord(4));
-  runtime.listAdd(thread, list, key);
+  runtime_.listAdd(thread, list, key);
   key = SmallInt::fromWord(0);
-  runtime.listAdd(thread, list, key);
+  runtime_.listAdd(thread, list, key);
   Object result(&scope, runBuiltin(SetBuiltins::intersection, set, list));
   ASSERT_TRUE(result.isSet());
   EXPECT_EQ(Set::cast(*result).numItems(), 1);
   set = *result;
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, SetIntersectionWithFrozenSetReturnsSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIntersectionWithFrozenSetReturnsSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
+  Set set(&scope, runtime_.newSet());
+  FrozenSet frozen_set(&scope, runtime_.emptyFrozenSet());
   Object result(&scope, runBuiltin(SetBuiltins::intersection, set, frozen_set));
   ASSERT_TRUE(result.isSet());
 }
 
-TEST(SetBuiltinsTest, FrozenSetIntersectionWithSetReturnsFrozenSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, FrozenSetIntersectionWithSetReturnsFrozenSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
-  Set set(&scope, runtime.newSet());
+  FrozenSet frozen_set(&scope, runtime_.emptyFrozenSet());
+  Set set(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::intersection, frozen_set, set));
   ASSERT_TRUE(result.isFrozenSet());
 }
 
-TEST(SetBuiltinsTest, SetAndWithFrozenSetReturnsSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetAndWithFrozenSetReturnsSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
+  Set set(&scope, runtime_.newSet());
+  FrozenSet frozen_set(&scope, runtime_.emptyFrozenSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, set, frozen_set));
   ASSERT_TRUE(result.isSet());
 }
 
-TEST(SetBuiltinsTest, FrozenSetAndWithSetReturnsFrozenSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, FrozenSetAndWithSetReturnsFrozenSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  FrozenSet frozen_set(&scope, runtime.emptyFrozenSet());
-  Set set(&scope, runtime.newSet());
+  FrozenSet frozen_set(&scope, runtime_.emptyFrozenSet());
+  Set set(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderAnd, frozen_set, set));
   ASSERT_TRUE(result.isFrozenSet());
 }
 
-TEST(SetIteratorBuiltinsTest, CallDunderNext) {
-  Runtime runtime;
+TEST_F(SetIteratorBuiltinsTest, CallDunderNext) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object value(&scope, SmallInt::fromWord(0));
-  runtime.setAdd(thread, set, value);
+  runtime_.setAdd(thread, set, value);
   value = SmallInt::fromWord(1);
-  runtime.setAdd(thread, set, value);
+  runtime_.setAdd(thread, set, value);
 
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, set));
   ASSERT_TRUE(iter.isSetIterator());
@@ -322,11 +306,10 @@ TEST(SetIteratorBuiltinsTest, CallDunderNext) {
   ASSERT_TRUE(item3.isError());
 }
 
-TEST(SetIteratorBuiltinsTest, CallDunderNextWithEmptySet) {
-  Runtime runtime;
+TEST_F(SetIteratorBuiltinsTest, CallDunderNextWithEmptySet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, set));
   ASSERT_TRUE(iter.isSetIterator());
 
@@ -334,11 +317,10 @@ TEST(SetIteratorBuiltinsTest, CallDunderNextWithEmptySet) {
   ASSERT_TRUE(result.isError());
 }
 
-TEST(SetIteratorBuiltinsTes, DunderIterReturnsSelf) {
-  Runtime runtime;
+TEST_F(SetIteratorBuiltinsTest, DunderIterReturnsSelf) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set empty_set(&scope, runtime.newSet());
+  Set empty_set(&scope, runtime_.newSet());
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, empty_set));
   ASSERT_TRUE(iter.isSetIterator());
 
@@ -347,11 +329,10 @@ TEST(SetIteratorBuiltinsTes, DunderIterReturnsSelf) {
   ASSERT_EQ(*result, *iter);
 }
 
-TEST(SetIteratorBuiltinsTest, DunderLengthHintOnEmptySetReturnsZero) {
-  Runtime runtime;
+TEST_F(SetIteratorBuiltinsTest, DunderLengthHintOnEmptySetReturnsZero) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set empty_set(&scope, runtime.newSet());
+  Set empty_set(&scope, runtime_.newSet());
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, empty_set));
   ASSERT_TRUE(iter.isSetIterator());
 
@@ -360,13 +341,12 @@ TEST(SetIteratorBuiltinsTest, DunderLengthHintOnEmptySetReturnsZero) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint, 0));
 }
 
-TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
-  Runtime runtime;
+TEST_F(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set one_element_set(&scope, runtime.newSet());
+  Set one_element_set(&scope, runtime_.newSet());
   Object zero(&scope, SmallInt::fromWord(0));
-  runtime.setAdd(thread, one_element_set, zero);
+  runtime_.setAdd(thread, one_element_set, zero);
 
   Object iter(&scope, runBuiltin(SetBuiltins::dunderIter, one_element_set));
   ASSERT_TRUE(iter.isSetIterator());
@@ -384,22 +364,20 @@ TEST(SetIteratorBuiltinsTest, DunderLengthHintOnConsumedSetReturnsZero) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 0));
 }
 
-TEST(SetBuiltinsTest, SetIsDisjointWithNonIterableArg) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, SetIsDisjointWithNonIterableArg) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 s = {1}
 s.isdisjoint(None)
 )"),
                             LayoutId::kTypeError, "object is not iterable"));
 }
 
-TEST(SetBuiltinsTest, SetIsDisjointWithSetArg) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIsDisjointWithSetArg) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Set set(&scope, runtime.newSet());
-  Set other(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
+  Set other(&scope, runtime_.newSet());
   Object value(&scope, NoneType::object());
 
   // set().isdisjoint(set())
@@ -408,33 +386,32 @@ TEST(SetBuiltinsTest, SetIsDisjointWithSetArg) {
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint({None})
-  runtime.setAdd(thread, other, value);
+  runtime_.setAdd(thread, other, value);
   Object result1(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint({None})
-  runtime.setAdd(thread, set, value);
+  runtime_.setAdd(thread, set, value);
   Object result2(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
 
   // {None}.isdisjoint({1})
-  other = runtime.newSet();
+  other = runtime_.newSet();
   value = SmallInt::fromWord(1);
-  runtime.setAdd(thread, other, value);
+  runtime_.setAdd(thread, other, value);
   Object result3(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
-  Set set(&scope, runtime.newSet());
-  List other(&scope, runtime.newList());
+  Set set(&scope, runtime_.newSet());
+  List other(&scope, runtime_.newList());
   Object value(&scope, NoneType::object());
 
   // set().isdisjoint([])
@@ -443,29 +420,28 @@ TEST(SetBuiltinsTest, SetIsDisjointWithIterableArg) {
   EXPECT_EQ(*result, Bool::trueObj());
 
   // set().isdisjoint([None])
-  runtime.listAdd(thread, other, value);
+  runtime_.listAdd(thread, other, value);
   Object result1(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result1.isBool());
   EXPECT_EQ(*result1, Bool::trueObj());
 
   // {None}.isdisjoint([None])
-  runtime.setAdd(thread, set, value);
+  runtime_.setAdd(thread, set, value);
   Object result2(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result2.isBool());
   EXPECT_EQ(*result2, Bool::falseObj());
 
   // {None}.isdisjoint([1])
-  other = runtime.newList();
+  other = runtime_.newList();
   value = SmallInt::fromWord(1);
-  runtime.listAdd(thread, other, value);
+  runtime_.listAdd(thread, other, value);
   Object result3(&scope, runBuiltin(SetBuiltins::isDisjoint, set, other));
   ASSERT_TRUE(result3.isBool());
   EXPECT_EQ(*result3, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithSetSubclass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderEqWithSetSubclass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Bar(set): pass
 
 a = set()
@@ -478,16 +454,15 @@ cmp3 = (b == a1)
 cmp4 = (b == b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp3"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp4"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderNeWithSetSubclass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderNeWithSetSubclass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Bar(set): pass
 
 a = set()
@@ -500,16 +475,15 @@ cmp3 = (b != a1)
 cmp4 = (b != b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp3"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp4"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderGeWithSetSubclass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderGeWithSetSubclass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Bar(set): pass
 
 a = set()
@@ -522,16 +496,15 @@ cmp3 = (b >= a1)
 cmp4 = (b >= b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp3"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp4"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderGtWithSetSubclass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderGtWithSetSubclass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Bar(set): pass
 
 a = set()
@@ -544,16 +517,15 @@ cmp3 = (b > a1)
 cmp4 = (b > b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp3"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp4"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderLeWithSetSubclass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderLeWithSetSubclass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Bar(set): pass
 
 a = set()
@@ -566,16 +538,15 @@ cmp3 = (b <= a1)
 cmp4 = (b <= b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp3"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp4"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderLtWithSetSubclass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderLtWithSetSubclass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Bar(set): pass
 
 a = set()
@@ -588,36 +559,33 @@ cmp3 = (b < a1)
 cmp4 = (b < b)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp1"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp2"), Bool::falseObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp3"), Bool::trueObj());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "cmp4"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp1"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp2"), Bool::falseObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp3"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "cmp4"), Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithEmptySetsReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderEqWithEmptySetsReturnsTrue) {
   // (set() == set()) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  Set set1(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
+  Set set1(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithSameSetReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderEqWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s == s) is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, set));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithEqualSetsReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderEqWithEqualSetsReturnsTrue) {
   // ({0, 1, 2) == {0, 1, 2}) is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
@@ -625,9 +593,8 @@ TEST(SetBuiltinsTest, DunderEqWithEqualSetsReturnsTrue) {
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithUnequalSetsReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderEqWithUnequalSetsReturnsFalse) {
   // ({0, 1, 2} == {1, 2, 3}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(1, 4));
@@ -635,29 +602,26 @@ TEST(SetBuiltinsTest, DunderEqWithUnequalSetsReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderNeWithEmptySetsReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderNeWithEmptySetsReturnsFalse) {
   // (set() != set()) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  Set set1(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
+  Set set1(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderNeWithSameSetReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderNeWithSameSetReturnsFalse) {
   // s = {0, 1, 2}; (s != s) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, set));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderNeWithEqualSetsReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderNeWithEqualSetsReturnsFalse) {
   // ({0, 1, 2} != {0, 1, 2}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
@@ -665,9 +629,8 @@ TEST(SetBuiltinsTest, DunderNeWithEqualSetsReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderNeWithUnequalSetsReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderNeWithUnequalSetsReturnsTrue) {
   // ({0, 1, 2} != {1, 2, 3}) is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(1, 4));
@@ -675,18 +638,16 @@ TEST(SetBuiltinsTest, DunderNeWithUnequalSetsReturnsTrue) {
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderGeWithSameSetReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderGeWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s >= s) is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, set));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderGeWithEqualSetsReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderGeWithEqualSetsReturnsTrue) {
   // ({0, 1, 2} >= {0, 1, 2}) is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
@@ -694,9 +655,8 @@ TEST(SetBuiltinsTest, DunderGeWithEqualSetsReturnsTrue) {
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderGeWithSupersetReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderGeWithSupersetReturnsFalse) {
   // ({0, 1, 2} >= {0, 1, 2, 3}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 4));
@@ -704,31 +664,28 @@ TEST(SetBuiltinsTest, DunderGeWithSupersetReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderGeWithEmptySetReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderGeWithEmptySetReturnsTrue) {
   // ({0, 1, 2} >= set()) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
-  Set set1(&scope, runtime.newSet());
+  Set set1(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderLeWithEmptySetReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderLeWithEmptySetReturnsTrue) {
   // s = {0, 1, 2}; (s <= s) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  Set set1(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
+  Set set1(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, set1));
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderLeWithEqualSetsReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderLeWithEqualSetsReturnsTrue) {
   // ({0, 1, 2} <= {0, 1, 2}) is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
@@ -736,9 +693,8 @@ TEST(SetBuiltinsTest, DunderLeWithEqualSetsReturnsTrue) {
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderLeWithSubsetReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderLeWithSubsetReturnsFalse) {
   // ({0, 1, 2, 3} <= {0, 1, 2}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 4));
   Set set1(&scope, setFromRange(0, 3));
@@ -746,20 +702,18 @@ TEST(SetBuiltinsTest, DunderLeWithSubsetReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderLeWithEmptySetReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderLeWithEmptySetReturnsFalse) {
   // ({0, 1, 2} <= set()) is False
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
-  Set set1(&scope, runtime.newSet());
+  Set set1(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, set1));
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderGtWithEqualSetsReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderGtWithEqualSetsReturnsFalse) {
   // ({0, 1, 2} > {0, 1, 2}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
@@ -767,9 +721,8 @@ TEST(SetBuiltinsTest, DunderGtWithEqualSetsReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderGtWithSubsetReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderGtWithSubsetReturnsTrue) {
   // ({0, 1, 2, 3} > {0, 1, 2}) is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 4));
   Set set1(&scope, setFromRange(0, 3));
@@ -777,9 +730,8 @@ TEST(SetBuiltinsTest, DunderGtWithSubsetReturnsTrue) {
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderGtWithSupersetReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderGtWithSupersetReturnsFalse) {
   // ({0, 1, 2} > {0, 1, 2, 3}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 4));
@@ -787,9 +739,8 @@ TEST(SetBuiltinsTest, DunderGtWithSupersetReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderLtWithEqualSetsReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderLtWithEqualSetsReturnsFalse) {
   // ({0, 1, 2} < {0, 1, 2}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 3));
@@ -797,9 +748,8 @@ TEST(SetBuiltinsTest, DunderLtWithEqualSetsReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderLtWithSupersetReturnsTrue) {
+TEST_F(SetBuiltinsTest, DunderLtWithSupersetReturnsTrue) {
   // ({0, 1, 2} < {0, 1, 2, 3})  is True
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 3));
   Set set1(&scope, setFromRange(0, 4));
@@ -807,9 +757,8 @@ TEST(SetBuiltinsTest, DunderLtWithSupersetReturnsTrue) {
   ASSERT_EQ(*result, Bool::trueObj());
 }
 
-TEST(SetBuiltinsTest, DunderLtWithSubsetReturnsFalse) {
+TEST_F(SetBuiltinsTest, DunderLtWithSubsetReturnsFalse) {
   // ({0, 1, 2, 3} < {0, 1, 2}) is False
-  Runtime runtime;
   HandleScope scope;
   Set set(&scope, setFromRange(0, 4));
   Set set1(&scope, setFromRange(0, 3));
@@ -817,243 +766,222 @@ TEST(SetBuiltinsTest, DunderLtWithSubsetReturnsFalse) {
   ASSERT_EQ(*result, Bool::falseObj());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithNonSetSecondArgReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderEqWithNonSetSecondArgReturnsNotImplemented) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderEq, set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderNeWithNonSetSecondArgReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderNeWithNonSetSecondArgReturnsNotImplemented) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderNe, set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderGeWithNonSetSecondArgReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderGeWithNonSetSecondArgReturnsNotImplemented) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderGe, set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderGtWithNonSetSecondArgReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderGtWithNonSetSecondArgReturnsNotImplemented) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderGt, set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderLeWithNonSetSecondArgReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderLeWithNonSetSecondArgReturnsNotImplemented) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderLe, set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(SetBuiltins::dunderLt, set, none));
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderEqWithNonSetFirstArgRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderEqWithNonSetFirstArgRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 set.__eq__(None, set())
 )"),
                             LayoutId::kTypeError,
                             "__eq__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderNeWithNonSetFirstArgRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderNeWithNonSetFirstArgRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 set.__ne__(None, set())
 )"),
                             LayoutId::kTypeError,
                             "__ne__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderGeWithNonSetFirstArgRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderGeWithNonSetFirstArgRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 set.__ge__(None, set())
 )"),
                             LayoutId::kTypeError,
                             "__ge__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderGtWithNonSetFirstArgRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderGtWithNonSetFirstArgRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 set.__gt__(None, set())
 )"),
                             LayoutId::kTypeError,
                             "__gt__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderLeWithNonSetFirstArgRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderLeWithNonSetFirstArgRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 set.__le__(None, set())
 )"),
                             LayoutId::kTypeError,
                             "__le__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderLtWithNonSetFirstArgRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderLtWithNonSetFirstArgRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 set.__lt__(None, set())
 )"),
                             LayoutId::kTypeError,
                             "__lt__() requires a 'set' or 'frozenset' object"));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithNonSetFirstArgRaisesTypeError) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderInitWithNonSetFirstArgRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
+      raisedWithStr(runFromCStr(&runtime_, R"(
 set.__init__([])
 )"),
                     LayoutId::kTypeError,
                     "'__init__' requires a 'set' object but got 'list'"));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 set.__init__(set(), None)
 )"),
                             LayoutId::kTypeError, "object is not iterable"));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderInitWithIteratorUpdatesSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Set set1(&scope, setFromRange(0, 3));
   Object result(&scope, runBuiltin(SetBuiltins::dunderInit, set, set1));
   ASSERT_TRUE(result.isNoneType());
   EXPECT_EQ(set.numItems(), set1.numItems());
   Object key(&scope, SmallInt::fromWord(0));
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, DunderInitWithSetSubclassUpdatesSet) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderInitWithSetSubclassUpdatesSet) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Set(set): pass
 
 s = Set([0, 1, 2])
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
-  ASSERT_TRUE(runtime.isInstanceOfSet(*s));
+  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  ASSERT_TRUE(runtime_.isInstanceOfSet(*s));
   Object key(&scope, SmallInt::fromWord(0));
   Set set(&scope, *s);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, DunderLenWithSetSubclassReturnsLen) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderLenWithSetSubclassReturnsLen) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Set(set): pass
 
 s = Set([0, 1, 2])
 )")
                    .isError());
-  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
-  ASSERT_TRUE(runtime.isInstanceOfSet(*s));
+  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  ASSERT_TRUE(runtime_.isInstanceOfSet(*s));
 
   Object result(&scope, runBuiltin(SetBuiltins::dunderLen, s));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
-TEST(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
-  Runtime runtime;
-  ASSERT_FALSE(
-      runFromCStr(&runtime, "result = frozenset.__new__(frozenset)").isError());
+TEST_F(SetBuiltinsTest, FrozenSetDunderNewReturnsSingleton) {
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = frozenset.__new__(frozenset)")
+                   .isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(result.isFrozenSet());
-  EXPECT_EQ(*result, runtime.emptyFrozenSet());
+  EXPECT_EQ(*result, runtime_.emptyFrozenSet());
 }
 
-TEST(SetBuiltinsTest, SubclassOfFrozenSetDunderNewDoesNotReturnSingleton) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, SubclassOfFrozenSetDunderNewDoesNotReturnSingleton) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C(frozenset):
     pass
 o = C()
 )")
                    .isError());
   HandleScope scope;
-  Object o(&scope, moduleAt(&runtime, "__main__", "o"));
-  EXPECT_NE(*o, runtime.emptyFrozenSet());
+  Object o(&scope, moduleAt(&runtime_, "__main__", "o"));
+  EXPECT_NE(*o, runtime_.emptyFrozenSet());
 }
 
-TEST(SetBuiltinsTest, FrozenSetDunderNewFromEmptyIterableReturnsSingleton) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, FrozenSetDunderNewFromEmptyIterableReturnsSingleton) {
   HandleScope scope;
-  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
-  List empty_iterable(&scope, runtime.newList());
+  Type type(&scope, runtime_.typeAt(LayoutId::kFrozenSet));
+  List empty_iterable(&scope, runtime_.newList());
   Object result(&scope,
                 runBuiltin(FrozenSetBuiltins::dunderNew, type, empty_iterable));
-  EXPECT_EQ(*result, runtime.emptyFrozenSet());
+  EXPECT_EQ(*result, runtime_.emptyFrozenSet());
 }
 
-TEST(SetBuiltinsTest, FrozenSetDunderNewFromFrozenSetIsIdempotent) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, FrozenSetDunderNewFromFrozenSetIsIdempotent) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  Type type(&scope, runtime_.typeAt(LayoutId::kFrozenSet));
   List nonempty_list(&scope, listFromRange(1, 5));
-  FrozenSet frozenset(&scope, runtime.newFrozenSet());
-  frozenset = runtime.setUpdate(Thread::current(), frozenset, nonempty_list);
+  FrozenSet frozenset(&scope, runtime_.newFrozenSet());
+  frozenset = runtime_.setUpdate(Thread::current(), frozenset, nonempty_list);
   Object result(&scope,
                 runBuiltin(FrozenSetBuiltins::dunderNew, type, frozenset));
   EXPECT_EQ(*result, *frozenset);
 }
 
-TEST(SetBuiltinsTest, FrozenSetDunderNewFromIterableContainsIterableElements) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest,
+       FrozenSetDunderNewFromIterableContainsIterableElements) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  Type type(&scope, runtime_.typeAt(LayoutId::kFrozenSet));
   List nonempty_list(&scope, listFromRange(1, 5));
   Object result_obj(
       &scope, runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
@@ -1061,19 +989,18 @@ TEST(SetBuiltinsTest, FrozenSetDunderNewFromIterableContainsIterableElements) {
   FrozenSet result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 4);
   Int one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime.setIncludes(thread, result, one));
+  EXPECT_TRUE(runtime_.setIncludes(thread, result, one));
   Int two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime.setIncludes(thread, result, two));
+  EXPECT_TRUE(runtime_.setIncludes(thread, result, two));
   Int three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime.setIncludes(thread, result, three));
+  EXPECT_TRUE(runtime_.setIncludes(thread, result, three));
   Int four(&scope, SmallInt::fromWord(4));
-  EXPECT_TRUE(runtime.setIncludes(thread, result, four));
+  EXPECT_TRUE(runtime_.setIncludes(thread, result, four));
 }
 
-TEST(SetBuiltinsTest, FrozenSetFromIterableIsNotSingleton) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, FrozenSetFromIterableIsNotSingleton) {
   HandleScope scope;
-  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  Type type(&scope, runtime_.typeAt(LayoutId::kFrozenSet));
   List nonempty_list(&scope, listFromRange(1, 5));
   Object result1(&scope,
                  runBuiltin(FrozenSetBuiltins::dunderNew, type, nonempty_list));
@@ -1084,75 +1011,69 @@ TEST(SetBuiltinsTest, FrozenSetFromIterableIsNotSingleton) {
   ASSERT_NE(*result1, *result2);
 }
 
-TEST(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableRaisesTypeError) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, FrozenSetDunderNewWithNonIterableRaisesTypeError) {
   HandleScope scope;
-  Type type(&scope, runtime.typeAt(LayoutId::kFrozenSet));
+  Type type(&scope, runtime_.typeAt(LayoutId::kFrozenSet));
   Object none(&scope, NoneType::object());
   Object result(&scope, runBuiltin(FrozenSetBuiltins::dunderNew, type, none));
   ASSERT_TRUE(result.isError());
 }
 
-TEST(SetBuiltinsTest, SetCopy) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, SetCopy) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object set_copy(&scope, setCopy(thread, set));
   ASSERT_TRUE(set_copy.isSet());
   EXPECT_EQ(Set::cast(*set_copy).numItems(), 0);
 
   Object key(&scope, SmallInt::fromWord(0));
-  runtime.setAdd(thread, set, key);
+  runtime_.setAdd(thread, set, key);
   key = SmallInt::fromWord(1);
-  runtime.setAdd(thread, set, key);
+  runtime_.setAdd(thread, set, key);
   key = SmallInt::fromWord(2);
-  runtime.setAdd(thread, set, key);
+  runtime_.setAdd(thread, set, key);
 
   Object set_copy1(&scope, setCopy(thread, set));
   ASSERT_TRUE(set_copy1.isSet());
   EXPECT_EQ(Set::cast(*set_copy1).numItems(), 3);
   set = *set_copy1;
   key = SmallInt::fromWord(0);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(1);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
   key = SmallInt::fromWord(2);
-  EXPECT_TRUE(runtime.setIncludes(thread, set, key));
+  EXPECT_TRUE(runtime_.setIncludes(thread, set, key));
 }
 
-TEST(SetBuiltinsTest, SetEqualsWithSameSetReturnsTrue) {
+TEST_F(SetBuiltinsTest, SetEqualsWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s == s) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   ASSERT_TRUE(setEquals(thread, set, set));
 }
 
-TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetsReturnsTrue) {
+TEST_F(SetBuiltinsTest, SetIsSubsetWithEmptySetsReturnsTrue) {
   // (set() <= set()) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  Set set1(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
+  Set set1(&scope, runtime_.newSet());
   ASSERT_TRUE(setIsSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, SetIsSubsetWithEmptySetAndNonEmptySetReturnsTrue) {
+TEST_F(SetBuiltinsTest, SetIsSubsetWithEmptySetAndNonEmptySetReturnsTrue) {
   // (set() <= {0, 1, 2}) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Set set1(&scope, setFromRange(0, 3));
   ASSERT_TRUE(setIsSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, SetIsSubsetWithEqualsetReturnsTrue) {
+TEST_F(SetBuiltinsTest, SetIsSubsetWithEqualsetReturnsTrue) {
   // ({0, 1, 2} <= {0, 1, 2}) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
@@ -1160,9 +1081,8 @@ TEST(SetBuiltinsTest, SetIsSubsetWithEqualsetReturnsTrue) {
   ASSERT_TRUE(setIsSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, SetIsSubsetWithSubsetReturnsTrue) {
+TEST_F(SetBuiltinsTest, SetIsSubsetWithSubsetReturnsTrue) {
   // ({1, 2, 3} <= {1, 2, 3, 4}) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 4));
@@ -1170,9 +1090,8 @@ TEST(SetBuiltinsTest, SetIsSubsetWithSubsetReturnsTrue) {
   ASSERT_TRUE(setIsSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, SetIsSubsetWithSupersetReturnsFalse) {
+TEST_F(SetBuiltinsTest, SetIsSubsetWithSupersetReturnsFalse) {
   // ({1, 2, 3, 4} <= {1, 2, 3}) is False
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 5));
@@ -1180,18 +1099,16 @@ TEST(SetBuiltinsTest, SetIsSubsetWithSupersetReturnsFalse) {
   ASSERT_FALSE(setIsSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, SetIsSubsetWithSameSetReturnsTrue) {
+TEST_F(SetBuiltinsTest, SetIsSubsetWithSameSetReturnsTrue) {
   // s = {0, 1, 2}; (s <= s) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 4));
   ASSERT_TRUE(setIsSubset(thread, set, set));
 }
 
-TEST(SetBuiltinsTest, SetIsProperSubsetWithSupersetReturnsTrue) {
+TEST_F(SetBuiltinsTest, SetIsProperSubsetWithSupersetReturnsTrue) {
   // ({0, 1, 2, 3} < {0, 1, 2, 3, 4}) is True
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 4));
@@ -1199,9 +1116,8 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithSupersetReturnsTrue) {
   ASSERT_TRUE(setIsProperSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, SetIsProperSubsetWithUnequalSetsReturnsFalse) {
+TEST_F(SetBuiltinsTest, SetIsProperSubsetWithUnequalSetsReturnsFalse) {
   // ({1, 2, 3} < {0, 1, 2}) is False
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 4));
@@ -1209,18 +1125,16 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithUnequalSetsReturnsFalse) {
   ASSERT_FALSE(setIsProperSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, SetIsProperSubsetWithSameSetReturnsFalse) {
+TEST_F(SetBuiltinsTest, SetIsProperSubsetWithSameSetReturnsFalse) {
   // s = {0, 1, 2}; (s < s) is False
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(0, 3));
   ASSERT_FALSE(setIsProperSubset(thread, set, set));
 }
 
-TEST(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
+TEST_F(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
   // ({1, 2, 3, 4} < {1, 2, 3}) is False
-  Runtime runtime;
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, setFromRange(1, 5));
@@ -1228,12 +1142,11 @@ TEST(SetBuiltinsTest, SetIsProperSubsetWithSubsetReturnsFalse) {
   ASSERT_FALSE(setIsProperSubset(thread, set, set1));
 }
 
-TEST(SetBuiltinsTest, ReprReturnsElements) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, ReprReturnsElements) {
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = set([3, 2, 1]).__repr__()").isError());
+      runFromCStr(&runtime_, "result = set([3, 2, 1]).__repr__()").isError());
   HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result.isStr());
   unique_c_ptr<char> result_str(Str::cast(*result).toCStr());
   word elts[3];
@@ -1246,9 +1159,8 @@ TEST(SetBuiltinsTest, ReprReturnsElements) {
   EXPECT_EQ(elts[2], 3);
 }
 
-TEST(SetBuiltinsTest, RecursiveSetPrintsEllipsis) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, RecursiveSetPrintsEllipsis) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self, obj):
     self.val = obj
@@ -1264,11 +1176,10 @@ result = s.__repr__()
 )")
                    .isError());
   EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "{set(...)}"));
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "{set(...)}"));
 }
 
-TEST(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
   HandleScope scope;
   Object not_a_set(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
@@ -1276,33 +1187,30 @@ TEST(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
       "'<anonymous>' requires a 'set' object but got 'NoneType'"));
 }
 
-TEST(SetBuiltinsTest, CopyReturnsNewObject) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, CopyReturnsNewObject) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   Object result(&scope, runBuiltin(SetBuiltins::copy, set));
   EXPECT_NE(*set, *result);
   EXPECT_TRUE(result.isSet());
 }
 
-TEST(SetBuiltinsTest, CopyFrozenSetRaisesTypeError) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, CopyFrozenSetRaisesTypeError) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  FrozenSet set(&scope, runtime.newFrozenSet());
+  FrozenSet set(&scope, runtime_.newFrozenSet());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SetBuiltins::copy, set), LayoutId::kTypeError,
       "'<anonymous>' requires a 'set' object but got 'frozenset'"));
 }
 
-TEST(SetBuiltinsTest, CopyReturnsShallowCopy) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  Object obj(&scope, runtime.newTuple(5));
-  EXPECT_FALSE(runtime.setAdd(thread, set, obj).isError());
+  Set set(&scope, runtime_.newSet());
+  Object obj(&scope, runtime_.newTuple(5));
+  EXPECT_FALSE(runtime_.setAdd(thread, set, obj).isError());
   Set set2(&scope, runBuiltin(SetBuiltins::copy, set));
   Tuple data(&scope, set2.data());
   bool has_object = false;
@@ -1316,8 +1224,7 @@ TEST(SetBuiltinsTest, CopyReturnsShallowCopy) {
   EXPECT_TRUE(has_object);
 }
 
-TEST(FrozenSetBuiltinsTest, CopyWithNonFrozenSetRaisesTypeError) {
-  Runtime runtime;
+TEST_F(FrozenSetBuiltinsTest, CopyWithNonFrozenSetRaisesTypeError) {
   HandleScope scope;
   Object not_a_set(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
@@ -1325,52 +1232,48 @@ TEST(FrozenSetBuiltinsTest, CopyWithNonFrozenSetRaisesTypeError) {
       "'<anonymous>' requires a 'frozenset' object but got 'NoneType'"));
 }
 
-TEST(FrozenSetBuiltinsTest, CopySetRaisesTypeError) {
-  Runtime runtime;
+TEST_F(FrozenSetBuiltinsTest, CopySetRaisesTypeError) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
+  Set set(&scope, runtime_.newSet());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(FrozenSetBuiltins::copy, set), LayoutId::kTypeError,
       "'<anonymous>' requires a 'frozenset' object but got 'set'"));
 }
 
-TEST(FrozenSetBuiltinsTest, CopyFrozenSetReturnsSameObject) {
-  Runtime runtime;
+TEST_F(FrozenSetBuiltinsTest, CopyFrozenSetReturnsSameObject) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  FrozenSet set(&scope, runtime.newFrozenSet());
+  FrozenSet set(&scope, runtime_.newFrozenSet());
   Object result(&scope, runBuiltin(FrozenSetBuiltins::copy, set));
   EXPECT_EQ(*set, *result);
   EXPECT_TRUE(result.isFrozenSet());
 }
 
-TEST(FrozenSetBuiltinsTest, CopyFrozenSetSubsetReturnsNewObject) {
-  Runtime runtime;
+TEST_F(FrozenSetBuiltinsTest, CopyFrozenSetSubsetReturnsNewObject) {
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C(frozenset):
   pass
 sub = C()
 result = frozenset.copy(sub)
 )")
                    .isError());
-  Object sub(&scope, moduleAt(&runtime, "__main__", "sub"));
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  EXPECT_TRUE(runtime.isInstanceOfFrozenSet(*sub));
-  EXPECT_TRUE(runtime.isInstanceOfFrozenSet(*result));
+  Object sub(&scope, moduleAt(&runtime_, "__main__", "sub"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_TRUE(runtime_.isInstanceOfFrozenSet(*sub));
+  EXPECT_TRUE(runtime_.isInstanceOfFrozenSet(*result));
   EXPECT_FALSE(sub.isFrozenSet());
   EXPECT_TRUE(result.isFrozenSet());
   EXPECT_NE(sub, result);
 }
 
-TEST(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
-  Runtime runtime;
+TEST_F(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  FrozenSet set(&scope, runtime.newFrozenSet());
-  Object obj(&scope, runtime.newTuple(5));
-  EXPECT_FALSE(runtime.setAdd(thread, set, obj).isError());
+  FrozenSet set(&scope, runtime_.newFrozenSet());
+  Object obj(&scope, runtime_.newTuple(5));
+  EXPECT_FALSE(runtime_.setAdd(thread, set, obj).isError());
   FrozenSet set2(&scope, runBuiltin(FrozenSetBuiltins::copy, set));
   Tuple data(&scope, set2.data());
   bool has_object = false;
@@ -1384,107 +1287,98 @@ TEST(FrozenSetBuiltinsTest, CopyMakesShallowCopy) {
   EXPECT_TRUE(has_object);
 }
 
-TEST(SetBuiltinsTest, UpdateWithNoArgsDoesNothing) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, UpdateWithNoArgsDoesNothing) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Set set(&scope, runtime.newSet());
-  Tuple starargs(&scope, runtime.newTuple(0));
+  Set set(&scope, runtime_.newSet());
+  Tuple starargs(&scope, runtime_.newTuple(0));
   Object result(&scope, runBuiltin(SetBuiltins::update, set, starargs));
   EXPECT_TRUE(result.isNoneType());
   EXPECT_EQ(set.numItems(), 0);
 }
 
-TEST(SetBuiltinsTest, UpdateWithNonSetRaisesTypeError) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, UpdateWithNonSetRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
+      raisedWithStr(runFromCStr(&runtime_, R"(
 set.update(None)
 )"),
                     LayoutId::kTypeError,
                     "'update' requires a 'set' object but got 'NoneType'"));
 }
 
-TEST(SetBuiltinsTest, UpdateWithNonIterableRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, UpdateWithNonIterableRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 result = set()
 result.update({5}, {6}, None)
 )"),
                             LayoutId::kTypeError, "object is not iterable"));
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_EQ(result.numItems(), 2);
 }
 
-TEST(SetBuiltinsTest, UpdateWithSetAddsElements) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, UpdateWithSetAddsElements) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = set()
 result.update({5})
 )")
                    .isError());
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_EQ(result.numItems(), 1);
 }
 
-TEST(SetBuiltinsTest, UpdateWithMultipleSetsAddsAllElements) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, UpdateWithMultipleSetsAddsAllElements) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = set()
 result.update({5}, {6})
 )")
                    .isError());
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_EQ(result.numItems(), 2);
 }
 
-TEST(SetBuiltinsTest, UpdateWithIterableAddsElements) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SetBuiltinsTest, UpdateWithIterableAddsElements) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = set([1, 2])
 result.update([5, 6])
 )")
                    .isError());
   HandleScope scope;
-  Set result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Set result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_EQ(result.numItems(), 4);
 }
 
-TEST(SetBuiltinsTest, DunderOrWithNonSetBaseSelfReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderOrWithNonSetBaseSelfReturnsNotImplemented) {
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = set.__or__(None, set())").isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+      runFromCStr(&runtime_, "result = set.__or__(None, set())").isError());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"),
             NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderOrWithNonSetBaseOtherReturnsNotImplemented) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderOrWithNonSetBaseOtherReturnsNotImplemented) {
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = set.__or__(set(), None)").isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"),
+      runFromCStr(&runtime_, "result = set.__or__(set(), None)").isError());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"),
             NotImplementedType::object());
 }
 
-TEST(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
-  Runtime runtime;
+TEST_F(SetBuiltinsTest, DunderOrReturnsSetContainingUnionOfElements) {
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = set.__or__({1, 2}, {2, 3})").isError());
+      runFromCStr(&runtime_, "result = set.__or__({1, 2}, {2, 3})").isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(result_obj.isSet());
   Set result(&scope, *result_obj);
   EXPECT_EQ(result.numItems(), 3);
   Object one(&scope, SmallInt::fromWord(1));
-  EXPECT_TRUE(runtime.setIncludes(thread, result, one));
+  EXPECT_TRUE(runtime_.setIncludes(thread, result, one));
   Object two(&scope, SmallInt::fromWord(2));
-  EXPECT_TRUE(runtime.setIncludes(thread, result, two));
+  EXPECT_TRUE(runtime_.setIncludes(thread, result, two));
   Object three(&scope, SmallInt::fromWord(3));
-  EXPECT_TRUE(runtime.setIncludes(thread, result, three));
+  EXPECT_TRUE(runtime_.setIncludes(thread, result, three));
 }
 
 }  // namespace python

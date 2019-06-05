@@ -14,16 +14,17 @@ namespace python {
 
 using namespace testing;
 
-TEST(SysModuleTest,
-     ExcInfoWhileExceptionNotBeingHandledReturnsTupleOfThreeNone) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+using SysModuleTest = RuntimeFixture;
+
+TEST_F(SysModuleTest,
+       ExcInfoWhileExceptionNotBeingHandledReturnsTupleOfThreeNone) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 result = sys.exc_info()
 )")
                    .isError());
-  HandleScope scope;
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -33,11 +34,10 @@ result = sys.exc_info()
   EXPECT_EQ(result.at(2), NoneType::object());
 }
 
-TEST(
+TEST_F(
     SysModuleTest,
     ExcInfoWhileExceptionNotBeingHandledAfterExceptionIsRaisedReturnsTupleOfThreeNone) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 try:
   raise IndexError(3)
@@ -46,8 +46,8 @@ except:
 result = sys.exc_info()
 )")
                    .isError());
-  HandleScope scope;
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
@@ -57,10 +57,9 @@ result = sys.exc_info()
   EXPECT_EQ(result.at(2), NoneType::object());
 }
 
-TEST(SysModuleTest,
-     ExcInfoWhileExceptionBeingHandledReturnsTupleOfTypeValueTraceback) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SysModuleTest,
+       ExcInfoWhileExceptionBeingHandledReturnsTupleOfTypeValueTraceback) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 try:
   raise IndexError(4)
@@ -68,14 +67,14 @@ except:
   result = sys.exc_info()
 )")
                    .isError());
-  HandleScope scope;
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
 
-  Type expected_type(&scope, runtime.typeAt(LayoutId::kIndexError));
+  Type expected_type(&scope, runtime_.typeAt(LayoutId::kIndexError));
   EXPECT_EQ(result.at(0), expected_type);
 
   ASSERT_TRUE(result.at(1).isIndexError());
@@ -89,9 +88,8 @@ except:
   // inspect result.at(2) here.
 }
 
-TEST(SysModuleTest, ExcInfoReturnsInfoOfExceptionCurrentlyBeingHandled) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SysModuleTest, ExcInfoReturnsInfoOfExceptionCurrentlyBeingHandled) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 try:
   raise IndexError(4)
@@ -102,14 +100,14 @@ except:
     result = sys.exc_info()
 )")
                    .isError());
-  HandleScope scope;
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result_obj.isTuple());
 
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 3);
 
-  Type expected_type(&scope, runtime.typeAt(LayoutId::kIndexError));
+  Type expected_type(&scope, runtime_.typeAt(LayoutId::kIndexError));
   EXPECT_EQ(result.at(0), expected_type);
 
   ASSERT_TRUE(result.at(1).isIndexError());
@@ -123,39 +121,36 @@ except:
   // inspect result.at(2) here.
 }
 
-TEST(SysModuleTest, ExecutableIsValid) {
-  Runtime runtime;
-  HandleScope scope;
-  Object executable_obj(&scope, moduleAt(&runtime, "sys", "executable"));
+TEST_F(SysModuleTest, ExecutableIsValid) {
+  HandleScope scope(thread_);
+  Object executable_obj(&scope, moduleAt(&runtime_, "sys", "executable"));
   ASSERT_TRUE(executable_obj.isStr());
   Str executable(&scope, *executable_obj);
   ASSERT_TRUE(executable.length() > 0);
   EXPECT_TRUE(executable.charAt(0) == '/');
-  Str test_executable_name(&scope, runtime.newStrFromCStr("python-tests"));
+  Str test_executable_name(&scope, runtime_.newStrFromCStr("python-tests"));
   Int find_result(&scope,
                   strFind(executable, test_executable_name, 0, kMaxWord));
   EXPECT_FALSE(find_result.isNegative());
 }
 
-TEST(SysModuleTest, StderrWriteWritesToStderrFile) {
-  Runtime runtime;
-  EXPECT_EQ(compileAndRunToStderrString(&runtime, R"(
+TEST_F(SysModuleTest, StderrWriteWritesToStderrFile) {
+  EXPECT_EQ(compileAndRunToStderrString(&runtime_, R"(
 import sys
 sys.stderr.write("Bonjour")
 )"),
             "Bonjour");
 }
 
-TEST(SysModuleTest, StdoutWriteWritesToStdoutFile) {
-  Runtime runtime;
-  EXPECT_EQ(compileAndRunToString(&runtime, R"(
+TEST_F(SysModuleTest, StdoutWriteWritesToStdoutFile) {
+  EXPECT_EQ(compileAndRunToString(&runtime_, R"(
 import sys
 sys.stdout.write("Hola")
 )"),
             "Hola");
 }
 
-TEST(SysModuleTest, SysArgvProgArg) {  // pystone dependency
+TEST_F(SysModuleTest, SysArgvProgArg) {  // pystone dependency
   const char* src = R"(
 import sys
 print(len(sys.argv))
@@ -163,16 +158,15 @@ print(len(sys.argv))
 for x in sys.argv:
   print(x)
 )";
-  Runtime runtime;
   const char* argv[2];
   argv[0] = "./python";  // program
   argv[1] = "SysArgv";   // script
-  runtime.setArgv(Thread::current(), 2, argv);
-  std::string output = compileAndRunToString(&runtime, src);
+  runtime_.setArgv(thread_, 2, argv);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "1\nSysArgv\n");
 }
 
-TEST(SysModuleTest, SysArgvMultiArgs) {  // pystone dependency
+TEST_F(SysModuleTest, SysArgvMultiArgs) {  // pystone dependency
   const char* src = R"(
 import sys
 print(len(sys.argv))
@@ -182,66 +176,60 @@ print(sys.argv[1])
 for x in sys.argv:
   print(x)
 )";
-  Runtime runtime;
   const char* argv[3];
   argv[0] = "./python";  // program
   argv[1] = "SysArgv";   // script
   argv[2] = "200";       // argument
-  runtime.setArgv(Thread::current(), 3, argv);
-  std::string output = compileAndRunToString(&runtime, src);
+  runtime_.setArgv(thread_, 3, argv);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "2\n200\nSysArgv\n200\n");
 }
 
-TEST(SysModuleTest, SysExit) {
+TEST_F(SysModuleTest, SysExit) {
   const char* src = R"(
 import sys
 sys.exit()
 )";
-  Runtime runtime;
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
               ::testing::ExitedWithCode(0), "");
 }
 
-TEST(SysModuleTest, SysExitCode) {  // pystone dependency
+TEST_F(SysModuleTest, SysExitCode) {  // pystone dependency
   const char* src = R"(
 import sys
 sys.exit(100)
 )";
-  Runtime runtime;
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
               ::testing::ExitedWithCode(100), "");
 }
 
-TEST(SysModuleTest, SysExitWithNonCodeReturnsOne) {  // pystone dependency
+TEST_F(SysModuleTest, SysExitWithNonCodeReturnsOne) {  // pystone dependency
   const char* src = R"(
 import sys
 sys.exit("barf")
 )";
-  Runtime runtime;
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
               ::testing::ExitedWithCode(1), "barf");
 }
 
-TEST(SysModuleTest, SysExitWithFalseReturnsZero) {
+TEST_F(SysModuleTest, SysExitWithFalseReturnsZero) {
   const char* src = R"(
 import sys
 sys.exit(False)
 )";
-  Runtime runtime;
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, src)),
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, src)),
               ::testing::ExitedWithCode(0), "");
 }
 
-TEST(SysModuleTest, Platform) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SysModuleTest, Platform) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 sysname = sys.platform
 )")
                    .isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object sysname(&scope, moduleAt(&runtime, main, "sysname"));
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object sysname(&scope, moduleAt(&runtime_, main, "sysname"));
   ASSERT_TRUE(sysname.isStr());
   struct utsname name;
   ASSERT_EQ(uname(&name), 0);
@@ -256,28 +244,26 @@ sysname = sys.platform
   }
 }
 
-TEST(SysModuleTest, PathImporterCache) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SysModuleTest, PathImporterCache) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 result = sys.path_importer_cache
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(result.isDict());
 }
 
-TEST(SysModuleTest, BuiltinModuleNames) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SysModuleTest, BuiltinModuleNames) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 builtin_names = sys.builtin_module_names
 )")
                    .isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object builtins(&scope, moduleAt(&runtime, main, "builtin_names"));
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object builtins(&scope, moduleAt(&runtime_, main, "builtin_names"));
   ASSERT_TRUE(builtins.isTuple());
 
   // Test that builtin list is greater than 0
@@ -295,36 +281,32 @@ builtin_names = sys.builtin_module_names
   EXPECT_TRUE(builtin__stat);
 }
 
-TEST(SysModuleTest, FlagsVerbose) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(SysModuleTest, FlagsVerbose) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import sys
 result = sys.flags.verbose
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
-TEST(SysModuleTest, MaxsizeIsMaxWord) {
-  Runtime runtime;
-  HandleScope scope;
-  Object maxsize(&scope, moduleAt(&runtime, "sys", "maxsize"));
+TEST_F(SysModuleTest, MaxsizeIsMaxWord) {
+  HandleScope scope(thread_);
+  Object maxsize(&scope, moduleAt(&runtime_, "sys", "maxsize"));
   EXPECT_TRUE(isIntEqualsWord(*maxsize, kMaxWord));
 }
 
-TEST(SysModuleTest, ByteorderIsCorrectString) {
-  Runtime runtime;
-  HandleScope scope;
-  Object byteorder(&scope, moduleAt(&runtime, "sys", "byteorder"));
+TEST_F(SysModuleTest, ByteorderIsCorrectString) {
+  HandleScope scope(thread_);
+  Object byteorder(&scope, moduleAt(&runtime_, "sys", "byteorder"));
   EXPECT_TRUE(isStrEqualsCStr(
       *byteorder, endian::native == endian::little ? "little" : "big"));
 }
 
-TEST(SysModuleTest, UnderFdFlushFlushesFile) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(SysModuleTest, UnderFdFlushFlushesFile) {
+  HandleScope scope(thread_);
   char buf[128];
   std::memset(buf, 0, sizeof(buf));
   FILE* out = fmemopen(buf, sizeof(buf), "w");
@@ -332,10 +314,10 @@ TEST(SysModuleTest, UnderFdFlushFlushesFile) {
   char stream_buf[64];
   int res = setvbuf(out, stream_buf, _IOFBF, sizeof(stream_buf));
   ASSERT_EQ(res, 0);
-  runtime.setStdoutFile(out);
-  Bytes bytes(&scope, runtime.newBytesWithAll(
+  runtime_.setStdoutFile(out);
+  Bytes bytes(&scope, runtime_.newBytesWithAll(
                           View<byte>(reinterpret_cast<const byte*>("a"), 1)));
-  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
   runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes);
   EXPECT_EQ(buf[0], 0);
   Object result(&scope, runBuiltin(SysModule::underFdFlush, under_stdout_fd));
@@ -344,58 +326,54 @@ TEST(SysModuleTest, UnderFdFlushFlushesFile) {
   std::fclose(out);
 }
 
-TEST(SysModuleTest, UnderFdFlushWithNonIntFdRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(SysModuleTest, UnderFdFlushWithNonIntFdRaisesTypeError) {
+  HandleScope scope(thread_);
   Object fd(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SysModule::underFdFlush, fd), LayoutId::kTypeError,
       "'<anonymous>' requires a 'int' object but got 'NoneType'"));
 }
 
-TEST(SysModuleTest, UnderFdFlushWithInvalidFdRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object fd(&scope, runtime.newInt(0xbadf00d));
+TEST_F(SysModuleTest, UnderFdFlushWithInvalidFdRaisesValueError) {
+  HandleScope scope(thread_);
+  Object fd(&scope, runtime_.newInt(0xbadf00d));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SysModule::underFdFlush, fd), LayoutId::kValueError,
       "'<anonymous>' called with unknown file descriptor"));
 }
 
-TEST(SysModuleTest, UnderFdFlushOnFailureRaisesOSError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(SysModuleTest, UnderFdFlushOnFailureRaisesOSError) {
+  HandleScope scope(thread_);
   char buf[1] = "";
   FILE* out = fmemopen(buf, sizeof(buf), "w");
   ASSERT_NE(out, nullptr);
   char stream_buf[64];
   int res = setvbuf(out, stream_buf, _IOFBF, sizeof(stream_buf));
   ASSERT_EQ(res, 0);
-  runtime.setStdoutFile(out);
-  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  runtime_.setStdoutFile(out);
+  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
   const byte aaa[] = {'a', 'a', 'a'};
-  Object bytes(&scope, runtime.newBytesWithAll(aaa));
+  Object bytes(&scope, runtime_.newBytesWithAll(aaa));
   runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes);
   // The write may or may not have triggered an error depending on the libc.
-  Thread::current()->clearPendingException();
+  thread_->clearPendingException();
   EXPECT_TRUE(raised(runBuiltin(SysModule::underFdFlush, under_stdout_fd),
                      LayoutId::kOSError));
   std::fclose(out);
 }
 
-TEST(SysModuleTest, UnderFdWriteWithStderrFdStrWritesToStderrFile) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(SysModuleTest, UnderFdWriteWithStderrFdStrWritesToStderrFile) {
+  HandleScope scope(thread_);
   char buf[128];
   std::memset(buf, 0, sizeof(buf));
   FILE* out = fmemopen(buf, sizeof(buf), "w");
   ASSERT_NE(out, nullptr);
-  runtime.setStderrFile(out);
-  runtime.setStdoutFile(nullptr);
-  Object under_stderr_fd(&scope, moduleAt(&runtime, "sys", "_stderr_fd"));
+  runtime_.setStderrFile(out);
+  runtime_.setStdoutFile(nullptr);
+  Object under_stderr_fd(&scope, moduleAt(&runtime_, "sys", "_stderr_fd"));
   ASSERT_TRUE(under_stderr_fd.isSmallInt());
   const byte hi[] = {'H', 'i', '!'};
-  Object bytes(&scope, runtime.newBytesWithAll(hi));
+  Object bytes(&scope, runtime_.newBytesWithAll(hi));
   Object result(&scope,
                 runBuiltin(SysModule::underFdWrite, under_stderr_fd, bytes));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
@@ -404,19 +382,18 @@ TEST(SysModuleTest, UnderFdWriteWithStderrFdStrWritesToStderrFile) {
   EXPECT_EQ(std::strcmp(buf, "Hi!"), 0);
 }
 
-TEST(SysModuleTest, UnderFdWriteWithStdoutFdStrWritesToStdoutFile) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(SysModuleTest, UnderFdWriteWithStdoutFdStrWritesToStdoutFile) {
+  HandleScope scope(thread_);
   char buf[128];
   std::memset(buf, 0, sizeof(buf));
   FILE* out = fmemopen(buf, sizeof(buf), "w");
   ASSERT_NE(out, nullptr);
-  runtime.setStderrFile(nullptr);
-  runtime.setStdoutFile(out);
-  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  runtime_.setStderrFile(nullptr);
+  runtime_.setStdoutFile(out);
+  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
   ASSERT_TRUE(under_stdout_fd.isSmallInt());
   const byte yo[] = {'Y', 'o', '!'};
-  Object bytes(&scope, runtime.newBytesWithAll(yo));
+  Object bytes(&scope, runtime_.newBytesWithAll(yo));
   Object result(&scope,
                 runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
@@ -425,38 +402,35 @@ TEST(SysModuleTest, UnderFdWriteWithStdoutFdStrWritesToStdoutFile) {
   EXPECT_EQ(std::strcmp(buf, "Yo!"), 0);
 }
 
-TEST(SysModuleTest, UnderFdWriteWithNonIntFdRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(SysModuleTest, UnderFdWriteWithNonIntFdRaisesTypeError) {
+  HandleScope scope(thread_);
   Object fd(&scope, NoneType::object());
-  Object bytes(&scope, runtime.newBytes(0, 0));
+  Object bytes(&scope, runtime_.newBytes(0, 0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SysModule::underFdWrite, fd, bytes), LayoutId::kTypeError,
       "'<anonymous>' requires a 'int' object but got 'NoneType'"));
 }
 
-TEST(SysModuleTest, UnderFdWriteWithInvalidFdRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object fd(&scope, runtime.newInt(0xbadf00d));
-  Object bytes(&scope, runtime.newBytes(0, 0));
+TEST_F(SysModuleTest, UnderFdWriteWithInvalidFdRaisesValueError) {
+  HandleScope scope(thread_);
+  Object fd(&scope, runtime_.newInt(0xbadf00d));
+  Object bytes(&scope, runtime_.newBytes(0, 0));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(SysModule::underFdWrite, fd, bytes), LayoutId::kValueError,
       "'<anonymous>' called with unknown file descriptor"));
 }
 
-TEST(SysModuleTest, UnderFdWriteOnFailureRaisesOSError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(SysModuleTest, UnderFdWriteOnFailureRaisesOSError) {
+  HandleScope scope(thread_);
   char buf[1] = "";
   FILE* out = fmemopen(buf, sizeof(buf), "r");
   ASSERT_NE(out, nullptr);
   int res = setvbuf(out, nullptr, _IONBF, 0);
   ASSERT_EQ(res, 0);
-  runtime.setStdoutFile(out);
-  Object under_stdout_fd(&scope, moduleAt(&runtime, "sys", "_stdout_fd"));
+  runtime_.setStdoutFile(out);
+  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
   const byte hi[] = {'H', 'i', '!'};
-  Object bytes(&scope, runtime.newBytesWithAll(hi));
+  Object bytes(&scope, runtime_.newBytesWithAll(hi));
   Object result(&scope,
                 runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes));
   EXPECT_TRUE(raised(*result, LayoutId::kOSError));

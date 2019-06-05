@@ -8,7 +8,10 @@ namespace python {
 
 using namespace testing;
 
-TEST(GeneratorTest, Basic) {
+using CoroutineTest = RuntimeFixture;
+using GeneratorTest = RuntimeFixture;
+
+TEST_F(GeneratorTest, Basic) {
   const char* src = R"(
 def fib(n):
     a = 0
@@ -20,17 +23,15 @@ def fib(n):
 result = [i for i in fib(7)]
 )";
 
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_PYLIST_EQ(result, {0, 1, 1, 2, 3, 5, 8});
 }
 
-TEST(GeneratorTest, InitialSend) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(GeneratorTest, InitialSend) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def gen():
   global value
   value = 3
@@ -42,26 +43,24 @@ g.send(None)
 g.send(7)
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "value"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "value"));
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
-TEST(GeneratorTest, BadInitialSend) {
+TEST_F(GeneratorTest, BadInitialSend) {
   const char* src = R"(
 def gen():
   yield 0
 gen().send(1)
 )";
-  Runtime runtime;
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                     "can't send non-None value to a just-started generator"));
 }
 
-TEST(GeneratorTest, YieldFrom) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(GeneratorTest, YieldFrom) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = []
 def log(obj):
   global result
@@ -94,7 +93,7 @@ for i in g:
   log(i)
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_PYLIST_EQ(
       result,
       {"priming", "ready", "sending", "initial string", "initial string first",
@@ -103,14 +102,13 @@ for i in g:
   // Manually check element 3 for object identity
   ASSERT_TRUE(result.isList());
   List list(&scope, *result);
-  Object initial(&scope, moduleAt(&runtime, "__main__", "initial_str"));
+  Object initial(&scope, moduleAt(&runtime_, "__main__", "initial_str"));
   EXPECT_GE(list.numItems(), 3);
   EXPECT_EQ(list.at(3), *initial);
 }
 
-TEST(GeneratorTest, ReraiseAfterYield) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(GeneratorTest, ReraiseAfterYield) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 def gen():
   try:
     raise RuntimeError("inside generator")
@@ -128,10 +126,9 @@ except:
                             LayoutId::kRuntimeError, "inside generator"));
 }
 
-TEST(GeneratorTest, ReturnFromTrySkipsExcept) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(GeneratorTest, ReturnFromTrySkipsExcept) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = 0
 
 def gen():
@@ -152,15 +149,13 @@ except StopIteration:
 )")
                    .isError());
 
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result.isSmallInt());
   EXPECT_EQ(SmallInt::cast(*result).value(), 1);
 }
 
-TEST(GeneratorTest, NextAfterReturnRaisesStopIteration) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  EXPECT_EQ(runFromCStr(&runtime, R"(
+TEST_F(GeneratorTest, NextAfterReturnRaisesStopIteration) {
+  EXPECT_EQ(runFromCStr(&runtime_, R"(
 def gen():
   yield 0
   return "hello there"
@@ -169,20 +164,18 @@ g = gen()
 g.__next__()
 )"),
             NoneType::object());
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "g.__next__()"),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "g.__next__()"),
                             LayoutId::kStopIteration, "hello there"));
-  thread->clearPendingException();
+  thread_->clearPendingException();
   EXPECT_TRUE(
-      raised(runFromCStr(&runtime, "g.__next__()"), LayoutId::kStopIteration));
-  thread->clearPendingException();
+      raised(runFromCStr(&runtime_, "g.__next__()"), LayoutId::kStopIteration));
+  thread_->clearPendingException();
   EXPECT_TRUE(
-      raised(runFromCStr(&runtime, "g.__next__()"), LayoutId::kStopIteration));
+      raised(runFromCStr(&runtime_, "g.__next__()"), LayoutId::kStopIteration));
 }
 
-TEST(GeneratorTest, NextAfterRaiseRaisesStopIteration) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  EXPECT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(GeneratorTest, NextAfterRaiseRaisesStopIteration) {
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
 def gen():
   yield 0
   raise RuntimeError("kaboom")
@@ -192,35 +185,33 @@ g = gen()
 g.__next__()
 )")
                    .isError());
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "g.__next__()"),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "g.__next__()"),
                             LayoutId::kRuntimeError, "kaboom"));
-  thread->clearPendingException();
+  thread_->clearPendingException();
   EXPECT_TRUE(
-      raised(runFromCStr(&runtime, "g.__next__()"), LayoutId::kStopIteration));
+      raised(runFromCStr(&runtime_, "g.__next__()"), LayoutId::kStopIteration));
 }
 
-TEST(CoroutineTest, Basic) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(CoroutineTest, Basic) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 async def coro():
   return 24
 c = coro()
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "c"));
   EXPECT_TRUE(result.isCoroutine());
 }
 
-TEST(CoroutineTest, BadInitialSend) {
+TEST_F(CoroutineTest, BadInitialSend) {
   const char* src = R"(
 async def coro():
   return 0
 coro().send(1)
 )";
-  Runtime runtime;
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                     "can't send non-None value to a just-started coroutine"));
 }
 

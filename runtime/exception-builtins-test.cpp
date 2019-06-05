@@ -7,34 +7,34 @@
 namespace python {
 using namespace testing;
 
-TEST(ExceptionBuiltinsTest, BaseExceptionNoArguments) {
-  Runtime runtime;
-  HandleScope scope;
+using ExceptionBuiltinsTest = RuntimeFixture;
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(ExceptionBuiltinsTest, BaseExceptionNoArguments) {
+  HandleScope scope(thread_);
+
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = BaseException()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isBaseException());
   BaseException base_exception(&scope, *exc);
 
   // No constructor arguments means args should contain an empty tuple.
   ASSERT_TRUE(base_exception.args().isTuple());
-  ASSERT_EQ(base_exception.args(), runtime.newTuple(0));
+  ASSERT_EQ(base_exception.args(), runtime_.newTuple(0));
 }
 
-TEST(ExceptionBuiltinsTest, BaseExceptionManyArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, BaseExceptionManyArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = BaseException(1,2,3)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isBaseException());
   BaseException base_exception(&scope, *exc);
 
@@ -46,55 +46,51 @@ exc = BaseException(1,2,3)
   EXPECT_EQ(args.at(2), SmallInt::fromWord(3));
 }
 
-TEST(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, StrFromBaseExceptionNoArgs) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = BaseException().__str__()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, ""));
 }
 
-TEST(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, StrFromBaseExceptionOneArg) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = BaseException("hello").__str__()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "hello"));
 }
 
-TEST(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, StrFromBaseExceptionManyArgs) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = BaseException("hello", "world").__str__()
 )")
                    .isError());
 
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "('hello', 'world')"));
 }
 
-TEST(ExceptionBuiltinsTest, ExceptionManyArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, ExceptionManyArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = Exception(1,2,3)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isException());
   Exception exception(&scope, *exc);
 
@@ -106,11 +102,10 @@ exc = Exception(1,2,3)
   EXPECT_EQ(args.at(2), SmallInt::fromWord(3));
 }
 
-TEST(ExceptionBuiltinsTest, SimpleExceptionTypesCanBeConstructed) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, SimpleExceptionTypesCanBeConstructed) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 attr_error = AttributeError()
 name_error = NameError()
 value_error = ValueError()
@@ -119,103 +114,98 @@ rt_error = RuntimeError()
                    .isError());
 
   BaseException attr_error(&scope,
-                           moduleAt(&runtime, "__main__", "attr_error"));
+                           moduleAt(&runtime_, "__main__", "attr_error"));
   BaseException name_error(&scope,
-                           moduleAt(&runtime, "__main__", "name_error"));
+                           moduleAt(&runtime_, "__main__", "name_error"));
   BaseException value_error(&scope,
-                            moduleAt(&runtime, "__main__", "value_error"));
-  BaseException rt_error(&scope, moduleAt(&runtime, "__main__", "rt_error"));
+                            moduleAt(&runtime_, "__main__", "value_error"));
+  BaseException rt_error(&scope, moduleAt(&runtime_, "__main__", "rt_error"));
 
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*attr_error));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*attr_error));
   EXPECT_EQ(attr_error.layoutId(), LayoutId::kAttributeError);
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*name_error));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*name_error));
   EXPECT_EQ(name_error.layoutId(), LayoutId::kNameError);
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*value_error));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*value_error));
   EXPECT_EQ(value_error.layoutId(), LayoutId::kValueError);
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*rt_error));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*rt_error));
   EXPECT_EQ(rt_error.layoutId(), LayoutId::kRuntimeError);
 }
 
-TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesHaveCorrectHierarchy) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, LookupErrorAndSubclassesHaveCorrectHierarchy) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 lookup_is_exc = issubclass(LookupError, Exception)
 index_is_lookup = issubclass(IndexError, LookupError)
 key_is_lookup = issubclass(KeyError, LookupError)
 )")
                    .isError());
 
-  Bool lookup_is_exc(&scope, moduleAt(&runtime, "__main__", "lookup_is_exc"));
+  Bool lookup_is_exc(&scope, moduleAt(&runtime_, "__main__", "lookup_is_exc"));
   Bool index_is_lookup(&scope,
-                       moduleAt(&runtime, "__main__", "index_is_lookup"));
-  Bool key_is_lookup(&scope, moduleAt(&runtime, "__main__", "key_is_lookup"));
+                       moduleAt(&runtime_, "__main__", "index_is_lookup"));
+  Bool key_is_lookup(&scope, moduleAt(&runtime_, "__main__", "key_is_lookup"));
 
   EXPECT_TRUE(lookup_is_exc.value());
   EXPECT_TRUE(index_is_lookup.value());
   EXPECT_TRUE(key_is_lookup.value());
 }
 
-TEST(ExceptionBuiltinsTest, LookupErrorAndSubclassesCanBeConstructed) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, LookupErrorAndSubclassesCanBeConstructed) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 l = LookupError()
 i = IndexError()
 k = KeyError()
 )")
                    .isError());
 
-  LookupError l(&scope, moduleAt(&runtime, "__main__", "l"));
-  IndexError i(&scope, moduleAt(&runtime, "__main__", "i"));
-  KeyError k(&scope, moduleAt(&runtime, "__main__", "k"));
+  LookupError l(&scope, moduleAt(&runtime_, "__main__", "l"));
+  IndexError i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  KeyError k(&scope, moduleAt(&runtime_, "__main__", "k"));
 
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*l));
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*i));
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*k));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*l));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*i));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*k));
 }
 
-TEST(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, KeyErrorStrPrintsMissingKey) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 s = KeyError("key").__str__()
 )")
                    .isError());
 
-  Object s(&scope, moduleAt(&runtime, "__main__", "s"));
+  Object s(&scope, moduleAt(&runtime_, "__main__", "s"));
   EXPECT_TRUE(isStrEqualsCStr(*s, "'key'"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     KeyErrorStrWithMoreThanOneArgPrintsBaseExceptionStr) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest,
+       KeyErrorStrWithMoreThanOneArgPrintsBaseExceptionStr) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 s = KeyError("key", "key2").__str__()
 b = BaseException("key", "key2").__str__()
 )")
                    .isError());
 
-  Str s(&scope, moduleAt(&runtime, "__main__", "s"));
-  Str b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Str s(&scope, moduleAt(&runtime_, "__main__", "s"));
+  Str b(&scope, moduleAt(&runtime_, "__main__", "b"));
   EXPECT_TRUE(isStrEquals(s, b));
 }
 
-TEST(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, TypeErrorReturnsTypeError) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = TypeError()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   BaseException exception(&scope, *exc);
 
   // The args attribute contains a tuple of the constructor arguments.
@@ -224,16 +214,15 @@ exc = TypeError()
   EXPECT_EQ(args.length(), 0);
 }
 
-TEST(ExceptionBuiltinsTest, StopIterationNoArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, StopIterationNoArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = StopIteration()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -246,16 +235,15 @@ exc = StopIteration()
   EXPECT_EQ(args.length(), 0);
 }
 
-TEST(ExceptionBuiltinsTest, StopIterationOneArgument) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, StopIterationOneArgument) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = StopIteration(1)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -269,16 +257,15 @@ exc = StopIteration(1)
   EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
 }
 
-TEST(ExceptionBuiltinsTest, StopIterationManyArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, StopIterationManyArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = StopIteration(4, 5, 6)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isStopIteration());
   StopIteration stop_iteration(&scope, *exc);
 
@@ -294,35 +281,33 @@ exc = StopIteration(4, 5, 6)
   EXPECT_EQ(args.at(2), SmallInt::fromWord(6));
 }
 
-TEST(ExceptionBuiltinsTest, NotImplementedErrorNoArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, NotImplementedErrorNoArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = NotImplementedError()
 exc_is_rt_error = issubclass(NotImplementedError, RuntimeError)
 )")
                    .isError());
 
-  NotImplementedError exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  NotImplementedError exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   Bool exc_is_rt_error(&scope,
-                       moduleAt(&runtime, "__main__", "exc_is_rt_error"));
+                       moduleAt(&runtime_, "__main__", "exc_is_rt_error"));
 
-  EXPECT_TRUE(runtime.isInstanceOfBaseException(*exc));
+  EXPECT_TRUE(runtime_.isInstanceOfBaseException(*exc));
 
   EXPECT_TRUE(exc_is_rt_error.value());
 }
 
-TEST(ExceptionBuiltinsTest, SystemExitNoArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, SystemExitNoArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = SystemExit()
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
   ASSERT_TRUE(system_exit.args().isTuple());
@@ -335,16 +320,15 @@ exc = SystemExit()
   EXPECT_EQ(args.length(), 0);
 }
 
-TEST(ExceptionBuiltinsTest, SystemExitOneArgument) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, SystemExitOneArgument) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = SystemExit(1)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
   ASSERT_TRUE(system_exit.args().isTuple());
@@ -358,16 +342,15 @@ exc = SystemExit(1)
   EXPECT_EQ(args.at(0), SmallInt::fromWord(1));
 }
 
-TEST(ExceptionBuiltinsTest, SystemExitManyArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, SystemExitManyArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = SystemExit(4, 5, 6)
 )")
                    .isError());
 
-  Object exc(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object exc(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(exc.isSystemExit());
   SystemExit system_exit(&scope, *exc);
 
@@ -383,26 +366,24 @@ exc = SystemExit(4, 5, 6)
   EXPECT_EQ(args.at(2), SmallInt::fromWord(6));
 }
 
-TEST(ExceptionBuiltinsTest, SystemExitGetValue) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, SystemExitGetValue) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = SystemExit(1111)
 result = exc.value
 )")
                    .isError());
 
   // The value attribute should contain the first constructor argument.
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1111));
 }
 
-TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "x = ImportError()").isError());
-  Object data(&scope, moduleAt(&runtime, "__main__", "x"));
+TEST_F(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "x = ImportError()").isError());
+  Object data(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
@@ -420,11 +401,10 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
   EXPECT_TRUE(isIntEqualsWord(err.name(), 3333));
 }
 
-TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "x = ImportError(1111)").isError());
-  Object data(&scope, moduleAt(&runtime, "__main__", "x"));
+TEST_F(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "x = ImportError(1111)").isError());
+  Object data(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
@@ -433,13 +413,12 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsg) {
   EXPECT_EQ(err.name(), NoneType::object());
 }
 
-TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "x = ImportError(1111, name=2222, path=3333)")
+      runFromCStr(&runtime_, "x = ImportError(1111, name=2222, path=3333)")
           .isError());
-  Object data(&scope, moduleAt(&runtime, "__main__", "x"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(data.isImportError());
 
   ImportError err(&scope, *data);
@@ -448,23 +427,21 @@ TEST(ExceptionBuiltinsTest, ImportErrorConstructWithMsgNameAndPath) {
   EXPECT_TRUE(isIntEqualsWord(err.path(), 3333));
 }
 
-TEST(ExceptionBuiltinsTest, ImportErrorConstructWithInvalidKwargs) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "x = ImportError(foo=123)"),
+TEST_F(ExceptionBuiltinsTest, ImportErrorConstructWithInvalidKwargs) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "x = ImportError(foo=123)"),
                             LayoutId::kTypeError,
                             "TypeError: invalid keyword argument supplied"));
 }
 
-TEST(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, ModuleNotFoundErrorManyArguments) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exc = ModuleNotFoundError(1111, name=2222, path=3333)
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(data.isModuleNotFoundError());
 
   ModuleNotFoundError err(&scope, *data);
@@ -473,86 +450,76 @@ exc = ModuleNotFoundError(1111, name=2222, path=3333)
   EXPECT_TRUE(isIntEqualsWord(err.path(), 3333));
 }
 
-TEST(ExceptionBuiltinsTest, DunderReprWithNoArgsHasEmptyParens) {
-  Runtime runtime;
-
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(ExceptionBuiltinsTest, DunderReprWithNoArgsHasEmptyParens) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = NameError().__repr__()
 )")
                    .isError());
 
-  EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "NameError()"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"),
+                              "NameError()"));
 }
 
-TEST(ExceptionBuiltinsTest, DunderReprCallsTupleRepr) {
-  Runtime runtime;
-
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(ExceptionBuiltinsTest, DunderReprCallsTupleRepr) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 n = NameError().__class__.__name__
 result = NameError(1, 2).__repr__()
 )")
                    .isError());
 
   EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime, "__main__", "n"), "NameError"));
-  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"),
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "n"), "NameError"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"),
                               "NameError(1, 2)"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeDecodeErrorWithImproperFirstArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeDecodeErrorWithImproperFirstArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeDecodeError([], b'', 1, 1, '1')";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "argument 1 must be str, not list"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeDecodeErrorWithImproperSecondArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeDecodeErrorWithImproperSecondArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeDecodeError('1', [], 1, 1, '1')";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "a bytes-like object is required, not 'list'"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeDecodeErrorWithImproperThirdArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeDecodeErrorWithImproperThirdArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeDecodeError('1', b'', [], 1, '1')";
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeDecodeErrorWithImproperFourthArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeDecodeErrorWithImproperFourthArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeDecodeError('1', b'', 1, [], '1')";
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeDecodeErrorWithImproperFifthArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeDecodeErrorWithImproperFifthArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeDecodeError('1', b'', 1, 1, [])";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "argument 5 must be str, not list"));
 }
 
-TEST(ExceptionBuiltinsTest, UnicodeDecodeErrorReturnsObjectWithFieldsSet) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(
-      runFromCStr(&runtime, "exc = UnicodeDecodeError('en', b'ob', 1, 2, 're')")
-          .isError());
+TEST_F(ExceptionBuiltinsTest, UnicodeDecodeErrorReturnsObjectWithFieldsSet) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_,
+                           "exc = UnicodeDecodeError('en', b'ob', 1, 2, 're')")
+                   .isError());
 
-  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeDecodeError());
 
   UnicodeDecodeError err(&scope, *data);
@@ -564,10 +531,10 @@ TEST(ExceptionBuiltinsTest, UnicodeDecodeErrorReturnsObjectWithFieldsSet) {
   EXPECT_TRUE(isStrEqualsCStr(err.reason(), "re"));
 }
 
-TEST(ExceptionBuiltinsTest, UnicodeDecodeErrorWithIndexSubclassReturnsObject) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeDecodeErrorWithIndexSubclassReturnsObject) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Ind():
     def __index__(self):
         return 1
@@ -576,7 +543,7 @@ exc = UnicodeDecodeError('en', b'ob', i, i, 're')
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeDecodeError());
 
   UnicodeDecodeError err(&scope, *data);
@@ -584,59 +551,53 @@ exc = UnicodeDecodeError('en', b'ob', i, i, 're')
   EXPECT_TRUE(isIntEqualsWord(err.end(), 1));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeEncodeErrorWithImproperFirstArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeEncodeErrorWithImproperFirstArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeEncodeError([], '', 1, 1, '1')";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "argument 1 must be str, not list"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeEncodeErrorWithImproperSecondArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeEncodeErrorWithImproperSecondArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeEncodeError('1', [], 1, 1, '1')";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "argument 2 must be str, not 'list'"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeEncodeErrorWithImproperThirdArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeEncodeErrorWithImproperThirdArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeEncodeError('1', '', [], 1, '1')";
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeEncodeErrorWithImproperFourthArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeEncodeErrorWithImproperFourthArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeEncodeError('1', '', 1, [], '1')";
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeEncodeErrorWithImproperFifthArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeEncodeErrorWithImproperFifthArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeEncodeError('1', '', 1, 1, [])";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "argument 5 must be str, not list"));
 }
 
-TEST(ExceptionBuiltinsTest, UnicodeEncodeErrorReturnsObjectWithFieldsSet) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, UnicodeEncodeErrorReturnsObjectWithFieldsSet) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "exc = UnicodeEncodeError('en', 'ob', 1, 2, 're')")
+      runFromCStr(&runtime_, "exc = UnicodeEncodeError('en', 'ob', 1, 2, 're')")
           .isError());
 
-  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeEncodeError());
 
   UnicodeEncodeError err(&scope, *data);
@@ -647,10 +608,10 @@ TEST(ExceptionBuiltinsTest, UnicodeEncodeErrorReturnsObjectWithFieldsSet) {
   EXPECT_TRUE(isStrEqualsCStr(err.reason(), "re"));
 }
 
-TEST(ExceptionBuiltinsTest, UnicodeEncodeErrorWithIndexSubclassReturnsObject) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeEncodeErrorWithIndexSubclassReturnsObject) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Ind():
     def __index__(self):
         return 1
@@ -659,7 +620,7 @@ exc = UnicodeEncodeError('en', 'ob', i, i, 're')
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeEncodeError());
 
   UnicodeEncodeError err(&scope, *data);
@@ -667,50 +628,45 @@ exc = UnicodeEncodeError('en', 'ob', i, i, 're')
   EXPECT_TRUE(isIntEqualsWord(err.end(), 1));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeTranslateErrorWithImproperFirstArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeTranslateErrorWithImproperFirstArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeTranslateError([], 1, 1, '1')";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "argument 1 must be str, not list"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeTranslateErrorWithImproperSecondArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeTranslateErrorWithImproperSecondArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeTranslateError('1', [], 1, '1')";
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeTranslateErrorWithImproperThirdArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeTranslateErrorWithImproperThirdArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeTranslateError('1', 1, [], '1')";
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, bad_arg), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, bad_arg), LayoutId::kTypeError,
                     "'list' object cannot be interpreted as an integer"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeTranslateErrorWithImproperFourthArgumentsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeTranslateErrorWithImproperFourthArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeTranslateError('1', 1, 1, [])";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, bad_arg),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, bad_arg),
                             LayoutId::kTypeError,
                             "argument 4 must be str, not list"));
 }
 
-TEST(ExceptionBuiltinsTest, UnicodeTranslateErrorReturnsObjectWithFieldsSet) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(ExceptionBuiltinsTest, UnicodeTranslateErrorReturnsObjectWithFieldsSet) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "exc = UnicodeTranslateError('obj', 1, 2, 're')")
+      runFromCStr(&runtime_, "exc = UnicodeTranslateError('obj', 1, 2, 're')")
           .isError());
 
-  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeTranslateError());
 
   UnicodeTranslateError err(&scope, *data);
@@ -720,11 +676,10 @@ TEST(ExceptionBuiltinsTest, UnicodeTranslateErrorReturnsObjectWithFieldsSet) {
   EXPECT_TRUE(isStrEqualsCStr(err.reason(), "re"));
 }
 
-TEST(ExceptionBuiltinsTest,
-     UnicodeTranslateErrorWithIndexSubclassReturnsObject) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(ExceptionBuiltinsTest,
+       UnicodeTranslateErrorWithIndexSubclassReturnsObject) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Ind():
     def __index__(self):
         return 1
@@ -733,7 +688,7 @@ exc = UnicodeTranslateError('en', i, i, 're')
 )")
                    .isError());
 
-  Object data(&scope, moduleAt(&runtime, "__main__", "exc"));
+  Object data(&scope, moduleAt(&runtime_, "__main__", "exc"));
   ASSERT_TRUE(data.isUnicodeTranslateError());
 
   UnicodeTranslateError err(&scope, *data);

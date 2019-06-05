@@ -13,7 +13,9 @@ namespace python {
 
 using namespace testing;
 
-TEST(UtilsTest, RotateLeft) {
+using UtilsTest = RuntimeFixture;
+
+TEST(UtilsTestNoFixture, RotateLeft) {
   EXPECT_EQ(Utils::rotateLeft(1ULL, 0), 0x0000000000000001ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 1), 0x0000000000000002ULL);
   EXPECT_EQ(Utils::rotateLeft(1ULL, 2), 0x0000000000000004ULL);
@@ -86,21 +88,19 @@ static RawObject testPrintStacktrace(Thread* thread, Frame*, word) {
   return thread->runtime()->newStrFromCStr(stream.str().c_str());
 }
 
-TEST(UtilsTest, PrintTracebackPrintsTraceback) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(UtilsTest, PrintTracebackPrintsTraceback) {
+  HandleScope scope(thread_);
 
   // Create main module.
-  ASSERT_FALSE(runFromCStr(&runtime, "").isError());
-  Object main_obj(&scope, runtime.findModuleById(SymbolId::kDunderMain));
+  ASSERT_FALSE(runFromCStr(&runtime_, "").isError());
+  Object main_obj(&scope, runtime_.findModuleById(SymbolId::kDunderMain));
   ASSERT_TRUE(main_obj.isModule());
   Module main(&scope, *main_obj);
 
-  runtime.moduleAddBuiltinFunction(main, SymbolId::kTraceback,
-                                   testPrintStacktrace);
+  runtime_.moduleAddBuiltinFunction(main, SymbolId::kTraceback,
+                                    testPrintStacktrace);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(@_patch
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(@_patch
 def traceback():
   pass
 def foo(x, y):
@@ -131,16 +131,13 @@ result = foo('a', 99)
   }
   expected << ")>\n";
 
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, expected.str().c_str()));
 }
 
-TEST(UtilsTest, PrintTracebackPrintsInvalidFrame) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-
+TEST_F(UtilsTest, PrintTracebackPrintsInvalidFrame) {
   // Thrash the frame with invalid data.
-  memset(bit_cast<char*>(thread->currentFrame()), -33, Frame::kSize);
+  memset(bit_cast<char*>(thread_->currentFrame()), -33, Frame::kSize);
 
   std::ostringstream stream;
   Utils::printTraceback(&stream);
@@ -149,23 +146,21 @@ TEST(UtilsTest, PrintTracebackPrintsInvalidFrame) {
 )");
 }
 
-TEST(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
+  HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   Object qualname(&scope, Str::empty());
   Object none(&scope, NoneType::object());
-  Dict globals(&scope, runtime.newDict());
+  Dict globals(&scope, runtime_.newDict());
   Function function(
-      &scope, Interpreter::makeFunction(thread, qualname, code, none, none,
+      &scope, Interpreter::makeFunction(thread_, qualname, code, none, none,
                                         none, none, globals));
 
-  Frame* frame = thread->currentFrame();
+  Frame* frame = thread_->currentFrame();
   frame->pushValue(*function);
-  thread->pushCallFrame(*function);
+  thread_->pushCallFrame(*function);
 
   // Destroy function on frame.
   frame->setValueAt(NoneType::object(), 0);

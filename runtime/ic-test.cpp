@@ -7,7 +7,9 @@ namespace python {
 
 using namespace testing;
 
-TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
+using IcTest = RuntimeFixture;
+
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadAttrOperations) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -46,7 +48,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesLoadAttrOperations) {
   EXPECT_EQ(icOriginalArg(*function, 2), 77);
 }
 
-TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesStoreAttr) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -68,7 +70,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesStoreAttr) {
   EXPECT_EQ(icOriginalArg(*function, 0), 48);
 }
 
-TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesBinaryOpcodes) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -148,7 +150,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesBinaryOpcodes) {
             static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
-TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesInplaceOpcodes) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -228,7 +230,7 @@ TEST(IcTest, IcRewriteBytecodeRewritesInplaceOpcodes) {
             static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
-TEST(IcTest, IcRewriteBytecodeRewritesCompareOpOpcodes) {
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesCompareOpOpcodes) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -278,23 +280,19 @@ static RawObject layoutIdAsSmallInt(LayoutId id) {
   return SmallInt::fromWord(static_cast<word>(id));
 }
 
-TEST(IcTest, IcLookupReturnsFirstCachedValue) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcLookupReturnsFirstCachedValue) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(1 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   caches.atPut(kIcEntryKeyOffset, layoutIdAsSmallInt(LayoutId::kSmallInt));
-  caches.atPut(kIcEntryValueOffset, runtime.newInt(44));
+  caches.atPut(kIcEntryValueOffset, runtime_.newInt(44));
   EXPECT_TRUE(isIntEqualsWord(icLookup(caches, 0, LayoutId::kSmallInt), 44));
 }
 
-TEST(IcTest, IcLookupReturnsFourthCachedValue) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcLookupReturnsFourthCachedValue) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
   caches.atPut(kIcEntryKeyOffset, layoutIdAsSmallInt(LayoutId::kSmallInt));
   word cache_offset = kIcPointersPerCache;
   caches.atPut(cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
@@ -306,16 +304,14 @@ TEST(IcTest, IcLookupReturnsFourthCachedValue) {
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kSmallInt));
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryValueOffset,
-               runtime.newInt(7));
+               runtime_.newInt(7));
   EXPECT_TRUE(isIntEqualsWord(icLookup(caches, 1, LayoutId::kSmallInt), 7));
 }
 
-TEST(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
   EXPECT_TRUE(icLookup(caches, 1, LayoutId::kSmallInt).isErrorNotFound());
 }
 
@@ -326,12 +322,10 @@ static RawObject binopKey(LayoutId left, LayoutId right, IcBinopFlags flags) {
                             static_cast<word>(flags));
 }
 
-TEST(IcTest, IcLookupBinopReturnsCachedValue) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcLookupBinopReturnsCachedValue) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
   word cache_offset = kIcPointersPerCache;
   caches.atPut(
       cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
@@ -343,7 +337,7 @@ TEST(IcTest, IcLookupBinopReturnsCachedValue) {
       cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset,
       binopKey(LayoutId::kSmallInt, LayoutId::kBytes, IC_BINOP_REFLECTED));
   caches.atPut(cache_offset + 2 * kIcPointersPerEntry + kIcEntryValueOffset,
-               runtime.newStrFromCStr("xy"));
+               runtime_.newStrFromCStr("xy"));
 
   IcBinopFlags flags;
   EXPECT_TRUE(isStrEqualsCStr(
@@ -352,37 +346,31 @@ TEST(IcTest, IcLookupBinopReturnsCachedValue) {
   EXPECT_EQ(flags, IC_BINOP_REFLECTED);
 }
 
-TEST(IcTest, IcLookupBinopReturnsErrorNotFound) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcLookupBinopReturnsErrorNotFound) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
   IcBinopFlags flags;
   EXPECT_TRUE(
       icLookupBinop(caches, 0, LayoutId::kSmallInt, LayoutId::kSmallInt, &flags)
           .isErrorNotFound());
 }
 
-TEST(IcTest, IcUpdateSetsEmptyEntry) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcUpdateSetsEmptyEntry) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(1 * kIcPointersPerCache));
-  Object value(&scope, runtime.newInt(88));
-  icUpdate(thread, caches, 0, LayoutId::kSmallStr, value);
+  Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
+  Object value(&scope, runtime_.newInt(88));
+  icUpdate(thread_, caches, 0, LayoutId::kSmallStr, value);
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryKeyOffset),
                               static_cast<word>(LayoutId::kSmallStr)));
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), 88));
 }
 
-TEST(IcTest, IcUpdateUpdatesExistingEntry) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcUpdateUpdatesExistingEntry) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
   word cache_offset = kIcPointersPerCache;
   caches.atPut(cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kSmallInt));
@@ -392,8 +380,8 @@ TEST(IcTest, IcUpdateUpdatesExistingEntry) {
                layoutIdAsSmallInt(LayoutId::kSmallStr));
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kBytes));
-  Object value(&scope, runtime.newStrFromCStr("test"));
-  icUpdate(thread, caches, 1, LayoutId::kSmallStr, value);
+  Object value(&scope, runtime_.newStrFromCStr("test"));
+  icUpdate(thread_, caches, 1, LayoutId::kSmallStr, value);
   EXPECT_TRUE(isIntEqualsWord(
       caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset),
       static_cast<word>(LayoutId::kSmallStr)));
@@ -402,7 +390,7 @@ TEST(IcTest, IcUpdateUpdatesExistingEntry) {
       "test"));
 }
 
-TEST(IcTest, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
+TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(c, k):
@@ -414,8 +402,7 @@ result = f(container, 0)
 )")
                    .isError());
 
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
@@ -438,7 +425,7 @@ result2 = f(container2, 1)
   EXPECT_TRUE(isIntEqualsWord(*result2, 5));
 }
 
-TEST(IcTest, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {
+TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithNonFunctionDoesntUpdateCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(c, k):
@@ -456,8 +443,7 @@ result = f(container, "hi")
 )")
                    .isError());
 
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hi"));
 
@@ -479,14 +465,12 @@ result2 = f(container, "hello there!")
   EXPECT_TRUE(isStrEqualsCStr(*result2, "hello there!"));
 }
 
-TEST(IcTest, IcUpdateBinopSetsEmptyEntry) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcUpdateBinopSetsEmptyEntry) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(kIcPointersPerCache));
-  Object value(&scope, runtime.newInt(-44));
-  icUpdateBinop(thread, caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes,
+  Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
+  Object value(&scope, runtime_.newInt(-44));
+  icUpdateBinop(thread_, caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes,
                 value, IC_BINOP_REFLECTED);
   EXPECT_EQ(
       caches.at(kIcEntryKeyOffset),
@@ -494,12 +478,10 @@ TEST(IcTest, IcUpdateBinopSetsEmptyEntry) {
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), -44));
 }
 
-TEST(IcTest, IcUpdateBinopSetsExistingEntry) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(IcTest, IcUpdateBinopSetsExistingEntry) {
+  HandleScope scope(thread_);
 
-  Tuple caches(&scope, runtime.newTuple(2 * kIcPointersPerCache));
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
   word cache_offset = kIcPointersPerCache;
   caches.atPut(
       cache_offset + 0 * kIcPointersPerEntry + kIcEntryKeyOffset,
@@ -507,8 +489,8 @@ TEST(IcTest, IcUpdateBinopSetsExistingEntry) {
   caches.atPut(
       cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
       binopKey(LayoutId::kLargeInt, LayoutId::kSmallInt, IC_BINOP_REFLECTED));
-  Object value(&scope, runtime.newStrFromCStr("yyy"));
-  icUpdateBinop(thread, caches, 1, LayoutId::kLargeInt, LayoutId::kSmallInt,
+  Object value(&scope, runtime_.newStrFromCStr("yyy"));
+  icUpdateBinop(thread_, caches, 1, LayoutId::kLargeInt, LayoutId::kSmallInt,
                 value, IC_BINOP_NONE);
   EXPECT_TRUE(
       caches.at(cache_offset + 0 * kIcPointersPerEntry + kIcEntryValueOffset)
@@ -521,7 +503,7 @@ TEST(IcTest, IcUpdateBinopSetsExistingEntry) {
       "yyy"));
 }
 
-TEST(IcTest, ForIterUpdateCacheWithFunctionUpdatesCache) {
+TEST(IcTestNoFixture, ForIterUpdateCacheWithFunctionUpdatesCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(container):
@@ -535,8 +517,7 @@ result = f(container)
 )")
                    .isError());
 
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 
@@ -549,7 +530,7 @@ result = f(container)
   EXPECT_EQ(icLookup(caches, 0, iterator.layoutId()), *iter_next);
 }
 
-TEST(IcTest, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
+TEST(IcTestNoFixture, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 def f(container):
@@ -573,8 +554,7 @@ result = f(container)
 )")
                    .isError());
 
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+  HandleScope scope;
   Object result(&scope, moduleAt(&runtime, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 

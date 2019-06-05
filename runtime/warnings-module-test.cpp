@@ -7,33 +7,32 @@
 namespace python {
 using namespace testing;
 
-TEST(WarningsModuleTest, ModuleImporting) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+using WarningsModuleTest = RuntimeFixture;
+
+TEST_F(WarningsModuleTest, ModuleImporting) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import _warnings
   )")
                    .isError());
-  RawObject warnings = moduleAt(&runtime, "__main__", "_warnings");
+  RawObject warnings = moduleAt(&runtime_, "__main__", "_warnings");
   EXPECT_TRUE(warnings.isModule());
 }
 
-TEST(WarningsModuleTest, WarnDoesNothing) {
+TEST_F(WarningsModuleTest, WarnDoesNothing) {
   // TODO(T39431178): _warnings.warn() should actually do things.
-  Runtime runtime;
   HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import _warnings
 result = _warnings.warn("something went wrong")
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(result.isNoneType());
 }
 
-TEST(WarningsModuleTest, WarnWithNoArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(WarningsModuleTest, WarnWithNoArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, R"(
+      runFromCStr(&runtime_, R"(
 import _warnings
 _warnings.warn()
 )"),
@@ -41,9 +40,8 @@ _warnings.warn()
       "TypeError: 'warn' takes min 1 positional arguments but 0 given"));
 }
 
-TEST(WarningsModuleTest, WarnWithInvalidCategoryRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(WarningsModuleTest, WarnWithInvalidCategoryRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 import _warnings
 _warnings.warn("warning!", 1234)
 )"),
@@ -51,9 +49,8 @@ _warnings.warn("warning!", 1234)
                             "category must be a Warning subclass"));
 }
 
-TEST(WarningsModuleTest, WarnWithLargeStacklevelRaisesOverflowError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(WarningsModuleTest, WarnWithLargeStacklevelRaisesOverflowError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 import _warnings
 _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
 )"),
@@ -61,9 +58,8 @@ _warnings.warn("hello", stacklevel=1180591620717411303424)  # 2 ** 70
                             "Python int too large to convert to C ssize_t"));
 }
 
-TEST(WarningsModuleTest, WarnWithInvalidKwRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(WarningsModuleTest, WarnWithInvalidKwRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 import _warnings
 _warnings.warn("hello", stack_level=3)
   )"),

@@ -10,18 +10,19 @@ namespace python {
 
 using namespace testing;
 
-TEST(RangeBuiltinsTest, DunderIterReturnsRangeIter) {
-  Runtime runtime;
-  HandleScope scope;
-  Object empty_range(&scope, runtime.newRange(0, 0, 1));
+using RangeBuiltinsTest = RuntimeFixture;
+using RangeIteratorBuiltinsTest = RuntimeFixture;
+
+TEST_F(RangeBuiltinsTest, DunderIterReturnsRangeIter) {
+  HandleScope scope(thread_);
+  Object empty_range(&scope, runtime_.newRange(0, 0, 1));
   Object iter(&scope, runBuiltin(RangeBuiltins::dunderIter, empty_range));
   ASSERT_TRUE(iter.isRangeIterator());
 }
 
-TEST(RangeBuiltinsTest, CallDunderNext) {
-  Runtime runtime;
-  HandleScope scope;
-  Object range(&scope, runtime.newRange(0, 2, 1));
+TEST_F(RangeBuiltinsTest, CallDunderNext) {
+  HandleScope scope(thread_);
+  Object range(&scope, runtime_.newRange(0, 2, 1));
   Object iter(&scope, runBuiltin(RangeBuiltins::dunderIter, range));
   ASSERT_TRUE(iter.isRangeIterator());
 
@@ -32,10 +33,9 @@ TEST(RangeBuiltinsTest, CallDunderNext) {
   EXPECT_TRUE(isIntEqualsWord(*item2, 1));
 }
 
-TEST(RangeIteratorBuiltinsTest, DunderIterReturnsSelf) {
-  Runtime runtime;
-  HandleScope scope;
-  Object empty_range(&scope, runtime.newRange(0, 0, 1));
+TEST_F(RangeIteratorBuiltinsTest, DunderIterReturnsSelf) {
+  HandleScope scope(thread_);
+  Object empty_range(&scope, runtime_.newRange(0, 0, 1));
   Object iter(&scope, runBuiltin(RangeBuiltins::dunderIter, empty_range));
   ASSERT_TRUE(iter.isRangeIterator());
 
@@ -44,10 +44,9 @@ TEST(RangeIteratorBuiltinsTest, DunderIterReturnsSelf) {
   ASSERT_EQ(*result, *iter);
 }
 
-TEST(RangeIteratorBuiltinsTest, DunderLengthHintReturnsPendingLength) {
-  Runtime runtime;
-  HandleScope scope;
-  Object empty_range(&scope, runtime.newRange(0, 0, 1));
+TEST_F(RangeIteratorBuiltinsTest, DunderLengthHintReturnsPendingLength) {
+  HandleScope scope(thread_);
+  Object empty_range(&scope, runtime_.newRange(0, 0, 1));
   Object iter(&scope, runBuiltin(RangeBuiltins::dunderIter, empty_range));
   ASSERT_TRUE(iter.isRangeIterator());
 
@@ -55,7 +54,7 @@ TEST(RangeIteratorBuiltinsTest, DunderLengthHintReturnsPendingLength) {
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint1, 0));
 
-  RangeIterator::cast(*iter).setRange(runtime.newRange(0, 1, 1));
+  RangeIterator::cast(*iter).setRange(runtime_.newRange(0, 1, 1));
   Object length_hint2(
       &scope, runBuiltin(RangeIteratorBuiltins::dunderLengthHint, iter));
   EXPECT_TRUE(isIntEqualsWord(*length_hint2, 1));
@@ -69,10 +68,9 @@ TEST(RangeIteratorBuiltinsTest, DunderLengthHintReturnsPendingLength) {
   EXPECT_TRUE(isIntEqualsWord(*length_hint3, 0));
 }
 
-TEST(RangeIteratorBuiltinsTest, DunderLengthHintWithNegativeStepRange) {
-  Runtime runtime;
-  HandleScope scope;
-  Object neg_range(&scope, runtime.newRange(0, -2, -1));
+TEST_F(RangeIteratorBuiltinsTest, DunderLengthHintWithNegativeStepRange) {
+  HandleScope scope(thread_);
+  Object neg_range(&scope, runtime_.newRange(0, -2, -1));
   Object iter(&scope, runBuiltin(RangeBuiltins::dunderIter, neg_range));
   ASSERT_TRUE(iter.isRangeIterator());
 

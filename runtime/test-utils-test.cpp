@@ -8,20 +8,20 @@ namespace python {
 
 using namespace testing;
 
-TEST(TestUtils, IsByteArrayEquals) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+using TestUtils = RuntimeFixture;
+
+TEST_F(TestUtils, IsByteArrayEquals) {
+  HandleScope scope(thread_);
 
   const byte view[] = {'f', 'o', 'o'};
-  Object bytes(&scope, runtime.newBytesWithAll(view));
+  Object bytes(&scope, runtime_.newBytesWithAll(view));
   auto const type_err = isByteArrayEqualsBytes(bytes, view);
   EXPECT_FALSE(type_err);
   const char* type_msg = "is a 'bytes'";
   EXPECT_STREQ(type_err.message(), type_msg);
 
-  ByteArray array(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, array, view);
+  ByteArray array(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread_, array, view);
   auto const ok = isByteArrayEqualsBytes(array, view);
   EXPECT_TRUE(ok);
 
@@ -37,29 +37,27 @@ TEST(TestUtils, IsByteArrayEquals) {
   EXPECT_STREQ(error.message(), error_msg);
 
   Object result(&scope,
-                thread->raiseWithFmt(LayoutId::kValueError, "bad things"));
+                thread_->raiseWithFmt(LayoutId::kValueError, "bad things"));
   auto const exc = isByteArrayEqualsBytes(result, view);
   EXPECT_FALSE(exc);
   const char* exc_msg = "pending 'ValueError' exception";
   EXPECT_STREQ(exc.message(), exc_msg);
 }
 
-TEST(TestUtils, IsBytesEquals) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(TestUtils, IsBytesEquals) {
+  HandleScope scope(thread_);
 
   const byte view[] = {'f', 'o', 'o'};
-  Object bytes(&scope, runtime.newBytesWithAll(view));
+  Object bytes(&scope, runtime_.newBytesWithAll(view));
   auto const ok = isBytesEqualsBytes(bytes, view);
   EXPECT_TRUE(ok);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 foo = Foo(b"foo")
 )")
                    .isError());
-  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
   auto const subclass_ok = isBytesEqualsBytes(foo, view);
   EXPECT_TRUE(subclass_ok);
 
@@ -68,7 +66,7 @@ foo = Foo(b"foo")
   const char* ne_msg = "b'foo' is not equal to b'bar'";
   EXPECT_STREQ(not_equal.message(), ne_msg);
 
-  Object str(&scope, runtime.newStrWithAll(view));
+  Object str(&scope, runtime_.newStrWithAll(view));
   auto const type_err = isBytesEqualsBytes(str, view);
   EXPECT_FALSE(type_err);
   const char* type_msg = "is a 'str'";
@@ -81,25 +79,23 @@ foo = Foo(b"foo")
   EXPECT_STREQ(error.message(), error_msg);
 
   Object result(&scope,
-                thread->raiseWithFmt(LayoutId::kValueError, "bad things"));
+                thread_->raiseWithFmt(LayoutId::kValueError, "bad things"));
   auto const exc = isBytesEqualsBytes(result, view);
   EXPECT_FALSE(exc);
   const char* exc_msg = "pending 'ValueError' exception";
   EXPECT_STREQ(exc.message(), exc_msg);
 }
 
-TEST(TestUtils, PyListEqual) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(TestUtils, PyListEqual) {
+  HandleScope scope(thread_);
 
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 l = [None, False, 100, 200.5, 'hello']
 i = 123456
 )")
                    .isError());
-  Object list(&scope, moduleAt(&runtime, "__main__", "l"));
-  Object not_list(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object list(&scope, moduleAt(&runtime_, "__main__", "l"));
+  Object not_list(&scope, moduleAt(&runtime_, "__main__", "i"));
 
   auto const ok = AssertPyListEqual(
       "", "", list, {Value::none(), false, 100, 200.5, "hello"});
@@ -160,9 +156,8 @@ Expected: four)";
   EXPECT_STREQ(bad_str.message(), str_msg);
 }
 
-TEST(TestUtils, NewEmptyCode) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(TestUtils, NewEmptyCode) {
+  HandleScope scope(thread_);
 
   Code code(&scope, newEmptyCode());
   EXPECT_EQ(code.argcount(), 0);

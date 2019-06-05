@@ -9,7 +9,9 @@
 namespace python {
 using namespace testing;
 
-TEST(HeapTest, AllocateObjects) {
+using HeapTest = RuntimeFixture;
+
+TEST(HeapTestNoFixture, AllocateObjects) {
   const int size = OS::kPageSize * 4;
   Heap heap(size);
 
@@ -24,10 +26,9 @@ TEST(HeapTest, AllocateObjects) {
   EXPECT_TRUE(heap.contains(raw2));
 }
 
-TEST(HeapTest, AllocateFails) {
-  Runtime runtime;
-  HandleScope scope;
-  Heap* heap = runtime.heap();
+TEST_F(HeapTest, AllocateFails) {
+  HandleScope scope(thread_);
+  Heap* heap = runtime_.heap();
   word free_space = heap->space()->end() - heap->space()->fill();
 
   // Allocate the first half of the heap. Use a handle to prevent gc
@@ -50,27 +51,24 @@ TEST(HeapTest, AllocateFails) {
   ASSERT_EQ(heap->space()->end(), heap->space()->fill());
 }
 
-TEST(HeapTest, AllocateBigLargeInt) {
-  Runtime runtime;
-  HandleScope scope;
-  Object result(&scope, runtime.heap()->createLargeInt(100000));
+TEST_F(HeapTest, AllocateBigLargeInt) {
+  HandleScope scope(thread_);
+  Object result(&scope, runtime_.heap()->createLargeInt(100000));
   ASSERT_TRUE(result.isLargeInt());
   EXPECT_EQ(LargeInt::cast(*result).numDigits(), 100000);
 }
 
-TEST(HeapTest, AllocateBigInstance) {
-  Runtime runtime;
-  HandleScope scope;
-  Layout layout(&scope, runtime.layoutCreateEmpty(Thread::current()));
-  Object result(&scope, runtime.heap()->createInstance(layout.id(), 100000));
+TEST_F(HeapTest, AllocateBigInstance) {
+  HandleScope scope(thread_);
+  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
+  Object result(&scope, runtime_.heap()->createInstance(layout.id(), 100000));
   ASSERT_TRUE(result.isInstance());
   EXPECT_EQ(Instance::cast(*result).headerCountOrOverflow(), 100000);
 }
 
-TEST(HeapTest, AllocateMutableBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  Object result(&scope, runtime.heap()->createMutableBytes(15));
+TEST_F(HeapTest, AllocateMutableBytes) {
+  HandleScope scope(thread_);
+  Object result(&scope, runtime_.heap()->createMutableBytes(15));
   ASSERT_TRUE(result.isMutableBytes());
   EXPECT_EQ(MutableBytes::cast(*result).length(), 15);
 }

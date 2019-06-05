@@ -9,24 +9,25 @@ namespace python {
 
 using namespace testing;
 
-TEST(BuiltinsModuleTest, BuiltinCallableOnTypeReturnsTrue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+using BuiltinsModuleTest = RuntimeFixture;
+using BuiltinsModuleDeathTest = RuntimeFixture;
+
+TEST_F(BuiltinsModuleTest, BuiltinCallableOnTypeReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   pass
 
 a = callable(Foo)
   )")
                    .isError());
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Bool a(&scope, moduleAt(&runtime_, main, "a"));
   EXPECT_TRUE(a.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinCallableOnMethodReturnsTrue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinCallableOnMethodReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   def bar():
     return None
@@ -35,32 +36,30 @@ a = callable(Foo.bar)
 b = callable(Foo().bar)
   )")
                    .isError());
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Bool a(&scope, moduleAt(&runtime, main, "a"));
-  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Bool a(&scope, moduleAt(&runtime_, main, "a"));
+  Bool b(&scope, moduleAt(&runtime_, main, "b"));
   EXPECT_TRUE(a.value());
   EXPECT_TRUE(b.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinCallableOnNonCallableReturnsFalse) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinCallableOnNonCallableReturnsFalse) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = callable(1)
 b = callable("hello")
   )")
                    .isError());
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Bool a(&scope, moduleAt(&runtime, main, "a"));
-  Bool b(&scope, moduleAt(&runtime, main, "b"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Bool a(&scope, moduleAt(&runtime_, main, "a"));
+  Bool b(&scope, moduleAt(&runtime_, main, "b"));
   EXPECT_FALSE(a.value());
   EXPECT_FALSE(b.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinCallableOnObjectWithCallOnTypeReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   def __call__(self):
     pass
@@ -69,16 +68,15 @@ f = Foo()
 a = callable(f)
   )")
                    .isError());
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Bool a(&scope, moduleAt(&runtime_, main, "a"));
   EXPECT_TRUE(a.value());
 }
 
-TEST(BuiltinsModuleTest,
-     BuiltinCallableOnObjectWithInstanceCallButNoTypeCallReturnsFalse) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest,
+       BuiltinCallableOnObjectWithInstanceCallButNoTypeCallReturnsFalse) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   pass
 
@@ -90,79 +88,71 @@ f.__call__ = fakecall
 a = callable(f)
   )")
                    .isError());
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Bool a(&scope, moduleAt(&runtime, main, "a"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Bool a(&scope, moduleAt(&runtime_, main, "a"));
   EXPECT_FALSE(a.value());
 }
 
-TEST(BuiltinsModuleTest, BuiltinChrWithNonIntRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, BuiltinChrWithNonIntRaisesTypeError) {
+  HandleScope scope(thread_);
   Object i(&scope, NoneType::object());
   EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
                             LayoutId::kTypeError,
                             "an integer is required (got type NoneType)"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinChrWithLargeIntRaisesOverflowError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object i(&scope, runtime.newInt(kMaxWord));
+TEST_F(BuiltinsModuleTest, BuiltinChrWithLargeIntRaisesOverflowError) {
+  HandleScope scope(thread_);
+  Object i(&scope, runtime_.newInt(kMaxWord));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
                             LayoutId::kOverflowError,
                             "Python int too large to convert to C long"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinChrWithNegativeIntRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, BuiltinChrWithNegativeIntRaisesValueError) {
+  HandleScope scope(thread_);
   Object i(&scope, SmallInt::fromWord(-1));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
                             LayoutId::kValueError,
                             "chr() arg not in range(0x110000)"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinChrWithNonUnicodeIntRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, BuiltinChrWithNonUnicodeIntRaisesValueError) {
+  HandleScope scope(thread_);
   Object i(&scope, SmallInt::fromWord(kMaxUnicode + 1));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
                             LayoutId::kValueError,
                             "chr() arg not in range(0x110000)"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinChrWithMaxUnicodeReturnsString) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, BuiltinChrWithMaxUnicodeReturnsString) {
+  HandleScope scope(thread_);
   Object i(&scope, SmallInt::fromWord(kMaxUnicode));
   EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i),
             SmallStr::fromCodePoint(kMaxUnicode));
 }
 
-TEST(BuiltinsModuleTest, BuiltinChrWithASCIIReturnsString) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, BuiltinChrWithASCIIReturnsString) {
+  HandleScope scope(thread_);
   Object i(&scope, SmallInt::fromWord('*'));
   EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i), SmallStr::fromCStr("*"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinChrWithIntSubclassReturnsString) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinChrWithIntSubclassReturnsString) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C(int): pass
 i = C(42)
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
   EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i), SmallStr::fromCStr("*"));
 }
 
-TEST(BuiltinsModuleTest, DirCallsDunderDirReturnsSortedList) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DirCallsDunderDirReturnsSortedList) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __dir__(self):
     return ["B", "A"]
@@ -170,7 +160,7 @@ c = C()
 d = dir(c)
 )")
                    .isError());
-  Object d_obj(&scope, moduleAt(&runtime, "__main__", "d"));
+  Object d_obj(&scope, moduleAt(&runtime_, "__main__", "d"));
   ASSERT_TRUE(d_obj.isList());
   List d(&scope, *d_obj);
   ASSERT_EQ(d.numItems(), 2);
@@ -178,64 +168,54 @@ d = dir(c)
   EXPECT_TRUE(isStrEqualsCStr(d.at(1), "B"));
 }
 
-TEST(BuiltinsModuleDeathTest, DirWithoutObjectCallsLocals) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleDeathTest, DirWithoutObjectCallsLocals) {
   // locals() is not implemented yet, so we will die here.
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
 dir()
 )")),
                "locals()");
 }
 
-TEST(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
-  Runtime runtime;
-  EXPECT_EQ(moduleAt(&runtime, "builtins", "Ellipsis"), runtime.ellipsis());
+TEST_F(BuiltinsModuleTest, EllipsisMatchesEllipsis) {
+  EXPECT_EQ(moduleAt(&runtime_, "builtins", "Ellipsis"), runtime_.ellipsis());
 }
 
-TEST(BuiltinsModuleTest, IdReturnsInt) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object obj(&scope, runtime.newInt(12345));
+TEST_F(BuiltinsModuleTest, IdReturnsInt) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newInt(12345));
   EXPECT_TRUE(runBuiltin(BuiltinsModule::id, obj).isInt());
 }
 
-TEST(BuiltinsModuleTest, IdDoesNotChangeAfterGC) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object obj(&scope, runtime.newStrFromCStr("hello world foobar"));
+TEST_F(BuiltinsModuleTest, IdDoesNotChangeAfterGC) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newStrFromCStr("hello world foobar"));
   Object id_before(&scope, runBuiltin(BuiltinsModule::id, obj));
-  runtime.collectGarbage();
+  runtime_.collectGarbage();
   Object id_after(&scope, runBuiltin(BuiltinsModule::id, obj));
   EXPECT_EQ(*id_before, *id_after);
 }
 
-TEST(BuiltinsModuleTest, IdReturnsDifferentValueForDifferentObject) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object obj1(&scope, runtime.newStrFromCStr("hello world foobar"));
-  Object obj2(&scope, runtime.newStrFromCStr("hello world foobarbaz"));
+TEST_F(BuiltinsModuleTest, IdReturnsDifferentValueForDifferentObject) {
+  HandleScope scope(thread_);
+  Object obj1(&scope, runtime_.newStrFromCStr("hello world foobar"));
+  Object obj2(&scope, runtime_.newStrFromCStr("hello world foobarbaz"));
   EXPECT_NE(runBuiltin(BuiltinsModule::id, obj1),
             runBuiltin(BuiltinsModule::id, obj2));
 }
 
-TEST(BuiltinsModuleTest, BuiltinLen) {
-  Runtime runtime;
-  std::string result = compileAndRunToString(&runtime, "print(len([1,2,3]))");
+TEST_F(BuiltinsModuleTest, BuiltinLen) {
+  std::string result = compileAndRunToString(&runtime_, "print(len([1,2,3]))");
   EXPECT_EQ(result, "3\n");
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(len(1))"),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "print(len(1))"),
                             LayoutId::kTypeError, "object has no len()"));
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
+  HandleScope scope(thread_);
 
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
   const byte bytes_array[] = {0xca, 0xfe};
-  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
@@ -243,14 +223,13 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
   EXPECT_TRUE(isIntEqualsWord(*result, 0xfeca));
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsLargeInt) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsLargeInt) {
+  HandleScope scope(thread_);
 
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
   const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
                               0x45, 0x67, 0x89, 0xab, 0xcd};
-  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
   Int result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
@@ -260,13 +239,12 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsLargeInt) {
   EXPECT_EQ(result.digitAt(1), 0xcdab89U);
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsSmallInt) {
+  HandleScope scope(thread_);
 
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
   const byte bytes_array[] = {0xca, 0xfe};
-  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::trueObj());
   Bool signed_arg(&scope, Bool::falseObj());
   Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
@@ -274,14 +252,13 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsSmallInt) {
   EXPECT_TRUE(isIntEqualsWord(*result, 0xcafe));
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsLargeInt) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsLargeInt) {
+  HandleScope scope(thread_);
 
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
   const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
                               0x45, 0x67, 0x89, 0xab, 0xcd};
-  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::trueObj());
   Bool signed_arg(&scope, Bool::falseObj());
   Int result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
@@ -291,12 +268,11 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithBigEndianReturnsLargeInt) {
   EXPECT_EQ(result.digitAt(1), 0xcafebaU);
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithEmptyBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithEmptyBytes) {
+  HandleScope scope(thread_);
 
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytesWithAll(View<byte>(nullptr, 0)));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(View<byte>(nullptr, 0)));
   Bool bo_big_false(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
   Object result_little(
@@ -311,14 +287,13 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithEmptyBytes) {
   EXPECT_TRUE(isIntEqualsWord(*result_big, 0));
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithNumberWithDigitHighBitSet) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithNumberWithDigitHighBitSet) {
+  HandleScope scope(thread_);
 
   // Test special case where a positive number having a high bit set at the end
   // of a "digit" needs an extra digit in the LargeInt representation.
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytes(kWordSize, 0xff));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytes(kWordSize, 0xff));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::falseObj());
   Int result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
@@ -327,13 +302,12 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithNumberWithDigitHighBitSet) {
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsSmallInt) {
+  HandleScope scope(thread_);
 
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
   const byte bytes_array[] = {0xff};
-  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::falseObj());
   Bool signed_arg(&scope, Bool::trueObj());
   Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
@@ -341,14 +315,13 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsSmallInt) {
   EXPECT_TRUE(isIntEqualsWord(*result, -1));
 }
 
-TEST(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsLargeInt) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsLargeInt) {
+  HandleScope scope(thread_);
 
-  Type int_type(&scope, runtime.typeAt(LayoutId::kInt));
+  Type int_type(&scope, runtime_.typeAt(LayoutId::kInt));
   const byte bytes_array[] = {0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23,
                               0x45, 0x67, 0x89, 0xab, 0xcd};
-  Bytes bytes(&scope, runtime.newBytesWithAll(bytes_array));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(bytes_array));
   Bool byteorder_big(&scope, Bool::trueObj());
   Bool signed_arg(&scope, Bool::trueObj());
   Object result(&scope, runBuiltin(BuiltinsModule::underIntFromBytes, int_type,
@@ -357,103 +330,93 @@ TEST(BuiltinsModuleTest, UnderIntFromBytesWithNegativeNumberReturnsLargeInt) {
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromByteArrayWithZeroBaseReturnsCodeLiteral) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(BuiltinsModuleTest, IntNewFromByteArrayWithZeroBaseReturnsCodeLiteral) {
+  HandleScope scope(thread_);
   const byte view[] = {'0', 'x', 'b', 'a', '5', 'e'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  ByteArray array(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, array, view);
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(BuiltinsModule::underIntNewFromByteArray,
                                    type, array, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xba5e));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromByteArrayWithInvalidByteRaisesValueError) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(BuiltinsModuleTest, IntNewFromByteArrayWithInvalidByteRaisesValueError) {
+  HandleScope scope(thread_);
   const byte view[] = {'$'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  ByteArray array(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, array, view);
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromByteArray, type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromByteArrayWithInvalidLiteraRaisesValueError) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(BuiltinsModuleTest,
+       IntNewFromByteArrayWithInvalidLiteraRaisesValueError) {
+  HandleScope scope(thread_);
   const byte view[] = {'a'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  ByteArray array(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, array, view);
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread_, array, view);
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromByteArray, type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'a'"));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromBytesWithZeroBaseReturnsCodeLiteral) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, IntNewFromBytesWithZeroBaseReturnsCodeLiteral) {
+  HandleScope scope(thread_);
   const byte view[] = {'0', '4', '3'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(BuiltinsModule::underIntNewFromBytes, type,
                                    bytes, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 043));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromBytesWithInvalidByteRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, IntNewFromBytesWithInvalidByteRaisesValueError) {
+  HandleScope scope(thread_);
   const byte view[] = {'$'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromBytesWithInvalidLiteralRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, IntNewFromBytesWithInvalidLiteralRaisesValueError) {
+  HandleScope scope(thread_);
   const byte view[] = {'8', '6'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(7));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 7: b'86'"));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromBytesWithBytesSubclassReturnsSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, IntNewFromBytesWithBytesSubclassReturnsSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 foo = Foo(b"42")
 )")
                    .isError());
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, moduleAt(&runtime_, "__main__", "foo"));
   Int base(&scope, SmallInt::fromWord(21));
   EXPECT_EQ(runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
             SmallInt::fromWord(86));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromIntWithBoolReturnsSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
-  Object type(&scope, runtime.typeAt(LayoutId::kInt));
+TEST_F(BuiltinsModuleTest, IntNewFromIntWithBoolReturnsSmallInt) {
+  HandleScope scope(thread_);
+  Object type(&scope, runtime_.typeAt(LayoutId::kInt));
   Object fls(&scope, Bool::falseObj());
   Object tru(&scope, Bool::trueObj());
   Object false_result(
@@ -464,9 +427,8 @@ TEST(BuiltinsModuleTest, IntNewFromIntWithBoolReturnsSmallInt) {
   EXPECT_EQ(true_result, SmallInt::fromWord(1));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromIntWithSubClassReturnsValueOfSubClass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, IntFromIntWithSubClassReturnsValueOfSubClass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class SubInt(int):
   def __new__(cls, value):
       self = super(SubInt, cls).__new__(cls, value)
@@ -476,206 +438,186 @@ class SubInt(int):
 result = SubInt(50)
 )")
                    .isError());
-  HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_FALSE(result.isInt());
   EXPECT_TRUE(isIntEqualsWord(*result, 50));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromStrWithZeroBaseReturnsCodeLiteral) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, IntNewFromStrWithZeroBaseReturnsCodeLiteral) {
+  HandleScope scope(thread_);
   const char* src = "1985";
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Str str(&scope, runtime.newStrFromCStr(src));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
   Object result(
       &scope, runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 1985));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromStrWithInvalidCharRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, IntNewFromStrWithInvalidCharRaisesValueError) {
+  HandleScope scope(thread_);
   const char* src = "$";
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Str str(&scope, runtime.newStrFromCStr(src));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: '$'"));
 }
 
-TEST(BuiltinsModuleTest, IntNewFromStrWithInvalidLiteralRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, IntNewFromStrWithInvalidLiteralRaisesValueError) {
+  HandleScope scope(thread_);
   const char* src = "305";
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Str str(&scope, runtime.newStrFromCStr(src));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(4));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 4: '305'"));
 }
 
-TEST(ThreadTest, BuiltinLenGetLenFromDict) {
-  Runtime runtime;
-
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinLenGetLenFromDict) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 len0 = len({})
 len1 = len({'one': 1})
 len5 = len({'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5})
 )")
                    .isError());
 
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object len0(&scope, moduleAt(&runtime, main, "len0"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object len0(&scope, moduleAt(&runtime_, main, "len0"));
   EXPECT_EQ(*len0, SmallInt::fromWord(0));
-  Object len1(&scope, moduleAt(&runtime, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime_, main, "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Object len5(&scope, moduleAt(&runtime, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime_, main, "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
-TEST(ThreadTest, BuiltinLenGetLenFromList) {
-  Runtime runtime;
-
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinLenGetLenFromList) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 len0 = len([])
 len1 = len([1])
 len5 = len([1,2,3,4,5])
 )")
                    .isError());
 
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object len0(&scope, moduleAt(&runtime, main, "len0"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object len0(&scope, moduleAt(&runtime_, main, "len0"));
   EXPECT_EQ(*len0, SmallInt::fromWord(0));
-  Object len1(&scope, moduleAt(&runtime, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime_, main, "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Object len5(&scope, moduleAt(&runtime, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime_, main, "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
-TEST(ThreadTest, BuiltinLenGetLenFromSet) {
-  Runtime runtime;
-
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinLenGetLenFromSet) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 len1 = len({1})
 len5 = len({1,2,3,4,5})
 )")
                    .isError());
 
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
   // TODO(cshapiro): test the empty set when we have builtins.set defined.
-  Object len1(&scope, moduleAt(&runtime, main, "len1"));
+  Object len1(&scope, moduleAt(&runtime_, main, "len1"));
   EXPECT_EQ(*len1, SmallInt::fromWord(1));
-  Object len5(&scope, moduleAt(&runtime, main, "len5"));
+  Object len5(&scope, moduleAt(&runtime_, main, "len5"));
   EXPECT_EQ(*len5, SmallInt::fromWord(5));
 }
 
-TEST(BuiltinsModuleTest, BuiltinOrd) {
-  Runtime runtime;
-  std::string result = compileAndRunToString(&runtime, "print(ord('A'))");
+TEST_F(BuiltinsModuleTest, BuiltinOrd) {
+  std::string result = compileAndRunToString(&runtime_, "print(ord('A'))");
   EXPECT_EQ(result, "65\n");
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "print(ord(1))"),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "print(ord(1))"),
                             LayoutId::kTypeError,
                             "Unsupported type in builtin 'ord'"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinOrdSupportNonASCII) {
-  Runtime runtime;
-  HandleScope scope;
-  Str two_bytes(&scope, runtime.newStrFromCStr("\xC3\xA9"));
+TEST_F(BuiltinsModuleTest, BuiltinOrdSupportNonASCII) {
+  HandleScope scope(thread_);
+  Str two_bytes(&scope, runtime_.newStrFromCStr("\xC3\xA9"));
   Object two_ord(&scope, runBuiltin(BuiltinsModule::ord, two_bytes));
   EXPECT_TRUE(isIntEqualsWord(*two_ord, 0xE9));
 
-  Str three_bytes(&scope, runtime.newStrFromCStr("\xE2\xB3\x80"));
+  Str three_bytes(&scope, runtime_.newStrFromCStr("\xE2\xB3\x80"));
   Object three_ord(&scope, runBuiltin(BuiltinsModule::ord, three_bytes));
   EXPECT_TRUE(isIntEqualsWord(*three_ord, 0x2CC0));
 
-  Str four_bytes(&scope, runtime.newStrFromCStr("\xF0\x9F\x86\x92"));
+  Str four_bytes(&scope, runtime_.newStrFromCStr("\xF0\x9F\x86\x92"));
   Object four_ord(&scope, runBuiltin(BuiltinsModule::ord, four_bytes));
   EXPECT_TRUE(isIntEqualsWord(*four_ord, 0x1F192));
 }
 
-TEST(BuiltinsModuleTest, BuiltinOrdWithMultiCodepointStringRaisesError) {
-  Runtime runtime;
-  HandleScope scope;
-  Str two_chars(&scope, runtime.newStrFromCStr("ab"));
+TEST_F(BuiltinsModuleTest, BuiltinOrdWithMultiCodepointStringRaisesError) {
+  HandleScope scope(thread_);
+  Str two_chars(&scope, runtime_.newStrFromCStr("ab"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, two_chars),
                             LayoutId::kTypeError,
                             "Builtin 'ord' expects string of length 1"));
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintStdOut) {
+TEST_F(BuiltinsModuleTest, BuiltInPrintStdOut) {
   const char* src = R"(
 import sys
 print("hello", file=sys.stdout)
 )";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "hello\n");
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintEnd) {
+TEST_F(BuiltinsModuleTest, BuiltInPrintEnd) {
   const char* src = R"(
 import sys
 print("hi", end='ho')
 )";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "hiho");
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintStdOutEnd) {
+TEST_F(BuiltinsModuleTest, BuiltInPrintStdOutEnd) {
   const char* src = R"(
 import sys
 print("hi", end='ho', file=sys.stdout)
 )";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "hiho");
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintStdErr) {
+TEST_F(BuiltinsModuleTest, BuiltInPrintStdErr) {
   const char* src = R"(
 import sys
 print("hi", file=sys.stderr, end='ya')
 )";
-  Runtime runtime;
-  std::string output = compileAndRunToStderrString(&runtime, src);
+  std::string output = compileAndRunToStderrString(&runtime_, src);
   EXPECT_EQ(output, "hiya");
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintNone) {
+TEST_F(BuiltinsModuleTest, BuiltInPrintNone) {
   const char* src = R"(
 print(None)
 )";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "None\n");
 }
 
-TEST(BuiltinsModuleTest, BuiltInPrintStrList) {
+TEST_F(BuiltinsModuleTest, BuiltInPrintStrList) {
   const char* src = R"(
 print(['one', 'two'])
 )";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "['one', 'two']\n");
 }
 
-TEST(BuiltinsModuleTest, PrintWithFileNoneWritesToSysStdout) {
-  Runtime runtime;
-  EXPECT_EQ(compileAndRunToString(&runtime, "print(7, file=None)"), "7\n");
+TEST_F(BuiltinsModuleTest, PrintWithFileNoneWritesToSysStdout) {
+  EXPECT_EQ(compileAndRunToString(&runtime_, "print(7, file=None)"), "7\n");
 }
 
-TEST(BuiltinsModuleTest, PrintWithSysStdoutNoneDoesNothing) {
-  Runtime runtime;
-  EXPECT_EQ(compileAndRunToString(&runtime, R"(
+TEST_F(BuiltinsModuleTest, PrintWithSysStdoutNoneDoesNothing) {
+  EXPECT_EQ(compileAndRunToString(&runtime_, R"(
 import sys
 sys.stdout = None
 print("hello")
@@ -683,9 +625,8 @@ print("hello")
             "");
 }
 
-TEST(BuiltinsModuleTest, PrintWithoutSysStdoutRaisesRuntimeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, PrintWithoutSysStdoutRaisesRuntimeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 import sys
 del sys.stdout
 print()
@@ -693,9 +634,8 @@ print()
                             LayoutId::kRuntimeError, "lost sys.stdout"));
 }
 
-TEST(BuiltinsModuleTest, PrintWithFlushCallsFileFlush) {
-  Runtime runtime;
-  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, PrintWithFlushCallsFileFlush) {
+  EXPECT_TRUE(raised(runFromCStr(&runtime_, R"(
 import sys
 class C:
   def write(self, text): pass
@@ -706,9 +646,8 @@ print(flush=True)
                      LayoutId::kUserWarning));
 }
 
-TEST(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltInReprOnUserTypeWithDunderRepr) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   def __repr__(self):
     return "foo"
@@ -716,23 +655,21 @@ class Foo:
 a = repr(Foo())
 )")
                    .isError());
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object a(&scope, moduleAt(&runtime, main, "a"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object a(&scope, moduleAt(&runtime_, main, "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
 }
 
-TEST(BuiltinsModuleTest, BuiltInReprOnClass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = repr(int)").isError());
-  HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BuiltinsModuleTest, BuiltInReprOnClass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = repr(int)").isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "<class 'int'>"));
 }
 
-TEST(BuiltinsModuleTest, BuiltInAsciiCallsDunderRepr) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltInAsciiCallsDunderRepr) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   def __repr__(self):
     return "foo"
@@ -740,49 +677,44 @@ class Foo:
 a = ascii(Foo())
 )")
                    .isError());
-  HandleScope scope;
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object a(&scope, moduleAt(&runtime, main, "a"));
+  HandleScope scope(thread_);
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object a(&scope, moduleAt(&runtime_, main, "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "foo"));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassWithNonFunctionRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, DunderBuildClassWithNonFunctionRaisesTypeError) {
+  HandleScope scope(thread_);
   Object body(&scope, NoneType::object());
-  Object name(&scope, runtime.newStrFromCStr("a"));
+  Object name(&scope, runtime_.newStrFromCStr("a"));
   Object metaclass(&scope, Unbound::object());
   Object bootstrap(&scope, Bool::falseObj());
-  Object bases(&scope, runtime.newTuple(0));
-  Object kwargs(&scope, runtime.newDict());
+  Object bases(&scope, runtime_.newTuple(0));
+  Object kwargs(&scope, runtime_.newDict());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,
                  bootstrap, bases, kwargs),
       LayoutId::kTypeError, "__build_class__: func must be a function"));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassWithNonStringRaisesTypeError) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, "def f(): pass").isError());
-  Object body(&scope, moduleAt(&runtime, "__main__", "f"));
+TEST_F(BuiltinsModuleTest, DunderBuildClassWithNonStringRaisesTypeError) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "def f(): pass").isError());
+  Object body(&scope, moduleAt(&runtime_, "__main__", "f"));
   Object name(&scope, NoneType::object());
   Object metaclass(&scope, Unbound::object());
   Object bootstrap(&scope, Bool::falseObj());
-  Object bases(&scope, runtime.newTuple(0));
-  Object kwargs(&scope, runtime.newDict());
+  Object bases(&scope, runtime_.newTuple(0));
+  Object kwargs(&scope, runtime_.newDict());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,
                  bootstrap, bases, kwargs),
       LayoutId::kTypeError, "__build_class__: name is not a string"));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassCallsMetaclass) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DunderBuildClassCallsMetaclass) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Meta(type):
   def __new__(mcls, name, bases, namespace, *args, **kwargs):
     return (mcls, name, bases, namespace, args, kwargs)
@@ -790,8 +722,8 @@ class C(int, float, metaclass=Meta, hello="world"):
   x = 42
 )")
                    .isError());
-  Object meta(&scope, moduleAt(&runtime, "__main__", "Meta"));
-  Object c_obj(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object meta(&scope, moduleAt(&runtime_, "__main__", "Meta"));
+  Object c_obj(&scope, moduleAt(&runtime_, "__main__", "C"));
   ASSERT_TRUE(c_obj.isTuple());
   Tuple c(&scope, *c_obj);
   ASSERT_EQ(c.length(), 6);
@@ -801,27 +733,26 @@ class C(int, float, metaclass=Meta, hello="world"):
   ASSERT_TRUE(c.at(2).isTuple());
   Tuple c_bases(&scope, c.at(2));
   ASSERT_EQ(c_bases.length(), 2);
-  EXPECT_EQ(c_bases.at(0), runtime.typeAt(LayoutId::kInt));
-  EXPECT_EQ(c_bases.at(1), runtime.typeAt(LayoutId::kFloat));
+  EXPECT_EQ(c_bases.at(0), runtime_.typeAt(LayoutId::kInt));
+  EXPECT_EQ(c_bases.at(1), runtime_.typeAt(LayoutId::kFloat));
 
   ASSERT_TRUE(c.at(3).isDict());
   Dict c_namespace(&scope, c.at(3));
-  Object x(&scope, runtime.newStrFromCStr("x"));
-  EXPECT_TRUE(runtime.dictIncludes(thread, c_namespace, x));
+  Object x(&scope, runtime_.newStrFromCStr("x"));
+  EXPECT_TRUE(runtime_.dictIncludes(thread_, c_namespace, x));
   ASSERT_TRUE(c.at(4).isTuple());
   EXPECT_EQ(Tuple::cast(c.at(4)).length(), 0);
-  Object hello(&scope, runtime.newStrFromCStr("hello"));
+  Object hello(&scope, runtime_.newStrFromCStr("hello"));
   ASSERT_TRUE(c.at(5).isDict());
   Dict c_kwargs(&scope, c.at(5));
   EXPECT_EQ(c_kwargs.numItems(), 1);
   EXPECT_TRUE(
-      isStrEqualsCStr(runtime.dictAt(thread, c_kwargs, hello), "world"));
+      isStrEqualsCStr(runtime_.dictAt(thread_, c_kwargs, hello), "world"));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassCalculatesMostSpecificMetaclass) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DunderBuildClassCalculatesMostSpecificMetaclass) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Meta(type): pass
 class C1(int, metaclass=Meta): pass
 class C2(C1, metaclass=type): pass
@@ -829,20 +760,19 @@ t1 = type(C1)
 t2 = type(C2)
 )")
                    .isError());
-  Object meta(&scope, moduleAt(&runtime, "__main__", "Meta"));
-  Object t1(&scope, moduleAt(&runtime, "__main__", "t1"));
-  Object t2(&scope, moduleAt(&runtime, "__main__", "t2"));
+  Object meta(&scope, moduleAt(&runtime_, "__main__", "Meta"));
+  Object t1(&scope, moduleAt(&runtime_, "__main__", "t1"));
+  Object t2(&scope, moduleAt(&runtime_, "__main__", "t2"));
   ASSERT_TRUE(t1.isType());
   ASSERT_TRUE(t2.isType());
   EXPECT_EQ(t1, meta);
   EXPECT_EQ(t2, meta);
 }
 
-TEST(BuiltinsModuleTest,
-     DunderBuildClassWithIncompatibleMetaclassesRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest,
+       DunderBuildClassWithIncompatibleMetaclassesRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, R"(
+      runFromCStr(&runtime_, R"(
 class M1(type): pass
 class M2(type): pass
 class C1(metaclass=M1): pass
@@ -853,10 +783,9 @@ class C2(C1, metaclass=M2): pass
       "(non-strict) subclass of the metaclasses of all its bases"));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassWithMeetMetaclassUsesMeet) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DunderBuildClassWithMeetMetaclassUsesMeet) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class M1(type): pass
 class M2(type): pass
 class M3(M1, M2): pass
@@ -868,12 +797,12 @@ t2 = type(C2)
 t3 = type(C3)
 )")
                    .isError());
-  Object m1(&scope, moduleAt(&runtime, "__main__", "M1"));
-  Object m2(&scope, moduleAt(&runtime, "__main__", "M2"));
-  Object m3(&scope, moduleAt(&runtime, "__main__", "M3"));
-  Object t1(&scope, moduleAt(&runtime, "__main__", "t1"));
-  Object t2(&scope, moduleAt(&runtime, "__main__", "t2"));
-  Object t3(&scope, moduleAt(&runtime, "__main__", "t3"));
+  Object m1(&scope, moduleAt(&runtime_, "__main__", "M1"));
+  Object m2(&scope, moduleAt(&runtime_, "__main__", "M2"));
+  Object m3(&scope, moduleAt(&runtime_, "__main__", "M3"));
+  Object t1(&scope, moduleAt(&runtime_, "__main__", "t1"));
+  Object t2(&scope, moduleAt(&runtime_, "__main__", "t2"));
+  Object t3(&scope, moduleAt(&runtime_, "__main__", "t3"));
   ASSERT_TRUE(t1.isType());
   ASSERT_TRUE(t2.isType());
   ASSERT_TRUE(t3.isType());
@@ -882,9 +811,8 @@ t3 = type(C3)
   EXPECT_EQ(t3, m3);
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassPropagatesDunderPrepareError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DunderBuildClassPropagatesDunderPrepareError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class Meta(type):
   @classmethod
   def __prepare__(cls, *args, **kwds):
@@ -895,10 +823,9 @@ class C(metaclass=Meta):
                             LayoutId::kIndentationError, "foo"));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassWithNonDictPrepareRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, DunderBuildClassWithNonDictPrepareRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, R"(
+      raisedWithStr(runFromCStr(&runtime_, R"(
 class Meta(type):
   @classmethod
   def __prepare__(cls, *args, **kwds):
@@ -910,11 +837,10 @@ class C(metaclass=Meta):
                     "Meta.__prepare__() must return a mapping, not int"));
 }
 
-TEST(BuiltinsModuleTest,
-     DunderBuildClassWithNonTypeMetaclassAndNonDictPrepareRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest,
+       DunderBuildClassWithNonTypeMetaclassAndNonDictPrepareRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, R"(
+      runFromCStr(&runtime_, R"(
 class Meta:
   def __prepare__(self, *args, **kwds):
     return 42
@@ -925,10 +851,9 @@ class C(metaclass=Meta()):
       "<metaclass>.__prepare__() must return a mapping, not int"));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassUsesDunderPrepareForClassDict) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DunderBuildClassUsesDunderPrepareForClassDict) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Meta(type):
   @classmethod
   def __prepare__(cls, *args, **kwds):
@@ -938,14 +863,13 @@ class C(metaclass=Meta):
 result = C.foo
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassPassesNameBasesAndKwargsToPrepare) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DunderBuildClassPassesNameBasesAndKwargsToPrepare) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Meta(type):
   def __init__(metacls, name, bases, namespace, **kwargs):
     pass
@@ -961,203 +885,187 @@ base = C.bar
 answer = C.baz
 )")
                    .isError());
-  Object name(&scope, moduleAt(&runtime, "__main__", "name"));
-  Object base(&scope, moduleAt(&runtime, "__main__", "base"));
-  Object answer(&scope, moduleAt(&runtime, "__main__", "answer"));
+  Object name(&scope, moduleAt(&runtime_, "__main__", "name"));
+  Object base(&scope, moduleAt(&runtime_, "__main__", "base"));
+  Object answer(&scope, moduleAt(&runtime_, "__main__", "answer"));
   EXPECT_TRUE(isStrEqualsCStr(*name, "C"));
-  EXPECT_EQ(base, runtime.typeAt(LayoutId::kInt));
+  EXPECT_EQ(base, runtime_.typeAt(LayoutId::kInt));
   EXPECT_TRUE(isIntEqualsWord(*answer, 42));
 }
 
-TEST(BuiltinsModuleTest, DunderBuildClassWithRaisingBodyPropagatesException) {
-  Runtime runtime;
-  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, DunderBuildClassWithRaisingBodyPropagatesException) {
+  EXPECT_TRUE(raised(runFromCStr(&runtime_, R"(
 class C:
   raise UserWarning()
 )"),
                      LayoutId::kUserWarning));
 }
 
-TEST(BuiltinsModuleTest, GetAttrFromClassReturnsValue) {
+TEST_F(BuiltinsModuleTest, GetAttrFromClassReturnsValue) {
   const char* src = R"(
 class Foo:
   bar = 1
 obj = getattr(Foo, 'bar')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(1));
 }
 
-TEST(BuiltinsModuleTest, GetAttrFromInstanceReturnsValue) {
+TEST_F(BuiltinsModuleTest, GetAttrFromInstanceReturnsValue) {
   const char* src = R"(
 class Foo:
   bar = 1
 obj = getattr(Foo(), 'bar')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(1));
 }
 
-TEST(BuiltinsModuleTest, GetAttrFromInstanceWithMissingAttrReturnsDefault) {
+TEST_F(BuiltinsModuleTest, GetAttrFromInstanceWithMissingAttrReturnsDefault) {
   const char* src = R"(
 class Foo: pass
 obj = getattr(Foo(), 'bar', 2)
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
   EXPECT_EQ(*obj, SmallInt::fromWord(2));
 }
 
-TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrRaisesTypeError) {
+TEST_F(BuiltinsModuleTest, GetAttrWithNonStringAttrRaisesTypeError) {
   const char* src = R"(
 class Foo: pass
 getattr(Foo(), 1)
 )";
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                             "getattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleTest, GetAttrWithNonStringAttrAndDefaultRaisesTypeError) {
+TEST_F(BuiltinsModuleTest, GetAttrWithNonStringAttrAndDefaultRaisesTypeError) {
   const char* src = R"(
 class Foo: pass
 getattr(Foo(), 1, 2)
 )";
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                             "getattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleTest,
-     GetAttrFromClassMissingAttrWithoutDefaultRaisesAttributeError) {
+TEST_F(BuiltinsModuleTest,
+       GetAttrFromClassMissingAttrWithoutDefaultRaisesAttributeError) {
   const char* src = R"(
 class Foo:
   bar = 1
 getattr(Foo, 'foo')
 )";
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
                             LayoutId::kAttributeError,
                             "type object 'Foo' has no attribute 'foo'"));
 }
 
-TEST(BuiltinsModuleTest, HasAttrFromClassMissingAttrReturnsFalse) {
+TEST_F(BuiltinsModuleTest, HasAttrFromClassMissingAttrReturnsFalse) {
   const char* src = R"(
 class Foo: pass
 obj = hasattr(Foo, 'bar')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
   EXPECT_EQ(*obj, Bool::falseObj());
 }
 
-TEST(BuiltinsModuleTest, HasAttrFromClassWithAttrReturnsTrue) {
+TEST_F(BuiltinsModuleTest, HasAttrFromClassWithAttrReturnsTrue) {
   const char* src = R"(
 class Foo:
   bar = 1
 obj = hasattr(Foo, 'bar')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
   EXPECT_EQ(*obj, Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, HasAttrWithNonStringAttrRaisesTypeError) {
+TEST_F(BuiltinsModuleTest, HasAttrWithNonStringAttrRaisesTypeError) {
   const char* src = R"(
 class Foo:
   bar = 1
 hasattr(Foo, 1)
 )";
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                             "hasattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleTest, HasAttrFromInstanceMissingAttrReturnsFalse) {
+TEST_F(BuiltinsModuleTest, HasAttrFromInstanceMissingAttrReturnsFalse) {
   const char* src = R"(
 class Foo: pass
 obj = hasattr(Foo(), 'bar')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
   EXPECT_EQ(*obj, Bool::falseObj());
 }
 
-TEST(BuiltinsModuleTest, HasAttrFromInstanceWithAttrReturnsTrue) {
+TEST_F(BuiltinsModuleTest, HasAttrFromInstanceWithAttrReturnsTrue) {
   const char* src = R"(
 class Foo:
   bar = 1
 obj = hasattr(Foo(), 'bar')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object obj(&scope, moduleAt(&runtime, main, "obj"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object obj(&scope, moduleAt(&runtime_, main, "obj"));
   EXPECT_EQ(*obj, Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest,
-     HashWithObjectWithNotCallableDunderHashRaisesTypeError) {
+TEST_F(BuiltinsModuleTest,
+       HashWithObjectWithNotCallableDunderHashRaisesTypeError) {
   const char* src = R"(
 class C:
   __hash__ = None
 
 hash(C())
 )";
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                             "unhashable type: 'C'"));
 }
 
-TEST(BuiltinsModuleTest, HashWithObjectReturningNonIntRaisesTypeError) {
+TEST_F(BuiltinsModuleTest, HashWithObjectReturningNonIntRaisesTypeError) {
   const char* src = R"(
 class C:
   def __hash__(self): return "10"
 
 hash(C())
 )";
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                             "__hash__ method should return an integer"));
 }
 
-TEST(BuiltinsModuleTest, HashWithObjectReturnsObjectDunderHashValue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, HashWithObjectReturnsObjectDunderHashValue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __hash__(self): return 10
 
 h = hash(C())
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "h"), SmallInt::fromWord(10));
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "h"), SmallInt::fromWord(10));
 }
 
-TEST(BuiltinsModuleTest,
-     HashWithObjectWithModifiedDunderHashReturnsClassDunderHashValue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest,
+       HashWithObjectWithModifiedDunderHashReturnsClassDunderHashValue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __hash__(self): return 10
 
@@ -1167,38 +1075,36 @@ c.__hash__ = fake_hash
 h = hash(c)
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "h"), SmallInt::fromWord(10));
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "h"), SmallInt::fromWord(10));
 }
 
-TEST(BuiltinsModuleTest, BuiltInSetAttr) {
+TEST_F(BuiltinsModuleTest, BuiltInSetAttr) {
   const char* src = R"(
 class Foo:
   bar = 1
 a = setattr(Foo, 'foo', 2)
 b = Foo.foo
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object a(&scope, moduleAt(&runtime, main, "a"));
-  Object b(&scope, moduleAt(&runtime, main, "b"));
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object b(&scope, moduleAt(&runtime_, main, "b"));
   EXPECT_EQ(*a, NoneType::object());
   EXPECT_EQ(*b, SmallInt::fromWord(2));
 }
 
-TEST(BuiltinsModuleTest, BuiltInSetAttrRaisesTypeError) {
+TEST_F(BuiltinsModuleTest, BuiltInSetAttrRaisesTypeError) {
   const char* src = R"(
 class Foo:
   bar = 1
 a = setattr(Foo, 2, 'foo')
 )";
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src), LayoutId::kTypeError,
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                             "setattr(): attribute name must be string"));
 }
 
-TEST(BuiltinsModuleTest, ModuleAttrReturnsBuiltinsName) {
+TEST_F(BuiltinsModuleTest, ModuleAttrReturnsBuiltinsName) {
   // TODO(eelizondo): Parameterize test for all builtin types
   const char* src = R"(
 a = hasattr(object, '__module__')
@@ -1206,24 +1112,23 @@ b = getattr(object, '__module__')
 c = hasattr(list, '__module__')
 d = getattr(list, '__module__')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_EQ(*a, Bool::trueObj());
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b).equalsCStr("builtins"));
 
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
   EXPECT_EQ(*c, Bool::trueObj());
-  Object d(&scope, moduleAt(&runtime, "__main__", "d"));
+  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
   ASSERT_TRUE(d.isStr());
   EXPECT_TRUE(Str::cast(*b).equalsCStr("builtins"));
 }
 
-TEST(BuiltinsModuleTest, QualnameAttrReturnsTypeName) {
+TEST_F(BuiltinsModuleTest, QualnameAttrReturnsTypeName) {
   // TODO(eelizondo): Parameterize test for all builtin types
   const char* src = R"(
 a = hasattr(object, '__qualname__')
@@ -1231,158 +1136,146 @@ b = getattr(object, '__qualname__')
 c = hasattr(list, '__qualname__')
 d = getattr(list, '__qualname__')
 )";
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, src).isError());
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_EQ(*a, Bool::trueObj());
-  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
   ASSERT_TRUE(b.isStr());
   EXPECT_TRUE(Str::cast(*b).equalsCStr("object"));
 
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
   EXPECT_EQ(*c, Bool::trueObj());
-  Object d(&scope, moduleAt(&runtime, "__main__", "d"));
+  Object d(&scope, moduleAt(&runtime_, "__main__", "d"));
   ASSERT_TRUE(d.isStr());
   EXPECT_TRUE(Str::cast(*d).equalsCStr("list"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinCompile) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, BuiltinCompile) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
       runFromCStr(
-          &runtime,
+          &runtime_,
           R"(code = compile("a = 1\nb = 2", "<string>", "eval", dont_inherit=True))")
           .isError());
-  Str filename(&scope, runtime.newStrFromCStr("<string>"));
-  Code code(&scope, moduleAt(&runtime, "__main__", "code"));
+  Str filename(&scope, runtime_.newStrFromCStr("<string>"));
+  Code code(&scope, moduleAt(&runtime_, "__main__", "code"));
   ASSERT_TRUE(code.filename().isStr());
   EXPECT_TRUE(Str::cast(code.filename()).equals(*filename));
 
   ASSERT_TRUE(code.names().isTuple());
   Tuple names(&scope, code.names());
   ASSERT_EQ(names.length(), 2);
-  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("a")));
-  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("b")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
 }
 
-TEST(BuiltinsModuleTest, BuiltinCompileBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinCompileBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 data = b'a = 1; b = 2'
 code = compile(data, "<string>", "eval", dont_inherit=True)
 )")
                    .isError());
-  Code code(&scope, moduleAt(&runtime, "__main__", "code"));
+  Code code(&scope, moduleAt(&runtime_, "__main__", "code"));
   Object filename(&scope, code.filename());
   EXPECT_TRUE(isStrEqualsCStr(*filename, "<string>"));
 
   ASSERT_TRUE(code.names().isTuple());
   Tuple names(&scope, code.names());
   ASSERT_EQ(names.length(), 2);
-  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("a")));
-  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("b")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
 }
 
-TEST(BuiltinsModuleTest, BuiltinCompileWithBytesSubclass) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinCompileWithBytesSubclass) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 data = Foo(b"a = 1; b = 2")
 code = compile(data, "<string>", "eval", dont_inherit=True)
 )")
                    .isError());
-  Code code(&scope, moduleAt(&runtime, "__main__", "code"));
+  Code code(&scope, moduleAt(&runtime_, "__main__", "code"));
   Object filename(&scope, code.filename());
   EXPECT_TRUE(isStrEqualsCStr(*filename, "<string>"));
 
   ASSERT_TRUE(code.names().isTuple());
   Tuple names(&scope, code.names());
   ASSERT_EQ(names.length(), 2);
-  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("a")));
-  ASSERT_TRUE(names.contains(runtime.newStrFromCStr("b")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("a")));
+  ASSERT_TRUE(names.contains(runtime_.newStrFromCStr("b")));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooFewArgs) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooFewArgs) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "compile(1)"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "compile(1)"), LayoutId::kTypeError,
       "TypeError: 'compile' takes min 3 positional arguments but 1 given"));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooManyArgs) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleDeathTest, BuiltinCompileRaisesTypeErrorGivenTooManyArgs) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "compile(1, 2, 3, 4, 5, 6, 7, 8, 9)"),
+      runFromCStr(&runtime_, "compile(1, 2, 3, 4, 5, 6, 7, 8, 9)"),
       LayoutId::kTypeError,
       "TypeError: 'compile' takes max 6 positional arguments but 9 given"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, BuiltinCompileRaisesTypeErrorGivenBadMode) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime,
+      runFromCStr(&runtime_,
                   "compile('hello', 'hello', 'hello', dont_inherit=True)"),
       LayoutId::kValueError,
       "Expected mode to be 'exec', 'eval', or 'single' in 'compile'"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinExecSetsGlobal) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = 1337
 exec("a = 1338")
   )")
                    .isError());
   // We can't use runBuiltin here because it does not set up the frame properly
   // for functions that need globals, implicitGlobals, etc
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
-TEST(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, "").isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
+TEST_F(BuiltinsModuleTest, BuiltinExecSetsGlobalGivenGlobals) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "").isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
   Dict globals(&scope, main.dict());
-  Str globals_name(&scope, runtime.newStrFromCStr("gl"));
-  runtime.moduleDictAtPut(thread, globals, globals_name, globals);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  Str globals_name(&scope, runtime_.newStrFromCStr("gl"));
+  runtime_.moduleDictAtPut(thread_, globals, globals_name, globals);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = 1337
 result = exec("a = 1338", gl)
   )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, main, "result"));
+  Object result(&scope, moduleAt(&runtime_, main, "result"));
   ASSERT_TRUE(result.isNoneType());
-  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, main, "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
-TEST(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinExecWithEmptyGlobalsFailsToSetGlobal) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = 1337
 result = exec("a = 1338", {})
   )")
                    .isError());
-  Module main(&scope, findModule(&runtime, "__main__"));
-  Object result(&scope, moduleAt(&runtime, main, "result"));
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object result(&scope, moduleAt(&runtime_, main, "result"));
   ASSERT_TRUE(result.isNoneType());
-  Object a(&scope, moduleAt(&runtime, main, "a"));
+  Object a(&scope, moduleAt(&runtime_, main, "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1337));
 }
 
-TEST(BuiltinsModuleDeathTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleDeathTest, BuiltinExecWithNonDictGlobalsRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 a = 1337
 result = exec("a = 1338", 7)
   )"),
@@ -1390,42 +1283,39 @@ result = exec("a = 1338", 7)
                             "Expected 'globals' to be dict in 'exec'"));
 }
 
-TEST(BuiltinsModuleTest, BuiltinExecExWithTupleCallsExec) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinExecExWithTupleCallsExec) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exec(*("a = 1338",))
   )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
-TEST(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, BuiltinExecExWithListCallsExec) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 exec(*["a = 1338"])
   )")
                    .isError());
-  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isIntEqualsWord(*a, 1338));
 }
 
-TEST(BuiltinsModuleTest, CopyFunctionEntriesCopies) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, CopyFunctionEntriesCopies) {
+  HandleScope scope(thread_);
   Function::Entry entry = BuiltinsModule::chr;
-  Str qualname(&scope, runtime.symbols()->Chr());
+  Str qualname(&scope, runtime_.symbols()->Chr());
   Function func(&scope,
-                runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+                runtime_.newBuiltinFunction(SymbolId::kChr, qualname, entry));
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def chr(self):
   "docstring"
   pass
 )")
                    .isError());
-  Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
+  Function python_func(&scope, moduleAt(&runtime_, "__main__", "chr"));
   copyFunctionEntries(Thread::current(), func, python_func);
   Code base_code(&scope, func.code());
   Code patch_code(&scope, python_func.code());
@@ -1435,124 +1325,117 @@ def chr(self):
   EXPECT_EQ(python_func.entryEx(), &builtinTrampolineEx);
 }
 
-TEST(BuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {
+  HandleScope scope(thread_);
   Function::Entry entry = BuiltinsModule::chr;
-  Str qualname(&scope, runtime.symbols()->Chr());
+  Str qualname(&scope, runtime_.symbols()->Chr());
   Function func(&scope,
-                runtime.newBuiltinFunction(SymbolId::kChr, qualname, entry));
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+                runtime_.newBuiltinFunction(SymbolId::kChr, qualname, entry));
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def chr(self):
   return 42
 )")
                    .isError());
-  Function python_func(&scope, moduleAt(&runtime, "__main__", "chr"));
+  Function python_func(&scope, moduleAt(&runtime_, "__main__", "chr"));
   ASSERT_DEATH(copyFunctionEntries(Thread::current(), func, python_func),
                "Redefinition of native code method 'chr' in managed code");
 }
 
-TEST(BuiltinsModuleTest,
-     UnderIntNewFromByteArrayWithZeroBaseReturnsCodeLiteral) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromByteArrayWithZeroBaseReturnsCodeLiteral) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   const byte view[] = {'0', 'x', 'b', 'a', '5', 'e'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  ByteArray array(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, array, view);
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread, array, view);
   Int base(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(BuiltinsModule::underIntNewFromByteArray,
                                    type, array, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 0xba5e));
 }
 
-TEST(BuiltinsModuleTest,
-     UnderIntNewFromByteArrayWithInvalidByteRaisesValueError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromByteArrayWithInvalidByteRaisesValueError) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   const byte view[] = {'$'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  ByteArray array(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, array, view);
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread, array, view);
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromByteArray, type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
-TEST(BuiltinsModuleTest,
-     UnderIntNewFromByteArrayWithInvalidLiteraRaisesValueError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromByteArrayWithInvalidLiteraRaisesValueError) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   const byte view[] = {'a'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  ByteArray array(&scope, runtime.newByteArray());
-  runtime.byteArrayExtend(thread, array, view);
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  ByteArray array(&scope, runtime_.newByteArray());
+  runtime_.byteArrayExtend(thread, array, view);
   Int base(&scope, SmallInt::fromWord(10));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromByteArray, type, array, base),
       LayoutId::kValueError, "invalid literal for int() with base 10: b'a'"));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromBytesWithZeroBaseReturnsCodeLiteral) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntNewFromBytesWithZeroBaseReturnsCodeLiteral) {
+  HandleScope scope(thread_);
   const byte view[] = {'0', '4', '3'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(BuiltinsModule::underIntNewFromBytes, type,
                                    bytes, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 043));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromBytesWithInvalidByteRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromBytesWithInvalidByteRaisesValueError) {
+  HandleScope scope(thread_);
   const byte view[] = {'$'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: b'$'"));
 }
 
-TEST(BuiltinsModuleTest,
-     UnderIntNewFromBytesWithInvalidLiteralRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromBytesWithInvalidLiteralRaisesValueError) {
+  HandleScope scope(thread_);
   const byte view[] = {'8', '6'};
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, runtime.newBytesWithAll(view));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(view));
   Int base(&scope, SmallInt::fromWord(7));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
       LayoutId::kValueError, "invalid literal for int() with base 7: b'86'"));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromBytesWithBytesSubclassReturnsSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromBytesWithBytesSubclassReturnsSmallInt) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 foo = Foo(b"42")
 )")
                    .isError());
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Bytes bytes(&scope, moduleAt(&runtime_, "__main__", "foo"));
   Int base(&scope, SmallInt::fromWord(21));
   EXPECT_EQ(runBuiltin(BuiltinsModule::underIntNewFromBytes, type, bytes, base),
             SmallInt::fromWord(86));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromIntWithBoolReturnsSmallInt) {
-  Runtime runtime;
-  HandleScope scope;
-  Object type(&scope, runtime.typeAt(LayoutId::kInt));
+TEST_F(BuiltinsModuleTest, UnderIntNewFromIntWithBoolReturnsSmallInt) {
+  HandleScope scope(thread_);
+  Object type(&scope, runtime_.typeAt(LayoutId::kInt));
   Object fls(&scope, Bool::falseObj());
   Object tru(&scope, Bool::trueObj());
   Object false_result(
@@ -1563,9 +1446,9 @@ TEST(BuiltinsModuleTest, UnderIntNewFromIntWithBoolReturnsSmallInt) {
   EXPECT_EQ(true_result, SmallInt::fromWord(1));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromIntWithSubClassReturnsValueOfSubClass) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromIntWithSubClassReturnsValueOfSubClass) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class SubInt(int):
   def __new__(cls, value):
       self = super(SubInt, cls).__new__(cls, value)
@@ -1575,57 +1458,53 @@ class SubInt(int):
 result = SubInt(50)
 )")
                    .isError());
-  HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_FALSE(result.isInt());
   EXPECT_TRUE(isIntEqualsWord(*result, 50));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromStrWithZeroBaseReturnsCodeLiteral) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntNewFromStrWithZeroBaseReturnsCodeLiteral) {
+  HandleScope scope(thread_);
   const char* src = "1985";
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Str str(&scope, runtime.newStrFromCStr(src));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(0));
   Object result(
       &scope, runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 1985));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromStrWithInvalidCharRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest, UnderIntNewFromStrWithInvalidCharRaisesValueError) {
+  HandleScope scope(thread_);
   const char* src = "$";
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Str str(&scope, runtime.newStrFromCStr(src));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(36));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 36: '$'"));
 }
 
-TEST(BuiltinsModuleTest, UnderIntNewFromStrWithInvalidLiteralRaisesValueError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BuiltinsModuleTest,
+       UnderIntNewFromStrWithInvalidLiteralRaisesValueError) {
+  HandleScope scope(thread_);
   const char* src = "305";
-  Type type(&scope, runtime.typeAt(LayoutId::kInt));
-  Str str(&scope, runtime.newStrFromCStr(src));
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
   Int base(&scope, SmallInt::fromWord(4));
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::underIntNewFromStr, type, str, base),
       LayoutId::kValueError, "invalid literal for int() with base 4: '305'"));
 }
 
-TEST(BuiltinsModuleDeathTest, UnderUnimplementedAbortsProgram) {
-  Runtime runtime;
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, "_unimplemented()")),
+TEST_F(BuiltinsModuleDeathTest, UnderUnimplementedAbortsProgram) {
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, "_unimplemented()")),
                ".*'_unimplemented' called.");
 }
 
-TEST(BuiltinsModuleDeathTest, UnderUnimplementedPrintsFunctionName) {
-  Runtime runtime;
-  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleDeathTest, UnderUnimplementedPrintsFunctionName) {
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime_, R"(
 def foobar():
   _unimplemented()
 foobar()
@@ -1633,18 +1512,16 @@ foobar()
                ".*'_unimplemented' called in function 'foobar'.");
 }
 
-TEST(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object not_func(&scope, runtime.newInt(12));
+TEST_F(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object not_func(&scope, runtime_.newInt(12));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::underPatch, not_func),
                             LayoutId::kTypeError,
                             "_patch expects function argument"));
 }
 
-TEST(BuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 not_a_function = 1234
 
 @_patch
@@ -1655,147 +1532,133 @@ def not_a_function():
                             "_patch can only patch functions"));
 }
 
-TEST(StrBuiltinsTest, UnderStrFromStrWithStrTypeReturnsValueOfStrType) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, UnderStrFromStrWithStrTypeReturnsValueOfStrType) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = _str_from_str(str, 'value')
 )")
                    .isError());
-  HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  ASSERT_TRUE(runtime.isInstanceOfStr(*result));
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  ASSERT_TRUE(runtime_.isInstanceOfStr(*result));
   EXPECT_TRUE(result.isStr());
 }
 
-TEST(StrBuiltinsTest,
-     UnderStrFromStrWithSubClassTypeReturnsValueOfSubClassType) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest,
+       UnderStrFromStrWithSubClassTypeReturnsValueOfSubClassType) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Sub(str): pass
 result = _str_from_str(Sub, 'value')
 )")
                    .isError());
-  HandleScope scope;
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
-  Object sub(&scope, moduleAt(&runtime, "__main__", "Sub"));
-  EXPECT_EQ(runtime.typeOf(*result), sub);
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  Object sub(&scope, moduleAt(&runtime_, "__main__", "Sub"));
+  EXPECT_EQ(runtime_.typeOf(*result), sub);
   EXPECT_TRUE(isStrEqualsCStr(*result, "value"));
 }
 
-TEST(StrArrayBuiltinsTest, UnderStrArrayIaddWithStrReturnsStrArray) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  StrArray self(&scope, runtime.newStrArray());
+TEST_F(BuiltinsModuleTest, UnderStrArrayIaddWithStrReturnsStrArray) {
+  HandleScope scope(thread_);
+  StrArray self(&scope, runtime_.newStrArray());
   const char* test_str = "hello";
-  Str other(&scope, runtime.newStrFromCStr(test_str));
+  Str other(&scope, runtime_.newStrFromCStr(test_str));
   StrArray result(&scope,
                   runBuiltin(BuiltinsModule::underStrArrayIadd, self, other));
-  EXPECT_TRUE(isStrEqualsCStr(runtime.strFromStrArray(result), test_str));
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(result), test_str));
   EXPECT_EQ(self, result);
 }
 
-TEST(BuiltinsModuleTest, AllOnListWithOnlyTrueReturnsTrue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, AllOnListWithOnlyTrueReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = all([True, True])
   )")
                    .isError());
-  HandleScope scope;
-  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Bool result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(result.value());
 }
 
-TEST(BuiltinsModuleTest, AllOnListWithFalseReturnsFalse) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, AllOnListWithFalseReturnsFalse) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = all([True, False, True])
   )")
                    .isError());
-  HandleScope scope;
-  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Bool result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_FALSE(result.value());
 }
 
-TEST(BuiltinsModuleTest, AnyOnListWithOnlyFalseReturnsFalse) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, AnyOnListWithOnlyFalseReturnsFalse) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = any([False, False])
   )")
                    .isError());
-  HandleScope scope;
-  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Bool result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_FALSE(result.value());
 }
 
-TEST(BuiltinsModuleTest, AnyOnListWithTrueReturnsTrue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, AnyOnListWithTrueReturnsTrue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = any([False, True, False])
   )")
                    .isError());
-  HandleScope scope;
-  Bool result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Bool result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(result.value());
 }
 
-TEST(BuiltinsModuleTest, RangeOnNonIntegerRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, RangeOnNonIntegerRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, R"(range("foo", "bar", "baz"))"),
+      runFromCStr(&runtime_, R"(range("foo", "bar", "baz"))"),
       LayoutId::kTypeError, "Arguments to range() must be integers"));
 }
 
-TEST(BuiltinsModuleTest, RangeWithOnlyStopDefaultsOtherArguments) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, RangeWithOnlyStopDefaultsOtherArguments) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = range(5)
   )")
                    .isError());
-  HandleScope scope;
-  Range result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Range result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_EQ(result.start(), 0);
   EXPECT_EQ(result.stop(), 5);
   EXPECT_EQ(result.step(), 1);
 }
 
-TEST(BuiltinsModuleTest, RangeWithStartAndStopDefaultsStep) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, RangeWithStartAndStopDefaultsStep) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = range(1, 5)
   )")
                    .isError());
-  HandleScope scope;
-  Range result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Range result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_EQ(result.start(), 1);
   EXPECT_EQ(result.stop(), 5);
   EXPECT_EQ(result.step(), 1);
 }
 
-TEST(BuiltinsModuleTest, RangeWithAllArgsSetsAllArgs) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, RangeWithAllArgsSetsAllArgs) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = range(1, 5, 7)
   )")
                    .isError());
-  HandleScope scope;
-  Range result(&scope, moduleAt(&runtime, "__main__", "result"));
+  HandleScope scope(thread_);
+  Range result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_EQ(result.start(), 1);
   EXPECT_EQ(result.stop(), 5);
   EXPECT_EQ(result.step(), 7);
 }
 
-TEST(BuiltinsModuleTest, FilterWithNonIterableArgumentRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "filter(None, 1)"),
+TEST_F(BuiltinsModuleTest, FilterWithNonIterableArgumentRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "filter(None, 1)"),
                             LayoutId::kTypeError,
                             "'int' object is not iterable"));
 }
 
-TEST(BuiltinsModuleTest,
-     FilterWithNoneFuncAndIterableReturnsItemsOfTrueBoolValue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest,
+       FilterWithNoneFuncAndIterableReturnsItemsOfTrueBoolValue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 f = filter(None, [1,0,2,0])
 r0 = f.__next__()
 r1 = f.__next__()
@@ -1806,19 +1669,19 @@ except StopIteration:
   exhausted = True
 )")
                    .isError());
-  HandleScope scope;
-  Object r0(&scope, moduleAt(&runtime, "__main__", "r0"));
-  Object r1(&scope, moduleAt(&runtime, "__main__", "r1"));
-  Object exhausted(&scope, moduleAt(&runtime, "__main__", "exhausted"));
+  HandleScope scope(thread_);
+  Object r0(&scope, moduleAt(&runtime_, "__main__", "r0"));
+  Object r1(&scope, moduleAt(&runtime_, "__main__", "r1"));
+  Object exhausted(&scope, moduleAt(&runtime_, "__main__", "exhausted"));
   EXPECT_TRUE(isIntEqualsWord(*r0, 1));
   EXPECT_TRUE(isIntEqualsWord(*r1, 2));
   EXPECT_EQ(*exhausted, Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest,
-     FilterWithFuncReturningBoolAndIterableReturnsItemsEvaluatedToTrueByFunc) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(
+    BuiltinsModuleTest,
+    FilterWithFuncReturningBoolAndIterableReturnsItemsEvaluatedToTrueByFunc) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def even(e): return e % 2 == 0
 
 f = filter(even, [1,2,3,4])
@@ -1831,24 +1694,22 @@ except StopIteration:
   exhausted = True
 )")
                    .isError());
-  HandleScope scope;
-  Object r0(&scope, moduleAt(&runtime, "__main__", "r0"));
-  Object r1(&scope, moduleAt(&runtime, "__main__", "r1"));
-  Object exhausted(&scope, moduleAt(&runtime, "__main__", "exhausted"));
+  HandleScope scope(thread_);
+  Object r0(&scope, moduleAt(&runtime_, "__main__", "r0"));
+  Object r1(&scope, moduleAt(&runtime_, "__main__", "r1"));
+  Object exhausted(&scope, moduleAt(&runtime_, "__main__", "exhausted"));
   EXPECT_TRUE(isIntEqualsWord(*r0, 2));
   EXPECT_TRUE(isIntEqualsWord(*r1, 4));
   EXPECT_EQ(*exhausted, Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, FormatWithNonStrFmtSpecRaisesTypeError) {
   EXPECT_TRUE(
-      raised(runFromCStr(&runtime, "format('hi', 1)"), LayoutId::kTypeError));
+      raised(runFromCStr(&runtime_, "format('hi', 1)"), LayoutId::kTypeError));
 }
 
-TEST(BuiltinsModuleTest, FormatCallsDunderFormat) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, FormatCallsDunderFormat) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __format__(self, fmt_spec):
     return "foobar"
@@ -1856,44 +1717,40 @@ result = format(C(), 'hi')
 )")
                    .isError());
   EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "foobar"));
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "foobar"));
 }
 
-TEST(BuiltinsModuleTest, FormatRaisesWhenDunderFormatReturnsNonStr) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, FormatRaisesWhenDunderFormatReturnsNonStr) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __format__(self, fmt_spec):
     return 1
 )")
                    .isError());
-  EXPECT_TRUE(
-      raised(runFromCStr(&runtime, "format(C(), 'hi')"), LayoutId::kTypeError));
+  EXPECT_TRUE(raised(runFromCStr(&runtime_, "format(C(), 'hi')"),
+                     LayoutId::kTypeError));
 }
 
-TEST(BuiltinsModuleTest, IterWithIterableCallsDunderIter) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, IterWithIterableCallsDunderIter) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 l = list(iter([1, 2, 3]))
 )")
                    .isError());
-  HandleScope scope;
-  Object l(&scope, moduleAt(&runtime, "__main__", "l"));
+  HandleScope scope(thread_);
+  Object l(&scope, moduleAt(&runtime_, "__main__", "l"));
   EXPECT_PYLIST_EQ(l, {1, 2, 3});
 }
 
-TEST(BuiltinsModuleTest, IterWithNonIterableRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, IterWithNonIterableRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 iter(None)
 )"),
                             LayoutId::kTypeError,
                             "'NoneType' object is not iterable"));
 }
 
-TEST(BuiltinsModuleTest, IterWithRaisingDunderIterPropagatesException) {
-  Runtime runtime;
-  EXPECT_TRUE(raised(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, IterWithRaisingDunderIterPropagatesException) {
+  EXPECT_TRUE(raised(runFromCStr(&runtime_, R"(
 class C:
   def __iter__(self):
     raise UserWarning()
@@ -1902,9 +1759,8 @@ iter(C())
                      LayoutId::kUserWarning));
 }
 
-TEST(BuiltinsModuleTest, IterWithCallableReturnsIterator) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, IterWithCallableReturnsIterator) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.x = 0
@@ -1917,13 +1773,13 @@ reduced = callable_iter.__reduce__()
 l = list(callable_iter)
 )")
                    .isError());
-  HandleScope scope;
-  Object l(&scope, moduleAt(&runtime, "__main__", "l"));
+  HandleScope scope(thread_);
+  Object l(&scope, moduleAt(&runtime_, "__main__", "l"));
   EXPECT_PYLIST_EQ(l, {1, 2});
 
-  Object iter(&scope, moduleAt(&runtime, "builtins", "iter"));
-  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
-  Object reduced_obj(&scope, moduleAt(&runtime, "__main__", "reduced"));
+  Object iter(&scope, moduleAt(&runtime_, "builtins", "iter"));
+  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object reduced_obj(&scope, moduleAt(&runtime_, "__main__", "reduced"));
   ASSERT_TRUE(reduced_obj.isTuple());
   Tuple reduced(&scope, *reduced_obj);
   ASSERT_EQ(reduced.length(), 2);
@@ -1935,9 +1791,8 @@ l = list(callable_iter)
   EXPECT_TRUE(isIntEqualsWord(inner.at(1), 3));
 }
 
-TEST(BuiltinsModuleTest, NextWithoutIteratorRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, NextWithoutIteratorRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class C:
   pass
 next(C())
@@ -1946,9 +1801,8 @@ next(C())
                             "'C' object is not iterable"));
 }
 
-TEST(BuiltinsModuleTest, NextWithIteratorFetchesNextItem) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, NextWithIteratorFetchesNextItem) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __iter__(self):
     self.a = 1
@@ -1964,13 +1818,12 @@ c = next(itr)
 d = next(itr)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "c"), 1));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "d"), 2));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "c"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "d"), 2));
 }
 
-TEST(BuiltinsModuleTest, NextWithIteratorAndDefaultFetchesNextItem) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, NextWithIteratorAndDefaultFetchesNextItem) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __iter__(self):
     self.a = 1
@@ -1986,13 +1839,12 @@ c = next(itr, 0)
 d = next(itr, 0)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "c"), 1));
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "d"), 2));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "c"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "d"), 2));
 }
 
-TEST(BuiltinsModuleTest, NextWithIteratorRaisesStopIteration) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, NextWithIteratorRaisesStopIteration) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class C:
   def __iter__(self):
     return self
@@ -2006,9 +1858,8 @@ next(itr)
                             LayoutId::kStopIteration, "stopit"));
 }
 
-TEST(BuiltinsModuleTest, NextWithIteratorAndDefaultReturnsDefault) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, NextWithIteratorAndDefaultReturnsDefault) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __iter__(self):
     return self
@@ -2019,21 +1870,20 @@ itr = iter(C())
 c = next(itr, None)
 )")
                    .isError());
-  EXPECT_TRUE(moduleAt(&runtime, "__main__", "c").isNoneType());
+  EXPECT_TRUE(moduleAt(&runtime_, "__main__", "c").isNoneType());
 }
 
-TEST(BuiltinsModuleTest, SortedReturnsSortedList) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, SortedReturnsSortedList) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 unsorted = [5, 7, 8, 6]
 result = sorted(unsorted)
 )")
                    .isError());
 
-  HandleScope scope;
-  Object unsorted_obj(&scope, moduleAt(&runtime, "__main__", "unsorted"));
+  HandleScope scope(thread_);
+  Object unsorted_obj(&scope, moduleAt(&runtime_, "__main__", "unsorted"));
   ASSERT_TRUE(unsorted_obj.isList());
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result_obj.isList());
   EXPECT_NE(*unsorted_obj, *result_obj);
 
@@ -2052,18 +1902,17 @@ result = sorted(unsorted)
   EXPECT_EQ(result.at(3), SmallInt::fromWord(8));
 }
 
-TEST(BuiltinsModuleTest, SortedWithReverseReturnsReverseSortedList) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, SortedWithReverseReturnsReverseSortedList) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 unsorted = [1, 2, 3, 4]
 result = sorted(unsorted, reverse=True)
 )")
                    .isError());
 
-  HandleScope scope;
-  Object unsorted_obj(&scope, moduleAt(&runtime, "__main__", "unsorted"));
+  HandleScope scope(thread_);
+  Object unsorted_obj(&scope, moduleAt(&runtime_, "__main__", "unsorted"));
   ASSERT_TRUE(unsorted_obj.isList());
-  Object result_obj(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result_obj(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result_obj.isList());
   EXPECT_NE(*unsorted_obj, *result_obj);
 
@@ -2082,68 +1931,61 @@ result = sorted(unsorted, reverse=True)
   EXPECT_EQ(result.at(3), SmallInt::fromWord(1));
 }
 
-TEST(BuiltinsModuleTest, MaxWithEmptyIterableRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "max([])"),
+TEST_F(BuiltinsModuleTest, MaxWithEmptyIterableRaisesValueError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "max([])"),
                             LayoutId::kValueError,
                             "max() arg is an empty sequence"));
 }
 
-TEST(BuiltinsModuleTest, MaxWithMultipleArgsReturnsMaximum) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = max(1, 3, 5, 2, -1)").isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+TEST_F(BuiltinsModuleTest, MaxWithMultipleArgsReturnsMaximum) {
+  ASSERT_FALSE(
+      runFromCStr(&runtime_, "result = max(1, 3, 5, 2, -1)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 5));
 }
 
-TEST(BuiltinsModuleTest, MaxWithNoArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, MaxWithNoArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "max()"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "max()"), LayoutId::kTypeError,
       "TypeError: 'max' takes min 1 positional arguments but 0 given"));
 }
 
-TEST(BuiltinsModuleTest, MaxWithIterableReturnsMaximum) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, MaxWithIterableReturnsMaximum) {
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = max((1, 3, 5, 2, -1))").isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 5));
+      runFromCStr(&runtime_, "result = max((1, 3, 5, 2, -1))").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 5));
 }
 
-TEST(BuiltinsModuleTest, MaxWithEmptyIterableAndDefaultReturnsDefault) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = max([], default=42)").isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 42));
+TEST_F(BuiltinsModuleTest, MaxWithEmptyIterableAndDefaultReturnsDefault) {
+  ASSERT_FALSE(
+      runFromCStr(&runtime_, "result = max([], default=42)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 42));
 }
 
-TEST(BuiltinsModuleTest, MaxWithKeyOrdersByKeyFunction) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MaxWithKeyOrdersByKeyFunction) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = max((1, 2, 3), key=lambda x: -x)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 1));
 }
 
-TEST(BuiltinsModuleTest, MaxWithEmptyIterableAndKeyAndDefaultReturnsDefault) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MaxWithEmptyIterableAndKeyAndDefaultReturnsDefault) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = max((), key=lambda x: x, default='empty')
 )")
                    .isError());
   EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "empty"));
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "empty"));
 }
 
-TEST(BuiltinsModuleTest, MaxWithMultipleArgsAndDefaultRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, MaxWithMultipleArgsAndDefaultRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "max(1, 2, default=0)"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "max(1, 2, default=0)"), LayoutId::kTypeError,
       "Cannot specify a default for max() with multiple positional arguments"));
 }
 
-TEST(BuiltinsModuleTest, MaxWithKeyReturnsFirstOccuranceOfEqualValues) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MaxWithKeyReturnsFirstOccuranceOfEqualValues) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   pass
 
@@ -2152,12 +1994,11 @@ second = A()
 result = max(first, second, key=lambda x: 1) is first
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, MaxWithoutKeyReturnsFirstOccuranceOfEqualValues) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MaxWithoutKeyReturnsFirstOccuranceOfEqualValues) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A():
   def __gt__(self, _):
     return False
@@ -2167,71 +2008,63 @@ second = A()
 result = max(first, second) is first
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, MinWithEmptyIterableRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "min([])"),
+TEST_F(BuiltinsModuleTest, MinWithEmptyIterableRaisesValueError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "min([])"),
                             LayoutId::kValueError,
                             "min() arg is an empty sequence"));
 }
 
-TEST(BuiltinsModuleTest, MinWithMultipleArgsReturnsMinimum) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = min(4, 3, 1, 2, 5)").isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 1));
+TEST_F(BuiltinsModuleTest, MinWithMultipleArgsReturnsMinimum) {
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = min(4, 3, 1, 2, 5)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 1));
 }
 
-TEST(BuiltinsModuleTest, MinWithNoArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, MinWithNoArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "min()"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "min()"), LayoutId::kTypeError,
       "TypeError: 'min' takes min 1 positional arguments but 0 given"));
 }
 
-TEST(BuiltinsModuleTest, MinWithIterableReturnsMinimum) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, MinWithIterableReturnsMinimum) {
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = min((4, 3, 1, 2, 5))").isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 1));
+      runFromCStr(&runtime_, "result = min((4, 3, 1, 2, 5))").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 1));
 }
 
-TEST(BuiltinsModuleTest, MinWithEmptyIterableAndDefaultReturnsDefault) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = min([], default=42)").isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 42));
+TEST_F(BuiltinsModuleTest, MinWithEmptyIterableAndDefaultReturnsDefault) {
+  ASSERT_FALSE(
+      runFromCStr(&runtime_, "result = min([], default=42)").isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 42));
 }
 
-TEST(BuiltinsModuleTest, MinWithKeyOrdersByKeyFunction) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MinWithKeyOrdersByKeyFunction) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = min((1, 2, 3), key=lambda x: -x)
 )")
                    .isError());
-  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 3));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 3));
 }
 
-TEST(BuiltinsModuleTest, MinWithEmptyIterableAndKeyAndDefaultReturnsDefault) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MinWithEmptyIterableAndKeyAndDefaultReturnsDefault) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = min((), key=lambda x: x, default='empty')
 )")
                    .isError());
   EXPECT_TRUE(
-      isStrEqualsCStr(moduleAt(&runtime, "__main__", "result"), "empty"));
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "empty"));
 }
 
-TEST(BuiltinsModuleTest, MinWithMultipleArgsAndDefaultRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BuiltinsModuleTest, MinWithMultipleArgsAndDefaultRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "min(1, 2, default=0)"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "min(1, 2, default=0)"), LayoutId::kTypeError,
       "Cannot specify a default for min() with multiple positional arguments"));
 }
 
-TEST(BuiltinsModuleTest, MinReturnsFirstOccuranceOfEqualValues) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MinReturnsFirstOccuranceOfEqualValues) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
   pass
 
@@ -2240,12 +2073,11 @@ second = A()
 result = min(first, second, key=lambda x: 1) is first
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, MinWithoutKeyReturnsFirstOccuranceOfEqualValues) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MinWithoutKeyReturnsFirstOccuranceOfEqualValues) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A():
   def __lt__(self, _):
     return False
@@ -2255,20 +2087,18 @@ second = A()
 result = min(first, second) is first
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "result"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, MapWithNonIterableArgumentRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "map(1,1)"),
+TEST_F(BuiltinsModuleTest, MapWithNonIterableArgumentRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "map(1,1)"),
                             LayoutId::kTypeError,
                             "'int' object is not iterable"));
 }
 
-TEST(BuiltinsModuleTest,
-     MapWithIterableDunderNextReturnsFuncAppliedElementsSequentially) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest,
+       MapWithIterableDunderNextReturnsFuncAppliedElementsSequentially) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def inc(e):
   return e + 1
 
@@ -2277,14 +2107,14 @@ r0 = m.__next__()
 r1 = m.__next__()
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "r0"), SmallInt::fromWord(2));
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "r1"), SmallInt::fromWord(3));
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "r0"), SmallInt::fromWord(2));
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "r1"), SmallInt::fromWord(3));
 }
 
-TEST(BuiltinsModuleTest,
-     MapWithMultipleIterablesDunderNextReturnsFuncAppliedElementsSequentially) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(
+    BuiltinsModuleTest,
+    MapWithMultipleIterablesDunderNextReturnsFuncAppliedElementsSequentially) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def inc(e0, e1):
   return e0 + e1
 
@@ -2293,13 +2123,12 @@ r0 = m.__next__()
 r1 = m.__next__()
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "r0"), SmallInt::fromWord(101));
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "r1"), SmallInt::fromWord(202));
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "r0"), SmallInt::fromWord(101));
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "r1"), SmallInt::fromWord(202));
 }
 
-TEST(BuiltinsModuleTest, MapDunderNextFinishesByRaisingStopIteration) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, MapDunderNextFinishesByRaisingStopIteration) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def inc(e):
   return e + 1
 
@@ -2313,14 +2142,13 @@ except StopIteration:
   exc_raised = True
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "exc_raised"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "exc_raised"), Bool::trueObj());
 }
 
-TEST(
+TEST_F(
     BuiltinsModuleTest,
     MapWithMultipleIterablesDunderNextFinishesByRaisingStopIterationOnShorterOne) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def inc(e0, e1):
   return e0, e1
 
@@ -2333,19 +2161,17 @@ except StopIteration:
   exc_raised = True
 )")
                    .isError());
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "exc_raised"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "exc_raised"), Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, EnumerateWithNonIterableRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "enumerate(1.0)"),
+TEST_F(BuiltinsModuleTest, EnumerateWithNonIterableRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "enumerate(1.0)"),
                             LayoutId::kTypeError,
                             "'float' object is not iterable"));
 }
 
-TEST(BuiltinsModuleTest, EnumerateReturnsEnumeratedTuples) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, EnumerateReturnsEnumeratedTuples) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 e = enumerate([7, 3])
 res1 = e.__next__()
 res2 = e.__next__()
@@ -2356,36 +2182,34 @@ except StopIteration:
   exhausted = True
 )")
                    .isError());
-  HandleScope scope;
-  Object res1(&scope, moduleAt(&runtime, "__main__", "res1"));
+  HandleScope scope(thread_);
+  Object res1(&scope, moduleAt(&runtime_, "__main__", "res1"));
   ASSERT_TRUE(res1.isTuple());
   EXPECT_EQ(Tuple::cast(*res1).at(0), SmallInt::fromWord(0));
   EXPECT_EQ(Tuple::cast(*res1).at(1), SmallInt::fromWord(7));
-  Object res2(&scope, moduleAt(&runtime, "__main__", "res2"));
+  Object res2(&scope, moduleAt(&runtime_, "__main__", "res2"));
   ASSERT_TRUE(res2.isTuple());
   EXPECT_EQ(Tuple::cast(*res2).at(0), SmallInt::fromWord(1));
   EXPECT_EQ(Tuple::cast(*res2).at(1), SmallInt::fromWord(3));
-  EXPECT_EQ(moduleAt(&runtime, "__main__", "exhausted"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "exhausted"), Bool::trueObj());
 }
 
-TEST(BuiltinsModuleTest, AbsReturnsAbsoluteValue) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, AbsReturnsAbsoluteValue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 res1 = abs(10)
 res2 = abs(-10)
 )")
                    .isError());
 
-  HandleScope scope;
-  Object res1(&scope, moduleAt(&runtime, "__main__", "res1"));
+  HandleScope scope(thread_);
+  Object res1(&scope, moduleAt(&runtime_, "__main__", "res1"));
   EXPECT_TRUE(isIntEqualsWord(*res1, 10));
-  Object res2(&scope, moduleAt(&runtime, "__main__", "res2"));
+  Object res2(&scope, moduleAt(&runtime_, "__main__", "res2"));
   EXPECT_TRUE(isIntEqualsWord(*res2, 10));
 }
 
-TEST(BuiltinsModuleTest, AbsWithoutDunderAbsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BuiltinsModuleTest, AbsWithoutDunderAbsRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class Foo(): pass
 res1 = abs(Foo())
 )"),

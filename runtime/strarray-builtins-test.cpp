@@ -7,62 +7,54 @@ namespace python {
 
 using namespace testing;
 
-TEST(StrArrayBuiltinsTest, DunderNewAndDunderInitCreateStrArray) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, "obj = _strarray('hello')").isError());
-  StrArray self(&scope, moduleAt(&runtime, "__main__", "obj"));
-  EXPECT_TRUE(isStrEqualsCStr(runtime.strFromStrArray(self), "hello"));
+using StrArrayBuiltinsTest = RuntimeFixture;
+
+TEST_F(StrArrayBuiltinsTest, DunderNewAndDunderInitCreateStrArray) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "obj = _strarray('hello')").isError());
+  StrArray self(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.strFromStrArray(self), "hello"));
 }
 
-TEST(StrArrayBuiltinsTest, DunderInitWithWrongTypeRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "obj = _strarray(b'hello')"),
+TEST_F(StrArrayBuiltinsTest, DunderInitWithWrongTypeRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "obj = _strarray(b'hello')"),
                             LayoutId::kTypeError,
                             "_strarray can only be initialized with str"));
 }
 
-TEST(StrArrayBuiltinsTest, DunderReprWithNonStrArrayRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "_strarray.__repr__(b'')"),
+TEST_F(StrArrayBuiltinsTest, DunderReprWithNonStrArrayRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "_strarray.__repr__(b'')"),
                             LayoutId::kTypeError,
                             "'__repr__' requires a '_strarray' object"));
 }
 
-TEST(StrArrayBuiltinsTest, DunderReprWithSimpleStrArrayReturnsStr) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(StrArrayBuiltinsTest, DunderReprWithSimpleStrArrayReturnsStr) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "obj = _strarray('hello').__repr__()").isError());
-  Str self(&scope, moduleAt(&runtime, "__main__", "obj"));
+      runFromCStr(&runtime_, "obj = _strarray('hello').__repr__()").isError());
+  Str self(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_TRUE(isStrEqualsCStr(*self, "_strarray('hello')"));
 }
 
-TEST(StrArrayBuiltinsTest, DunderStrWithNonStrArrayRaisesTypeError) {
-  Runtime runtime;
+TEST_F(StrArrayBuiltinsTest, DunderStrWithNonStrArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "_strarray.__str__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "_strarray.__str__(b'')"), LayoutId::kTypeError,
       "'__str__' requires a '_strarray' object but got 'bytes'"));
 }
 
-TEST(StrArrayBuiltinsTest, DunderStrWithEmptyStrArrayReturnsEmptyStr) {
-  Runtime runtime;
+TEST_F(StrArrayBuiltinsTest, DunderStrWithEmptyStrArrayReturnsEmptyStr) {
   HandleScope scope;
-  StrArray self(&scope, runtime.newStrArray());
+  StrArray self(&scope, runtime_.newStrArray());
   Object repr(&scope, runBuiltin(StrArrayBuiltins::dunderStr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, ""));
 }
 
-TEST(StrArrayBuiltinsTest, DunderStrWithSimpleStrArrayReturnsStr) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  StrArray self(&scope, runtime.newStrArray());
+TEST_F(StrArrayBuiltinsTest, DunderStrWithSimpleStrArrayReturnsStr) {
+  HandleScope scope(thread_);
+  StrArray self(&scope, runtime_.newStrArray());
   const char* test_str = "foo";
-  Str foo(&scope, runtime.newStrFromCStr(test_str));
-  runtime.strArrayAddStr(thread, self, foo);
+  Str foo(&scope, runtime_.newStrFromCStr(test_str));
+  runtime_.strArrayAddStr(thread_, self, foo);
   Object repr(&scope, runBuiltin(StrArrayBuiltins::dunderStr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, test_str));
 }

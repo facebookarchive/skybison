@@ -7,469 +7,424 @@ namespace python {
 
 using namespace testing;
 
-TEST(BytesBuiltinsTest, BuiltinBaseIsBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  Type bytes_type(&scope, runtime.typeAt(LayoutId::kBytes));
+using BytesBuiltinsTest = RuntimeFixture;
+
+TEST_F(BytesBuiltinsTest, BuiltinBaseIsBytes) {
+  HandleScope scope(thread_);
+  Type bytes_type(&scope, runtime_.typeAt(LayoutId::kBytes));
   EXPECT_EQ(bytes_type.builtinBase(), LayoutId::kBytes);
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderAddWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__add__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__add__(b'')"), LayoutId::kTypeError,
       "TypeError: 'bytes.__add__' takes 2 positional arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderAddWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__add__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__add__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__add__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderAddWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
-  Object other(&scope, runtime.newBytes(1, '1'));
+  Object other(&scope, runtime_.newBytes(1, '1'));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithNonBytesOtherRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, '1'));
+TEST_F(BytesBuiltinsTest, DunderAddWithNonBytesOtherRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, '1'));
   Object other(&scope, SmallInt::fromWord(2));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(raised(*sum, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithBytesLikeOtherReturnsBytes) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderAddWithBytesLikeOtherReturnsBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object self(&scope, runtime.newBytes(1, '1'));
-  ByteArray other(&scope, runtime.newByteArray());
+  Object self(&scope, runtime_.newBytes(1, '1'));
+  ByteArray other(&scope, runtime_.newByteArray());
   const byte buf[] = {'2', '3'};
-  runtime.byteArrayExtend(thread, other, buf);
+  runtime_.byteArrayExtend(thread, other, buf);
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(isBytesEqualsCStr(sum, "123"));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithBytesSubclassReturnsBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderAddWithBytesSubclassReturnsBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b'abc')
 other = Foo(b'123')
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
-  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime_, "__main__", "other"));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(isBytesEqualsCStr(sum, "abc123"));
 }
 
-TEST(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, '1'));
-  Object other(&scope, runtime.newBytes(2, '2'));
+TEST_F(BytesBuiltinsTest, DunderAddWithTwoBytesReturnsConcatenatedBytes) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, '1'));
+  Object other(&scope, runtime_.newBytes(2, '2'));
   Object sum(&scope, runBuiltin(BytesBuiltins::dunderAdd, self, other));
   EXPECT_TRUE(isBytesEqualsCStr(sum, "122"));
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderEqWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__eq__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__eq__(b'')"), LayoutId::kTypeError,
       "TypeError: 'bytes.__eq__' takes 2 positional arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderEqWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__eq__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__eq__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__eq__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderEqWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
-  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(1, 'a'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   EXPECT_TRUE(raised(*eq, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
+TEST_F(BytesBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   EXPECT_TRUE(eq.isNotImplementedType());
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithBytesSubclassComparesBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderEqWithBytesSubclassComparesBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b'123')
 other = Foo(b'123')
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
-  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime_, "__main__", "other"));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   EXPECT_EQ(eq, Bool::trueObj());
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(5, 'a'));
-  Object other(&scope, runtime.newBytes(5, 'a'));
+TEST_F(BytesBuiltinsTest, DunderEqWithEqualBytesReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(5, 'a'));
+  Object other(&scope, runtime_.newBytes(5, 'a'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   ASSERT_TRUE(eq.isBool());
   EXPECT_TRUE(Bool::cast(*eq).value());
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  Object other(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderEqWithDifferentLengthsReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(4, 'a'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   ASSERT_TRUE(eq.isBool());
   EXPECT_FALSE(Bool::cast(*eq).value());
 }
 
-TEST(BytesBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(3, 'b'));
+TEST_F(BytesBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(3, 'b'));
   Object eq(&scope, runBuiltin(BytesBuiltins::dunderEq, self, other));
   ASSERT_TRUE(eq.isBool());
   EXPECT_FALSE(Bool::cast(*eq).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderGeWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__ge__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__ge__(b'')"), LayoutId::kTypeError,
       "TypeError: 'bytes.__ge__' takes 2 positional arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderGeWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__ge__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__ge__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__ge__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderGeWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
-  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(1, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   EXPECT_TRUE(raised(*ge, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isNotImplementedType());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithBytesSubclassComparesBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderGeWithBytesSubclassComparesBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b'123')
 other = Foo(b'123')
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
-  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime_, "__main__", "other"));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   EXPECT_EQ(ge, Bool::trueObj());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithEqualBytesReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(5, 'a'));
-  Object other(&scope, runtime.newBytes(5, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGeWithEqualBytesReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(5, 'a'));
+  Object other(&scope, runtime_.newBytes(5, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
   EXPECT_TRUE(Bool::cast(*ge).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(2, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGeWithShorterOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(2, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
   EXPECT_TRUE(Bool::cast(*ge).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGeWithLongerOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(4, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
   EXPECT_FALSE(Bool::cast(*ge).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyEarlierOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'b'));
-  Object other(&scope, runtime.newBytes(3, 'a'));
+TEST_F(BytesBuiltinsTest,
+       DunderGeWithLexicographicallyEarlierOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'b'));
+  Object other(&scope, runtime_.newBytes(3, 'a'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
   EXPECT_TRUE(Bool::cast(*ge).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(3, 'b'));
+TEST_F(BytesBuiltinsTest, DunderGeWithLexicographicallyLaterOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(3, 'b'));
   Object ge(&scope, runBuiltin(BytesBuiltins::dunderGe, self, other));
   ASSERT_TRUE(ge.isBool());
   EXPECT_FALSE(Bool::cast(*ge).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.__getitem__(b'')"),
+TEST_F(BytesBuiltinsTest, DunderGetItemWithTooFewArgsRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes.__getitem__(b'')"),
                             LayoutId::kTypeError,
                             "TypeError: 'bytes.__getitem__' takes 2 positional "
                             "arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderGetItemWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__getitem__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__getitem__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__getitem__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderGetItemWithNonBytesSelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__getitem__(0, 1)"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__getitem__(0, 1)"), LayoutId::kTypeError,
       "'__getitem__' requires a 'bytes' object but received a 'int'"));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''[2**64]"),
+TEST_F(BytesBuiltinsTest, DunderGetItemWithLargeIntRaisesIndexError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b''[2**64]"),
                             LayoutId::kIndexError,
                             "cannot fit 'int' into an index-sized integer"));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'abc'[3]"),
+TEST_F(BytesBuiltinsTest,
+       DunderGetItemWithIntGreaterOrEqualLenRaisesIndexError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b'abc'[3]"),
                             LayoutId::kIndexError, "index out of range"));
 }
 
-TEST(BytesBuiltinsTest,
-     DunderGetItemWithNegativeIntGreaterThanLenRaisesIndexError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b'abc'[-4]"),
+TEST_F(BytesBuiltinsTest,
+       DunderGetItemWithNegativeIntGreaterThanLenRaisesIndexError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b'abc'[-4]"),
                             LayoutId::kIndexError, "index out of range"));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = b'hello'[-5]").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderGetItemWithNegativeIntIndexesFromEnd) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = b'hello'[-5]").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = b'hello'[0]").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderGetItemIndexesFromBeginning) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = b'hello'[0]").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 'h'));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = b'hello world'[:3]").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderGetItemWithSliceReturnsBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = b'hello world'[:3]").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "hel"));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderGetItemWithSliceStepReturnsBytes) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = b'hello world'[1:6:2]").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+      runFromCStr(&runtime_, "result = b'hello world'[1:6:2]").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "el "));
 }
 
-TEST(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderGetItemWithNonIndexOtherRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "b''[1.5]"), LayoutId::kTypeError,
+      raisedWithStr(runFromCStr(&runtime_, "b''[1.5]"), LayoutId::kTypeError,
                     "byte indices must be integers or slice, not float"));
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderGtWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__gt__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__gt__(b'')"), LayoutId::kTypeError,
       "TypeError: 'bytes.__gt__' takes 2 positional arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderGtWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__gt__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__gt__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__gt__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderGtWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
-  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(1, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   EXPECT_TRUE(raised(*gt, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isNotImplementedType());
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithBytesSubclassComparesBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderGtWithBytesSubclassComparesBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b'123')
 other = Foo(b'123')
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
-  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime_, "__main__", "other"));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   EXPECT_EQ(gt, Bool::falseObj());
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithEqualBytesReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(5, 'a'));
-  Object other(&scope, runtime.newBytes(5, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGtWithEqualBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(5, 'a'));
+  Object other(&scope, runtime_.newBytes(5, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
   EXPECT_FALSE(Bool::cast(*gt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(2, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGtWithShorterOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(2, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
   EXPECT_TRUE(Bool::cast(*gt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderGtWithLongerOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(4, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
   EXPECT_FALSE(Bool::cast(*gt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyEarlierOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'b'));
-  Object other(&scope, runtime.newBytes(3, 'a'));
+TEST_F(BytesBuiltinsTest,
+       DunderGtWithLexicographicallyEarlierOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'b'));
+  Object other(&scope, runtime_.newBytes(3, 'a'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
   EXPECT_TRUE(Bool::cast(*gt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(3, 'b'));
+TEST_F(BytesBuiltinsTest, DunderGtWithLexicographicallyLaterOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(3, 'b'));
   Object gt(&scope, runBuiltin(BytesBuiltins::dunderGt, self, other));
   ASSERT_TRUE(gt.isBool());
   EXPECT_FALSE(Bool::cast(*gt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderHashReturnsSmallInt) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderHashReturnsSmallInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   const byte bytes[] = {'h', 'e', 'l', 'l', 'o', '\0'};
-  Bytes bytes_obj(&scope, runtime.newBytesWithAll(bytes));
+  Bytes bytes_obj(&scope, runtime_.newBytesWithAll(bytes));
   EXPECT_TRUE(runBuiltin(BytesBuiltins::dunderHash, bytes_obj).isSmallInt());
 }
 
-TEST(BytesBuiltinsTest, DunderHashSmallBytesReturnsSmallInt) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderHashSmallBytesReturnsSmallInt) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   const byte bytes[] = {'h'};
-  Bytes bytes_obj(&scope, runtime.newBytesWithAll(bytes));
+  Bytes bytes_obj(&scope, runtime_.newBytesWithAll(bytes));
   EXPECT_TRUE(runBuiltin(BytesBuiltins::dunderHash, bytes_obj).isSmallInt());
 }
 
-TEST(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   const byte bytes[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd', '\0'};
-  Bytes bytes_obj1(&scope, runtime.newBytesWithAll(bytes));
-  Bytes bytes_obj2(&scope, runtime.newBytesWithAll(bytes));
+  Bytes bytes_obj1(&scope, runtime_.newBytesWithAll(bytes));
+  Bytes bytes_obj2(&scope, runtime_.newBytesWithAll(bytes));
   EXPECT_NE(*bytes_obj1, *bytes_obj2);
   Object result1(&scope, runBuiltin(BytesBuiltins::dunderHash, bytes_obj1));
   Object result2(&scope, runBuiltin(BytesBuiltins::dunderHash, bytes_obj2));
@@ -478,547 +433,494 @@ TEST(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
   EXPECT_EQ(*result1, *result2);
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__le__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__le__(b'')"), LayoutId::kTypeError,
       "TypeError: 'bytes.__le__' takes 2 positional arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderLeWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__le__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__le__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__le__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderLeWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
-  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(1, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   EXPECT_TRUE(raised(*le, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isNotImplementedType());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithBytesSubclassComparesBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderLeWithBytesSubclassComparesBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b'123')
 other = Foo(b'123')
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
-  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime_, "__main__", "other"));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   EXPECT_EQ(le, Bool::trueObj());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithEqualBytesReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(5, 'a'));
-  Object other(&scope, runtime.newBytes(5, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLeWithEqualBytesReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(5, 'a'));
+  Object other(&scope, runtime_.newBytes(5, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
   EXPECT_TRUE(Bool::cast(*le).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(2, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLeWithShorterOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(2, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
   EXPECT_FALSE(Bool::cast(*le).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLeWithLongerOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(4, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
   EXPECT_TRUE(Bool::cast(*le).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyEarlierOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'b'));
-  Object other(&scope, runtime.newBytes(3, 'a'));
+TEST_F(BytesBuiltinsTest,
+       DunderLeWithLexicographicallyEarlierOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'b'));
+  Object other(&scope, runtime_.newBytes(3, 'a'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
   EXPECT_FALSE(Bool::cast(*le).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLeWithLexicographicallyLaterOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(3, 'b'));
+TEST_F(BytesBuiltinsTest, DunderLeWithLexicographicallyLaterOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(3, 'b'));
   Object le(&scope, runBuiltin(BytesBuiltins::dunderLe, self, other));
   ASSERT_TRUE(le.isBool());
   EXPECT_TRUE(Bool::cast(*le).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderLenWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__len__()"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__len__()"), LayoutId::kTypeError,
       "TypeError: 'bytes.__len__' takes 1 positional arguments but 0 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.__len__(b'', b'')"),
+TEST_F(BytesBuiltinsTest, DunderLenWithTooManyArgsRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes.__len__(b'', b'')"),
                             LayoutId::kTypeError,
                             "TypeError: 'bytes.__len__' takes max 1 positional "
                             "arguments but 2 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderLenWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
   EXPECT_TRUE(raised(*len, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithEmptyBytesReturnsZero) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytesWithAll(View<byte>(nullptr, 0)));
+TEST_F(BytesBuiltinsTest, DunderLenWithEmptyBytesReturnsZero) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytesWithAll(View<byte>(nullptr, 0)));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
   EXPECT_EQ(len, SmallInt::fromWord(0));
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithNonEmptyBytesReturnsLength) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLenWithNonEmptyBytesReturnsLength) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(4, 'a'));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
   EXPECT_EQ(len, SmallInt::fromWord(4));
 }
 
-TEST(BytesBuiltinsTest, DunderLenWithBytesSubclassReturnsLength) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderLenWithBytesSubclassReturnsLength) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b"1234567890")
   )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
   Object len(&scope, runBuiltin(BytesBuiltins::dunderLen, self));
   EXPECT_EQ(len, SmallInt::fromWord(10));
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderLtWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__lt__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__lt__(b'')"), LayoutId::kTypeError,
       "TypeError: 'bytes.__lt__' takes 2 positional arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderLtWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__lt__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__lt__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__lt__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderLtWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
-  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(1, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   EXPECT_TRUE(raised(*lt, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isNotImplementedType());
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithBytesSubclassComparesBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderLtWithBytesSubclassComparesBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b'123')
 other = Foo(b'123')
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
-  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime_, "__main__", "other"));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   EXPECT_EQ(lt, Bool::falseObj());
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithEqualBytesReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(5, 'a'));
-  Object other(&scope, runtime.newBytes(5, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLtWithEqualBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(5, 'a'));
+  Object other(&scope, runtime_.newBytes(5, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
   EXPECT_FALSE(Bool::cast(*lt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(2, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLtWithShorterOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(2, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
   EXPECT_FALSE(Bool::cast(*lt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderLtWithLongerOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(4, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
   EXPECT_TRUE(Bool::cast(*lt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyEarlierOtherReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'b'));
-  Object other(&scope, runtime.newBytes(3, 'a'));
+TEST_F(BytesBuiltinsTest,
+       DunderLtWithLexicographicallyEarlierOtherReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'b'));
+  Object other(&scope, runtime_.newBytes(3, 'a'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
   EXPECT_FALSE(Bool::cast(*lt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(3, 'b'));
+TEST_F(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(3, 'b'));
   Object lt(&scope, runBuiltin(BytesBuiltins::dunderLt, self, other));
   ASSERT_TRUE(lt.isBool());
   EXPECT_TRUE(Bool::cast(*lt).value());
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__mul__(0, 1)"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__mul__(0, 1)"), LayoutId::kTypeError,
       "'__mul__' requires a 'bytes' object but got 'int'"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
-  Object count(&scope, runtime.newList());
+  Object count(&scope, runtime_.newList());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BytesBuiltins::dunderMul, self, count), LayoutId::kTypeError,
       "'list' object cannot be interpreted as an integer"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithIntSubclassReturnsRepeatedBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderMulWithIntSubclassReturnsRepeatedBytes) {
+  HandleScope scope(thread_);
   const byte view[] = {'a', 'b', 'c'};
-  Object self(&scope, runtime.newBytesWithAll(view));
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  Object self(&scope, runtime_.newBytesWithAll(view));
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C(int): pass
 count = C(4)
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "abcabcabcabc"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderMulWithDunderIndexReturnsRepeatedBytes) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __index__(self):
     return 2
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "aa"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderMulWithBadDunderIndexRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __index__(self):
     return "foo"
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kTypeError,
                             "__index__ returned non-int (type str)"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulPropagatesDunderIndexError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderMulPropagatesDunderIndexError) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __index__(self):
     raise ArithmeticError("called __index__")
 count = C()
 )")
                    .isError());
-  Object count(&scope, moduleAt(&runtime, "__main__", "count"));
+  Object count(&scope, moduleAt(&runtime_, "__main__", "count"));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kArithmeticError, "called __index__"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
+  HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
   const uword digits[] = {1, 1};
-  Object count(&scope, runtime.newIntWithDigits(digits));
+  Object count(&scope, runtime_.newIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kOverflowError,
                             "cannot fit 'int' into an index-sized integer"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
+TEST_F(BytesBuiltinsTest, DunderMulWithOverflowRaisesOverflowError) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
   Object count(&scope, SmallInt::fromWord(SmallInt::kMaxValue / 2));
   EXPECT_TRUE(raisedWithStr(runBuiltin(BytesBuiltins::dunderMul, self, count),
                             LayoutId::kOverflowError,
                             "repeated bytes are too long"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithEmptyBytesReturnsEmptyBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderMulWithEmptyBytesReturnsEmptyBytes) {
+  HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
-  Object count(&scope, runtime.newInt(10));
+  Object count(&scope, runtime_.newInt(10));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, ""));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithNegativeReturnsEmptyBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderMulWithNegativeReturnsEmptyBytes) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(4, 'a'));
   Object count(&scope, SmallInt::fromWord(-5));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, ""));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithZeroReturnsEmptyBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderMulWithZeroReturnsEmptyBytes) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(4, 'a'));
   Object count(&scope, SmallInt::fromWord(0));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, ""));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithOneReturnsSameBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderMulWithOneReturnsSameBytes) {
+  HandleScope scope(thread_);
   const byte bytes_array[] = {'a', 'b'};
-  Object self(&scope, runtime.newBytesWithAll(bytes_array));
+  Object self(&scope, runtime_.newBytesWithAll(bytes_array));
   Object count(&scope, SmallInt::fromWord(1));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ab"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulReturnsRepeatedBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderMulReturnsRepeatedBytes) {
+  HandleScope scope(thread_);
   const byte bytes_array[] = {'a', 'b'};
-  Object self(&scope, runtime.newBytesWithAll(bytes_array));
+  Object self(&scope, runtime_.newBytesWithAll(bytes_array));
   Object count(&scope, SmallInt::fromWord(3));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ababab"));
 }
 
-TEST(BytesBuiltinsTest, DunderMulWithBytesSubclassReturnsRepeatedBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderMulWithBytesSubclassReturnsRepeatedBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b"ab")
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
   Object count(&scope, SmallInt::fromWord(3));
   Object result(&scope, runBuiltin(BytesBuiltins::dunderMul, self, count));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ababab"));
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderNeWithTooFewArgsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__ne__(b'')"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "bytes.__ne__(b'')"), LayoutId::kTypeError,
       "TypeError: 'bytes.__ne__' takes 2 positional arguments but 1 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithTooManyArgsRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderNeWithTooManyArgsRaisesTypeError) {
   EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime, "bytes.__ne__(b'', b'', b'')"),
+      raisedWithStr(runFromCStr(&runtime_, "bytes.__ne__(b'', b'', b'')"),
                     LayoutId::kTypeError,
                     "TypeError: 'bytes.__ne__' takes max 2 positional "
                     "arguments but 3 given"));
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderNeWithNonBytesSelfRaisesTypeError) {
+  HandleScope scope(thread_);
   Object self(&scope, SmallInt::fromWord(0));
-  Object other(&scope, runtime.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(1, 'a'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   EXPECT_TRUE(raised(*ne, LayoutId::kTypeError));
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
+TEST_F(BytesBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
   Object other(&scope, SmallInt::fromWord(0));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   EXPECT_TRUE(ne.isNotImplementedType());
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithBytesSubclassComparesBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderNeWithBytesSubclassComparesBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b'123')
 other = Foo(b'123')
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
-  Object other(&scope, moduleAt(&runtime, "__main__", "other"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
+  Object other(&scope, moduleAt(&runtime_, "__main__", "other"));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   EXPECT_EQ(ne, Bool::falseObj());
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(5, 'a'));
-  Object other(&scope, runtime.newBytes(5, 'a'));
+TEST_F(BytesBuiltinsTest, DunderNeWithEqualBytesReturnsFalse) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(5, 'a'));
+  Object other(&scope, runtime_.newBytes(5, 'a'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   ASSERT_TRUE(ne.isBool());
   EXPECT_FALSE(Bool::cast(*ne).value());
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(1, 'a'));
-  Object other(&scope, runtime.newBytes(4, 'a'));
+TEST_F(BytesBuiltinsTest, DunderNeWithDifferentLengthsReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(1, 'a'));
+  Object other(&scope, runtime_.newBytes(4, 'a'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   ASSERT_TRUE(ne.isBool());
   EXPECT_TRUE(Bool::cast(*ne).value());
 }
 
-TEST(BytesBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(3, 'a'));
-  Object other(&scope, runtime.newBytes(3, 'b'));
+TEST_F(BytesBuiltinsTest, DunderNeWithDifferentContentsReturnsTrue) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(3, 'a'));
+  Object other(&scope, runtime_.newBytes(3, 'b'));
   Object ne(&scope, runBuiltin(BytesBuiltins::dunderNe, self, other));
   ASSERT_TRUE(ne.isBool());
   EXPECT_TRUE(Bool::cast(*ne).value());
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithoutSourceWithEncodingRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(encoding='ascii')"),
+TEST_F(BytesBuiltinsTest, DunderNewWithoutSourceWithEncodingRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes(encoding='ascii')"),
                             LayoutId::kTypeError,
                             "encoding or errors without sequence argument"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithoutSourceWithErrorsRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(errors='strict')"),
+TEST_F(BytesBuiltinsTest, DunderNewWithoutSourceWithErrorsRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes(errors='strict')"),
                             LayoutId::kTypeError,
                             "encoding or errors without sequence argument"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithoutArgsReturnsEmptyBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "obj = bytes()").isError());
-  Object obj(&scope, moduleAt(&runtime, "__main__", "obj"));
+TEST_F(BytesBuiltinsTest, DunderNewWithoutArgsReturnsEmptyBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "obj = bytes()").isError());
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
   EXPECT_TRUE(isBytesEqualsCStr(obj, ""));
 }
 
-TEST(BytesBuiltinsTest,
-     DunderNewWithNonStringSourceWithEncodingRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(1, 'ascii')"),
+TEST_F(BytesBuiltinsTest,
+       DunderNewWithNonStringSourceWithEncodingRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes(1, 'ascii')"),
                             LayoutId::kTypeError,
                             "encoding without a string argument"));
 }
 
-TEST(BytesBuiltinsTest,
-     DunderNewWithoutEncodingWithErrorsAndStringSourceRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes('', errors='strict')"),
-                            LayoutId::kTypeError,
-                            "string argument without an encoding"));
+TEST_F(BytesBuiltinsTest,
+       DunderNewWithoutEncodingWithErrorsAndStringSourceRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(&runtime_, "bytes('', errors='strict')"),
+      LayoutId::kTypeError, "string argument without an encoding"));
 }
 
-TEST(BytesBuiltinsTest,
-     DunderNewWithoutEncodingWithErrorsAndNonStringSourceRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes(1, errors='strict')"),
+TEST_F(BytesBuiltinsTest,
+       DunderNewWithoutEncodingWithErrorsAndNonStringSourceRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes(1, errors='strict')"),
                             LayoutId::kTypeError,
                             "errors without a string argument"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithMistypedDunderBytesRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderNewWithMistypedDunderBytesRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class Foo:
   def __bytes__(self): return 1
 bytes(Foo())
@@ -1027,9 +929,8 @@ bytes(Foo())
                             "__bytes__ returned non-bytes (type int)"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewPropagatesDunderBytesError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderNewPropagatesDunderBytesError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class Foo:
   def __bytes__(self): raise SystemError("foo")
 bytes(Foo())
@@ -1037,296 +938,264 @@ bytes(Foo())
                             LayoutId::kSystemError, "foo"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithDunderBytesReturnsBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderNewWithDunderBytesReturnsBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   def __bytes__(self): return b'foo'
 result = bytes(Foo())
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "foo"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithNegativeIntegerSourceRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "result = bytes(-1)"),
+TEST_F(BytesBuiltinsTest, DunderNewWithNegativeIntegerSourceRaisesValueError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "result = bytes(-1)"),
                             LayoutId::kValueError, "negative count"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithLargeIntegerSourceRaisesOverflowError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "result = bytes(2**63)"),
+TEST_F(BytesBuiltinsTest, DunderNewWithLargeIntegerSourceRaisesOverflowError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "result = bytes(2**63)"),
                             LayoutId::kOverflowError,
                             "cannot fit 'int' into an index-sized integer"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsZeroFilledBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes(10)").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderNewWithIntegerSourceReturnsZeroFilledBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = bytes(10)").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   const byte bytes[10] = {};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes(b'123')").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderNewWithBytesReturnsSameBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = bytes(b'123')").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   const byte bytes[] = {'1', '2', '3'};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithByteArrayReturnsBytesCopy) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderNewWithByteArrayReturnsBytesCopy) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = bytes(bytearray(b'123'))").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+      runFromCStr(&runtime_, "result = bytes(bytearray(b'123'))").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   const byte bytes[] = {'1', '2', '3'};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithListReturnsNewBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes([6, 28])").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderNewWithListReturnsNewBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = bytes([6, 28])").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   const byte bytes[] = {6, 28};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithTupleReturnsNewBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = bytes((6, 28))").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderNewWithTupleReturnsNewBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = bytes((6, 28))").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   const byte bytes[] = {6, 28};
   EXPECT_TRUE(isBytesEqualsBytes(result, bytes));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithNegativeRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "result = bytes([-1])"),
+TEST_F(BytesBuiltinsTest, DunderNewWithNegativeRaisesValueError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "result = bytes([-1])"),
                             LayoutId::kValueError,
                             "bytes must be in range(0, 256)"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithGreaterThanByteRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "result = bytes([256])"),
+TEST_F(BytesBuiltinsTest, DunderNewWithGreaterThanByteRaisesValueError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "result = bytes([256])"),
                             LayoutId::kValueError,
                             "bytes must be in range(0, 256)"));
 }
 
-TEST(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderNewWithIterableReturnsNewBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   def __iter__(self):
     return [1, 2, 3].__iter__()
 result = bytes(Foo())
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   const byte expected[] = {1, 2, 3};
   EXPECT_TRUE(isBytesEqualsBytes(result, expected));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.__repr__(bytearray())"),
+      runFromCStr(&runtime_, "bytes.__repr__(bytearray())"),
       LayoutId::kTypeError,
       "'__repr__' requires a 'bytes' object but got 'bytearray'"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithEmptyBytesReturnsEmptyRepr) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderReprWithEmptyBytesReturnsEmptyRepr) {
+  HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "b''"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithSimpleBytesReturnsRepr) {
-  Runtime runtime;
-  HandleScope scope;
-  Object self(&scope, runtime.newBytes(10, '*'));
+TEST_F(BytesBuiltinsTest, DunderReprWithSimpleBytesReturnsRepr) {
+  HandleScope scope(thread_);
+  Object self(&scope, runtime_.newBytes(10, '*'));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "b'**********'"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithBytesSubclassReturnsStr) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, DunderReprWithBytesSubclassReturnsStr) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b"*****")
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "b'*****'"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderReprWithDoubleQuoteUsesSingleQuoteDelimiters) {
+  HandleScope scope(thread_);
   const byte view[] = {'_', '"', '_'};
-  Object self(&scope, runtime.newBytesWithAll(view));
+  Object self(&scope, runtime_.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'_"_')"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderReprWithSingleQuoteUsesDoubleQuoteDelimiters) {
+  HandleScope scope(thread_);
   const byte view[] = {'_', '\'', '_'};
-  Object self(&scope, runtime.newBytesWithAll(view));
+  Object self(&scope, runtime_.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b"_'_")"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderReprWithBothQuotesUsesSingleQuoteDelimiters) {
+  HandleScope scope(thread_);
   const byte view[] = {'_', '"', '_', '\'', '_'};
-  Object self(&scope, runtime.newBytesWithAll(view));
+  Object self(&scope, runtime_.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'_"_\'_')"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderReprWithSpeciaBytesUsesEscapeSequences) {
+  HandleScope scope(thread_);
   const byte view[] = {'\\', '\t', '\n', '\r'};
-  Object self(&scope, runtime.newBytesWithAll(view));
+  Object self(&scope, runtime_.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\\\t\n\r')"));
 }
 
-TEST(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DunderReprWithSmallAndLargeBytesUsesHex) {
+  HandleScope scope(thread_);
   const byte view[] = {0, 0x1f, 0x80, 0xff};
-  Object self(&scope, runtime.newBytesWithAll(view));
+  Object self(&scope, runtime_.newBytesWithAll(view));
   Object repr(&scope, runBuiltin(BytesBuiltins::dunderRepr, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, R"(b'\x00\x1f\x80\xff')"));
 }
 
-TEST(BytesBuiltinsTest, DunderRmulCallsDunderMul) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "result = 3 * b'1'").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+TEST_F(BytesBuiltinsTest, DunderRmulCallsDunderMul) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "result = 3 * b'1'").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "111"));
 }
 
-TEST(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, DecodeWithASCIIReturnsString) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = b'hello'.decode('ascii')").isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+      runFromCStr(&runtime_, "result = b'hello'.decode('ascii')").isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isStrEqualsCStr(*result, "hello"));
 }
 
-TEST(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.hex(1)"),
+TEST_F(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes.hex(1)"),
                             LayoutId::kTypeError,
                             "'hex' requires a 'bytes' object but got 'int'"));
 }
 
-TEST(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
+  HandleScope scope(thread_);
   Bytes self(&scope, Bytes::empty());
   Object result(&scope, runBuiltin(BytesBuiltins::hex, self));
   EXPECT_TRUE(isStrEqualsCStr(*result, ""));
 }
 
-TEST(BytesBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
+  HandleScope scope(thread_);
   const byte bytes_array[] = {0x12, 0x34, 0xfe, 0x5b};
-  Bytes self(&scope, runtime.newBytesWithAll(bytes_array));
+  Bytes self(&scope, runtime_.newBytesWithAll(bytes_array));
   Object result(&scope, runBuiltin(BytesBuiltins::hex, self));
   EXPECT_TRUE(isStrEqualsCStr(*result, "1234fe5b"));
 }
 
-TEST(BytesBuiltinsTest, HexWithBytesSubclassReturnsStr) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, HexWithBytesSubclassReturnsStr) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 self = Foo(b"*\x01a\x92")
 )")
                    .isError());
-  HandleScope scope;
-  Object self(&scope, moduleAt(&runtime, "__main__", "self"));
+  HandleScope scope(thread_);
+  Object self(&scope, moduleAt(&runtime_, "__main__", "self"));
   Object repr(&scope, runBuiltin(BytesBuiltins::hex, self));
   EXPECT_TRUE(isStrEqualsCStr(*repr, "2a016192"));
 }
 
-TEST(BytesBuiltinsTest, JoinWithNonBytesRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.join(1, [])"),
+TEST_F(BytesBuiltinsTest, JoinWithNonBytesRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes.join(1, [])"),
                             LayoutId::kTypeError,
                             "'join' requires a 'bytes' object"));
 }
 
-TEST(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.join(0)"),
+TEST_F(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b''.join(0)"),
                             LayoutId::kTypeError, "object is not iterable"));
 }
 
-TEST(BytesBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Bytes self(&scope, runtime.newBytes(3, 'a'));
-  Object iter(&scope, runtime.newTuple(0));
+  Bytes self(&scope, runtime_.newBytes(3, 'a'));
+  Object iter(&scope, runtime_.newTuple(0));
   Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, ""));
 }
 
-TEST(BytesBuiltinsTest, JoinWithEmptySeparatorReturnsBytes) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, JoinWithEmptySeparatorReturnsBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Bytes self(&scope, Bytes::empty());
-  Tuple iter(&scope, runtime.newTuple(3));
-  iter.atPut(0, runtime.newBytes(1, 'A'));
-  iter.atPut(1, runtime.newBytes(2, 'B'));
-  iter.atPut(2, runtime.newBytes(1, 'A'));
+  Tuple iter(&scope, runtime_.newTuple(3));
+  iter.atPut(0, runtime_.newBytes(1, 'A'));
+  iter.atPut(1, runtime_.newBytes(2, 'B'));
+  iter.atPut(2, runtime_.newBytes(1, 'A'));
   Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ABBA"));
 }
 
-TEST(BytesBuiltinsTest, JoinWithNonEmptyListReturnsBytes) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, JoinWithNonEmptyListReturnsBytes) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Bytes self(&scope, runtime.newBytes(1, ' '));
-  List iter(&scope, runtime.newList());
-  Bytes value(&scope, runtime.newBytes(1, '*'));
-  runtime.listAdd(thread, iter, value);
-  runtime.listAdd(thread, iter, value);
-  runtime.listAdd(thread, iter, value);
+  Bytes self(&scope, runtime_.newBytes(1, ' '));
+  List iter(&scope, runtime_.newList());
+  Bytes value(&scope, runtime_.newBytes(1, '*'));
+  runtime_.listAdd(thread, iter, value);
+  runtime_.listAdd(thread, iter, value);
+  runtime_.listAdd(thread, iter, value);
   Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "* * *"));
 }
 
-TEST(BytesBuiltinsTest, JoinWithBytesSubclassesReturnsBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, JoinWithBytesSubclassesReturnsBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes):
   def join(self, iterable):
     # this should not be called - expect bytes.join() instead
@@ -1336,25 +1205,23 @@ ac = Foo(b"AC")
 dc = Foo(b"DC")
 )")
                    .isError());
-  HandleScope scope;
-  Bytes self(&scope, moduleAt(&runtime, "__main__", "sep"));
-  Tuple iter(&scope, runtime.newTuple(2));
-  iter.atPut(0, moduleAt(&runtime, "__main__", "ac"));
-  iter.atPut(1, moduleAt(&runtime, "__main__", "dc"));
+  HandleScope scope(thread_);
+  Bytes self(&scope, moduleAt(&runtime_, "__main__", "sep"));
+  Tuple iter(&scope, runtime_.newTuple(2));
+  iter.atPut(0, moduleAt(&runtime_, "__main__", "ac"));
+  iter.atPut(1, moduleAt(&runtime_, "__main__", "dc"));
   Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
 }
 
-TEST(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "b' '.join([1])"), LayoutId::kTypeError,
+      runFromCStr(&runtime_, "b' '.join([1])"), LayoutId::kTypeError,
       "sequence item 0: expected a bytes-like object, int found"));
 }
 
-TEST(BytesBuiltinsTest, JoinWithIterableReturnsBytes) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(BytesBuiltinsTest, JoinWithIterableReturnsBytes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   def __iter__(self):
     return [b'ab', b'c', b'def'].__iter__()
@@ -1363,38 +1230,34 @@ result = b' '.join(Foo())
                    .isError());
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isBytesEqualsCStr(result, "ab c def"));
 }
 
-TEST(BytesBuiltinsTest, MaketransWithNonBytesLikeFromRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, MaketransWithNonBytesLikeFromRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.maketrans([1,2], b'ab')"),
+      runFromCStr(&runtime_, "bytes.maketrans([1,2], b'ab')"),
       LayoutId::kTypeError, "a bytes-like object is required, not 'list'"));
 }
 
-TEST(BytesBuiltinsTest, MaketransWithNonBytesLikeToRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "bytes.maketrans(b'1', 2)"),
+TEST_F(BytesBuiltinsTest, MaketransWithNonBytesLikeToRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes.maketrans(b'1', 2)"),
                             LayoutId::kTypeError,
                             "a bytes-like object is required, not 'int'"));
 }
 
-TEST(BytesBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, MaketransWithDifferentLengthsRaisesValueError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.maketrans(b'12', bytearray())"),
+      runFromCStr(&runtime_, "bytes.maketrans(b'12', bytearray())"),
       LayoutId::kValueError, "maketrans arguments must have same length"));
 }
 
-TEST(BytesBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime, "result = bytes.maketrans(bytearray(), b'')")
+      runFromCStr(&runtime_, "result = bytes.maketrans(bytearray(), b'')")
           .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   byte expected[256];
   for (word i = 0; i < 256; i++) {
     expected[i] = i;
@@ -1402,14 +1265,13 @@ TEST(BytesBuiltinsTest, MaketransWithEmptyReturnsDefaultBytes) {
   EXPECT_TRUE(isBytesEqualsBytes(result, expected));
 }
 
-TEST(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
+  HandleScope scope(thread_);
   ASSERT_FALSE(
-      runFromCStr(&runtime,
+      runFromCStr(&runtime_,
                   "result = bytes.maketrans(bytearray(b'abc'), b'123')")
           .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   ASSERT_TRUE(result.isBytes());
   Bytes actual(&scope, *result);
   EXPECT_EQ(actual.byteAt('a'), '1');
@@ -1417,92 +1279,84 @@ TEST(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('c'), '3');
 }
 
-TEST(BytesBuiltinsTest, TranslateWithNonBytesSelfRaisesTypeError) {
-  Runtime runtime;
+TEST_F(BytesBuiltinsTest, TranslateWithNonBytesSelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime, "bytes.translate(bytearray(), None)"),
+      runFromCStr(&runtime_, "bytes.translate(bytearray(), None)"),
       LayoutId::kTypeError,
       "'translate' requires a 'bytes' object but got 'bytearray'"));
 }
 
-TEST(BytesBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.translate(42)"),
+TEST_F(BytesBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b''.translate(42)"),
                             LayoutId::kTypeError,
                             "a bytes-like object is required, not 'int'"));
 }
 
-TEST(BytesBuiltinsTest, TranslateWithNonBytesLikeDeleteRaisesTypeError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.translate(None, 42)"),
+TEST_F(BytesBuiltinsTest, TranslateWithNonBytesLikeDeleteRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b''.translate(None, 42)"),
                             LayoutId::kTypeError,
                             "a bytes-like object is required, not 'int'"));
 }
 
-TEST(BytesBuiltinsTest, TranslateWithShortTableRaisesValueError) {
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "b''.translate(b'')"),
+TEST_F(BytesBuiltinsTest, TranslateWithShortTableRaisesValueError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b''.translate(b'')"),
                             LayoutId::kValueError,
                             "translation table must be 256 characters long"));
 }
 
-TEST(BytesBuiltinsTest, TranslateWithEmptyBytesReturnsEmptyBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, TranslateWithEmptyBytesReturnsEmptyBytes) {
+  HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
   Object table(&scope, NoneType::object());
-  Object del(&scope, runtime.newByteArray());
+  Object del(&scope, runtime_.newByteArray());
   Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
   EXPECT_EQ(result, Bytes::empty());
 }
 
-TEST(BytesBuiltinsTest, TranslateWithNonEmptySecondArgDeletesBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, TranslateWithNonEmptySecondArgDeletesBytes) {
+  HandleScope scope(thread_);
   const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
   const byte abc[] = {'a', 'b', 'c'};
-  Object self(&scope, runtime.newBytesWithAll(alabama));
+  Object self(&scope, runtime_.newBytesWithAll(alabama));
   Object table(&scope, NoneType::object());
-  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object del(&scope, runtime_.newBytesWithAll(abc));
   Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
   EXPECT_TRUE(isBytesEqualsCStr(result, "Alm"));
 }
 
-TEST(BytesBuiltinsTest, TranslateWithTableTranslatesBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(
-      runFromCStr(&runtime, "table = bytes.maketrans(b'Aa', b'12')").isError());
+TEST_F(BytesBuiltinsTest, TranslateWithTableTranslatesBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "table = bytes.maketrans(b'Aa', b'12')")
+                   .isError());
   const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
-  Object self(&scope, runtime.newBytesWithAll(alabama));
-  Object table(&scope, moduleAt(&runtime, "__main__", "table"));
+  Object self(&scope, runtime_.newBytesWithAll(alabama));
+  Object table(&scope, moduleAt(&runtime_, "__main__", "table"));
   Object del(&scope, Bytes::empty());
   Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
   EXPECT_TRUE(isBytesEqualsCStr(result, "1l2b2m2"));
 }
 
-TEST(BytesBuiltinsTest, TranslateWithTableAndDeleteTranslatesAndDeletesBytes) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(
-      runFromCStr(&runtime, "table = bytes.maketrans(b'Aa', b'12')").isError());
+TEST_F(BytesBuiltinsTest,
+       TranslateWithTableAndDeleteTranslatesAndDeletesBytes) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "table = bytes.maketrans(b'Aa', b'12')")
+                   .isError());
   const byte alabama[] = {'A', 'l', 'a', 'b', 'a', 'm', 'a'};
   const byte abc[] = {'a', 'b', 'c'};
-  Object self(&scope, runtime.newBytesWithAll(alabama));
-  Object table(&scope, moduleAt(&runtime, "__main__", "table"));
-  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object self(&scope, runtime_.newBytesWithAll(alabama));
+  Object table(&scope, moduleAt(&runtime_, "__main__", "table"));
+  Object del(&scope, runtime_.newBytesWithAll(abc));
   Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
   EXPECT_TRUE(isBytesEqualsCStr(result, "1lm"));
 }
 
-TEST(BytesBuiltinsTest, TranslateDeletesAllBytes) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(BytesBuiltinsTest, TranslateDeletesAllBytes) {
+  HandleScope scope(thread_);
   const byte alabama[] = {'b', 'a', 'c', 'a', 'a', 'c', 'a'};
   const byte abc[] = {'a', 'b', 'c'};
-  Object self(&scope, runtime.newBytesWithAll(alabama));
+  Object self(&scope, runtime_.newBytesWithAll(alabama));
   Object table(&scope, NoneType::object());
-  Object del(&scope, runtime.newBytesWithAll(abc));
+  Object del(&scope, runtime_.newBytesWithAll(abc));
   Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
   EXPECT_EQ(result, Bytes::empty());
 }

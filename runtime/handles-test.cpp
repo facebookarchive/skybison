@@ -16,9 +16,10 @@ namespace python {
 
 using namespace testing;
 
-TEST(HandlesTest, UpCastTest) {
-  Runtime runtime;
-  HandleScope scope;
+using HandlesTest = RuntimeFixture;
+
+TEST_F(HandlesTest, UpCastTest) {
+  HandleScope scope(thread_);
 
   SmallInt h1(&scope, RawObject{0xFEEDFACEL});
 
@@ -31,9 +32,8 @@ TEST(HandlesTest, UpCastTest) {
   EXPECT_TRUE(visitor.hasVisited(*h1));
 }
 
-TEST(HandlesTest, DownCastTest) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(HandlesTest, DownCastTest) {
+  HandleScope scope(thread_);
 
   RawObject i1{0xFEEDFACEL};
   Object h1(&scope, i1);
@@ -47,9 +47,8 @@ TEST(HandlesTest, DownCastTest) {
   EXPECT_TRUE(visitor.hasVisited(i1));
 }
 
-TEST(HandlesTest, IllegalCastRunTimeTest) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(HandlesTest, IllegalCastRunTimeTest) {
+  HandleScope scope(thread_);
 
   RawObject i1{0xFEEDFACEL};
   Object h1(&scope, i1);
@@ -57,41 +56,37 @@ TEST(HandlesTest, IllegalCastRunTimeTest) {
   EXPECT_DEBUG_DEATH(USE(Dict(&scope, *h1)), "Invalid Handle construction");
 }
 
-TEST(HandlesTest, ThreadSubclassTest) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(HandlesTest, ThreadSubclassTest) {
+  HandleScope scope(thread_);
 
-  Layout layout(&scope, runtime.layoutAt(LayoutId::kStopIteration));
-  BaseException exn(&scope, runtime.newInstance(layout));
+  Layout layout(&scope, runtime_.layoutAt(LayoutId::kStopIteration));
+  BaseException exn(&scope, runtime_.newInstance(layout));
   EXPECT_TRUE(exn.isStopIteration());
 }
 
-TEST(HandlesTest, IllegalCastWithThreadTest) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(HandlesTest, IllegalCastWithThreadTest) {
+  HandleScope scope(thread_);
 
   EXPECT_DEBUG_DEATH(USE(BaseException(&scope, SmallInt::fromWord(123))),
                      "Invalid Handle construction");
 }
 
-TEST(HandlesTest, VisitNoScopes) {
+TEST_F(HandlesTest, VisitNoScopes) {
   Handles handles;
   RememberingVisitor visitor;
   handles.visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 0);
 }
 
-TEST(HandlesTest, VisitEmptyScope) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(HandlesTest, VisitEmptyScope) {
+  HandleScope scope(thread_);
   RememberingVisitor visitor;
   scope.handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 0);
 }
 
-TEST(HandlesTest, VisitOneHandle) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(HandlesTest, VisitOneHandle) {
+  HandleScope scope(thread_);
   RawObject object{0xFEEDFACEL};
   Object handle(&scope, object);
   USE(handle);
@@ -101,9 +96,8 @@ TEST(HandlesTest, VisitOneHandle) {
   EXPECT_TRUE(visitor.hasVisited(object));
 }
 
-TEST(HandlesTest, VisitTwoHandles) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(HandlesTest, VisitTwoHandles) {
+  HandleScope scope(thread_);
   RememberingVisitor visitor;
   RawObject o1{0xFEEDFACEL};
   Object h1(&scope, o1);
@@ -117,8 +111,7 @@ TEST(HandlesTest, VisitTwoHandles) {
   EXPECT_TRUE(visitor.hasVisited(o2));
 }
 
-TEST(HandlesTest, VisitObjectInNestedScope) {
-  Runtime runtime;
+TEST_F(HandlesTest, VisitObjectInNestedScope) {
   Handles* handles = Thread::current()->handles();
 
   RawObject object{0xFEEDFACEL};
@@ -161,8 +154,7 @@ TEST(HandlesTest, VisitObjectInNestedScope) {
   }
 }
 
-TEST(HandlesTest, NestedScopes) {
-  Runtime runtime;
+TEST_F(HandlesTest, NestedScopes) {
   Handles* handles = Thread::current()->handles();
 
   RawObject o1{0xDECAF1L};

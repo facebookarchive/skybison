@@ -12,6 +12,8 @@ namespace python {
 
 using namespace testing;
 
+using DebuggingTests = RuntimeFixture;
+
 static RawObject makeTestCode(Thread* thread) {
   Runtime* runtime = thread->runtime();
   HandleScope scope;
@@ -74,11 +76,9 @@ static RawObject makeTestFunction(Thread* thread) {
   return *func;
 }
 
-TEST(DebuggingTests, DumpExtendedCode) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object code(&scope, makeTestCode(thread));
+TEST_F(DebuggingTests, DumpExtendedCode) {
+  HandleScope scope(thread_);
+  Object code(&scope, makeTestCode(thread_));
 
   std::stringstream ss;
   dumpExtended(ss, *code);
@@ -101,7 +101,7 @@ TEST(DebuggingTests, DumpExtendedCode) {
 )");
 }
 
-TEST(DebuggingTests, DumpExtendedFunction) {
+TEST(DebuggingTestsNoFixture, DumpExtendedFunction) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -138,11 +138,9 @@ TEST(DebuggingTests, DumpExtendedFunction) {
 )");
 }
 
-TEST(DebuggingTests, DumpExtendedHeapObject) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DebuggingTests, DumpExtendedHeapObject) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self):
     self.foo = 5
@@ -151,7 +149,7 @@ i = C()
 i.baz = ()
 )")
                    .isError());
-  Object i(&scope, moduleAt(&runtime, "__main__", "i"));
+  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
   ASSERT_TRUE(i.isHeapObject());
   std::stringstream ss;
   dumpExtended(ss, *i);
@@ -162,11 +160,9 @@ i.baz = ()
 )");
 }
 
-TEST(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object func(&scope, makeTestFunction(thread));
+TEST_F(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
+  HandleScope scope(thread_);
+  Object func(&scope, makeTestFunction(thread_));
   std::stringstream ss;
   dumpExtendedHeapObject(ss, RawHeapObject::cast(*func));
   EXPECT_EQ(ss.str(), R"(heap object <type "function">:
@@ -181,60 +177,53 @@ TEST(DebuggingTests, DumpExtendedHeapObjectWithOverflowDict) {
 )");
 }
 
-TEST(DebuggingTests, FormatBool) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatBool) {
   std::stringstream ss;
   ss << Bool::trueObj() << ';' << Bool::falseObj();
   EXPECT_EQ(ss.str(), "True;False");
 }
 
-TEST(DebuggingTests, FormatBoundMethod) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DebuggingTests, FormatBoundMethod) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def foo():
     pass
 bound_method = C().foo
 )")
                    .isError());
-  Object bound_method(&scope, moduleAt(&runtime, "__main__", "bound_method"));
+  Object bound_method(&scope, moduleAt(&runtime_, "__main__", "bound_method"));
   ASSERT_TRUE(bound_method.isBoundMethod());
   std::stringstream ss;
   ss << bound_method;
   EXPECT_EQ(ss.str(), "<bound_method \"C.foo\", <\"C\" object>>");
 }
 
-TEST(DebuggingTests, FormatCode) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(DebuggingTests, FormatCode) {
+  HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
-  code.setName(runtime.newStrFromCStr("foobar"));
+  code.setName(runtime_.newStrFromCStr("foobar"));
   std::stringstream ss;
   ss << code;
   EXPECT_EQ(ss.str(), "<code \"foobar\">");
 }
 
-TEST(DebuggingTests, FormatDict) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Dict dict(&scope, runtime.newDict());
-  Object key0(&scope, runtime.newStrFromCStr("hello"));
+TEST_F(DebuggingTests, FormatDict) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_.newDict());
+  Object key0(&scope, runtime_.newStrFromCStr("hello"));
   Object key1(&scope, NoneType::object());
-  Object value0(&scope, runtime.newInt(88));
-  Object value1(&scope, runtime.newTuple(0));
-  runtime.dictAtPut(thread, dict, key0, value0);
-  runtime.dictAtPut(thread, dict, key1, value1);
+  Object value0(&scope, runtime_.newInt(88));
+  Object value1(&scope, runtime_.newTuple(0));
+  runtime_.dictAtPut(thread_, dict, key0, value0);
+  runtime_.dictAtPut(thread_, dict, key1, value1);
   std::stringstream ss;
   ss << dict;
   EXPECT_TRUE(ss.str() == R"({"hello": 88, None: ()})" ||
               ss.str() == R"({None: (), "hello": 88}")");
 }
 
-TEST(DebuggingTests, FormatError) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatError) {
   std::stringstream ss;
   ss << Error::error();
   EXPECT_EQ(ss.str(), "Error");
@@ -260,100 +249,89 @@ TEST(DebuggingTests, FormatError) {
   EXPECT_EQ(ss.str(), "Error<OutOfBounds>");
 }
 
-TEST(DebuggingTests, FormatFloat) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatFloat) {
   std::stringstream ss;
-  ss << runtime.newFloat(42.42);
+  ss << runtime_.newFloat(42.42);
   EXPECT_EQ(ss.str(), "0x1.535c28f5c28f6p+5");
 }
 
-TEST(DebuggingTests, FormatFunction) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(DebuggingTests, FormatFunction) {
+  HandleScope scope(thread_);
   std::stringstream ss;
-  Object function(&scope, moduleAt(&runtime, "builtins", "callable"));
+  Object function(&scope, moduleAt(&runtime_, "builtins", "callable"));
   ASSERT_TRUE(function.isFunction());
   ss << function;
   EXPECT_EQ(ss.str(), R"(<function "callable">)");
 }
 
-TEST(DebuggingTests, FormatLargeInt) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatLargeInt) {
   std::stringstream ss;
   const uword digits[] = {0x12345, kMaxUword};
-  ss << runtime.newIntWithDigits(digits);
+  ss << runtime_.newIntWithDigits(digits);
   EXPECT_EQ(ss.str(), "largeint([0x0000000000012345, 0xffffffffffffffff])");
 }
 
-TEST(DebuggingTests, FormatLargeStr) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(DebuggingTests, FormatLargeStr) {
+  HandleScope scope(thread_);
   std::stringstream ss;
-  Object str(&scope, runtime.newStrFromCStr("hello world"));
+  Object str(&scope, runtime_.newStrFromCStr("hello world"));
   EXPECT_TRUE(str.isLargeStr());
   ss << str;
   EXPECT_EQ(ss.str(), "\"hello world\"");
 }
 
-TEST(DebuggingTests, FormatList) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  List list(&scope, runtime.newList());
+TEST_F(DebuggingTests, FormatList) {
+  HandleScope scope(thread_);
+  List list(&scope, runtime_.newList());
   Object o0(&scope, NoneType::object());
-  Object o1(&scope, runtime.newInt(17));
-  runtime.listAdd(thread, list, o0);
-  runtime.listAdd(thread, list, o1);
+  Object o1(&scope, runtime_.newInt(17));
+  runtime_.listAdd(thread_, list, o0);
+  runtime_.listAdd(thread_, list, o1);
   std::stringstream ss;
   ss << list;
   EXPECT_EQ(ss.str(), "[None, 17]");
 }
 
-TEST(DebuggingTests, FormatModule) {
-  Runtime runtime;
-  HandleScope scope;
-  Object name(&scope, runtime.newStrFromCStr("foomodule"));
-  Object module(&scope, runtime.newModule(name));
+TEST_F(DebuggingTests, FormatModule) {
+  HandleScope scope(thread_);
+  Object name(&scope, runtime_.newStrFromCStr("foomodule"));
+  Object module(&scope, runtime_.newModule(name));
   std::stringstream ss;
   ss << module;
   EXPECT_EQ(ss.str(), R"(<module "foomodule">)");
 }
 
-TEST(DebuggingTests, FormatNone) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatNone) {
   std::stringstream ss;
   ss << NoneType::object();
   EXPECT_EQ(ss.str(), "None");
 }
 
-TEST(DebuggingTests, FormatObjectWithBuiltinClass) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatObjectWithBuiltinClass) {
   std::stringstream ss;
   ss << NotImplementedType::object();
   EXPECT_EQ(ss.str(), R"(<"NotImplementedType" object>)");
 }
 
-TEST(DebuggingTests, FormatObjectWithUserDefinedClass) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DebuggingTests, FormatObjectWithUserDefinedClass) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
   pass
 foo = Foo()
 )")
                    .isError());
-  Object foo(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
   std::stringstream ss;
   ss << foo;
   EXPECT_EQ(ss.str(), R"(<"Foo" object>)");
 }
 
-TEST(DebuggingTests, FormatObjectWithUnknownType) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(DebuggingTests, FormatObjectWithUnknownType) {
+  HandleScope scope(thread_);
   Object obj(&scope, NotImplementedType::object());
   // Phabricate a nameless type...
-  Type::cast(runtime.typeOf(*obj)).setName(NoneType::object());
+  Type::cast(runtime_.typeOf(*obj)).setName(NoneType::object());
 
   std::stringstream ss;
   std::stringstream expected;
@@ -363,8 +341,7 @@ TEST(DebuggingTests, FormatObjectWithUnknownType) {
   EXPECT_EQ(ss.str(), expected.str());
 }
 
-TEST(DebuggingTests, FormatSmallInt) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatSmallInt) {
   std::stringstream ss;
   ss << SmallInt::fromWord(-42) << ';'
      << SmallInt::fromWord(SmallInt::kMinValue) << ';'
@@ -374,92 +351,85 @@ TEST(DebuggingTests, FormatSmallInt) {
   EXPECT_EQ(ss.str(), expected.str());
 }
 
-TEST(DebuggingTests, FormatSmallStr) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(DebuggingTests, FormatSmallStr) {
+  HandleScope scope(thread_);
   std::stringstream ss;
-  Object str(&scope, runtime.newStrFromCStr("aa"));
+  Object str(&scope, runtime_.newStrFromCStr("aa"));
   EXPECT_TRUE(str.isSmallStr());
   ss << str;
   EXPECT_EQ(ss.str(), "\"aa\"");
 }
 
-TEST(DebuggingTests, FormatTuple) {
-  Runtime runtime;
-  HandleScope scope;
-  Tuple tuple(&scope, runtime.newTuple(2));
+TEST_F(DebuggingTests, FormatTuple) {
+  HandleScope scope(thread_);
+  Tuple tuple(&scope, runtime_.newTuple(2));
   tuple.atPut(0, Bool::trueObj());
-  tuple.atPut(1, runtime.newStrFromCStr("hey"));
+  tuple.atPut(1, runtime_.newStrFromCStr("hey"));
   std::stringstream ss;
   ss << tuple;
   EXPECT_EQ(ss.str(), R"((True, "hey"))");
 }
 
-TEST(DebuggingTests, FormatTupleWithoutElements) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatTupleWithoutElements) {
   std::stringstream ss;
-  ss << runtime.newTuple(0);
+  ss << runtime_.newTuple(0);
   EXPECT_EQ(ss.str(), "()");
 }
 
-TEST(DebuggingTests, FormatTupleWithOneElement) {
-  Runtime runtime;
-  HandleScope scope;
-  Tuple tuple(&scope, runtime.newTuple(1));
-  tuple.atPut(0, runtime.newInt(77));
+TEST_F(DebuggingTests, FormatTupleWithOneElement) {
+  HandleScope scope(thread_);
+  Tuple tuple(&scope, runtime_.newTuple(1));
+  tuple.atPut(0, runtime_.newInt(77));
   std::stringstream ss;
   ss << tuple;
   EXPECT_EQ(ss.str(), "(77,)");
 }
 
-TEST(DebuggingTests, FormatType) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DebuggingTests, FormatType) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class MyClass:
   pass
 )")
                    .isError());
-  Object my_class(&scope, moduleAt(&runtime, "__main__", "MyClass"));
+  Object my_class(&scope, moduleAt(&runtime_, "__main__", "MyClass"));
   std::stringstream ss;
   ss << my_class;
   EXPECT_EQ(ss.str(), "<type \"MyClass\">");
 }
 
-TEST(DebuggingTests, FormatFrame) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DebuggingTests, FormatFrame) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def func(arg0, arg1):
   hello = "world"
   return arg0 + arg1
 )")
                    .isError());
-  Function func(&scope, moduleAt(&runtime, "__main__", "func"));
+  Function func(&scope, moduleAt(&runtime_, "__main__", "func"));
 
-  Thread* thread = Thread::current();
-  Frame* root = thread->currentFrame();
+  Frame* root = thread_->currentFrame();
   root->setVirtualPC(8);
   root->pushValue(NoneType::object());
-  Function function(&scope, makeTestFunction(thread));
+  Function function(&scope, makeTestFunction(thread_));
   root->pushValue(*function);
-  root->pushValue(runtime.newStrFromCStr("foo bar"));
-  root->pushValue(runtime.newTuple(0));
-  root->pushValue(runtime.newDict());
+  root->pushValue(runtime_.newStrFromCStr("foo bar"));
+  root->pushValue(runtime_.newTuple(0));
+  root->pushValue(runtime_.newDict());
   ASSERT_EQ(root->previousFrame(), nullptr);
 
-  Frame* frame0 = thread->pushCallFrame(*function);
+  Frame* frame0 = thread_->pushCallFrame(*function);
   frame0->setVirtualPC(42);
-  frame0->setLocal(3, runtime.newStrFromCStr("bar foo"));
+  frame0->setLocal(3, runtime_.newStrFromCStr("bar foo"));
   frame0->pushValue(*func);
-  frame0->pushValue(runtime.newInt(-9));
-  frame0->pushValue(runtime.newInt(17));
-  Frame* frame1 = thread->pushCallFrame(*func);
+  frame0->pushValue(runtime_.newInt(-9));
+  frame0->pushValue(runtime_.newInt(17));
+  Frame* frame1 = thread_->pushCallFrame(*func);
   frame1->setVirtualPC(4);
-  frame1->setLocal(2, runtime.newStrFromCStr("world"));
+  frame1->setLocal(2, runtime_.newStrFromCStr("world"));
 
   std::stringstream ss;
-  ss << thread->currentFrame();
+  ss << thread_->currentFrame();
   EXPECT_EQ(ss.str(), R"(- initial frame
   pc: 8
   stack:
@@ -492,8 +462,7 @@ def func(arg0, arg1):
 )");
 }
 
-TEST(DebuggingTests, FormatFrameNullptr) {
-  Runtime runtime;
+TEST_F(DebuggingTests, FormatFrameNullptr) {
   std::stringstream ss;
   ss << static_cast<Frame*>(nullptr);
   EXPECT_EQ(ss.str(), "<nullptr>");

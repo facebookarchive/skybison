@@ -10,6 +10,9 @@ namespace python {
 
 using namespace testing;
 
+using CApiHandlesDeathTest = RuntimeFixture;
+using CApiHandlesTest = RuntimeFixture;
+
 static RawObject initializeExtensionType(PyObject* extension_type) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
@@ -38,89 +41,76 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   return *type;
 }
 
-TEST(CApiHandlesTest, BorrowedApiHandles) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(CApiHandlesTest, BorrowedApiHandles) {
+  HandleScope scope(thread_);
 
   // Create a new object and a new reference to that object.
-  Object obj(&scope, runtime.newTuple(10));
-  ApiHandle* new_ref = ApiHandle::newReference(thread, *obj);
+  Object obj(&scope, runtime_.newTuple(10));
+  ApiHandle* new_ref = ApiHandle::newReference(thread_, *obj);
   word refcnt = new_ref->refcnt();
 
   // Create a borrowed reference to the same object.  This should not affect the
   // reference count of the handle.
-  ApiHandle* borrowed_ref = ApiHandle::borrowedReference(thread, *obj);
+  ApiHandle* borrowed_ref = ApiHandle::borrowedReference(thread_, *obj);
   EXPECT_EQ(borrowed_ref, new_ref);
   EXPECT_EQ(borrowed_ref->refcnt(), refcnt);
 
   // Create another new reference.  This should increment the reference count
   // of the handle.
-  ApiHandle* another_ref = ApiHandle::newReference(thread, *obj);
+  ApiHandle* another_ref = ApiHandle::newReference(thread_, *obj);
   EXPECT_EQ(another_ref, new_ref);
   EXPECT_EQ(another_ref->refcnt(), refcnt + 1);
 }
 
-TEST(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Dict dict(&scope, runtime.apiHandles());
-  Object obj(&scope, runtime.newInt(1));
-  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
+TEST_F(CApiHandlesTest, BuiltinIntObjectReturnsApiHandle) {
+  HandleScope scope(thread_);
+  Dict dict(&scope, runtime_.apiHandles());
+  Object obj(&scope, runtime_.newInt(1));
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(runtime.dictIncludes(thread, dict, obj));
+  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj));
 }
 
-TEST(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
+  HandleScope scope(thread_);
 
-  Object obj(&scope, runtime.newInt(1));
-  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
+  Object obj(&scope, runtime_.newInt(1));
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   Object handle_obj(&scope, handle->asObject());
   EXPECT_TRUE(isIntEqualsWord(*handle_obj, 1));
 }
 
-TEST(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
+  HandleScope scope(thread_);
 
-  Dict dict(&scope, runtime.apiHandles());
-  Object obj(&scope, runtime.newList());
-  ASSERT_FALSE(runtime.dictIncludes(thread, dict, obj));
+  Dict dict(&scope, runtime_.apiHandles());
+  Object obj(&scope, runtime_.newList());
+  ASSERT_FALSE(runtime_.dictIncludes(thread_, dict, obj));
 
-  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   EXPECT_NE(handle, nullptr);
 
-  EXPECT_TRUE(runtime.dictIncludes(thread, dict, obj));
+  EXPECT_TRUE(runtime_.dictIncludes(thread_, dict, obj));
 }
 
-TEST(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
-  Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::current();
-  Object obj(&scope, runtime.newList());
-  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
-  ApiHandle* handle2 = ApiHandle::newReference(thread, *obj);
+TEST_F(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newList());
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
+  ApiHandle* handle2 = ApiHandle::newReference(thread_, *obj);
   EXPECT_EQ(handle, handle2);
 }
 
-TEST(CApiHandlesTest, ApiHandleReturnsBuiltinObject) {
-  Runtime runtime;
-  HandleScope scope;
-  Thread* thread = Thread::current();
-  Object obj(&scope, runtime.newList());
-  ApiHandle* handle = ApiHandle::newReference(thread, *obj);
+TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinObject) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newList());
+  ApiHandle* handle = ApiHandle::newReference(thread_, *obj);
   Object handle_obj(&scope, handle->asObject());
   EXPECT_TRUE(handle_obj.isList());
 }
 
-TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
+  HandleScope scope(thread_);
 
   // Create type
   PyObject extension_type;
@@ -128,52 +118,48 @@ TEST(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
 
   // Create instance
   Layout layout(&scope, type.instanceLayout());
-  Thread* thread = Thread::current();
-  Object attr_name(&scope, runtime.symbols()->ExtensionPtr());
-  HeapObject instance(&scope, runtime.newInstance(layout));
+  Object attr_name(&scope, runtime_.symbols()->ExtensionPtr());
+  HeapObject instance(&scope, runtime_.newInstance(layout));
 
-  PyObject* type_handle = ApiHandle::newReference(thread, *type);
+  PyObject* type_handle = ApiHandle::newReference(thread_, *type);
   PyObject pyobj = {nullptr, 1, reinterpret_cast<PyTypeObject*>(type_handle)};
-  Object object_ptr(&scope, runtime.newIntFromCPtr(static_cast<void*>(&pyobj)));
-  instanceSetAttr(thread, instance, attr_name, object_ptr);
+  Object object_ptr(&scope,
+                    runtime_.newIntFromCPtr(static_cast<void*>(&pyobj)));
+  instanceSetAttr(thread_, instance, attr_name, object_ptr);
 
-  PyObject* result = ApiHandle::newReference(thread, *instance);
+  PyObject* result = ApiHandle::newReference(thread_, *instance);
   EXPECT_TRUE(result);
   EXPECT_EQ(result, &pyobj);
 }
 
-TEST(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CApiHandlesTest, Runtime_InstanceObjectReturnsPyObject) {
+  HandleScope scope(thread_);
 
   // Create type
   PyObject extension_type;
   Type type(&scope, initializeExtensionType(&extension_type));
 
   // Initialize instance Layout
-  Thread* thread = Thread::current();
-  Layout layout(&scope, runtime.layoutCreateEmpty(thread));
+  Layout layout(&scope, runtime_.layoutCreateEmpty(thread_));
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
 
   // Create instance
-  HeapObject instance(&scope, runtime.newInstance(layout));
-  PyObject* result = ApiHandle::newReference(thread, *instance);
+  HeapObject instance(&scope, runtime_.newInstance(layout));
+  PyObject* result = ApiHandle::newReference(thread_, *instance);
   ASSERT_NE(result, nullptr);
 
   Object obj(&scope, ApiHandle::fromPyObject(result)->asObject());
   EXPECT_EQ(*obj, *instance);
 }
 
-TEST(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
+  HandleScope scope(thread_);
 
   // Create type
   PyObject extension_type;
   Type type(&scope, initializeExtensionType(&extension_type));
-  PyObject* extension_type_ref =
-      ApiHandle::newReference(Thread::current(), *type);
+  PyObject* extension_type_ref = ApiHandle::newReference(thread_, *type);
 
   PyObject pyobj = {nullptr, 1,
                     reinterpret_cast<PyTypeObject*>(extension_type_ref)};
@@ -181,17 +167,15 @@ TEST(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
   EXPECT_TRUE(handle_obj.isInstance());
 }
 
-TEST(CApiHandlesTest, Cache) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CApiHandlesTest, Cache) {
+  HandleScope scope(thread_);
 
-  Thread* thread = Thread::current();
-
-  auto handle1 = ApiHandle::newReference(thread, SmallInt::fromWord(5));
+  auto handle1 = ApiHandle::newReference(thread_, SmallInt::fromWord(5));
   EXPECT_EQ(handle1->cache(), nullptr);
 
-  Str str(&scope, runtime.newStrFromCStr("this is too long for a RawSmallStr"));
-  auto handle2 = ApiHandle::newReference(thread, *str);
+  Str str(&scope,
+          runtime_.newStrFromCStr("this is too long for a RawSmallStr"));
+  auto handle2 = ApiHandle::newReference(thread_, *str);
   EXPECT_EQ(handle2->cache(), nullptr);
 
   void* buffer1 = std::malloc(16);
@@ -211,39 +195,35 @@ TEST(CApiHandlesTest, Cache) {
 
   Object key(&scope, handle1->asObject());
   handle1->dispose();
-  Dict caches(&scope, runtime.apiCaches());
-  EXPECT_TRUE(runtime.dictAt(Thread::current(), caches, key).isError());
+  Dict caches(&scope, runtime_.apiCaches());
+  EXPECT_TRUE(runtime_.dictAt(thread_, caches, key).isError());
   EXPECT_EQ(handle2->cache(), buffer1);
 }
 
-TEST(CApiHandlesTest, VisitReferences) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope;
+TEST_F(CApiHandlesTest, VisitReferences) {
+  HandleScope scope(thread_);
 
-  Object obj1(&scope, runtime.newInt(123));
-  Object obj2(&scope, runtime.newStrFromCStr("hello"));
-  ApiHandle::newReference(thread, *obj1);
-  ApiHandle::newReference(thread, *obj2);
+  Object obj1(&scope, runtime_.newInt(123));
+  Object obj2(&scope, runtime_.newStrFromCStr("hello"));
+  ApiHandle::newReference(thread_, *obj1);
+  ApiHandle::newReference(thread_, *obj2);
 
   RememberingVisitor visitor;
-  ApiHandle::visitReferences(runtime.apiHandles(), &visitor);
+  ApiHandle::visitReferences(runtime_.apiHandles(), &visitor);
 
   // We should've visited obj1, obj2, their types, and Type.
   EXPECT_TRUE(visitor.hasVisited(*obj1));
-  EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(obj1.layoutId())));
+  EXPECT_TRUE(visitor.hasVisited(runtime_.typeAt(obj1.layoutId())));
   EXPECT_TRUE(visitor.hasVisited(*obj2));
-  EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(obj2.layoutId())));
-  EXPECT_TRUE(visitor.hasVisited(runtime.typeAt(LayoutId::kType)));
+  EXPECT_TRUE(visitor.hasVisited(runtime_.typeAt(obj2.layoutId())));
+  EXPECT_TRUE(visitor.hasVisited(runtime_.typeAt(LayoutId::kType)));
 }
 
-TEST(CApiHandlesDeathTest, CleanupApiHandlesOnExit) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope;
-  Object obj(&scope, runtime.newStrFromCStr("hello"));
-  ApiHandle::newReference(thread, *obj);
-  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime, R"(
+TEST_F(CApiHandlesDeathTest, CleanupApiHandlesOnExit) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newStrFromCStr("hello"));
+  ApiHandle::newReference(thread_, *obj);
+  ASSERT_EXIT(static_cast<void>(runFromCStr(&runtime_, R"(
 import sys
 sys.exit()
 )")),

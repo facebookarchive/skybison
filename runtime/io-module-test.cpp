@@ -7,7 +7,9 @@
 
 namespace python {
 
-TEST(IoModuleTest, ReadFileBytesAsString) {
+using IoModuleTest = testing::RuntimeFixture;
+
+TEST_F(IoModuleTest, ReadFileBytesAsString) {
   int fd;
   testing::unique_file_ptr filename(OS::temporaryFile("filebytes-test", &fd));
   char c_filedata[] = "Foo, Bar, Baz";
@@ -16,18 +18,17 @@ TEST(IoModuleTest, ReadFileBytesAsString) {
   ASSERT_EQ(written_bytes, filedata_len + 1);
   close(fd);
 
-  Runtime runtime;
-  HandleScope scope;
-  Str pyfile(&scope, runtime.newStrFromFmt(R"(
+  HandleScope scope(thread_);
+  Str pyfile(&scope, runtime_.newStrFromFmt(R"(
 import _io
 file_bytes = _io._readfile("%s")
 filestr = _io._readbytes(file_bytes)
 )",
-                                           filename.get()));
+                                            filename.get()));
   unique_c_ptr<char> c_pyfile(pyfile.toCStr());
-  ASSERT_FALSE(testing::runFromCStr(&runtime, c_pyfile.get()).isError());
+  ASSERT_FALSE(testing::runFromCStr(&runtime_, c_pyfile.get()).isError());
 
-  Str filestr(&scope, testing::moduleAt(&runtime, "__main__", "filestr"));
+  Str filestr(&scope, testing::moduleAt(&runtime_, "__main__", "filestr"));
   EXPECT_TRUE(filestr.equalsCStr(c_filedata));
 }
 

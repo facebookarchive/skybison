@@ -9,33 +9,33 @@ namespace python {
 
 using namespace testing;
 
-TEST(RefBuiltinsTest, ReferentTest) {
+using RefBuiltinsTest = RuntimeFixture;
+
+TEST_F(RefBuiltinsTest, ReferentTest) {
   const char* src = R"(
 from _weakref import ref
 class Foo: pass
 a = Foo()
 weak = ref(a)
 )";
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  compileAndRunToString(&runtime, src);
-  RawObject a = moduleAt(&runtime, "__main__", "a");
-  RawObject weak = moduleAt(&runtime, "__main__", "weak");
+  HandleScope scope(thread_);
+  compileAndRunToString(&runtime_, src);
+  RawObject a = moduleAt(&runtime_, "__main__", "a");
+  RawObject weak = moduleAt(&runtime_, "__main__", "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
   EXPECT_EQ(WeakRef::cast(weak).callback(), NoneType::object());
 
-  Module main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime_, "__main__"));
   Dict globals(&scope, main.dict());
-  Object key(&scope, runtime.newStrFromCStr("a"));
-  runtime.dictRemove(thread, globals, key);
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  runtime_.dictRemove(thread_, globals, key);
 
-  runtime.collectGarbage();
-  weak = moduleAt(&runtime, "__main__", "weak");
+  runtime_.collectGarbage();
+  weak = moduleAt(&runtime_, "__main__", "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), NoneType::object());
 }
 
-TEST(RefBuiltinsTest, CallbackTest) {
+TEST_F(RefBuiltinsTest, CallbackTest) {
   const char* src = R"(
 from _weakref import ref
 class Foo: pass
@@ -46,42 +46,37 @@ def f(ref):
     b = 2
 weak = ref(a, f)
 )";
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  compileAndRunToString(&runtime, src);
-  RawObject a = moduleAt(&runtime, "__main__", "a");
-  RawObject b = moduleAt(&runtime, "__main__", "b");
-  RawObject weak = moduleAt(&runtime, "__main__", "weak");
+  HandleScope scope(thread_);
+  compileAndRunToString(&runtime_, src);
+  RawObject a = moduleAt(&runtime_, "__main__", "a");
+  RawObject b = moduleAt(&runtime_, "__main__", "b");
+  RawObject weak = moduleAt(&runtime_, "__main__", "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
   EXPECT_TRUE(isIntEqualsWord(b, 1));
 
-  Module main(&scope, findModule(&runtime, "__main__"));
+  Module main(&scope, findModule(&runtime_, "__main__"));
   Dict globals(&scope, main.dict());
-  Object key(&scope, runtime.newStrFromCStr("a"));
-  runtime.dictRemove(thread, globals, key);
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  runtime_.dictRemove(thread_, globals, key);
 
-  runtime.collectGarbage();
-  weak = moduleAt(&runtime, "__main__", "weak");
-  b = moduleAt(&runtime, "__main__", "b");
+  runtime_.collectGarbage();
+  weak = moduleAt(&runtime_, "__main__", "weak");
+  b = moduleAt(&runtime_, "__main__", "b");
   EXPECT_TRUE(isIntEqualsWord(b, 2));
   EXPECT_EQ(WeakRef::cast(weak).referent(), NoneType::object());
   EXPECT_EQ(WeakRef::cast(weak).callback(), NoneType::object());
 }
 
-TEST(RefBuiltinsTest, DunderCallReturnsObject) {
-  Runtime runtime;
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
+TEST_F(RefBuiltinsTest, DunderCallReturnsObject) {
+  HandleScope scope(thread_);
   Object obj(&scope, Str::empty());
   Object callback(&scope, NoneType::object());
-  WeakRef ref(&scope, runtime.newWeakRef(thread, obj, callback));
+  WeakRef ref(&scope, runtime_.newWeakRef(thread_, obj, callback));
   Object result(&scope, runBuiltin(RefBuiltins::dunderCall, ref));
   EXPECT_EQ(result, obj);
 }
 
-TEST(RefBuiltinsTest, DunderCallWithNonRefRaisesTypeError) {
-  Runtime runtime;
+TEST_F(RefBuiltinsTest, DunderCallWithNonRefRaisesTypeError) {
   HandleScope scope;
   Object obj(&scope, NoneType::object());
   Object result(&scope, runBuiltin(RefBuiltins::dunderCall, obj));
@@ -89,23 +84,21 @@ TEST(RefBuiltinsTest, DunderCallWithNonRefRaisesTypeError) {
                             "'__call__' requires a 'ref' object"));
 }
 
-TEST(RefBuiltinsTest, DunderHashWithDeadRefRaisesTypeError) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(RefBuiltinsTest, DunderHashWithDeadRefRaisesTypeError) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import _weakref
 class C:
   pass
 ref = _weakref.ref(C())
 )")
                    .isError());
-  runtime.collectGarbage();
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "ref.__hash__()"),
+  runtime_.collectGarbage();
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "ref.__hash__()"),
                             LayoutId::kTypeError, "weak object has gone away"));
 }
 
-TEST(RefBuiltinsTest, DunderHashCallsHashOfReferent) {
-  Runtime runtime;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(RefBuiltinsTest, DunderHashCallsHashOfReferent) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import _weakref
 class C:
   def __hash__(self):
@@ -114,7 +107,7 @@ c = C()
 ref = _weakref.ref(c)
 )")
                    .isError());
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, "ref.__hash__()"),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "ref.__hash__()"),
                             LayoutId::kException, "foo"));
 }
 

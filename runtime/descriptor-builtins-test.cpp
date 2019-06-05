@@ -10,7 +10,9 @@ namespace python {
 
 using namespace testing;
 
-TEST(DescriptorBuiltinsTest, Classmethod) {
+using DescriptorBuiltinsTest = RuntimeFixture;
+
+TEST_F(DescriptorBuiltinsTest, Classmethod) {
   const char* src = R"(
 class Foo():
   a = 1
@@ -22,12 +24,11 @@ a.bar()
 Foo.a = 2
 Foo.bar()
 )";
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "1\n2\n");
 }
 
-TEST(DescriptorBuiltinsTest, StaticmethodObjAccess) {
+TEST_F(DescriptorBuiltinsTest, StaticmethodObjAccess) {
   const char* src = R"(
 class E:
     @staticmethod
@@ -38,12 +39,11 @@ e = E()
 print(e.f(5))
 )";
 
-  Runtime runtime;
-  const std::string output = compileAndRunToString(&runtime, src);
+  const std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "6\n");
 }
 
-TEST(DescriptorBuiltinsTest, StaticmethodClsAccess) {
+TEST_F(DescriptorBuiltinsTest, StaticmethodClsAccess) {
   const char* src = R"(
 class E():
     @staticmethod
@@ -53,17 +53,15 @@ class E():
 print(E.f(1,2))
 )";
 
-  Runtime runtime;
-  const std::string output = compileAndRunToString(&runtime, src);
+  const std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "3\n");
 }
 
-TEST(DescriptorBuiltinsTest,
-     PropertyCreateEmptyGetterSetterDeleterReturnsNone) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, "x = property()").isError());
-  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+TEST_F(DescriptorBuiltinsTest,
+       PropertyCreateEmptyGetterSetterDeleterReturnsNone) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, "x = property()").isError());
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(x.isProperty());
   Property prop(&scope, *x);
   ASSERT_TRUE(prop.getter().isNoneType());
@@ -71,10 +69,9 @@ TEST(DescriptorBuiltinsTest,
   ASSERT_TRUE(prop.deleter().isNoneType());
 }
 
-TEST(DescriptorBuiltinsTest, PropertyCreateWithGetterSetterReturnsArgs) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyCreateWithGetterSetterReturnsArgs) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def get_foo():
   pass
 def set_foo():
@@ -82,7 +79,7 @@ def set_foo():
 x = property(get_foo, set_foo)
 )")
                    .isError());
-  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(x.isProperty());
   Property prop(&scope, *x);
   ASSERT_TRUE(prop.getter().isFunction());
@@ -90,10 +87,9 @@ x = property(get_foo, set_foo)
   ASSERT_TRUE(prop.deleter().isNoneType());
 }
 
-TEST(DescriptorBuiltinsTest, PropertyModifyViaGetterReturnsGetter) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyModifyViaGetterReturnsGetter) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def get_foo():
   pass
 def set_foo():
@@ -102,14 +98,14 @@ x = property(None, set_foo)
 y = x.getter(get_foo)
 )")
                    .isError());
-  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(x.isProperty());
   Property x_prop(&scope, *x);
   ASSERT_TRUE(x_prop.getter().isNoneType());
   ASSERT_TRUE(x_prop.setter().isFunction());
   ASSERT_TRUE(x_prop.deleter().isNoneType());
 
-  Object y(&scope, moduleAt(&runtime, "__main__", "y"));
+  Object y(&scope, moduleAt(&runtime_, "__main__", "y"));
   ASSERT_TRUE(y.isProperty());
   Property y_prop(&scope, *y);
   ASSERT_TRUE(y_prop.getter().isFunction());
@@ -117,10 +113,9 @@ y = x.getter(get_foo)
   ASSERT_TRUE(y_prop.deleter().isNoneType());
 }
 
-TEST(DescriptorBuiltinsTest, PropertyModifyViaSetterReturnsSetter) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyModifyViaSetterReturnsSetter) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def get_foo():
   pass
 def set_foo():
@@ -129,14 +124,14 @@ x = property(get_foo)
 y = x.setter(set_foo)
 )")
                    .isError());
-  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(x.isProperty());
   Property x_prop(&scope, *x);
   ASSERT_TRUE(x_prop.getter().isFunction());
   ASSERT_TRUE(x_prop.setter().isNoneType());
   ASSERT_TRUE(x_prop.deleter().isNoneType());
 
-  Object y(&scope, moduleAt(&runtime, "__main__", "y"));
+  Object y(&scope, moduleAt(&runtime_, "__main__", "y"));
   ASSERT_TRUE(y.isProperty());
   Property y_prop(&scope, *y);
   ASSERT_TRUE(y_prop.getter().isFunction());
@@ -144,7 +139,7 @@ y = x.setter(set_foo)
   ASSERT_TRUE(y_prop.deleter().isNoneType());
 }
 
-TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {
+TEST_F(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -160,12 +155,11 @@ c2 = C(42)
 print(c1.x, c2.x)
 )";
 
-  Runtime runtime;
-  const std::string output = compileAndRunToString(&runtime, src);
+  const std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "24 42\n");
 }
 
-TEST(DescriptorBuiltinsTest, PropertyNoGetterRaisesAttributeErrorUnreadable) {
+TEST_F(DescriptorBuiltinsTest, PropertyNoGetterRaisesAttributeErrorUnreadable) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -180,12 +174,12 @@ c1 = C(24)
 c1.x
 )";
 
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
                             LayoutId::kAttributeError, "unreadable attribute"));
 }
 
-TEST(DescriptorBuiltinsTest, PropertyNoSetterRaisesAttributeErrorCannotModify) {
+TEST_F(DescriptorBuiltinsTest,
+       PropertyNoSetterRaisesAttributeErrorCannotModify) {
   const char* src = R"(
 class C:
   def __init__(self, x):
@@ -200,15 +194,13 @@ c1 = C(24)
 c1.x = 42
 )";
 
-  Runtime runtime;
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, src),
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
                             LayoutId::kAttributeError, "can't set attribute"));
 }
 
-TEST(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaClass) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -222,14 +214,13 @@ x = C.x
 )")
                    .isError());
 
-  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   ASSERT_TRUE(x.isProperty());
 }
 
-TEST(DescriptorBuiltinsTest, PropertyAddedViaClassModifiedViaSetter) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyAddedViaClassModifiedViaSetter) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -249,16 +240,15 @@ x2 = c1.x
 )")
                    .isError());
 
-  Object x1(&scope, moduleAt(&runtime, "__main__", "x1"));
+  Object x1(&scope, moduleAt(&runtime_, "__main__", "x1"));
   EXPECT_TRUE(isIntEqualsWord(*x1, 24));
-  Object x2(&scope, moduleAt(&runtime, "__main__", "x2"));
+  Object x2(&scope, moduleAt(&runtime_, "__main__", "x2"));
   EXPECT_TRUE(isIntEqualsWord(*x2, 42));
 }
 
-TEST(DescriptorBuiltinsTest, PropertyAddedViaDecoratorSanityCheck) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyAddedViaDecoratorSanityCheck) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -277,14 +267,13 @@ x = c1.x
 )")
                    .isError());
 
-  Object x(&scope, moduleAt(&runtime, "__main__", "x"));
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   EXPECT_TRUE(isIntEqualsWord(*x, 42));
 }
 
-TEST(DescriptorBuiltinsTest, PropertyWithCallableGetterReturnsValue) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyWithCallableGetterReturnsValue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Getter:
     def __call__(self, obj):
         return 123
@@ -295,14 +284,13 @@ class Foo:
 result = Foo().x
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
-TEST(DescriptorBuiltinsTest, PropertyWithCallableSetterSetsValue) {
-  Runtime runtime;
-  HandleScope scope;
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+TEST_F(DescriptorBuiltinsTest, PropertyWithCallableSetterSetsValue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Setter:
     def __call__(self, obj, value):
         obj.y = value
@@ -315,7 +303,7 @@ foo.x = 123
 result = foo.y
 )")
                    .isError());
-  Object result(&scope, moduleAt(&runtime, "__main__", "result"));
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 

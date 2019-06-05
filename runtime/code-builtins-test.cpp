@@ -6,6 +6,8 @@ namespace python {
 
 using namespace testing;
 
+using CodeBuiltinsTest = RuntimeFixture;
+
 static RawObject makeTestCode() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -31,91 +33,82 @@ static RawObject makeTestCode() {
                           freevars, cellvars, filename, name, 5, lnotab);
 }
 
-TEST(CodeBuiltinsTest, CoArgcountReturnsArgcount) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoArgcountReturnsArgcount) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_argcount"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_argcount"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
 
-TEST(CodeBuiltinsTest, CoKwonlyargcountReturnsKwonlyargcount) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoKwonlyargcountReturnsKwonlyargcount) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_kwonlyargcount"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_kwonlyargcount"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
 }
 
-TEST(CodeBuiltinsTest, CoNlocalsReturnsNLocals) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoNlocalsReturnsNLocals) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_nlocals"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_nlocals"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 2));
 }
 
-TEST(CodeBuiltinsTest, CoStacksizeReturnsStacksize) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoStacksizeReturnsStacksize) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_stacksize"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_stacksize"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
 }
 
-TEST(CodeBuiltinsTest, CoFlagsReturnsFlags) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoFlagsReturnsFlags) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_flags"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_flags"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 4));
 }
 
-TEST(CodeBuiltinsTest, CoCodeReturnsCode) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoCodeReturnsCode) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_code"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_code"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   byte reference[] = {100, 0, 83, 0};
   EXPECT_TRUE(isBytesEqualsBytes(result, reference));
 }
 
-TEST(CodeBuiltinsTest, CoConstsReturnsConsts) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoConstsReturnsConsts) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_consts"));
-  Object result_obj(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_consts"));
+  Object result_obj(&scope, runtime_.attributeAt(Thread::current(), code, key));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 1);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "const0"));
 }
 
-TEST(CodeBuiltinsTest, CoNamesReturnsNames) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoNamesReturnsNames) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_names"));
-  Object result_obj(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_names"));
+  Object result_obj(&scope, runtime_.attributeAt(Thread::current(), code, key));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 1);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "name0"));
 }
 
-TEST(CodeBuiltinsTest, CoVarnamesReturnsVarnames) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoVarnamesReturnsVarnames) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_varnames"));
-  Object result_obj(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_varnames"));
+  Object result_obj(&scope, runtime_.attributeAt(Thread::current(), code, key));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 2);
@@ -123,54 +116,49 @@ TEST(CodeBuiltinsTest, CoVarnamesReturnsVarnames) {
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "var1"));
 }
 
-TEST(CodeBuiltinsTest, CoFreevarsReturnsFreevars) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoFreevarsReturnsFreevars) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_freevars"));
-  Object result_obj(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_freevars"));
+  Object result_obj(&scope, runtime_.attributeAt(Thread::current(), code, key));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 1);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "freevar0"));
 }
 
-TEST(CodeBuiltinsTest, CoCellvarsReturnsCellvars) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoCellvarsReturnsCellvars) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_cellvars"));
-  Object result_obj(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_cellvars"));
+  Object result_obj(&scope, runtime_.attributeAt(Thread::current(), code, key));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);
   ASSERT_EQ(result.length(), 1);
   EXPECT_TRUE(isStrEqualsCStr(result.at(0), "cellvar0"));
 }
 
-TEST(CodeBuiltinsTest, CoFilenameReturnsFilename) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoFilenameReturnsFilename) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_filename"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_filename"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isStrEqualsCStr(*result, "filename0"));
 }
 
-TEST(CodeBuiltinsTest, CoFilenameReturnsName) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoFilenameReturnsName) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_name"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_name"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isStrEqualsCStr(*result, "name0"));
 }
 
-TEST(CodeBuiltinsTest, CoLnotabReturnsLnotab) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(CodeBuiltinsTest, CoLnotabReturnsLnotab) {
+  HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
-  Object key(&scope, runtime.newStrFromCStr("co_lnotab"));
-  Object result(&scope, runtime.attributeAt(Thread::current(), code, key));
+  Object key(&scope, runtime_.newStrFromCStr("co_lnotab"));
+  Object result(&scope, runtime_.attributeAt(Thread::current(), code, key));
   EXPECT_TRUE(isBytesEqualsCStr(result, "lnotab"));
 }
 

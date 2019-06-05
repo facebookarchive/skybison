@@ -10,38 +10,37 @@ namespace python {
 
 namespace testing {
 
-TEST(MarshalModuleTest, LoadsReadsSet) {
-  Runtime runtime;
-  HandleScope scope;
+using MarshalModuleTest = RuntimeFixture;
+
+TEST_F(MarshalModuleTest, LoadsReadsSet) {
+  HandleScope scope(thread_);
   // marshal.loads(set())
   const byte set_bytes[] = "\xbc\x00\x00\x00\x00";
-  Bytes bytes(&scope, runtime.newBytesWithAll(set_bytes));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(set_bytes));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }
 
-TEST(MarshalModuleTest, LoadsWithBytesSubclassReadsSet) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(MarshalModuleTest, LoadsWithBytesSubclassReadsSet) {
+  HandleScope scope(thread_);
   // marshal.loads(set())
-  ASSERT_FALSE(runFromCStr(&runtime, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo(bytes): pass
 foo = Foo(b"\xbc\x00\x00\x00\x00")
 )")
                    .isError());
-  Bytes bytes(&scope, moduleAt(&runtime, "__main__", "foo"));
+  Bytes bytes(&scope, moduleAt(&runtime_, "__main__", "foo"));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);
 }
 
-TEST(MarshalModuleTest, LoadsIgnoresExtraBytesAtEnd) {
-  Runtime runtime;
-  HandleScope scope;
+TEST_F(MarshalModuleTest, LoadsIgnoresExtraBytesAtEnd) {
+  HandleScope scope(thread_);
   // marshal.loads(set() + some extra bytes)
   const byte set_bytes[] = "\xbc\x00\x00\x00\x00\x00\x00\x00\xAA\xBB\xCC";
-  Bytes bytes(&scope, runtime.newBytesWithAll(set_bytes));
+  Bytes bytes(&scope, runtime_.newBytesWithAll(set_bytes));
   Object obj(&scope, runBuiltin(MarshalModule::loads, bytes));
   ASSERT_TRUE(obj.isSet());
   EXPECT_EQ(Set::cast(*obj).numItems(), 0);

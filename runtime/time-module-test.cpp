@@ -8,7 +8,9 @@ namespace python {
 
 using namespace testing;
 
-TEST(TimeModuleTest, TimeOpSub) {  // pystone dependency
+using TimeModuleTest = RuntimeFixture;
+
+TEST_F(TimeModuleTest, TimeOpSub) {  // pystone dependency
   const char* src = R"(
 import time
 starttime = time.time()
@@ -18,12 +20,11 @@ nulltime = time.time() - starttime
 print(nulltime.__class__ is float)
 )";
 
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "True\n");
 }
 
-TEST(TimeModuleTest, TimeOpDiv) {  // pystone dependency
+TEST_F(TimeModuleTest, TimeOpDiv) {  // pystone dependency
   const char* src = R"(
 loops = 50
 from time import time
@@ -38,32 +39,29 @@ else:
 print(benchtime != 0.0)
 )";
 
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "True\n");
 }
 
-TEST(TimeModuleTest, TimeTime) {  // pystone dependency
+TEST_F(TimeModuleTest, TimeTime) {  // pystone dependency
   const char* src = R"(
 import time
 t = time.time()
 print(t.__class__ is float)
 )";
 
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "True\n");
 }
 
-TEST(TimeModuleTest, TimeTimeFromImport) {  // pystone dependency
+TEST_F(TimeModuleTest, TimeTimeFromImport) {  // pystone dependency
   const char* src = R"(
 from time import time
 t = time()
 print(t.__class__ is float)
 )";
 
-  Runtime runtime;
-  std::string output = compileAndRunToString(&runtime, src);
+  std::string output = compileAndRunToString(&runtime_, src);
   EXPECT_EQ(output, "True\n");
 }
 
