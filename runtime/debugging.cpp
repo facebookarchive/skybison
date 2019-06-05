@@ -484,19 +484,19 @@ std::ostream& operator<<(std::ostream& os, Frame* frame) {
   return os;
 }
 
-__attribute__((used)) void dump(RawObject object) {
+USED void dump(RawObject object) {
   dumpExtended(std::cerr, object);
   std::cerr << '\n';
 }
 
-__attribute__((used)) void dump(const Object& object) {
+USED void dump(const Object& object) {
   dumpExtended(std::cerr, *object);
   std::cerr << '\n';
 }
 
-__attribute__((used)) void dump(Frame* frame) { std::cerr << frame; }
+USED void dump(Frame* frame) { std::cerr << frame; }
 
-__attribute__((used)) void dumpSingleFrame(Frame* frame) {
+USED void dumpSingleFrame(Frame* frame) {
   dumpSingleFrame(Thread::current(), std::cerr, frame);
 }
 

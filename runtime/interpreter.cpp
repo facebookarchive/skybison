@@ -703,11 +703,9 @@ RawObject Interpreter::compareOperationRetry(Thread* thread, Frame* caller,
   return thread->raiseUnsupportedBinaryOperation(left, right, op_symbol);
 }
 
-RawObject Interpreter::binaryOperationWithMethod(Thread* thread, Frame* caller,
-                                                 RawObject method,
-                                                 IcBinopFlags flags,
-                                                 RawObject left,
-                                                 RawObject right) {
+HANDLER_INLINE USED RawObject Interpreter::binaryOperationWithMethod(
+    Thread* thread, Frame* caller, RawObject method, IcBinopFlags flags,
+    RawObject left, RawObject right) {
   caller->pushValue(method);
   if (flags & IC_BINOP_REFLECTED) {
     caller->pushValue(right);
@@ -2397,8 +2395,8 @@ bool Interpreter::loadAttrUpdateCache(Context* ctx, word arg) {
   return false;
 }
 
-RawObject Interpreter::loadAttrWithLocation(Thread* thread, RawObject receiver,
-                                            RawObject location) {
+HANDLER_INLINE USED RawObject Interpreter::loadAttrWithLocation(
+    Thread* thread, RawObject receiver, RawObject location) {
   if (location.isFunction()) {
     HandleScope scope(thread);
     Object self(&scope, receiver);
@@ -3375,6 +3373,7 @@ bool Interpreter::compareOpFallback(Context* ctx, word arg,
   return false;
 }
 
+HANDLER_INLINE
 bool Interpreter::doCompareOpCached(Context* ctx, word arg) {
   return cachedBinaryOpImpl(ctx, arg, compareOpUpdateCache, compareOpFallback);
 }
@@ -3426,6 +3425,7 @@ bool Interpreter::inplaceOpFallback(Context* ctx, word arg,
   return false;
 }
 
+HANDLER_INLINE
 bool Interpreter::doInplaceOpCached(Context* ctx, word arg) {
   return cachedBinaryOpImpl(ctx, arg, inplaceOpUpdateCache, inplaceOpFallback);
 }
@@ -3466,6 +3466,7 @@ bool Interpreter::binaryOpFallback(Context* ctx, word arg, IcBinopFlags flags) {
   return false;
 }
 
+HANDLER_INLINE
 bool Interpreter::doBinaryOpCached(Context* ctx, word arg) {
   return cachedBinaryOpImpl(ctx, arg, binaryOpUpdateCache, binaryOpFallback);
 }

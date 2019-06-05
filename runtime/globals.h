@@ -116,11 +116,13 @@ inline D bit_cast(const S& src) {
 #define NODISCARD __attribute__((warn_unused_result))
 #endif
 
-#define WARN_UNUSED __attribute__((warn_unused))
+#define ALIGN_16 __attribute__((aligned(16)))
 
 #define ALWAYS_INLINE inline __attribute__((always_inline))
 
-#define ALIGN_16 __attribute__((aligned(16)))
+#define USED __attribute__((used))
+
+#define WARN_UNUSED __attribute__((warn_unused))
 
 // Endian enum (as proposed in the C++20 draft).
 enum class endian {
