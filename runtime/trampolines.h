@@ -9,13 +9,14 @@ namespace python {
 class Frame;
 class Thread;
 
-using PrepareCallFunc = RawObject (*)(Thread*, const Function&, Frame*, word);
-RawObject preparePositionalCall(Thread* thread, const Function& function,
+using PrepareCallFunc = RawObject (*)(Thread*, RawFunction, Frame*, word);
+RawObject preparePositionalCall(Thread* thread, RawFunction function,
                                 Frame* caller, word argc);
-RawObject prepareKeywordCall(Thread* thread, const Function& function,
+RawObject prepareKeywordCall(Thread* thread, RawFunction function,
                              Frame* caller, word argc);
-RawObject prepareExplodeCall(Thread* thread, const Function& function,
+RawObject prepareExplodeCall(Thread* thread, RawFunction function,
                              Frame* caller, word arg);
+
 void processFreevarsAndCellvars(Thread* thread, const Function& function,
                                 Frame* callee_frame);
 
@@ -133,5 +134,17 @@ RawObject varkwSlotTrampolineKw(Thread* thread, Frame* caller,
                                 word argc) ALIGN_16;
 RawObject varkwSlotTrampolineEx(Thread* thread, Frame* caller,
                                 word flags) ALIGN_16;
+
+RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
+                                  Frame* caller, const word argc);
+
+inline RawObject preparePositionalCall(Thread* thread, RawFunction function,
+                                       Frame* caller, word argc) {
+  // Are we one of the less common cases?
+  if (argc != function.argcount() || !function.hasSimpleCall()) {
+    return processDefaultArguments(thread, function, caller, argc);
+  }
+  return function;
+}
 
 }  // namespace python

@@ -2763,17 +2763,12 @@ HANDLER_INLINE bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
   return unwind(ctx);
 }
 
-HANDLER_INLINE void Interpreter::pushFrame(Context* ctx,
-                                           const Function& function,
+HANDLER_INLINE void Interpreter::pushFrame(Context* ctx, RawFunction function,
                                            RawObject* post_call_sp) {
-  Frame* callee_frame = ctx->thread->pushCallFrame(*function);
+  Frame* callee_frame = ctx->thread->pushCallFrame(function);
   // Pop the arguments off of the caller's stack now that the callee "owns"
   // them.
   ctx->frame->setValueStackTop(post_call_sp);
-
-  if (function.hasFreevarsOrCellvars()) {
-    processFreevarsAndCellvars(ctx->thread, function, callee_frame);
-  }
 
   ctx->frame->setVirtualPC(ctx->pc);
   ctx->frame = callee_frame;
@@ -2794,28 +2789,39 @@ bool Interpreter::callTrampoline(Context* ctx, Function::Entry entry, word argc,
 HANDLER_INLINE bool Interpreter::handleCall(
     Context* ctx, word argc, word callable_idx, word num_extra_pop,
     PrepareCallFunc prepare_args,
-    Function::Entry (Function::*get_entry)() const) {
+    Function::Entry (RawFunction::*get_entry)() const) {
+  // Warning: This code is using `RawXXX` variables for performance! This is
+  // despite the fact that we call functions that do potentially perform memory
+  // allocations. This is legal here because we always rely on the functions
+  // returning an up-to-date address and we make sure to never access any value
+  // produce before a call after that call. Be careful not to break this
+  // invariant if you change the code!
+
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
-  HandleScope scope(thread);
   RawObject* post_call_sp =
       frame->valueStackTop() + callable_idx + 1 + num_extra_pop;
-  Object callable(&scope, frame->peek(callable_idx));
+  RawObject callable = frame->peek(callable_idx);
   if (!callable.isFunction()) {
     callable = prepareCallableCall(thread, frame, callable_idx, &argc);
     if (callable.isError()) return unwind(ctx);
   }
+  RawFunction function = RawFunction::cast(callable);
 
-  Function function(&scope, *callable);
   if (!function.isInterpreted()) {
     return callTrampoline(ctx, (function.*get_entry)(), argc, post_call_sp);
   }
 
-  if (prepare_args(thread, function, frame, argc).isError()) {
-    return unwind(ctx);
-  }
+  RawObject result = prepare_args(thread, function, frame, argc);
+  if (result.isError()) return unwind(ctx);
+  function = RawFunction::cast(result);
 
   pushFrame(ctx, function, post_call_sp);
+  if (function.hasFreevarsOrCellvars()) {
+    HandleScope scope(thread);
+    Function function_handle(&scope, function);
+    processFreevarsAndCellvars(ctx->thread, function_handle, ctx->frame);
+  }
   return false;
 }
 
@@ -2923,11 +2929,14 @@ HANDLER_INLINE bool Interpreter::doCallFunctionEx(Context* ctx, word arg) {
     return callTrampoline(ctx, function.entryEx(), arg, post_call_sp);
   }
 
-  if (prepareExplodeCall(thread, function, frame, arg).isError()) {
+  if (prepareExplodeCall(thread, *function, frame, arg).isError()) {
     return unwind(ctx);
   }
 
-  pushFrame(ctx, function, post_call_sp);
+  pushFrame(ctx, *function, post_call_sp);
+  if (function.hasFreevarsOrCellvars()) {
+    processFreevarsAndCellvars(ctx->thread, function, ctx->frame);
+  }
   return false;
 }
 

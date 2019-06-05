@@ -57,10 +57,10 @@ void processFreevarsAndCellvars(Thread* thread, const Function& function,
   }
 }
 
-static RawObject processDefaultArguments(Thread* thread,
-                                         const Function& function,
-                                         Frame* caller, const word argc) {
+RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
+                                  Frame* caller, const word argc) {
   HandleScope scope(thread);
+  Function function(&scope, function_raw);
   Object tmp_varargs(&scope, NoneType::object());
   word new_argc = argc;
   if (new_argc < function.argcount() && function.hasDefaults()) {
@@ -144,7 +144,7 @@ static RawObject processDefaultArguments(Thread* thread,
         function.argcount(),
         new_argc - function.hasVarargs() - function.hasVarkeyargs());
   }
-  return NoneType::object();  // value not significant, it's just not an error
+  return *function;
 }
 
 static word findName(RawObject name, RawTuple name_list) {
@@ -254,9 +254,10 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
 // Converts the outgoing arguments of a keyword call into positional arguments
 // and processes default arguments, rearranging everything into a form expected
 // by the callee.
-RawObject prepareKeywordCall(Thread* thread, const Function& function,
+RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
                              Frame* caller, word argc) {
   HandleScope scope(thread);
+  Function function(&scope, function_raw);
   // Destructively pop the tuple of kwarg names
   Tuple keywords(&scope, caller->topValue());
   caller->popValue();
@@ -377,7 +378,7 @@ RawObject prepareKeywordCall(Thread* thread, const Function& function,
   if (function.hasVarkeyargs()) {
     caller->pushValue(*tmp_dict);
   }
-  return res;
+  return *function;
 }
 
 // Converts explode arguments into positional arguments.
@@ -415,30 +416,19 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
   return SmallInt::fromWord(argc);
 }
 
-// Takes the outgoing arguments of a positional argument call and rearranges
-// them into the form expected by the callee.
-RawObject preparePositionalCall(Thread* thread, const Function& function,
-                                Frame* caller, word argc) {
-  // Are we one of the less common cases?
-  if (argc != function.argcount() || !function.hasSimpleCall()) {
-    RawObject result = processDefaultArguments(thread, function, caller, argc);
-    if (result.isError()) {
-      return result;
-    }
-  }
-  return NoneType::object();
-}
-
 // Takes the outgoing arguments of an explode argument call and rearranges them
 // into the form expected by the callee.
-RawObject prepareExplodeCall(Thread* thread, const Function& function,
+RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
                              Frame* caller, word arg) {
+  HandleScope scope(thread);
+  Function function(&scope, function_raw);
+
   RawObject arg_obj = processExplodeArguments(thread, caller, arg);
   if (arg_obj.isError()) return arg_obj;
   word new_argc = SmallInt::cast(arg_obj).value();
 
   if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
-    RawObject result = prepareKeywordCall(thread, function, caller, new_argc);
+    RawObject result = prepareKeywordCall(thread, *function, caller, new_argc);
     if (result.isError()) {
       return result;
     }
@@ -446,13 +436,13 @@ RawObject prepareExplodeCall(Thread* thread, const Function& function,
     // Are we one of the less common cases?
     if (new_argc != function.argcount() || !(function.hasSimpleCall())) {
       RawObject result =
-          processDefaultArguments(thread, function, caller, new_argc);
+          processDefaultArguments(thread, *function, caller, new_argc);
       if (result.isError()) {
         return result;
       }
     }
   }
-  return NoneType::object();
+  return *function;
 }
 
 static RawObject createGenerator(Thread* thread, const Function& function,
@@ -474,7 +464,7 @@ static RawObject createGenerator(Thread* thread, const Function& function,
 RawObject generatorTrampoline(Thread* thread, Frame* caller, word arg) {
   HandleScope scope(thread);
   Function function(&scope, caller->peek(arg));
-  RawObject error = preparePositionalCall(thread, function, caller, arg);
+  RawObject error = preparePositionalCall(thread, *function, caller, arg);
   if (error.isError()) {
     return error;
   }
@@ -488,7 +478,7 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* caller, word argc) {
   // The argument does not include the hidden keyword dictionary argument.  Add
   // one to skip over the keyword dictionary to read the function object.
   Function function(&scope, caller->peek(argc + 1));
-  RawObject error = prepareKeywordCall(thread, function, caller, argc);
+  RawObject error = prepareKeywordCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -503,7 +493,7 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, function, caller, arg);
+  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
   if (error.isError()) {
     return error;
   }
@@ -515,7 +505,7 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
 RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word arg) {
   HandleScope scope(thread);
   Function function(&scope, caller->peek(arg));
-  RawObject error = preparePositionalCall(thread, function, caller, arg);
+  RawObject error = preparePositionalCall(thread, *function, caller, arg);
   if (error.isError()) {
     return error;
   }
@@ -531,7 +521,7 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
   // The argument does not include the hidden keyword dictionary argument.  Add
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, caller->peek(argc + 1));
-  RawObject error = prepareKeywordCall(thread, function, caller, argc);
+  RawObject error = prepareKeywordCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -548,7 +538,7 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, function, caller, arg);
+  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
   if (error.isError()) {
     return error;
   }
@@ -561,7 +551,7 @@ RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
 RawObject interpreterTrampoline(Thread* thread, Frame* caller, word argc) {
   HandleScope scope(thread);
   Function function(&scope, caller->peek(argc));
-  RawObject error = preparePositionalCall(thread, function, caller, argc);
+  RawObject error = preparePositionalCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -574,7 +564,7 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller, word argc) {
   // The argument does not include the hidden keyword dictionary argument.  Add
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, caller->peek(argc + 1));
-  RawObject error = prepareKeywordCall(thread, function, caller, argc);
+  RawObject error = prepareKeywordCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -588,7 +578,7 @@ RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word arg) {
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, function, caller, arg);
+  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
   if (error.isError()) {
     return error;
   }
@@ -600,7 +590,7 @@ RawObject interpreterClosureTrampoline(Thread* thread, Frame* caller,
                                        word argc) {
   HandleScope scope(thread);
   Function function(&scope, caller->peek(argc));
-  RawObject error = preparePositionalCall(thread, function, caller, argc);
+  RawObject error = preparePositionalCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -615,7 +605,7 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
   // The argument does not include the hidden keyword dictionary argument.  Add
   // one to skip the keyword dictionary to get to the function object.
   Function function(&scope, caller->peek(argc + 1));
-  RawObject error = prepareKeywordCall(thread, function, caller, argc);
+  RawObject error = prepareKeywordCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -631,7 +621,7 @@ RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
       &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, function, caller, arg);
+  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
   if (error.isError()) {
     return error;
   }
@@ -1126,7 +1116,7 @@ static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller,
 RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc) {
   return builtinTrampolineImpl(
       thread, caller, argc, [&](const Function& function) {
-        return preparePositionalCall(thread, function, caller, argc);
+        return preparePositionalCall(thread, *function, caller, argc);
       });
 }
 
@@ -1134,7 +1124,7 @@ RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc) {
   return builtinTrampolineImpl(
       thread, caller, argc + 1 /* skip over implicit tuple of kwargs */,
       [&](const Function& function) {
-        return prepareKeywordCall(thread, function, caller, argc);
+        return prepareKeywordCall(thread, *function, caller, argc);
       });
 }
 
@@ -1142,7 +1132,7 @@ RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc) {
   return builtinTrampolineImpl(
       thread, caller, (argc & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1,
       [&](const Function& function) {
-        return prepareExplodeCall(thread, function, caller, argc);
+        return prepareExplodeCall(thread, *function, caller, argc);
       });
 }
 

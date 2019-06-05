@@ -472,7 +472,7 @@ class Interpreter {
   // doCallFunctionKw().
   static bool handleCall(Context* ctx, word argc, word callable_idx,
                          word num_extra_pop, PrepareCallFunc prepare_args,
-                         Function::Entry (Function::*get_entry)() const);
+                         Function::Entry (RawFunction::*get_entry)() const);
 
   // Call a function through its trampoline, pushing the result on the stack.
   static bool callTrampoline(Context* ctx, Function::Entry entry, word argc,
@@ -480,7 +480,7 @@ class Interpreter {
 
   // After a callable is prepared and all arguments are processed, push a frame
   // for the callee and update the Context to begin executing it.
-  static void pushFrame(Context* ctx, const Function& function,
+  static void pushFrame(Context* ctx, RawFunction function,
                         RawObject* post_call_sp);
 
   // Pop the current Frame, restoring the execution context of the previous
