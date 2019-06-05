@@ -276,6 +276,54 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesCompareOpOpcodes) {
   EXPECT_EQ(icOriginalArg(*function, 5), static_cast<word>(CompareOp::GE));
 }
 
+TEST(IcTestNoFixture,
+     IcRewriteBytecodeRewritesReservesCachesForGlobalVariables) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  byte bytecode[] = {
+      LOAD_GLOBAL, 0, STORE_GLOBAL, 1, LOAD_ATTR, 9, DELETE_GLOBAL, 2,
+      STORE_NAME,  3, DELETE_NAME,  4, LOAD_ATTR, 9, LOAD_NAME,     5,
+  };
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  code.setNames(runtime.newTuple(12));
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals));
+  // makeFunction() calls icRewriteBytecode().
+
+  byte expected[] = {
+      LOAD_GLOBAL,
+      0,
+      STORE_GLOBAL,
+      1,
+      // Note that LOAD_ATTR's cache index starts at 2 to reserve the first 2
+      // cache lines for 12 global variables.
+      LOAD_ATTR_CACHED,
+      2,
+      DELETE_GLOBAL,
+      2,
+      STORE_NAME,
+      3,
+      DELETE_NAME,
+      4,
+      LOAD_ATTR_CACHED,
+      3,
+      LOAD_NAME,
+      5,
+  };
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+
+  Tuple caches(&scope, function.caches());
+  // 12 for global names is round to 2 cache lines each of which is 8 entries.
+  EXPECT_EQ(caches.length(), (2 + 2) * kIcPointersPerCache);
+}
+
 static RawObject layoutIdAsSmallInt(LayoutId id) {
   return SmallInt::fromWord(static_cast<word>(id));
 }
@@ -354,6 +402,17 @@ TEST_F(IcTest, IcLookupBinopReturnsErrorNotFound) {
   EXPECT_TRUE(
       icLookupBinop(caches, 0, LayoutId::kSmallInt, LayoutId::kSmallInt, &flags)
           .isErrorNotFound());
+}
+
+TEST_F(IcTest, IcLookupGlobalVar) {
+  HandleScope scope(thread_);
+  Tuple caches(&scope, runtime_.newTuple(2));
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  caches.atPut(0, *cache);
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 99));
+  EXPECT_TRUE(icLookupGlobalVar(caches, 1).isNoneType());
 }
 
 TEST_F(IcTest, IcUpdateSetsEmptyEntry) {
@@ -564,6 +623,226 @@ result = f(container)
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
   EXPECT_TRUE(icLookup(caches, 0, iterator.layoutId()).isErrorNotFound());
+}
+
+static RawObject testingFunction(Thread* thread) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime->newDict());
+  MutableBytes rewritten_bytecode(&scope,
+                                  runtime->newMutableBytesUninitialized(4));
+  rewritten_bytecode.byteAtPut(0, LOAD_GLOBAL);
+  rewritten_bytecode.byteAtPut(1, 0);
+  rewritten_bytecode.byteAtPut(2, STORE_GLOBAL);
+  rewritten_bytecode.byteAtPut(3, 1);
+
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals));
+  function.setRewrittenBytecode(*rewritten_bytecode);
+
+  code.setNames(runtime->newTuple(2));
+  Tuple caches(&scope, runtime->newTuple(2));
+  function.setCaches(*caches);
+  return *function;
+}
+
+TEST_F(IcTest, insertDependencyInsertsDependentAsHead) {
+  HandleScope scope(thread_);
+  Function function0(&scope, testingFunction(thread_));
+  Function function1(&scope, testingFunction(thread_));
+
+  ValueCell cache(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(cache.dependencyLink().isNoneType());
+
+  insertDependency(thread_, function0, cache);
+  WeakLink link0(&scope, cache.dependencyLink());
+  EXPECT_EQ(link0.referent(), *function0);
+  EXPECT_TRUE(link0.prev().isNoneType());
+  EXPECT_TRUE(link0.next().isNoneType());
+
+  insertDependency(thread_, function1, cache);
+  WeakLink link1(&scope, cache.dependencyLink());
+  EXPECT_EQ(link1.referent(), *function1);
+  EXPECT_TRUE(link1.prev().isNoneType());
+  EXPECT_EQ(link1.next(), *link0);
+}
+
+TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcode) {
+  HandleScope scope(thread_);
+  Function function(&scope, testingFunction(thread_));
+  Tuple caches(&scope, function.caches());
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  ValueCell another_cache(&scope, runtime_.newValueCell());
+  another_cache.setValue(SmallInt::fromWord(123));
+
+  icUpdateGlobalVar(thread_, function, 0, cache);
+
+  EXPECT_EQ(caches.at(0), cache);
+  EXPECT_EQ(rewritten_bytecode.byteAt(0), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewritten_bytecode.byteAt(2), STORE_GLOBAL);
+
+  icUpdateGlobalVar(thread_, function, 1, another_cache);
+
+  EXPECT_EQ(caches.at(0), cache);
+  EXPECT_EQ(rewritten_bytecode.byteAt(0), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewritten_bytecode.byteAt(2), STORE_GLOBAL_CACHED);
+}
+
+TEST_F(IcTest, IcUpdateGlobalVarCreatesDependencyLink) {
+  HandleScope scope(thread_);
+  Function function(&scope, testingFunction(thread_));
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  icUpdateGlobalVar(thread_, function, 0, cache);
+
+  ASSERT_TRUE(cache.dependencyLink().isWeakLink());
+  WeakLink link(&scope, cache.dependencyLink());
+  EXPECT_EQ(link.referent(), *function);
+  EXPECT_EQ(link.prev(), NoneType::object());
+  EXPECT_EQ(link.next(), NoneType::object());
+}
+
+TEST_F(IcTest, IcUpdateGlobalVarInsertsHeadOfDependencyLink) {
+  HandleScope scope(thread_);
+  Function function0(&scope, testingFunction(thread_));
+  Function function1(&scope, testingFunction(thread_));
+
+  // Adds cache into function0's caches first, then to function1's.
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  icUpdateGlobalVar(thread_, function0, 0, cache);
+  icUpdateGlobalVar(thread_, function1, 0, cache);
+
+  ASSERT_TRUE(cache.dependencyLink().isWeakLink());
+  WeakLink link(&scope, cache.dependencyLink());
+  EXPECT_EQ(link.referent(), *function1);
+  EXPECT_TRUE(link.prev().isNoneType());
+
+  WeakLink next_link(&scope, link.next());
+  EXPECT_EQ(next_link.referent(), *function0);
+  EXPECT_EQ(next_link.prev(), *link);
+  EXPECT_TRUE(next_link.next().isNoneType());
+}
+
+TEST_F(IcTest,
+       IcInvalidateGlobalVarRemovesInvalidatedCacheFromReferencedFunctions) {
+  HandleScope scope(thread_);
+  Function function0(&scope, testingFunction(thread_));
+  Function function1(&scope, testingFunction(thread_));
+  Tuple caches0(&scope, function0.caches());
+  Tuple caches1(&scope, function1.caches());
+
+  // Both caches of Function0 & 1 caches the same cache value.
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  ValueCell another_cache(&scope, runtime_.newValueCell());
+  another_cache.setValue(SmallInt::fromWord(123));
+
+  icUpdateGlobalVar(thread_, function0, 0, cache);
+  icUpdateGlobalVar(thread_, function0, 1, another_cache);
+  icUpdateGlobalVar(thread_, function1, 0, another_cache);
+  icUpdateGlobalVar(thread_, function1, 1, cache);
+
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 0)), 99));
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 1)), 99));
+
+  // Invalidating cache makes it removed from both caches, and nobody depends on
+  // it anymore.
+  icInvalidateGlobalVar(thread_, cache);
+
+  EXPECT_TRUE(icLookupGlobalVar(caches0, 0).isNoneType());
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
+  EXPECT_TRUE(icLookupGlobalVar(caches1, 1).isNoneType());
+  EXPECT_TRUE(cache.dependencyLink().isNoneType());
+}
+
+TEST_F(IcTest, IcInvalidateGlobalVarDoNotDeferenceDeallocatedReferent) {
+  HandleScope scope(thread_);
+  Function function0(&scope, testingFunction(thread_));
+  Function function1(&scope, testingFunction(thread_));
+  Tuple caches0(&scope, function0.caches());
+  Tuple caches1(&scope, function1.caches());
+
+  // Both caches of Function0 & 1 caches the same cache value.
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  ValueCell another_cache(&scope, runtime_.newValueCell());
+  another_cache.setValue(SmallInt::fromWord(123));
+
+  icUpdateGlobalVar(thread_, function0, 0, cache);
+  icUpdateGlobalVar(thread_, function0, 1, another_cache);
+  icUpdateGlobalVar(thread_, function1, 0, another_cache);
+  icUpdateGlobalVar(thread_, function1, 1, cache);
+
+  ASSERT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 0)), 99));
+  ASSERT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+  ASSERT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
+  ASSERT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 1)), 99));
+
+  // Simulate GCing function1.
+  WeakLink link(&scope, cache.dependencyLink());
+  ASSERT_EQ(link.referent(), *function1);
+  link.setReferent(NoneType::object());
+
+  // Invalidation cannot touch function1 anymore.
+  icInvalidateGlobalVar(thread_, cache);
+
+  EXPECT_TRUE(icLookupGlobalVar(caches0, 0).isNoneType());
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 1)), 99));
+  EXPECT_TRUE(cache.dependencyLink().isNoneType());
+}
+
+TEST_F(IcTest, IcInvalidateGlobalVarRevertsOpCodeToOriginalOnes) {
+  HandleScope scope(thread_);
+  Function function(&scope, testingFunction(thread_));
+  MutableBytes bytecode(&scope, function.rewrittenBytecode());
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  ValueCell another_cache(&scope, runtime_.newValueCell());
+  another_cache.setValue(SmallInt::fromWord(123));
+
+  byte original_expected[] = {LOAD_GLOBAL, 0, STORE_GLOBAL, 1};
+  ASSERT_TRUE(isMutableBytesEqualsBytes(bytecode, original_expected));
+
+  icUpdateGlobalVar(thread_, function, 0, cache);
+  byte cached_expected0[] = {LOAD_GLOBAL_CACHED, 0, STORE_GLOBAL, 1};
+  EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, cached_expected0));
+  EXPECT_EQ(bytecode.byteAt(0), LOAD_GLOBAL_CACHED);
+
+  icUpdateGlobalVar(thread_, function, 1, another_cache);
+  byte cached_expected1[] = {LOAD_GLOBAL_CACHED, 0, STORE_GLOBAL_CACHED, 1};
+  EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, cached_expected1));
+
+  icInvalidateGlobalVar(thread_, cache);
+
+  // Only invalidated cache's opcode gets reverted to the original one.
+  byte invalidated_expected[] = {LOAD_GLOBAL, 0, STORE_GLOBAL_CACHED, 1};
+  EXPECT_TRUE(isMutableBytesEqualsBytes(bytecode, invalidated_expected));
 }
 
 }  // namespace python

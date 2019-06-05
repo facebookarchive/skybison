@@ -133,7 +133,7 @@ TEST(DebuggingTestsNoFixture, DumpExtendedFunction) {
        4 RETURN_VALUE 0
   Rewritten bytecode:
      0 LOAD_CONST 0
-     2 LOAD_ATTR_CACHED 0
+     2 LOAD_ATTR_CACHED 1
      4 RETURN_VALUE 0
 )");
 }

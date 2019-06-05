@@ -563,6 +563,7 @@ class Runtime;
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnimplemented, "_unimplemented")                                      \
   V(UnderWarnings, "_warnings")                                                \
+  V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
   V(Anonymous, "<anonymous>")                                                  \
   V(UnicodeDecodeError, "UnicodeDecodeError")                                  \

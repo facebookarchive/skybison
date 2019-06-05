@@ -172,4 +172,9 @@ TEST_F(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
 )");
 }
 
+TEST_F(UtilsTest, RoundUpDiv) {
+  EXPECT_EQ(Utils::roundUpDiv(17, 3), 6);
+  EXPECT_EQ(Utils::roundUpDiv(17, 2), 9);
+}
+
 }  // namespace python

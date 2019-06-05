@@ -44,6 +44,40 @@ TEST_F(ScavengerTest, ClearWeakReference) {
   EXPECT_EQ(WeakRef::cast(*ref).referent(), NoneType::object());
 }
 
+TEST_F(ScavengerTest, ClearWeakLinkReferences) {
+  HandleScope scope(thread_);
+  Object none(&scope, NoneType::object());
+  Object link0(&scope, *none);
+  Object link1(&scope, *none);
+  Object link2(&scope, *none);
+  Tuple referent1(&scope, runtime_.newTuple(11));
+  {
+    Tuple referent0(&scope, runtime_.newTuple(10));
+    Tuple referent2(&scope, runtime_.newTuple(11));
+    WeakLink link0_inner(&scope,
+                         runtime_.newWeakLink(thread_, referent0, none, none));
+    WeakLink link1_inner(
+        &scope, runtime_.newWeakLink(thread_, referent1, link0_inner, none));
+    WeakLink link2_inner(
+        &scope, runtime_.newWeakLink(thread_, referent2, link1_inner, none));
+    link0_inner.setNext(*link1_inner);
+    link1_inner.setNext(*link2_inner);
+
+    link0 = *link0_inner;
+    link1 = *link1_inner;
+    link2 = *link2_inner;
+
+    runtime_.collectGarbage();
+    EXPECT_EQ(link0_inner.referent(), *referent0);
+    EXPECT_EQ(link1_inner.referent(), *referent1);
+    EXPECT_EQ(link2_inner.referent(), *referent2);
+  }
+  runtime_.collectGarbage();
+  EXPECT_EQ(WeakRef::cast(*link0).referent(), NoneType::object());
+  EXPECT_EQ(WeakRef::cast(*link1).referent(), *referent1);
+  EXPECT_EQ(WeakRef::cast(*link2).referent(), NoneType::object());
+}
+
 TEST_F(ScavengerTest, PreserveSomeClearSomeReferents) {
   HandleScope scope(thread_);
 

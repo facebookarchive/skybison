@@ -2959,6 +2959,18 @@ TEST_F(RuntimeTest,
       LayoutId::kValueError, "code: varnames is too small"));
 }
 
+TEST_F(RuntimeTest, NewWeakLink) {
+  HandleScope scope(thread_);
+
+  Tuple referent(&scope, runtime_.newTuple(2));
+  Object prev(&scope, runtime_.newInt(2));
+  Object next(&scope, runtime_.newInt(3));
+  WeakLink link(&scope, runtime_.newWeakLink(thread_, referent, prev, next));
+  EXPECT_EQ(link.referent(), *referent);
+  EXPECT_EQ(link.prev(), *prev);
+  EXPECT_EQ(link.next(), *next);
+}
+
 // Set is not special except that it is a builtin type with sealed attributes.
 TEST_F(RuntimeTest, SetHasSameSizeCreatedTwoDifferentWays) {
   HandleScope scope(thread_);

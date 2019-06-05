@@ -130,13 +130,21 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
     }
   }
 
+  // Add cache entries for global variables.  This is going to over allocate
+  // somewhat in order to simplify the indexing arithmetic.  Not all names are
+  // used for globals, some are used for attributes.  This is good enough for
+  // now.
+  word names_length = Tuple::cast(Code::cast(function.code()).names()).length();
+  word num_global_caches = Utils::roundUpDiv(names_length, kIcPointersPerCache);
+  num_caches += num_global_caches;
+
   Runtime* runtime = thread->runtime();
   Tuple original_arguments(&scope, runtime->newTuple(num_caches));
 
   // Rewrite bytecode.
   MutableBytes result(&scope,
                       runtime->newMutableBytesUninitialized(bytecode_length));
-  for (word i = 0, cache = 0; i < bytecode_length;) {
+  for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
     word begin = i;
     Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
     int32_t arg = bytecode.byteAt(i++);
@@ -207,6 +215,114 @@ void icUpdateBinop(Thread* thread, const Tuple& caches, word index,
       caches.atPut(i + kIcEntryValueOffset, *value);
     }
   }
+}
+
+void insertDependency(Thread* thread, const Object& dependent,
+                      const ValueCell& value_cell) {
+  HandleScope scope(thread);
+  Object link(&scope, value_cell.dependencyLink());
+  Object none(&scope, NoneType::object());
+  WeakLink new_link(
+      &scope, thread->runtime()->newWeakLink(thread, dependent, none, link));
+  if (link.isWeakLink()) {
+    WeakLink::cast(*link).setPrev(*new_link);
+  }
+  value_cell.setDependencyLink(*new_link);
+}
+
+void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
+                       const ValueCell& value_cell) {
+  HandleScope scope(thread);
+  Tuple caches(&scope, function.caches());
+  DCHECK(caches.at(index).isNoneType(),
+         "cache entry must be empty one before update");
+  insertDependency(thread, function, value_cell);
+  caches.atPut(index, *value_cell);
+
+  // Update all global variable access to the cached value in the function.
+  MutableBytes bytecode(&scope, function.rewrittenBytecode());
+  word bytecode_length = bytecode.length();
+  byte target_arg = static_cast<byte>(index);
+  for (word i = 0; i < bytecode_length;) {
+    word first_bc_index = i;
+    Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
+    int32_t arg = bytecode.byteAt(i++);
+    while (bc == Bytecode::EXTENDED_ARG) {
+      bc = static_cast<Bytecode>(bytecode.byteAt(i++));
+      arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
+    }
+    if (arg != target_arg) {
+      continue;
+    }
+    if (bc == LOAD_GLOBAL) {
+      bytecode.byteAtPut(first_bc_index, LOAD_GLOBAL_CACHED);
+    } else if (bc == STORE_GLOBAL) {
+      bytecode.byteAtPut(first_bc_index, STORE_GLOBAL_CACHED);
+    }
+  }
+}
+
+void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Tuple caches(&scope, runtime->emptyTuple());
+  Object referent(&scope, NoneType::object());
+  Object function(&scope, NoneType::object());
+  Object link(&scope, value_cell.dependencyLink());
+  MutableBytes bytecode(&scope, runtime->newMutableBytesUninitialized(0));
+  while (!link.isNoneType()) {
+    DCHECK(link.isWeakLink(), "ValuCell.dependenyLink must be a WeakLink");
+    referent = WeakLink::cast(*link).referent();
+    if (referent.isNoneType()) {
+      // The function got deallocated.
+      link = WeakLink::cast(*link).next();
+      continue;
+    }
+    DCHECK(referent.isFunction(),
+           "dependencyLink's payload must be a function");
+    function = *referent;
+    word names_length =
+        Tuple::cast(Code::cast(Function::cast(*function).code()).names())
+            .length();
+    DCHECK(names_length < 256,
+           "more than 256 global names may require bytecode stretching");
+
+    // Empty the cache.
+    caches = Function::cast(*function).caches();
+    word name_index_found = -1;
+    for (word i = 0; i < names_length; i++) {
+      if (caches.at(i) == *value_cell) {
+        caches.atPut(i, NoneType::object());
+        name_index_found = i;
+        break;
+      }
+    }
+    DCHECK(name_index_found >= 0,
+           "a dependent function must have cached the value");
+
+    bytecode = Function::cast(*function).rewrittenBytecode();
+    word bytecode_length = bytecode.length();
+    for (word i = 0; i < bytecode_length; i += 2) {
+      Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i));
+      byte arg = bytecode.byteAt(i + 1);
+      Bytecode original_bc = bc;
+      switch (bc) {
+        case LOAD_GLOBAL_CACHED:
+          original_bc = LOAD_GLOBAL;
+          break;
+        case STORE_GLOBAL_CACHED:
+          original_bc = STORE_GLOBAL;
+          break;
+        default:
+          break;
+      }
+      if (bc != original_bc && arg == name_index_found) {
+        bytecode.byteAtPut(i, original_bc);
+      }
+    }
+    link = WeakLink::cast(*link).next();
+  }
+  value_cell.setDependencyLink(NoneType::object());
 }
 
 }  // namespace python

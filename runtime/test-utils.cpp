@@ -268,7 +268,7 @@ RawCode newEmptyCode() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object none(&scope, NoneType::object());
+  Bytes code(&scope, runtime->newBytes(0, 0));
   Tuple empty_tuple(&scope, runtime->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
@@ -278,7 +278,7 @@ RawCode newEmptyCode() {
                                      0,             // nlocals
                                      0,             // stacksize
                                      flags,         // flags
-                                     none,          // code
+                                     code,          // code
                                      empty_tuple,   // consts
                                      empty_tuple,   // names
                                      empty_tuple,   // varnames

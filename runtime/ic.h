@@ -31,6 +31,11 @@ RawObject icLookupBinop(const Tuple& caches, word index,
                         LayoutId left_layout_id, LayoutId right_layout_id,
                         IcBinopFlags* flags_out);
 
+// Looks for a cache entry for a global variable.
+// Returns a ValueCell in case of cache hit.
+// Returns the NoneType object otherwise.
+RawObject icLookupGlobalVar(const Tuple& caches, word index);
+
 // Returns the original argument of bytecode operations that were rewritten by
 // `rewriteBytecode()`.
 word icOriginalArg(RawFunction function, word index);
@@ -52,25 +57,41 @@ void icUpdateBinop(Thread* thread, const Tuple& caches, word index,
                    LayoutId left_layout_id, LayoutId right_layout_id,
                    const Object& value, IcBinopFlags flags);
 
+void insertDependency(Thread* thread, const Object& dependent,
+                      const ValueCell& value_cell);
+
+// Sets a cache entry for a global variable.
+void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
+                       const ValueCell& value_cell);
+
+// Invalide global variable cache entries referring to value_cell.
+void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell);
+
 // Cache layout:
 //  The caches for the caching opcodes of a function are joined together in a
 //  tuple object.
 //
-//  0: cache 0  (used by the first opcode using an inline cache)
-//    - 0: entry0 layout_id: layout id to match as SmallInt
-//    - 1: entry0 target: cached value
-//    - 2: entry1 layout_id
-//    - 3: entry1 target
-//    - 4: entry2 layout_id
-//    - 5: entry2 target
-//    - 6: entry3 layout_id
-//    - 7: entry3 target
-//  8: cache 1  (used by the second opcode using an inline cache)
-//    - 8: entry0 layout_id
-//    - 9: entry0 target
-//      ...
-//  n * kIcPointersPerCache: cache n
-
+//  +-Global Variable Cache Section -------------------------------------------
+//  | 0: global variable cache 0 (for global var with name == code.names.at(0)
+//  | ...
+//  | k - 1: global variable cache k - 1 where k == code.names.length()
+//  +-Method Cache Section -----------------------------------------------------
+//  | k: cache 0  (used by the first opcode using an inline cache)
+//  |   - 0: entry0 layout_id: layout id to match as SmallInt
+//  |   - 1: entry0 target: cached value
+//  |   - 2: entry1 layout_id
+//  |   - 3: entry1 target
+//  |   - 4: entry2 layout_id
+//  |   - 5: entry2 target
+//  |   - 6: entry3 layout_id
+//  |   - 7: entry3 target
+//  | k + 8: cache 1  (used by the second opcode using an inline cache)
+//  |   - 8: entry0 layout_id
+//  |   - 9: entry0 target
+//  |     ...
+//  | k + n * kIcPointersPerCache: cache n
+//  |
+//  +--------------------------------------------------------------------------
 const int kIcPointersPerEntry = 2;
 const int kIcEntriesPerCache = 4;
 const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
@@ -113,6 +134,10 @@ inline RawObject icLookupBinop(const Tuple& caches, word index,
     }
   }
   return Error::notFound();
+}
+
+inline RawObject icLookupGlobalVar(const Tuple& caches, word index) {
+  return caches.at(index);
 }
 
 inline word icOriginalArg(RawFunction function, word index) {

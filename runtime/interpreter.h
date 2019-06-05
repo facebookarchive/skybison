@@ -85,6 +85,10 @@ class Interpreter {
   // batch concat/join <num> string objects on the stack (no conversion)
   static RawObject stringJoin(Thread* thread, RawObject* sp, word num);
 
+  static bool isCacheEnabledForCurrentFunction(Context* ctx) {
+    return ctx->caches.length() > 0;
+  }
+
   static RawObject isTrue(Thread* thread, RawObject value);
 
   static RawObject callDescriptorGet(Thread* thread, Frame* caller,
@@ -388,7 +392,7 @@ class Interpreter {
   static void doDeleteDeref(Context* ctx, word arg);
   static void doDeleteFast(Context* ctx, word arg);
   static bool doDeleteGlobal(Context* ctx, word arg);
-  static void doDeleteName(Context* ctx, word arg);
+  static bool doDeleteName(Context* ctx, word arg);
   static void doDupTop(Context* ctx, word arg);
   static void doDupTopTwo(Context* ctx, word arg);
   static void doImportStar(Context* ctx, word arg);
@@ -402,6 +406,7 @@ class Interpreter {
   static void doLoadClosure(Context* ctx, word arg);
   static void doLoadConst(Context* ctx, word arg);
   static bool doLoadGlobal(Context* ctx, word arg);
+  static bool doLoadGlobalCached(Context* ctx, word arg);
   static void doMakeFunction(Context* ctx, word arg);
   static void doMapAdd(Context* ctx, word arg);
   static void doNop(Context* ctx, word arg);
@@ -422,6 +427,7 @@ class Interpreter {
   static void doStoreDeref(Context* ctx, word arg);
   static void doStoreFast(Context* ctx, word arg);
   static void doStoreGlobal(Context* ctx, word arg);
+  static void doStoreGlobalCached(Context* ctx, word arg);
   static void doStoreName(Context* ctx, word arg);
 
   // Common functionality for opcode handlers that dispatch to binary and

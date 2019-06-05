@@ -75,6 +75,7 @@ class Handle;
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
   V(ValueCell)                                                                 \
+  V(WeakLink)                                                                  \
   V(WeakRef)
 
 // Heap-allocated Python types in the BaseException hierarchy.
@@ -323,6 +324,7 @@ class RawObject {
   bool isUnicodeError() const;
   bool isUnicodeTranslateError() const;
   bool isValueCell() const;
+  bool isWeakLink() const;
   bool isWeakRef() const;
 
   // superclass objects
@@ -2240,13 +2242,13 @@ class RawValueCell : public RawHeapObject {
   // Getters and setters
   RawObject value() const;
   void setValue(RawObject object) const;
-
-  bool isUnbound() const;
-  void makeUnbound() const;
+  RawObject dependencyLink() const;
+  void setDependencyLink(RawObject object) const;
 
   // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
-  static const int kSize = kValueOffset + kPointerSize;
+  static const int kDependencyLinkOffset = kValueOffset + kPointerSize;
+  static const int kSize = kDependencyLinkOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(ValueCell);
 };
@@ -2293,6 +2295,29 @@ class RawWeakRef : public RawHeapObject {
   static const int kSize = kLinkOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(WeakRef);
+};
+
+/**
+ * RawWeakLink objects are used to form double linked lists where the elements
+ * can still be garbage collected.
+ *
+ * A main usage of this is to maintain a list of function objects
+ * to be notified of global variable cache invalidation.
+ */
+class RawWeakLink : public RawWeakRef {
+ public:
+  // Getters and setters.
+  RawObject next() const;
+  void setNext(RawObject object) const;
+  RawObject prev() const;
+  void setPrev(RawObject object) const;
+
+  // Layout.
+  static const int kNextOffset = RawWeakRef::kSize;
+  static const int kPrevOffset = kNextOffset + kPointerSize;
+  static const int kSize = kPrevOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(WeakLink);
 };
 
 /**
@@ -2982,8 +3007,14 @@ inline bool RawObject::isValueCell() const {
   return isHeapObjectWithLayout(LayoutId::kValueCell);
 }
 
+inline bool RawObject::isWeakLink() const {
+  return isHeapObjectWithLayout(LayoutId::kWeakLink);
+}
+
 inline bool RawObject::isWeakRef() const {
-  return isHeapObjectWithLayout(LayoutId::kWeakRef);
+  // WeakLink is a subclass of WeakLink sharing its layout, so this is safe.
+  return isHeapObjectWithLayout(LayoutId::kWeakRef) ||
+         isHeapObjectWithLayout(LayoutId::kWeakLink);
 }
 
 inline bool RawObject::isBytes() const {
@@ -4801,9 +4832,13 @@ inline void RawValueCell::setValue(RawObject object) const {
   instanceVariableAtPut(kValueOffset, object);
 }
 
-inline bool RawValueCell::isUnbound() const { return *this == value(); }
+inline RawObject RawValueCell::dependencyLink() const {
+  return instanceVariableAt(kDependencyLinkOffset);
+}
 
-inline void RawValueCell::makeUnbound() const { setValue(*this); }
+inline void RawValueCell::setDependencyLink(RawObject object) const {
+  instanceVariableAtPut(kDependencyLinkOffset, object);
+}
 
 // RawSetBase
 
@@ -4875,6 +4910,24 @@ inline RawObject RawWeakRef::link() const {
 
 inline void RawWeakRef::setLink(RawObject reference) const {
   instanceVariableAtPut(kLinkOffset, reference);
+}
+
+// RawWeakLink
+
+inline RawObject RawWeakLink::next() const {
+  return instanceVariableAt(kNextOffset);
+}
+
+inline void RawWeakLink::setNext(RawObject object) const {
+  instanceVariableAtPut(kNextOffset, object);
+}
+
+inline RawObject RawWeakLink::prev() const {
+  return instanceVariableAt(kPrevOffset);
+}
+
+inline void RawWeakLink::setPrev(RawObject object) const {
+  instanceVariableAtPut(kPrevOffset, object);
 }
 
 // RawLayout

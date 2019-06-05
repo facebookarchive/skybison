@@ -164,7 +164,7 @@ TEST_F(TestUtils, NewEmptyCode) {
   EXPECT_TRUE(code.cell2arg().isNoneType());
   ASSERT_TRUE(code.cellvars().isTuple());
   EXPECT_EQ(Tuple::cast(code.cellvars()).length(), 0);
-  EXPECT_TRUE(code.code().isNoneType());
+  EXPECT_TRUE(code.code().isBytes());
   EXPECT_TRUE(code.consts().isTuple());
   EXPECT_TRUE(code.filename().isStr());
   EXPECT_EQ(code.firstlineno(), 0);

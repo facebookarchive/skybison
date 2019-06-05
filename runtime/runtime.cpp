@@ -1313,6 +1313,8 @@ void Runtime::initializeHeapTypes() {
                       LayoutId::kObject);
   addEmptyBuiltinType(SymbolId::kUnderMutableBytes, LayoutId::kMutableBytes,
                       LayoutId::kObject);
+  addEmptyBuiltinType(SymbolId::kUnderWeakLink, LayoutId::kWeakLink,
+                      LayoutId::kObject);
   StrArrayBuiltins::initialize(this);
 
   // Abstract classes.
@@ -3297,6 +3299,17 @@ RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {
 }
 
 RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }
+
+RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
+                               const Object& prev, const Object& next) {
+  HandleScope scope(thread);
+  WeakLink link(&scope, heap()->create<RawWeakLink>());
+  link.setReferent(*referent);
+  link.setCallback(NoneType::object());
+  link.setPrev(*prev);
+  link.setNext(*next);
+  return *link;
+}
 
 RawObject Runtime::newWeakRef(Thread* thread, const Object& referent,
                               const Object& callback) {

@@ -1831,26 +1831,63 @@ HANDLER_INLINE bool Interpreter::doPopExcept(Context* ctx, word) {
 }
 
 HANDLER_INLINE void Interpreter::doStoreName(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
+  // TypeDict results are not cached since LOAD_NAME doesn't use caching.
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   HandleScope scope(thread);
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject names = Code::cast(frame->code()).names();
   Object key(&scope, Tuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
-  thread->runtime()->dictAtPutInValueCell(thread, implicit_globals, key, value);
+  Runtime* runtime = thread->runtime();
+  runtime->dictAtPutInValueCell(thread, implicit_globals, key, value);
+  if (isCacheEnabledForCurrentFunction(ctx) &&
+      frame->implicitGlobals() == frame->function().globals()) {
+    Dict globals(&scope, frame->function().globals());
+    Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
+    // TODO(T45203542): Use a placeholder in globals to avoid builtin lookup.
+    Object builtin_result(&scope, runtime->dictAt(thread, builtins, key));
+    DCHECK(builtin_result.isErrorNotFound() || !builtin_result.isError(),
+           "dictAt should not raise an exception other than ErrorNotFound");
+    if (!builtin_result.isErrorNotFound()) {
+      // The newly created global variable shadows the previously cached value
+      // from _builtins__, so invalidate the cached builtin value.
+      DCHECK(builtin_result.isValueCell(), "result must be a ValueCell");
+      ValueCell value_cell(&scope, *builtin_result);
+      icInvalidateGlobalVar(thread, value_cell);
+    }
+  }
 }
 
-HANDLER_INLINE void Interpreter::doDeleteName(Context* ctx, word arg) {
+static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
+  return thread->raiseWithFmt(LayoutId::kNameError, "name '%S' is not defined",
+                              &name);
+}
+
+HANDLER_INLINE bool Interpreter::doDeleteName(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Dict implicit_globals(&scope, frame->implicitGlobals());
   RawObject names = Code::cast(frame->code()).names();
-  Object key(&scope, Tuple::cast(names).at(arg));
-  if (thread->runtime()->dictRemove(thread, implicit_globals, key).isError()) {
-    UNIMPLEMENTED("item not found in delete name");
+  Str key(&scope, Tuple::cast(names).at(arg));
+  Object result(&scope,
+                thread->runtime()->dictRemove(thread, implicit_globals, key));
+  DCHECK(result.isErrorNotFound() || !result.isError(),
+         "dictRemove should not raise an exception other than ErrorNotFound");
+  if (result.isErrorNotFound()) {
+    raiseUndefinedName(thread, key);
+    return unwind(ctx);
   }
+  // Only a module dict needs cache invalidation.
+  Dict globals(&scope, frame->function().globals());
+  if (isCacheEnabledForCurrentFunction(ctx) &&
+      frame->implicitGlobals() == *globals) {
+    DCHECK(result.isValueCell(), "result must be a ValueCell");
+    ValueCell value_cell(&scope, *result);
+    icInvalidateGlobalVar(thread, value_cell);
+  }
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doUnpackSequence(Context* ctx, word arg) {
@@ -2146,17 +2183,31 @@ HANDLER_INLINE void Interpreter::doStoreGlobal(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
   Tuple names(&scope, Code::cast(frame->code()).names());
-  DCHECK(0 <= arg && arg < names.length(),
-         "STORE_GLOBAL's arg is out of the range of code.names()");
   Str key(&scope, names.at(arg));
   Object value(&scope, frame->popValue());
   Dict globals(&scope, frame->function().globals());
   thread->runtime()->dictAtPutInValueCell(thread, globals, key, value);
+  if (isCacheEnabledForCurrentFunction(ctx)) {
+    Runtime* runtime = thread->runtime();
+    Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
+    // TODO(djang): Consider using a placeholder in globals to avoid
+    // a builtin lookup.
+    Object builtin_result(&scope, runtime->dictAt(thread, builtins, key));
+    DCHECK(builtin_result.isErrorNotFound() || !builtin_result.isError(),
+           "dictAt should not raise an exception other than ErrorNotFound");
+    if (!builtin_result.isError()) {
+      // Shadowing happens so invalidate the cached builtin value.
+      DCHECK(builtin_result.isValueCell(), "result must be a ValueCell");
+      ValueCell value_cell(&scope, *builtin_result);
+      icInvalidateGlobalVar(thread, value_cell);
+    }
+  }
 }
 
-static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
-  return thread->raiseWithFmt(LayoutId::kNameError, "name '%S' is not defined",
-                              &name);
+HANDLER_INLINE void Interpreter::doStoreGlobalCached(Context* ctx, word arg) {
+  RawObject cached = icLookupGlobalVar(ctx->caches, arg);
+  DCHECK(cached.isValueCell(), "the cached value must not be a ValueCell");
+  ValueCell::cast(cached).setValue(ctx->frame->popValue());
 }
 
 HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
@@ -2164,8 +2215,6 @@ HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
   Tuple names(&scope, Code::cast(frame->code()).names());
-  DCHECK(0 <= arg && arg < names.length(),
-         "DELETE_GLOBAL's arg is out of the range of code.names()");
   Str key(&scope, names.at(arg));
   Dict globals(&scope, frame->function().globals());
   Object result(&scope, thread->runtime()->dictRemove(thread, globals, key));
@@ -2174,6 +2223,12 @@ HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   if (result.isErrorNotFound()) {
     raiseUndefinedName(thread, key);
     return unwind(ctx);
+  }
+  if (isCacheEnabledForCurrentFunction(ctx)) {
+    DCHECK(result.isValueCell(), "result must be a ValueCell");
+    ValueCell value_cell(&scope, *result);
+    // TODO(T45091174): Move this into a module instance.
+    icInvalidateGlobalVar(thread, value_cell);
   }
   return false;
 }
@@ -2184,8 +2239,8 @@ HANDLER_INLINE void Interpreter::doLoadConst(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -2194,52 +2249,41 @@ HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
 
   // 1. implicitGlobals
   Dict implicit_globals(&scope, frame->implicitGlobals());
-  RawObject value = runtime->dictAt(thread, implicit_globals, key);
-  if (value.isValueCell()) {
-    // 3a. found in [implicit]/globals but with up to 2-layers of indirection
-    DCHECK(!ValueCell::cast(value).isUnbound(), "unbound globals");
-    value = ValueCell::cast(value).value();
-    if (value.isValueCell()) {
-      DCHECK(!ValueCell::cast(value).isUnbound(), "unbound builtins");
-      value = ValueCell::cast(value).value();
-    }
-    frame->pushValue(value);
+  Object result(&scope, runtime->dictAt(thread, implicit_globals, key));
+  DCHECK(result.isErrorNotFound() || !result.isError(),
+         "dictAt should not raise an exception other than ErrorNotFound");
+  if (!result.isErrorNotFound()) {
+    // 3a. found in [implicit]/globals
+    DCHECK(result.isValueCell(), "result must be a ValueCell");
+    frame->pushValue(ValueCell::cast(*result).value());
     return false;
   }
 
+  Dict globals(&scope, frame->function().globals());
   // In the module body, globals == implicit_globals, so no need to check
   // twice. However in class body, it is a different dict.
-  Dict globals(&scope, frame->function().globals());
-  if (frame->implicitGlobals() != globals) {
+  if (frame->implicitGlobals() != *globals) {
     // 2. globals
-    value = runtime->dictAt(thread, globals, key);
-  }
-  if (value.isValueCell()) {
-    // 3a. found in [implicit]/globals but with up to 2-layers of indirection
-    DCHECK(!ValueCell::cast(value).isUnbound(), "unbound globals");
-    value = ValueCell::cast(value).value();
-    if (value.isValueCell()) {
-      DCHECK(!ValueCell::cast(value).isUnbound(), "unbound builtins");
-      value = ValueCell::cast(value).value();
+    result = runtime->dictAt(thread, globals, key);
+    if (!result.isErrorNotFound()) {
+      // 3a. found in [implicit]/globals
+      DCHECK(result.isValueCell(), "result must be a ValueCell");
+      frame->pushValue(ValueCell::cast(*result).value());
+      return false;
     }
-    frame->pushValue(value);
+  }
+
+  // 3b. not found; check builtins.
+  Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
+  result = runtime->dictAt(thread, builtins, key);
+  if (!result.isErrorNotFound()) {
+    DCHECK(result.isValueCell(), "result must be a ValueCell");
+    frame->pushValue(ValueCell::cast(*result).value());
     return false;
   }
 
-  // 3b. not found; check builtins -- one layer of indirection
-  Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
-  value = runtime->dictAt(thread, builtins, key);
-  if (value.isValueCell()) {
-    DCHECK(!ValueCell::cast(value).isUnbound(), "unbound builtins");
-    value = ValueCell::cast(value).value();
-  }
-
-  if (value.isError()) {
-    raiseUndefinedName(ctx->thread, key);
-    return unwind(ctx);
-  }
-  frame->pushValue(value);
-  return false;
+  raiseUndefinedName(ctx->thread, key);
+  return unwind(ctx);
 }
 
 HANDLER_INLINE void Interpreter::doBuildTuple(Context* ctx, word arg) {
@@ -2567,36 +2611,52 @@ HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
   Tuple names(&scope, Code::cast(frame->code()).names());
-  DCHECK(0 <= arg && arg < names.length(),
-         "LOAD_GLOBAL's arg is out of the range of code.names()");
   Str key(&scope, names.at(arg));
   Dict globals(&scope, frame->function().globals());
   Runtime* runtime = thread->runtime();
   Object result(&scope, runtime->dictAt(thread, globals, key));
+  bool cache_enabled = isCacheEnabledForCurrentFunction(ctx);
   DCHECK(result.isErrorNotFound() || !result.isError(),
          "dictAt should not raise an exception other than ErrorNotFound");
-  if (!result.isError()) {
-    DCHECK(result.isValueCell(), "result must be a ValueCell");
-    ctx->frame->pushValue(ValueCell::cast(*result).value());
-    return false;
-  }
   if (!result.isErrorNotFound()) {
-    return unwind(ctx);
+    // TODO(T44918830): cache real value if we think the value cell contains a
+    // runtime constant.
+    DCHECK(result.isValueCell(), "result must be a ValueCell");
+    ValueCell value_cell(&scope, *result);
+    if (cache_enabled) {
+      Function function(&scope, frame->function());
+      icUpdateGlobalVar(thread, function, arg, value_cell);
+    }
+    ctx->frame->pushValue(value_cell.value());
+    return false;
   }
 
   Dict builtins(&scope, thread->runtime()->moduleDictBuiltins(thread, globals));
   Object builtin_result(&scope, runtime->dictAt(thread, builtins, key));
   DCHECK(builtin_result.isErrorNotFound() || !builtin_result.isError(),
          "dictAt should not raise an exception other than ErrorNotFound");
-  if (!builtin_result.isError()) {
+  if (!builtin_result.isErrorNotFound()) {
+    // TODO(T45203542): Use a placeholder to mark functions affected by
+    // shadowing this name.
     DCHECK(builtin_result.isValueCell(), "result must be a ValueCell");
-    ctx->frame->pushValue(ValueCell::cast(*builtin_result).value());
+    ValueCell value_cell(&scope, *builtin_result);
+    if (cache_enabled) {
+      Function function(&scope, frame->function());
+      icUpdateGlobalVar(thread, function, arg, value_cell);
+    }
+    ctx->frame->pushValue(value_cell.value());
     return false;
   }
-  if (builtin_result.isErrorNotFound()) {
-    raiseUndefinedName(thread, key);
-  }
+
+  raiseUndefinedName(thread, key);
   return unwind(ctx);
+}
+
+HANDLER_INLINE bool Interpreter::doLoadGlobalCached(Context* ctx, word arg) {
+  RawObject cached = icLookupGlobalVar(ctx->caches, arg);
+  DCHECK(cached.isValueCell(), "A cache entry must be a ValueCell");
+  ctx->frame->pushValue(ValueCell::cast(cached).value());
+  return false;
 }
 
 HANDLER_INLINE void Interpreter::doContinueLoop(Context* ctx, word arg) {
@@ -2817,12 +2877,13 @@ HANDLER_INLINE bool Interpreter::doLoadDeref(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Code code(&scope, ctx->frame->code());
-  ValueCell value(&scope, ctx->frame->local(code.nlocals() + arg));
+  ValueCell value_cell(&scope, ctx->frame->local(code.nlocals() + arg));
+  Object value(&scope, value_cell.value());
   if (value.isUnbound()) {
     raiseUnboundCellFreeVar(thread, code, arg);
     return unwind(ctx);
   }
-  ctx->frame->pushValue(value.value());
+  ctx->frame->pushValue(*value);
   return false;
 }
 
@@ -2834,7 +2895,8 @@ HANDLER_INLINE void Interpreter::doStoreDeref(Context* ctx, word arg) {
 
 HANDLER_INLINE void Interpreter::doDeleteDeref(Context* ctx, word arg) {
   RawCode code = Code::cast(ctx->frame->code());
-  ValueCell::cast(ctx->frame->local(code.nlocals() + arg)).makeUnbound();
+  ValueCell::cast(ctx->frame->local(code.nlocals() + arg))
+      .setValue(Unbound::object());
 }
 
 HANDLER_INLINE bool Interpreter::doCallFunctionKw(Context* ctx, word argc) {

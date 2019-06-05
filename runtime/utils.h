@@ -107,6 +107,14 @@ class Utils {
   }
 
   template <typename T>
+  static T roundUpDiv(T denominator, int divisor) {
+    if (isPowerOfTwo(divisor)) {
+      return roundUp(denominator, divisor) >> (highestBit(divisor) - 1);
+    }
+    return (denominator + (divisor - 1)) / divisor;
+  }
+
+  template <typename T>
   static T nextPowerOfTwo(T x) {
     // Turn off all but msb.
     while ((x & (x - 1u)) != 0) {

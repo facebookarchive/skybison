@@ -3508,4 +3508,140 @@ with Mgr():
   // TODO(T40269344): Inspect __context__ from the raised exception.
 }
 
+TEST(InterpreterTestNoFixture, LoadGlobalCachedReturnsModuleDictValue) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+a = 400
+
+def foo():
+  return a + a
+
+result = foo()
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 800));
+  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(isStrEqualsCStr(
+      Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
+  Tuple caches(&scope, function.caches());
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 400));
+}
+
+TEST(InterpreterTestNoFixture, LoadGlobalCachedReturnsBuiltinDictValue) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+__builtins__.a = 400
+
+def foo():
+  return a + a
+
+result = foo()
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime, "__main__", "result"), 800));
+  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(isStrEqualsCStr(
+      Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
+  Tuple caches(&scope, function.caches());
+  EXPECT_TRUE(
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 400));
+}
+
+TEST(InterpreterTestNoFixture,
+     StoreGlobalCachedInvalidatesCachedBuiltinToBeShadowed) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+__builtins__.a = 400
+
+def foo():
+  return a + a
+
+def bar():
+  # Shadowing __builtins__.a.
+  global a
+  a = 123
+
+foo()
+bar()
+)")
+                   .isError());
+  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(isStrEqualsCStr(
+      Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
+  Tuple caches(&scope, function.caches());
+  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+}
+
+TEST(InterpreterTestNoFixture, DeleteGlobalInvalidatesCachedValue) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+a = 400
+def foo():
+  return a + a
+
+def bar():
+  global a
+  del a
+
+foo()
+bar()
+)")
+                   .isError());
+  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(isStrEqualsCStr(
+      Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
+  Tuple caches(&scope, function.caches());
+  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+}
+
+TEST(InterpreterTestNoFixture, StoreNameInvalidatesCachedBuiltinToBeShadowed) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+__builtins__.a = 400
+
+def foo():
+  return a + a
+
+foo()
+a = 800
+)")
+                   .isError());
+  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(isStrEqualsCStr(
+      Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
+  Tuple caches(&scope, function.caches());
+  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+}
+
+TEST(InterpreterTestNoFixture, DeleteNameInvalidatesCachedGlobalVar) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+a = 400
+def foo():
+  return a + a
+
+foo()
+del a
+)")
+                   .isError());
+  Function function(&scope, moduleAt(&runtime, "__main__", "foo"));
+  ASSERT_TRUE(isStrEqualsCStr(
+      Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
+  Tuple caches(&scope, function.caches());
+  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+}
+
 }  // namespace python

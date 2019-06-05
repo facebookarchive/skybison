@@ -83,6 +83,11 @@ class Value {
 
 inline Value Value::none() { return Value{}; }
 
+inline RawObject valueCellValue(RawObject value_cell_obj) {
+  DCHECK(value_cell_obj.isValueCell(), "expected valuecell");
+  return ValueCell::cast(value_cell_obj).value();
+}
+
 // Check if the given Object is a list containing the expected elements.
 ::testing::AssertionResult AssertPyListEqual(
     const char* actual_expr, const char* expected_expr, const Object& actual,

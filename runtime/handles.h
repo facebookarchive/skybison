@@ -149,6 +149,7 @@ class WARN_UNUSED Handle : public T {
   V(TupleIterator)                                                             \
   V(Unbound)                                                                   \
   V(ValueCell)                                                                 \
+  V(WeakLink)                                                                  \
   V(WeakRef)
 
 // The handles for certain types allow user-defined subtypes.

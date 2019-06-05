@@ -221,6 +221,9 @@ class Runtime {
 
   RawObject newValueCell();
 
+  RawObject newWeakLink(Thread* thread, const Object& referent,
+                        const Object& prev, const Object& next);
+
   RawObject newWeakRef(Thread* thread, const Object& referent,
                        const Object& callback);
 
