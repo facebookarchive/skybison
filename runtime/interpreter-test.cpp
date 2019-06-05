@@ -504,7 +504,7 @@ v3 = B(1)
 }
 
 TEST(InterpreterTestNoFixture, DoBinaryOpWithCacheHitCallsCachedMethod) {
-  Runtime runtime(true /* cache_enabled */);
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
 
@@ -543,7 +543,7 @@ TEST(InterpreterTestNoFixture, DoBinaryOpWithCacheHitCallsCachedMethod) {
 }
 
 TEST(InterpreterTestNoFixture, DoBinaryOpWithCacheHitCallsRetry) {
-  Runtime runtime(true /* cache_enabled */);
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -3078,7 +3078,7 @@ TEST_F(InterpreterTest, RaiseWithNoActiveExceptionRaisesRuntimeError) {
 }
 
 TEST(InterpreterTestNoFixture, LoadAttrSetLocationSetsLocation) {
-  Runtime runtime(true /* cache_enabled */);
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -3100,7 +3100,7 @@ i = C()
 
 TEST(InterpreterTestNoFixture,
      LoadAttrSetLocationWithCustomGetAttributeSetsNoLocation) {
-  Runtime runtime(true /* cache_enabled */);
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -3120,7 +3120,7 @@ i = C()
 }
 
 TEST(InterpreterTestNoFixture, LoadAttrSetLocationCallsDunderGetattr) {
-  Runtime runtime(true /* cache_enabled */);
+  Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
