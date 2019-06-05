@@ -179,7 +179,6 @@ class Frame {
   // code does not have OPTIMIZED and NEWLOCALS flags set.
   RawObject implicitGlobals();
 
-  // Returns the code object of the current function.
   RawObject code();
 
   // A pointer to the previous frame or nullptr if this is the first frame

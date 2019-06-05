@@ -929,7 +929,6 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
       function.setDoc(consts.at(0));
     }
   }
-  function.setFastGlobals(runtime->computeFastGlobals(thread, code, globals));
   if (runtime->isCacheEnabled()) {
     // TODO(T45382423): Move this into a separate function to be called by a
     // relevant opcode during opcode execution.
@@ -2143,39 +2142,45 @@ HANDLER_INLINE bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE void Interpreter::doStoreGlobal(Context* ctx, word arg) {
-  ValueCell::cast(Tuple::cast(ctx->frame->function().fastGlobals()).at(arg))
-      .setValue(ctx->frame->popValue());
-}
-
-HANDLER_INLINE void Interpreter::doDeleteGlobal(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
   HandleScope scope(thread);
-  ValueCell value_cell(
-      &scope,
-      ValueCell::cast(Tuple::cast(frame->function().fastGlobals()).at(arg)));
-  CHECK(!value_cell.value().isValueCell(), "Unbound Globals");
-  Object key(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
+  Tuple names(&scope, Code::cast(frame->code()).names());
+  DCHECK(0 <= arg && arg < names.length(),
+         "STORE_GLOBAL's arg is out of the range of code.names()");
+  Str key(&scope, names.at(arg));
+  Object value(&scope, frame->popValue());
   Dict globals(&scope, frame->function().globals());
-  Runtime* runtime = thread->runtime();
-  Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
-  Object value_in_builtin(&scope, runtime->dictAt(thread, builtins, key));
-  if (value_in_builtin.isError()) {
-    value_in_builtin =
-        runtime->dictAtPutInValueCell(thread, builtins, key, value_in_builtin);
-    ValueCell::cast(*value_in_builtin).makeUnbound();
-  }
-  value_cell.setValue(*value_in_builtin);
-}
-
-HANDLER_INLINE void Interpreter::doLoadConst(Context* ctx, word arg) {
-  RawObject consts = Code::cast(ctx->frame->code()).consts();
-  ctx->frame->pushValue(Tuple::cast(consts).at(arg));
+  thread->runtime()->dictAtPutInValueCell(thread, globals, key, value);
 }
 
 static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
   return thread->raiseWithFmt(LayoutId::kNameError, "name '%S' is not defined",
                               &name);
+}
+
+HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
+  Thread* thread = ctx->thread;
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  Tuple names(&scope, Code::cast(frame->code()).names());
+  DCHECK(0 <= arg && arg < names.length(),
+         "DELETE_GLOBAL's arg is out of the range of code.names()");
+  Str key(&scope, names.at(arg));
+  Dict globals(&scope, frame->function().globals());
+  Object result(&scope, thread->runtime()->dictRemove(thread, globals, key));
+  DCHECK(result.isErrorNotFound() || !result.isError(),
+         "dictRemove should not raise an exception other than ErrorNotFound");
+  if (result.isErrorNotFound()) {
+    raiseUndefinedName(thread, key);
+    return unwind(ctx);
+  }
+  return false;
+}
+
+HANDLER_INLINE void Interpreter::doLoadConst(Context* ctx, word arg) {
+  RawObject consts = Code::cast(ctx->frame->code()).consts();
+  ctx->frame->pushValue(Tuple::cast(consts).at(arg));
 }
 
 HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
@@ -2557,18 +2562,41 @@ HANDLER_INLINE bool Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doLoadGlobal(Context* ctx, word arg) {
-  RawObject value =
-      ValueCell::cast(Tuple::cast(ctx->frame->function().fastGlobals()).at(arg))
-          .value();
-  if (value.isValueCell()) {
-    CHECK(!ValueCell::cast(value).isUnbound(), "Unbound global '%s'",
-          Str::cast(Tuple::cast(Code::cast(ctx->frame->code()).names()).at(arg))
-              .toCStr());
-    value = ValueCell::cast(value).value();
+HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {
+  Thread* thread = Thread::current();
+  Frame* frame = ctx->frame;
+  HandleScope scope(thread);
+  Tuple names(&scope, Code::cast(frame->code()).names());
+  DCHECK(0 <= arg && arg < names.length(),
+         "LOAD_GLOBAL's arg is out of the range of code.names()");
+  Str key(&scope, names.at(arg));
+  Dict globals(&scope, frame->function().globals());
+  Runtime* runtime = thread->runtime();
+  Object result(&scope, runtime->dictAt(thread, globals, key));
+  DCHECK(result.isErrorNotFound() || !result.isError(),
+         "dictAt should not raise an exception other than ErrorNotFound");
+  if (!result.isError()) {
+    DCHECK(result.isValueCell(), "result must be a ValueCell");
+    ctx->frame->pushValue(ValueCell::cast(*result).value());
+    return false;
   }
-  ctx->frame->pushValue(value);
-  DCHECK(!ctx->frame->topValue().isError(), "unexpected error object");
+  if (!result.isErrorNotFound()) {
+    return unwind(ctx);
+  }
+
+  Dict builtins(&scope, thread->runtime()->moduleDictBuiltins(thread, globals));
+  Object builtin_result(&scope, runtime->dictAt(thread, builtins, key));
+  DCHECK(builtin_result.isErrorNotFound() || !builtin_result.isError(),
+         "dictAt should not raise an exception other than ErrorNotFound");
+  if (!builtin_result.isError()) {
+    DCHECK(builtin_result.isValueCell(), "result must be a ValueCell");
+    ctx->frame->pushValue(ValueCell::cast(*builtin_result).value());
+    return false;
+  }
+  if (builtin_result.isErrorNotFound()) {
+    raiseUndefinedName(thread, key);
+  }
+  return unwind(ctx);
 }
 
 HANDLER_INLINE void Interpreter::doContinueLoop(Context* ctx, word arg) {

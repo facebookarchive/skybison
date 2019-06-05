@@ -1720,11 +1720,6 @@ class RawFunction : public RawHeapObject {
   RawObject qualname() const;
   void setQualname(RawObject qualname) const;
 
-  // The pre-computed object array provided fast globals access.
-  // fastGlobals[arg] == globals[names[arg]]
-  RawObject fastGlobals() const;
-  void setFastGlobals(RawObject fast_globals) const;
-
   // Bytecode rewritten to a variant that uses inline caching.
   RawObject rewrittenBytecode() const;
   void setRewrittenBytecode(RawObject rewritten_bytecode) const;
@@ -1767,8 +1762,7 @@ class RawFunction : public RawHeapObject {
   static const int kEntryOffset = kGlobalsOffset + kPointerSize;
   static const int kEntryKwOffset = kEntryOffset + kPointerSize;
   static const int kEntryExOffset = kEntryKwOffset + kPointerSize;
-  static const int kFastGlobalsOffset = kEntryExOffset + kPointerSize;
-  static const int kRewrittenBytecodeOffset = kFastGlobalsOffset + kPointerSize;
+  static const int kRewrittenBytecodeOffset = kEntryExOffset + kPointerSize;
   static const int kCachesOffset = kRewrittenBytecodeOffset + kPointerSize;
   static const int kOriginalArgumentsOffset = kCachesOffset + kPointerSize;
   static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
@@ -4587,14 +4581,6 @@ inline void RawFunction::setTotalArgs(word value) const {
   instanceVariableAtPut(kTotalArgsOffset, RawSmallInt::fromWord(value));
 }
 
-inline RawObject RawFunction::fastGlobals() const {
-  return instanceVariableAt(kFastGlobalsOffset);
-}
-
-inline void RawFunction::setFastGlobals(RawObject fast_globals) const {
-  instanceVariableAtPut(kFastGlobalsOffset, fast_globals);
-}
-
 inline RawObject RawFunction::rewrittenBytecode() const {
   return instanceVariableAt(kRewrittenBytecodeOffset);
 }
@@ -4811,6 +4797,7 @@ inline RawObject RawValueCell::value() const {
 }
 
 inline void RawValueCell::setValue(RawObject object) const {
+  // TODO(T44801497): Disallow a ValueCell in another ValueCell.
   instanceVariableAtPut(kValueOffset, object);
 }
 

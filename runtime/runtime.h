@@ -607,10 +607,6 @@ class Runtime {
   RawObject layoutDeleteAttribute(Thread* thread, const Layout& layout,
                                   const Object& name);
 
-  // Pre-computes fast_globals for functions.
-  RawObject computeFastGlobals(Thread* thread, const Code& code,
-                               const Dict& globals);
-
   RawObject computeBuiltinBase(Thread* thread, const Type& type);
 
   void typeAddBuiltinFunction(const Type& type, SymbolId name,

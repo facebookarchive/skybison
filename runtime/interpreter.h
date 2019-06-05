@@ -387,7 +387,7 @@ class Interpreter {
   static void doContinueLoop(Context* ctx, word arg);
   static void doDeleteDeref(Context* ctx, word arg);
   static void doDeleteFast(Context* ctx, word arg);
-  static void doDeleteGlobal(Context* ctx, word arg);
+  static bool doDeleteGlobal(Context* ctx, word arg);
   static void doDeleteName(Context* ctx, word arg);
   static void doDupTop(Context* ctx, word arg);
   static void doDupTopTwo(Context* ctx, word arg);
@@ -401,7 +401,7 @@ class Interpreter {
   static void doLoadClassDeref(Context* ctx, word arg);
   static void doLoadClosure(Context* ctx, word arg);
   static void doLoadConst(Context* ctx, word arg);
-  static void doLoadGlobal(Context* ctx, word arg);
+  static bool doLoadGlobal(Context* ctx, word arg);
   static void doMakeFunction(Context* ctx, word arg);
   static void doMapAdd(Context* ctx, word arg);
   static void doNop(Context* ctx, word arg);

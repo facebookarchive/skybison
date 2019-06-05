@@ -23,11 +23,7 @@ a = sys.__name__
   EXPECT_TRUE(a.equalsCStr("sys"));
 }
 
-TEST_F(ModuleBuiltinsDeathTest, DirectModuleAccessRaisesNameError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "module.__new__()"),
-                            LayoutId::kNameError,
-                            "name 'module' is not defined"));
-}
+// TODO(T39575976): Add tests verifying internal names's hiding.
 
 TEST_F(ModuleBuiltinsTest, DunderDirReturnsList) {
   HandleScope scope(thread_);

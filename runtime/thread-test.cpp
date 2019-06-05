@@ -606,7 +606,7 @@ static std::string TestName(::testing::TestParamInfo<TestData> info) {
   return info.param.name;
 }
 
-TestData kFastGlobalTests[] = {
+TestData kGlobalVariableAccessTests[] = {
     {"LoadGlobal", "1\n",
      R"(
 a = 1
@@ -615,7 +615,6 @@ def f():
 f()
 )",
      false},
-
     {"LoadGlobalFromBuiltin", "True\n",
      R"(
 class A(): pass
@@ -625,15 +624,16 @@ def f():
 f()
 )",
      false},
-
-    {"LoadGlobalUnbound", ".*Unbound global 'a'",
+    {"LoadGlobalUnbound", "a is undefined\n",
      R"(
 def f():
-  print(a)
+  try:
+    print(a)
+  except NameError:
+    print("a is undefined")
 f()
 )",
-     true},
-
+     false},
     {"StoreGlobal", "2\n2\n",
      R"(
 def f():
@@ -644,7 +644,6 @@ f()
 print(a)
 )",
      false},
-
     {"StoreGlobalShadowBuiltin", "2\n",
      R"(
 def f():
@@ -654,7 +653,6 @@ f()
 print(isinstance)
 )",
      false},
-
     {"DeleteGlobal", "True\nTrue\n",
      R"(
 class A(): pass
@@ -668,30 +666,32 @@ f()
 print(isinstance(a, A))
 )",
      false},
-
-    {"DeleteGlobalUnbound", ".*Unbound Globals.*",
+    {"DeleteGlobalUnbound", "a is undefined\n",
      R"(
 def f():
   global a
-  del a
+  try:
+    del a
+  except NameError:
+    print("a is undefined")
 f()
 )",
-     true},
-
-    {"DeleteGlobalBuiltinUnbound", ".*Unbound Globals.*",
+     false},
+    {"DeleteGlobalBuiltinUnbound", "isinstance is undefined\n",
      R"(
 def f():
   global isinstance
-  del isinstance
+  try:
+    del isinstance
+  except NameError:
+    print("isinstance is undefined")
 f()
 )",
-     true}
-
-};
+     false}};
 
 class GlobalsTest : public ::testing::TestWithParam<TestData> {};
 
-TEST_P(GlobalsTest, FastGlobal) {
+TEST_P(GlobalsTest, GlobalVariableAcess) {
   Runtime runtime;
   TestData data = GetParam();
   if (data.death) {
@@ -703,8 +703,9 @@ TEST_P(GlobalsTest, FastGlobal) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(FastGlobal, GlobalsTest,
-                        ::testing::ValuesIn(kFastGlobalTests), TestName);
+INSTANTIATE_TEST_CASE_P(GlobalVariableAcess, GlobalsTest,
+                        ::testing::ValuesIn(kGlobalVariableAccessTests),
+                        TestName);
 
 TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   HandleScope scope(thread_);

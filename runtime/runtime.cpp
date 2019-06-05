@@ -2043,12 +2043,9 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   CHECK(!executeModule(BuiltinsModule::kFrozenData, module).isError(),
         "Failed to initialize builtins module");
 
-  // TODO(T39575976): Create a consistent way to remove from global dict
-  // Explicitly remove module as this is not exposed in CPython
+  // TODO(T39575976): Create a consistent way to hide internal names
+  // such as "module" or "function"
   Dict module_dict(&scope, module.dict());
-  Object module_name(&scope, symbols()->Module());
-  dictRemove(thread, module_dict, module_name);
-
   Object dunder_import_name(&scope, symbols()->DunderImport());
   dunder_import_ = dictAt(thread, module_dict, dunder_import_name);
 
@@ -3640,59 +3637,6 @@ RawDict Runtime::moduleDictBuiltins(Thread* thread, const Dict& dict) {
   Object none(&scope, NoneType::object());
   moduleDictAtPut(thread, builtins, none_name, none);
   return *builtins;
-}
-
-RawObject Runtime::computeFastGlobals(Thread* thread, const Code& code,
-                                      const Dict& globals) {
-  HandleScope scope(thread);
-  Bytes bytes(&scope, code.code());
-  Dict builtins(&scope, moduleDictBuiltins(thread, globals));
-  Tuple names(&scope, code.names());
-  Tuple fast_globals(&scope, newTuple(names.length()));
-  for (word i = 0; i < bytes.length(); i += 2) {
-    Bytecode bc = static_cast<Bytecode>(bytes.byteAt(i));
-    word arg = bytes.byteAt(i + 1);
-    while (bc == EXTENDED_ARG) {
-      i += 2;
-      bc = static_cast<Bytecode>(bytes.byteAt(i));
-      arg = (arg << 8) | bytes.byteAt(i + 1);
-    }
-    if (bc != LOAD_GLOBAL && bc != STORE_GLOBAL && bc != DELETE_GLOBAL) {
-      continue;
-    }
-    Object key(&scope, names.at(arg));
-    Str key_str(&scope, *key);
-    char* key_cstr = key_str.toCStr();
-    bool var = false;
-    if (!strcmp(key_cstr, "a") && strlen(key_cstr) == 1) {
-      var = true;
-    }
-    if (var) {
-      printf("a is found\n");
-    }
-    free(key_cstr);
-    RawObject value = dictAt(thread, globals, key);
-    if (value.isError()) {
-      if (var) printf("not global\n");
-      value = dictAt(thread, builtins, key);
-      if (value.isError()) {
-        if (var) printf("not builtin\n");
-        // insert a place holder to allow {STORE|DELETE}_GLOBAL
-        Object handle(&scope, value);
-        value = dictAtPutInValueCell(thread, builtins, key, handle);
-        ValueCell::cast(value).makeUnbound();
-      } else {
-        if (var) printf("builtin\n");
-      }
-      Object handle(&scope, value);
-      value = dictAtPutInValueCell(thread, globals, key, handle);
-    } else {
-      if (var) printf("global\n");
-    }
-    DCHECK(value.isValueCell(), "not  value cell");
-    fast_globals.atPut(arg, value);
-  }
-  return *fast_globals;
 }
 
 // See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
