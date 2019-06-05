@@ -907,12 +907,16 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
     is_interpreted = true;
   }
   Object name(&scope, code.name());
+  word total_args = code.totalArgs();
+  word total_vars =
+      code.nlocals() - total_args + code.numCellvars() + code.numFreevars();
   Function function(
       &scope,
       runtime->newInterpreterFunction(
           thread, name, qualname_str, code, code.flags(), code.argcount(),
-          code.totalArgs(), closure_tuple, annotations_dict, kw_defaults_dict,
-          defaults_tuple, globals, entry, entry_kw, entry_ex, is_interpreted));
+          total_args, total_vars, code.stacksize(), closure_tuple,
+          annotations_dict, kw_defaults_dict, defaults_tuple, globals, entry,
+          entry_kw, entry_ex, is_interpreted));
 
   Object dunder_name(&scope, runtime->symbols()->at(SymbolId::kDunderName));
   Object value_cell(&scope, runtime->dictAt(thread, globals, dunder_name));

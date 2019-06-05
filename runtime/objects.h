@@ -1561,10 +1561,6 @@ class RawCode : public RawHeapObject {
   word nlocals() const;
   void setNlocals(word value) const;
 
-  // The total number of variables in this code object: normal locals, cell
-  // variables, and free variables. Does not include arguments.
-  word totalVars() const;
-
   word stacksize() const;
   void setStacksize(word value) const;
 
@@ -1722,6 +1718,21 @@ class RawFunction : public RawHeapObject {
   RawObject qualname() const;
   void setQualname(RawObject qualname) const;
 
+  // Maximum stack size used by the bytecode.
+  word stacksize() const;
+  void setStacksize(word value) const;
+
+  // Returns the number of parameters. This includes `code.argcount()`,
+  // `code.kwonlyargcount()`, and an extra parameter for varargs and for
+  // varkeyargs argument when necessary.
+  word totalArgs() const;
+  void setTotalArgs(word value) const;
+
+  // Returns number of variables. This is the number of locals that are not
+  // parameters plus the number of cell variables and free variables.
+  word totalVars() const;
+  void setTotalVars(word value) const;
+
   // Bytecode rewritten to a variant that uses inline caching.
   RawObject rewrittenBytecode() const;
   void setRewrittenBytecode(RawObject rewritten_bytecode) const;
@@ -1733,10 +1744,6 @@ class RawFunction : public RawHeapObject {
   // Original arguments for bytecode operations using the inline cache.
   RawObject originalArguments() const;
   void setOriginalArguments(RawObject originall_arguments) const;
-
-  // Precomputed value of RawCode::totalArgs().
-  word totalArgs() const;
-  void setTotalArgs(word value) const;
 
   // The function's dictionary
   RawObject dict() const;
@@ -1752,7 +1759,9 @@ class RawFunction : public RawHeapObject {
   static const int kFlagsOffset = kCodeOffset + kPointerSize;
   static const int kArgcountOffset = kFlagsOffset + kPointerSize;
   static const int kTotalArgsOffset = kArgcountOffset + kPointerSize;
-  static const int kDocOffset = kTotalArgsOffset + kPointerSize;
+  static const int kTotalVarsOffset = kTotalArgsOffset + kPointerSize;
+  static const int kStacksizeOffset = kTotalVarsOffset + kPointerSize;
+  static const int kDocOffset = kStacksizeOffset + kPointerSize;
   static const int kNameOffset = kDocOffset + kPointerSize;
   static const int kQualnameOffset = kNameOffset + kPointerSize;
   static const int kModuleOffset = kQualnameOffset + kPointerSize;
@@ -2530,7 +2539,7 @@ class RawSuper : public RawHeapObject {
  *   | Arg 0                |     |
  *   | ...                  |     |
  *   | Arg N                |     |
- *   | Local 0              |     | frame()-code()->totalVars() * kPointerSize
+ *   | Local 0              |     | (totalArgs() + totalVars()) * kPointerSize
  *   | ...                  |     |
  *   | Local N              |     |
  *   +----------------------+  <--+
@@ -4025,10 +4034,6 @@ inline void RawCode::setNlocals(word value) const {
   instanceVariableAtPut(kNlocalsOffset, RawSmallInt::fromWord(value));
 }
 
-inline word RawCode::totalVars() const {
-  return nlocals() - totalArgs() + numCellvars() + numFreevars();
-}
-
 inline word RawCode::stacksize() const {
   return RawSmallInt::cast(instanceVariableAt(kStacksizeOffset)).value();
 }
@@ -4610,6 +4615,22 @@ inline word RawFunction::totalArgs() const {
 
 inline void RawFunction::setTotalArgs(word value) const {
   instanceVariableAtPut(kTotalArgsOffset, RawSmallInt::fromWord(value));
+}
+
+inline word RawFunction::totalVars() const {
+  return RawSmallInt::cast(instanceVariableAt(kTotalVarsOffset)).value();
+}
+
+inline void RawFunction::setTotalVars(word value) const {
+  instanceVariableAtPut(kTotalVarsOffset, RawSmallInt::fromWord(value));
+}
+
+inline word RawFunction::stacksize() const {
+  return RawSmallInt::cast(instanceVariableAt(kStacksizeOffset)).value();
+}
+
+inline void RawFunction::setStacksize(word value) const {
+  instanceVariableAtPut(kStacksizeOffset, RawSmallInt::fromWord(value));
 }
 
 inline RawObject RawFunction::rewrittenBytecode() const {

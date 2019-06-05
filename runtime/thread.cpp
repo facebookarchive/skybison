@@ -123,9 +123,8 @@ Frame* Thread::pushNativeFrame(word nargs) {
 }
 
 Frame* Thread::pushCallFrame(RawFunction function) {
-  RawCode code = Code::cast(function.code());
-  Frame* result =
-      openAndLinkFrame(code.totalArgs(), code.totalVars(), code.stacksize());
+  Frame* result = openAndLinkFrame(function.totalArgs(), function.totalVars(),
+                                   function.stacksize());
   result->setVirtualPC(0);
   return result;
 }

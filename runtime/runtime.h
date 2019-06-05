@@ -119,10 +119,10 @@ class Runtime {
   RawObject newInterpreterFunction(
       Thread* thread, const Object& name, const Object& qualname,
       const Code& code, word flags, word argcount, word total_args,
-      const Object& closure, const Object& annotations,
-      const Object& kw_defaults, const Object& defaults, const Dict& globals,
-      Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex,
-      bool is_interpreted);
+      word total_vars, word stacksize, const Object& closure,
+      const Object& annotations, const Object& kw_defaults,
+      const Object& defaults, const Dict& globals, Function::Entry entry,
+      Function::Entry entry_kw, Function::Entry entry_ex, bool is_interpreted);
 
   RawObject newExceptionState();
 

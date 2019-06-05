@@ -614,7 +614,8 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
 RawObject Runtime::newInterpreterFunction(
     Thread* thread, const Object& name, const Object& qualname,
     const Code& code, word flags, word argcount, word total_args,
-    const Object& closure, const Object& annotations, const Object& kw_defaults,
+    word total_vars, word stacksize, const Object& closure,
+    const Object& annotations, const Object& kw_defaults,
     const Object& defaults, const Dict& globals, Function::Entry entry,
     Function::Entry entry_kw, Function::Entry entry_ex, bool is_interpreted) {
   HandleScope scope(thread);
@@ -623,6 +624,8 @@ RawObject Runtime::newInterpreterFunction(
   function.setFlags(flags);
   function.setArgcount(argcount);
   function.setTotalArgs(total_args);
+  function.setTotalVars(total_vars);
+  function.setStacksize(stacksize);
   function.setName(*name);
   function.setQualname(*qualname);
   function.setGlobals(*globals);
@@ -663,15 +666,15 @@ RawObject Runtime::newHeapFrame(const Function& function) {
          "expected a RawGenerator/RawCoroutine code object");
 
   HandleScope scope;
-  Code code(&scope, function.code());
   word num_args = function.totalArgs();
-  word num_vars = code.totalVars();
+  word num_vars = function.totalVars();
+  word stacksize = function.stacksize();
   // +1 for the function pointer.
-  word extra_words = num_args + num_vars + code.stacksize() + 1;
+  word extra_words = num_args + num_vars + stacksize + 1;
   HeapFrame frame(
       &scope, heap()->createInstance(LayoutId::kHeapFrame,
                                      HeapFrame::numAttributes(extra_words)));
-  frame.setMaxStackSize(code.stacksize());
+  frame.setMaxStackSize(stacksize);
   return *frame;
 }
 
