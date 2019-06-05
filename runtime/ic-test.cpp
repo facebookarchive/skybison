@@ -734,6 +734,42 @@ TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcode) {
   EXPECT_EQ(rewritten_bytecode.byteAt(2), STORE_GLOBAL_CACHED);
 }
 
+TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcodeWithExtendedArg) {
+  HandleScope scope(thread_);
+  Function function(&scope, testingFunction(thread_));
+  Tuple caches(&scope, function.caches());
+
+  MutableBytes rewritten_bytecode(&scope,
+                                  runtime_.newMutableBytesUninitialized(8));
+  // TODO(T45440363): Replace the argument of EXTENDED_ARG for a non-zero value.
+  rewritten_bytecode.byteAtPut(0, EXTENDED_ARG);
+  rewritten_bytecode.byteAtPut(1, 0);
+  rewritten_bytecode.byteAtPut(2, LOAD_GLOBAL);
+  rewritten_bytecode.byteAtPut(3, 0);
+  rewritten_bytecode.byteAtPut(4, EXTENDED_ARG);
+  rewritten_bytecode.byteAtPut(5, 0);
+  rewritten_bytecode.byteAtPut(6, STORE_GLOBAL);
+  rewritten_bytecode.byteAtPut(7, 1);
+  function.setRewrittenBytecode(*rewritten_bytecode);
+
+  ValueCell cache(&scope, runtime_.newValueCell());
+  cache.setValue(SmallInt::fromWord(99));
+  ValueCell another_cache(&scope, runtime_.newValueCell());
+  another_cache.setValue(SmallInt::fromWord(123));
+
+  icUpdateGlobalVar(thread_, function, 0, cache);
+
+  EXPECT_EQ(caches.at(0), cache);
+  EXPECT_EQ(rewritten_bytecode.byteAt(2), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewritten_bytecode.byteAt(6), STORE_GLOBAL);
+
+  icUpdateGlobalVar(thread_, function, 1, another_cache);
+
+  EXPECT_EQ(caches.at(0), cache);
+  EXPECT_EQ(rewritten_bytecode.byteAt(2), LOAD_GLOBAL_CACHED);
+  EXPECT_EQ(rewritten_bytecode.byteAt(6), STORE_GLOBAL_CACHED);
+}
+
 TEST_F(IcTest, IcUpdateGlobalVarCreatesDependencyLink) {
   HandleScope scope(thread_);
   Function function(&scope, testingFunction(thread_));

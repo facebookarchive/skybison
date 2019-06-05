@@ -246,7 +246,6 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
   word bytecode_length = bytecode.length();
   byte target_arg = static_cast<byte>(index);
   for (word i = 0; i < bytecode_length;) {
-    word first_bc_index = i;
     Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
     int32_t arg = bytecode.byteAt(i++);
     while (bc == Bytecode::EXTENDED_ARG) {
@@ -257,9 +256,9 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
       continue;
     }
     if (bc == LOAD_GLOBAL) {
-      bytecode.byteAtPut(first_bc_index, LOAD_GLOBAL_CACHED);
+      bytecode.byteAtPut(i - 2, LOAD_GLOBAL_CACHED);
     } else if (bc == STORE_GLOBAL) {
-      bytecode.byteAtPut(first_bc_index, STORE_GLOBAL_CACHED);
+      bytecode.byteAtPut(i - 2, STORE_GLOBAL_CACHED);
     }
   }
 }
