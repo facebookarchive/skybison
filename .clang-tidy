@@ -1,5 +1,6 @@
 Checks: >
   -*,
+  bugprone-argument-comment,
   google-readability-casting,
   google-readability-todo,
   modernize-use-nullptr,
