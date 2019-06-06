@@ -365,6 +365,7 @@ class Interpreter {
   static bool doLoadAttrCached(Context* ctx, word arg);
   static bool doLoadDeref(Context* ctx, word arg);
   static bool doLoadFast(Context* ctx, word arg);
+  static bool doLoadFastReverse(Context* ctx, word arg);
   static bool doLoadMethod(Context* ctx, word arg);
   static bool doLoadMethodCached(Context* ctx, word arg);
   static bool doLoadName(Context* ctx, word arg);
@@ -429,6 +430,7 @@ class Interpreter {
   static void doStoreAnnotation(Context* ctx, word arg);
   static void doStoreDeref(Context* ctx, word arg);
   static void doStoreFast(Context* ctx, word arg);
+  static void doStoreFastReverse(Context* ctx, word arg);
   static void doStoreGlobal(Context* ctx, word arg);
   static void doStoreGlobalCached(Context* ctx, word arg);
   static void doStoreName(Context* ctx, word arg);

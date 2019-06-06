@@ -363,6 +363,46 @@ TEST(IcTestNoFixture,
   EXPECT_EQ(caches.length(), (2 + 2) * kIcPointersPerCache);
 }
 
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple varnames(&scope, runtime.newTuple(3));
+  varnames.atPut(0, runtime.internStrFromCStr(thread, "arg0"));
+  varnames.atPut(1, runtime.internStrFromCStr(thread, "var0"));
+  varnames.atPut(2, runtime.internStrFromCStr(thread, "var1"));
+  word argcount = 1;
+  word nlocals = 3;
+  byte bytecode[] = {
+      LOAD_FAST,  2, LOAD_FAST,  1, LOAD_FAST,  0,
+      STORE_FAST, 2, STORE_FAST, 1, STORE_FAST, 0,
+  };
+  Bytes code_code(&scope, runtime.newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime.emptyTuple());
+  Object empty_string(&scope, Str::empty());
+  Object empty_bytes(&scope, Bytes::empty());
+  Code code(&scope,
+            runtime.newCode(argcount, 0, nlocals, 0, 0, code_code, empty_tuple,
+                            empty_tuple, varnames, empty_tuple, empty_tuple,
+                            empty_string, empty_string, 0, empty_bytes));
+
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, empty_string, code, none, none,
+                                        none, none, globals));
+  // makeFunction() calls icRewriteBytecode().
+
+  byte expected[] = {
+      LOAD_FAST_REVERSE,  0, LOAD_FAST_REVERSE,  1, LOAD_FAST_REVERSE,  2,
+      STORE_FAST_REVERSE, 0, STORE_FAST_REVERSE, 1, STORE_FAST_REVERSE, 2,
+  };
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
+  EXPECT_EQ(Tuple::cast(function.caches()).length(), 0);
+}
+
 static RawObject layoutIdAsSmallInt(LayoutId id) {
   return SmallInt::fromWord(static_cast<word>(id));
 }

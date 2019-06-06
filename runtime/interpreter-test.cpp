@@ -1040,6 +1040,112 @@ v3 = ASub(2)
   EXPECT_EQ(result.at(1), v2);
 }
 
+TEST_F(InterpreterTest, DoStoreFastStoresValue) {
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, SmallInt::fromWord(1111));
+  code.setConsts(*consts);
+  code.setNlocals(2);
+  const byte bytecode[] = {LOAD_CONST, 0, STORE_FAST,   1,
+                           LOAD_FAST,  1, RETURN_VALUE, 0};
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(isIntEqualsWord(runCode(code), 1111));
+}
+
+TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(4));
+  consts.atPut(0, SmallInt::fromWord(1));
+  consts.atPut(1, SmallInt::fromWord(22));
+  consts.atPut(2, SmallInt::fromWord(333));
+  consts.atPut(3, SmallInt::fromWord(4444));
+  code.setConsts(*consts);
+  code.setNlocals(4);
+  const byte bytecode[] = {
+      LOAD_CONST,        0, STORE_FAST,   0, LOAD_CONST,        1,
+      STORE_FAST,        1, LOAD_CONST,   2, STORE_FAST,        2,
+      LOAD_CONST,        3, STORE_FAST,   3, LOAD_FAST_REVERSE, 3,  // 1
+      LOAD_FAST_REVERSE, 2,                                         // 22
+      LOAD_FAST_REVERSE, 0,                                         // 4444
+      LOAD_FAST_REVERSE, 1,                                         // 333
+      BUILD_TUPLE,       4, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  Object result_obj(&scope, runCode(code));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 22));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 4444));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 333));
+}
+
+TEST_F(InterpreterTest,
+       DoLoadFastReverseFromUninitializedLocalRaisesUnboundLocalError) {
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(1));
+  consts.atPut(0, SmallInt::fromWord(42));
+  code.setConsts(*consts);
+  Tuple varnames(&scope, runtime_.newTuple(3));
+  varnames.atPut(0, runtime_.internStrFromCStr(thread_, "foo"));
+  varnames.atPut(1, runtime_.internStrFromCStr(thread_, "bar"));
+  varnames.atPut(2, runtime_.internStrFromCStr(thread_, "baz"));
+  code.setVarnames(*varnames);
+  code.setNlocals(3);
+  const byte bytecode[] = {
+      LOAD_CONST,  0, STORE_FAST,        0, LOAD_CONST,   0, STORE_FAST, 2,
+      DELETE_FAST, 2, LOAD_FAST_REVERSE, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  EXPECT_TRUE(
+      raisedWithStr(runCode(code), LayoutId::kUnboundLocalError,
+                    "local variable 'baz' referenced before assignment"));
+}
+
+TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(4));
+  consts.atPut(0, SmallInt::fromWord(1));
+  consts.atPut(1, SmallInt::fromWord(22));
+  consts.atPut(2, SmallInt::fromWord(333));
+  consts.atPut(3, SmallInt::fromWord(4444));
+  code.setConsts(*consts);
+  code.setNlocals(4);
+  const byte bytecode[] = {
+      LOAD_CONST,  0, STORE_FAST_REVERSE, 0,
+      LOAD_CONST,  1, STORE_FAST_REVERSE, 1,
+      LOAD_CONST,  2, STORE_FAST_REVERSE, 3,
+      LOAD_CONST,  3, STORE_FAST_REVERSE, 2,
+      LOAD_FAST,   0,  // 333
+      LOAD_FAST,   1,  // 4444
+      LOAD_FAST,   2,  // 22
+      LOAD_FAST,   3,  // 1
+      BUILD_TUPLE, 4, RETURN_VALUE,       0,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  Object result_obj(&scope, runCode(code));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 333));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 4444));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 22));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 1));
+}
+
 TEST_F(InterpreterTest, SequenceContains) {
   HandleScope scope(thread_);
 

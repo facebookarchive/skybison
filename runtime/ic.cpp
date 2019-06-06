@@ -7,20 +7,20 @@
 
 namespace python {
 
-struct BytecodeArgPair {
+struct RewrittenOp {
   Bytecode bc;
   word arg;
+  bool needs_inline_cache;
 };
 
-static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
+static RewrittenOp rewriteOperation(const Code& code, Bytecode bc, word arg) {
   auto cached_binop = [](Interpreter::BinaryOp op) {
-    return BytecodeArgPair{BINARY_OP_CACHED, static_cast<word>(op)};
+    return RewrittenOp{BINARY_OP_CACHED, static_cast<word>(op), true};
   };
   auto cached_inplace = [](Interpreter::BinaryOp op) {
-    return BytecodeArgPair{INPLACE_OP_CACHED, static_cast<word>(op)};
+    return RewrittenOp{INPLACE_OP_CACHED, static_cast<word>(op), true};
   };
   switch (bc) {
-    // Binary operations.
     case BINARY_ADD:
       return cached_binop(Interpreter::BinaryOp::ADD);
     case BINARY_AND:
@@ -42,7 +42,7 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
     case BINARY_RSHIFT:
       return cached_binop(Interpreter::BinaryOp::RSHIFT);
     case BINARY_SUBSCR:
-      return BytecodeArgPair{BINARY_SUBSCR_CACHED, arg};
+      return RewrittenOp{BINARY_SUBSCR_CACHED, arg, true};
     case BINARY_SUBTRACT:
       return cached_binop(Interpreter::BinaryOp::SUB);
     case BINARY_TRUE_DIVIDE:
@@ -57,10 +57,11 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
         case CompareOp::NE:
         case CompareOp::GT:
         case CompareOp::GE:
-          return BytecodeArgPair{COMPARE_OP_CACHED, arg};
+          return RewrittenOp{COMPARE_OP_CACHED, arg, true};
       }
       break;
-    // Inplace operations.
+    case FOR_ITER:
+      return RewrittenOp{FOR_ITER_CACHED, arg, true};
     case INPLACE_ADD:
       return cached_inplace(Interpreter::BinaryOp::ADD);
     case INPLACE_AND:
@@ -87,28 +88,37 @@ static BytecodeArgPair rewriteOperation(Bytecode bc, word arg) {
       return cached_inplace(Interpreter::BinaryOp::TRUEDIV);
     case INPLACE_XOR:
       return cached_inplace(Interpreter::BinaryOp::XOR);
-    // Attribute accessors.
     case LOAD_ATTR:
-      return BytecodeArgPair{LOAD_ATTR_CACHED, arg};
+      return RewrittenOp{LOAD_ATTR_CACHED, arg, true};
+    case LOAD_FAST: {
+      CHECK(arg < code.nlocals(), "unexpected local number");
+      word reverse_arg = code.nlocals() - arg - 1;
+      return RewrittenOp{LOAD_FAST_REVERSE, reverse_arg, false};
+    }
     case LOAD_METHOD:
-      return BytecodeArgPair{LOAD_METHOD_CACHED, arg};
+      return RewrittenOp{LOAD_METHOD_CACHED, arg, true};
     case STORE_ATTR:
-      return BytecodeArgPair{STORE_ATTR_CACHED, arg};
-    // Other opcodes.
-    case FOR_ITER:
-      return BytecodeArgPair{FOR_ITER_CACHED, arg};
+      return RewrittenOp{STORE_ATTR_CACHED, arg, true};
+    case STORE_FAST: {
+      CHECK(arg < code.nlocals(), "unexpected local number");
+      word reverse_arg = code.nlocals() - arg - 1;
+      return RewrittenOp{STORE_FAST_REVERSE, reverse_arg, false};
+    }
 
     case BINARY_OP_CACHED:
     case COMPARE_OP_CACHED:
+    case FOR_ITER_CACHED:
     case INPLACE_OP_CACHED:
     case LOAD_ATTR_CACHED:
+    case LOAD_FAST_REVERSE:
+    case LOAD_METHOD_CACHED:
     case STORE_ATTR_CACHED:
-    case FOR_ITER_CACHED:
+    case STORE_FAST_REVERSE:
       UNREACHABLE("should not have cached opcode in input");
     default:
       break;
   }
-  return BytecodeArgPair{bc, arg};
+  return RewrittenOp{bc, arg, false};
 }
 
 void icRewriteBytecode(Thread* thread, const Function& function) {
@@ -116,7 +126,8 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   word num_caches = 0;
 
   // Scan bytecode to figure out how many caches we need.
-  Bytes bytecode(&scope, Code::cast(function.code()).code());
+  Code code(&scope, function.code());
+  Bytes bytecode(&scope, code.code());
   word bytecode_length = bytecode.length();
   for (word i = 0; i < bytecode_length;) {
     Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
@@ -126,8 +137,8 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
       arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
     }
 
-    BytecodeArgPair rewritten = rewriteOperation(bc, arg);
-    if (rewritten.bc != bc) {
+    RewrittenOp rewritten = rewriteOperation(code, bc, arg);
+    if (rewritten.needs_inline_cache) {
       num_caches++;
     }
   }
@@ -155,11 +166,10 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
       arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
     }
 
-    BytecodeArgPair rewritten = rewriteOperation(bc, arg);
-    if (rewritten.bc != bc) {
+    RewrittenOp rewritten = rewriteOperation(code, bc, arg);
+    if (rewritten.needs_inline_cache) {
       // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
-      CHECK(cache < 256,
-            "more than 256 entries may require bytecode stretching");
+      CHECK(cache < 256, "more than 256 entries may require bytecode resizing");
       for (word j = begin; j < i - 2; j += 2) {
         result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
         result.byteAtPut(j + 1, 0);
@@ -171,8 +181,19 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
       original_arguments.atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
     } else {
-      for (word j = begin; j < i; j++) {
-        result.byteAtPut(j, bytecode.byteAt(j));
+      if (rewritten.arg != arg || rewritten.bc != bc) {
+        CHECK(rewritten.arg < 256,
+              "more than 256 entries may require bytecode resizing");
+        for (word j = begin; j < i - 2; j += 2) {
+          result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
+          result.byteAtPut(j + 1, 0);
+        }
+        result.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
+        result.byteAtPut(i - 1, static_cast<byte>(rewritten.arg));
+      } else {
+        for (word j = begin; j < i; j++) {
+          result.byteAtPut(j, bytecode.byteAt(j));
+        }
       }
     }
   }

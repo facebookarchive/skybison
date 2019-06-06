@@ -2705,9 +2705,32 @@ HANDLER_INLINE bool Interpreter::doLoadFast(Context* ctx, word arg) {
   return false;
 }
 
+HANDLER_INLINE bool Interpreter::doLoadFastReverse(Context* ctx, word arg) {
+  Frame* frame = ctx->frame;
+  RawObject value = frame->localWithReverseIndex(arg);
+  if (value.isError()) {
+    Thread* thread = ctx->thread;
+    HandleScope scope(thread);
+    Code code(&scope, ctx->frame->code());
+    word name_idx = code.nlocals() - arg - 1;
+    Str name(&scope, Tuple::cast(code.varnames()).at(name_idx));
+    thread->raiseWithFmt(LayoutId::kUnboundLocalError,
+                         "local variable '%S' referenced before assignment",
+                         &name);
+    return unwind(ctx);
+  }
+  frame->pushValue(value);
+  return false;
+}
+
 HANDLER_INLINE void Interpreter::doStoreFast(Context* ctx, word arg) {
   RawObject value = ctx->frame->popValue();
   ctx->frame->setLocal(arg, value);
+}
+
+HANDLER_INLINE void Interpreter::doStoreFastReverse(Context* ctx, word arg) {
+  RawObject value = ctx->frame->popValue();
+  ctx->frame->setLocalWithReverseIndex(arg, value);
 }
 
 HANDLER_INLINE void Interpreter::doDeleteFast(Context* ctx, word arg) {

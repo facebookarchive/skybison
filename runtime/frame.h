@@ -164,6 +164,9 @@ class Frame {
   RawObject local(word idx);
   void setLocal(word idx, RawObject local);
 
+  RawObject localWithReverseIndex(word reverse_idx);
+  void setLocalWithReverseIndex(word reverse_idx, RawObject local);
+
   RawFunction function();
 
   void setNumLocals(word num_locals);
@@ -364,9 +367,22 @@ inline RawObject Frame::local(word idx) {
   return *(locals() - idx);
 }
 
+inline RawObject Frame::localWithReverseIndex(word reverse_idx) {
+  DCHECK_INDEX(reverse_idx, numLocals());
+  RawObject* locals_end = reinterpret_cast<RawObject*>(address() + kSize);
+  return locals_end[reverse_idx];
+}
+
 inline void Frame::setLocal(word idx, RawObject object) {
   DCHECK_INDEX(idx, numLocals());
   *(locals() - idx) = object;
+}
+
+inline void Frame::setLocalWithReverseIndex(word reverse_idx,
+                                            RawObject object) {
+  DCHECK_INDEX(reverse_idx, numLocals());
+  RawObject* locals_end = reinterpret_cast<RawObject*>(address() + kSize);
+  locals_end[reverse_idx] = object;
 }
 
 inline void Frame::setNumLocals(word num_locals) {
