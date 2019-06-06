@@ -336,7 +336,7 @@ target_link_libraries(
   dl
   siphash)
 # TODO(T42692043): This awkwardness should go away once we freeze the stdlib.
-target_compile_definitions(runtime PRIVATE PYRO_BASEDIR=\"${CMAKE_SOURCE_DIR}\")
+target_compile_definitions(runtime PRIVATE PYRO_BASEDIR="${CMAKE_SOURCE_DIR}")
 
 add_library(
   extension
@@ -370,7 +370,7 @@ target_compile_options(
 target_link_libraries(
   modules
   PRIVATE
-  extension)
+  cpython)
 
 add_executable(
   python

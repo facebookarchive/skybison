@@ -1,10 +1,18 @@
+#include <cstdlib>
+
+#include "Python.h"
+
+#include "Python-ast.h"
+// Unset Python-ast.h macros that conflict with gtest/gtest.h
+#undef Compare
+#undef Set
+#undef Assert
+
+#include "capi-fixture.h"
+#include "capi-testing.h"
 #include "gtest/gtest.h"
 
 #include "gmock/gmock-matchers.h"
-
-#include "Python.h"
-#include "capi-fixture.h"
-#include "capi-testing.h"
 
 namespace python {
 
@@ -310,6 +318,36 @@ sys.excepthook = my_hook
             0);
   PyErr_SetObject(PyExc_RuntimeError, Py_None);
   EXPECT_EXIT(PyErr_Print(), ::testing::ExitedWithCode(123), "^$");
+}
+
+TEST_F(PythonrunExtensionApiTest, PyParserFromStringReturnsModuleNode) {
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  PyArena* arena = PyArena_New();
+  ASSERT_NE(arena, nullptr);
+  mod_ty module =
+      PyParser_ASTFromString("a = 123", "test", Py_file_input, &flags, arena);
+  EXPECT_NE(module, nullptr);
+  EXPECT_EQ(module->kind, Module_kind);
+  PyArena_Free(arena);
+}
+
+TEST_F(PythonrunExtensionApiTest, PyParserFromFileReturnsModuleNode) {
+  const char* buffer = "a = 123";
+  FILE* fp = fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
+                      sizeof(buffer), "r");
+  const char* enc = nullptr;
+  const char* ps1 = nullptr;
+  const char* ps2 = nullptr;
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  PyArena* arena = PyArena_New();
+  ASSERT_NE(arena, nullptr);
+  mod_ty module = PyParser_ASTFromFile(fp, "test", enc, Py_file_input, ps1, ps2,
+                                       &flags, nullptr, arena);
+  EXPECT_NE(module, nullptr);
+  EXPECT_EQ(module->kind, Module_kind);
+  PyArena_Free(arena);
 }
 
 }  // namespace python

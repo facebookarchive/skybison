@@ -1,3 +1,4 @@
+#include <cerrno>
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "int-builtins.h"
@@ -92,9 +93,57 @@ PY_EXPORT int PyObject_AsFileDescriptor(PyObject* obj) {
   return fd;
 }
 
-PY_EXPORT char* Py_UniversalNewlineFgets(char* /* f */, int /* n */,
-                                         FILE* /* m */, PyObject* /* j */) {
-  UNIMPLEMENTED("Py_UniversalNewlineFgets");
+PY_EXPORT char* Py_UniversalNewlineFgets(char* buf, int buf_size, FILE* stream,
+                                         PyObject* fobj) {
+  if (fobj != nullptr) {
+    errno = ENXIO;
+    return nullptr;
+  }
+
+  enum Newline {
+    CR = 0x1,
+    LF = 0x2,
+    CRLF = 0x4,
+  };
+  char* ptr = buf;
+  bool skipnextlf = false;
+  for (char ch; --buf_size > 0 && (ch = std::getc(stream)) != EOF;) {
+    int newlinetypes = 0;
+    if (skipnextlf) {
+      skipnextlf = false;
+      if (ch == '\n') {
+        // Seeing a \n here with skipnextlf true means we saw a \r before.
+        newlinetypes |= Newline::CRLF;
+        ch = std::getc(stream);
+        if (ch == EOF) break;
+      } else {
+        // Note that c == EOF also brings us here, so we're okay
+        // if the last char in the file is a CR.
+        newlinetypes |= Newline::CR;
+      }
+    }
+    if (ch == '\r') {
+      // A \r is translated into a \n, and we skip  an adjacent \n, if any.
+      // We don't set the newlinetypes flag until we've seen the next char.
+      skipnextlf = true;
+      ch = '\n';
+    } else if (ch == '\n') {
+      newlinetypes |= Newline::LF;
+    }
+    *ptr++ = ch;
+    if (ch == '\n') break;
+  }
+  *ptr = '\0';
+  if (skipnextlf) {
+    // If we have no file object we cannot save the skipnextlf flag.
+    // We have to readahead, which will cause a pause if we're reading
+    // from an interactive stream, but that is very unlikely unless we're
+    // doing something silly like exec(open("/dev/tty").read()).
+    char ch = std::getc(stream);
+    if (ch != '\n') std::ungetc(ch, stream);
+  }
+  if (ptr == buf) return nullptr;
+  return buf;
 }
 
 }  // namespace python

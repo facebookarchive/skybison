@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define PyAPI_DATA(RTYPE) extern RTYPE
+
 /* Singletons */
 #define Py_Ellipsis PyEllipsis_Ptr()
 #define Py_False PyFalse_Ptr()
