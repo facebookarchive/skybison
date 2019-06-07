@@ -163,10 +163,10 @@ class Frame {
  public:
   // Function arguments, local variables, cell variables, and free variables
   RawObject local(word idx);
-  void setLocal(word idx, RawObject local);
+  void setLocal(word idx, RawObject value);
 
   RawObject localWithReverseIndex(word reverse_idx);
-  void setLocalWithReverseIndex(word reverse_idx, RawObject local);
+  void setLocalWithReverseIndex(word reverse_idx, RawObject value);
 
   RawFunction function();
 
@@ -374,16 +374,15 @@ inline RawObject Frame::localWithReverseIndex(word reverse_idx) {
   return locals_end[reverse_idx];
 }
 
-inline void Frame::setLocal(word idx, RawObject object) {
+inline void Frame::setLocal(word idx, RawObject value) {
   DCHECK_INDEX(idx, numLocals());
-  *(locals() - idx) = object;
+  *(locals() - idx) = value;
 }
 
-inline void Frame::setLocalWithReverseIndex(word reverse_idx,
-                                            RawObject object) {
+inline void Frame::setLocalWithReverseIndex(word reverse_idx, RawObject value) {
   DCHECK_INDEX(reverse_idx, numLocals());
   RawObject* locals_end = reinterpret_cast<RawObject*>(address() + kSize);
-  locals_end[reverse_idx] = object;
+  locals_end[reverse_idx] = value;
 }
 
 inline void Frame::setNumLocals(word num_locals) {

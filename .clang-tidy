@@ -7,6 +7,7 @@ Checks: >
   readability-braces-around-statements,
   readability-else-after-return,
   readability-identifier-naming,
+  readability-inconsistent-declaration-parameter-name,
 FormatStyle: file
 HeaderFilterRegex: runtime/.*
 CheckOptions:

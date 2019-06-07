@@ -946,19 +946,19 @@ class RawKeyError : public RawLookupError {
 class RawUnicodeError : public RawException {
  public:
   RawObject encoding() const;
-  void setEncoding(RawObject encoding) const;
+  void setEncoding(RawObject encoding_name) const;
 
   RawObject object() const;
-  void setObject(RawObject object) const;
+  void setObject(RawObject bytes) const;
 
   RawObject start() const;
-  void setStart(RawObject object) const;
+  void setStart(RawObject index) const;
 
   RawObject end() const;
-  void setEnd(RawObject end) const;
+  void setEnd(RawObject index) const;
 
   RawObject reason() const;
-  void setReason(RawObject reason) const;
+  void setReason(RawObject error_description) const;
 
   static const int kEncodingOffset = RawBaseException::kSize;
   static const int kObjectOffset = kEncodingOffset + kPointerSize;
@@ -1023,7 +1023,7 @@ class RawType : public RawHeapObject {
   void setBuiltinBase(LayoutId base) const;
 
   RawObject dict() const;
-  void setDict(RawObject name) const;
+  void setDict(RawObject dict) const;
 
   bool isBuiltin() const;
 
@@ -1516,7 +1516,7 @@ class RawCode : public RawHeapObject {
   word totalArgs() const;
 
   RawObject cell2arg() const;
-  void setCell2arg(RawObject args) const;
+  void setCell2arg(RawObject value) const;
 
   RawObject cellvars() const;
   void setCellvars(RawObject value) const;
@@ -1743,7 +1743,7 @@ class RawFunction : public RawHeapObject {
 
   // Original arguments for bytecode operations using the inline cache.
   RawObject originalArguments() const;
-  void setOriginalArguments(RawObject originall_arguments) const;
+  void setOriginalArguments(RawObject original_arguments) const;
 
   // The function's dictionary
   RawObject dict() const;
@@ -3848,46 +3848,46 @@ inline RawObject RawUnicodeError::encoding() const {
   return instanceVariableAt(kEncodingOffset);
 }
 
-inline void RawUnicodeError::setEncoding(RawObject value) const {
-  DCHECK(value.isStr(), "Only string type is permitted as a value");
-  instanceVariableAtPut(kEncodingOffset, value);
+inline void RawUnicodeError::setEncoding(RawObject encoding_name) const {
+  DCHECK(encoding_name.isStr(), "Only string type is permitted as a value");
+  instanceVariableAtPut(kEncodingOffset, encoding_name);
 }
 
 inline RawObject RawUnicodeError::object() const {
   return instanceVariableAt(kObjectOffset);
 }
 
-inline void RawUnicodeError::setObject(RawObject value) const {
+inline void RawUnicodeError::setObject(RawObject bytes) const {
   // TODO(T39229519): Allow bytearrays to be stored as well
-  DCHECK(value.isBytes(), "Only bytes type is permitted as a value");
-  instanceVariableAtPut(kObjectOffset, value);
+  DCHECK(bytes.isBytes(), "Only bytes type is permitted as a value");
+  instanceVariableAtPut(kObjectOffset, bytes);
 }
 
 inline RawObject RawUnicodeError::start() const {
   return instanceVariableAt(kStartOffset);
 }
 
-inline void RawUnicodeError::setStart(RawObject value) const {
-  DCHECK(value.isInt(), "Only int type is permitted as a value");
-  instanceVariableAtPut(kStartOffset, value);
+inline void RawUnicodeError::setStart(RawObject index) const {
+  DCHECK(index.isInt(), "Only int type is permitted as a value");
+  instanceVariableAtPut(kStartOffset, index);
 }
 
 inline RawObject RawUnicodeError::end() const {
   return instanceVariableAt(kEndOffset);
 }
 
-inline void RawUnicodeError::setEnd(RawObject value) const {
-  DCHECK(value.isInt(), "Only int type is permitted as a value");
-  instanceVariableAtPut(kEndOffset, value);
+inline void RawUnicodeError::setEnd(RawObject index) const {
+  DCHECK(index.isInt(), "Only int type is permitted as a value");
+  instanceVariableAtPut(kEndOffset, index);
 }
 
 inline RawObject RawUnicodeError::reason() const {
   return instanceVariableAt(kReasonOffset);
 }
 
-inline void RawUnicodeError::setReason(RawObject value) const {
-  DCHECK(value.isStr(), "Only string type is permitted as a value");
-  instanceVariableAtPut(kReasonOffset, value);
+inline void RawUnicodeError::setReason(RawObject error_description) const {
+  DCHECK(error_description.isStr(), "Only string type is permitted as a value");
+  instanceVariableAtPut(kReasonOffset, error_description);
 }
 
 // RawCode
@@ -4357,9 +4357,9 @@ inline word RawStrArray::numItems() const {
   return RawSmallInt::cast(instanceVariableAt(kNumItemsOffset)).value();
 }
 
-inline void RawStrArray::setNumItems(word num_bytes) const {
-  DCHECK_BOUND(num_bytes, capacity());
-  instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_bytes));
+inline void RawStrArray::setNumItems(word num_items) const {
+  DCHECK_BOUND(num_items, capacity());
+  instanceVariableAtPut(kNumItemsOffset, RawSmallInt::fromWord(num_items));
 }
 
 inline void RawStrArray::copyTo(byte* dst, word length) const {
@@ -4772,8 +4772,8 @@ inline RawObject RawModule::def() const {
   return instanceVariableAt(kDefOffset);
 }
 
-inline void RawModule::setDef(RawObject dict) const {
-  instanceVariableAtPut(kDefOffset, dict);
+inline void RawModule::setDef(RawObject def) const {
+  instanceVariableAtPut(kDefOffset, def);
 }
 
 // RawStr
