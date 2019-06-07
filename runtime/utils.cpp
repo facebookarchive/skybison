@@ -41,8 +41,8 @@ class TracebackPrinter : public FrameVisitor {
         line << "  File '<unknown>',  ";
       }
 
-      // Extract line number
-      if (code.lnotab().isBytes()) {
+      // Extract line number unless it is a native functions.
+      if (code.lnotab().isBytes() && !code.code().isInt()) {
         Runtime* runtime = thread->runtime();
         word linenum =
             runtime->codeOffsetToLineNum(thread, code, frame->virtualPC());

@@ -121,7 +121,7 @@ result = foo('a', 99)
   File '<test string>', line 11, in <module>
   File '<test string>', line 6, in foo
   File '<test string>', line 10, in bar
-  File '<test string>', line 3, in traceback  <native function at )"
+  File '<test string>', in traceback  <native function at )"
            << fptr << " (";
   if (dladdr(fptr, &info) && info.dli_sname != nullptr) {
     EXPECT_NE(std::strstr(info.dli_sname, "testPrintStacktrace"), nullptr);

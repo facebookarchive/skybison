@@ -97,6 +97,8 @@ class BlockStack {
 
   TryBlock peek();
 
+  void setDepth(word new_top);
+
   static const int kStackOffset = 0;
   static const int kTopOffset =
       kStackOffset + kMaxBlockStackDepth * kPointerSize;
@@ -106,7 +108,6 @@ class BlockStack {
   uword address();
   RawObject at(int offset);
   void atPut(int offset, RawObject value);
-  void setDepth(word new_top);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(BlockStack);
 };

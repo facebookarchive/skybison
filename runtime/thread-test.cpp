@@ -317,36 +317,6 @@ TEST_F(ThreadTest, PushFrameWithNoFreeVars) {
   EXPECT_EQ(thread_->stackPtr(), prev_sp - Frame::kSize);
 }
 
-TEST_F(ThreadTest, OpenAndLinkFrameZerosBlockStack) {
-  HandleScope scope(thread_);
-
-  // Fill stack with nonsense data.
-  Frame* frame = thread_->currentFrame();
-  for (word i = 0; i < 100; i++) {
-    frame->pushValue(SmallInt::fromWord(0xbadf00d));
-  }
-  frame->dropValues(100);
-
-  Code code(&scope, newEmptyCode());
-  code.setCode(Bytes::empty());
-  Object qualname(&scope, Str::empty());
-  Object empty_tuple(&scope, runtime_.emptyTuple());
-  Dict empty_dict(&scope, runtime_.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread_, qualname, code, empty_tuple,
-                                        empty_dict, empty_dict, empty_tuple,
-                                        empty_dict));
-
-  frame->pushValue(*function);
-  Frame* new_frame = thread_->pushCallFrame(*function);
-  // The block stack is a contiguous chunk of small integers.
-  RawObject* block_stack =
-      reinterpret_cast<RawObject*>(new_frame->blockStack());
-  for (word i = 0; i < BlockStack::kSize / kPointerSize; i++) {
-    EXPECT_EQ(block_stack[i], SmallInt::fromWord(0));
-  }
-}
-
 TEST_F(ThreadTest, ManipulateValueStack) {
   Frame* frame = thread_->currentFrame();
 

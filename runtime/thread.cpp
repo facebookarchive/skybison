@@ -88,10 +88,10 @@ inline Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   byte* sp = stackPtr();
   word size = Frame::kSize + num_vars * kPointerSize;
   sp -= size;
-  std::memset(sp, 0, size);
   auto frame = reinterpret_cast<Frame*>(sp);
   frame->setValueStackTop(reinterpret_cast<RawObject*>(frame));
   frame->setNumLocals(num_args + num_vars);
+  frame->blockStack()->setDepth(0);
 
   // return a pointer to the base of the frame
   linkFrame(frame);
@@ -118,8 +118,7 @@ Frame* Thread::pushNativeFrame(word nargs) {
   // to include a declaration of how much space is needed. However, that's of
   // limited use right now since we can't detect an "overflow" of a frame
   // anyway.
-  Frame* frame = openAndLinkFrame(nargs, 0, 0);
-  return frame;
+  return openAndLinkFrame(nargs, 0, 0);
 }
 
 Frame* Thread::pushCallFrame(RawFunction function) {
