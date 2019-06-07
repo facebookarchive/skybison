@@ -403,12 +403,12 @@ inline word Frame::numLocals() {
 
 inline Frame* Frame::previousFrame() {
   RawObject frame = at(kPreviousFrameOffset);
-  return static_cast<Frame*>(SmallInt::cast(frame).asCPtr());
+  return static_cast<Frame*>(SmallInt::cast(frame).asAlignedCPtr());
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
   atPut(kPreviousFrameOffset,
-        SmallInt::fromWord(reinterpret_cast<uword>(frame)));
+        SmallInt::fromAlignedCPtr(reinterpret_cast<void*>(frame)));
 }
 
 inline RawObject* Frame::valueStackBase() {
