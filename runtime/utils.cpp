@@ -42,7 +42,7 @@ class TracebackPrinter : public FrameVisitor {
       }
 
       // Extract line number unless it is a native functions.
-      if (code.lnotab().isBytes() && !code.code().isInt()) {
+      if (!code.isNative() && code.lnotab().isBytes()) {
         Runtime* runtime = thread->runtime();
         word linenum =
             runtime->codeOffsetToLineNum(thread, code, frame->virtualPC());
@@ -60,7 +60,7 @@ class TracebackPrinter : public FrameVisitor {
 
     if (code_obj.isCode()) {
       Code code(&scope, *code_obj);
-      if (code.code().isInt()) {
+      if (code.isNative()) {
         void* fptr = Int::cast(code.code()).asCPtr();
         line << "  <native function at " << fptr << " (";
 

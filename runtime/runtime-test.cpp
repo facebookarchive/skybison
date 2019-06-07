@@ -2824,12 +2824,12 @@ TEST_F(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   varnames.atPut(2, *baz);
   cellvars.atPut(0, *foobar);
   cellvars.atPut(1, *foobaz);
-  Object none(&scope, NoneType::object());
+  Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.newTuple(0));
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
-            runtime_.newCode(argcount, kwargcount, nlocals, 0, 0, none,
+            runtime_.newCode(argcount, kwargcount, nlocals, 0, 0, code_code,
                              empty_tuple, empty_tuple, varnames, empty_tuple,
                              cellvars, empty_str, empty_str, 0, empty_bytes));
   EXPECT_TRUE(code.cell2arg().isNoneType());
@@ -2851,12 +2851,12 @@ TEST_F(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   varnames.atPut(2, *baz);
   cellvars.atPut(0, *baz);
   cellvars.atPut(1, *foobar);
-  Object none(&scope, NoneType::object());
+  Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.newTuple(0));
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
-            runtime_.newCode(argcount, kwargcount, nlocals, 0, 0, none,
+            runtime_.newCode(argcount, kwargcount, nlocals, 0, 0, code_code,
                              empty_tuple, empty_tuple, varnames, empty_tuple,
                              cellvars, empty_str, empty_str, 0, empty_bytes));
   ASSERT_FALSE(code.cell2arg().isNoneType());
@@ -2883,12 +2883,12 @@ TEST_F(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
   varnames.atPut(2, *baz);
   cellvars.atPut(0, *baz);
   cellvars.atPut(1, *foobar);
-  Object none(&scope, NoneType::object());
+  Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.newTuple(0));
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
-            runtime_.newCode(argcount, 0, nlocals, 0, 0, none, empty_tuple,
+            runtime_.newCode(argcount, 0, nlocals, 0, 0, code_code, empty_tuple,
                              empty_tuple, varnames, empty_tuple, cellvars,
                              empty_str, empty_str, 0, empty_bytes));
   EXPECT_FALSE(code.flags() & Code::Flags::NOFREE);
@@ -2898,14 +2898,14 @@ TEST_F(RuntimeTest, NewCodeWithNoFreevarsOrCellvarsSetsNofreeFlag) {
   HandleScope scope(thread_);
   Tuple varnames(&scope, runtime_.newTuple(1));
   varnames.atPut(0, runtime_.newStrFromCStr("foobar"));
-  Object none(&scope, NoneType::object());
+  Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.newTuple(0));
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Object code_obj(
-      &scope, runtime_.newCode(0, 0, 0, 0, 0, none, empty_tuple, empty_tuple,
-                               varnames, empty_tuple, empty_tuple, empty_str,
-                               empty_str, 0, empty_bytes));
+      &scope, runtime_.newCode(0, 0, 0, 0, 0, code_code, empty_tuple,
+                               empty_tuple, varnames, empty_tuple, empty_tuple,
+                               empty_str, empty_str, 0, empty_bytes));
   ASSERT_TRUE(code_obj.isCode());
   Code code(&scope, *code_obj);
   EXPECT_TRUE(code.flags() & Code::Flags::NOFREE);
@@ -2916,12 +2916,12 @@ TEST_F(RuntimeTest,
   HandleScope scope(thread_);
   Tuple varnames(&scope, runtime_.newTuple(1));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Object none(&scope, NoneType::object());
+  Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.newTuple(0));
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   EXPECT_TRUE(raisedWithStr(
-      runtime_.newCode(/*argcount=*/10, 0, 0, 0, 0, none, empty_tuple,
+      runtime_.newCode(/*argcount=*/10, 0, 0, 0, 0, code_code, empty_tuple,
                        empty_tuple, varnames, empty_tuple, cellvars, empty_str,
                        empty_str, 0, empty_bytes),
       LayoutId::kValueError, "code: varnames is too small"));
@@ -2932,14 +2932,14 @@ TEST_F(RuntimeTest,
   HandleScope scope(thread_);
   Tuple varnames(&scope, runtime_.newTuple(1));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Object none(&scope, NoneType::object());
+  Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.newTuple(0));
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   EXPECT_TRUE(raisedWithStr(
-      runtime_.newCode(0, /*kwonlyargcount=*/10, 0, 0, 0, none, empty_tuple,
-                       empty_tuple, varnames, empty_tuple, cellvars, empty_str,
-                       empty_str, 0, empty_bytes),
+      runtime_.newCode(0, /*kwonlyargcount=*/10, 0, 0, 0, code_code,
+                       empty_tuple, empty_tuple, varnames, empty_tuple,
+                       cellvars, empty_str, empty_str, 0, empty_bytes),
       LayoutId::kValueError, "code: varnames is too small"));
 }
 
@@ -2948,12 +2948,12 @@ TEST_F(RuntimeTest,
   HandleScope scope(thread_);
   Tuple varnames(&scope, runtime_.newTuple(1));
   Tuple cellvars(&scope, runtime_.newTuple(2));
-  Object none(&scope, NoneType::object());
+  Object code_code(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.newTuple(0));
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   EXPECT_TRUE(raisedWithStr(
-      runtime_.newCode(/*argcount=*/1, /*kwonlyargcount=*/1, 0, 0, 0, none,
+      runtime_.newCode(/*argcount=*/1, /*kwonlyargcount=*/1, 0, 0, 0, code_code,
                        empty_tuple, empty_tuple, varnames, empty_tuple,
                        cellvars, empty_str, empty_str, 0, empty_bytes),
       LayoutId::kValueError, "code: varnames is too small"));

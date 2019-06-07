@@ -1546,6 +1546,8 @@ class RawCode : public RawHeapObject {
   bool hasOptimizedAndNewLocals() const;
   bool hasOptimizedOrNewLocals() const;
 
+  bool isNative() const;
+
   word kwonlyargcount() const;
   void setKwonlyargcount(word value) const;
 
@@ -4066,6 +4068,8 @@ inline bool RawCode::hasOptimizedAndNewLocals() const {
 inline bool RawCode::hasOptimizedOrNewLocals() const {
   return flags() & (Flags::OPTIMIZED | Flags::NEWLOCALS);
 }
+
+inline bool RawCode::isNative() const { return code().isInt(); }
 
 // RawLargeInt
 

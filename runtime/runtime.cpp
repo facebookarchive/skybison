@@ -495,6 +495,7 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
                            const Object& cellvars, const Object& filename,
                            const Object& name, word firstlineno,
                            const Object& lnotab) {
+  DCHECK(code.isInt() || isInstanceOfBytes(*code), "code must be bytes or int");
   DCHECK(isInstanceOfTuple(*consts), "expected tuple");
   DCHECK(isInstanceOfTuple(*names), "expected tuple");
   DCHECK(isInstanceOfTuple(*varnames), "expected tuple");
