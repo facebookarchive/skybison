@@ -253,9 +253,6 @@ RawObject SysModule::underGetframeCode(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
   }
-  if (frame->isNativeFrame()) {
-    return NoneType::object();
-  }
   return frame->code();
 }
 
@@ -292,9 +289,6 @@ RawObject SysModule::underGetframeLineno(Thread* thread, Frame* frame,
   if (frame == nullptr) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "call stack is not deep enough");
-  }
-  if (frame->isNativeFrame()) {
-    return SmallInt::fromWord(-1);
   }
   Code code(&scope, frame->code());
   word pc = frame->virtualPC();

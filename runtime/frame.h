@@ -223,9 +223,6 @@ class Frame {
   bool isSentinelFrame();
   void makeSentinel();
 
-  bool isNativeFrame();
-  void* nativeFunctionPointer();
-
   // Versions of valueStackTop() and popValue() for a Frame that's had
   // stashInternalPointers() called on it.
   RawObject* stashedValueStackTop();
@@ -486,13 +483,6 @@ inline bool Frame::isSentinelFrame() {
   // assertion checks if the field is not a SmallInt.
   return at(kPreviousFrameOffset) == SmallInt::fromWord(0);
 }
-
-inline void* Frame::nativeFunctionPointer() {
-  DCHECK(isNativeFrame(), "not native frame");
-  return Int::cast(code()).asCPtr();
-}
-
-inline bool Frame::isNativeFrame() { return code().isInt(); }
 
 inline RawObject* Frame::stashedValueStackTop() {
   word depth = SmallInt::cast(at(kValueStackTopOffset)).value();
