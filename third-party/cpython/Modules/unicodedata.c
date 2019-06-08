@@ -21,9 +21,9 @@
 
 /*[clinic input]
 module unicodedata
-class unicodedata.UCD 'PreviousDBVersion *' '&UCD_Type'
+class unicodedata.UCD 'PreviousDBVersion *' 'unicodedatastate(m)->UCD_Type'
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6dac153082d150bc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=67fe9aa79b5f6b28]*/
 
 /* character properties */
 
@@ -83,16 +83,102 @@ static PyMemberDef DB_members[] = {
         {NULL}
 };
 
-/* forward declaration */
-static PyTypeObject UCD_Type;
-#define UCD_Check(o) (Py_TYPE(o)==&UCD_Type)
+/* XXX Add doc strings. */
+
+static PyMethodDef unicodedata_functions[] = {
+    UNICODEDATA_UCD___REDUCE___METHODDEF
+    UNICODEDATA_UCD___REDUCE_EX___METHODDEF
+    UNICODEDATA_UCD_DECIMAL_METHODDEF
+    UNICODEDATA_UCD_DIGIT_METHODDEF
+    UNICODEDATA_UCD_NUMERIC_METHODDEF
+    UNICODEDATA_UCD_CATEGORY_METHODDEF
+    UNICODEDATA_UCD_BIDIRECTIONAL_METHODDEF
+    UNICODEDATA_UCD_COMBINING_METHODDEF
+    UNICODEDATA_UCD_MIRRORED_METHODDEF
+    UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
+    UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
+    UNICODEDATA_UCD_NAME_METHODDEF
+    UNICODEDATA_UCD_LOOKUP_METHODDEF
+    UNICODEDATA_UCD_NORMALIZE_METHODDEF
+    {NULL, NULL}                /* sentinel */
+};
+
+static PyObject *
+UCD_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot create '%.100s' instances", _PyType_Name(type));
+    return NULL;
+}
+
+static PyType_Slot UCD_Type_slots[] = {
+    {Py_tp_new, UCD_new},
+    {Py_tp_dealloc, PyObject_Del},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_methods, unicodedata_functions},
+    {Py_tp_members, DB_members},
+    {0, 0},
+};
+
+static PyType_Spec UCD_Type_spec = {
+    "unicodedata.UCD",
+    sizeof(PreviousDBVersion),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    UCD_Type_slots
+};
+
+PyDoc_STRVAR(unicodedata_docstring,
+"This module provides access to the Unicode Character Database which\n\
+defines character properties for all Unicode characters. The data in\n\
+this database is based on the UnicodeData.txt file version\n\
+" UNIDATA_VERSION " which is publically available from ftp://ftp.unicode.org/.\n\
+\n\
+The module uses the same names and symbols as defined by the\n\
+UnicodeData File Format " UNIDATA_VERSION ".");
+
+typedef struct {
+    PyObject *UCD_Type;
+} unicodedatastate;
+
+#define unicodedatastate(o) ((unicodedatastate *)PyModule_GetState(o))
+
+#define unicodedatastate_global ((unicodedatastate *)PyModule_GetState(PyState_FindModule(&unicodedatamodule)))
+
+static int unicodedata_clear(PyObject* module) {
+    Py_CLEAR(unicodedatastate(module)->UCD_Type);
+    return 0;
+}
+
+static int unicodedata_traverse(PyObject* module, visitproc visit, void* arg) {
+    Py_VISIT(unicodedatastate(module)->UCD_Type);
+    return 0;
+}
+
+static void unicodedata_free(void* module) {
+    unicodedata_clear((PyObject*)module);
+}
+
+static struct PyModuleDef unicodedatamodule = {
+        PyModuleDef_HEAD_INIT,
+        "unicodedata",
+        unicodedata_docstring,
+        sizeof(unicodedatastate),
+        unicodedata_functions,
+        NULL,
+        unicodedata_traverse,
+        unicodedata_clear,
+        unicodedata_free,
+};
+
+#define UCD_Check(o) (Py_TYPE(o)==(PyTypeObject *)unicodedatastate_global->UCD_Type)
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
-                     Py_UCS4 (*normalization)(Py_UCS4))
+                     Py_UCS4 (*normalization)(Py_UCS4), PyObject *type)
 {
         PreviousDBVersion *self;
-        self = PyObject_New(PreviousDBVersion, &UCD_Type);
+        self = PyObject_New(PreviousDBVersion, (PyTypeObject *)type);
         if (self == NULL)
                 return NULL;
         self->name = name;
@@ -103,6 +189,34 @@ new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4)
 
 
 /* --- Module API --------------------------------------------------------- */
+
+/*[clinic input]
+unicodedata.UCD.__reduce__
+returns null and raises an exception to avoid pickling
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD___reduce___impl(PreviousDBVersion *self)
+/*[clinic end generated code: output=1002a827a4900c6e input=f68e47d45a7ced4b]*/
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
+}
+
+/*[clinic input]
+unicodedata.UCD.__reduce_ex__
+  protocol: int
+  /
+Returns NULL and raises an exception to avoid pickling
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD___reduce_ex___impl(PreviousDBVersion *self, int protocol)
+/*[clinic end generated code: output=0d12289b0ce2ffe3 input=cd5ed3c802227a1f]*/
+{
+    return unicodedata_UCD___reduce___impl(self);
+}
 
 /*[clinic input]
 unicodedata.UCD.decimal
@@ -1259,108 +1373,31 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
     return PyUnicode_FromOrdinal(code);
 }
 
-/* XXX Add doc strings. */
-
-static PyMethodDef unicodedata_functions[] = {
-    UNICODEDATA_UCD_DECIMAL_METHODDEF
-    UNICODEDATA_UCD_DIGIT_METHODDEF
-    UNICODEDATA_UCD_NUMERIC_METHODDEF
-    UNICODEDATA_UCD_CATEGORY_METHODDEF
-    UNICODEDATA_UCD_BIDIRECTIONAL_METHODDEF
-    UNICODEDATA_UCD_COMBINING_METHODDEF
-    UNICODEDATA_UCD_MIRRORED_METHODDEF
-    UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
-    UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
-    UNICODEDATA_UCD_NAME_METHODDEF
-    UNICODEDATA_UCD_LOOKUP_METHODDEF
-    UNICODEDATA_UCD_NORMALIZE_METHODDEF
-    {NULL, NULL}                /* sentinel */
-};
-
-static PyTypeObject UCD_Type = {
-        /* The ob_type field must be initialized in the module init function
-         * to be portable to Windows without using C++. */
-        PyVarObject_HEAD_INIT(NULL, 0)
-        "unicodedata.UCD",              /*tp_name*/
-        sizeof(PreviousDBVersion),      /*tp_basicsize*/
-        0,                      /*tp_itemsize*/
-        /* methods */
-        (destructor)PyObject_Del, /*tp_dealloc*/
-        0,                      /*tp_print*/
-        0,                      /*tp_getattr*/
-        0,                      /*tp_setattr*/
-        0,                      /*tp_reserved*/
-        0,                      /*tp_repr*/
-        0,                      /*tp_as_number*/
-        0,                      /*tp_as_sequence*/
-        0,                      /*tp_as_mapping*/
-        0,                      /*tp_hash*/
-        0,                      /*tp_call*/
-        0,                      /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        0,                      /*tp_setattro*/
-        0,                      /*tp_as_buffer*/
-        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
-        0,                      /*tp_doc*/
-        0,                      /*tp_traverse*/
-        0,                      /*tp_clear*/
-        0,                      /*tp_richcompare*/
-        0,                      /*tp_weaklistoffset*/
-        0,                      /*tp_iter*/
-        0,                      /*tp_iternext*/
-        unicodedata_functions,  /*tp_methods*/
-        DB_members,             /*tp_members*/
-        0,                      /*tp_getset*/
-        0,                      /*tp_base*/
-        0,                      /*tp_dict*/
-        0,                      /*tp_descr_get*/
-        0,                      /*tp_descr_set*/
-        0,                      /*tp_dictoffset*/
-        0,                      /*tp_init*/
-        0,                      /*tp_alloc*/
-        0,                      /*tp_new*/
-        0,                      /*tp_free*/
-        0,                      /*tp_is_gc*/
-};
-
-PyDoc_STRVAR(unicodedata_docstring,
-"This module provides access to the Unicode Character Database which\n\
-defines character properties for all Unicode characters. The data in\n\
-this database is based on the UnicodeData.txt file version\n\
-" UNIDATA_VERSION " which is publically available from ftp://ftp.unicode.org/.\n\
-\n\
-The module uses the same names and symbols as defined by the\n\
-UnicodeData File Format " UNIDATA_VERSION ".");
-
-static struct PyModuleDef unicodedatamodule = {
-        PyModuleDef_HEAD_INIT,
-        "unicodedata",
-        unicodedata_docstring,
-        -1,
-        unicodedata_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-};
-
 PyMODINIT_FUNC
 PyInit_unicodedata(void)
 {
     PyObject *m, *v;
 
-    Py_TYPE(&UCD_Type) = &PyType_Type;
-
     m = PyModule_Create(&unicodedatamodule);
     if (!m)
         return NULL;
 
+    PyObject *UCD_Type = PyType_FromSpec(&UCD_Type_spec);
+    if (UCD_Type == NULL) {
+        return NULL;
+    }
+    unicodedatastate(m)->UCD_Type = UCD_Type;
+    Py_INCREF(UCD_Type);
+
+
     PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
-    Py_INCREF(&UCD_Type);
-    PyModule_AddObject(m, "UCD", (PyObject*)&UCD_Type);
+    PyModule_AddObject(m, "UCD", UCD_Type);
 
     /* Previous versions */
-    v = new_previous_version("3.2.0", get_change_3_2_0, normalization_3_2_0);
+    v = new_previous_version("3.2.0",
+                             get_change_3_2_0,
+                             normalization_3_2_0,
+                             UCD_Type);
     if (v != NULL)
         PyModule_AddObject(m, "ucd_3_2_0", v);
 

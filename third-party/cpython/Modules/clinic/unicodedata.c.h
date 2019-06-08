@@ -2,6 +2,51 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(unicodedata_UCD___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"returns null and raises an exception to avoid pickling");
+
+#define UNICODEDATA_UCD___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)unicodedata_UCD___reduce__, METH_NOARGS, unicodedata_UCD___reduce____doc__},
+
+static PyObject *
+unicodedata_UCD___reduce___impl(PreviousDBVersion *self);
+
+static PyObject *
+unicodedata_UCD___reduce__(PreviousDBVersion *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicodedata_UCD___reduce___impl(self);
+}
+
+PyDoc_STRVAR(unicodedata_UCD___reduce_ex____doc__,
+"__reduce_ex__($self, protocol, /)\n"
+"--\n"
+"\n"
+"Returns NULL and raises an exception to avoid pickling");
+
+#define UNICODEDATA_UCD___REDUCE_EX___METHODDEF    \
+    {"__reduce_ex__", (PyCFunction)unicodedata_UCD___reduce_ex__, METH_O, unicodedata_UCD___reduce_ex____doc__},
+
+static PyObject *
+unicodedata_UCD___reduce_ex___impl(PreviousDBVersion *self, int protocol);
+
+static PyObject *
+unicodedata_UCD___reduce_ex__(PreviousDBVersion *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int protocol;
+
+    if (!PyArg_Parse(arg, "i:__reduce_ex__", &protocol)) {
+        goto exit;
+    }
+    return_value = unicodedata_UCD___reduce_ex___impl(self, protocol);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
 "decimal($self, chr, default=None, /)\n"
 "--\n"
@@ -379,4 +424,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5313ce129da87b2f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=535a7c0d2c913000 input=a9049054013a1b77]*/

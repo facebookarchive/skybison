@@ -221,8 +221,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 {
     /* Name mangling: __private becomes _classname__private.
        This is independent from how the name is used. */
-    PyObject *result;
-    size_t nlen, plen, ipriv;
+    Py_ssize_t nlen, plen, ipriv;
     Py_UCS4 maxchar;
     if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
         PyUnicode_READ_CHAR(ident, 0) != '_' ||
@@ -4758,14 +4757,16 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 */
 
 struct assembler {
-    PyObject *a_bytecode;  /* string containing bytecode */
-    int a_offset;              /* offset into bytecode */
-    int a_nblocks;             /* number of reachable blocks */
-    basicblock **a_postorder; /* list of blocks in dfs postorder */
-    PyObject *a_lnotab;    /* string containing lnotab */
-    int a_lnotab_off;      /* offset into lnotab */
-    int a_lineno;              /* last lineno of emitted instruction */
-    int a_lineno_off;      /* bytecode offset of last lineno */
+    _PyBytesWriter a_bytecode;      /* bytecode writer */
+    void *a_bytecode_str;           /* str tracking the bytecode writing */
+    int a_offset;                   /* offset into bytecode */
+    int a_nblocks;                  /* number of reachable blocks */
+    basicblock **a_postorder;       /* list of blocks in dfs postorder */
+    _PyBytesWriter a_lnotab;        /* lnotab writer */
+    void *a_lnotab_str;             /* string tracking the lnotab writing */
+    int a_lnotab_off;               /* offset into lnotab */
+    int a_lineno;                   /* last lineno of emitted instruction */
+    int a_lineno_off;               /* bytecode offset of last lineno */
 };
 
 static void
@@ -4860,11 +4861,15 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
     a->a_lineno = firstlineno;
-    a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
-    if (!a->a_bytecode)
+    _PyBytesWriter_Init(&a->a_bytecode);
+    a->a_bytecode.overallocate = 1;
+    a->a_bytecode_str = _PyBytesWriter_Alloc(&a->a_bytecode, 0);
+    if (!a->a_bytecode_str)
         return 0;
-    a->a_lnotab = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
-    if (!a->a_lnotab)
+    _PyBytesWriter_Init(&a->a_lnotab);
+    a->a_lnotab.overallocate = 1;
+    a->a_lnotab_str = _PyBytesWriter_Alloc(&a->a_lnotab, 0);
+    if (!a->a_lnotab_str)
         return 0;
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
@@ -4882,8 +4887,8 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
 static void
 assemble_free(struct assembler *a)
 {
-    Py_XDECREF(a->a_bytecode);
-    Py_XDECREF(a->a_lnotab);
+    _PyBytesWriter_Dealloc(&a->a_bytecode);
+    _PyBytesWriter_Dealloc(&a->a_lnotab);
     if (a->a_postorder)
         PyObject_Free(a->a_postorder);
 }
@@ -4899,6 +4904,13 @@ blocksize(basicblock *b)
     return size;
 }
 
+static void lnotab_write_byte(struct assembler *a, unsigned char entry) {
+    a->a_lnotab_str = _PyBytesWriter_WriteBytes(&a->a_lnotab,
+                                                a->a_lnotab_str,
+                                                &entry,
+                                                sizeof(entry));
+}
+
 /* Appends a pair to the end of the line number table, a_lnotab, representing
    the instruction's bytecode offset and line number.  See
    Objects/lnotab_notes.txt for the description of the line number table. */
@@ -4907,8 +4919,6 @@ static int
 assemble_lnotab(struct assembler *a, struct instr *i)
 {
     int d_bytecode, d_lineno;
-    Py_ssize_t len;
-    unsigned char *lnotab;
 
     d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
     d_lineno = i->i_lineno - a->a_lineno;
@@ -4919,26 +4929,10 @@ assemble_lnotab(struct assembler *a, struct instr *i)
         return 1;
 
     if (d_bytecode > 255) {
-        int j, nbytes, ncodes = d_bytecode / 255;
-        nbytes = a->a_lnotab_off + 2 * ncodes;
-        len = PyBytes_GET_SIZE(a->a_lnotab);
-        if (nbytes >= len) {
-            if ((len <= INT_MAX / 2) && (len * 2 < nbytes))
-                len = nbytes;
-            else if (len <= INT_MAX / 2)
-                len *= 2;
-            else {
-                PyErr_NoMemory();
-                return 0;
-            }
-            if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
-                return 0;
-        }
-        lnotab = (unsigned char *)
-                   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
+        int j, ncodes = d_bytecode / 255;
         for (j = 0; j < ncodes; j++) {
-            *lnotab++ = 255;
-            *lnotab++ = 0;
+            lnotab_write_byte(a, 255);
+            lnotab_write_byte(a, 0);
         }
         d_bytecode -= ncodes * 255;
         a->a_lnotab_off += ncodes * 2;
@@ -4946,7 +4940,7 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     assert(0 <= d_bytecode && d_bytecode <= 255);
 
     if (d_lineno < -128 || 127 < d_lineno) {
-        int j, nbytes, ncodes, k;
+        int j, ncodes, k;
         if (d_lineno < 0) {
             k = -128;
             /* use division on positive numbers */
@@ -4958,53 +4952,71 @@ assemble_lnotab(struct assembler *a, struct instr *i)
         }
         d_lineno -= ncodes * k;
         assert(ncodes >= 1);
-        nbytes = a->a_lnotab_off + 2 * ncodes;
-        len = PyBytes_GET_SIZE(a->a_lnotab);
-        if (nbytes >= len) {
-            if ((len <= INT_MAX / 2) && len * 2 < nbytes)
-                len = nbytes;
-            else if (len <= INT_MAX / 2)
-                len *= 2;
-            else {
-                PyErr_NoMemory();
-                return 0;
-            }
-            if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
-                return 0;
-        }
-        lnotab = (unsigned char *)
-                   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-        *lnotab++ = d_bytecode;
-        *lnotab++ = k;
+        lnotab_write_byte(a, d_bytecode);
+        lnotab_write_byte(a, k);
         d_bytecode = 0;
         for (j = 1; j < ncodes; j++) {
-            *lnotab++ = 0;
-            *lnotab++ = k;
+            lnotab_write_byte(a, 0);
+            lnotab_write_byte(a, k);
         }
         a->a_lnotab_off += ncodes * 2;
     }
     assert(-128 <= d_lineno && d_lineno <= 127);
 
-    len = PyBytes_GET_SIZE(a->a_lnotab);
-    if (a->a_lnotab_off + 2 >= len) {
-        if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
-            return 0;
-    }
-    lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-
     a->a_lnotab_off += 2;
     if (d_bytecode) {
-        *lnotab++ = d_bytecode;
-        *lnotab++ = d_lineno;
+        lnotab_write_byte(a, d_bytecode);
+        lnotab_write_byte(a, d_lineno);
     }
     else {      /* First line of a block; def stmt, etc. */
-        *lnotab++ = 0;
-        *lnotab++ = d_lineno;
+        lnotab_write_byte(a, 0);
+        lnotab_write_byte(a, d_lineno);
     }
     a->a_lineno = i->i_lineno;
     a->a_lineno_off = a->a_offset;
     return 1;
+}
+
+/* Spits out bytecode_str/oparg pair using ilen bytes. bytecode_str should be
+ * pointed at the desired location of the first EXTENDED_ARG */
+static void*
+write_op_arg_bytes(_PyBytesWriter* bytecode_writer, void* bytecode_str,
+    unsigned char opcode, unsigned int oparg, int ilen)
+{
+    _Py_CODEUNIT codeunit;
+    switch (ilen) {
+        case 4:
+            codeunit = PACKOPARG(EXTENDED_ARG, (oparg >> 24) & 0xff),
+            bytecode_str = _PyBytesWriter_WriteBytes(bytecode_writer,
+                                                     bytecode_str,
+                                                     &codeunit,
+                                                     sizeof(_Py_CODEUNIT));
+            /* fall through */
+        case 3:
+            codeunit = PACKOPARG(EXTENDED_ARG, (oparg >> 16) & 0xff),
+            bytecode_str = _PyBytesWriter_WriteBytes(bytecode_writer,
+                                                     bytecode_str,
+                                                     &codeunit,
+                                                     sizeof(_Py_CODEUNIT));
+            /* fall through */
+        case 2:
+            codeunit = PACKOPARG(EXTENDED_ARG, (oparg >> 8) & 0xff),
+            bytecode_str = _PyBytesWriter_WriteBytes(bytecode_writer,
+                                                     bytecode_str,
+                                                     &codeunit,
+                                                     sizeof(_Py_CODEUNIT));
+            /* fall through */
+        case 1:
+            codeunit = PACKOPARG(opcode, oparg & 0xff),
+            bytecode_str = _PyBytesWriter_WriteBytes(bytecode_writer,
+                                                     bytecode_str,
+                                                     &codeunit,
+                                                     sizeof(_Py_CODEUNIT));
+            break;
+        default:
+            assert(0);
+    }
+    return bytecode_str;
 }
 
 /* assemble_emit()
@@ -5016,22 +5028,15 @@ static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
     int size, arg = 0;
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
-    _Py_CODEUNIT *code;
 
     arg = i->i_oparg;
     size = instrsize(arg);
     if (i->i_lineno && !assemble_lnotab(a, i))
         return 0;
-    if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
-        if (len > PY_SSIZE_T_MAX / 2)
-            return 0;
-        if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
-            return 0;
-    }
-    code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
-    write_op_arg(code, i->i_opcode, arg, size);
+    a->a_bytecode_str = write_op_arg_bytes(&a->a_bytecode,
+                                           a->a_bytecode_str,
+                                           i->i_opcode, arg, size);
     return 1;
 }
 
@@ -5155,6 +5160,7 @@ makecode(struct compiler *c, struct assembler *a)
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
     PyObject *bytecode = NULL;
+    PyObject *lnotab = NULL;
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
@@ -5186,7 +5192,9 @@ makecode(struct compiler *c, struct assembler *a)
     if (flags < 0)
         goto error;
 
-    bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
+    bytecode = _PyBytesWriter_Finish(&a->a_bytecode, a->a_bytecode_str);
+    lnotab = _PyBytesWriter_Finish(&a->a_lnotab, a->a_lnotab_str);
+    bytecode = PyCode_Optimize(bytecode, consts, names, lnotab);
     if (!bytecode)
         goto error;
 
@@ -5204,7 +5212,7 @@ makecode(struct compiler *c, struct assembler *a)
                     freevars, cellvars,
                     c->c_filename, c->u->u_name,
                     c->u->u_firstlineno,
-                    a->a_lnotab);
+                    lnotab);
  error:
     Py_XDECREF(consts);
     Py_XDECREF(names);
@@ -5213,6 +5221,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_XDECREF(freevars);
     Py_XDECREF(cellvars);
     Py_XDECREF(bytecode);
+    Py_XDECREF(lnotab);
     return co;
 }
 
@@ -5298,11 +5307,6 @@ assemble(struct compiler *c, int addNone)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
     }
-
-    if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0)
-        goto error;
-    if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0)
-        goto error;
 
     co = makecode(c, &a);
  error:
