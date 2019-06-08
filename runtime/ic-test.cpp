@@ -48,6 +48,61 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadAttrOperations) {
   EXPECT_EQ(icOriginalArg(*function, 2), 77);
 }
 
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesZeroArgMethodCalls) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  byte bytecode[] = {
+      NOP,          99,        EXTENDED_ARG,  0xca, LOAD_ATTR,     0xfe,
+      NOP,          LOAD_ATTR, EXTENDED_ARG,  1,    EXTENDED_ARG,  2,
+      EXTENDED_ARG, 3,         LOAD_ATTR,     4,    CALL_FUNCTION, 1,
+      LOAD_ATTR,    4,         CALL_FUNCTION, 0};
+  code.setCode(runtime.newBytesWithAll(bytecode));
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals));
+
+  byte expected[] = {NOP,
+                     99,
+                     EXTENDED_ARG,
+                     0,
+                     LOAD_ATTR_CACHED,
+                     0,
+                     NOP,
+                     LOAD_ATTR,
+                     EXTENDED_ARG,
+                     0,
+                     EXTENDED_ARG,
+                     0,
+                     EXTENDED_ARG,
+                     0,
+                     LOAD_ATTR_CACHED,
+                     1,
+                     CALL_FUNCTION,
+                     1,
+                     LOAD_METHOD_CACHED,
+                     2,
+                     CALL_METHOD,
+                     0};
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+
+  ASSERT_TRUE(function.caches().isTuple());
+  Tuple caches(&scope, function.caches());
+  EXPECT_EQ(caches.length(), 3 * kIcPointersPerCache);
+  for (word i = 0, length = caches.length(); i < length; i++) {
+    EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
+  }
+
+  EXPECT_EQ(icOriginalArg(*function, 0), 0xcafe);
+  EXPECT_EQ(icOriginalArg(*function, 1), 0x01020304);
+  EXPECT_EQ(icOriginalArg(*function, 2), 4);
+}
+
 TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadMethodOperations) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();

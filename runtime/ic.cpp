@@ -13,6 +13,21 @@ struct RewrittenOp {
   bool needs_inline_cache;
 };
 
+static void rewriteZeroArgMethodCallsUsingLoadMethodCached(
+    const MutableBytes& bytecode) {
+  word bytecode_length = bytecode.length();
+  Bytecode prev = LOAD_METHOD;
+  for (word i = 0; i < bytecode_length; i += Frame::kCodeUnitSize) {
+    Bytecode curr = static_cast<Bytecode>(bytecode.byteAt(i));
+    int32_t arg = bytecode.byteAt(i + 1);
+    if (prev == LOAD_ATTR_CACHED && curr == CALL_FUNCTION && arg == 0) {
+      bytecode.byteAtPut(i - 2, LOAD_METHOD_CACHED);
+      bytecode.byteAtPut(i, CALL_METHOD);
+    }
+    prev = curr;
+  }
+}
+
 static RewrittenOp rewriteOperation(const Code& code, Bytecode bc, word arg) {
   auto cached_binop = [](Interpreter::BinaryOp op) {
     return RewrittenOp{BINARY_OP_CACHED, static_cast<word>(op), true};
@@ -180,23 +195,24 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
       // Remember original arg.
       original_arguments.atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
+    } else if (rewritten.arg != arg || rewritten.bc != bc) {
+      CHECK(rewritten.arg < 256,
+            "more than 256 entries may require bytecode resizing");
+      for (word j = begin; j < i - 2; j += 2) {
+        result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
+        result.byteAtPut(j + 1, 0);
+      }
+      result.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
+      result.byteAtPut(i - 1, static_cast<byte>(rewritten.arg));
     } else {
-      if (rewritten.arg != arg || rewritten.bc != bc) {
-        CHECK(rewritten.arg < 256,
-              "more than 256 entries may require bytecode resizing");
-        for (word j = begin; j < i - 2; j += 2) {
-          result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
-          result.byteAtPut(j + 1, 0);
-        }
-        result.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
-        result.byteAtPut(i - 1, static_cast<byte>(rewritten.arg));
-      } else {
-        for (word j = begin; j < i; j++) {
-          result.byteAtPut(j, bytecode.byteAt(j));
-        }
+      for (word j = begin; j < i; j++) {
+        result.byteAtPut(j, bytecode.byteAt(j));
       }
     }
   }
+
+  // TODO(T45428069): Remove this once the compiler starts emitting the opcodes.
+  rewriteZeroArgMethodCallsUsingLoadMethodCached(result);
 
   function.setCaches(runtime->newTuple(num_caches * kIcPointersPerCache));
   function.setRewrittenBytecode(*result);
