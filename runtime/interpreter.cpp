@@ -826,12 +826,12 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
   return sequenceIterSearch(thread, caller, value, container);
 }
 
-RawObject Interpreter::isTrue(Thread* thread, RawObject value_raw) {
-  if (value_raw.isBool()) return value_raw;
-  if (value_raw.isNoneType()) return Bool::falseObj();
+RawObject Interpreter::isTrue(Thread* thread, RawObject value_obj) {
+  if (value_obj.isBool()) return value_obj;
+  if (value_obj.isNoneType()) return Bool::falseObj();
 
   HandleScope scope(thread);
-  Object value(&scope, value_raw);
+  Object value(&scope, value_obj);
   Object result(&scope, thread->invokeMethod1(value, SymbolId::kDunderBool));
   if (!result.isError()) {
     if (result.isBool()) return *result;
@@ -945,13 +945,13 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   return *function;
 }
 
-HANDLER_INLINE void Interpreter::raise(Context* ctx, RawObject raw_exc,
-                                       RawObject raw_cause) {
+HANDLER_INLINE void Interpreter::raise(Context* ctx, RawObject exc_obj,
+                                       RawObject cause_obj) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   HandleScope scope(ctx->thread);
-  Object exc(&scope, raw_exc);
-  Object cause(&scope, raw_cause);
+  Object exc(&scope, exc_obj);
+  Object cause(&scope, cause_obj);
   Object type(&scope, NoneType::object());
   Object value(&scope, NoneType::object());
 
@@ -2356,7 +2356,7 @@ HANDLER_INLINE bool Interpreter::doLoadAttr(Context* ctx, word arg) {
 
 RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
                                            const Object& name_str,
-                                           Object* to_cache_out) {
+                                           Object* location_out) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*object));
@@ -2365,7 +2365,7 @@ RawObject Interpreter::loadAttrSetLocation(Thread* thread, const Object& object,
       typeLookupSymbolInMro(thread, type, SymbolId::kDunderGetattribute));
   if (dunder_getattribute == runtime->objectDunderGetattribute()) {
     Object result(&scope, objectGetAttributeSetLocation(
-                              thread, object, name_str, to_cache_out));
+                              thread, object, name_str, location_out));
     if (result.isErrorNotFound()) {
       result =
           thread->invokeMethod2(object, SymbolId::kDunderGetattr, name_str);
@@ -2848,9 +2848,8 @@ HANDLER_INLINE bool Interpreter::handleCall(
   return false;
 }
 
-HANDLER_INLINE bool Interpreter::doCallFunction(Context* ctx, word argc) {
-  return handleCall(ctx, argc, argc, 0, preparePositionalCall,
-                    &Function::entry);
+HANDLER_INLINE bool Interpreter::doCallFunction(Context* ctx, word arg) {
+  return handleCall(ctx, arg, arg, 0, preparePositionalCall, &Function::entry);
 }
 
 HANDLER_INLINE void Interpreter::doMakeFunction(Context* ctx, word arg) {
@@ -2933,8 +2932,8 @@ HANDLER_INLINE void Interpreter::doDeleteDeref(Context* ctx, word arg) {
       .setValue(Unbound::object());
 }
 
-HANDLER_INLINE bool Interpreter::doCallFunctionKw(Context* ctx, word argc) {
-  return handleCall(ctx, argc, argc + 1, 0, prepareKeywordCall,
+HANDLER_INLINE bool Interpreter::doCallFunctionKw(Context* ctx, word arg) {
+  return handleCall(ctx, arg, arg + 1, 0, prepareKeywordCall,
                     &Function::entryKw);
 }
 
@@ -3166,11 +3165,11 @@ HANDLER_INLINE void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
   frame->pushValue(*result);
 }
 
-HANDLER_INLINE bool Interpreter::doFormatValue(Context* ctx, word flags) {
+HANDLER_INLINE bool Interpreter::doFormatValue(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
-  int conv = (flags & FVC_MASK_FLAG);
-  int have_fmt_spec = (flags & FVS_MASK_FLAG) == FVS_HAVE_SPEC_FLAG;
+  int conv = (arg & FVC_MASK_FLAG);
+  int have_fmt_spec = (arg & FVS_MASK_FLAG) == FVS_HAVE_SPEC_FLAG;
   Runtime* runtime = thread->runtime();
   Object fmt_spec(&scope, Str::empty());
   if (have_fmt_spec) {

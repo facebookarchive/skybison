@@ -89,7 +89,7 @@ class Interpreter {
     return ctx->caches.length() > 0;
   }
 
-  static RawObject isTrue(Thread* thread, RawObject value);
+  static RawObject isTrue(Thread* thread, RawObject value_obj);
 
   static RawObject callDescriptorGet(Thread* thread, Frame* caller,
                                      const Object& descriptor,
@@ -160,7 +160,7 @@ class Interpreter {
   static RawObject prepareCallableCall(Thread* thread, Frame* frame,
                                        word callable_idx, word* nargs);
 
-  static RawObject unaryOperation(Thread* thread, const Object& receiver,
+  static RawObject unaryOperation(Thread* thread, const Object& self,
                                   SymbolId selector);
 
   static RawObject binaryOperation(Thread* thread, Frame* caller, BinaryOp op,
@@ -242,7 +242,7 @@ class Interpreter {
 
   // Process the operands to the RAISE_VARARGS bytecode into a pending exception
   // on ctx->thread.
-  static void raise(Context* ctx, RawObject exc, RawObject cause);
+  static void raise(Context* ctx, RawObject exc_obj, RawObject cause_obj);
 
   static RawObject storeAttrSetLocation(Thread* thread, const Object& object,
                                         const Object& name_str,
@@ -418,12 +418,12 @@ class Interpreter {
   static bool doPopJumpIfFalse(Context* ctx, word arg);
   static bool doPopJumpIfTrue(Context* ctx, word arg);
   static void doPopTop(Context* ctx, word arg);
-  static void doPrintExpr(Context* ctx, word);
+  static void doPrintExpr(Context* ctx, word arg);
   static void doRotThree(Context* ctx, word arg);
   static void doRotTwo(Context* ctx, word arg);
   static void doSetAdd(Context* ctx, word arg);
   static void doSetupAnnotations(Context* ctx, word arg);
-  static void doSetupAsyncWith(Context* ctx, word flags);
+  static void doSetupAsyncWith(Context* ctx, word arg);
   static void doSetupExcept(Context* ctx, word arg);
   static void doSetupFinally(Context* ctx, word arg);
   static void doSetupLoop(Context* ctx, word arg);

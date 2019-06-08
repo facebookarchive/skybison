@@ -580,7 +580,7 @@ class RawHeader : public RawObject {
 
   bool hasOverflow() const;
 
-  static RawHeader from(word count, word hash, LayoutId layout_id,
+  static RawHeader from(word count, word hash, LayoutId id,
                         ObjectFormat format);
 
   // Layout.
@@ -1788,7 +1788,7 @@ class RawFunction : public RawHeapObject {
 class RawInstance : public RawHeapObject {
  public:
   // Sizing.
-  static word allocationSize(word num_attributes);
+  static word allocationSize(word num_attr);
 
   RAW_OBJECT_COMMON(Instance);
 };
