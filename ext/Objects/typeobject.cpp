@@ -1577,7 +1577,8 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   setExtensionSlot(type, ExtensionSlot::kItemSize, *item_size);
 
   // Set the class flags
-  Object flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY));
+  Object flags(&scope, runtime->newInt(spec->flags | Py_TPFLAGS_READY |
+                                       Py_TPFLAGS_HEAPTYPE));
   setExtensionSlot(type, ExtensionSlot::kFlags, *flags);
 
   if (addOperators(thread, type).isError()) return nullptr;
@@ -1608,7 +1609,9 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
                                         Py_ssize_t nitems) {
   DCHECK(ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj)),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
-  HandleScope scope;
+
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
   Type type(&scope,
             ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type_obj))
                 ->asObject());
@@ -1616,19 +1619,25 @@ PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
          "Type is unmanaged. Please initialize using PyType_FromSpec");
   DCHECK(!type.extensionSlots().isNoneType(),
          "GenericAlloc from types initialized through Python code");
+
+  // Allocate a new instance
   Int basic_size(&scope, extensionSlot(type, ExtensionSlot::kBasicSize));
   Int item_size(&scope, extensionSlot(type, ExtensionSlot::kItemSize));
   Py_ssize_t size = Utils::roundUp(
       nitems * item_size.asWord() + basic_size.asWord(), kWordSize);
-
-  PyObject* pyobj = static_cast<PyObject*>(PyObject_Calloc(1, size));
-  if (pyobj == nullptr) return nullptr;
-  pyobj->ob_refcnt = 1;
-  pyobj->ob_type = type_obj;
-  if (item_size.asWord() != 0) {
-    reinterpret_cast<PyVarObject*>(pyobj)->ob_size = nitems;
+  PyObject* result = static_cast<PyObject*>(PyObject_Calloc(1, size));
+  if (result == nullptr) {
+    thread->raiseMemoryError();
+    return nullptr;
   }
-  return pyobj;
+
+  // Initialize the newly-allocated instance
+  if (item_size.asWord() == 0) {
+    PyObject_Init(result, type_obj);
+  } else {
+    PyObject_InitVar(reinterpret_cast<PyVarObject*>(result), type_obj, nitems);
+  }
+  return result;
 }
 
 PY_EXPORT Py_ssize_t _PyObject_SIZE_Func(PyObject* obj) {

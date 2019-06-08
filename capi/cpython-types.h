@@ -32,10 +32,6 @@ typedef Py_ssize_t Py_hash_t;
 #define PyWeakref_GET_OBJECT(ref) PyWeakref_GetObject(ref)
 /* clang-format on */
 
-#define Py_TPFLAGS_READY (1UL << 12)
-#define Py_TPFLAGS_READYING (1UL << 13)
-#define Py_TPFLAGS_HAVE_GC (1UL << 14)
-
 typedef struct _longobject PyLongObject;
 typedef struct _typeobject PyTypeObject;
 typedef struct _PyWeakReference PyWeakReference;

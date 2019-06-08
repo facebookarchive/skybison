@@ -768,11 +768,13 @@ TEST_F(ObjectExtensionApiTest, NewReturnsAllocatedObject) {
       "foo.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
   };
   PyObjectPtr type(PyType_FromSpec(&spec));
+  Py_ssize_t refcnt = Py_REFCNT(type.get());
   BarObject* instance =
       PyObject_New(BarObject, reinterpret_cast<PyTypeObject*>(type.get()));
   ASSERT_NE(instance, nullptr);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(Py_REFCNT(instance), 1);
+  EXPECT_EQ(Py_REFCNT(type), refcnt + 1);
   PyObject_Free(instance);
 }
 

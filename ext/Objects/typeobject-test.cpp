@@ -59,6 +59,8 @@ TEST_F(TypeExtensionApiTest, GetFlagsFromExtensionTypeReturnsSetFlags) {
               Py_TPFLAGS_DEFAULT);
   EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(type.get())) &
               Py_TPFLAGS_READY);
+  EXPECT_TRUE(PyType_GetFlags(reinterpret_cast<PyTypeObject*>(type.get())) &
+              Py_TPFLAGS_HEAPTYPE);
 }
 
 TEST_F(TypeExtensionApiTest, FromSpecCreatesRuntimeType) {
