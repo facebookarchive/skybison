@@ -406,6 +406,12 @@ TEST_F(UnicodeExtensionApiTest, FindCharWithUnicodeCharFindsChar) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(UnicodeExtensionApiTest, FromStringAndSizeCreatesEmptyString) {
+  PyObjectPtr pyuni(PyUnicode_FromStringAndSize(nullptr, 0));
+  EXPECT_TRUE(isUnicodeEqualsCStr(pyuni, ""));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(UnicodeExtensionApiTest, FromStringAndSizeCreatesSizedString) {
   const char* str = "Some string";
   PyObjectPtr pyuni(PyUnicode_FromStringAndSize(str, 11));

@@ -609,7 +609,7 @@ PY_EXPORT PyObject* PyUnicode_FromStringAndSize(const char* u,
                          "Negative size passed to PyUnicode_FromStringAndSize");
     return nullptr;
   }
-  if (u == nullptr) {
+  if (u == nullptr && size != 0) {
     // TODO(T36562134): Implement _PyUnicode_New
     UNIMPLEMENTED("_PyUnicode_New");
   }
