@@ -1,5 +1,8 @@
 #pragma once
 
+#include "handles.h"
+#include "objects.h"
+
 namespace python {
 
 // Define the set of bytecodes.
@@ -315,5 +318,12 @@ enum CallFunctionExFlag {
 extern const char* const kBytecodeNames[];
 
 extern const CompareOp kSwappedCompareOp[];
+
+struct BytecodeOp {
+  Bytecode bc;
+  int32_t arg;
+};
+
+BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index);
 
 }  // namespace python

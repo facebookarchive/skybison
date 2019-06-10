@@ -9,7 +9,7 @@ namespace python {
 
 struct RewrittenOp {
   Bytecode bc;
-  word arg;
+  int32_t arg;
   bool needs_inline_cache;
 };
 
@@ -17,25 +17,26 @@ static void rewriteZeroArgMethodCallsUsingLoadMethodCached(
     const MutableBytes& bytecode) {
   word bytecode_length = bytecode.length();
   Bytecode prev = LOAD_METHOD;
-  for (word i = 0; i < bytecode_length; i += Frame::kCodeUnitSize) {
-    Bytecode curr = static_cast<Bytecode>(bytecode.byteAt(i));
-    int32_t arg = bytecode.byteAt(i + 1);
-    if (prev == LOAD_ATTR_CACHED && curr == CALL_FUNCTION && arg == 0) {
-      bytecode.byteAtPut(i - 2, LOAD_METHOD_CACHED);
-      bytecode.byteAtPut(i, CALL_METHOD);
+  word prev_index = 0;
+  for (word i = 0; i < bytecode_length;) {
+    BytecodeOp op = nextBytecodeOp(bytecode, &i);
+    if (prev == LOAD_ATTR_CACHED && op.bc == CALL_FUNCTION && op.arg == 0) {
+      bytecode.byteAtPut(prev_index, LOAD_METHOD_CACHED);
+      bytecode.byteAtPut(i - 2, CALL_METHOD);
     }
-    prev = curr;
+    prev = op.bc;
+    prev_index = i - 2;
   }
 }
 
-static RewrittenOp rewriteOperation(const Code& code, Bytecode bc, word arg) {
-  auto cached_binop = [](Interpreter::BinaryOp op) {
-    return RewrittenOp{BINARY_OP_CACHED, static_cast<word>(op), true};
+static RewrittenOp rewriteOperation(const Code& code, BytecodeOp op) {
+  auto cached_binop = [](Interpreter::BinaryOp bin_op) {
+    return RewrittenOp{BINARY_OP_CACHED, static_cast<int32_t>(bin_op), true};
   };
-  auto cached_inplace = [](Interpreter::BinaryOp op) {
-    return RewrittenOp{INPLACE_OP_CACHED, static_cast<word>(op), true};
+  auto cached_inplace = [](Interpreter::BinaryOp bin_op) {
+    return RewrittenOp{INPLACE_OP_CACHED, static_cast<int32_t>(bin_op), true};
   };
-  switch (bc) {
+  switch (op.bc) {
     case BINARY_ADD:
       return cached_binop(Interpreter::BinaryOp::ADD);
     case BINARY_AND:
@@ -57,7 +58,7 @@ static RewrittenOp rewriteOperation(const Code& code, Bytecode bc, word arg) {
     case BINARY_RSHIFT:
       return cached_binop(Interpreter::BinaryOp::RSHIFT);
     case BINARY_SUBSCR:
-      return RewrittenOp{BINARY_SUBSCR_CACHED, arg, true};
+      return RewrittenOp{BINARY_SUBSCR_CACHED, op.arg, true};
     case BINARY_SUBTRACT:
       return cached_binop(Interpreter::BinaryOp::SUB);
     case BINARY_TRUE_DIVIDE:
@@ -65,18 +66,18 @@ static RewrittenOp rewriteOperation(const Code& code, Bytecode bc, word arg) {
     case BINARY_XOR:
       return cached_binop(Interpreter::BinaryOp::XOR);
     case COMPARE_OP:
-      switch (arg) {
+      switch (op.arg) {
         case CompareOp::LT:
         case CompareOp::LE:
         case CompareOp::EQ:
         case CompareOp::NE:
         case CompareOp::GT:
         case CompareOp::GE:
-          return RewrittenOp{COMPARE_OP_CACHED, arg, true};
+          return RewrittenOp{COMPARE_OP_CACHED, op.arg, true};
       }
       break;
     case FOR_ITER:
-      return RewrittenOp{FOR_ITER_CACHED, arg, true};
+      return RewrittenOp{FOR_ITER_CACHED, op.arg, true};
     case INPLACE_ADD:
       return cached_inplace(Interpreter::BinaryOp::ADD);
     case INPLACE_AND:
@@ -104,19 +105,19 @@ static RewrittenOp rewriteOperation(const Code& code, Bytecode bc, word arg) {
     case INPLACE_XOR:
       return cached_inplace(Interpreter::BinaryOp::XOR);
     case LOAD_ATTR:
-      return RewrittenOp{LOAD_ATTR_CACHED, arg, true};
+      return RewrittenOp{LOAD_ATTR_CACHED, op.arg, true};
     case LOAD_FAST: {
-      CHECK(arg < code.nlocals(), "unexpected local number");
-      word reverse_arg = code.nlocals() - arg - 1;
+      CHECK(op.arg < code.nlocals(), "unexpected local number");
+      int32_t reverse_arg = code.nlocals() - op.arg - 1;
       return RewrittenOp{LOAD_FAST_REVERSE, reverse_arg, false};
     }
     case LOAD_METHOD:
-      return RewrittenOp{LOAD_METHOD_CACHED, arg, true};
+      return RewrittenOp{LOAD_METHOD_CACHED, op.arg, true};
     case STORE_ATTR:
-      return RewrittenOp{STORE_ATTR_CACHED, arg, true};
+      return RewrittenOp{STORE_ATTR_CACHED, op.arg, true};
     case STORE_FAST: {
-      CHECK(arg < code.nlocals(), "unexpected local number");
-      word reverse_arg = code.nlocals() - arg - 1;
+      CHECK(op.arg < code.nlocals(), "unexpected local number");
+      int32_t reverse_arg = code.nlocals() - op.arg - 1;
       return RewrittenOp{STORE_FAST_REVERSE, reverse_arg, false};
     }
 
@@ -133,7 +134,7 @@ static RewrittenOp rewriteOperation(const Code& code, Bytecode bc, word arg) {
     default:
       break;
   }
-  return RewrittenOp{bc, arg, false};
+  return RewrittenOp{op.bc, op.arg, false};
 }
 
 void icRewriteBytecode(Thread* thread, const Function& function) {
@@ -142,17 +143,11 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
 
   // Scan bytecode to figure out how many caches we need.
   Code code(&scope, function.code());
-  Bytes bytecode(&scope, code.code());
+  MutableBytes bytecode(&scope, function.rewrittenBytecode());
   word bytecode_length = bytecode.length();
   for (word i = 0; i < bytecode_length;) {
-    Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-    int32_t arg = bytecode.byteAt(i++);
-    while (bc == Bytecode::EXTENDED_ARG) {
-      bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-      arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
-    }
-
-    RewrittenOp rewritten = rewriteOperation(code, bc, arg);
+    BytecodeOp op = nextBytecodeOp(bytecode, &i);
+    RewrittenOp rewritten = rewriteOperation(code, op);
     if (rewritten.needs_inline_cache) {
       num_caches++;
     }
@@ -168,54 +163,38 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
 
   Runtime* runtime = thread->runtime();
   Tuple original_arguments(&scope, runtime->newTuple(num_caches));
-
-  // Rewrite bytecode.
-  MutableBytes result(&scope,
-                      runtime->newMutableBytesUninitialized(bytecode_length));
   for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
     word begin = i;
-    Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-    int32_t arg = bytecode.byteAt(i++);
-    while (bc == Bytecode::EXTENDED_ARG) {
-      bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-      arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
-    }
-
-    RewrittenOp rewritten = rewriteOperation(code, bc, arg);
+    BytecodeOp op = nextBytecodeOp(bytecode, &i);
+    RewrittenOp rewritten = rewriteOperation(code, op);
     if (rewritten.needs_inline_cache) {
       // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
       CHECK(cache < 256, "more than 256 entries may require bytecode resizing");
       for (word j = begin; j < i - 2; j += 2) {
-        result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
-        result.byteAtPut(j + 1, 0);
+        bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
+        bytecode.byteAtPut(j + 1, 0);
       }
-      result.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
-      result.byteAtPut(i - 1, static_cast<byte>(cache));
+      bytecode.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
+      bytecode.byteAtPut(i - 1, static_cast<byte>(cache));
 
       // Remember original arg.
       original_arguments.atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
-    } else if (rewritten.arg != arg || rewritten.bc != bc) {
+    } else if (rewritten.arg != op.arg || rewritten.bc != op.bc) {
       CHECK(rewritten.arg < 256,
             "more than 256 entries may require bytecode resizing");
       for (word j = begin; j < i - 2; j += 2) {
-        result.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
-        result.byteAtPut(j + 1, 0);
+        bytecode.byteAtPut(j, static_cast<byte>(Bytecode::EXTENDED_ARG));
+        bytecode.byteAtPut(j + 1, 0);
       }
-      result.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
-      result.byteAtPut(i - 1, static_cast<byte>(rewritten.arg));
-    } else {
-      for (word j = begin; j < i; j++) {
-        result.byteAtPut(j, bytecode.byteAt(j));
-      }
+      bytecode.byteAtPut(i - 2, static_cast<byte>(rewritten.bc));
+      bytecode.byteAtPut(i - 1, static_cast<byte>(rewritten.arg));
     }
   }
 
   // TODO(T45428069): Remove this once the compiler starts emitting the opcodes.
-  rewriteZeroArgMethodCallsUsingLoadMethodCached(result);
-
+  rewriteZeroArgMethodCallsUsingLoadMethodCached(bytecode);
   function.setCaches(runtime->newTuple(num_caches * kIcPointersPerCache));
-  function.setRewrittenBytecode(*result);
   function.setOriginalArguments(*original_arguments);
 }
 
@@ -283,18 +262,13 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
   word bytecode_length = bytecode.length();
   byte target_arg = static_cast<byte>(index);
   for (word i = 0; i < bytecode_length;) {
-    Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-    int32_t arg = bytecode.byteAt(i++);
-    while (bc == Bytecode::EXTENDED_ARG) {
-      bc = static_cast<Bytecode>(bytecode.byteAt(i++));
-      arg = (arg << kBitsPerByte) | bytecode.byteAt(i++);
-    }
-    if (arg != target_arg) {
+    BytecodeOp op = nextBytecodeOp(bytecode, &i);
+    if (op.arg != target_arg) {
       continue;
     }
-    if (bc == LOAD_GLOBAL) {
+    if (op.bc == LOAD_GLOBAL) {
       bytecode.byteAtPut(i - 2, LOAD_GLOBAL_CACHED);
-    } else if (bc == STORE_GLOBAL) {
+    } else if (op.bc == STORE_GLOBAL) {
       bytecode.byteAtPut(i - 2, STORE_GLOBAL_CACHED);
     }
   }
@@ -341,10 +315,9 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
     bytecode = Function::cast(*function).rewrittenBytecode();
     word bytecode_length = bytecode.length();
     for (word i = 0; i < bytecode_length; i += 2) {
-      Bytecode bc = static_cast<Bytecode>(bytecode.byteAt(i));
-      byte arg = bytecode.byteAt(i + 1);
-      Bytecode original_bc = bc;
-      switch (bc) {
+      BytecodeOp op = nextBytecodeOp(bytecode, &i);
+      Bytecode original_bc = op.bc;
+      switch (op.bc) {
         case LOAD_GLOBAL_CACHED:
           original_bc = LOAD_GLOBAL;
           break;
@@ -354,8 +327,8 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
         default:
           break;
       }
-      if (bc != original_bc && arg == name_index_found) {
-        bytecode.byteAtPut(i, original_bc);
+      if (op.bc != original_bc && op.arg == name_index_found) {
+        bytecode.byteAtPut(i - 2, original_bc);
       }
     }
     link = WeakLink::cast(*link).next();

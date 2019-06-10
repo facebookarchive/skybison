@@ -932,16 +932,15 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
       function.setDoc(consts.at(0));
     }
   }
+  Bytes bytecode(&scope, code.code());
+  function.setRewrittenBytecode(
+      runtime->mutableBytesFromBytes(thread, bytecode));
+  function.setCaches(runtime->emptyTuple());
+  function.setOriginalArguments(runtime->emptyTuple());
   if (runtime->isCacheEnabled()) {
     // TODO(T45382423): Move this into a separate function to be called by a
     // relevant opcode during opcode execution.
     icRewriteBytecode(thread, function);
-  } else {
-    Bytes bytecode(&scope, code.code());
-    function.setRewrittenBytecode(
-        runtime->mutableBytesFromBytes(thread, bytecode));
-    function.setCaches(runtime->newTuple(0));
-    function.setOriginalArguments(runtime->newTuple(0));
   }
   return *function;
 }

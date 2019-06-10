@@ -400,6 +400,7 @@ add_library(
   STATIC
   runtime/builtins-module-test.cpp
   runtime/bytearray-builtins-test.cpp
+  runtime/bytecode-test.cpp
   runtime/bytes-builtins-test.cpp
   runtime/capi-handles-test.cpp
   runtime/code-builtins-test.cpp
