@@ -530,10 +530,6 @@ class Runtime {
   // Save the current Frame to the given generator.
   void genSave(Thread* thread, const GeneratorBase& gen);
 
-  // Get the RawGeneratorBase corresponding to the given Frame, assuming it is
-  // executing in a resumed GeneratorBase.
-  RawGeneratorBase genFromStackFrame(Frame* frame);
-
   NewValueCellCallback* newValueCellCallback() {
     return &new_value_cell_callback_;
   }

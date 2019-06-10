@@ -275,18 +275,17 @@ class Interpreter {
   // return to the dispatch loop (the "handler" is either a loop for
   // break/continue, or a finally block for break/continue/return). Returns
   // false if the popped block was not relevant to the given Why.
-  static bool popBlock(Context* ctx, TryBlock::Why why, const Object& value);
+  static bool popBlock(Context* ctx, TryBlock::Why why, RawObject value);
 
   // Pop from the block stack until a handler that cares about 'return' is
   // found, or the stack is emptied. The return value is meant to be used
   // directly as the return value of an opcode handler (see "Opcode handlers"
   // below for an explanation).
-  static bool handleReturn(Context* ctx, const Object& retval);
+  static bool handleReturn(Context* ctx, RawObject retval);
 
   // Pop from the block stack until a handler that cares about 'break' or
   // 'continue' is found.
-  static void handleLoopExit(Context* ctx, TryBlock::Why why,
-                             const Object& retval);
+  static void handleLoopExit(Context* ctx, TryBlock::Why why, RawObject retval);
 
   // Pseudo-opcodes
   static void doInvalidBytecode(Context* ctx, word arg);

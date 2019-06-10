@@ -7,6 +7,12 @@
 
 namespace python {
 
+RawGeneratorBase generatorFromStackFrame(Frame* frame) {
+  // For now, we have the invariant that GeneratorBase bodies are only invoked
+  // by __next__() or send(), which have the GeneratorBase as their first local.
+  return GeneratorBase::cast(frame->previousFrame()->local(0));
+}
+
 // Check that the generator is in an OK state to resume, run it, then check if
 // it's newly-finished.
 static RawObject sendImpl(Thread* thread, const GeneratorBase& gen,

@@ -7,6 +7,7 @@
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "frame.h"
+#include "generator-builtins.h"
 #include "ic.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
@@ -1021,8 +1022,7 @@ HANDLER_INLINE void Interpreter::unwindExceptHandler(Thread* thread,
   thread->setCaughtExceptionTraceback(frame->popValue());
 }
 
-bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
-                           const Object& value) {
+bool Interpreter::popBlock(Context* ctx, TryBlock::Why why, RawObject value) {
   Frame* frame = ctx->frame;
   DCHECK(frame->blockStack()->depth() > 0,
          "Tried to pop from empty blockstack");
@@ -1030,7 +1030,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
 
   TryBlock block = frame->blockStack()->peek();
   if (block.kind() == TryBlock::kLoop && why == TryBlock::Why::kContinue) {
-    ctx->pc = SmallInt::cast(*value).value();
+    ctx->pc = SmallInt::cast(value).value();
     return true;
   }
 
@@ -1057,7 +1057,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
 
   DCHECK(block.kind() == TryBlock::kFinally, "Unexpected TryBlock kind");
   if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
-    frame->pushValue(*value);
+    frame->pushValue(value);
   }
   frame->pushValue(SmallInt::fromWord(static_cast<word>(why)));
   ctx->pc = block.handler();
@@ -1066,37 +1066,37 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why,
 
 // If the current frame is executing a Generator, mark it as finished.
 static void finishCurrentGenerator(Interpreter::Context* ctx) {
-  if (!ctx->frame->function().hasGenerator()) return;
+  Frame* frame = ctx->frame;
+  if (!frame->function().hasGenerator()) return;
 
   // Write to the Generator's HeapFrame directly so we don't have to save the
   // live frame to it one last time.
-  HandleScope scope(ctx->thread);
-  GeneratorBase gen(&scope,
-                    ctx->thread->runtime()->genFromStackFrame(ctx->frame));
-  HeapFrame heap_frame(&scope, gen.heapFrame());
+  RawGeneratorBase gen = generatorFromStackFrame(frame);
+  RawHeapFrame heap_frame = HeapFrame::cast(gen.heapFrame());
   heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
 }
 
-bool Interpreter::handleReturn(Context* ctx, const Object& retval) {
+bool Interpreter::handleReturn(Context* ctx, RawObject retval) {
   Frame* frame = ctx->frame;
-  for (;;) {
-    if (frame->blockStack()->depth() == 0) {
-      if (frame == ctx->entry_frame) {
-        finishCurrentGenerator(ctx);
-        frame->pushValue(*retval);
-        return true;
-      }
-
-      popFrame(ctx);
-      ctx->frame->pushValue(*retval);
+  BlockStack* block_stack = frame->blockStack();
+  while (block_stack->depth() > 0) {
+    if (popBlock(ctx, TryBlock::Why::kReturn, retval)) {
       return false;
     }
-    if (popBlock(ctx, TryBlock::Why::kReturn, retval)) return false;
   }
+  if (frame == ctx->entry_frame) {
+    finishCurrentGenerator(ctx);
+    frame->pushValue(retval);
+    return true;
+  }
+
+  popFrame(ctx);
+  ctx->frame->pushValue(retval);
+  return false;
 }
 
 HANDLER_INLINE void Interpreter::handleLoopExit(Context* ctx, TryBlock::Why why,
-                                                const Object& retval) {
+                                                RawObject retval) {
   for (;;) {
     if (popBlock(ctx, why, retval)) return;
   }
@@ -1171,16 +1171,9 @@ HANDLER_INLINE void Interpreter::popFrame(Context* ctx) {
   ctx->frame = caller_frame;
   ctx->thread->popFrame();
 
-  // Using Frame::function() in a critical path is a little sketchy, since
-  // it depends on a not-quite-invariant property of our system that the stack
-  // slot right above the current Frame contains the Function that was called to
-  // execute it. We can clean this up once we merge Code and Function
-  // and store a Function directly in the Frame.
-  HandleScope scope(ctx->thread);
-
   // Reset context for previous frame except when returning to initial frame).
   if (caller_frame->previousFrame() != nullptr) {
-    Function caller_func(&scope, caller_frame->function());
+    RawFunction caller_func = caller_frame->function();
     ctx->bytecode = caller_func.rewrittenBytecode();
     ctx->caches = caller_func.caches();
   }
@@ -1593,7 +1586,7 @@ HANDLER_INLINE bool Interpreter::doYieldFrom(Context* ctx, word) {
 
   // Unlike YIELD_VALUE, don't update PC in the frame: we want this
   // instruction to re-execute until the subiterator is exhausted.
-  GeneratorBase gen(&scope, thread->runtime()->genFromStackFrame(frame));
+  GeneratorBase gen(&scope, generatorFromStackFrame(frame));
   thread->runtime()->genSave(thread, gen);
   frame->pushValue(*result);
   return true;
@@ -1641,9 +1634,7 @@ HANDLER_INLINE bool Interpreter::doInplaceOr(Context* ctx, word) {
 }
 
 HANDLER_INLINE void Interpreter::doBreakLoop(Context* ctx, word) {
-  HandleScope scope(ctx->thread);
-  Object none(&scope, NoneType::object());
-  handleLoopExit(ctx, TryBlock::Why::kBreak, none);
+  handleLoopExit(ctx, TryBlock::Why::kBreak, NoneType::object());
 }
 
 HANDLER_INLINE bool Interpreter::doWithCleanupStart(Context* ctx, word) {
@@ -1723,8 +1714,7 @@ HANDLER_INLINE bool Interpreter::doWithCleanupFinish(Context* ctx, word) {
 }
 
 HANDLER_INLINE bool Interpreter::doReturnValue(Context* ctx, word) {
-  HandleScope scope(ctx->thread);
-  Object result(&scope, ctx->frame->popValue());
+  RawObject result = ctx->frame->popValue();
   return handleReturn(ctx, result);
 }
 
@@ -1751,7 +1741,7 @@ HANDLER_INLINE bool Interpreter::doYieldValue(Context* ctx, word) {
 
   Object result(&scope, frame->popValue());
   frame->setVirtualPC(ctx->pc);
-  GeneratorBase gen(&scope, thread->runtime()->genFromStackFrame(frame));
+  GeneratorBase gen(&scope, generatorFromStackFrame(frame));
   thread->runtime()->genSave(thread, gen);
   frame->pushValue(*result);
   return true;
@@ -1787,19 +1777,22 @@ HANDLER_INLINE bool Interpreter::doEndFinally(Context* ctx, word) {
   Object status(&scope, frame->popValue());
   if (status.isSmallInt()) {
     auto why = static_cast<TryBlock::Why>(SmallInt::cast(*status).value());
-    if (why == TryBlock::Why::kSilenced) {
-      unwindExceptHandler(thread, frame, frame->blockStack()->pop());
-      return false;
+    switch (why) {
+      case TryBlock::Why::kReturn:
+        return handleReturn(ctx, frame->popValue());
+      case TryBlock::Why::kContinue:
+        handleLoopExit(ctx, why, frame->popValue());
+        return false;
+      case TryBlock::Why::kBreak:
+      case TryBlock::Why::kYield:
+      case TryBlock::Why::kException:
+        handleLoopExit(ctx, why, NoneType::object());
+        return false;
+      case TryBlock::Why::kSilenced:
+        unwindExceptHandler(thread, frame, frame->blockStack()->pop());
+        return false;
     }
-
-    Object retval(&scope, NoneType::object());
-    if (why == TryBlock::Why::kReturn || why == TryBlock::Why::kContinue) {
-      retval = frame->popValue();
-    }
-
-    if (why == TryBlock::Why::kReturn) return handleReturn(ctx, retval);
-    handleLoopExit(ctx, why, retval);
-    return false;
+    UNIMPLEMENTED("unexpected why value");
   }
   if (thread->runtime()->isInstanceOfType(*status) &&
       Type(&scope, *status).isBaseExceptionSubclass()) {
@@ -2662,9 +2655,7 @@ HANDLER_INLINE bool Interpreter::doLoadGlobalCached(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE void Interpreter::doContinueLoop(Context* ctx, word arg) {
-  HandleScope scope(ctx->thread);
-  Object arg_int(&scope, RawSmallInt::fromWord(arg));
-  handleLoopExit(ctx, TryBlock::Why::kContinue, arg_int);
+  handleLoopExit(ctx, TryBlock::Why::kContinue, SmallInt::fromWord(arg));
 }
 
 HANDLER_INLINE void Interpreter::doSetupLoop(Context* ctx, word arg) {

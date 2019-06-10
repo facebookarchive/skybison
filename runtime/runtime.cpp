@@ -3296,12 +3296,6 @@ void Runtime::genSave(Thread* thread, const GeneratorBase& gen) {
   copyStackFrameToHeapFrame(live_frame, heap_frame);
 }
 
-RawGeneratorBase Runtime::genFromStackFrame(Frame* frame) {
-  // For now, we have the invariant that GeneratorBase bodies are only invoked
-  // by __next__() or send(), which have the GeneratorBase as their first local.
-  return GeneratorBase::cast(frame->previousFrame()->local(0));
-}
-
 RawObject Runtime::newValueCell() { return heap()->create<RawValueCell>(); }
 
 RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,

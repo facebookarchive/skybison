@@ -4,6 +4,10 @@
 
 namespace python {
 
+// Get the RawGeneratorBase corresponding to the given Frame, assuming it is
+// executing in a resumed GeneratorBase.
+RawGeneratorBase generatorFromStackFrame(Frame* frame);
+
 template <typename T, SymbolId name, LayoutId type>
 class GeneratorBaseBuiltins : public Builtins<T, name, type> {
  public:
