@@ -2689,9 +2689,8 @@ HANDLER_INLINE void Interpreter::doSetupFinally(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doLoadFast(Context* ctx, word arg) {
-  // TODO(cshapiro): Need to handle unbound local error
   RawObject value = ctx->frame->local(arg);
-  if (value.isError()) {
+  if (value.isErrorNotFound()) {
     Thread* thread = ctx->thread;
     HandleScope scope(thread);
     Str name(&scope,
@@ -2708,7 +2707,7 @@ HANDLER_INLINE bool Interpreter::doLoadFast(Context* ctx, word arg) {
 HANDLER_INLINE bool Interpreter::doLoadFastReverse(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject value = frame->localWithReverseIndex(arg);
-  if (value.isError()) {
+  if (value.isErrorNotFound()) {
     Thread* thread = ctx->thread;
     HandleScope scope(thread);
     Code code(&scope, ctx->frame->code());
@@ -2736,7 +2735,7 @@ HANDLER_INLINE void Interpreter::doStoreFastReverse(Context* ctx, word arg) {
 HANDLER_INLINE void Interpreter::doDeleteFast(Context* ctx, word arg) {
   // TODO(T32821785): use another immediate value than Error to signal unbound
   // local
-  if (ctx->frame->local(arg).isError()) {
+  if (ctx->frame->local(arg).isErrorNotFound()) {
     RawObject name =
         Tuple::cast(Code::cast(ctx->frame->code()).varnames()).at(arg);
     UNIMPLEMENTED("unbound local %s", Str::cast(name).toCStr());
