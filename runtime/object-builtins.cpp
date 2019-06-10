@@ -313,16 +313,6 @@ RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return thread->runtime()->newInstance(layout);
 }
 
-RawObject ObjectBuiltins::dunderNewKw(Thread* thread, Frame* frame,
-                                      word nargs) {
-  // This should really raise an error if __init__ is not overridden (see
-  // https://hlrz.com/source/xref/cpython-3.6/Objects/typeobject.c#3428)
-  // However, object.__new__ should also do that as well. For now, just forward
-  // to __new__.
-  KwArguments args(frame, nargs);
-  return dunderNew(thread, frame, nargs - args.numKeywords() - 1);
-}
-
 RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,
                                         word nargs) {
   Arguments args(frame, nargs);

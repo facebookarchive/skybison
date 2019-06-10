@@ -41,7 +41,6 @@ class ObjectBuiltins {
   static RawObject dunderHash(Thread*, Frame*, word);
   static RawObject dunderInit(Thread*, Frame*, word);
   static RawObject dunderNew(Thread*, Frame*, word);
-  static RawObject dunderNewKw(Thread*, Frame*, word);
   static RawObject dunderSetattr(Thread*, Frame*, word);
   static RawObject dunderSizeof(Thread*, Frame*, word);
 

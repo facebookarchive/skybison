@@ -293,31 +293,6 @@ class Arguments {
   word num_args_;
 };
 
-class KwArguments : public Arguments {
- public:
-  KwArguments(Frame* frame, word nargs)
-      : Arguments(frame, nargs),
-        kwnames_(Tuple::cast(frame->local(nargs - 1))),
-        num_keywords_(kwnames_.length()) {
-    num_args_ = nargs - num_keywords_ - 1;
-  }
-
-  RawObject getKw(RawObject name) const {
-    for (word i = 0; i < num_keywords_; i++) {
-      if (Str::cast(name).equals(kwnames_.at(i))) {
-        return frame_->local(num_args_ + i);
-      }
-    }
-    return Error::notFound();
-  }
-
-  word numKeywords() const { return num_keywords_; }
-
- private:
-  RawTuple kwnames_;
-  word num_keywords_;
-};
-
 inline uword Frame::address() { return reinterpret_cast<uword>(this); }
 
 inline RawObject Frame::at(int offset) {
