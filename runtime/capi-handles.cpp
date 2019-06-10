@@ -201,14 +201,14 @@ RawObject ApiHandle::getExtensionPtrAttr(Thread* thread, const Object& obj) {
   return instanceGetAttribute(thread, instance, attr_name);
 }
 
-RawObject ApiHandle::asInstance(RawObject obj) {
+RawObject ApiHandle::asInstance(RawObject type) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
-  DCHECK(obj.isType(), "not a RawType object");
-  Type type(&scope, obj);
-  Layout layout(&scope, type.instanceLayout());
+  DCHECK(type.isType(), "not a RawType object");
+  Type type_obj(&scope, type);
+  Layout layout(&scope, type_obj.instanceLayout());
   HeapObject instance(&scope, runtime->newInstance(layout));
   Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());

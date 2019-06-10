@@ -159,7 +159,7 @@ class Runtime {
 
   RawObject newModule(const Object& name);
 
-  RawObject newMutableBytesUninitialized(word length);
+  RawObject newMutableBytesUninitialized(word size);
 
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
@@ -175,7 +175,7 @@ class Runtime {
 
   RawObject newRange(word start, word stop, word step);
 
-  RawObject newRangeIterator(const Object& iterable);
+  RawObject newRangeIterator(const Object& range);
 
   RawObject newSetIterator(const Object& set);
 
@@ -202,7 +202,7 @@ class Runtime {
   RawObject newStrFromUTF32(View<int32_t> code_units);
   RawObject newStrWithAll(View<byte> code_units);
 
-  RawObject newStrIterator(const Object& iterable);
+  RawObject newStrIterator(const Object& str);
 
   RawObject newSuper();
 
@@ -285,8 +285,7 @@ class Runtime {
   RawObject lookupNameInModule(Thread* thread, SymbolId module_name,
                                SymbolId name);
 
-  RawObject moduleDictAt(Thread* thread, const Dict& module_dict,
-                         const Object& key);
+  RawObject moduleDictAt(Thread* thread, const Dict& dict, const Object& key);
   RawObject moduleDictAtPut(Thread* thread, const Dict& dict, const Object& key,
                             const Object& value);
   // Returns `__builtins__` of a module dict. Returns a new dict with a single
@@ -308,7 +307,7 @@ class Runtime {
                                              const Object& name);
 
   // Gets the internal notion of type, rather than the user-visible type.
-  RawObject concreteTypeAt(LayoutId id);
+  RawObject concreteTypeAt(LayoutId layout_id);
   inline RawObject concreteTypeOf(RawObject object) {
     return concreteTypeAt(object.layoutId());
   }
@@ -403,7 +402,8 @@ class Runtime {
   // Makes a new copy of the `original` bytes with the specified `size`.
   // If the new length is less than the old length, truncate the bytes to fit.
   // If the new length is greater than the old length, pad with trailing zeros.
-  RawObject bytesCopyWithSize(Thread* thread, const Bytes& original, word size);
+  RawObject bytesCopyWithSize(Thread* thread, const Bytes& original,
+                              word new_length);
 
   // Returns a new Bytes from the first `length` int-like elements in the tuple.
   RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
@@ -421,7 +421,7 @@ class Runtime {
 
   // Returns a new Bytes that contains the specified slice of self.
   RawObject bytesSlice(Thread* thread, const Bytes& self, word start, word stop,
-                       word stride);
+                       word step);
 
   // Returns a new Bytes containing the subsequence of self
   // with the given start index and length.
@@ -516,7 +516,7 @@ class Runtime {
 
   // Update a set from an iterator
   // Returns either the updated set or an Error object.
-  RawObject setUpdate(Thread* thread, const SetBase& set,
+  RawObject setUpdate(Thread* thread, const SetBase& dst,
                       const Object& iterable);
 
   RawObject tupleSubseq(Thread* thread, const Tuple& self, word start,
@@ -569,8 +569,8 @@ class Runtime {
   RawObject classConstructor(const Type& type);
 
   // Implements `receiver.name`
-  RawObject attributeAt(Thread* thread, const Object& receiver,
-                        const Object& name);
+  RawObject attributeAt(Thread* thread, const Object& object,
+                        const Object& name_str);
   RawObject attributeAtId(Thread* thread, const Object& receiver, SymbolId id);
   RawObject attributeAtWithCStr(Thread* thread, const Object& receiver,
                                 const char* name);
@@ -708,7 +708,7 @@ class Runtime {
   // not actually callable).
   // Note that this does not include __call__ defined on the particular
   // instance, only __call__ defined on the type.
-  bool isCallable(Thread* thread, const Object& object);
+  bool isCallable(Thread* thread, const Object& obj);
 
   // Returns whether object's class provides a __delete__ method
   bool isDeleteDescriptor(Thread* thread, const Object& object);
@@ -758,7 +758,7 @@ class Runtime {
   // Writes the results to the handles pointed to by `quotient` or `modulo`.
   // It is allowed to specify a nullptr for any of them.
   // Returns true on success, false on division by zero.
-  bool intDivideModulo(Thread* thread, const Int& left, const Int& right,
+  bool intDivideModulo(Thread* thread, const Int& dividend, const Int& divisor,
                        Object* quotient, Object* modulo);
 
   // Returns a copy of `value` with all bits flipped.
@@ -841,7 +841,7 @@ class Runtime {
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
   // The given dict gets grown if dict reaches its load factor.
-  void dictEnsureCapacity(Thread* thread, const Dict& data);
+  void dictEnsureCapacity(Thread* thread, const Dict& dict);
 
   static bool dictHasEmptyItem(const Tuple& data);
 
@@ -885,7 +885,7 @@ class Runtime {
   // attribute entries starting at a specific index.  Useful for constructing
   // the in-object attributes array for built-in classes with fixed attributes.
   void appendBuiltinAttributes(View<BuiltinAttribute> attributes,
-                               const Tuple& dst, word index);
+                               const Tuple& dst, word start_index);
 
   // Appends the edge to the list of edges.
   //
@@ -916,7 +916,7 @@ class Runtime {
   //
   // The new layout shares the in-object and overflow attributes with the
   // parent and contains no outgoing edges.
-  RawObject layoutCreateChild(Thread* thread, const Layout& parent);
+  RawObject layoutCreateChild(Thread* thread, const Layout& layout);
 
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(Thread* thread, const Type& type, SymbolId name);

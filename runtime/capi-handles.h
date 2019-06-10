@@ -88,7 +88,7 @@ class ApiHandle : public PyObject {
 
  private:
   // Allocates a handle for a managed object.
-  static ApiHandle* alloc(Thread* thread, RawObject obj);
+  static ApiHandle* alloc(Thread* thread, RawObject reference);
 
   // Returns a handle for a managed object.  If a handle does not already
   // exist, a new handle is created and its reference count is initialized to

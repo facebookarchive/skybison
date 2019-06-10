@@ -638,8 +638,8 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   return thread->exec(code, globals, locals);
 }
 
-RawObject BuiltinsModule::id(Thread* thread, Frame* frame_frame, word nargs) {
-  Arguments args(frame_frame, nargs);
+RawObject BuiltinsModule::id(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
   // NOTE: An ID must be unique for the lifetime of an object. If we ever free
   // an unreferenced API handle before its referent becomes garbage, this code
   // will need to provide an additional signal to keep the handle alive as long
@@ -648,8 +648,8 @@ RawObject BuiltinsModule::id(Thread* thread, Frame* frame_frame, word nargs) {
       ApiHandle::borrowedReference(thread, args.get(0)));
 }
 
-RawObject BuiltinsModule::ord(Thread* thread, Frame* frame_frame, word nargs) {
-  Arguments args(frame_frame, nargs);
+RawObject BuiltinsModule::ord(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
   RawObject arg = args.get(0);
   if (!arg.isStr()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -1239,9 +1239,9 @@ RawObject BuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
-RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame_frame,
+RawObject BuiltinsModule::underListSort(Thread* thread, Frame* frame,
                                         word nargs) {
-  Arguments args(frame_frame, nargs);
+  Arguments args(frame, nargs);
   HandleScope scope(thread);
   CHECK(thread->runtime()->isInstanceOfList(args.get(0)),
         "Unsupported argument type for 'ls'");
