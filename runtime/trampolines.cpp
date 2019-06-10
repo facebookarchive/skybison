@@ -386,10 +386,10 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
 // Returns the new number of positional arguments as a SmallInt, or Error if an
 // exception was raised (most likely due to a non-string keyword name).
 static RawObject processExplodeArguments(Thread* thread, Frame* caller,
-                                         word arg) {
+                                         word flags) {
   HandleScope scope(thread);
   Object kw_dict(&scope, NoneType::object());
-  if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
+  if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     kw_dict = caller->topValue();
     caller->popValue();
   }
@@ -399,7 +399,7 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
     caller->pushValue(positional_args.at(i));
   }
   Runtime* runtime = thread->runtime();
-  if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
+  if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     Dict dict(&scope, *kw_dict);
     Tuple keys(&scope, runtime->dictKeys(thread, dict));
     for (word i = 0; i < keys.length(); i++) {
@@ -419,15 +419,15 @@ static RawObject processExplodeArguments(Thread* thread, Frame* caller,
 // Takes the outgoing arguments of an explode argument call and rearranges them
 // into the form expected by the callee.
 RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
-                             Frame* caller, word arg) {
+                             Frame* caller, word flags) {
   HandleScope scope(thread);
   Function function(&scope, function_raw);
 
-  RawObject arg_obj = processExplodeArguments(thread, caller, arg);
+  RawObject arg_obj = processExplodeArguments(thread, caller, flags);
   if (arg_obj.isError()) return arg_obj;
   word new_argc = SmallInt::cast(arg_obj).value();
 
-  if (arg & CallFunctionExFlag::VAR_KEYWORDS) {
+  if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     RawObject result = prepareKeywordCall(thread, *function, caller, new_argc);
     if (result.isError()) {
       return result;
@@ -461,10 +461,10 @@ static RawObject createGenerator(Thread* thread, const Function& function,
   return *gen_base;
 }
 
-RawObject generatorTrampoline(Thread* thread, Frame* caller, word arg) {
+RawObject generatorTrampoline(Thread* thread, Frame* caller, word argc) {
   HandleScope scope(thread);
-  Function function(&scope, caller->peek(arg));
-  RawObject error = preparePositionalCall(thread, *function, caller, arg);
+  Function function(&scope, caller->peek(argc));
+  RawObject error = preparePositionalCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -487,13 +487,13 @@ RawObject generatorTrampolineKw(Thread* thread, Frame* caller, word argc) {
   return createGenerator(thread, function, qualname);
 }
 
-RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
+RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
-      &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
+      &scope, caller->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  RawObject error = prepareExplodeCall(thread, *function, caller, flags);
   if (error.isError()) {
     return error;
   }
@@ -502,10 +502,10 @@ RawObject generatorTrampolineEx(Thread* thread, Frame* caller, word arg) {
   return createGenerator(thread, function, qualname);
 }
 
-RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word arg) {
+RawObject generatorClosureTrampoline(Thread* thread, Frame* caller, word argc) {
   HandleScope scope(thread);
-  Function function(&scope, caller->peek(arg));
-  RawObject error = preparePositionalCall(thread, *function, caller, arg);
+  Function function(&scope, caller->peek(argc));
+  RawObject error = preparePositionalCall(thread, *function, caller, argc);
   if (error.isError()) {
     return error;
   }
@@ -532,13 +532,13 @@ RawObject generatorClosureTrampolineKw(Thread* thread, Frame* caller,
 }
 
 RawObject generatorClosureTrampolineEx(Thread* thread, Frame* caller,
-                                       word arg) {
+                                       word flags) {
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
-      &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
+      &scope, caller->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  RawObject error = prepareExplodeCall(thread, *function, caller, flags);
   if (error.isError()) {
     return error;
   }
@@ -572,13 +572,13 @@ RawObject interpreterTrampolineKw(Thread* thread, Frame* caller, word argc) {
   return Interpreter::execute(thread, callee_frame, function);
 }
 
-RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word arg) {
+RawObject interpreterTrampolineEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
-      &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
+      &scope, caller->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  RawObject error = prepareExplodeCall(thread, *function, caller, flags);
   if (error.isError()) {
     return error;
   }
@@ -615,13 +615,13 @@ RawObject interpreterClosureTrampolineKw(Thread* thread, Frame* caller,
 }
 
 RawObject interpreterClosureTrampolineEx(Thread* thread, Frame* caller,
-                                         word arg) {
+                                         word flags) {
   HandleScope scope(thread);
   // The argument is either zero when there is one argument and one when there
   // are two arguments.  Skip over these arguments to read the function object.
   Function function(
-      &scope, caller->peek((arg & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
-  RawObject error = prepareExplodeCall(thread, *function, caller, arg);
+      &scope, caller->peek((flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1));
+  RawObject error = prepareExplodeCall(thread, *function, caller, flags);
   if (error.isError()) {
     return error;
   }
@@ -667,9 +667,9 @@ RawObject methodTrampolineNoArgsKw(Thread* thread, Frame* caller, word argc) {
   return callMethNoArgs(thread, function, self);
 }
 
-RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc) {
+RawObject methodTrampolineNoArgsEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   Tuple varargs(&scope, caller->peek(has_varkeywords));
   if (varargs.length() != 1) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -733,9 +733,9 @@ RawObject methodTrampolineOneArgKw(Thread* thread, Frame* caller, word argc) {
   return callMethOneArg(thread, function, self, arg);
 }
 
-RawObject methodTrampolineOneArgEx(Thread* thread, Frame* caller, word argc) {
+RawObject methodTrampolineOneArgEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
@@ -802,9 +802,9 @@ RawObject methodTrampolineVarArgsKw(Thread* thread, Frame* caller, word argc) {
   return callMethVarArgs(thread, function, self, varargs);
 }
 
-RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* caller, word argc) {
+RawObject methodTrampolineVarArgsEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
@@ -880,9 +880,10 @@ RawObject methodTrampolineKeywordsKw(Thread* thread, Frame* caller, word argc) {
   return callMethKeywords(thread, function, self, args, kwargs);
 }
 
-RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* caller, word argc) {
+RawObject methodTrampolineKeywordsEx(Thread* thread, Frame* caller,
+                                     word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   Tuple varargs(&scope, caller->peek(has_varkeywords));
   Object kwargs(&scope, NoneType::object());
   if (has_varkeywords) {
@@ -918,9 +919,9 @@ RawObject moduleTrampolineNoArgsKw(Thread* thread, Frame* caller, word argc) {
   return callMethNoArgs(thread, function, module);
 }
 
-RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word argc) {
+RawObject moduleTrampolineNoArgsEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   Tuple varargs(&scope, caller->peek(has_varkeywords));
   if (varargs.length() != 0) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
@@ -968,9 +969,9 @@ RawObject moduleTrampolineOneArgKw(Thread* thread, Frame* caller, word argc) {
   return callMethOneArg(thread, function, module, arg);
 }
 
-RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* caller, word argc) {
+RawObject moduleTrampolineOneArgEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
@@ -1017,9 +1018,9 @@ RawObject moduleTrampolineVarArgsKw(Thread* thread, Frame* caller, word argc) {
   return callMethVarArgs(thread, function, module, varargs);
 }
 
-RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller, word argc) {
+RawObject moduleTrampolineVarArgsEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   if (has_varkeywords) {
     Object kw_args(&scope, caller->topValue());
     if (!kw_args.isDict()) UNIMPLEMENTED("mapping kwargs");
@@ -1072,9 +1073,10 @@ RawObject moduleTrampolineKeywordsKw(Thread* thread, Frame* caller, word argc) {
   return callMethKeywords(thread, function, module, args, kwargs);
 }
 
-RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* caller, word argc) {
+RawObject moduleTrampolineKeywordsEx(Thread* thread, Frame* caller,
+                                     word flags) {
   HandleScope scope(thread);
-  bool has_varkeywords = argc & CallFunctionExFlag::VAR_KEYWORDS;
+  bool has_varkeywords = flags & CallFunctionExFlag::VAR_KEYWORDS;
   Object varargs(&scope, caller->peek(has_varkeywords));
   Object kwargs(&scope, NoneType::object());
   if (has_varkeywords) {
@@ -1128,11 +1130,11 @@ RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc) {
       });
 }
 
-RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word argc) {
+RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word flags) {
   return builtinTrampolineImpl(
-      thread, caller, (argc & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1,
+      thread, caller, (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1,
       [&](const Function& function) {
-        return prepareExplodeCall(thread, *function, caller, argc);
+        return prepareExplodeCall(thread, *function, caller, flags);
       });
 }
 
@@ -1157,21 +1159,21 @@ RawObject slotTrampolineKw(Thread* thread, Frame* frame, word argc) {
   return slotTrampoline(thread, frame, argc);
 }
 
-RawObject slotTrampolineEx(Thread* thread, Frame* caller, word argc) {
+RawObject slotTrampolineEx(Thread* thread, Frame* caller, word flags) {
   HandleScope scope(thread);
 
-  if (argc & CallFunctionExFlag::VAR_KEYWORDS) {
+  if (flags & CallFunctionExFlag::VAR_KEYWORDS) {
     Dict kwargs(&scope, caller->popValue());
     if (kwargs.numItems() != 0) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "function takes no keyword arguments");
     }
-    argc &= ~CallFunctionExFlag::VAR_KEYWORDS;
+    flags &= ~CallFunctionExFlag::VAR_KEYWORDS;
   }
-  DCHECK(argc == 0, "unexpected arg flag");
+  DCHECK(flags == 0, "unexpected flags");
 
   Tuple args(&scope, caller->popValue());
-  argc = args.length();
+  word argc = args.length();
   for (word i = 0; i < argc; ++i) {
     caller->pushValue(args.at(i));
   }
