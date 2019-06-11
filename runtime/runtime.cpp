@@ -691,13 +691,9 @@ RawObject Runtime::newInstance(const Layout& layout) {
 
 RawObject Runtime::newQualname(Thread* thread, const Type& type,
                                SymbolId name) {
-  // TODO(T40440499): Clean this mess up with a helper or string formatting
   HandleScope scope(thread);
-  Tuple parts(&scope, newTuple(2));
-  parts.atPut(0, type.name());
-  parts.atPut(1, symbols()->at(name));
-  Str sep(&scope, newStrFromCStr("."));
-  return strJoin(thread, sep, parts, 2);
+  Str type_name(&scope, type.name());
+  return newStrFromFmt("%S.%Y", &type_name, name);
 }
 
 void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
