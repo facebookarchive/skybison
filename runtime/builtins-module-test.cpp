@@ -1520,6 +1520,22 @@ TEST_F(BuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
                             "_patch expects function argument"));
 }
 
+TEST_F(BuiltinsModuleTest, UnderPatchWithMissingFuncRaisesAttributeError) {
+  HandleScope scope(thread_);
+  SymbolId func_name = SymbolId::kHex;
+  Str qualname(&scope, runtime_.symbols()->at(func_name));
+  Function func(&scope,
+                runtime_.newBuiltinFunction(func_name, qualname,
+                                            BuiltinsModule::underIntFromBytes));
+  Str module_name(&scope, runtime_.newStrFromCStr("foo"));
+  Module module(&scope, runtime_.newModule(module_name));
+  runtime_.addModule(module);
+  func.setModule(*module_name);
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::underPatch, func),
+                            LayoutId::kAttributeError,
+                            "function hex not found in module foo"));
+}
+
 TEST_F(BuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 not_a_function = 1234

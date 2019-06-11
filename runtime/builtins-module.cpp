@@ -1329,6 +1329,11 @@ RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {
   Module module(&scope, runtime->findModule(module_name));
   Object base_fn_obj(&scope, runtime->moduleAt(module, fn_name));
   if (!base_fn_obj.isFunction()) {
+    if (base_fn_obj.isErrorNotFound()) {
+      return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                  "function %S not found in module %S",
+                                  &fn_name, &module_name);
+    }
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "_patch can only patch functions");
   }
