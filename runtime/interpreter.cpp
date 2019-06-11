@@ -1187,12 +1187,14 @@ HANDLER_INLINE void Interpreter::popFrame(Context* ctx) {
   ctx->frame = caller_frame;
   ctx->thread->popFrame();
 
-  // Reset context for previous frame except when returning to initial frame).
-  if (caller_frame->previousFrame() != nullptr) {
-    RawFunction caller_func = caller_frame->function();
-    ctx->bytecode = caller_func.rewrittenBytecode();
-    ctx->caches = caller_func.caches();
-  }
+  // Using Frame::function() in a critical path is a little sketchy, since
+  // it depends on a not-quite-invariant property of our system that the stack
+  // slot right above the current Frame contains the Function that was called to
+  // execute it. We can clean this up once we merge Code and Function
+  // and store a Function directly in the Frame.
+  RawFunction caller_func = Function::cast(caller_frame->function());
+  ctx->bytecode = caller_func.rewrittenBytecode();
+  ctx->caches = caller_func.caches();
   ctx->pc = caller_frame->virtualPC();
 }
 

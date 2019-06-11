@@ -192,8 +192,9 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
   Function function(&scope, Interpreter::makeFunction(
                                 this, qualname, code, empty_tuple, empty_dict,
                                 empty_dict, empty_tuple, globals));
-  // Push implicit globals and function.
+  // Push implicit globals.
   currentFrame()->pushValue(*locals);
+  // Push function to be available from frame.function().
   currentFrame()->pushValue(*function);
   Frame* frame = pushCallFrame(*function);
   Object result(&scope, Interpreter::execute(this, frame, function));
