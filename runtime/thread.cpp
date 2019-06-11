@@ -249,6 +249,19 @@ RawObject Thread::invokeMethod3(const Object& receiver, SymbolId selector,
 }
 
 RawObject Thread::invokeMethodStatic2(LayoutId type, SymbolId method_name,
+                                      const Object& receiver,
+                                      const Object& arg1) {
+  HandleScope scope(this);
+  Object type_obj(&scope, runtime()->typeAt(type));
+  if (type_obj.isError()) return *type_obj;
+  Type type_handle(&scope, *type_obj);
+  Object method(&scope, typeLookupSymbolInMro(this, type_handle, method_name));
+  if (method.isError()) return *method;
+  return Interpreter::callMethod2(this, currentFrame_, method, receiver, arg1);
+}
+
+RawObject Thread::invokeMethodStatic3(LayoutId type, SymbolId method_name,
+                                      const Object& receiver,
                                       const Object& arg1, const Object& arg2) {
   HandleScope scope(this);
   Object type_obj(&scope, runtime()->typeAt(type));
@@ -256,20 +269,8 @@ RawObject Thread::invokeMethodStatic2(LayoutId type, SymbolId method_name,
   Type type_handle(&scope, *type_obj);
   Object method(&scope, typeLookupSymbolInMro(this, type_handle, method_name));
   if (method.isError()) return *method;
-  return Interpreter::callMethod2(this, currentFrame_, method, arg1, arg2);
-}
-
-RawObject Thread::invokeMethodStatic3(LayoutId type, SymbolId method_name,
-                                      const Object& arg1, const Object& arg2,
-                                      const Object& arg3) {
-  HandleScope scope(this);
-  Object type_obj(&scope, runtime()->typeAt(type));
-  if (type_obj.isError()) return *type_obj;
-  Type type_handle(&scope, *type_obj);
-  Object method(&scope, typeLookupSymbolInMro(this, type_handle, method_name));
-  if (method.isError()) return *method;
-  return Interpreter::callMethod3(this, currentFrame_, method, arg1, arg2,
-                                  arg3);
+  return Interpreter::callMethod3(this, currentFrame_, method, receiver, arg1,
+                                  arg2);
 }
 
 RawObject Thread::invokeMethodStatic4(LayoutId type, SymbolId method_name,
@@ -358,22 +359,22 @@ const bool kRecordTracebacks = std::getenv("PYRO_RECORD_TRACEBACKS") != nullptr;
 const bool kRecordTracebacks = true;
 #endif
 
-RawObject Thread::raiseWithType(RawObject type_raw, RawObject value_raw) {
+RawObject Thread::raiseWithType(RawObject type, RawObject value) {
   DCHECK(!hasPendingException(), "unhandled exception lingering");
   HandleScope scope(this);
-  Type type(&scope, type_raw);
-  Object value(&scope, value_raw);
-  Object traceback(&scope, NoneType::object());
+  Type type_obj(&scope, type);
+  Object value_obj(&scope, value);
+  Object traceback_obj(&scope, NoneType::object());
 
   if (UNLIKELY(kRecordTracebacks)) {
     std::ostringstream tb;
     Utils::printTraceback(&tb);
-    traceback = runtime()->newStrFromCStr(tb.str().c_str());
+    traceback_obj = runtime()->newStrFromCStr(tb.str().c_str());
   }
 
-  setPendingExceptionType(*type);
-  setPendingExceptionValue(*value);
-  setPendingExceptionTraceback(*traceback);
+  setPendingExceptionType(*type_obj);
+  setPendingExceptionValue(*value_obj);
+  setPendingExceptionTraceback(*traceback_obj);
   return Error::exception();
 }
 
@@ -510,8 +511,8 @@ void Thread::setCaughtExceptionValue(RawObject value) {
   ExceptionState::cast(caught_exc_stack_).setValue(value);
 }
 
-void Thread::setCaughtExceptionTraceback(RawObject tb) {
-  ExceptionState::cast(caught_exc_stack_).setTraceback(tb);
+void Thread::setCaughtExceptionTraceback(RawObject traceback) {
+  ExceptionState::cast(caught_exc_stack_).setTraceback(traceback);
 }
 
 RawObject Thread::caughtExceptionState() { return caught_exc_stack_; }
