@@ -3,7 +3,6 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <sstream>
 
 #include "builtins-module.h"
 #include "frame.h"
@@ -14,7 +13,6 @@
 #include "runtime.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
-#include "utils.h"
 #include "visitor.h"
 
 namespace python {
@@ -349,28 +347,12 @@ RawObject Thread::raise(LayoutId type, RawObject value) {
   return raiseWithType(runtime()->typeAt(type), value);
 }
 
-// TODO(T39919701): This is a temporary, off-by-default (in Release builds) hack
-// until we have proper traceback support. It has no mapping to actual
-// tracebacks as understood by Python code; see its usage in
-// Thread::raiseWithType() below for details.
-#ifdef NDEBUG
-const bool kRecordTracebacks = std::getenv("PYRO_RECORD_TRACEBACKS") != nullptr;
-#else
-const bool kRecordTracebacks = true;
-#endif
-
 RawObject Thread::raiseWithType(RawObject type, RawObject value) {
   DCHECK(!hasPendingException(), "unhandled exception lingering");
   HandleScope scope(this);
   Type type_obj(&scope, type);
   Object value_obj(&scope, value);
   Object traceback_obj(&scope, NoneType::object());
-
-  if (UNLIKELY(kRecordTracebacks)) {
-    std::ostringstream tb;
-    Utils::printTraceback(&tb);
-    traceback_obj = runtime()->newStrFromCStr(tb.str().c_str());
-  }
 
   setPendingExceptionType(*type_obj);
   setPendingExceptionValue(*value_obj);

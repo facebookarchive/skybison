@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 
 #include "builtins-module.h"
 #include "dict-builtins.h"
@@ -19,6 +20,7 @@
 #include "trampolines.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
+#include "utils.h"
 
 namespace python {
 
@@ -1101,14 +1103,29 @@ HANDLER_INLINE void Interpreter::handleLoopExit(Context* ctx, TryBlock::Why why,
   }
 }
 
+// TODO(T39919701): This is a temporary, off-by-default (in Release builds) hack
+// until we have proper traceback support. It has no mapping to actual
+// tracebacks as understood by Python code; see its usage in
+// Interpreter::unwind() below for details.
+#ifdef NDEBUG
+const bool kRecordTracebacks = std::getenv("PYRO_RECORD_TRACEBACKS") != nullptr;
+#else
+const bool kRecordTracebacks = true;
+#endif
+
 bool Interpreter::unwind(Context* ctx) {
   DCHECK(ctx->thread->hasPendingException(),
          "unwind() called without a pending exception");
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
 
-  // TODO(bsimmers): Record traceback for newly-raised exceptions, like what
-  // CPython does with PyTraceBack_Here().
+  if (UNLIKELY(kRecordTracebacks) &&
+      thread->pendingExceptionTraceback().isNoneType()) {
+    std::ostringstream tb;
+    Utils::printTraceback(&tb);
+    thread->setPendingExceptionTraceback(
+        thread->runtime()->newStrFromCStr(tb.str().c_str()));
+  }
 
   for (;;) {
     Frame* frame = ctx->frame;
