@@ -288,7 +288,7 @@ class Interpreter {
   static void handleLoopExit(Context* ctx, TryBlock::Why why, RawObject retval);
 
   // Pseudo-opcodes
-  static void doInvalidBytecode(Context* ctx, word arg);
+  static bool doInvalidBytecode(Context* ctx, word arg);
 
  private:
   // Opcode handlers
@@ -385,54 +385,54 @@ class Interpreter {
   static bool doWithCleanupStart(Context* ctx, word arg);
   static bool doYieldFrom(Context* ctx, word arg);
   static bool doYieldValue(Context* ctx, word arg);
-  static void doBreakLoop(Context* ctx, word arg);
-  static void doBuildConstKeyMap(Context* ctx, word arg);
-  static void doBuildList(Context* ctx, word arg);
-  static void doBuildSlice(Context* ctx, word arg);
-  static void doBuildString(Context* ctx, word arg);
-  static void doBuildTuple(Context* ctx, word arg);
-  static void doContinueLoop(Context* ctx, word arg);
-  static void doDeleteDeref(Context* ctx, word arg);
-  static void doDeleteFast(Context* ctx, word arg);
+  static bool doBreakLoop(Context* ctx, word arg);
+  static bool doBuildConstKeyMap(Context* ctx, word arg);
+  static bool doBuildList(Context* ctx, word arg);
+  static bool doBuildSlice(Context* ctx, word arg);
+  static bool doBuildString(Context* ctx, word arg);
+  static bool doBuildTuple(Context* ctx, word arg);
+  static bool doContinueLoop(Context* ctx, word arg);
+  static bool doDeleteDeref(Context* ctx, word arg);
+  static bool doDeleteFast(Context* ctx, word arg);
   static bool doDeleteGlobal(Context* ctx, word arg);
   static bool doDeleteName(Context* ctx, word arg);
-  static void doDupTop(Context* ctx, word arg);
-  static void doDupTopTwo(Context* ctx, word arg);
-  static void doImportStar(Context* ctx, word arg);
-  static void doJumpAbsolute(Context* ctx, word arg);
-  static void doJumpForward(Context* ctx, word arg);
+  static bool doDupTop(Context* ctx, word arg);
+  static bool doDupTopTwo(Context* ctx, word arg);
+  static bool doImportStar(Context* ctx, word arg);
+  static bool doJumpAbsolute(Context* ctx, word arg);
+  static bool doJumpForward(Context* ctx, word arg);
   static bool doJumpIfFalseOrPop(Context* ctx, word arg);
   static bool doJumpIfTrueOrPop(Context* ctx, word arg);
-  static void doListAppend(Context* ctx, word arg);
-  static void doLoadBuildClass(Context* ctx, word arg);
-  static void doLoadClassDeref(Context* ctx, word arg);
-  static void doLoadClosure(Context* ctx, word arg);
-  static void doLoadConst(Context* ctx, word arg);
+  static bool doListAppend(Context* ctx, word arg);
+  static bool doLoadBuildClass(Context* ctx, word arg);
+  static bool doLoadClassDeref(Context* ctx, word arg);
+  static bool doLoadClosure(Context* ctx, word arg);
+  static bool doLoadConst(Context* ctx, word arg);
   static bool doLoadGlobal(Context* ctx, word arg);
   static bool doLoadGlobalCached(Context* ctx, word arg);
-  static void doMakeFunction(Context* ctx, word arg);
-  static void doMapAdd(Context* ctx, word arg);
-  static void doNop(Context* ctx, word arg);
-  static void doPopBlock(Context* ctx, word arg);
+  static bool doMakeFunction(Context* ctx, word arg);
+  static bool doMapAdd(Context* ctx, word arg);
+  static bool doNop(Context* ctx, word arg);
+  static bool doPopBlock(Context* ctx, word arg);
   static bool doPopJumpIfFalse(Context* ctx, word arg);
   static bool doPopJumpIfTrue(Context* ctx, word arg);
-  static void doPopTop(Context* ctx, word arg);
-  static void doPrintExpr(Context* ctx, word arg);
-  static void doRotThree(Context* ctx, word arg);
-  static void doRotTwo(Context* ctx, word arg);
-  static void doSetAdd(Context* ctx, word arg);
-  static void doSetupAnnotations(Context* ctx, word arg);
-  static void doSetupAsyncWith(Context* ctx, word arg);
-  static void doSetupExcept(Context* ctx, word arg);
-  static void doSetupFinally(Context* ctx, word arg);
-  static void doSetupLoop(Context* ctx, word arg);
-  static void doStoreAnnotation(Context* ctx, word arg);
-  static void doStoreDeref(Context* ctx, word arg);
-  static void doStoreFast(Context* ctx, word arg);
-  static void doStoreFastReverse(Context* ctx, word arg);
-  static void doStoreGlobal(Context* ctx, word arg);
-  static void doStoreGlobalCached(Context* ctx, word arg);
-  static void doStoreName(Context* ctx, word arg);
+  static bool doPopTop(Context* ctx, word arg);
+  static bool doPrintExpr(Context* ctx, word arg);
+  static bool doRotThree(Context* ctx, word arg);
+  static bool doRotTwo(Context* ctx, word arg);
+  static bool doSetAdd(Context* ctx, word arg);
+  static bool doSetupAnnotations(Context* ctx, word arg);
+  static bool doSetupAsyncWith(Context* ctx, word arg);
+  static bool doSetupExcept(Context* ctx, word arg);
+  static bool doSetupFinally(Context* ctx, word arg);
+  static bool doSetupLoop(Context* ctx, word arg);
+  static bool doStoreAnnotation(Context* ctx, word arg);
+  static bool doStoreDeref(Context* ctx, word arg);
+  static bool doStoreFast(Context* ctx, word arg);
+  static bool doStoreFastReverse(Context* ctx, word arg);
+  static bool doStoreGlobal(Context* ctx, word arg);
+  static bool doStoreGlobalCached(Context* ctx, word arg);
+  static bool doStoreName(Context* ctx, word arg);
 
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations

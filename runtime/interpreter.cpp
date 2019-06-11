@@ -1184,42 +1184,47 @@ static Bytecode currentBytecode(Interpreter::Context* ctx) {
   return static_cast<Bytecode>(ctx->bytecode.byteAt(pc));
 }
 
-HANDLER_INLINE void Interpreter::doInvalidBytecode(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doInvalidBytecode(Context* ctx, word) {
   Bytecode bc = currentBytecode(ctx);
   UNREACHABLE("bytecode '%s'", kBytecodeNames[bc]);
 }
 
-HANDLER_INLINE void Interpreter::doPopTop(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doPopTop(Context* ctx, word) {
   ctx->frame->popValue();
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doRotTwo(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doRotTwo(Context* ctx, word) {
   RawObject* sp = ctx->frame->valueStackTop();
   RawObject top = *sp;
   *sp = *(sp + 1);
   *(sp + 1) = top;
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doRotThree(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doRotThree(Context* ctx, word) {
   RawObject* sp = ctx->frame->valueStackTop();
   RawObject top = *sp;
   *sp = *(sp + 1);
   *(sp + 1) = *(sp + 2);
   *(sp + 2) = top;
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doDupTop(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doDupTop(Context* ctx, word) {
   ctx->frame->pushValue(ctx->frame->topValue());
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doDupTopTwo(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doDupTopTwo(Context* ctx, word) {
   RawObject first = ctx->frame->topValue();
   RawObject second = ctx->frame->peek(1);
   ctx->frame->pushValue(second);
   ctx->frame->pushValue(first);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doNop(Context*, word) {}
+HANDLER_INLINE bool Interpreter::doNop(Context*, word) { return false; }
 
 HANDLER_INLINE bool Interpreter::doUnaryPositive(Context* ctx, word) {
   return doUnaryOperation(SymbolId::kDunderPos, ctx);
@@ -1528,7 +1533,7 @@ HANDLER_INLINE bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doPrintExpr(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doPrintExpr(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
@@ -1539,13 +1544,14 @@ HANDLER_INLINE void Interpreter::doPrintExpr(Context* ctx, word) {
   }
   frame->pushValue(value_cell.value());
   frame->pushValue(*value);
-  call(thread, frame, 1);
+  return doCallFunction(ctx, 1);
 }
 
-HANDLER_INLINE void Interpreter::doLoadBuildClass(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doLoadBuildClass(Context* ctx, word) {
   Thread* thread = ctx->thread;
   RawValueCell value_cell = ValueCell::cast(thread->runtime()->buildClass());
   ctx->frame->pushValue(value_cell.value());
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doYieldFrom(Context* ctx, word) {
@@ -1632,8 +1638,9 @@ HANDLER_INLINE bool Interpreter::doInplaceOr(Context* ctx, word) {
   return doInplaceOperation(BinaryOp::OR, ctx);
 }
 
-HANDLER_INLINE void Interpreter::doBreakLoop(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doBreakLoop(Context* ctx, word) {
   handleLoopExit(ctx, TryBlock::Why::kBreak, NoneType::object());
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doWithCleanupStart(Context* ctx, word) {
@@ -1717,7 +1724,7 @@ HANDLER_INLINE bool Interpreter::doReturnValue(Context* ctx, word) {
   return handleReturn(ctx, result);
 }
 
-HANDLER_INLINE void Interpreter::doSetupAnnotations(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doSetupAnnotations(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -1731,6 +1738,7 @@ HANDLER_INLINE void Interpreter::doSetupAnnotations(Context* ctx, word) {
     runtime->dictAtPutInValueCell(thread, implicit_globals, annotations,
                                   new_dict);
   }
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doYieldValue(Context* ctx, word) {
@@ -1746,7 +1754,7 @@ HANDLER_INLINE bool Interpreter::doYieldValue(Context* ctx, word) {
   return true;
 }
 
-HANDLER_INLINE void Interpreter::doImportStar(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doImportStar(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
 
@@ -1760,12 +1768,14 @@ HANDLER_INLINE void Interpreter::doImportStar(Context* ctx, word) {
   Frame* frame = ctx->frame;
   Dict implicit_globals(&scope, frame->implicitGlobals());
   thread->runtime()->moduleImportAllFrom(implicit_globals, module);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doPopBlock(Context* ctx, word) {
+HANDLER_INLINE bool Interpreter::doPopBlock(Context* ctx, word) {
   Frame* frame = ctx->frame;
   TryBlock block = frame->blockStack()->pop();
   frame->setValueStackTop(frame->valueStackBase() - block.level());
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doEndFinally(Context* ctx, word) {
@@ -1824,7 +1834,7 @@ HANDLER_INLINE bool Interpreter::doPopExcept(Context* ctx, word) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doStoreName(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doStoreName(Context* ctx, word arg) {
   // TypeDict results are not cached since LOAD_NAME doesn't use caching.
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
@@ -1851,6 +1861,7 @@ HANDLER_INLINE void Interpreter::doStoreName(Context* ctx, word arg) {
       icInvalidateGlobalVar(thread, value_cell);
     }
   }
+  return false;
 }
 
 static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
@@ -2172,7 +2183,7 @@ HANDLER_INLINE bool Interpreter::doDeleteAttr(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doStoreGlobal(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doStoreGlobal(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;
   HandleScope scope(thread);
@@ -2196,12 +2207,14 @@ HANDLER_INLINE void Interpreter::doStoreGlobal(Context* ctx, word arg) {
       icInvalidateGlobalVar(thread, value_cell);
     }
   }
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doStoreGlobalCached(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doStoreGlobalCached(Context* ctx, word arg) {
   RawObject cached = icLookupGlobalVar(ctx->caches, arg);
   DCHECK(cached.isValueCell(), "the cached value must not be a ValueCell");
   ValueCell::cast(cached).setValue(ctx->frame->popValue());
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
@@ -2227,9 +2240,10 @@ HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doLoadConst(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doLoadConst(Context* ctx, word arg) {
   RawObject consts = Code::cast(ctx->frame->code()).consts();
   ctx->frame->pushValue(Tuple::cast(consts).at(arg));
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
@@ -2280,7 +2294,7 @@ HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
   return unwind(ctx);
 }
 
-HANDLER_INLINE void Interpreter::doBuildTuple(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doBuildTuple(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Tuple tuple(&scope, thread->runtime()->newTuple(arg));
@@ -2288,9 +2302,10 @@ HANDLER_INLINE void Interpreter::doBuildTuple(Context* ctx, word arg) {
     tuple.atPut(i, ctx->frame->popValue());
   }
   ctx->frame->pushValue(*tuple);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doBuildList(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doBuildList(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Tuple array(&scope, thread->runtime()->newTuple(arg));
@@ -2301,6 +2316,7 @@ HANDLER_INLINE void Interpreter::doBuildList(Context* ctx, word arg) {
   list.setItems(*array);
   list.setNumItems(array.length());
   ctx->frame->pushValue(list);
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doBuildSet(Context* ctx, word arg) {
@@ -2540,8 +2556,9 @@ HANDLER_INLINE bool Interpreter::doImportFrom(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doJumpForward(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doJumpForward(Context* ctx, word arg) {
   ctx->pc += arg;
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
@@ -2572,8 +2589,9 @@ HANDLER_INLINE bool Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doJumpAbsolute(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doJumpAbsolute(Context* ctx, word arg) {
   ctx->pc = arg;
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
@@ -2653,29 +2671,33 @@ HANDLER_INLINE bool Interpreter::doLoadGlobalCached(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doContinueLoop(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doContinueLoop(Context* ctx, word arg) {
   handleLoopExit(ctx, TryBlock::Why::kContinue, SmallInt::fromWord(arg));
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doSetupLoop(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doSetupLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(TryBlock(TryBlock::kLoop, ctx->pc + arg, stack_depth));
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doSetupExcept(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doSetupExcept(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackSize();
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(TryBlock(TryBlock::kExcept, ctx->pc + arg, stack_depth));
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doSetupFinally(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doSetupFinally(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doLoadFast(Context* ctx, word arg) {
@@ -2712,17 +2734,19 @@ HANDLER_INLINE bool Interpreter::doLoadFastReverse(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doStoreFast(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doStoreFast(Context* ctx, word arg) {
   RawObject value = ctx->frame->popValue();
   ctx->frame->setLocal(arg, value);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doStoreFastReverse(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doStoreFastReverse(Context* ctx, word arg) {
   RawObject value = ctx->frame->popValue();
   ctx->frame->setLocalWithReverseIndex(arg, value);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doDeleteFast(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doDeleteFast(Context* ctx, word arg) {
   // TODO(T32821785): use another immediate value than Error to signal unbound
   // local
   if (ctx->frame->local(arg).isErrorNotFound()) {
@@ -2731,9 +2755,10 @@ HANDLER_INLINE void Interpreter::doDeleteFast(Context* ctx, word arg) {
     UNIMPLEMENTED("unbound local %s", Str::cast(name).toCStr());
   }
   ctx->frame->setLocal(arg, Error::notFound());
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doStoreAnnotation(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Runtime* runtime = ctx->thread->runtime();
@@ -2748,6 +2773,7 @@ HANDLER_INLINE void Interpreter::doStoreAnnotation(Context* ctx, word arg) {
                     runtime->dictAt(thread, implicit_globals, annotations));
   Dict anno_dict(&scope, ValueCell::cast(*value_cell).value());
   runtime->dictAtPut(thread, anno_dict, key, value);
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doRaiseVarargs(Context* ctx, word arg) {
@@ -2841,7 +2867,7 @@ HANDLER_INLINE bool Interpreter::doCallFunction(Context* ctx, word arg) {
   return handleCall(ctx, arg, arg, 0, preparePositionalCall, &Function::entry);
 }
 
-HANDLER_INLINE void Interpreter::doMakeFunction(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doMakeFunction(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
@@ -2858,9 +2884,10 @@ HANDLER_INLINE void Interpreter::doMakeFunction(Context* ctx, word arg) {
   Dict globals(&scope, frame->function().globals());
   frame->pushValue(makeFunction(thread, qualname, code, closure, annotations,
                                 kw_defaults, defaults, globals));
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doBuildSlice(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doBuildSlice(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Slice slice(&scope, thread->runtime()->newSlice());
@@ -2868,11 +2895,13 @@ HANDLER_INLINE void Interpreter::doBuildSlice(Context* ctx, word arg) {
   slice.setStop(ctx->frame->popValue());
   slice.setStart(ctx->frame->topValue());  // TOP
   ctx->frame->setTopValue(*slice);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doLoadClosure(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doLoadClosure(Context* ctx, word arg) {
   RawCode code = Code::cast(ctx->frame->code());
   ctx->frame->pushValue(ctx->frame->local(code.nlocals() + arg));
+  return false;
 }
 
 static RawObject raiseUnboundCellFreeVar(Thread* thread, const Code& code,
@@ -2909,16 +2938,18 @@ HANDLER_INLINE bool Interpreter::doLoadDeref(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doStoreDeref(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doStoreDeref(Context* ctx, word arg) {
   RawCode code = Code::cast(ctx->frame->code());
   ValueCell::cast(ctx->frame->local(code.nlocals() + arg))
       .setValue(ctx->frame->popValue());
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doDeleteDeref(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doDeleteDeref(Context* ctx, word arg) {
   RawCode code = Code::cast(ctx->frame->code());
   ValueCell::cast(ctx->frame->local(code.nlocals() + arg))
       .setValue(Unbound::object());
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doCallFunctionKw(Context* ctx, word arg) {
@@ -2986,32 +3017,35 @@ HANDLER_INLINE bool Interpreter::doSetupWith(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doListAppend(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doListAppend(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object value(&scope, ctx->frame->popValue());
   List list(&scope, ctx->frame->peek(arg - 1));
   thread->runtime()->listAdd(thread, list, value);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doSetAdd(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doSetAdd(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object value(&scope, ctx->frame->popValue());
   Set set(&scope, Set::cast(ctx->frame->peek(arg - 1)));
   thread->runtime()->setAdd(thread, set, value);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doMapAdd(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doMapAdd(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Object key(&scope, ctx->frame->popValue());
   Object value(&scope, ctx->frame->popValue());
   Dict dict(&scope, Dict::cast(ctx->frame->peek(arg - 1)));
   ctx->thread->runtime()->dictAtPut(thread, dict, key, value);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doLoadClassDeref(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Code code(&scope, ctx->frame->code());
@@ -3029,6 +3063,7 @@ HANDLER_INLINE void Interpreter::doLoadClassDeref(Context* ctx, word arg) {
   } else {
     ctx->frame->pushValue(ValueCell::cast(*result).value());
   }
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doBuildListUnpack(Context* ctx, word arg) {
@@ -3144,7 +3179,7 @@ HANDLER_INLINE bool Interpreter::doBuildSetUnpack(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   HandleScope scope(ctx->thread);
   Object result(&scope, frame->popValue());
@@ -3152,6 +3187,7 @@ HANDLER_INLINE void Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
   BlockStack* block_stack = frame->blockStack();
   block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
   frame->pushValue(*result);
+  return false;
 }
 
 HANDLER_INLINE bool Interpreter::doFormatValue(Context* ctx, word arg) {
@@ -3237,7 +3273,7 @@ HANDLER_INLINE bool Interpreter::doFormatValue(Context* ctx, word arg) {
   return false;
 }
 
-HANDLER_INLINE void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Tuple keys(&scope, ctx->frame->popValue());
@@ -3248,9 +3284,10 @@ HANDLER_INLINE void Interpreter::doBuildConstKeyMap(Context* ctx, word arg) {
     thread->runtime()->dictAtPut(thread, dict, key, value);
   }
   ctx->frame->pushValue(*dict);
+  return false;
 }
 
-HANDLER_INLINE void Interpreter::doBuildString(Context* ctx, word arg) {
+HANDLER_INLINE bool Interpreter::doBuildString(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Runtime* runtime = thread->runtime();
   switch (arg) {
@@ -3266,6 +3303,7 @@ HANDLER_INLINE void Interpreter::doBuildString(Context* ctx, word arg) {
       break;
     }
   }
+  return false;
 }
 
 // LOAD_METHOD shapes the stack as follows:
@@ -3495,25 +3533,6 @@ bool Interpreter::doBinaryOpCached(Context* ctx, word arg) {
   return cachedBinaryOpImpl(ctx, arg, binaryOpUpdateCache, binaryOpFallback);
 }
 
-// Bytecode handlers that might raise an exception return bool rather than
-// void.  These wrappers normalize the calling convention so handlers that
-// never raise can continue returning void.  They will likely be rendered
-// obsolete by future work we have planned to restructure and/or JIT the
-// interpreter dispatch loop.
-using VoidOp = void (*)(Interpreter::Context*, word);
-using BoolOp = bool (*)(Interpreter::Context*, word);
-
-template <VoidOp op>
-ALWAYS_INLINE bool wrapHandler(Interpreter::Context* ctx, word arg) {
-  op(ctx, arg);
-  return false;
-}
-
-template <BoolOp op>
-ALWAYS_INLINE bool wrapHandler(Interpreter::Context* ctx, word arg) {
-  return op(ctx, arg);
-}
-
 RawObject Interpreter::execute(Thread* thread, Frame* frame,
                                const Function& function) {
   HandleScope scope(thread);
@@ -3576,7 +3595,7 @@ extendedArg:
   goto* dispatch_table[bc];
 
 #define OP(name, id, handler)                                                  \
-  handle##name : if (wrapHandler<handler>(&ctx, arg)) return do_return();      \
+  handle##name : if (handler(&ctx, arg)) return do_return();                   \
   goto* next_label();
   FOREACH_BYTECODE(OP)
 #undef OP
