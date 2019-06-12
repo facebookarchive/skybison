@@ -96,7 +96,7 @@ char* OS::readFile(const char* filename, word* len_out) {
   word length = ::lseek(fd.get(), 0, SEEK_END);
   CHECK(length != -1, "lseek failure");
   ::lseek(fd.get(), 0, SEEK_SET);
-  char* buffer = new char[length + 1];
+  char* buffer = new char[length];
   {
     word result;
     do {
@@ -106,7 +106,6 @@ char* OS::readFile(const char* filename, word* len_out) {
   if (len_out != nullptr) {
     *len_out = length;
   }
-  buffer[length] = '\0';
   return buffer;
 }
 
