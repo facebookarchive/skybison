@@ -22,7 +22,7 @@ RawObject createException(Thread* thread, const Type& type,
 // ensure that value is an instance of it (or a subtype). If a new exception
 // with a traceback is raised during normalization traceback will be set to the
 // new traceback.
-void normalizeException(Thread* thread, Object* exc, Object* value,
+void normalizeException(Thread* thread, Object* exc, Object* val,
                         Object* traceback);
 
 // Internal equivalents to PyErr_PrintEx(): Print information about the current

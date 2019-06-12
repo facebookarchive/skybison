@@ -60,7 +60,8 @@ RawObject createException(Thread* thread, const Type& type,
   return Interpreter::callFunction1(thread, caller, type, value);
 }
 
-void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
+void normalizeException(Thread* thread, Object* exc, Object* val,
+                        Object* traceback) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
 
@@ -102,7 +103,7 @@ void normalizeException(Thread* thread, Object* exc, Object* val, Object* tb) {
     *exc = thread->pendingExceptionType();
     *val = thread->pendingExceptionValue();
     Object new_tb(&scope, thread->pendingExceptionTraceback());
-    if (!new_tb.isNoneType()) *tb = *new_tb;
+    if (!new_tb.isNoneType()) *traceback = *new_tb;
     thread->clearPendingException();
   }
 
