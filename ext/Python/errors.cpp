@@ -329,7 +329,24 @@ PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
   Object val_obj(&scope, ApiHandle::fromPyObject(val)->asObject());
+
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*exc_obj) ||
+      !Type(&scope, *exc_obj).isBaseExceptionSubclass()) {
+    Object exc_repr(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                    SymbolId::kRepr, exc_obj));
+    if (exc_repr.isErrorException()) return;
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "exception %S not a BaseException subclass",
+                         &exc_repr);
+    return;
+  }
+
   thread->raiseWithType(*exc_obj, *val_obj);
+  if (runtime->isInstanceOfBaseException(*val_obj)) {
+    thread->setPendingExceptionTraceback(
+        BaseException(&scope, *val_obj).traceback());
+  }
 }
 
 PY_EXPORT void PyErr_SyntaxLocation(const char* /* e */, int /* o */) {

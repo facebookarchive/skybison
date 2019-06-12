@@ -39,6 +39,17 @@ TEST_F(ErrorsExtensionApiTest, SetObjectSetsTypeAndValue) {
   Py_DECREF(value);
 }
 
+TEST_F(ErrorsExtensionApiTest, SetObjectWithNonExceptionTypeRaisesSystemError) {
+  PyObjectPtr bool_type(PyObject_Type(Py_True));
+  PyErr_SetObject(bool_type, Py_None);
+  EXPECT_EQ(PyErr_Occurred(), PyExc_SystemError);
+}
+
+TEST_F(ErrorsExtensionApiTest, SetObjectWithNonTypeRaisesSystemError) {
+  PyErr_SetObject(Py_True, Py_None);
+  EXPECT_EQ(PyErr_Occurred(), PyExc_SystemError);
+}
+
 TEST_F(ErrorsExtensionApiTest, ClearClearsExceptionState) {
   // Set the exception state
   Py_INCREF(PyExc_Exception);
