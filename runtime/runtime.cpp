@@ -576,7 +576,7 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
                                       Function::Entry entry) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object code_code(&scope, newInt(bit_cast<uword>(entry)));
+  Object entry_ptr(&scope, newIntFromCPtr(bit_cast<void*>(entry)));
   Tuple empty_tuple(&scope, newTuple(0));
   Object empty_string(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
@@ -586,7 +586,7 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
                             0,             // nlocals
                             0,             // stacksize
                             0,             // flags
-                            code_code,     // code
+                            entry_ptr,     // code
                             empty_tuple,   // consts
                             empty_tuple,   // names
                             empty_tuple,   // varnames
