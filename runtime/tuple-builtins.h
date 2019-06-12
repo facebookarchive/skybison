@@ -8,16 +8,6 @@
 
 namespace python {
 
-// Helper function for struct sequences to look for hidden fields in the
-// instance's attributes. This should only be used through the
-// struct sequence field descriptors and through the C-API
-RawObject underStructseqGetAttr(Thread* thread, Frame* frame, word nargs);
-
-// Helper function for struct sequences to bypass its descriptor immutability.
-// This should only be used when creating struct sequences and
-// through the C-API
-RawObject underStructseqSetAttr(Thread* thread, Frame* frame, word nargs);
-
 // If seq is a tuple (not a tuple subtype), return it. Otherwise, attempt to
 // treat it as an iterable object and return a tuple with its elements. May
 // return Error if an exception is raised at any point.

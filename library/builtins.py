@@ -7,6 +7,7 @@
 # helper here.
 _Unbound = _Unbound  # noqa: F821
 _patch = _patch  # noqa: F821
+_traceback = _traceback  # noqa: F821
 
 
 # Begin: Early definitions that are necessary to process the rest of the file:
@@ -183,6 +184,30 @@ class object(bootstrap=True):  # noqa: E999
 
 
 class BaseException(bootstrap=True):
+    # Some properties of BaseException can be Unbound to indicate that they're
+    # nullptr from the C-API's point of view. We want to hide that distinction
+    # from managed code, which is done with descriptors created here.
+    #
+    # This function is only needed during class creation, so it's deleted at
+    # the end of the class body to avoid exposing it to user code.
+    def _maybe_unbound_property(name, dunder_name, target_type):  # noqa: B902
+        def get(instance):
+            value = _instance_getattr(instance, dunder_name)
+            return None if value is _Unbound else value
+
+        def set(instance, value):
+            if value is not None and not isinstance(value, target_type):
+                raise TypeError(
+                    f"exception {name} must be None or a {target_type.__name__}"
+                )
+            _instance_setattr(instance, dunder_name, value)
+
+        return property(get, set)
+
+    __cause__ = _maybe_unbound_property("cause", "__cause__", BaseException)
+
+    __context__ = _maybe_unbound_property("context", "__context__", BaseException)
+
     def __init__(self, *args):
         pass
 
@@ -199,6 +224,10 @@ class BaseException(bootstrap=True):
         if len(self.args) == 1:
             return str(self.args[0])
         return str(self.args)
+
+    __traceback__ = _maybe_unbound_property("traceback", "__traceback__", _traceback)
+
+    del _maybe_unbound_property
 
 
 Ellipsis = ...
@@ -517,6 +546,16 @@ def _int(obj) -> int:
     if result_type is int:
         return result
     raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
+
+
+@_patch
+def _instance_getattr(obj, name):
+    pass
+
+
+@_patch
+def _instance_setattr(obj, name, value):
+    pass
 
 
 @_patch
@@ -867,7 +906,7 @@ class _structseq_field:
     def __get__(self, instance, owner):
         if self.index is not None:
             return instance[self.index]
-        return _structseq_getattr(instance, self.name)
+        return _instance_getattr(instance, self.name)
 
     def __init__(self, name, index):
         self.name = name
@@ -877,11 +916,6 @@ class _structseq_field:
         raise TypeError("readonly attribute")
 
 
-@_patch
-def _structseq_getattr(obj, name):
-    pass
-
-
 def _structseq_getitem(self, pos):
     if pos < 0 or pos >= _type(self).n_fields:
         raise IndexError("index out of bounds")
@@ -889,7 +923,7 @@ def _structseq_getitem(self, pos):
         return self[pos]
     else:
         name = self._structseq_field_names[pos]
-        return _structseq_getattr(self, name)
+        return _instance_getattr(self, name)
 
 
 def _structseq_new(cls, sequence, dict={}):  # noqa B006
@@ -914,12 +948,12 @@ def _structseq_new(cls, sequence, dict={}):  # noqa B006
     # Fill the rest of the hidden fields
     for i in range(min_len, seq_len):
         key = cls._structseq_field_names[i]
-        _structseq_setattr(structseq, key, seq_tuple[min_len])
+        _instance_setattr(structseq, key, seq_tuple[min_len])
 
     # Fill the remaining from the dict or set to None
     for i in range(seq_len, max_len):
         key = cls._structseq_field_names[i]
-        _structseq_setattr(structseq, key, dict.get(key))
+        _instance_setattr(structseq, key, dict.get(key))
 
     return structseq
 
@@ -932,11 +966,6 @@ def _structseq_repr(self):
     # TODO(T40273054): Iterate attributes and return field names
     tuple_values = ", ".join([i.__repr__() for i in self])
     return f"{_type(self).__name__}({tuple_values})"
-
-
-@_patch
-def _structseq_setattr(obj, name, value):
-    pass
 
 
 @_patch

@@ -15,6 +15,7 @@
 #include "interpreter.h"
 #include "list-builtins.h"
 #include "marshal.h"
+#include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -112,6 +113,8 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberUInt, underGetMemberUInt},
     {SymbolId::kUnderGetMemberULong, underGetMemberULong},
     {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
+    {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
+    {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
     {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
@@ -126,11 +129,11 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
+    {SymbolId::kUnderSetCheck, underSetCheck},
     {SymbolId::kUnderSetMemberDouble, underSetMemberDouble},
     {SymbolId::kUnderSetMemberFloat, underSetMemberFloat},
     {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
     {SymbolId::kUnderSetMemberPyObject, underSetMemberPyObject},
-    {SymbolId::kUnderSetCheck, underSetCheck},
     {SymbolId::kUnderSliceCheck, underSliceCheck},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
@@ -140,8 +143,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
-    {SymbolId::kUnderStructseqGetAttr, underStructseqGetAttr},
-    {SymbolId::kUnderStructseqSetAttr, underStructseqSetAttr},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderType, underType},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
@@ -247,6 +248,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kTypeError, LayoutId::kTypeError},
     {SymbolId::kUnboundLocalError, LayoutId::kUnboundLocalError},
     {SymbolId::kUnderStrArray, LayoutId::kStrArray},
+    {SymbolId::kUnderTraceback, LayoutId::kTraceback},
     {SymbolId::kUnicodeDecodeError, LayoutId::kUnicodeDecodeError},
     {SymbolId::kUnicodeEncodeError, LayoutId::kUnicodeEncodeError},
     {SymbolId::kUnicodeError, LayoutId::kUnicodeError},
@@ -985,6 +987,25 @@ RawObject BuiltinsModule::underGetMemberUShort(Thread* thread, Frame* frame,
   unsigned short value = 0;
   std::memcpy(&value, reinterpret_cast<void*>(addr), sizeof(value));
   return thread->runtime()->newIntFromUnsigned(value);
+}
+
+RawObject BuiltinsModule::underInstanceGetattr(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  HeapObject instance(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  return instanceGetAttribute(thread, instance, name);
+}
+
+RawObject BuiltinsModule::underInstanceSetattr(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  HeapObject instance(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  Object value(&scope, args.get(2));
+  return instanceSetAttr(thread, instance, name, value);
 }
 
 RawObject BuiltinsModule::underIntCheck(Thread* thread, Frame* frame,

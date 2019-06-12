@@ -5,8 +5,8 @@ module."""
 
 # flake8 has no knowledge about these functions' definitions and will complain
 # without this gross circular helper here.
+_instance_setattr = _instance_setattr  # noqa: F821
 _str_check = _str_check  # noqa: F821
-_structseq_setattr = _structseq_setattr  # noqa: F821
 _structseq_field = _structseq_field  # noqa: F821
 
 
@@ -65,7 +65,7 @@ def _namedtuple_new(cls, *sequence, **kwargs):  # noqa B006
     for i in range(len(kwarg_names)):
         key = kwarg_names[i]
         value = kwarg_values[i]
-        _structseq_setattr(structseq, key, value)
+        _instance_setattr(structseq, key, value)
 
     return structseq
 

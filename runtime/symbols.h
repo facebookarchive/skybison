@@ -180,6 +180,8 @@ class Runtime;
   V(UnderGetMemberUShort, "_get_member_ushort")                                \
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
+  V(UnderInstanceGetattr, "_instance_getattr")                                 \
+  V(UnderInstanceSetattr, "_instance_setattr")                                 \
   V(UnderIntCheck, "_int_check")                                               \
   V(UnderIntFromBytes, "_int_from_bytes")                                      \
   V(UnderIntNewFromByteArray, "_int_new_from_bytearray")                       \
@@ -247,13 +249,12 @@ class Runtime;
   V(UnderStrSplitlines, "_str_splitlines")                                     \
   V(UnderStructseqField, "_structseq_field")                                   \
   V(UnderStructseqFieldNames, "_structseq_field_names")                        \
-  V(UnderStructseqGetAttr, "_structseq_getattr")                               \
   V(UnderStructseqGetItem, "_structseq_getitem")                               \
   V(UnderStructseqNew, "_structseq_new")                                       \
   V(UnderStructseqRepr, "_structseq_repr")                                     \
-  V(UnderStructseqSetAttr, "_structseq_setattr")                               \
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
+  V(UnderTraceback, "_traceback")                                              \
   V(UnderType, "_type")                                                        \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \

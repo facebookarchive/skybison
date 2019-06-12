@@ -111,6 +111,35 @@ class DictTests(unittest.TestCase):
             dict.update({}, D())
 
 
+class ExceptionTests(unittest.TestCase):
+    def test_maybe_unbound_attributes(self):
+        exc = BaseException()
+        exc2 = BaseException()
+        self.assertIs(exc.__cause__, None)
+        self.assertIs(exc.__context__, None)
+        self.assertIs(exc.__traceback__, None)
+
+        # Test setter for __cause__.
+        self.assertRaises(TypeError, setattr, exc, "__cause__", 123)
+        exc.__cause__ = exc2
+        self.assertIs(exc.__cause__, exc2)
+        exc.__cause__ = None
+        self.assertIs(exc.__cause__, None)
+
+        # Test setter for __context__.
+        self.assertRaises(TypeError, setattr, exc, "__context__", 456)
+        exc.__context__ = exc2
+        self.assertIs(exc.__context__, exc2)
+        exc.__context__ = None
+        self.assertIs(exc.__context__, None)
+
+        # Test setter for __traceback__.
+        self.assertRaises(TypeError, setattr, "__traceback__", "some string")
+        # TODO(bsimmers): Set a real traceback once we support them.
+        exc.__traceback__ = None
+        self.assertIs(exc.__traceback__, None)
+
+
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):
         def inner_gen():
