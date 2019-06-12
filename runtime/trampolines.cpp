@@ -1092,50 +1092,56 @@ RawObject unimplementedTrampoline(Thread*, Frame*, word) {
   UNIMPLEMENTED("Trampoline");
 }
 
-template <typename InitArgs>
-static RawObject builtinTrampolineImpl(Thread* thread, Frame* caller,
-                                       word function_idx, InitArgs init_args) {
-  HandleScope scope(thread);
-  Function function(&scope, caller->peek(function_idx));
-  DCHECK(!function.code().isNoneType(),
-         "builtin functions should have annotated code objects");
-  Code code(&scope, function.code());
-  DCHECK(code.code().isSmallInt(),
-         "builtin functions should contain entrypoint in code.code");
-  // The native function has been annotated in managed code, so do some more
-  // advanced argument checking.
-  Object result(&scope, init_args(function));
-  if (result.isError()) return *result;
-  word argc = function.totalArgs();
-  void* entry = SmallInt::cast(code.code()).asCPtr();
-  Frame* frame = thread->pushNativeFrame(argc);
-  result = bit_cast<Function::Entry>(entry)(thread, frame, argc);
-  DCHECK(thread->isErrorValueOk(*result), "error/exception mismatch");
+static inline RawObject builtinTrampolineImpl(Thread* thread, Frame* caller,
+                                              word arg, word function_idx,
+                                              PrepareCallFunc prepare_call) {
+  // Warning: This code is using `RawXXX` variables for performance! This is
+  // despite the fact that we call functions that do potentially perform memory
+  // allocations. This is legal here because we always rely on the functions
+  // returning an up-to-date address and we make sure to never access any value
+  // produce before a call after that call. Be careful not to break this
+  // invariant if you change the code!
+
+  RawObject prepare_result = prepare_call(
+      thread, Function::cast(caller->peek(function_idx)), caller, arg);
+  if (prepare_result.isError()) return prepare_result;
+  RawFunction function = Function::cast(prepare_result);
+
+  RawObject result;
+  {
+    DCHECK(!function.code().isNoneType(),
+           "builtin functions should have annotated code objects");
+    RawCode code = Code::cast(function.code());
+    DCHECK(code.code().isSmallInt(),
+           "builtin functions should contain entrypoint in code.code");
+    void* entry = SmallInt::cast(code.code()).asCPtr();
+
+    word argc = function.totalArgs();
+    Frame* frame = thread->pushNativeFrame(argc);
+    result = bit_cast<Function::Entry>(entry)(thread, frame, argc);
+    // End scope so people do not accidentally use raw variables after the call
+    // which could have triggered a GC.
+  }
+  DCHECK(thread->isErrorValueOk(result), "error/exception mismatch");
   thread->popFrame();
-  return *result;
+  return result;
 }
 
 RawObject builtinTrampoline(Thread* thread, Frame* caller, word argc) {
-  return builtinTrampolineImpl(
-      thread, caller, argc, [&](const Function& function) {
-        return preparePositionalCall(thread, *function, caller, argc);
-      });
+  return builtinTrampolineImpl(thread, caller, argc, /*function_idx=*/argc,
+                               preparePositionalCall);
 }
 
 RawObject builtinTrampolineKw(Thread* thread, Frame* caller, word argc) {
-  return builtinTrampolineImpl(
-      thread, caller, argc + 1 /* skip over implicit tuple of kwargs */,
-      [&](const Function& function) {
-        return prepareKeywordCall(thread, *function, caller, argc);
-      });
+  return builtinTrampolineImpl(thread, caller, argc, /*function_idx=*/argc + 1,
+                               prepareKeywordCall);
 }
 
 RawObject builtinTrampolineEx(Thread* thread, Frame* caller, word flags) {
   return builtinTrampolineImpl(
-      thread, caller, (flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1,
-      [&](const Function& function) {
-        return prepareExplodeCall(thread, *function, caller, flags);
-      });
+      thread, caller, flags,
+      /*function_idx=*/(flags & CallFunctionExFlag::VAR_KEYWORDS) ? 2 : 1,
+      prepareExplodeCall);
 }
 
 RawObject slotTrampoline(Thread* thread, Frame* caller, word argc) {
