@@ -1543,7 +1543,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
   runtime->dictAtPutInValueCell(thread, dict, dict_key, name_obj);
 
   // Compute Mro
-  Tuple parents(&scope, runtime->newTuple(0));
+  Tuple parents(&scope, runtime->emptyTuple());
   Object mro(&scope, computeMro(thread, type, parents));
   type.setMro(*mro);
 

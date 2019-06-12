@@ -502,7 +502,7 @@ a = Foo((1, 2)) + (3, 4)
 
 TEST_F(TupleBuiltinsTest, DunderEqWithDifferentSizeTuplesReturnsFalse) {
   HandleScope scope(thread_);
-  Object left(&scope, runtime_.newTuple(0));
+  Object left(&scope, runtime_.emptyTuple());
   Object right(&scope, runtime_.newTuple(3));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   ASSERT_TRUE(a.isBool());
@@ -542,7 +542,7 @@ right = Foo((1, 2))
 
 TEST_F(TupleBuiltinsTest, DunderEqWithNonTupleSecondArgReturnsNotImplemented) {
   HandleScope scope(thread_);
-  Object left(&scope, runtime_.newTuple(0));
+  Object left(&scope, runtime_.emptyTuple());
   Object right(&scope, runtime_.newInt(1));
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   EXPECT_TRUE(a.isNotImplementedType());
@@ -551,7 +551,7 @@ TEST_F(TupleBuiltinsTest, DunderEqWithNonTupleSecondArgReturnsNotImplemented) {
 TEST_F(TupleBuiltinsTest, DunderEqWithNonTupleFirstArgRaisesTypeError) {
   HandleScope scope(thread_);
   Object left(&scope, runtime_.newInt(1));
-  Object right(&scope, runtime_.newTuple(0));
+  Object right(&scope, runtime_.emptyTuple());
   Object a(&scope, runBuiltin(TupleBuiltins::dunderEq, left, right));
   ASSERT_TRUE(a.isError());
   Thread* thread = Thread::current();

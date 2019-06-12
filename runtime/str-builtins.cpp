@@ -810,7 +810,7 @@ RawObject StrBuiltins::dunderMod(Thread* thread, Frame* frame, word nargs) {
   Object other(&scope, args.get(1));
   if (self.isStr()) {
     Str format(&scope, *self);
-    Tuple format_args(&scope, runtime->newTuple(0));
+    Tuple format_args(&scope, runtime->emptyTuple());
     if (other.isTuple()) {
       format_args = *other;
     } else {

@@ -26,7 +26,7 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   Type type(&scope, runtime->newType());
 
   // Compute MRO
-  Tuple mro(&scope, runtime->newTuple(0));
+  Tuple mro(&scope, runtime->emptyTuple());
   type.setMro(*mro);
 
   // Initialize instance Layout

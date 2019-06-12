@@ -16,7 +16,7 @@ class A: pass
                    .isError());
   Object a_obj(&scope, moduleAt(&runtime_, "__main__", "A"));
   Type a(&scope, *a_obj);
-  Tuple parents(&scope, runtime_.newTuple(0));
+  Tuple parents(&scope, runtime_.emptyTuple());
   Object result_obj(&scope, computeMro(thread_, a, parents));
   ASSERT_TRUE(result_obj.isTuple());
   Tuple result(&scope, *result_obj);

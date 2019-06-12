@@ -51,7 +51,7 @@ static RawObject makeTestFunction(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object qualname(&scope, runtime->newStrFromCStr("footype.baz"));
   Code code(&scope, makeTestCode(thread));
-  Object closure(&scope, runtime->newTuple(0));
+  Object closure(&scope, runtime->emptyTuple());
   Dict annotations(&scope, runtime->newDict());
   Object return_name(&scope, runtime->newStrFromCStr("return"));
   Object int_type(&scope, runtime->typeAt(LayoutId::kInt));
@@ -214,7 +214,7 @@ TEST_F(DebuggingTests, FormatDict) {
   Object key0(&scope, runtime_.newStrFromCStr("hello"));
   Object key1(&scope, NoneType::object());
   Object value0(&scope, runtime_.newInt(88));
-  Object value1(&scope, runtime_.newTuple(0));
+  Object value1(&scope, runtime_.emptyTuple());
   runtime_.dictAtPut(thread_, dict, key0, value0);
   runtime_.dictAtPut(thread_, dict, key1, value1);
   std::stringstream ss;
@@ -372,7 +372,7 @@ TEST_F(DebuggingTests, FormatTuple) {
 
 TEST_F(DebuggingTests, FormatTupleWithoutElements) {
   std::stringstream ss;
-  ss << runtime_.newTuple(0);
+  ss << runtime_.emptyTuple();
   EXPECT_EQ(ss.str(), "()");
 }
 
@@ -414,7 +414,7 @@ def func(arg0, arg1):
   Function function(&scope, makeTestFunction(thread_));
   root->pushValue(*function);
   root->pushValue(runtime_.newStrFromCStr("foo bar"));
-  root->pushValue(runtime_.newTuple(0));
+  root->pushValue(runtime_.emptyTuple());
   root->pushValue(runtime_.newDict());
   ASSERT_EQ(root->previousFrame(), nullptr);
 

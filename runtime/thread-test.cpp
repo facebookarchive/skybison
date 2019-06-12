@@ -284,7 +284,7 @@ TEST_F(ThreadTest, PushFrameWithNoCellVars) {
   Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   code.setCellvars(NoneType::object());
-  code.setFreevars(runtime_.newTuple(0));
+  code.setFreevars(runtime_.emptyTuple());
   Dict globals(&scope, runtime_.newDict());
   Object none(&scope, NoneType::object());
   Function function(
@@ -304,7 +304,7 @@ TEST_F(ThreadTest, PushFrameWithNoFreeVars) {
   Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
   code.setFreevars(NoneType::object());
-  code.setCellvars(runtime_.newTuple(0));
+  code.setCellvars(runtime_.emptyTuple());
   Dict globals(&scope, runtime_.newDict());
   Object none(&scope, NoneType::object());
   Function function(
@@ -2632,7 +2632,7 @@ TEST_F(ThreadTest, PushCallFrameWithSameGlobalsPropagatesBuiltins) {
   HandleScope scope(thread_);
   Code code(&scope, newEmptyCode());
   code.setCode(Bytes::empty());
-  code.setNames(runtime_.newTuple(0));
+  code.setNames(runtime_.emptyTuple());
 
   Object qualname(&scope, runtime_.newStrFromCStr("<anonymous>"));
   Object none(&scope, NoneType::object());

@@ -490,7 +490,7 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type.instanceLayout());
   Dict result(&scope, thread->runtime()->newInstance(layout));
   result.setNumItems(0);
-  result.setData(thread->runtime()->newTuple(0));
+  result.setData(thread->runtime()->emptyTuple());
   result.resetNumUsableItems();
   return *result;
 }

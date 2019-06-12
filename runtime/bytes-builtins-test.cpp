@@ -1164,7 +1164,7 @@ TEST_F(BytesBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Bytes self(&scope, runtime_.newBytes(3, 'a'));
-  Object iter(&scope, runtime_.newTuple(0));
+  Object iter(&scope, runtime_.emptyTuple());
   Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
   EXPECT_TRUE(isBytesEqualsCStr(result, ""));
 }

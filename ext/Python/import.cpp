@@ -58,7 +58,7 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
   Object level_obj(&scope, SmallInt::fromWord(level));
   Object fromlist_obj(&scope,
                       fromlist == nullptr
-                          ? runtime->newTuple(0)
+                          ? runtime->emptyTuple()
                           : ApiHandle::fromPyObject(fromlist)->asObject());
 
   Object locals_obj(&scope, locals == nullptr
@@ -157,7 +157,7 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
       runtime->dictAtPut(thread, globals_obj, key, value);
     }
   }
-  Object fromlist_obj(&scope, runtime->newTuple(0));
+  Object fromlist_obj(&scope, runtime->emptyTuple());
   Object level_obj(&scope, SmallInt::fromWord(0));
   Object result(&scope,
                 thread->invokeFunction5(

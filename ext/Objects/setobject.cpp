@@ -87,7 +87,7 @@ PY_EXPORT int PySet_Clear(PyObject* anyset) {
   }
   SetBase set(&scope, *set_obj);
   set.setNumItems(0);
-  set.setData(runtime->newTuple(0));
+  set.setData(runtime->emptyTuple());
   return 0;
 }
 

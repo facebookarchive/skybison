@@ -212,7 +212,7 @@ RawObject ListBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type.instanceLayout());
   List result(&scope, thread->runtime()->newInstance(layout));
   result.setNumItems(0);
-  result.setItems(thread->runtime()->newTuple(0));
+  result.setItems(thread->runtime()->emptyTuple());
   return *result;
 }
 

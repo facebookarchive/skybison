@@ -689,7 +689,7 @@ TEST_F(BuiltinsModuleTest, DunderBuildClassWithNonFunctionRaisesTypeError) {
   Object name(&scope, runtime_.newStrFromCStr("a"));
   Object metaclass(&scope, Unbound::object());
   Object bootstrap(&scope, Bool::falseObj());
-  Object bases(&scope, runtime_.newTuple(0));
+  Object bases(&scope, runtime_.emptyTuple());
   Object kwargs(&scope, runtime_.newDict());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,
@@ -704,7 +704,7 @@ TEST_F(BuiltinsModuleTest, DunderBuildClassWithNonStringRaisesTypeError) {
   Object name(&scope, NoneType::object());
   Object metaclass(&scope, Unbound::object());
   Object bootstrap(&scope, Bool::falseObj());
-  Object bases(&scope, runtime_.newTuple(0));
+  Object bases(&scope, runtime_.emptyTuple());
   Object kwargs(&scope, runtime_.newDict());
   EXPECT_TRUE(raisedWithStr(
       runBuiltin(BuiltinsModule::dunderBuildClass, body, name, metaclass,

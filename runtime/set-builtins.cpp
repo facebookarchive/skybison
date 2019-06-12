@@ -355,7 +355,7 @@ RawObject FrozenSetBuiltins::dunderNew(Thread* thread, Frame* frame,
     Layout layout(&scope, type.instanceLayout());
     FrozenSet result(&scope, thread->runtime()->newInstance(layout));
     result.setNumItems(0);
-    result.setData(thread->runtime()->newTuple(0));
+    result.setData(thread->runtime()->emptyTuple());
     return *result;
   }
   // Called with iterable, so iterate
@@ -658,7 +658,7 @@ RawObject SetBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Layout layout(&scope, type.instanceLayout());
   Set result(&scope, thread->runtime()->newInstance(layout));
   result.setNumItems(0);
-  result.setData(thread->runtime()->newTuple(0));
+  result.setData(thread->runtime()->emptyTuple());
   return *result;
 }
 

@@ -2935,7 +2935,7 @@ TEST_F(InterpreterTest, FunctionCallExWithNonFunctionRaisesTypeError) {
   Frame* frame = thread_->currentFrame();
   Str not_a_func(&scope, Str::empty());
   frame->pushValue(*not_a_func);
-  Tuple empty_args(&scope, runtime_.newTuple(0));
+  Tuple empty_args(&scope, runtime_.emptyTuple());
   frame->pushValue(*empty_args);
   EXPECT_TRUE(raisedWithStr(Interpreter::callEx(thread_, frame, 0),
                             LayoutId::kTypeError,

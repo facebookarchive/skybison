@@ -1291,7 +1291,7 @@ TEST_F(SetBuiltinsTest, UpdateWithNoArgsDoesNothing) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Set set(&scope, runtime_.newSet());
-  Tuple starargs(&scope, runtime_.newTuple(0));
+  Tuple starargs(&scope, runtime_.emptyTuple());
   Object result(&scope, runBuiltin(SetBuiltins::update, set, starargs));
   EXPECT_TRUE(result.isNoneType());
   EXPECT_EQ(set.numItems(), 0);

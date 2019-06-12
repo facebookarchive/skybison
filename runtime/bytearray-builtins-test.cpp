@@ -1360,7 +1360,7 @@ TEST_F(ByteArrayBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
   HandleScope scope(thread_);
   ByteArray self(&scope, runtime_.newByteArray());
   byteArrayAdd(thread_, &runtime_, self, 'a');
-  Object iter(&scope, runtime_.newTuple(0));
+  Object iter(&scope, runtime_.emptyTuple());
   Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
 }

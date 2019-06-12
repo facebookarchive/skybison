@@ -624,7 +624,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   cellvars.atPut(0, *bar);
   const byte bytecode[] = {LOAD_CLOSURE, 0, LOAD_DEREF, 0, RETURN_VALUE, 0};
   Bytes bc(&scope, runtime_.newBytesWithAll(bytecode));
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_str(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
   word flags = Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
@@ -671,7 +671,7 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesCellValue) {
   Bytes bc(&scope, runtime_.newBytesWithAll(bytecode));
   Object empty_str(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Code code(&scope,
             runtime_.newCode(1, 0, nlocals, 0, 0, bc, consts, empty_tuple,
                              varnames, empty_tuple, cellvars, empty_str,
@@ -843,7 +843,7 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(2));
   consts.atPut(0, *callee);
-  Tuple kw_tuple(&scope, runtime_.newTuple(0));
+  Tuple kw_tuple(&scope, runtime_.emptyTuple());
   consts.atPut(1, *kw_tuple);
   code.setConsts(*consts);
 
@@ -906,7 +906,7 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_.newTuple(2));
   consts.atPut(0, *callee);
-  Tuple arg_tuple(&scope, runtime_.newTuple(0));
+  Tuple arg_tuple(&scope, runtime_.emptyTuple());
   consts.atPut(1, *arg_tuple);
   code.setConsts(*consts);
 
@@ -1043,7 +1043,7 @@ TEST_F(TrampolinesTest,
   Tuple consts(&scope, runtime_.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
-  Tuple kw_tuple(&scope, runtime_.newTuple(0));
+  Tuple kw_tuple(&scope, runtime_.emptyTuple());
   consts.atPut(2, *kw_tuple);
   code.setConsts(*consts);
 
@@ -1293,7 +1293,7 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   Tuple consts(&scope, runtime_.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, SmallInt::fromWord(1111));
-  Tuple kw_tuple(&scope, runtime_.newTuple(0));
+  Tuple kw_tuple(&scope, runtime_.emptyTuple());
   consts.atPut(2, *kw_tuple);
   code.setConsts(*consts);
 
@@ -1863,7 +1863,7 @@ TEST_F(TrampolinesTest, SlotTrampolineKwAllowsCallWithNoKwargs) {
   Tuple consts(&scope, runtime_.newTuple(3));
   consts.atPut(0, *callee);
   consts.atPut(1, runtime_.newInt(1234));
-  Tuple kw_tuple(&scope, runtime_.newTuple(0));
+  Tuple kw_tuple(&scope, runtime_.emptyTuple());
   consts.atPut(2, *kw_tuple);
   code.setConsts(*consts);
 

@@ -1512,7 +1512,7 @@ TEST_F(ListBuiltinsTest, ExtendListIterator) {
 TEST_F(ListBuiltinsTest, ExtendTuple) {
   HandleScope scope(thread_);
   List list(&scope, runtime_.newList());
-  Object object_array0(&scope, runtime_.newTuple(0));
+  Object object_array0(&scope, runtime_.emptyTuple());
   Tuple object_array1(&scope, runtime_.newTuple(1));
   Tuple object_array16(&scope, runtime_.newTuple(16));
 

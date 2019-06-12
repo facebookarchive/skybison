@@ -116,7 +116,7 @@ std::ostream& dumpExtendedHeapObject(std::ostream& os, RawHeapObject value) {
   Type type(&scope, layout.describedType());
   os << "heap object " << type << ":\n";
   Tuple in_object(&scope, layout.inObjectAttributes());
-  Tuple entry(&scope, runtime->newTuple(0));
+  Tuple entry(&scope, runtime->emptyTuple());
   for (word i = 0, length = in_object.length(); i < length; i++) {
     entry = in_object.at(i);
     AttributeInfo info(entry.at(1));

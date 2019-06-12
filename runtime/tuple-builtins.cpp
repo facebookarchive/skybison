@@ -312,7 +312,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   word length = self.length();
   word times = right.asWord();
   if (length == 0 || times <= 0) {
-    return runtime->newTuple(0);
+    return runtime->emptyTuple();
   }
   if (length == 1 || times == 1) {
     return *self;
@@ -362,7 +362,7 @@ RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
 
   // If no iterable is given as an argument, return an empty zero tuple.
   if (args.get(1).isUnbound()) {
-    Tuple tuple(&scope, runtime->newTuple(0));
+    Tuple tuple(&scope, runtime->emptyTuple());
     return newTupleOrUserSubclass(thread, tuple, type);
   }
 

@@ -1999,7 +1999,7 @@ def test():
 
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function test(&scope, moduleAt(&runtime_, main, "test"));
-  Tuple args(&scope, runtime_.newTuple(0));
+  Tuple args(&scope, runtime_.emptyTuple());
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
 }
@@ -2118,7 +2118,7 @@ def test():
 
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function test(&scope, moduleAt(&runtime_, main, "test"));
-  Tuple args(&scope, runtime_.newTuple(0));
+  Tuple args(&scope, runtime_.emptyTuple());
   Object result(&scope, callFunction(test, args));
   EXPECT_EQ(*result, NoneType::object());
 }
@@ -2498,7 +2498,7 @@ def new_foo():
   HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function new_foo(&scope, moduleAt(&runtime_, main, "new_foo"));
-  Tuple args(&scope, runtime_.newTuple(0));
+  Tuple args(&scope, runtime_.emptyTuple());
   HeapObject instance(&scope, callFunction(new_foo, args));
 
   // Verify that 'bar' is an in-object property
@@ -2532,7 +2532,7 @@ def new_foo():
   HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function new_foo(&scope, moduleAt(&runtime_, main, "new_foo"));
-  Tuple args(&scope, runtime_.newTuple(0));
+  Tuple args(&scope, runtime_.emptyTuple());
   HeapObject instance(&scope, callFunction(new_foo, args));
 
   // Verify that 'bar' is an overflow property
@@ -2825,7 +2825,7 @@ TEST_F(RuntimeTest, NotMatchingCellAndVarNamesSetsCell2ArgToNone) {
   cellvars.atPut(0, *foobar);
   cellvars.atPut(1, *foobaz);
   Object code_code(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
@@ -2852,7 +2852,7 @@ TEST_F(RuntimeTest, MatchingCellAndVarNamesCreatesCell2Arg) {
   cellvars.atPut(0, *baz);
   cellvars.atPut(1, *foobar);
   Object code_code(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
@@ -2884,7 +2884,7 @@ TEST_F(RuntimeTest, NewCodeWithCellvarsTurnsOffNofreeFlag) {
   cellvars.atPut(0, *baz);
   cellvars.atPut(1, *foobar);
   Object code_code(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Code code(&scope,
@@ -2899,7 +2899,7 @@ TEST_F(RuntimeTest, NewCodeWithNoFreevarsOrCellvarsSetsNofreeFlag) {
   Tuple varnames(&scope, runtime_.newTuple(1));
   varnames.atPut(0, runtime_.newStrFromCStr("foobar"));
   Object code_code(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   Object code_obj(
@@ -2917,7 +2917,7 @@ TEST_F(RuntimeTest,
   Tuple varnames(&scope, runtime_.newTuple(1));
   Tuple cellvars(&scope, runtime_.newTuple(2));
   Object code_code(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   EXPECT_TRUE(raisedWithStr(
@@ -2933,7 +2933,7 @@ TEST_F(RuntimeTest,
   Tuple varnames(&scope, runtime_.newTuple(1));
   Tuple cellvars(&scope, runtime_.newTuple(2));
   Object code_code(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   EXPECT_TRUE(raisedWithStr(
@@ -2949,7 +2949,7 @@ TEST_F(RuntimeTest,
   Tuple varnames(&scope, runtime_.newTuple(1));
   Tuple cellvars(&scope, runtime_.newTuple(2));
   Object code_code(&scope, Bytes::empty());
-  Tuple empty_tuple(&scope, runtime_.newTuple(0));
+  Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Object empty_bytes(&scope, Bytes::empty());
   Object empty_str(&scope, Str::empty());
   EXPECT_TRUE(raisedWithStr(

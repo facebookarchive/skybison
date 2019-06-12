@@ -23,7 +23,7 @@ exc = BaseException()
 
   // No constructor arguments means args should contain an empty tuple.
   ASSERT_TRUE(base_exception.args().isTuple());
-  ASSERT_EQ(base_exception.args(), runtime_.newTuple(0));
+  ASSERT_EQ(base_exception.args(), runtime_.emptyTuple());
 }
 
 TEST_F(ExceptionBuiltinsTest, BaseExceptionManyArguments) {

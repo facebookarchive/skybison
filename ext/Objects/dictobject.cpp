@@ -160,7 +160,7 @@ PY_EXPORT void PyDict_Clear(PyObject* pydict) {
   }
   Dict dict(&scope, *dict_obj);
   dict.setNumItems(0);
-  dict.setData(runtime->newTuple(0));
+  dict.setData(runtime->emptyTuple());
 }
 
 PY_EXPORT int PyDict_ClearFreeList() { return 0; }
