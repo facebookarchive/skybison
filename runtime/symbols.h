@@ -13,10 +13,10 @@ class Runtime;
   V(DunderAdd, "__add__")                                                      \
   V(DunderAenter, "__aenter__")                                                \
   V(DunderAexit, "__aexit__")                                                  \
-  V(DunderAnd, "__and__")                                                      \
-  V(DunderAnnotations, "__annotations__")                                      \
   V(DunderAiter, "__aiter__")                                                  \
+  V(DunderAnd, "__and__")                                                      \
   V(DunderAnext, "__anext__")                                                  \
+  V(DunderAnnotations, "__annotations__")                                      \
   V(DunderAwait, "__await__")                                                  \
   V(DunderBases, "__bases__")                                                  \
   V(DunderBool, "__bool__")                                                    \
@@ -33,9 +33,9 @@ class Runtime;
   V(DunderContains, "__contains__")                                            \
   V(DunderContext, "__context__")                                              \
   V(DunderDel, "__del__")                                                      \
-  V(DunderDelitem, "__delitem__")                                              \
   V(DunderDelattr, "__delattr__")                                              \
   V(DunderDelete, "__delete__")                                                \
+  V(DunderDelitem, "__delitem__")                                              \
   V(DunderDict, "__dict__")                                                    \
   V(DunderDivmod, "__divmod__")                                                \
   V(DunderDoc, "__doc__")                                                      \
@@ -130,312 +130,9 @@ class Runtime;
   V(DunderTrunc, "__trunc__")                                                  \
   V(DunderValues, "__values__")                                                \
   V(DunderXor, "__xor__")                                                      \
-  V(Abs, "abs")                                                                \
-  V(AcquireLock, "acquire_lock")                                               \
-  V(Add, "add")                                                                \
-  V(AndUnder, "and_")                                                          \
-  V(Append, "append")                                                          \
-  V(Args, "args")                                                              \
-  V(Argv, "argv")                                                              \
-  V(ArithmeticError, "ArithmeticError")                                        \
-  V(UnderAsciiEncode, "_ascii_encode")                                         \
-  V(Ascii, "ascii")                                                            \
-  V(AsciiDecode, "ascii_decode")                                               \
-  V(AsciiEncode, "ascii_encode")                                               \
-  V(AssertionError, "AssertionError")                                          \
-  V(AttributeError, "AttributeError")                                          \
-  V(Backslashreplace, "backslashreplace")                                      \
-  V(BadArgumentToInternalFunction, "bad argument to internal function")        \
-  V(BadArgumentTypeForBuiltinOperation,                                        \
-    "bad argument type for built-in operation")                                \
-  V(BaseException, "BaseException")                                            \
-  V(Big, "big")                                                                \
-  V(BitLength, "bit_length")                                                   \
-  V(BlockingIOError, "BlockingIOError")                                        \
-  V(Bool, "bool")                                                              \
-  V(Bootstrap, "bootstrap")                                                    \
-  V(BrokenPipeError, "BrokenPipeError")                                        \
-  V(BufferError, "BufferError")                                                \
-  V(BuiltinModuleNames, "builtin_module_names")                                \
-  V(Builtins, "builtins")                                                      \
-  V(ByteArray, "bytearray")                                                    \
-  V(ByteArrayIterator, "bytearray_iterator")                                   \
-  V(Byteorder, "byteorder")                                                    \
-  V(Bytes, "bytes")                                                            \
-  V(BytesWarning, "BytesWarning")                                              \
-  V(Callable, "callable")                                                      \
-  V(Cast, "cast")                                                              \
-  V(Cause, "cause")                                                            \
-  V(ChildProcessError, "ChildProcessError")                                    \
-  V(Chr, "chr")                                                                \
-  V(Classmethod, "classmethod")                                                \
-  V(Clear, "clear")                                                            \
-  V(CoArgcount, "co_argcount")                                                 \
-  V(CoCellvars, "co_cellvars")                                                 \
-  V(CoCode, "co_code")                                                         \
-  V(CoConsts, "co_consts")                                                     \
-  V(CoFilename, "co_filename")                                                 \
-  V(CoFirstlineno, "co_firstlineno")                                           \
-  V(CoFlags, "co_flags")                                                       \
-  V(CoFreevars, "co_freevars")                                                 \
-  V(CoKwonlyargcount, "co_kwonlyargcount")                                     \
-  V(CoLnotab, "co_lnotab")                                                     \
-  V(CoNlocals, "co_nlocals")                                                   \
-  V(CoName, "co_name")                                                         \
-  V(CoNames, "co_names")                                                       \
-  V(CoStacksize, "co_stacksize")                                               \
-  V(CoVarnames, "co_varnames")                                                 \
-  V(Code, "code")                                                              \
-  V(Compile, "compile")                                                        \
-  V(Complex, "complex")                                                        \
-  V(Concat, "concat")                                                          \
-  V(Conjugate, "conjugate")                                                    \
-  V(ConnectionAbortedError, "ConnectionAbortedError")                          \
-  V(ConnectionError, "ConnectionError")                                        \
-  V(ConnectionRefusedError, "ConnectionRefusedError")                          \
-  V(ConnectionResetError, "ConnectionResetError")                              \
-  V(Contains, "contains")                                                      \
-  V(Copy, "copy")                                                              \
-  V(CountOf, "countOf")                                                        \
-  V(Coroutine, "coroutine")                                                    \
-  V(CreateBuiltin, "create_builtin")                                           \
-  V(CrRunning, "cr_running")                                                   \
-  V(Deleter, "deleter")                                                        \
-  V(DeprecationWarning, "DeprecationWarning")                                  \
-  V(Dict, "dict")                                                              \
-  V(DictItems, "dict_items")                                                   \
-  V(DictItemIterator, "dict_itemiterator")                                     \
-  V(DictKeys, "dict_keys")                                                     \
-  V(DictKeyIterator, "dict_keyiterator")                                       \
-  V(DictValues, "dict_values")                                                 \
-  V(DictValueIterator, "dict_valueiterator")                                   \
-  V(Discard, "discard")                                                        \
-  V(Displayhook, "displayhook")                                                \
-  V(Divmod, "divmod")                                                          \
-  V(DotSo, ".so")                                                              \
-  V(Dummy, "dummy")                                                            \
-  V(EOFError, "EOFError")                                                      \
-  V(Ellipsis, "ellipsis")                                                      \
-  V(Encode, "encode")                                                          \
-  V(Encoding, "encoding")                                                      \
-  V(End, "end")                                                                \
-  V(Eq, "eq")                                                                  \
-  V(Excepthook, "excepthook")                                                  \
-  V(Exception, "Exception")                                                    \
-  V(ExceptionState, "ExceptionState")                                          \
-  V(ExcInfo, "exc_info")                                                       \
-  V(Exec, "exec")                                                              \
-  V(ExecBuiltin, "exec_builtin")                                               \
-  V(ExecDynamic, "exec_dynamic")                                               \
-  V(Executable, "executable")                                                  \
-  V(Exit, "exit")                                                              \
-  V(Extend, "extend")                                                          \
-  V(ExtensionPtr, "___extension___")                                           \
-  V(ExtensionSuffixes, "extension_suffixes")                                   \
-  V(File, "file")                                                              \
-  V(Filename, "filename")                                                      \
-  V(Fileno, "fileno")                                                          \
-  V(FileExistsError, "FileExistsError")                                        \
-  V(FileNotFoundError, "FileNotFoundError")                                    \
-  V(Find, "find")                                                              \
-  V(FixCoFilename, "_fix_co_filename")                                         \
-  V(Format, "format")                                                          \
-  V(Float, "float")                                                            \
-  V(FloatingPointError, "FloatingPointError")                                  \
-  V(Floordiv, "floordiv")                                                      \
-  V(Frame, "frame")                                                            \
-  V(FromBytes, "from_bytes")                                                   \
-  V(FrozenSet, "frozenset")                                                    \
-  V(Function, "function")                                                      \
-  V(FutureWarning, "FutureWarning")                                            \
-  V(Generator, "generator")                                                    \
-  V(GeneratorExit, "GeneratorExit")                                            \
-  V(Get, "get")                                                                \
-  V(GetSizeOf, "getsizeof")                                                    \
-  V(GetFrozenObject, "get_frozen_object")                                      \
-  V(Getattr, "getattr")                                                        \
-  V(Getter, "getter")                                                          \
-  V(GiRunning, "gi_running")                                                   \
-  V(Hasattr, "hasattr")                                                        \
-  V(Hex, "hex")                                                                \
-  V(Iadd, "iadd")                                                              \
-  V(Iand, "iand")                                                              \
-  V(Iconcat, "iconcat")                                                        \
-  V(Id, "id")                                                                  \
-  V(Ifloordiv, "ifloordiv")                                                    \
-  V(Ignore, "ignore")                                                          \
-  V(Ilshift, "ilshift")                                                        \
-  V(Imatmul, "imatmul")                                                        \
-  V(Imod, "imod")                                                              \
-  V(Imul, "imul")                                                              \
-  V(Ior, "ior")                                                                \
-  V(Ipow, "ipow")                                                              \
-  V(Irshift, "irshift")                                                        \
-  V(Irepeat, "irepeat")                                                        \
-  V(IsInstance, "isinstance")                                                  \
-  V(IsSubclass, "issubclass")                                                  \
-  V(Isub, "isub")                                                              \
-  V(Itruediv, "itruediv")                                                      \
-  V(Ixor, "ixor")                                                              \
-  V(ImportError, "ImportError")                                                \
-  V(ImportWarning, "ImportWarning")                                            \
-  V(IndentationError, "IndentationError")                                      \
-  V(IndexError, "IndexError")                                                  \
-  V(IndexOf, "indexOf")                                                        \
-  V(Insert, "insert")                                                          \
-  V(Int, "int")                                                                \
-  V(InterruptedError, "InterruptedError")                                      \
-  V(Intersection, "intersection")                                              \
-  V(Invert, "invert")                                                          \
-  V(IsADirectoryError, "IsADirectoryError")                                    \
-  V(IsBuiltin, "is_builtin")                                                   \
-  V(IsDisjoint, "isdisjoint")                                                  \
-  V(IsFrozen, "is_frozen")                                                     \
-  V(IsFrozenPackage, "is_frozen_package")                                      \
-  V(Items, "items")                                                            \
-  V(Itertools, "itertools")                                                    \
-  V(Join, "join")                                                              \
-  V(KeyError, "KeyError")                                                      \
-  V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
-  V(Keys, "keys")                                                              \
-  V(UnderLatin1Encode, "_latin_1_encode")                                      \
-  V(Latin1Encode, "latin_1_encode")                                            \
-  V(Len, "len")                                                                \
-  V(Length, "length")                                                          \
-  V(LStrip, "lstrip")                                                          \
-  V(LargeBytes, "largebytes")                                                  \
-  V(LargeInt, "largeint")                                                      \
-  V(LargeStr, "largestr")                                                      \
-  V(LastType, "last_type")                                                     \
-  V(LastValue, "last_value")                                                   \
-  V(LastTraceback, "last_traceback")                                           \
-  V(Layout, "layout")                                                          \
-  V(Lineno, "lineno")                                                          \
-  V(List, "list")                                                              \
-  V(ListIterator, "list_iterator")                                             \
-  V(Little, "little")                                                          \
-  V(Loads, "loads")                                                            \
-  V(LookupError, "LookupError")                                                \
-  V(Lower, "lower")                                                            \
-  V(Lshift, "lshift")                                                          \
-  V(Lt, "lt")                                                                  \
-  V(Marshal, "marshal")                                                        \
-  V(Matmul, "matmul")                                                          \
-  V(Maxsize, "maxsize")                                                        \
-  V(MemoryError, "MemoryError")                                                \
-  V(MemoryView, "memoryview")                                                  \
-  V(MetaPath, "meta_path")                                                     \
-  V(Metaclass, "metaclass")                                                    \
-  V(Method, "method")                                                          \
-  V(Mod, "mod")                                                                \
-  V(Module, "module")                                                          \
-  V(ModuleNotFoundError, "ModuleNotFoundError")                                \
-  V(Modules, "modules")                                                        \
-  V(Msg, "msg")                                                                \
-  V(Mul, "mul")                                                                \
-  V(NFields, "n_fields")                                                       \
-  V(NSequenceFields, "n_sequence_fields")                                      \
-  V(NUnnamedFields, "n_unnamed_fields")                                        \
-  V(Name, "name")                                                              \
-  V(NameError, "NameError")                                                    \
-  V(Namedtuple, "namedtuple")                                                  \
-  V(Neg, "neg")                                                                \
-  V(None, "None")                                                              \
-  V(NoneType, "NoneType")                                                      \
-  V(NotADirectoryError, "NotADirectoryError")                                  \
-  V(NotImplemented, "NotImplemented")                                          \
-  V(NotImplementedError, "NotImplementedError")                                \
-  V(NotImplementedType, "NotImplementedType")                                  \
-  V(Null, "<NULL>")                                                            \
-  V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
-  V(OSError, "OSError")                                                        \
-  V(ObjectTypename, "object")                                                  \
-  V(Offset, "offset")                                                          \
-  V(Operator, "operator")                                                      \
-  V(Ord, "ord")                                                                \
-  V(OrUnder, "or_")                                                            \
-  V(OverflowError, "OverflowError")                                            \
-  V(Partition, "partition")                                                    \
-  V(Path, "path")                                                              \
-  V(PendingDeprecationWarning, "PendingDeprecationWarning")                    \
-  V(PermissionError, "PermissionError")                                        \
-  V(Platform, "platform")                                                      \
-  V(Pop, "pop")                                                                \
-  V(Pos, "pos")                                                                \
-  V(Pow, "pow")                                                                \
-  V(PrintFileAndLine, "print_file_and_line")                                   \
-  V(ProcessLookupError, "ProcessLookupError")                                  \
-  V(Property, "property")                                                      \
-  V(Proxy, "proxy")                                                            \
-  V(Range, "range")                                                            \
-  V(RangeIterator, "range_iterator")                                           \
-  V(Reason, "reason")                                                          \
-  V(RecursionError, "RecursionError")                                          \
-  V(Ref, "ref")                                                                \
-  V(ReferenceError, "ReferenceError")                                          \
-  V(ReleaseLock, "release_lock")                                               \
-  V(Remove, "remove")                                                          \
-  V(Rfind, "rfind")                                                            \
-  V(Repr, "repr")                                                              \
-  V(Replace, "replace")                                                        \
-  V(ResourceWarning, "ResourceWarning")                                        \
-  V(RPartition, "rpartition")                                                  \
-  V(Rshift, "rshift")                                                          \
-  V(RSplit, "rsplit")                                                          \
-  V(RStrip, "rstrip")                                                          \
-  V(RuntimeError, "RuntimeError")                                              \
-  V(RuntimeWarning, "RuntimeWarning")                                          \
-  V(Send, "send")                                                              \
-  V(Set, "set")                                                                \
-  V(SetIterator, "set_iterator")                                               \
-  V(SeqIterator, "iterator")                                                   \
-  V(Setattr, "setattr")                                                        \
-  V(Setter, "setter")                                                          \
-  V(Signed, "signed")                                                          \
-  V(Size, "size")                                                              \
-  V(Slice, "slice")                                                            \
-  V(SmallBytes, "smallbytes")                                                  \
-  V(SmallInt, "smallint")                                                      \
-  V(SmallStr, "smallstr")                                                      \
-  V(Split, "split")                                                            \
-  V(Start, "start")                                                            \
-  V(StaticMethod, "staticmethod")                                              \
-  V(Stderr, "stderr")                                                          \
-  V(Stdout, "stdout")                                                          \
-  V(Step, "step")                                                              \
-  V(Stop, "stop")                                                              \
-  V(StopAsyncIteration, "StopAsyncIteration")                                  \
-  V(StopIteration, "StopIteration")                                            \
-  V(Str, "str")                                                                \
-  V(StrIterator, "str_iterator")                                               \
-  V(Strict, "strict")                                                          \
-  V(StrictErrors, "strict_errors")                                             \
-  V(Strip, "strip")                                                            \
-  V(Sub, "sub")                                                                \
-  V(Super, "super")                                                            \
-  V(Surrogateescape, "surrogateescape")                                        \
-  V(Surrogatepass, "surrogatepass")                                            \
-  V(SyntaxError, "SyntaxError")                                                \
-  V(SyntaxWarning, "SyntaxWarning")                                            \
-  V(Sys, "sys")                                                                \
-  V(SystemError, "SystemError")                                                \
-  V(SystemExit, "SystemExit")                                                  \
-  V(TabError, "TabError")                                                      \
-  V(Text, "text")                                                              \
-  V(Throw, "throw")                                                            \
-  V(Time, "time")                                                              \
-  V(TimeoutError, "TimeoutError")                                              \
-  V(ToBytes, "to_bytes")                                                       \
-  V(Traceback, "traceback")                                                    \
-  V(Translate, "translate")                                                    \
-  V(Truediv, "truediv")                                                        \
-  V(Tuple, "tuple")                                                            \
-  V(TupleIterator, "tuple_iterator")                                           \
-  V(Type, "type")                                                              \
-  V(TypeError, "TypeError")                                                    \
-  V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnderAddress, "_address")                                                  \
   V(UnderAsciiDecode, "_ascii_decode")                                         \
+  V(UnderAsciiEncode, "_ascii_encode")                                         \
   V(UnderBaseDir, "_base_dir")                                                 \
   V(UnderBases, "_bases")                                                      \
   V(UnderBootstrap, "_bootstrap")                                              \
@@ -465,6 +162,9 @@ class Runtime;
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
   V(UnderFunctools, "_functools")                                              \
+  V(UnderGetframeCode, "_getframe_code")                                       \
+  V(UnderGetframeGlobals, "_getframe_globals")                                 \
+  V(UnderGetframeLineno, "_getframe_lineno")                                   \
   V(UnderGetMemberByte, "_get_member_byte")                                    \
   V(UnderGetMemberChar, "_get_member_char")                                    \
   V(UnderGetMemberDouble, "_get_member_double")                                \
@@ -478,9 +178,6 @@ class Runtime;
   V(UnderGetMemberUInt, "_get_member_uint")                                    \
   V(UnderGetMemberULong, "_get_member_ulong")                                  \
   V(UnderGetMemberUShort, "_get_member_ushort")                                \
-  V(UnderGetframeCode, "_getframe_code")                                       \
-  V(UnderGetframeGlobals, "_getframe_globals")                                 \
-  V(UnderGetframeLineno, "_getframe_lineno")                                   \
   V(UnderImp, "_imp")                                                          \
   V(UnderInstall, "_install")                                                  \
   V(UnderIntCheck, "_int_check")                                               \
@@ -490,6 +187,7 @@ class Runtime;
   V(UnderIntNewFromInt, "_int_new_from_int")                                   \
   V(UnderIntNewFromStr, "_int_new_from_str")                                   \
   V(UnderIo, "_io")                                                            \
+  V(UnderLatin1Encode, "_latin_1_encode")                                      \
   V(UnderListCheck, "_list_check")                                             \
   V(UnderListDelitem, "_list_delitem")                                         \
   V(UnderListDelslice, "_list_delslice")                                       \
@@ -562,10 +260,315 @@ class Runtime;
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnimplemented, "_unimplemented")                                      \
+  V(UnderUtf16Encode, "_utf_16_encode")                                        \
+  V(UnderUtf32Encode, "_utf_32_encode")                                        \
+  V(UnderUtf8Encode, "_utf_8_encode")                                          \
   V(UnderWarnings, "_warnings")                                                \
   V(UnderWeakLink, "_weaklink")                                                \
   V(UnderWeakRef, "_weakref")                                                  \
+  V(Abs, "abs")                                                                \
+  V(AcquireLock, "acquire_lock")                                               \
+  V(Add, "add")                                                                \
+  V(AndUnder, "and_")                                                          \
   V(Anonymous, "<anonymous>")                                                  \
+  V(Append, "append")                                                          \
+  V(Args, "args")                                                              \
+  V(Argv, "argv")                                                              \
+  V(ArithmeticError, "ArithmeticError")                                        \
+  V(Ascii, "ascii")                                                            \
+  V(AsciiDecode, "ascii_decode")                                               \
+  V(AsciiEncode, "ascii_encode")                                               \
+  V(AssertionError, "AssertionError")                                          \
+  V(AttributeError, "AttributeError")                                          \
+  V(Backslashreplace, "backslashreplace")                                      \
+  V(BadArgumentToInternalFunction, "bad argument to internal function")        \
+  V(BadArgumentTypeForBuiltinOperation,                                        \
+    "bad argument type for built-in operation")                                \
+  V(BaseException, "BaseException")                                            \
+  V(Big, "big")                                                                \
+  V(BitLength, "bit_length")                                                   \
+  V(BlockingIOError, "BlockingIOError")                                        \
+  V(Bool, "bool")                                                              \
+  V(Bootstrap, "bootstrap")                                                    \
+  V(BrokenPipeError, "BrokenPipeError")                                        \
+  V(BufferError, "BufferError")                                                \
+  V(BuiltinModuleNames, "builtin_module_names")                                \
+  V(Builtins, "builtins")                                                      \
+  V(ByteArray, "bytearray")                                                    \
+  V(ByteArrayIterator, "bytearray_iterator")                                   \
+  V(Byteorder, "byteorder")                                                    \
+  V(Bytes, "bytes")                                                            \
+  V(BytesWarning, "BytesWarning")                                              \
+  V(Callable, "callable")                                                      \
+  V(Cast, "cast")                                                              \
+  V(Cause, "cause")                                                            \
+  V(ChildProcessError, "ChildProcessError")                                    \
+  V(Chr, "chr")                                                                \
+  V(Classmethod, "classmethod")                                                \
+  V(Clear, "clear")                                                            \
+  V(CoArgcount, "co_argcount")                                                 \
+  V(CoCellvars, "co_cellvars")                                                 \
+  V(CoCode, "co_code")                                                         \
+  V(CoConsts, "co_consts")                                                     \
+  V(CoFilename, "co_filename")                                                 \
+  V(CoFirstlineno, "co_firstlineno")                                           \
+  V(CoFlags, "co_flags")                                                       \
+  V(CoFreevars, "co_freevars")                                                 \
+  V(CoKwonlyargcount, "co_kwonlyargcount")                                     \
+  V(CoLnotab, "co_lnotab")                                                     \
+  V(CoName, "co_name")                                                         \
+  V(CoNames, "co_names")                                                       \
+  V(CoNlocals, "co_nlocals")                                                   \
+  V(CoStacksize, "co_stacksize")                                               \
+  V(CoVarnames, "co_varnames")                                                 \
+  V(Code, "code")                                                              \
+  V(Compile, "compile")                                                        \
+  V(Complex, "complex")                                                        \
+  V(Concat, "concat")                                                          \
+  V(Conjugate, "conjugate")                                                    \
+  V(ConnectionAbortedError, "ConnectionAbortedError")                          \
+  V(ConnectionError, "ConnectionError")                                        \
+  V(ConnectionRefusedError, "ConnectionRefusedError")                          \
+  V(ConnectionResetError, "ConnectionResetError")                              \
+  V(Contains, "contains")                                                      \
+  V(Copy, "copy")                                                              \
+  V(Coroutine, "coroutine")                                                    \
+  V(CountOf, "countOf")                                                        \
+  V(CrRunning, "cr_running")                                                   \
+  V(CreateBuiltin, "create_builtin")                                           \
+  V(Deleter, "deleter")                                                        \
+  V(DeprecationWarning, "DeprecationWarning")                                  \
+  V(Dict, "dict")                                                              \
+  V(DictItemIterator, "dict_itemiterator")                                     \
+  V(DictItems, "dict_items")                                                   \
+  V(DictKeyIterator, "dict_keyiterator")                                       \
+  V(DictKeys, "dict_keys")                                                     \
+  V(DictValueIterator, "dict_valueiterator")                                   \
+  V(DictValues, "dict_values")                                                 \
+  V(Discard, "discard")                                                        \
+  V(Displayhook, "displayhook")                                                \
+  V(Divmod, "divmod")                                                          \
+  V(DotSo, ".so")                                                              \
+  V(Dummy, "dummy")                                                            \
+  V(EOFError, "EOFError")                                                      \
+  V(Ellipsis, "ellipsis")                                                      \
+  V(Encode, "encode")                                                          \
+  V(Encoding, "encoding")                                                      \
+  V(End, "end")                                                                \
+  V(Eq, "eq")                                                                  \
+  V(ExcInfo, "exc_info")                                                       \
+  V(Excepthook, "excepthook")                                                  \
+  V(Exception, "Exception")                                                    \
+  V(ExceptionState, "ExceptionState")                                          \
+  V(Exec, "exec")                                                              \
+  V(ExecBuiltin, "exec_builtin")                                               \
+  V(ExecDynamic, "exec_dynamic")                                               \
+  V(Executable, "executable")                                                  \
+  V(Exit, "exit")                                                              \
+  V(Extend, "extend")                                                          \
+  V(ExtensionPtr, "___extension___")                                           \
+  V(ExtensionSuffixes, "extension_suffixes")                                   \
+  V(File, "file")                                                              \
+  V(FileExistsError, "FileExistsError")                                        \
+  V(FileNotFoundError, "FileNotFoundError")                                    \
+  V(Filename, "filename")                                                      \
+  V(Fileno, "fileno")                                                          \
+  V(Find, "find")                                                              \
+  V(FixCoFilename, "_fix_co_filename")                                         \
+  V(Float, "float")                                                            \
+  V(FloatingPointError, "FloatingPointError")                                  \
+  V(Floordiv, "floordiv")                                                      \
+  V(Format, "format")                                                          \
+  V(Frame, "frame")                                                            \
+  V(FromBytes, "from_bytes")                                                   \
+  V(FrozenSet, "frozenset")                                                    \
+  V(Function, "function")                                                      \
+  V(FutureWarning, "FutureWarning")                                            \
+  V(Generator, "generator")                                                    \
+  V(GeneratorExit, "GeneratorExit")                                            \
+  V(Get, "get")                                                                \
+  V(GetFrozenObject, "get_frozen_object")                                      \
+  V(GetSizeOf, "getsizeof")                                                    \
+  V(Getattr, "getattr")                                                        \
+  V(Getter, "getter")                                                          \
+  V(GiRunning, "gi_running")                                                   \
+  V(Hasattr, "hasattr")                                                        \
+  V(Hex, "hex")                                                                \
+  V(Iadd, "iadd")                                                              \
+  V(Iand, "iand")                                                              \
+  V(Iconcat, "iconcat")                                                        \
+  V(Id, "id")                                                                  \
+  V(Ifloordiv, "ifloordiv")                                                    \
+  V(Ignore, "ignore")                                                          \
+  V(Ilshift, "ilshift")                                                        \
+  V(Imatmul, "imatmul")                                                        \
+  V(Imod, "imod")                                                              \
+  V(ImportError, "ImportError")                                                \
+  V(ImportWarning, "ImportWarning")                                            \
+  V(Imul, "imul")                                                              \
+  V(IndentationError, "IndentationError")                                      \
+  V(IndexError, "IndexError")                                                  \
+  V(IndexOf, "indexOf")                                                        \
+  V(Insert, "insert")                                                          \
+  V(Int, "int")                                                                \
+  V(InterruptedError, "InterruptedError")                                      \
+  V(Intersection, "intersection")                                              \
+  V(Invert, "invert")                                                          \
+  V(Ior, "ior")                                                                \
+  V(Ipow, "ipow")                                                              \
+  V(Irepeat, "irepeat")                                                        \
+  V(Irshift, "irshift")                                                        \
+  V(IsADirectoryError, "IsADirectoryError")                                    \
+  V(IsBuiltin, "is_builtin")                                                   \
+  V(IsDisjoint, "isdisjoint")                                                  \
+  V(IsFrozen, "is_frozen")                                                     \
+  V(IsFrozenPackage, "is_frozen_package")                                      \
+  V(IsInstance, "isinstance")                                                  \
+  V(IsSubclass, "issubclass")                                                  \
+  V(Isub, "isub")                                                              \
+  V(Items, "items")                                                            \
+  V(Itertools, "itertools")                                                    \
+  V(Itruediv, "itruediv")                                                      \
+  V(Ixor, "ixor")                                                              \
+  V(Join, "join")                                                              \
+  V(KeyError, "KeyError")                                                      \
+  V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
+  V(Keys, "keys")                                                              \
+  V(LStrip, "lstrip")                                                          \
+  V(LargeBytes, "largebytes")                                                  \
+  V(LargeInt, "largeint")                                                      \
+  V(LargeStr, "largestr")                                                      \
+  V(LastTraceback, "last_traceback")                                           \
+  V(LastType, "last_type")                                                     \
+  V(LastValue, "last_value")                                                   \
+  V(Latin1Encode, "latin_1_encode")                                            \
+  V(Layout, "layout")                                                          \
+  V(Len, "len")                                                                \
+  V(Length, "length")                                                          \
+  V(Lineno, "lineno")                                                          \
+  V(List, "list")                                                              \
+  V(ListIterator, "list_iterator")                                             \
+  V(Little, "little")                                                          \
+  V(Loads, "loads")                                                            \
+  V(LookupError, "LookupError")                                                \
+  V(Lower, "lower")                                                            \
+  V(Lshift, "lshift")                                                          \
+  V(Lt, "lt")                                                                  \
+  V(Marshal, "marshal")                                                        \
+  V(Matmul, "matmul")                                                          \
+  V(Maxsize, "maxsize")                                                        \
+  V(MemoryError, "MemoryError")                                                \
+  V(MemoryView, "memoryview")                                                  \
+  V(MetaPath, "meta_path")                                                     \
+  V(Metaclass, "metaclass")                                                    \
+  V(Method, "method")                                                          \
+  V(Mod, "mod")                                                                \
+  V(Module, "module")                                                          \
+  V(ModuleNotFoundError, "ModuleNotFoundError")                                \
+  V(Modules, "modules")                                                        \
+  V(Msg, "msg")                                                                \
+  V(Mul, "mul")                                                                \
+  V(NFields, "n_fields")                                                       \
+  V(NSequenceFields, "n_sequence_fields")                                      \
+  V(NUnnamedFields, "n_unnamed_fields")                                        \
+  V(Name, "name")                                                              \
+  V(NameError, "NameError")                                                    \
+  V(Namedtuple, "namedtuple")                                                  \
+  V(Neg, "neg")                                                                \
+  V(None, "None")                                                              \
+  V(NoneType, "NoneType")                                                      \
+  V(NotADirectoryError, "NotADirectoryError")                                  \
+  V(NotImplemented, "NotImplemented")                                          \
+  V(NotImplementedError, "NotImplementedError")                                \
+  V(NotImplementedType, "NotImplementedType")                                  \
+  V(Null, "<NULL>")                                                            \
+  V(NullArgumentToInternalRoutine, "null argument to internal routine")        \
+  V(OSError, "OSError")                                                        \
+  V(ObjectTypename, "object")                                                  \
+  V(Offset, "offset")                                                          \
+  V(Operator, "operator")                                                      \
+  V(OrUnder, "or_")                                                            \
+  V(Ord, "ord")                                                                \
+  V(OverflowError, "OverflowError")                                            \
+  V(Partition, "partition")                                                    \
+  V(Path, "path")                                                              \
+  V(PendingDeprecationWarning, "PendingDeprecationWarning")                    \
+  V(PermissionError, "PermissionError")                                        \
+  V(Platform, "platform")                                                      \
+  V(Pop, "pop")                                                                \
+  V(Pos, "pos")                                                                \
+  V(Pow, "pow")                                                                \
+  V(PrintFileAndLine, "print_file_and_line")                                   \
+  V(ProcessLookupError, "ProcessLookupError")                                  \
+  V(Property, "property")                                                      \
+  V(Proxy, "proxy")                                                            \
+  V(RPartition, "rpartition")                                                  \
+  V(RSplit, "rsplit")                                                          \
+  V(RStrip, "rstrip")                                                          \
+  V(Range, "range")                                                            \
+  V(RangeIterator, "range_iterator")                                           \
+  V(Reason, "reason")                                                          \
+  V(RecursionError, "RecursionError")                                          \
+  V(Ref, "ref")                                                                \
+  V(ReferenceError, "ReferenceError")                                          \
+  V(ReleaseLock, "release_lock")                                               \
+  V(Remove, "remove")                                                          \
+  V(Replace, "replace")                                                        \
+  V(Repr, "repr")                                                              \
+  V(ResourceWarning, "ResourceWarning")                                        \
+  V(Rfind, "rfind")                                                            \
+  V(Rshift, "rshift")                                                          \
+  V(RuntimeError, "RuntimeError")                                              \
+  V(RuntimeWarning, "RuntimeWarning")                                          \
+  V(Send, "send")                                                              \
+  V(SeqIterator, "iterator")                                                   \
+  V(Set, "set")                                                                \
+  V(SetIterator, "set_iterator")                                               \
+  V(Setattr, "setattr")                                                        \
+  V(Setter, "setter")                                                          \
+  V(Signed, "signed")                                                          \
+  V(Size, "size")                                                              \
+  V(Slice, "slice")                                                            \
+  V(SmallBytes, "smallbytes")                                                  \
+  V(SmallInt, "smallint")                                                      \
+  V(SmallStr, "smallstr")                                                      \
+  V(Split, "split")                                                            \
+  V(Start, "start")                                                            \
+  V(StaticMethod, "staticmethod")                                              \
+  V(Stderr, "stderr")                                                          \
+  V(Stdout, "stdout")                                                          \
+  V(Step, "step")                                                              \
+  V(Stop, "stop")                                                              \
+  V(StopAsyncIteration, "StopAsyncIteration")                                  \
+  V(StopIteration, "StopIteration")                                            \
+  V(Str, "str")                                                                \
+  V(StrIterator, "str_iterator")                                               \
+  V(Strict, "strict")                                                          \
+  V(StrictErrors, "strict_errors")                                             \
+  V(Strip, "strip")                                                            \
+  V(Sub, "sub")                                                                \
+  V(Super, "super")                                                            \
+  V(Surrogateescape, "surrogateescape")                                        \
+  V(Surrogatepass, "surrogatepass")                                            \
+  V(SyntaxError, "SyntaxError")                                                \
+  V(SyntaxWarning, "SyntaxWarning")                                            \
+  V(Sys, "sys")                                                                \
+  V(SystemError, "SystemError")                                                \
+  V(SystemExit, "SystemExit")                                                  \
+  V(TabError, "TabError")                                                      \
+  V(Text, "text")                                                              \
+  V(Throw, "throw")                                                            \
+  V(Time, "time")                                                              \
+  V(TimeoutError, "TimeoutError")                                              \
+  V(ToBytes, "to_bytes")                                                       \
+  V(Traceback, "traceback")                                                    \
+  V(Translate, "translate")                                                    \
+  V(Truediv, "truediv")                                                        \
+  V(Tuple, "tuple")                                                            \
+  V(TupleIterator, "tuple_iterator")                                           \
+  V(Type, "type")                                                              \
+  V(TypeError, "TypeError")                                                    \
+  V(UnboundLocalError, "UnboundLocalError")                                    \
   V(UnicodeDecodeError, "UnicodeDecodeError")                                  \
   V(UnicodeEncodeError, "UnicodeEncodeError")                                  \
   V(UnicodeError, "UnicodeError")                                              \
@@ -574,16 +577,13 @@ class Runtime;
   V(Update, "update")                                                          \
   V(Upper, "upper")                                                            \
   V(UserWarning, "UserWarning")                                                \
-  V(UnderUtf8Encode, "_utf_8_encode")                                          \
-  V(Utf8Encode, "utf_8_encode")                                                \
-  V(UnderUtf16Encode, "_utf_16_encode")                                        \
   V(Utf16Encode, "utf_16_encode")                                              \
-  V(UnderUtf32Encode, "_utf_32_encode")                                        \
   V(Utf32Encode, "utf_32_encode")                                              \
+  V(Utf8Encode, "utf_8_encode")                                                \
   V(Value, "value")                                                            \
-  V(Values, "values")                                                          \
   V(ValueCell, "valuecell")                                                    \
   V(ValueError, "ValueError")                                                  \
+  V(Values, "values")                                                          \
   V(Version, "version")                                                        \
   V(Warn, "warn")                                                              \
   V(WarnExplicit, "warn_explicit")                                             \
