@@ -1883,9 +1883,10 @@ HANDLER_INLINE bool Interpreter::doStoreName(Context* ctx, word arg) {
   return false;
 }
 
-static RawObject raiseUndefinedName(Thread* thread, const Str& name) {
-  return thread->raiseWithFmt(LayoutId::kNameError, "name '%S' is not defined",
-                              &name);
+static bool raiseUndefinedName(Interpreter::Context* ctx, const Str& name) {
+  ctx->thread->raiseWithFmt(LayoutId::kNameError, "name '%S' is not defined",
+                            &name);
+  return Interpreter::unwind(ctx);
 }
 
 HANDLER_INLINE bool Interpreter::doDeleteName(Context* ctx, word arg) {
@@ -1900,8 +1901,7 @@ HANDLER_INLINE bool Interpreter::doDeleteName(Context* ctx, word arg) {
   DCHECK(result.isErrorNotFound() || !result.isError(),
          "dictRemove should not raise an exception other than ErrorNotFound");
   if (result.isErrorNotFound()) {
-    raiseUndefinedName(thread, key);
-    return unwind(ctx);
+    return raiseUndefinedName(ctx, key);
   }
   // Only a module dict needs cache invalidation.
   Dict globals(&scope, frame->function().globals());
@@ -2247,8 +2247,7 @@ HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   DCHECK(result.isErrorNotFound() || !result.isError(),
          "dictRemove should not raise an exception other than ErrorNotFound");
   if (result.isErrorNotFound()) {
-    raiseUndefinedName(thread, key);
-    return unwind(ctx);
+    return raiseUndefinedName(ctx, key);
   }
   if (isCacheEnabledForCurrentFunction(ctx)) {
     DCHECK(result.isValueCell(), "result must be a ValueCell");
@@ -2309,8 +2308,7 @@ HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
     return false;
   }
 
-  raiseUndefinedName(ctx->thread, key);
-  return unwind(ctx);
+  return raiseUndefinedName(ctx, key);
 }
 
 HANDLER_INLINE bool Interpreter::doBuildTuple(Context* ctx, word arg) {
@@ -2679,8 +2677,7 @@ HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {
     return false;
   }
 
-  raiseUndefinedName(thread, key);
-  return unwind(ctx);
+  return raiseUndefinedName(ctx, key);
 }
 
 HANDLER_INLINE bool Interpreter::doLoadGlobalCached(Context* ctx, word arg) {
