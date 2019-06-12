@@ -19,7 +19,7 @@ class OS {
 
   static bool freeMemory(byte* ptr, word size);
 
-  static bool protectMemory(byte* ptr, word size, Protection);
+  static bool protectMemory(byte* address, word size, Protection);
 
   static bool secureRandom(byte* ptr, word size);
 
