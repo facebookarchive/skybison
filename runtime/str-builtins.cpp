@@ -802,10 +802,10 @@ RawObject StrBuiltins::strFormat(Thread* thread, const Str& fmt,
   return *result;
 }
 
-RawObject StrBuiltins::dunderMod(Thread* thread, Frame* caller, word nargs) {
+RawObject StrBuiltins::dunderMod(Thread* thread, Frame* frame, word nargs) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  Arguments args(caller, nargs);
+  Arguments args(frame, nargs);
   Object self(&scope, args.get(0));
   Object other(&scope, args.get(1));
   if (self.isStr()) {

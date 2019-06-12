@@ -156,8 +156,8 @@ std::ostream& dumpExtended(std::ostream& os, RawObject value) {
   }
 }
 
-std::ostream& operator<<(std::ostream& os, CastError err) {
-  switch (err) {
+std::ostream& operator<<(std::ostream& os, CastError value) {
+  switch (value) {
     case CastError::None:
       return os << "None";
     case CastError::Underflow:
