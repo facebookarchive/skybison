@@ -674,4 +674,53 @@ c = C()
   EXPECT_EQ(streams.out(), "");
 }
 
+TEST_F(ErrorsExtensionApiTest, SetObjectWithCaughtExceptionSetsContext) {
+  PyCFunction test_set_object = [](PyObject*, PyObject*) -> PyObject* {
+    PyErr_SetString(PyExc_ValueError, "something went wrong");
+    return nullptr;
+  };
+  static PyMethodDef methods[2];
+  methods[0] = {
+      "test_set_object",
+      test_set_object,
+      METH_NOARGS,
+      "doc",
+  };
+  methods[1] = {nullptr};
+  static PyModuleDef mod_def;
+  mod_def = {
+      PyModuleDef_HEAD_INIT,
+      "errors_test",  // m_name
+      "doc",          // m_doc
+      0,              // m_size
+      methods,        // m_methods
+      nullptr,        // m_slots
+      nullptr,        // m_traverse
+      nullptr,        // m_clear
+      nullptr,        // m_free
+  };
+
+  PyObjectPtr module(PyModule_Create(&mod_def));
+  ASSERT_NE(module, nullptr);
+  ASSERT_EQ(moduleSet("__main__", "errors_test", module), 0);
+  ASSERT_EQ(PyRun_SimpleString(R"(
+try:
+  try:
+    raise RuntimeError("blorp")
+  except RuntimeError as exc:
+    inner_exc = exc
+    errors_test.test_set_object()
+except ValueError as exc:
+  outer_exc = exc
+)"),
+            0);
+
+  PyObjectPtr inner_exc(moduleGet("__main__", "inner_exc"));
+  ASSERT_NE(inner_exc, nullptr);
+  PyObjectPtr outer_exc(moduleGet("__main__", "outer_exc"));
+  ASSERT_NE(outer_exc, nullptr);
+  EXPECT_EQ(PyException_GetContext(outer_exc), inner_exc);
+  EXPECT_EQ(PyException_GetContext(inner_exc), nullptr);
+}
+
 }  // namespace python

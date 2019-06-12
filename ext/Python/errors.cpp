@@ -319,10 +319,17 @@ PY_EXPORT PyObject* PyErr_SetImportErrorSubclass(PyObject* /* n */,
 PY_EXPORT void PyErr_SetNone(PyObject* type) { PyErr_SetObject(type, Py_None); }
 
 PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
-  // TODO(cshapiro): chain exception when val is an exception instance
-  Py_XINCREF(exc);
-  Py_XINCREF(val);
-  PyErr_Restore(exc, val, nullptr);
+  Thread* thread = Thread::current();
+  if (exc == nullptr) {
+    DCHECK(val == nullptr, "nullptr exc with non-nullptr val");
+    thread->clearPendingException();
+    return;
+  }
+
+  HandleScope scope(thread);
+  Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
+  Object val_obj(&scope, ApiHandle::fromPyObject(val)->asObject());
+  thread->raiseWithType(*exc_obj, *val_obj);
 }
 
 PY_EXPORT void PyErr_SyntaxLocation(const char* /* e */, int /* o */) {

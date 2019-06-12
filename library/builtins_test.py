@@ -139,6 +139,52 @@ class ExceptionTests(unittest.TestCase):
         exc.__traceback__ = None
         self.assertIs(exc.__traceback__, None)
 
+    def test_context_chaining(self):
+        inner_exc = None
+        outer_exc = None
+        try:
+            try:
+                raise RuntimeError("whoops")
+            except RuntimeError as exc:
+                inner_exc = exc
+                raise TypeError("darn")
+        except TypeError as exc:
+            outer_exc = exc
+
+        self.assertIsInstance(inner_exc, RuntimeError)
+        self.assertIsInstance(outer_exc, TypeError)
+        self.assertIs(outer_exc.__context__, inner_exc)
+        self.assertIsNone(inner_exc.__context__)
+
+    def test_context_chaining_cycle_avoidance(self):
+        exc0 = None
+        exc1 = None
+        exc2 = None
+        exc3 = None
+        try:
+            try:
+                try:
+                    try:
+                        raise RuntimeError("inner")
+                    except RuntimeError as exc:
+                        exc0 = exc
+                        raise RuntimeError("middle")
+                except RuntimeError as exc:
+                    exc1 = exc
+                    raise RuntimeError("outer")
+            except RuntimeError as exc:
+                exc2 = exc
+                # The __context__ link between exc1 and exc0 should be broken
+                # by this raise.
+                raise exc0
+        except RuntimeError as exc:
+            exc3 = exc
+
+        self.assertIs(exc3, exc0)
+        self.assertIs(exc3.__context__, exc2)
+        self.assertIs(exc2.__context__, exc1)
+        self.assertIs(exc1.__context__, None)
+
 
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):

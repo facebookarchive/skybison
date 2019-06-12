@@ -246,6 +246,14 @@ class Thread {
   RawObject caughtExceptionState();
   void setCaughtExceptionState(RawObject state);
 
+  // If there is a current caught exception, attach it to the given exception's
+  // __context__ attribute.
+  //
+  // Returns the updated value, which may be the result of createException(type,
+  // value) if value is not an instance of BaseException.
+  RawObject chainExceptionContext(const Handle<RawType>& type,
+                                  const Handle<RawObject>& value);
+
   // Returns true if and only if obj is not an Error and there is no pending
   // exception, or obj is an Error<Exception> and there is a pending exception.
   // Mostly used in assertions around call boundaries.

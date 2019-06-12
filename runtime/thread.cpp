@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "builtins-module.h"
+#include "exception-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "handles.h"
@@ -355,10 +356,45 @@ RawObject Thread::raiseWithType(RawObject type, RawObject value) {
   Object value_obj(&scope, value);
   Object traceback_obj(&scope, NoneType::object());
 
+  value_obj = chainExceptionContext(type_obj, value_obj);
+  if (value_obj.isErrorException()) return Error::exception();
+
   setPendingExceptionType(*type_obj);
   setPendingExceptionValue(*value_obj);
   setPendingExceptionTraceback(*traceback_obj);
   return Error::exception();
+}
+
+RawObject Thread::chainExceptionContext(const Type& type, const Object& value) {
+  if (caughtExceptionType().isNoneType() ||
+      caughtExceptionValue().isNoneType()) {
+    return *value;
+  }
+
+  HandleScope scope(this);
+  Object fixed_value(&scope, *value);
+  if (!runtime()->isInstanceOfBaseException(*value)) {
+    // Perform partial normalization before attempting to set __context__.
+    fixed_value = createException(this, type, value);
+    if (fixed_value.isError()) return *fixed_value;
+  }
+
+  // Avoid creating cycles by breaking any link from caught_value to value
+  // before setting value's __context__.
+  BaseException caught_value(&scope, caughtExceptionValue());
+  if (*fixed_value == *caught_value) return *fixed_value;
+  BaseException exc(&scope, *caught_value);
+  Object context(&scope, NoneType::object());
+  while (!(context = exc.context()).isNoneType()) {
+    if (*context == *fixed_value) {
+      exc.setContext(Unbound::object());
+      break;
+    }
+    exc = *context;
+  }
+
+  BaseException(&scope, *fixed_value).setContext(*caught_value);
+  return *fixed_value;
 }
 
 RawObject Thread::raiseWithFmt(LayoutId type, const char* fmt, ...) {
