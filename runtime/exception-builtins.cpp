@@ -606,13 +606,22 @@ const BuiltinAttribute ImportErrorBuiltins::kAttributes[] = {
     {SymbolId::kSentinelId, -1},
 };
 
-const BuiltinAttribute UnicodeErrorBuiltins::kAttributes[] = {
-    {SymbolId::kEncoding, RawUnicodeError::kEncodingOffset},
-    {SymbolId::kObjectTypename, RawUnicodeError::kObjectOffset},
-    {SymbolId::kStart, RawUnicodeError::kStartOffset},
-    {SymbolId::kEnd, RawUnicodeError::kEndOffset},
-    {SymbolId::kReason, RawUnicodeError::kReasonOffset},
+static const BuiltinAttribute kUnicodeErrorBaseAttributes[] = {
+    {SymbolId::kEncoding, RawUnicodeErrorBase::kEncodingOffset},
+    {SymbolId::kObjectTypename, RawUnicodeErrorBase::kObjectOffset},
+    {SymbolId::kStart, RawUnicodeErrorBase::kStartOffset},
+    {SymbolId::kEnd, RawUnicodeErrorBase::kEndOffset},
+    {SymbolId::kReason, RawUnicodeErrorBase::kReasonOffset},
     {SymbolId::kSentinelId, -1},
 };
+
+const BuiltinAttribute* const UnicodeDecodeErrorBuiltins::kAttributes =
+    kUnicodeErrorBaseAttributes;
+
+const BuiltinAttribute* const UnicodeEncodeErrorBuiltins::kAttributes =
+    kUnicodeErrorBaseAttributes;
+
+const BuiltinAttribute* const UnicodeTranslateErrorBuiltins::kAttributes =
+    kUnicodeErrorBaseAttributes;
 
 }  // namespace python

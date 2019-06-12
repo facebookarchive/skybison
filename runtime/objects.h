@@ -322,6 +322,7 @@ class RawObject {
   bool isUnicodeDecodeError() const;
   bool isUnicodeEncodeError() const;
   bool isUnicodeError() const;
+  bool isUnicodeErrorBase() const;
   bool isUnicodeTranslateError() const;
   bool isValueCell() const;
   bool isWeakLink() const;
@@ -945,11 +946,19 @@ class RawKeyError : public RawLookupError {
 
 class RawUnicodeError : public RawException {
  public:
+  RAW_OBJECT_COMMON(UnicodeError);
+};
+
+// This is a base class to allow for code reuse in the C++ implementations of
+// the UnicodeError subclasses. According to the Python type system, each
+// subclass of this Base class actually subclasses UnicodeError.
+class RawUnicodeErrorBase : public RawException {
+ public:
   RawObject encoding() const;
   void setEncoding(RawObject encoding_name) const;
 
   RawObject object() const;
-  void setObject(RawObject bytes) const;
+  void setObject(RawObject value) const;
 
   RawObject start() const;
   void setStart(RawObject index) const;
@@ -967,20 +976,20 @@ class RawUnicodeError : public RawException {
   static const int kReasonOffset = kEndOffset + kPointerSize;
   static const int kSize = kReasonOffset + kPointerSize;
 
-  RAW_OBJECT_COMMON(UnicodeError);
+  RAW_OBJECT_COMMON(UnicodeErrorBase);
 };
 
-class RawUnicodeDecodeError : public RawUnicodeError {
+class RawUnicodeDecodeError : public RawUnicodeErrorBase {
  public:
   RAW_OBJECT_COMMON(UnicodeDecodeError);
 };
 
-class RawUnicodeEncodeError : public RawUnicodeError {
+class RawUnicodeEncodeError : public RawUnicodeErrorBase {
  public:
   RAW_OBJECT_COMMON(UnicodeEncodeError);
 };
 
-class RawUnicodeTranslateError : public RawUnicodeError {
+class RawUnicodeTranslateError : public RawUnicodeErrorBase {
  public:
   RAW_OBJECT_COMMON(UnicodeTranslateError);
 };
@@ -3010,6 +3019,11 @@ inline bool RawObject::isUnicodeError() const {
   return isHeapObjectWithLayout(LayoutId::kUnicodeError);
 }
 
+inline bool RawObject::isUnicodeErrorBase() const {
+  return isUnicodeDecodeError() || isUnicodeEncodeError() ||
+         isUnicodeTranslateError();
+}
+
 inline bool RawObject::isUnicodeTranslateError() const {
   return isHeapObjectWithLayout(LayoutId::kUnicodeTranslateError);
 }
@@ -3846,48 +3860,48 @@ inline void RawUserTupleBase::setTupleValue(RawObject value) const {
 
 // RawUnicodeError
 
-inline RawObject RawUnicodeError::encoding() const {
+inline RawObject RawUnicodeErrorBase::encoding() const {
   return instanceVariableAt(kEncodingOffset);
 }
 
-inline void RawUnicodeError::setEncoding(RawObject encoding_name) const {
+inline void RawUnicodeErrorBase::setEncoding(RawObject encoding_name) const {
   DCHECK(encoding_name.isStr(), "Only string type is permitted as a value");
   instanceVariableAtPut(kEncodingOffset, encoding_name);
 }
 
-inline RawObject RawUnicodeError::object() const {
+inline RawObject RawUnicodeErrorBase::object() const {
   return instanceVariableAt(kObjectOffset);
 }
 
-inline void RawUnicodeError::setObject(RawObject bytes) const {
-  // TODO(T39229519): Allow bytearrays to be stored as well
-  DCHECK(bytes.isBytes(), "Only bytes type is permitted as a value");
-  instanceVariableAtPut(kObjectOffset, bytes);
+inline void RawUnicodeErrorBase::setObject(RawObject value) const {
+  DCHECK(value.isBytes() || value.isByteArray() || value.isStr(),
+         "Only str or bytes-like types are permitted as values");
+  instanceVariableAtPut(kObjectOffset, value);
 }
 
-inline RawObject RawUnicodeError::start() const {
+inline RawObject RawUnicodeErrorBase::start() const {
   return instanceVariableAt(kStartOffset);
 }
 
-inline void RawUnicodeError::setStart(RawObject index) const {
+inline void RawUnicodeErrorBase::setStart(RawObject index) const {
   DCHECK(index.isInt(), "Only int type is permitted as a value");
   instanceVariableAtPut(kStartOffset, index);
 }
 
-inline RawObject RawUnicodeError::end() const {
+inline RawObject RawUnicodeErrorBase::end() const {
   return instanceVariableAt(kEndOffset);
 }
 
-inline void RawUnicodeError::setEnd(RawObject index) const {
+inline void RawUnicodeErrorBase::setEnd(RawObject index) const {
   DCHECK(index.isInt(), "Only int type is permitted as a value");
   instanceVariableAtPut(kEndOffset, index);
 }
 
-inline RawObject RawUnicodeError::reason() const {
+inline RawObject RawUnicodeErrorBase::reason() const {
   return instanceVariableAt(kReasonOffset);
 }
 
-inline void RawUnicodeError::setReason(RawObject error_description) const {
+inline void RawUnicodeErrorBase::setReason(RawObject error_description) const {
   DCHECK(error_description.isStr(), "Only string type is permitted as a value");
   instanceVariableAtPut(kReasonOffset, error_description);
 }

@@ -396,9 +396,9 @@ PY_EXPORT int PyUnicodeDecodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfUnicodeError(*exc_obj),
+  DCHECK(runtime->isInstanceOfUnicodeErrorBase(*exc_obj),
          "exc must be instance of UnicodeError");
-  UnicodeError exc_err(&scope, *exc_obj);
+  UnicodeErrorBase exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfBytes(*object_attr)) {
     thread->raiseWithFmt(LayoutId::kTypeError,
@@ -453,9 +453,9 @@ PY_EXPORT int PyUnicodeDecodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfUnicodeError(*exc_obj),
+  DCHECK(runtime->isInstanceOfUnicodeErrorBase(*exc_obj),
          "exc must be instance of UnicodeError");
-  UnicodeError exc_err(&scope, *exc_obj);
+  UnicodeErrorBase exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfBytes(*object_attr)) {
     thread->raiseWithFmt(LayoutId::kTypeError,
@@ -483,9 +483,9 @@ static int unicodeErrorSetEnd(PyObject* unicode_error, Py_ssize_t end) {
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(unicode_error)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfUnicodeError(*exc_obj),
+  DCHECK(runtime->isInstanceOfUnicodeErrorBase(*exc_obj),
          "exc must be instance of UnicodeError");
-  UnicodeError exc(&scope, *exc_obj);
+  UnicodeErrorBase exc(&scope, *exc_obj);
   exc.setEnd(runtime->newInt(end));
   return 0;
 }
@@ -500,9 +500,9 @@ PY_EXPORT int PyUnicodeDecodeError_SetReason(PyObject* unicode_error,
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(unicode_error)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfUnicodeError(*exc_obj),
+  DCHECK(runtime->isInstanceOfUnicodeErrorBase(*exc_obj),
          "exc must be instance of UnicodeError");
-  UnicodeError exc(&scope, *exc_obj);
+  UnicodeErrorBase exc(&scope, *exc_obj);
   exc.setReason(runtime->newStrFromCStr(reason));
   return 0;
 }
@@ -512,9 +512,9 @@ static int unicodeErrorSetStart(PyObject* unicode_error, Py_ssize_t start) {
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(unicode_error)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfUnicodeError(*exc_obj),
+  DCHECK(runtime->isInstanceOfUnicodeErrorBase(*exc_obj),
          "exc must be instance of UnicodeError");
-  UnicodeError exc(&scope, *exc_obj);
+  UnicodeErrorBase exc(&scope, *exc_obj);
   exc.setStart(runtime->newInt(start));
   return 0;
 }
@@ -532,9 +532,9 @@ PY_EXPORT int PyUnicodeEncodeError_GetEnd(PyObject* exc, Py_ssize_t* end) {
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfUnicodeError(*exc_obj),
+  DCHECK(runtime->isInstanceOfUnicodeErrorBase(*exc_obj),
          "exc must be instance of UnicodeError");
-  UnicodeError exc_err(&scope, *exc_obj);
+  UnicodeErrorBase exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfStr(*object_attr)) {
     thread->raiseWithFmt(LayoutId::kTypeError,
@@ -579,9 +579,9 @@ PY_EXPORT int PyUnicodeEncodeError_GetStart(PyObject* exc, Py_ssize_t* start) {
   HandleScope scope(thread);
   Object exc_obj(&scope, ApiHandle::fromPyObject(exc)->asObject());
   Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfUnicodeError(*exc_obj),
+  DCHECK(runtime->isInstanceOfUnicodeErrorBase(*exc_obj),
          "exc must be instance of UnicodeError");
-  UnicodeError exc_err(&scope, *exc_obj);
+  UnicodeErrorBase exc_err(&scope, *exc_obj);
   Object object_attr(&scope, exc_err.object());
   if (!runtime->isInstanceOfStr(*object_attr)) {
     thread->raiseWithFmt(LayoutId::kTypeError,

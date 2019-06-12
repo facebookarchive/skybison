@@ -98,9 +98,6 @@ class ImportErrorBuiltins
 class UnicodeErrorBuiltins
     : public Builtins<UnicodeErrorBuiltins, SymbolId::kUnicodeError,
                       LayoutId::kUnicodeError, LayoutId::kValueError> {
- public:
-  static const BuiltinAttribute kAttributes[];
-
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeErrorBuiltins);
 };
@@ -109,9 +106,7 @@ class UnicodeDecodeErrorBuiltins
     : public Builtins<UnicodeDecodeErrorBuiltins, SymbolId::kUnicodeDecodeError,
                       LayoutId::kUnicodeDecodeError, LayoutId::kUnicodeError> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static const BuiltinAttribute* const kAttributes;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeDecodeErrorBuiltins);
@@ -121,9 +116,7 @@ class UnicodeEncodeErrorBuiltins
     : public Builtins<UnicodeEncodeErrorBuiltins, SymbolId::kUnicodeEncodeError,
                       LayoutId::kUnicodeEncodeError, LayoutId::kUnicodeError> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static const BuiltinAttribute* const kAttributes;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeEncodeErrorBuiltins);
@@ -134,9 +127,7 @@ class UnicodeTranslateErrorBuiltins
           UnicodeTranslateErrorBuiltins, SymbolId::kUnicodeTranslateError,
           LayoutId::kUnicodeTranslateError, LayoutId::kUnicodeError> {
  public:
-  static void postInitialize(Runtime*, const Type& new_type) {
-    new_type.setBuiltinBase(kSuperType);
-  }
+  static const BuiltinAttribute* const kAttributes;
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(UnicodeTranslateErrorBuiltins);

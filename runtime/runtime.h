@@ -681,6 +681,12 @@ class Runtime {
            builtin_base == LayoutId::kFrozenSet;
   }
 
+  bool isInstanceOfUnicodeErrorBase(RawObject instance) {
+    return isInstanceOfUnicodeDecodeError(instance) ||
+           isInstanceOfUnicodeEncodeError(instance) ||
+           isInstanceOfUnicodeTranslateError(instance);
+  }
+
   // Clear the allocated memory from all extension related objects
   void deallocExtensions();
 

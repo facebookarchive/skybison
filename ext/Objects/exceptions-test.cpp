@@ -374,6 +374,51 @@ exc = UnicodeDecodeError("utf8", b"object", 2, 4, "reason")
 }
 
 TEST_F(ExceptionsExtensionApiTest,
+       UnicodeDecodeErrorSubclassSetEndGetEndReturnsEnd) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeDecodeError): pass
+exc = ErrorSubclass("utf8", b"object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  ASSERT_EQ(PyUnicodeDecodeError_SetEnd(exc, 5), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeDecodeError_GetEnd(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 5);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       UnicodeDecodeErrorSubclassSetStartGetStartReturnsStart) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeDecodeError): pass
+exc = ErrorSubclass("utf8", b"object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  ASSERT_EQ(PyUnicodeDecodeError_SetStart(exc, 5), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeDecodeError_GetStart(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 5);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       UnicodeDecodeErrorSubclassSetReasonGetReasonReturnsReason) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeDecodeError): pass
+exc = ErrorSubclass("utf8", b"object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyUnicodeDecodeError_SetReason(exc, "foobar");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr result(PyUnicodeDecodeError_GetReason(exc));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "foobar"), 0);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
        UnicodeEncodeErrorGetEncodingWithNonStrEncodingRaisesTypeError) {
   PyRun_SimpleString(R"(
 exc = UnicodeEncodeError("utf8", "object", 2, 4, "reason")
@@ -609,6 +654,51 @@ exc = UnicodeEncodeError("utf8", "object", 2, 4, "reason")
 }
 
 TEST_F(ExceptionsExtensionApiTest,
+       UnicodeEncodeErrorSubclassSetEndGetEndReturnsEnd) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeEncodeError): pass
+exc = ErrorSubclass("utf8", "object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  ASSERT_EQ(PyUnicodeEncodeError_SetEnd(exc, 5), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeEncodeError_GetEnd(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 5);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       UnicodeEncodeErrorSubclassSetStartGetStartReturnsStart) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeEncodeError): pass
+exc = ErrorSubclass("utf8", "object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  ASSERT_EQ(PyUnicodeEncodeError_SetStart(exc, 5), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeEncodeError_GetStart(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 5);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       UnicodeEncodeErrorSubclassSetReasonGetReasonReturnsReason) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeEncodeError): pass
+exc = ErrorSubclass("utf8", "object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyUnicodeEncodeError_SetReason(exc, "foobar");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr result(PyUnicodeEncodeError_GetReason(exc));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "foobar"), 0);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
        UnicodeTranslateErrorGetObjectWithNonBytesObjectRaisesTypeError) {
   PyRun_SimpleString(R"(
 exc = UnicodeTranslateError("object", 2, 4, "reason")
@@ -796,6 +886,51 @@ exc = UnicodeTranslateError("object", 2, 4, "reason")
   ASSERT_EQ(PyUnicodeTranslateError_GetEnd(exc, &end), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(end, 5);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       UnicodeTranslateErrorSubclassSetEndGetEndReturnsEnd) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeTranslateError): pass
+exc = ErrorSubclass("object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  ASSERT_EQ(PyUnicodeTranslateError_SetEnd(exc, 5), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeTranslateError_GetEnd(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 5);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       UnicodeTranslateErrorSubclassSetStartGetStartReturnsStart) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeTranslateError): pass
+exc = ErrorSubclass("object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  ASSERT_EQ(PyUnicodeTranslateError_SetStart(exc, 5), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  Py_ssize_t end = 0;
+  ASSERT_EQ(PyUnicodeTranslateError_GetStart(exc, &end), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(end, 5);
+}
+
+TEST_F(ExceptionsExtensionApiTest,
+       UnicodeTranslateErrorSubclassSetReasonGetReasonReturnsReason) {
+  PyRun_SimpleString(R"(
+class ErrorSubclass(UnicodeTranslateError): pass
+exc = ErrorSubclass("object", 2, 4, "reason")
+)");
+  PyObjectPtr exc(moduleGet("__main__", "exc"));
+  PyUnicodeTranslateError_SetReason(exc, "foobar");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr result(PyUnicodeTranslateError_GetReason(exc));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "foobar"), 0);
 }
 
 }  // namespace python

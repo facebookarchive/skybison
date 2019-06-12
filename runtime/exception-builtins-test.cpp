@@ -473,6 +473,19 @@ result = NameError(1, 2).__repr__()
                               "NameError(1, 2)"));
 }
 
+TEST_F(ExceptionBuiltinsTest, UnicodeErrorsHaveProperBuiltinBases) {
+  HandleScope scope(thread_);
+  Type unic_error(&scope, runtime_.typeAt(LayoutId::kUnicodeError));
+  Type unic_dec_error(&scope, runtime_.typeAt(LayoutId::kUnicodeDecodeError));
+  Type unic_enc_error(&scope, runtime_.typeAt(LayoutId::kUnicodeEncodeError));
+  Type unic_trans_error(&scope,
+                        runtime_.typeAt(LayoutId::kUnicodeTranslateError));
+  EXPECT_EQ(unic_error.builtinBase(), LayoutId::kValueError);
+  EXPECT_EQ(unic_dec_error.builtinBase(), LayoutId::kUnicodeDecodeError);
+  EXPECT_EQ(unic_enc_error.builtinBase(), LayoutId::kUnicodeEncodeError);
+  EXPECT_EQ(unic_trans_error.builtinBase(), LayoutId::kUnicodeTranslateError);
+}
+
 TEST_F(ExceptionBuiltinsTest,
        UnicodeDecodeErrorWithImproperFirstArgumentsRaisesTypeError) {
   const char* bad_arg = "exc = UnicodeDecodeError([], b'', 1, 1, '1')";

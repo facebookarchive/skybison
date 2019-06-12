@@ -167,6 +167,7 @@ class WARN_UNUSED Handle : public T {
   V(UnicodeDecodeError)                                                        \
   V(UnicodeEncodeError)                                                        \
   V(UnicodeError)                                                              \
+  V(UnicodeErrorBase)                                                          \
   V(UnicodeTranslateError)                                                     \
   V(UserBytesBase)                                                             \
   V(UserFloatBase)                                                             \
