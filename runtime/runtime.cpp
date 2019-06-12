@@ -3713,10 +3713,14 @@ RawObject Runtime::computeBuiltinBase(Thread* thread, const Type& type) {
     if (!mro_type.isBuiltin()) {
       continue;
     }
+    Type builtin_base(&scope, typeAt(mro_type.builtinBase()));
     if (*candidate == *object_type) {
       candidate = *mro_type;
-    } else if (*mro_type != *object_type &&
-               !Tuple::cast(candidate.mro()).contains(*mro_type)) {
+    } else if (isSubclass(candidate, builtin_base)) {
+      continue;
+    } else if (isSubclass(builtin_base, candidate)) {
+      candidate = *builtin_base;
+    } else {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "multiple bases have instance lay-out conflict");

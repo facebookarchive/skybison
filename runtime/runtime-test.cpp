@@ -57,6 +57,45 @@ TEST_F(RuntimeTest, CollectGarbage) {
   ASSERT_TRUE(runtime_.heap()->verify());
 }
 
+TEST_F(RuntimeTest, ComputeBuiltinBaseChecksBuiltinBaseOfMROTypes) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class OneFromLeastUpperBound(LookupError, SystemError):
+  pass
+class TwoFromLeastUpperBound(UnicodeDecodeError, LookupError):
+  pass
+)")
+                   .isError());
+  HandleScope scope;
+  Object lookup_sub(&scope,
+                    moduleAt(&runtime_, "__main__", "OneFromLeastUpperBound"));
+  Object unic_dec_sub(
+      &scope, moduleAt(&runtime_, "__main__", "TwoFromLeastUpperBound"));
+  ASSERT_TRUE(lookup_sub.isType());
+  ASSERT_TRUE(unic_dec_sub.isType());
+  Type lookup_sub_type(&scope, *lookup_sub);
+  Type unic_dec_sub_type(&scope, *unic_dec_sub);
+  EXPECT_EQ(lookup_sub_type.builtinBase(), LayoutId::kLookupError);
+  EXPECT_EQ(unic_dec_sub_type.builtinBase(), LayoutId::kUnicodeDecodeError);
+
+  // Ensure that the subclass has its superclasses in its mro
+  Type lookup_type(&scope, runtime_.typeAt(LayoutId::kLookupError));
+  Type system_type(&scope, runtime_.typeAt(LayoutId::kSystemError));
+  Type unic_dec_type(&scope, runtime_.typeAt(LayoutId::kUnicodeDecodeError));
+  EXPECT_TRUE(runtime_.isSubclass(lookup_sub_type, lookup_type));
+  EXPECT_TRUE(runtime_.isSubclass(lookup_sub_type, system_type));
+  EXPECT_TRUE(runtime_.isSubclass(unic_dec_sub_type, unic_dec_type));
+  EXPECT_TRUE(runtime_.isSubclass(unic_dec_sub_type, lookup_type));
+}
+
+TEST_F(RuntimeTest, ComputeBuiltinBaseWithConflictingBasesRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class FailingMultiClass(UnicodeDecodeError, UnicodeEncodeError):
+  pass
+)"),
+                            LayoutId::kTypeError,
+                            "multiple bases have instance lay-out conflict"));
+}
+
 TEST(RuntimeTestNoFixture, AllocateAndCollectGarbage) {
   const word heap_size = 32 * kMiB;
   const word array_length = 1024;
