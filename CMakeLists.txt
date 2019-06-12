@@ -614,7 +614,15 @@ add_executable(
   runtime/python-test.cpp)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  set(CPYTHON_LINK_FLAGS -lpthread -ldl -lutil -lm -Xlinker -export-dynamic)
+  set(CPYTHON_LINK_FLAGS
+    -lpthread
+    -Wl,--no-as-needed
+    -ldl
+    -lutil
+    -lm
+    -Xlinker
+    -export-dynamic
+  )
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set(CPYTHON_LINK_FLAGS -ldl)
 else()
