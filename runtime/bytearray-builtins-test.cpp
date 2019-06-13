@@ -37,6 +37,23 @@ TEST_F(ByteArrayBuiltinsTest, AsBytes) {
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected_bytes));
 }
 
+TEST_F(ByteArrayBuiltinsTest, ClearWithNonByteArrayRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytearray.clear(5)"),
+                            LayoutId::kTypeError,
+                            "'clear' requires a 'bytearray' object"));
+}
+
+TEST_F(ByteArrayBuiltinsTest, ClearSetsLengthToZero) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+array = bytearray(b'foo')
+array.clear()
+)")
+                   .isError());
+  ByteArray array(&scope, moduleAt(&runtime_, "__main__", "array"));
+  EXPECT_EQ(array.numItems(), 0);
+}
+
 TEST_F(ByteArrayBuiltinsTest, DunderAddWithNonByteArraySelfRaisesTypeError) {
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime_, "bytearray.__add__(b'', b'')"),

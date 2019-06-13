@@ -210,6 +210,17 @@ TEST_F(BuiltinsModuleTest, BuiltinLen) {
                             LayoutId::kTypeError, "object has no len()"));
 }
 
+TEST_F(BuiltinsModuleTest, UnderByteArrayClearSetsLengthToZero) {
+  HandleScope scope(thread_);
+  ByteArray array(&scope, runtime_.newByteArray());
+  const byte byte_array[] = {'1', '2', '3'};
+  runtime_.byteArrayExtend(thread_, array, byte_array);
+  ASSERT_EQ(array.numItems(), 3);
+  ASSERT_FALSE(
+      runBuiltin(BuiltinsModule::underByteArrayClear, array).isError());
+  EXPECT_EQ(array.numItems(), 0);
+}
+
 TEST_F(BuiltinsModuleTest, UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
   HandleScope scope(thread_);
 

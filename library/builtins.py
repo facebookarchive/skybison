@@ -348,6 +348,11 @@ def _bytearray_check(obj) -> bool:
 
 
 @_patch
+def _bytearray_clear(self: bytearray):
+    pass
+
+
+@_patch
 def _bytearray_join(self: bytearray, iterable) -> bytearray:
     pass
 
@@ -1134,7 +1139,9 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def clear(self):
-        _unimplemented()
+        if not _bytearray_check(self):
+            raise TypeError("'clear' requires a 'bytearray' object")
+        _bytearray_clear(self)
 
     def copy(self):
         _unimplemented()
