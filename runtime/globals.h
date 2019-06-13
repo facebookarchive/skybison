@@ -120,6 +120,8 @@ inline D bit_cast(const S& src) {
 
 #define ALWAYS_INLINE inline __attribute__((always_inline))
 
+#define NEVER_INLINE __attribute__((noinline))
+
 #define USED __attribute__((used))
 
 #define WARN_UNUSED __attribute__((warn_unused))

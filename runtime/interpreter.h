@@ -488,6 +488,16 @@ class Interpreter {
   // Frame.
   static void popFrame(Context* ctx);
 
+  // Resolve a callable object to a function (resolving `__call__` descriptors
+  // as necessary).
+  // This is only a helper for the `prepareCallableCall` implementation:
+  // `prepareCallableCall` starts out with shortcuts with the common cases and
+  // only calls this function for the remaining rare cases with the expectation
+  // that this function is not inlined.
+  static RawObject prepareCallableCallDunderCall(Thread* thread, Frame* frame,
+                                                 word callable_idx,
+                                                 word* nargs);
+
   static bool loadAttrUpdateCache(Context* ctx, word arg);
   static bool storeAttrUpdateCache(Context* ctx, word arg);
 
