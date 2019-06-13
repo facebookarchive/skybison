@@ -117,7 +117,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
     {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
-    {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
     {SymbolId::kUnderIntNewFromByteArray, underIntNewFromByteArray},
     {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
     {SymbolId::kUnderIntNewFromInt, underIntNewFromInt},
