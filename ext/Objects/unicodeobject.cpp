@@ -1858,8 +1858,13 @@ PY_EXPORT int PyUnicode_KIND_Func(PyObject*) {
   UNIMPLEMENTED("PyUnicode_KIND_Func");
 }
 
-PY_EXPORT void* PyUnicode_DATA_Func(PyObject*) {
-  UNIMPLEMENTED("PyUnicode_DATA_Func");
+// NOTE: This will return a cached and managed C-string buffer that is a copy
+// of the Str internal buffer. It is NOT a direct pointer into the string
+// object, so writing into this buffer will do nothing. This is different
+// behavior from CPython, where changing the data in the buffer changes the
+// string object.
+PY_EXPORT void* PyUnicode_DATA_Func(PyObject* str) {
+  return PyUnicode_AsUTF8(str);
 }
 
 PY_EXPORT Py_UCS4 PyUnicode_READ_Func(int kind, void* data, Py_ssize_t index) {

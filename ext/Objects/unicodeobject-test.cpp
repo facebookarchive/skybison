@@ -255,6 +255,20 @@ TEST_F(UnicodeExtensionApiTest, ClearFreeListReturnsZeroPyro) {
   EXPECT_EQ(PyUnicode_ClearFreeList(), 0);
 }
 
+TEST_F(UnicodeExtensionApiTest, DATAReturnsCStringContainingStrContents) {
+  const char* cstr = "hello";
+  PyObjectPtr str(PyUnicode_FromString(cstr));
+  void* data = PyUnicode_DATA(str.get());
+  EXPECT_STREQ(reinterpret_cast<char*>(data), cstr);
+}
+
+TEST_F(UnicodeExtensionApiTest, DATAReturnsSamePointer) {
+  PyObjectPtr str(PyUnicode_FromString("hello"));
+  void* p1 = PyUnicode_DATA(str.get());
+  void* p2 = PyUnicode_DATA(str.get());
+  EXPECT_EQ(p1, p2);
+}
+
 TEST_F(UnicodeExtensionApiTest, FindWithNonStrSelfRaisesTypeError) {
   PyObject* self = Py_None;
   PyObjectPtr sub(PyUnicode_FromString("ll"));
@@ -468,6 +482,14 @@ TEST_F(UnicodeExtensionApiTest, READCHARReturnsCharAtIndex) {
   EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 0), 'f');
   EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 1), 'o');
   EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 2), 'o');
+}
+
+TEST_F(UnicodeExtensionApiTest, READReadsCharsFromDATA) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  void* data = PyUnicode_DATA(str.get());
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 0), 'f');
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 1), 'o');
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, data, 2), 'o');
 }
 
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
