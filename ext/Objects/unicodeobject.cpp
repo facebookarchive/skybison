@@ -1168,16 +1168,56 @@ PY_EXPORT PyObject* PyUnicode_DecodeUTF8Stateful(const char* c_str,
                   View<byte>(reinterpret_cast<const byte*>(c_str), size)));
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeUnicodeEscape(const char* /* s */,
-                                                  Py_ssize_t /* e */,
-                                                  const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_DecodeUnicodeEscape");
+PY_EXPORT PyObject* PyUnicode_DecodeUnicodeEscape(const char* c_str,
+                                                  Py_ssize_t size,
+                                                  const char* errors) {
+  DCHECK(c_str != nullptr, "c_str cannot be null");
+  const char* first_invalid_escape = nullptr;
+  PyObject* result = _PyUnicode_DecodeUnicodeEscape(c_str, size, errors,
+                                                    &first_invalid_escape);
+  if (result == nullptr) {
+    return nullptr;
+  }
+  if (first_invalid_escape != nullptr) {
+    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                         "invalid escape sequence '\\%c'",
+                         static_cast<byte>(*first_invalid_escape)) < 0) {
+      Py_DECREF(result);
+      return nullptr;
+    }
+  }
+  return result;
 }
 
 PY_EXPORT PyObject* _PyUnicode_DecodeUnicodeEscape(
-    const char* /* s */, Py_ssize_t /* size */, const char* /* errors */,
-    const char** /* first_invalid_escape */) {
-  UNIMPLEMENTED("_PyUnicode_DecodeUnicodeEscape");
+    const char* c_str, Py_ssize_t size, const char* errors,
+    const char** first_invalid_escape) {
+  DCHECK(c_str != nullptr, "c_str cannot be null");
+  DCHECK(first_invalid_escape != nullptr,
+         "first_invalid_escape cannot be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object bytes(&scope, thread->runtime()->newBytesWithAll(View<byte>(
+                           reinterpret_cast<const byte*>(c_str), size)));
+  Object errors_obj(&scope, symbolFromError(thread, errors));
+  Object result_obj(&scope, thread->invokeFunction2(
+                                SymbolId::kUnderCodecs,
+                                SymbolId::kUnderUnicodeEscapeDecodeStateful,
+                                bytes, errors_obj));
+  if (result_obj.isError()) {
+    if (result_obj.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kSystemError,
+                           "could not call _codecs.unicode_escape_decode");
+    }
+    return nullptr;
+  }
+  Tuple result(&scope, *result_obj);
+  Int first_invalid_index(&scope, result.at(2));
+  word invalid_index = first_invalid_index.asWord();
+  if (invalid_index > -1) {
+    *first_invalid_escape = c_str + invalid_index;
+  }
+  return ApiHandle::newReference(thread, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_EncodeCodePage(int /* e */, PyObject* /* e */,

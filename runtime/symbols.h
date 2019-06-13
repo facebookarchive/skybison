@@ -260,6 +260,8 @@ class Runtime;
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
   V(UnderUnbound, "_Unbound")                                                  \
+  V(UnderUnicodeEscapeDecode, "_unicode_escape_decode")                        \
+  V(UnderUnicodeEscapeDecodeStateful, "_unicode_escape_decode_stateful")       \
   V(UnderUnimplemented, "_unimplemented")                                      \
   V(UnderUtf16Encode, "_utf_16_encode")                                        \
   V(UnderUtf32Encode, "_utf_32_encode")                                        \

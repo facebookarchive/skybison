@@ -3,6 +3,7 @@
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions and will complain without this gross circular helper here.
 _bytes_check = _bytes_check  # noqa: F821
+_bytearray_check = _bytearray_check  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _index = _index  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -227,6 +228,49 @@ def latin_1_encode(data: str, errors: str = "strict"):
     # _latin_1_encode encountered an error and _call_encode_errorhandler was the
     # last function to write to `result`.
     return bytes(result), i
+
+
+@_patch
+def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _strarray):
+    """Tries to decode `data`, starting from `index`, into the `out` _strarray.
+    If it runs into any errors, it returns a tuple of
+    (error_start, error_end, error_message, first_invalid_escape),
+    where the first_invalid_escape is either the index into the data of the first
+    invalid escape sequence, or -1 if none occur.
+    If it finishes encoding, it returns a tuple of
+    (decoded, length, "", first_invalid_escape)
+    """
+    pass
+
+
+def _unicode_escape_decode_stateful(data: bytes, errors: str = "strict"):
+    if not _bytes_check(data) and not _bytearray_check(data):
+        raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
+    if not _str_check(errors):
+        raise TypeError(
+            "unicode_escape_decode() argument 2 must be str or None, not "
+            f"{type(errors).__name__}"
+        )
+    result = _strarray()
+    i = 0
+    decoded = ""
+    length = len(data)
+    while i < length:
+        decoded, i, error_msg, first_invalid = _unicode_escape_decode(
+            data, errors, i, result
+        )
+        if error_msg:
+            data, i = _call_decode_errorhandler(
+                errors, data, result, error_msg, "unicodeescape", decoded, i
+            )
+    if _str_check(decoded):
+        return decoded, i, first_invalid
+    # The error handler was the last to write to the result
+    return str(result), i, first_invalid
+
+
+def unicode_escape_decode(data: bytes, errors: str = "strict") -> str:
+    return _unicode_escape_decode_stateful(data, errors)[:2]
 
 
 @_patch

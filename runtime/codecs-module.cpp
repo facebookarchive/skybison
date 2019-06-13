@@ -48,6 +48,7 @@ const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAsciiEncode, underAsciiEncode},
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
     {SymbolId::kUnderLatin1Encode, underLatin1Encode},
+    {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
     {SymbolId::kUnderUtf16Encode, underUtf16Encode},
     {SymbolId::kUnderUtf32Encode, underUtf32Encode},
     {SymbolId::kUnderUtf8Encode, underUtf8Encode},
@@ -262,6 +263,234 @@ RawObject UnderCodecsModule::underLatin1Encode(Thread* thread, Frame* frame,
   }
   result.atPut(0, byteArrayAsBytes(thread, runtime, output));
   result.atPut(1, runtime->newInt(i));
+  return *result;
+}
+
+// Decodes a sequence of hexadecimal encoded bytes into a codepoint or returns
+// a negative value if the value could not be decoded. Sets the start variable
+// to where decoding should continue.
+static int32_t decodeHexEscaped(const Bytes& bytes, word* start, word count) {
+  DCHECK_BOUND(count, 8);
+  word result = 0;
+  word i = *start;
+  for (word len = bytes.length(); i < len && count != 0; i++, count--) {
+    byte ch = bytes.byteAt(i);
+    result <<= 4;
+    if (ch >= '0' && ch <= '9') {
+      result += ch - '0';
+    } else if (ch >= 'a' && ch <= 'f') {
+      result += ch - ('a' - 10);
+    } else if (ch >= 'A' && ch <= 'F') {
+      result += ch - ('A' - 10);
+    } else {
+      break;  // not a hexadecimal digit, stop reading
+    }
+  }
+  *start = i;
+  if (count != 0) {
+    return -1;
+  }
+  // if count is 4, result could be a 32-bit unicode character
+  if (result > kMaxUnicode) {
+    return -2;
+  }
+  return result;
+}
+
+// Decodes a sequence of unicode encoded bytes into a codepoint or returns
+// a negative value if no value should be written. Sets the iterating variable
+// to where decoding should continue, sets invalid_escape_index if it doesn't
+// recognize the escape sequence, and sets error_message if an error occurred.
+static int32_t decodeUnicodeEscaped(const Bytes& bytes, word* i,
+                                    word* invalid_escape_index,
+                                    const char** error_message) {
+  switch (byte ch = bytes.byteAt((*i)++)) {
+    // \x escapes
+    case '\n':
+      return -1;
+    case '\\':
+    case '\'':
+    case '\"':
+      return ch;
+    case 'b':
+      return '\b';
+    case 't':
+      return '\t';
+    case 'n':
+      return '\n';
+    case 'r':
+      return '\r';
+    // BEL
+    case 'a':
+      return '\007';
+    // FF
+    case 'f':
+      return '\014';
+    // VT
+    case 'v':
+      return '\013';
+
+    // \OOO (octal) escapes
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7': {
+      word escaped = ch - '0';
+      word octal_index = *i;
+      word length = bytes.length();
+      if (octal_index < length) {
+        word ch2 = bytes.byteAt(octal_index);
+        if ('0' <= ch2 && ch2 <= '7') {
+          escaped = (escaped << 3) + ch2 - '0';
+          if (++octal_index < length) {
+            word ch3 = bytes.byteAt(octal_index);
+            if ('0' <= ch3 && ch3 <= '7') {
+              octal_index++;
+              escaped = (escaped << 3) + ch3 - '0';
+            }
+          }
+        }
+      }
+      *i = octal_index;
+      return escaped;
+    }
+
+    // hex escapes
+    // \xXX
+    case 'x': {
+      word escaped;
+      if ((escaped = decodeHexEscaped(bytes, i, 2)) < 0) {
+        *error_message = (escaped == -1 ? "truncated \\xXX escape"
+                                        : "illegal Unicode character");
+        return -1;
+      }
+      return escaped;
+    }
+
+    // \uXXXX
+    case 'u': {
+      word escaped;
+      if ((escaped = decodeHexEscaped(bytes, i, 4)) < 0) {
+        *error_message = (escaped == -1 ? "truncated \\uXXXX escape"
+                                        : "illegal Unicode character");
+        return -1;
+      }
+      return escaped;
+    }
+
+    // \UXXXXXXXX
+    case 'U': {
+      word escaped;
+      if ((escaped = decodeHexEscaped(bytes, i, 8)) < 0) {
+        *error_message = (escaped == -1 ? "truncated \\uXXXXXXXX escape"
+                                        : "illegal Unicode character");
+        return -1;
+      }
+      return escaped;
+    }
+
+    case 'N':
+      // TODO(T39917408): Use the PyCapsule API to import UnicodeData
+      UNIMPLEMENTED("Requires PyCapsule_Import");
+      break;
+
+    default: {
+      *invalid_escape_index = *i - 1;
+      return ch;
+    }
+  }
+}
+
+RawObject UnderCodecsModule::underUnicodeEscapeDecode(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object bytes_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object index_obj(&scope, args.get(2));
+  Object output_obj(&scope, args.get(3));
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
+         "First arg to _unicode_escape_decode must be str");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _unicode_escape_decode must be str");
+  DCHECK(runtime->isInstanceOfInt(*index_obj),
+         "Third arg to _unicode_escape_decode must be int");
+  DCHECK(output_obj.isStrArray(),
+         "Fourth arg to _unicode_escape_decode must be _strarray");
+  // TODO(T36619847): Bytes subclass handling
+  Bytes bytes(&scope, *bytes_obj);
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+  Int index(&scope, intUnderlying(thread, index_obj));
+  StrArray dst(&scope, *output_obj);
+
+  Tuple result(&scope, runtime->newTuple(4));
+  word length = bytes.length();
+  runtime->strArrayEnsureCapacity(thread, dst, length);
+  word first_invalid_escape_index = -1;
+  for (word i = index.asWord(); i < length;) {
+    const char* message = nullptr;
+    word start_pos = i;
+    byte ch = bytes.byteAt(i++);
+    if (ch != '\\') {
+      if (ch <= kMaxASCII) {
+        runtime->strArrayAddASCII(thread, dst, ch);
+        continue;
+      }
+      Str temp(&scope, SmallStr::fromCodePoint(ch));
+      runtime->strArrayAddStr(thread, dst, temp);
+      continue;
+    }
+    if (i >= length) {
+      message = "\\ at end of string";
+    } else {
+      word invalid_escape_index = -1;
+      int32_t decoded =
+          decodeUnicodeEscaped(bytes, &i, &invalid_escape_index, &message);
+      if (invalid_escape_index != -1) {
+        runtime->strArrayAddASCII(thread, dst, '\\');
+        if (first_invalid_escape_index == -1) {
+          first_invalid_escape_index = invalid_escape_index;
+        }
+      }
+      if (decoded != -1) {
+        if (decoded <= kMaxASCII) {
+          runtime->strArrayAddASCII(thread, dst, decoded);
+          continue;
+        }
+        Str temp(&scope, SmallStr::fromCodePoint(decoded));
+        runtime->strArrayAddStr(thread, dst, temp);
+        continue;
+      }
+    }
+    if (message != nullptr) {
+      SymbolId error_id = lookupSymbolForErrorHandler(errors);
+      switch (error_id) {
+        case SymbolId::kReplace: {
+          Str temp(&scope, SmallStr::fromCodePoint(0xFFFD));
+          runtime->strArrayAddStr(thread, dst, temp);
+          break;
+        }
+        case SymbolId::kIgnore:
+          break;
+        default:
+          result.atPut(0, runtime->newInt(start_pos));
+          result.atPut(1, runtime->newInt(i));
+          result.atPut(2, runtime->newStrFromCStr(message));
+          result.atPut(3, runtime->newInt(first_invalid_escape_index));
+          return *result;
+      }
+    }
+  }
+  result.atPut(0, runtime->strFromStrArray(dst));
+  result.atPut(1, runtime->newInt(length));
+  result.atPut(2, runtime->newStrFromCStr(""));
+  result.atPut(3, runtime->newInt(first_invalid_escape_index));
   return *result;
 }
 

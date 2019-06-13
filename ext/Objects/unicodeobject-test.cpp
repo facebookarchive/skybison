@@ -1012,6 +1012,22 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8StatefulReturnsString) {
   EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello world"));
 }
 
+TEST_F(UnicodeExtensionApiTest, DecodeUnicodeEscapeReturnsString) {
+  PyObjectPtr str(
+      PyUnicode_DecodeUnicodeEscape("hello \\\nworld", 13, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello world"));
+}
+
+TEST_F(UnicodeExtensionApiTest, UnderDecodeUnicodeEscapeReturnsFirstInvalid) {
+  const char* invalid;
+  PyObjectPtr str(
+      _PyUnicode_DecodeUnicodeEscape("hello \\yworld", 13, nullptr, &invalid));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello \\yworld"));
+  EXPECT_EQ(*invalid, 'y');
+}
+
 TEST_F(UnicodeExtensionApiTest, FromFormatWithNoArgsReturnsString) {
   PyObjectPtr str(PyUnicode_FromFormat("hello world"));
   EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello world"));

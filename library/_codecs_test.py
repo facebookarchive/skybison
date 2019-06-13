@@ -246,6 +246,40 @@ class DecodeASCIITests(unittest.TestCase):
         self.assertEqual(consumed, 4)
 
 
+class DecodeUnicodeEscapeTests(unittest.TestCase):
+    def test_decode_unicode_escape_with_non_bytes_first_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.unicode_escape_decode([])
+
+    def test_decode_unicode_escape_with_non_string_second_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.unicode_escape_decode(b"", [])
+
+    def test_decode_unicode_escape_with_zero_length_returns_empty_string(self):
+        decoded, consumed = _codecs.unicode_escape_decode(b"")
+        self.assertEqual(decoded, "")
+        self.assertEqual(consumed, 0)
+
+    def test_decode_unicode_escape_with_well_formed_latin_1_returns_string(self):
+        decoded, consumed = _codecs.unicode_escape_decode(b"hello\x95")
+        self.assertEqual(decoded, "hello\x95")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_unicode_escape_with_custom_error_handler_returns_string(self):
+        _codecs.register_error("test", lambda x: ("-testing-", x.end))
+        decoded, consumed = _codecs.unicode_escape_decode(b"ab\\U90gc", "test")
+        self.assertEqual(decoded, "ab-testing-gc")
+        self.assertEqual(consumed, 8)
+
+    def test_decode_unicode_escape_stateful_returns_first_invalid_escape(self):
+        decoded, consumed, first_invalid = _codecs._unicode_escape_decode_stateful(
+            b"ab\\yc"
+        )
+        self.assertEqual(decoded, "ab\\yc")
+        self.assertEqual(consumed, 5)
+        self.assertEqual(first_invalid, 3)
+
+
 class EncodeASCIITests(unittest.TestCase):
     def test_encode_ascii_with_non_str_first_argument_raises_type_error(self):
         with self.assertRaises(TypeError):

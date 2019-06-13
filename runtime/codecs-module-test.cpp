@@ -108,6 +108,308 @@ encoded = Foo(b"hello")
   EXPECT_TRUE(str.equalsCStr("hello"));
 }
 
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithWellFormedLatin1ReturnsString) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 0xE9, 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  EXPECT_EQ(str.length(), 7);
+  EXPECT_TRUE(str.equalsCStr("hell\xC3\xA9o"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithIgnoreErrorHandlerReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("ignore"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  EXPECT_EQ(str.length(), 5);
+  EXPECT_TRUE(str.equalsCStr("hello"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithReplaceErrorHandlerReturnsStr) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("replace"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  EXPECT_EQ(str.length(), 8);
+  word placeholder;
+  EXPECT_EQ(str.codePointAt(5, &placeholder), 0xfffd);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest,
+       DecodeUnicodeEscapeReturnsMessageWhenEscapeAtEndOfString) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("not-a-handler"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 5));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 6));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "\\ at end of string"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeReturnsMessageOnTruncatedHex) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', 'x', '1'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("not-a-handler"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 5));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 8));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "truncated \\xXX escape"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest,
+       DecodeUnicodeEscapeReturnsMessageOnTruncatedSmallUnicode) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', 'u', '0'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("not-a-handler"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 5));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 8));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "truncated \\uXXXX escape"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest,
+       DecodeUnicodeEscapeReturnsMessageOnTruncatedLargeUnicode) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', 'U', '0'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("not-a-handler"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 5));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 8));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "truncated \\uXXXXXXXX escape"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeReturnsMessageOnOversizedUnicode) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', 'U', '0',
+                    '1', '1', '0', '0', '0', '0',  '0'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("not-a-handler"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 5));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 15));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), "illegal Unicode character"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithTruncatedHexProperlyIterates) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', '\\', 'U', '1',
+                    '1', '0', '0', '0', '0',  'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("ignore"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 13));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeProperlyEscapesSingleOctals) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', '0', 'w'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+
+  Tuple result(&scope, *result_obj);
+  byte escaped[] = {'h', 'e', 'l', 'l', 'o', 0x00, 'w'};
+  Str expected(&scope, runtime_.newStrWithAll(View<byte>{escaped}));
+  Object decoded(&scope, result.at(0));
+  EXPECT_TRUE(isStrEquals(decoded, expected));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 8));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest,
+       DecodeUnicodeEscapeProperlyEscapesMidStringDoubleOctals) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', '4', '0', 'w'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello w"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 9));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest,
+       DecodeUnicodeEscapeProperlyEscapesEndStringDoubleOctals) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', '4', '0'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello "));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 8));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeProperlyEscapesTripleOctals) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', 'o', '\\', '7', '7', '7', 'w'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hello\xC7\xBFw"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 10));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), -1));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeSetsFirstInvalidEscape) {
+  HandleScope scope(thread_);
+  byte encoded[] = {'h', 'e', 'l', 'l', '\\', 'y', 'o'};
+  Object bytes(&scope, runtime_.newBytesWithAll(encoded));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  EXPECT_TRUE(isStrEqualsCStr(result.at(0), "hell\\yo"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 7));
+  EXPECT_TRUE(isStrEqualsCStr(result.at(2), ""));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 5));
+}
+
+TEST_F(CodecsModuleTest, DecodeUnicodeEscapeWithBytesSubclassReturnsStr) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Foo(bytes): pass
+encoded = Foo(b"hello")
+)")
+                   .isError());
+  Object bytes(&scope, moduleAt(&runtime_, "__main__", "encoded"));
+  Object errors(&scope, runtime_.newStrFromCStr("strict"));
+  Object index(&scope, runtime_.newInt(0));
+  Object strarray(&scope, runtime_.newStrArray());
+  Object result_obj(
+      &scope, runBuiltin(UnderCodecsModule::underUnicodeEscapeDecode, bytes,
+                         errors, index, strarray));
+  ASSERT_TRUE(result_obj.isTuple());
+
+  Tuple result(&scope, *result_obj);
+  Str str(&scope, result.at(0));
+  EXPECT_EQ(str.length(), 5);
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 5));
+  EXPECT_TRUE(str.equalsCStr("hello"));
+}
+
 TEST_F(CodecsModuleTest, EncodeASCIIWithWellFormedASCIIReturnsString) {
   HandleScope scope(thread_);
   Object str(&scope, runtime_.newStrFromCStr("hello"));

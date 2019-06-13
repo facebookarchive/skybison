@@ -777,6 +777,8 @@ PyAPI_FUNC(PyObject*)
     PyUnicode_DecodeUTF8(const char*, Py_ssize_t, const char*);
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF8Stateful(const char*, Py_ssize_t,
                                                    const char*, Py_ssize_t*);
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(const char*, Py_ssize_t,
+                                                     const char*, const char**);
 PyAPI_FUNC(PyObject*)
     PyUnicode_DecodeUnicodeEscape(const char*, Py_ssize_t, const char*);
 PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(const char*, Py_ssize_t,
