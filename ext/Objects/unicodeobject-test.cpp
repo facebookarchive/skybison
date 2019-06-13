@@ -441,6 +441,35 @@ TEST_F(UnicodeExtensionApiTest, FromStringAndSizeIncrementsRefCount) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(UnicodeExtensionApiTest, READWithOneByteKindReturnsCharAtIndex) {
+  const char* str = "foo";
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 0), 'f');
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 1), 'o');
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_1BYTE_KIND, str, 2), 'o');
+}
+
+TEST_F(UnicodeExtensionApiTest, READWithTwoByteKindReturnsCharAtIndex) {
+  const char* str = "quux";
+  // This assumes little-endian architecture. No static assert because we can't
+  // include that enum and macro in these tests.
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_2BYTE_KIND, str, 0), 0x7571);  // qu
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_2BYTE_KIND, str, 1), 0x7875);  // ux
+}
+
+TEST_F(UnicodeExtensionApiTest, READWithFourByteKindReturnsCharAtIndex) {
+  const char* str = "quux";
+  // This assumes little-endian architecture. No static assert because we can't
+  // include that enum and macro in these tests.
+  EXPECT_EQ(PyUnicode_READ(PyUnicode_4BYTE_KIND, str, 0), 0x78757571);
+}
+
+TEST_F(UnicodeExtensionApiTest, READCHARReturnsCharAtIndex) {
+  PyObjectPtr str(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 0), 'f');
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 1), 'o');
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 2), 'o');
+}
+
 TEST_F(UnicodeExtensionApiTest, ReadyReturnsZero) {
   PyObject* pyunicode = PyUnicode_FromString("some string");
   int is_ready = PyUnicode_READY(pyunicode);

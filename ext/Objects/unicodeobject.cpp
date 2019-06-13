@@ -1862,12 +1862,22 @@ PY_EXPORT void* PyUnicode_DATA_Func(PyObject*) {
   UNIMPLEMENTED("PyUnicode_DATA_Func");
 }
 
-PY_EXPORT Py_UCS4 PyUnicode_READ_Func(int, void*, Py_ssize_t) {
-  UNIMPLEMENTED("PyUnicode_READ_Func");
+PY_EXPORT Py_UCS4 PyUnicode_READ_Func(int kind, void* data, Py_ssize_t index) {
+  if (kind == PyUnicode_1BYTE_KIND) return static_cast<Py_UCS1*>(data)[index];
+  if (kind == PyUnicode_2BYTE_KIND) return static_cast<Py_UCS2*>(data)[index];
+  DCHECK(kind == PyUnicode_4BYTE_KIND, "kind must be PyUnicode_4BYTE_KIND");
+  return static_cast<Py_UCS4*>(data)[index];
 }
 
-PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t) {
-  UNIMPLEMENTED("PyUnicode_READ_CHAR_Func");
+PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject* obj, Py_ssize_t index) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  DCHECK(thread->runtime()->isInstanceOfStr(*str_obj),
+         "PyUnicode_READ_CHAR must receive a unicode object");
+  Str str(&scope, strUnderlying(thread, str_obj));
+  word num_bytes;
+  return reinterpret_cast<Py_UCS4>(str.codePointAt(index, &num_bytes));
 }
 
 PY_EXPORT int PyUnicode_IS_ASCII_Func(PyObject* obj) {
