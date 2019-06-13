@@ -888,15 +888,14 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   Function::Entry entry;
   Function::Entry entry_kw;
   Function::Entry entry_ex;
-  bool is_interpreted;
+  word flags = code.flags();
   if (!code.hasOptimizedAndNewLocals()) {
     // We do not support calling non-optimized functions directly. We only allow
     // them in Thread::exec() and Thread::runClassFunction().
     entry = unimplementedTrampoline;
     entry_kw = unimplementedTrampoline;
     entry_ex = unimplementedTrampoline;
-    is_interpreted = false;
-  } else if (code.hasCoroutineOrGenerator()) {
+  } else if (code.isCoroutineOrGenerator()) {
     if (code.hasFreevarsOrCellvars()) {
       entry = generatorClosureTrampoline;
       entry_kw = generatorClosureTrampolineKw;
@@ -906,7 +905,6 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
       entry_kw = generatorTrampolineKw;
       entry_ex = generatorTrampolineEx;
     }
-    is_interpreted = false;
   } else {
     if (code.hasFreevarsOrCellvars()) {
       entry = interpreterClosureTrampoline;
@@ -917,19 +915,19 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
       entry_kw = interpreterTrampolineKw;
       entry_ex = interpreterTrampolineEx;
     }
-    is_interpreted = true;
+    flags |= Function::Flags::kInterpreted;
   }
   Object name(&scope, code.name());
   word total_args = code.totalArgs();
   word total_vars =
       code.nlocals() - total_args + code.numCellvars() + code.numFreevars();
+
   Function function(
-      &scope,
-      runtime->newInterpreterFunction(
-          thread, name, qualname_str, code, code.flags(), code.argcount(),
-          total_args, total_vars, code.stacksize(), closure_tuple,
-          annotations_dict, kw_defaults_dict, defaults_tuple, globals, entry,
-          entry_kw, entry_ex, is_interpreted));
+      &scope, runtime->newInterpreterFunction(
+                  thread, name, qualname_str, code, flags, code.argcount(),
+                  total_args, total_vars, code.stacksize(), closure_tuple,
+                  annotations_dict, kw_defaults_dict, defaults_tuple, globals,
+                  entry, entry_kw, entry_ex));
 
   Object dunder_name(&scope, runtime->symbols()->at(SymbolId::kDunderName));
   Object value_cell(&scope, runtime->dictAt(thread, globals, dunder_name));
@@ -1078,7 +1076,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why, RawObject value) {
 // If the current frame is executing a Generator, mark it as finished.
 static void finishCurrentGenerator(Interpreter::Context* ctx) {
   Frame* frame = ctx->frame;
-  if (!frame->function().hasGenerator()) return;
+  if (!frame->function().isGenerator()) return;
 
   // Write to the Generator's HeapFrame directly so we don't have to save the
   // live frame to it one last time.
@@ -1540,7 +1538,7 @@ HANDLER_INLINE bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
 
   if (iterable.isCoroutine()) {
     Function function(&scope, frame->function());
-    if (function.hasCoroutine() || function.hasIterableCoroutine()) {
+    if (function.isCoroutine() || function.isIterableCoroutine()) {
       thread->raiseWithFmt(
           LayoutId::kTypeError,
           "cannot 'yield from' a coroutine object in a non-coroutine "
@@ -3577,7 +3575,7 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
   // adding an alternate entry point that always throws (and asserts that an
   // exception is pending).
   if (ctx.thread->hasPendingException()) {
-    DCHECK(ctx.frame->function().hasCoroutineOrGenerator(),
+    DCHECK(ctx.frame->function().isCoroutineOrGenerator(),
            "Entered dispatch loop with a pending exception outside of "
            "generator/coroutine");
     if (Interpreter::unwind(&ctx)) return do_return();

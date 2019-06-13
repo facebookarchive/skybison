@@ -1516,7 +1516,8 @@ class RawCode : public RawHeapObject {
     COROUTINE = 0x0080,
     ITERABLE_COROUTINE = 0x0100,
     ASYNC_GENERATOR = 0x0200,
-    SIMPLE_CALL = 0x0400,  // Pyro addition; speeds detection of fast call
+    SIMPLE_CALL = 0x0400,  // TODO(T45713862): remove
+    LAST = SIMPLE_CALL,
   };
 
   // Getters and setters.
@@ -1550,7 +1551,7 @@ class RawCode : public RawHeapObject {
   void setFreevars(RawObject value) const;
   word numFreevars() const;
 
-  bool hasCoroutineOrGenerator() const;
+  bool isCoroutineOrGenerator() const;
   bool hasFreevarsOrCellvars() const;
   bool hasOptimizedAndNewLocals() const;
   bool hasOptimizedOrNewLocals() const;
@@ -1630,6 +1631,23 @@ class RawFunction : public RawHeapObject {
     kMethVarArgsAndKeywords,
   };
 
+  enum Flags {
+    kNone = 0,
+    // Matching Code::Flags (and CPython)
+    kOptimized = RawCode::Flags::OPTIMIZED,
+    kNewLocals = RawCode::Flags::NEWLOCALS,
+    kVarargs = RawCode::Flags::VARARGS,
+    kVarkeyargs = RawCode::Flags::VARKEYARGS,
+    kNested = RawCode::Flags::NESTED,
+    kGenerator = RawCode::Flags::GENERATOR,
+    kNoFree = RawCode::Flags::NOFREE,
+    kCoroutine = RawCode::Flags::COROUTINE,
+    kIterableCoroutine = RawCode::Flags::ITERABLE_COROUTINE,
+    kAsyncGenerator = RawCode::Flags::ASYNC_GENERATOR,
+    kSimpleCall = RawCode::Flags::SIMPLE_CALL,  // Speeds detection of fast call
+    kInterpreted = RawCode::Flags::LAST << 1,   // Executable by the interpreter
+  };
+
   // Getters and setters.
 
   // A dict containing parameter annotations
@@ -1684,19 +1702,19 @@ class RawFunction : public RawHeapObject {
   void setGlobals(RawObject globals) const;
 
   // Returns true if the function is a coroutine.
-  bool hasCoroutine() const;
+  bool isCoroutine() const;
 
   // Returns true if the function is a coroutine or a generator function.
-  bool hasCoroutineOrGenerator() const;
+  bool isCoroutineOrGenerator() const;
 
   // Returns true if the function has free variables or cell variables.
   bool hasFreevarsOrCellvars() const;
 
   // Returns true if the function is a generator.
-  bool hasGenerator() const;
+  bool isGenerator() const;
 
   // Returns true if the function is an iterable coroutine.
-  bool hasIterableCoroutine() const;
+  bool isIterableCoroutine() const;
 
   // Returns true if the function has the optimized or newlocals flag.
   bool hasOptimizedOrNewLocals() const;
@@ -1712,6 +1730,11 @@ class RawFunction : public RawHeapObject {
 
   // Returns true if the function has varkeyword arguments.
   bool hasVarkeyargs() const;
+
+  // Returns true if the function consists of bytecode that can be executed
+  // normally by the interpreter.
+  bool isInterpreted() const;
+  void setIsInterpreted(bool interpreted) const;
 
   // A dict containing defaults for keyword-only parameters
   RawObject kwDefaults() const;
@@ -1760,11 +1783,6 @@ class RawFunction : public RawHeapObject {
   RawObject dict() const;
   void setDict(RawObject dict) const;
 
-  // Whether or not the function consists of bytecode that can be executed
-  // normally by the interpreter.
-  bool isInterpreted() const;
-  void setIsInterpreted(bool interpreted) const;
-
   // Layout.
   static const int kCodeOffset = RawHeapObject::kSize;
   static const int kFlagsOffset = kCodeOffset + kPointerSize;
@@ -1788,8 +1806,7 @@ class RawFunction : public RawHeapObject {
   static const int kCachesOffset = kRewrittenBytecodeOffset + kPointerSize;
   static const int kOriginalArgumentsOffset = kCachesOffset + kPointerSize;
   static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
-  static const int kInterpreterInfoOffset = kDictOffset + kPointerSize;
-  static const int kSize = kInterpreterInfoOffset + kPointerSize;
+  static const int kSize = kDictOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Function);
 };
@@ -4066,7 +4083,7 @@ inline void RawCode::setVarnames(RawObject value) const {
   instanceVariableAtPut(kVarnamesOffset, value);
 }
 
-inline bool RawCode::hasCoroutineOrGenerator() const {
+inline bool RawCode::isCoroutineOrGenerator() const {
   return flags() & (Flags::COROUTINE | Flags::GENERATOR);
 }
 
@@ -4555,44 +4572,55 @@ inline void RawFunction::setGlobals(RawObject globals) const {
   instanceVariableAtPut(kGlobalsOffset, globals);
 }
 
-inline bool RawFunction::hasCoroutine() const {
-  return flags() & RawCode::Flags::COROUTINE;
+inline bool RawFunction::isCoroutine() const {
+  return flags() & Flags::kCoroutine;
 }
 
-inline bool RawFunction::hasCoroutineOrGenerator() const {
-  return flags() & (RawCode::Flags::COROUTINE | RawCode::Flags::GENERATOR);
+inline bool RawFunction::isCoroutineOrGenerator() const {
+  return flags() & (Flags::kCoroutine | Flags::kGenerator);
 }
 
 inline bool RawFunction::hasFreevarsOrCellvars() const {
-  return !(flags() & RawCode::Flags::NOFREE);
+  return !(flags() & Flags::kNoFree);
 }
 
-inline bool RawFunction::hasGenerator() const {
-  return flags() & RawCode::Flags::GENERATOR;
+inline bool RawFunction::isGenerator() const {
+  return flags() & Flags::kGenerator;
 }
 
-inline bool RawFunction::hasIterableCoroutine() const {
-  return flags() & RawCode::Flags::ITERABLE_COROUTINE;
+inline bool RawFunction::isIterableCoroutine() const {
+  return flags() & Flags::kIterableCoroutine;
 }
 
 inline bool RawFunction::hasOptimizedOrNewLocals() const {
-  return flags() & (RawCode::Flags::OPTIMIZED | RawCode::Flags::NEWLOCALS);
+  return flags() & (Flags::kOptimized | Flags::kNewLocals);
 }
 
 inline bool RawFunction::hasSimpleCall() const {
-  return flags() & RawCode::Flags::SIMPLE_CALL;
+  return flags() & Flags::kSimpleCall;
 }
 
 inline bool RawFunction::hasVarargs() const {
-  return flags() & RawCode::Flags::VARARGS;
+  return flags() & Flags::kVarargs;
 }
 
 inline bool RawFunction::hasVarkeyargs() const {
-  return flags() & RawCode::Flags::VARKEYARGS;
+  return flags() & Flags::kVarkeyargs;
 }
 
 inline bool RawFunction::hasVarargsOrVarkeyargs() const {
-  return flags() & (RawCode::Flags::VARARGS | RawCode::Flags::VARKEYARGS);
+  return flags() & (Flags::kVarargs | Flags::kVarkeyargs);
+}
+
+inline bool RawFunction::isInterpreted() const {
+  return flags() & Flags::kInterpreted;
+}
+
+inline void RawFunction::setIsInterpreted(bool interpreted) const {
+  instanceVariableAtPut(
+      kFlagsOffset,
+      RawSmallInt::fromWord(interpreted ? flags() | Flags::kInterpreted
+                                        : flags() & ~Flags::kInterpreted));
 }
 
 inline RawObject RawFunction::kwDefaults() const {
@@ -4683,14 +4711,6 @@ inline RawObject RawFunction::dict() const {
 
 inline void RawFunction::setDict(RawObject dict) const {
   instanceVariableAtPut(kDictOffset, dict);
-}
-
-inline bool RawFunction::isInterpreted() const {
-  return RawBool::cast(instanceVariableAt(kInterpreterInfoOffset)).value();
-}
-
-inline void RawFunction::setIsInterpreted(bool interpreted) const {
-  instanceVariableAtPut(kInterpreterInfoOffset, RawBool::fromBool(interpreted));
 }
 
 // RawInstance

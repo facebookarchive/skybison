@@ -607,7 +607,6 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
   function.setEntry(builtinTrampoline);
   function.setEntryKw(builtinTrampolineKw);
   function.setEntryEx(builtinTrampolineEx);
-  function.setIsInterpreted(false);
   function.setCode(*code);
   return *function;
 }
@@ -618,7 +617,7 @@ RawObject Runtime::newInterpreterFunction(
     word total_vars, word stacksize, const Object& closure,
     const Object& annotations, const Object& kw_defaults,
     const Object& defaults, const Dict& globals, Function::Entry entry,
-    Function::Entry entry_kw, Function::Entry entry_ex, bool is_interpreted) {
+    Function::Entry entry_kw, Function::Entry entry_ex) {
   HandleScope scope(thread);
   Function function(&scope, heap()->create<RawFunction>());
   function.setCode(*code);
@@ -637,7 +636,6 @@ RawObject Runtime::newInterpreterFunction(
   function.setEntry(entry);
   function.setEntryKw(entry_kw);
   function.setEntryEx(entry_ex);
-  function.setIsInterpreted(is_interpreted);
   return *function;
 }
 
@@ -654,7 +652,6 @@ RawObject Runtime::newFunction() {
   result.setEntryKw(unimplementedTrampoline);
   result.setEntryEx(unimplementedTrampoline);
   result.setName(symbols()->Anonymous());
-  result.setIsInterpreted(false);
   return *result;
 }
 
@@ -663,7 +660,7 @@ RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
 RawObject Runtime::newGenerator() { return heap()->create<RawGenerator>(); }
 
 RawObject Runtime::newHeapFrame(const Function& function) {
-  DCHECK(function.hasCoroutineOrGenerator(),
+  DCHECK(function.isCoroutineOrGenerator(),
          "expected a RawGenerator/RawCoroutine code object");
 
   HandleScope scope;

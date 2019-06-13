@@ -447,10 +447,10 @@ RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
 
 static RawObject createGenerator(Thread* thread, const Function& function,
                                  const Str& qualname) {
-  CHECK(function.hasCoroutineOrGenerator(), "must be a coroutine or generator");
+  CHECK(function.isCoroutineOrGenerator(), "must be a coroutine or generator");
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  GeneratorBase gen_base(&scope, function.hasGenerator()
+  GeneratorBase gen_base(&scope, function.isGenerator()
                                      ? runtime->newGenerator()
                                      : runtime->newCoroutine());
   gen_base.setHeapFrame(runtime->newHeapFrame(function));
