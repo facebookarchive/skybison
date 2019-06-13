@@ -368,7 +368,7 @@ def _bytes_getitem(self, index: int) -> int:
 
 
 @_patch
-def _bytes_getitem_slice(self, start: int, stop: int, step: int) -> bytes:
+def _bytes_getslice(self, start: int, stop: int, step: int) -> bytes:
     pass
 
 
@@ -436,6 +436,13 @@ def _dict_check(obj) -> bool:
     pass
 
 
+# TODO(T43319065): Re-write the non-dict-dict case in managed code in
+# dict.update
+@_patch
+def _dict_update_mapping(self, seq):
+    pass
+
+
 def _dunder_bases_tuple_check(obj, msg) -> None:
     try:
         if not _tuple_check(obj.__bases__):
@@ -460,17 +467,17 @@ def _get_member_byte(addr):
 
 
 @_patch
+def _get_member_char(addr):
+    pass
+
+
+@_patch
 def _get_member_double(addr):
     pass
 
 
 @_patch
 def _get_member_float(addr):
-    pass
-
-
-@_patch
-def _get_member_char(addr):
     pass
 
 
@@ -534,6 +541,16 @@ def _index(obj) -> int:
         )
 
 
+@_patch
+def _instance_getattr(obj, name):
+    pass
+
+
+@_patch
+def _instance_setattr(obj, name, value):
+    pass
+
+
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
     obj_type = _type(obj)
@@ -546,16 +563,6 @@ def _int(obj) -> int:
     if result_type is int:
         return result
     raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
-
-
-@_patch
-def _instance_getattr(obj, name):
-    pass
-
-
-@_patch
-def _instance_setattr(obj, name, value):
-    pass
 
 
 @_patch
@@ -622,6 +629,16 @@ def _list_check(obj) -> bool:
 
 
 @_patch
+def _list_delitem(self, key: int) -> None:
+    pass
+
+
+@_patch
+def _list_delslice(self, start: int, stop: int, step: int) -> None:
+    pass
+
+
+@_patch
 def _list_sort(list):
     pass
 
@@ -654,12 +671,8 @@ def _new_member_get_long(offset):
     return lambda instance: _get_member_long(_pyobject_offset(instance, offset))
 
 
-def _new_member_get_short(offset):
-    return lambda instance: _get_member_short(_pyobject_offset(instance, offset))
-
-
-def _new_member_get_string(offset):
-    return lambda instance: _get_member_string(_pyobject_offset(instance, offset))
+def _new_member_get_none(offset):
+    return lambda instance: None
 
 
 def _new_member_get_pyobject(offset, name=None):
@@ -668,8 +681,12 @@ def _new_member_get_pyobject(offset, name=None):
     )
 
 
-def _new_member_get_none(offset):
-    return lambda instance: None
+def _new_member_get_short(offset):
+    return lambda instance: _get_member_short(_pyobject_offset(instance, offset))
+
+
+def _new_member_get_string(offset):
+    return lambda instance: _get_member_string(_pyobject_offset(instance, offset))
 
 
 def _new_member_get_ubyte(offset):
@@ -686,20 +703,6 @@ def _new_member_get_ulong(offset):
 
 def _new_member_get_ushort(offset):
     return lambda instance: _get_member_ushort(_pyobject_offset(instance, offset))
-
-
-def _new_member_set_readonly(name):
-    def setter(instance, value):
-        raise AttributeError("{name} is a readonly attribute")
-
-    return setter
-
-
-def _new_member_set_readonly_strings(name):
-    def setter(instance, value):
-        raise TypeError("{name} is a readonly attribute")
-
-    return setter
 
 
 def _new_member_set_bool(offset):
@@ -757,6 +760,20 @@ def _new_member_set_pyobject(offset):
     return lambda instance, value: _set_member_pyobject(
         _pyobject_offset(instance, offset), value
     )
+
+
+def _new_member_set_readonly(name):
+    def setter(instance, value):
+        raise AttributeError("{name} is a readonly attribute")
+
+    return setter
+
+
+def _new_member_set_readonly_strings(name):
+    def setter(instance, value):
+        raise TypeError("{name} is a readonly attribute")
+
+    return setter
 
 
 @_patch
@@ -1292,7 +1309,7 @@ class bytes(bootstrap=True):
         if _int_check(key):
             return _bytes_getitem(self, key)
         if _slice_check(key):
-            return _bytes_getitem_slice(self, *key.indices(len(self)))
+            return _bytes_getslice(self, *key.indices(len(self)))
         try:
             return _bytes_getitem(self, _index(key))
         except TypeError:
@@ -1561,13 +1578,6 @@ class coroutine(bootstrap=True):
 
 def delattr(obj, name):
     _unimplemented()
-
-
-# TODO(T43319065): Re-write the non-dict-dict case in managed code in
-# dict.update
-@_patch
-def _dict_update_mapping(self, seq):
-    pass
 
 
 class dict(bootstrap=True):
@@ -2377,16 +2387,6 @@ def len(seq):
     if dunder_len is None:
         raise TypeError("object has no len()")
     return dunder_len()
-
-
-@_patch
-def _list_delitem(self, key: int) -> None:
-    pass
-
-
-@_patch
-def _list_delslice(self, start: int, stop: int, step: int) -> None:
-    pass
 
 
 class list(bootstrap=True):

@@ -143,7 +143,7 @@ class Runtime;
   V(UnderBytesCheck, "_bytes_check")                                           \
   V(UnderBytesFromInts, "_bytes_from_ints")                                    \
   V(UnderBytesGetitem, "_bytes_getitem")                                       \
-  V(UnderBytesGetitemSlice, "_bytes_getitem_slice")                            \
+  V(UnderBytesGetslice, "_bytes_getslice")                                     \
   V(UnderBytesJoin, "_bytes_join")                                             \
   V(UnderBytesMaketrans, "_bytes_maketrans")                                   \
   V(UnderBytesNew, "_bytes_new")                                               \

@@ -37,8 +37,7 @@ class BuiltinsModule {
   static RawObject underBoundMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGetItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject underBytesGetItemSlice(Thread* thread, Frame* frame,
-                                          word nargs);
+  static RawObject underBytesGetSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);

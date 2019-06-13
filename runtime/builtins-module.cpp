@@ -90,7 +90,7 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
-    {SymbolId::kUnderBytesGetitemSlice, underBytesGetItemSlice},
+    {SymbolId::kUnderBytesGetslice, underBytesGetSlice},
     {SymbolId::kUnderBytesJoin, BytesBuiltins::join},
     {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
@@ -773,8 +773,8 @@ RawObject BuiltinsModule::underBytesGetItem(Thread* thread, Frame* frame,
   return SmallInt::fromWord(self.byteAt(index));
 }
 
-RawObject BuiltinsModule::underBytesGetItemSlice(Thread* thread, Frame* frame,
-                                                 word nargs) {
+RawObject BuiltinsModule::underBytesGetSlice(Thread* thread, Frame* frame,
+                                             word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   Object self_obj(&scope, args.get(0));
