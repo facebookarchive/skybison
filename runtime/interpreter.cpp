@@ -2877,6 +2877,78 @@ bool Interpreter::callTrampoline(Context* ctx, Function::Entry entry, word argc,
   return false;
 }
 
+// Performs the function without pushing a new frame. Pops the arguments off of
+// the caller's frame and sets the top value to the result. Returns true
+// if the call succeeds.
+static bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
+  Runtime* runtime = thread->runtime();
+  switch (name) {
+    case SymbolId::kUnderByteArrayCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfByteArray(frame->popValue())));
+      return true;
+    case SymbolId::kUnderBytesCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfBytes(frame->popValue())));
+      return true;
+    case SymbolId::kUnderDictCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfDict(frame->popValue())));
+      return true;
+    case SymbolId::kUnderFloatCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfFloat(frame->popValue())));
+      return true;
+    case SymbolId::kUnderFrozenSetCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfFrozenSet(frame->popValue())));
+      return true;
+    case SymbolId::kUnderIntCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfInt(frame->popValue())));
+      return true;
+    case SymbolId::kUnderListCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfList(frame->popValue())));
+      return true;
+    case SymbolId::kUnderSetCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfSet(frame->popValue())));
+      return true;
+    case SymbolId::kUnderSliceCheck:
+      frame->setTopValue(Bool::fromBool(frame->popValue().isSlice()));
+      return true;
+    case SymbolId::kUnderStrCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfStr(frame->popValue())));
+      return true;
+    case SymbolId::kUnderTupleCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfTuple(frame->popValue())));
+      return true;
+    case SymbolId::kUnderType:
+      frame->setTopValue(runtime->typeOf(frame->popValue()));
+      return true;
+    case SymbolId::kUnderTypeCheck:
+      frame->setTopValue(
+          Bool::fromBool(runtime->isInstanceOfType(frame->popValue())));
+      return true;
+    case SymbolId::kUnderTypeCheckExact:
+      frame->setTopValue(Bool::fromBool(frame->popValue().isType()));
+      return true;
+    case SymbolId::kIsInstance:
+      if (runtime->typeOf(frame->peek(1)) == frame->peek(0)) {
+        frame->dropValues(2);
+        frame->setTopValue(Bool::trueObj());
+        return true;
+      }
+      return false;
+    default:
+      UNREACHABLE("function %s does not have an intrinsic implementation",
+                  Symbols::predefinedSymbolAt(name));
+  }
+}
+
 HANDLER_INLINE bool Interpreter::handleCall(
     Context* ctx, word argc, word callable_idx, word num_extra_pop,
     PrepareCallFunc prepare_args,
@@ -2896,6 +2968,11 @@ HANDLER_INLINE bool Interpreter::handleCall(
   callable = prepareCallableCall(thread, caller_frame, callable_idx, &argc);
   if (callable.isError()) return unwind(ctx);
   RawFunction function = RawFunction::cast(callable);
+
+  SymbolId name = static_cast<SymbolId>(function.intrinsicId());
+  if (name != SymbolId::kInvalid && doIntrinsic(thread, caller_frame, name)) {
+    return false;
+  }
 
   if (!function.isInterpreted()) {
     return callTrampoline(ctx, (function.*get_entry)(), argc, post_call_sp);

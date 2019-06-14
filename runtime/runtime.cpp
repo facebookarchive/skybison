@@ -2055,6 +2055,14 @@ void Runtime::createBuiltinsModule(Thread* thread) {
       typeDictAt(thread, object_dict, dunder_getattribute_name);
   Object dunder_setattr_name(&scope, symbols()->DunderSetattr());
   object_dunder_setattr_ = typeDictAt(thread, object_dict, dunder_setattr_name);
+
+  // Mark functions that have an intrinsic implementation.
+  for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;
+       i++) {
+    SymbolId intrinsic_id = BuiltinsModule::kIntrinsicIds[i];
+    Function::cast(moduleAtById(module, intrinsic_id))
+        .setIntrinsicId(static_cast<word>(intrinsic_id));
+  }
 }
 
 void Runtime::createImportlibModule(Thread* thread) {

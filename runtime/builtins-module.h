@@ -116,9 +116,11 @@ class BuiltinsModule {
   static RawObject underTypeIsSubclass(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
+
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];
   static const char* const kFrozenData;
+  static const SymbolId kIntrinsicIds[];
 };
 
 }  // namespace python

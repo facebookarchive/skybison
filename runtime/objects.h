@@ -1694,7 +1694,7 @@ class RawFunction : public RawHeapObject {
 
   // Returns the function flags.
   word flags() const;
-  void setFlags(word value) const;
+  void setFlags(word flags) const;
 
   // The dict that holds this function's global namespace. User-code
   // cannot change this
@@ -1735,6 +1735,11 @@ class RawFunction : public RawHeapObject {
   // normally by the interpreter.
   bool isInterpreted() const;
   void setIsInterpreted(bool interpreted) const;
+
+  // Returns as a word the SymbolId that corresponds to the name of the function
+  // if the function can be executed without pushing a frame, or -1 if it can't.
+  word intrinsicId() const;
+  void setIntrinsicId(word id) const;
 
   // A dict containing defaults for keyword-only parameters
   RawObject kwDefaults() const;
@@ -1809,6 +1814,14 @@ class RawFunction : public RawHeapObject {
   static const int kSize = kDictOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Function);
+
+ private:
+  void setFlagsAndIntrinsicId(word flags, word id) const;
+
+  // The intrinsic ID is stored in the high flag bits.
+  static const int kFlagsBits = 12;
+  static const int kIntrinsicIdOffset = kFlagsBits;
+  static const word kFlagsMask = (1 << kFlagsBits) - 1;
 };
 
 class RawInstance : public RawHeapObject {
@@ -4557,11 +4570,22 @@ inline void RawFunction::setEntryEx(RawFunction::Entry thunk) const {
 }
 
 inline word RawFunction::flags() const {
-  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value();
+  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value() &
+         kFlagsMask;
 }
 
-inline void RawFunction::setFlags(word value) const {
-  instanceVariableAtPut(kFlagsOffset, RawSmallInt::fromWord(value));
+inline void RawFunction::setFlagsAndIntrinsicId(word flags, word id) const {
+  instanceVariableAtPut(
+      kFlagsOffset,
+      RawSmallInt::fromWord(id << kIntrinsicIdOffset | (flags & kFlagsMask)));
+}
+
+inline void RawFunction::setFlags(word flags) const {
+  RawObject old_flags = instanceVariableAt(kFlagsOffset);
+  setFlagsAndIntrinsicId(
+      flags, old_flags.isNoneType()
+                 ? -1
+                 : RawSmallInt::cast(old_flags).value() >> kIntrinsicIdOffset);
 }
 
 inline RawObject RawFunction::globals() const {
@@ -4617,10 +4641,18 @@ inline bool RawFunction::isInterpreted() const {
 }
 
 inline void RawFunction::setIsInterpreted(bool interpreted) const {
-  instanceVariableAtPut(
-      kFlagsOffset,
-      RawSmallInt::fromWord(interpreted ? flags() | Flags::kInterpreted
-                                        : flags() & ~Flags::kInterpreted));
+  setFlagsAndIntrinsicId(interpreted ? flags() | Flags::kInterpreted
+                                     : flags() & ~Flags::kInterpreted,
+                         intrinsicId());
+}
+
+inline word RawFunction::intrinsicId() const {
+  return RawSmallInt::cast(instanceVariableAt(kFlagsOffset)).value() >>
+         kIntrinsicIdOffset;
+}
+
+inline void RawFunction::setIntrinsicId(word id) const {
+  setFlagsAndIntrinsicId(flags(), id);
 }
 
 inline RawObject RawFunction::kwDefaults() const {

@@ -263,6 +263,17 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
 
 const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 
+const SymbolId BuiltinsModule::kIntrinsicIds[] = {
+    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderBytesCheck,
+    SymbolId::kUnderDictCheck,      SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFrozenSetCheck, SymbolId::kUnderIntCheck,
+    SymbolId::kUnderListCheck,      SymbolId::kUnderSetCheck,
+    SymbolId::kUnderSliceCheck,     SymbolId::kUnderStrCheck,
+    SymbolId::kUnderTupleCheck,     SymbolId::kUnderType,
+    SymbolId::kUnderTypeCheck,      SymbolId::kUnderTypeCheckExact,
+    SymbolId::kIsInstance,          SymbolId::kSentinelId,
+};
+
 static bool isPass(const Code& code) {
   HandleScope scope;
   Bytes bytes(&scope, code.code());
