@@ -314,7 +314,7 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
 
     bytecode = Function::cast(*function).rewrittenBytecode();
     word bytecode_length = bytecode.length();
-    for (word i = 0; i < bytecode_length; i += 2) {
+    for (word i = 0; i < bytecode_length;) {
       BytecodeOp op = nextBytecodeOp(bytecode, &i);
       Bytecode original_bc = op.bc;
       switch (op.bc) {
