@@ -2068,6 +2068,16 @@ class RawDict::Bucket {
     return data.at(index + kValueOffset);
   }
 
+  static bool currentOrNextItem(RawTuple data, word* idx) {
+    if (*idx >= data.length()) {
+      return false;
+    }
+    if (!isEmptyOrTombstone(data, *idx)) {
+      return true;
+    }
+    return nextItem(data, idx);
+  }
+
   static bool nextItem(RawTuple data, word* idx) {
     // Calling next on an invalid index should not advance that index.
     if (*idx >= data.length()) {

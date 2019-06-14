@@ -334,9 +334,16 @@ PY_EXPORT int PyDict_Next(PyObject* pydict, Py_ssize_t* ppos, PyObject** pkey,
   }
   Dict dict(&scope, *dict_obj);
   Tuple dict_data(&scope, dict.data());
-  if (!Dict::Bucket::nextItem(*dict_data, ppos)) {
-    return false;
+  // Below are all the possible statuses of ppos and what to do in each case.
+  // * If an index is out of bounds, we should not advance.
+  // * If an index does not point to a valid bucket, we should try and find the
+  //   next bucket, or fail.
+  // * Read the contents of that bucket.
+  // * Advance the index.
+  if (!Dict::Bucket::currentOrNextItem(*dict_data, ppos)) {
+    return 0;
   }
+  // At this point, we will always have a valid bucket index.
   if (pkey != nullptr) {
     *pkey = ApiHandle::borrowedReference(thread,
                                          Dict::Bucket::key(*dict_data, *ppos));
