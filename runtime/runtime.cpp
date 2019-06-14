@@ -2025,7 +2025,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
     function.setFlags(Code::Flags::SIMPLE_CALL);
     function.setArgcount(1);
     function.setTotalArgs(1);
-    function.setModule(newStrFromCStr("builtins"));
+    function.setModule(symbols()->at(SymbolId::kBuiltins));
     Code code(&scope, function.code());
     code.setArgcount(1);
     code.setNlocals(1);
