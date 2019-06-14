@@ -426,6 +426,10 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   varnames.atPut(0, runtime.internStrFromCStr(thread, "arg0"));
   varnames.atPut(1, runtime.internStrFromCStr(thread, "var0"));
   varnames.atPut(2, runtime.internStrFromCStr(thread, "var1"));
+  Tuple freevars(&scope, runtime.newTuple(1));
+  freevars.atPut(0, runtime.internStrFromCStr(thread, "freevar0"));
+  Tuple cellvars(&scope, runtime.newTuple(1));
+  cellvars.atPut(0, runtime.internStrFromCStr(thread, "cellvar0"));
   word argcount = 1;
   word nlocals = 3;
   byte bytecode[] = {
@@ -435,11 +439,14 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   Bytes code_code(&scope, runtime.newBytesWithAll(bytecode));
   Object empty_tuple(&scope, runtime.emptyTuple());
   Object empty_string(&scope, Str::empty());
-  Object empty_bytes(&scope, Bytes::empty());
+  Object lnotab(&scope, Bytes::empty());
   Code code(&scope,
-            runtime.newCode(argcount, 0, nlocals, 0, 0, code_code, empty_tuple,
-                            empty_tuple, varnames, empty_tuple, empty_tuple,
-                            empty_string, empty_string, 0, empty_bytes));
+            runtime.newCode(argcount, /*kwonlyargcount=*/0, nlocals,
+                            /*stacksize=*/0, /*flags=*/0, code_code,
+                            /*consts=*/empty_tuple, /*names=*/empty_tuple,
+                            varnames, freevars, cellvars,
+                            /*filename=*/empty_string, /*name=*/empty_string,
+                            /*firstlineno=*/0, lnotab));
 
   Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
@@ -449,8 +456,8 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {
-      LOAD_FAST_REVERSE,  0, LOAD_FAST_REVERSE,  1, LOAD_FAST_REVERSE,  2,
-      STORE_FAST_REVERSE, 0, STORE_FAST_REVERSE, 1, STORE_FAST_REVERSE, 2,
+      LOAD_FAST_REVERSE,  2, LOAD_FAST_REVERSE,  3, LOAD_FAST_REVERSE,  4,
+      STORE_FAST_REVERSE, 2, STORE_FAST_REVERSE, 3, STORE_FAST_REVERSE, 4,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));

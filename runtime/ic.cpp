@@ -29,7 +29,7 @@ static void rewriteZeroArgMethodCallsUsingLoadMethodCached(
   }
 }
 
-static RewrittenOp rewriteOperation(const Code& code, BytecodeOp op) {
+static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
   auto cached_binop = [](Interpreter::BinaryOp bin_op) {
     return RewrittenOp{BINARY_OP_CACHED, static_cast<int32_t>(bin_op), true};
   };
@@ -107,8 +107,10 @@ static RewrittenOp rewriteOperation(const Code& code, BytecodeOp op) {
     case LOAD_ATTR:
       return RewrittenOp{LOAD_ATTR_CACHED, op.arg, true};
     case LOAD_FAST: {
-      CHECK(op.arg < code.nlocals(), "unexpected local number");
-      int32_t reverse_arg = code.nlocals() - op.arg - 1;
+      CHECK(op.arg < Code::cast(function.code()).nlocals(),
+            "unexpected local number");
+      word total_locals = function.totalLocals();
+      int32_t reverse_arg = total_locals - op.arg - 1;
       return RewrittenOp{LOAD_FAST_REVERSE, reverse_arg, false};
     }
     case LOAD_METHOD:
@@ -116,8 +118,10 @@ static RewrittenOp rewriteOperation(const Code& code, BytecodeOp op) {
     case STORE_ATTR:
       return RewrittenOp{STORE_ATTR_CACHED, op.arg, true};
     case STORE_FAST: {
-      CHECK(op.arg < code.nlocals(), "unexpected local number");
-      int32_t reverse_arg = code.nlocals() - op.arg - 1;
+      CHECK(op.arg < Code::cast(function.code()).nlocals(),
+            "unexpected local number");
+      word total_locals = function.totalLocals();
+      int32_t reverse_arg = total_locals - op.arg - 1;
       return RewrittenOp{STORE_FAST_REVERSE, reverse_arg, false};
     }
 
@@ -142,12 +146,11 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   word num_caches = 0;
 
   // Scan bytecode to figure out how many caches we need.
-  Code code(&scope, function.code());
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
   word bytecode_length = bytecode.length();
   for (word i = 0; i < bytecode_length;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
-    RewrittenOp rewritten = rewriteOperation(code, op);
+    RewrittenOp rewritten = rewriteOperation(function, op);
     if (rewritten.needs_inline_cache) {
       num_caches++;
     }
@@ -166,7 +169,7 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   for (word i = 0, cache = num_global_caches; i < bytecode_length;) {
     word begin = i;
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
-    RewrittenOp rewritten = rewriteOperation(code, op);
+    RewrittenOp rewritten = rewriteOperation(function, op);
     if (rewritten.needs_inline_cache) {
       // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
       CHECK(cache < 256, "more than 256 entries may require bytecode resizing");

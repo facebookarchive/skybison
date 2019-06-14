@@ -1772,6 +1772,10 @@ class RawFunction : public RawHeapObject {
   word totalVars() const;
   void setTotalVars(word value) const;
 
+  // Returns the number of locals. This is equivalent to
+  // `code().nlocals() + code().numFreevars() + code().numCellvars()`.
+  word totalLocals() const;
+
   // Bytecode rewritten to a variant that uses inline caching.
   RawObject rewrittenBytecode() const;
   void setRewrittenBytecode(RawObject rewritten_bytecode) const;
@@ -4711,6 +4715,10 @@ inline word RawFunction::totalVars() const {
 
 inline void RawFunction::setTotalVars(word value) const {
   instanceVariableAtPut(kTotalVarsOffset, RawSmallInt::fromWord(value));
+}
+
+inline word RawFunction::totalLocals() const {
+  return totalArgs() + totalVars();
 }
 
 inline word RawFunction::stacksize() const {
