@@ -2750,7 +2750,7 @@ HANDLER_INLINE bool Interpreter::doSetupFinally(Context* ctx, word arg) {
 HANDLER_INLINE bool Interpreter::doLoadFast(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject value = frame->local(arg);
-  if (value.isErrorNotFound()) {
+  if (UNLIKELY(value.isErrorNotFound())) {
     Thread* thread = ctx->thread;
     HandleScope scope(thread);
     Str name(&scope, Tuple::cast(Code::cast(frame->code()).varnames()).at(arg));
@@ -2759,14 +2759,14 @@ HANDLER_INLINE bool Interpreter::doLoadFast(Context* ctx, word arg) {
                          &name);
     return unwind(ctx);
   }
-  frame->pushValue(frame->local(arg));
+  frame->pushValue(value);
   return false;
 }
 
 HANDLER_INLINE bool Interpreter::doLoadFastReverse(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject value = frame->localWithReverseIndex(arg);
-  if (value.isErrorNotFound()) {
+  if (UNLIKELY(value.isErrorNotFound())) {
     Thread* thread = ctx->thread;
     HandleScope scope(thread);
     Code code(&scope, frame->code());
@@ -2799,7 +2799,7 @@ HANDLER_INLINE bool Interpreter::doDeleteFast(Context* ctx, word arg) {
   // TODO(T32821785): use another immediate value than Error to signal unbound
   // local
   Frame* frame = ctx->frame;
-  if (frame->local(arg).isErrorNotFound()) {
+  if (UNLIKELY(frame->local(arg).isErrorNotFound())) {
     RawObject name = Tuple::cast(Code::cast(frame->code()).varnames()).at(arg);
     UNIMPLEMENTED("unbound local %s", Str::cast(name).toCStr());
   }
