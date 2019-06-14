@@ -125,12 +125,12 @@ PyAPI_FUNC(void*) _PyBytesWriter_Alloc(_PyBytesWriter* writer, Py_ssize_t size);
 PyAPI_FUNC(void) _PyBytesWriter_Dealloc(_PyBytesWriter* writer);
 PyAPI_FUNC(PyObject*) _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str);
 PyAPI_FUNC(void) _PyBytesWriter_Init(_PyBytesWriter* writer);
-PyAPI_FUNC(void*)
-    _PyBytesWriter_Prepare(_PyBytesWriter* writer, void* str, Py_ssize_t size);
-PyAPI_FUNC(void*)
-    _PyBytesWriter_Resize(_PyBytesWriter* writer, void* str, Py_ssize_t size);
+PyAPI_FUNC(void*) _PyBytesWriter_Prepare(_PyBytesWriter* writer, void* str,
+                                         Py_ssize_t growth);
+PyAPI_FUNC(void*) _PyBytesWriter_Resize(_PyBytesWriter* writer, void* str,
+                                        Py_ssize_t new_size);
 PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter* writer, void* str,
-                                            const void* bytes, Py_ssize_t size);
+                                            const void* bytes, Py_ssize_t len);
 PyAPI_FUNC(PyObject*) PyCFunction_Call(PyObject*, PyObject*, PyObject*);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject*);
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject*);

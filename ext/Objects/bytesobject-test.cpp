@@ -708,12 +708,30 @@ TEST_F(BytesWriterExtensionApiTest, AllocSetsUpBuffer) {
   EXPECT_EQ(writer.min_size, size);
 }
 
+TEST_F(BytesWriterExtensionApiTest, DeallocFreesHeapBuffer) {
+  _PyBytesWriter writer;
+  _PyBytesWriter_Init(&writer);
+  void* str = _PyBytesWriter_Alloc(&writer, 0);
+  EXPECT_NE(str, nullptr);
+  str = _PyBytesWriter_Resize(&writer, str, 5000);
+  EXPECT_NE(str, nullptr);
+  const char* to_write = "Hello world!";
+  Py_ssize_t len = std::strlen(to_write);
+  str = _PyBytesWriter_WriteBytes(&writer, str, to_write, len);
+  ASSERT_NE(str, nullptr);
+  EXPECT_EQ(writer.min_size, len);
+  PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  ASSERT_TRUE(PyBytes_CheckExact(result));
+  _PyBytesWriter_Dealloc(&writer);
+}
+
 TEST_F(BytesWriterExtensionApiTest, FinishWithEmptyWriterReturnsEmptyBytes) {
   _PyBytesWriter writer;
   _PyBytesWriter_Init(&writer);
   void* str = _PyBytesWriter_Alloc(&writer, 0);
   ASSERT_NE(str, nullptr);
   PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  _PyBytesWriter_Dealloc(&writer);
   EXPECT_TRUE(PyBytes_CheckExact(result));
   EXPECT_EQ(PyBytes_Size(result), 0);
 }
@@ -726,6 +744,7 @@ TEST_F(BytesWriterExtensionApiTest,
   ASSERT_NE(str, nullptr);
   writer.use_bytearray = true;
   PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  _PyBytesWriter_Dealloc(&writer);
   EXPECT_TRUE(PyByteArray_CheckExact(result));
   EXPECT_EQ(PyByteArray_Size(result), 0);
 }
@@ -740,6 +759,7 @@ TEST_F(BytesWriterExtensionApiTest, FinishReturnsBytes) {
     *str++ = c;
   }
   PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  _PyBytesWriter_Dealloc(&writer);
   EXPECT_TRUE(PyBytes_CheckExact(result));
   EXPECT_EQ(PyBytes_Size(result), size);
   EXPECT_STREQ(PyBytes_AsString(result), "abcdefghij");
@@ -756,6 +776,7 @@ TEST_F(BytesWriterExtensionApiTest, FinishUseByteArrayReturnsByteArray) {
   }
   writer.use_bytearray = true;
   PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  _PyBytesWriter_Dealloc(&writer);
   EXPECT_TRUE(PyByteArray_CheckExact(result));
   EXPECT_EQ(PyByteArray_Size(result), size);
   EXPECT_STREQ(PyByteArray_AsString(result), "abcdefghij");
@@ -863,6 +884,7 @@ TEST_F(BytesWriterExtensionApiTest, WriteBytesGrowsAndWrites) {
   ASSERT_NE(str, nullptr);
   EXPECT_EQ(writer.min_size, initial_size + growth);
   PyObjectPtr result(_PyBytesWriter_Finish(&writer, str));
+  _PyBytesWriter_Dealloc(&writer);
   ASSERT_TRUE(PyBytes_CheckExact(result));
   EXPECT_EQ(PyBytes_Size(result), 5);
   EXPECT_STREQ(PyBytes_AsString(result), "Hello");

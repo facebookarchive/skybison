@@ -482,7 +482,6 @@ PY_EXPORT PyObject* _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str) {
   const byte* start = writerBufferStart(writer);
   word size = writer->ptr - start;
   if (size == 0) {
-    _PyBytesWriter_Dealloc(writer);
     return ApiHandle::newReference(thread, writer->use_bytearray
                                                ? runtime->newByteArray()
                                                : Bytes::empty());
@@ -491,12 +490,10 @@ PY_EXPORT PyObject* _PyBytesWriter_Finish(_PyBytesWriter* writer, void* str) {
     HandleScope scope(thread);
     ByteArray result(&scope, runtime->newByteArray());
     runtime->byteArrayExtend(thread, result, View<byte>{start, size});
-    _PyBytesWriter_Dealloc(writer);
     return ApiHandle::newReference(thread, *result);
   }
   PyObject* result = ApiHandle::newReference(
       thread, runtime->newBytesWithAll(View<byte>{start, size}));
-  _PyBytesWriter_Dealloc(writer);
   return result;
 }
 
