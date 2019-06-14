@@ -182,6 +182,39 @@ def ascii_encode(data: str, errors: str = "strict"):
 
 
 @_patch
+def _escape_decode(data: bytes, errors: str, recode_encoding: str):
+    """Tries to decode `data`.
+    If it runs into any errors, it raises and returns the message to throw.
+    If it finishes encoding, it returns a tuple of
+    (decoded, length, first_invalid_escape)
+    where the first_invalid_escape is either the index into the data of the first
+    invalid escape sequence, or -1 if none occur.
+    Will eventually have to handle the recode_encoding argument.
+    """
+    pass
+
+
+def _escape_decode_stateful(
+    data: bytes, errors: str = "strict", recode_encoding: str = ""
+):
+    if not (_bytes_check(data) or _str_check(data)):
+        raise TypeError(f"a bytes-like object is required, not '{type(data).__name__}'")
+    if not _str_check(errors):
+        raise TypeError(
+            "escape_decode() argument 2 must be str or None, not "
+            f"{type(errors).__name__}"
+        )
+    decoded = _escape_decode(data, errors, recode_encoding)
+    if _str_check(decoded):
+        raise ValueError(decoded)
+    return decoded
+
+
+def escape_decode(data: bytes, errors: str = "strict") -> str:
+    return _escape_decode_stateful(data, errors)[:2]
+
+
+@_patch
 def _latin_1_encode(data: str, errors: str, index: int, out: bytearray):
     """Tries to encode `data`, starting from `index`, into the `out` bytearray.
     If it encounters any codepoints above 255, it tries using the `errors`

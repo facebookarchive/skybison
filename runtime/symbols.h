@@ -155,6 +155,8 @@ class Runtime;
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
   V(UnderDictCheck, "_dict_check")                                             \
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
+  V(UnderEscapeDecode, "_escape_decode")                                       \
+  V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
   V(UnderFdFlush, "_fd_flush")                                                 \
   V(UnderFdWrite, "_fd_write")                                                 \
   V(UnderFindAndLoad, "_find_and_load")                                        \

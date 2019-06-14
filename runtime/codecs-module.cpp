@@ -8,6 +8,9 @@
 #include "runtime.h"
 #include "str-builtins.h"
 
+extern "C" unsigned char _PyLong_DigitValue[];  // from Include/longobject.h
+extern "C" unsigned int _Py_ctype_table[];      // from Include/pyctype.h
+
 namespace python {
 
 const int32_t kLowSurrogateStart = 0xDC00;
@@ -47,6 +50,7 @@ static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
 const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAsciiEncode, underAsciiEncode},
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
+    {SymbolId::kUnderEscapeDecode, underEscapeDecode},
     {SymbolId::kUnderLatin1Encode, underLatin1Encode},
     {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
     {SymbolId::kUnderUtf16Encode, underUtf16Encode},
@@ -199,6 +203,170 @@ RawObject UnderCodecsModule::underAsciiEncode(Thread* thread, Frame* frame,
   }
   result.atPut(0, byteArrayAsBytes(thread, runtime, output));
   result.atPut(1, runtime->newInt(i));
+  return *result;
+}
+
+// Decodes a sequence of unicode encoded bytes into a codepoint, returns
+// -1 if no value should be written, and -2 if an error occurred. Sets the
+// iterating variable to where decoding should continue, and sets
+// invalid_escape_index if it doesn't recognize the escape sequence.
+static int32_t decodeEscaped(const Bytes& bytes, word* i,
+                             word* invalid_escape_index) {
+  word length = bytes.length();
+  switch (byte ch = bytes.byteAt((*i)++)) {
+      // \x escapes
+    case '\n':
+      return -1;
+    case '\\':
+    case '\'':
+    case '\"':
+      return ch;
+    case 'b':
+      return '\b';
+    case 't':
+      return '\t';
+    case 'n':
+      return '\n';
+    case 'r':
+      return '\r';
+    // BEL,
+    case 'a':
+      return '\x07';
+    // VT
+    case 'v':
+      return '\x0B';
+    // FF
+    case 'f':
+      return '\x0C';
+
+    // \OOO (octal) escapes
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7': {
+      word escaped = ch - '0';
+      word octal_index = *i;
+      if (octal_index < length) {
+        word ch2 = bytes.byteAt(octal_index);
+        if ('0' <= ch2 && ch2 <= '7') {
+          escaped = (escaped << 3) + ch2 - '0';
+          if (++octal_index < length) {
+            word ch3 = bytes.byteAt(octal_index);
+            if ('0' <= ch3 && ch3 <= '7') {
+              octal_index++;
+              escaped = (escaped << 3) + ch3 - '0';
+            }
+          }
+        }
+      }
+      *i = octal_index;
+      return escaped;
+    }
+
+    // hex escapes
+    // \xXX
+    case 'x': {
+      word hex_index = *i;
+      if (hex_index + 1 < length) {
+        int digit1, digit2;
+        digit1 = _PyLong_DigitValue[bytes.byteAt(hex_index)];
+        digit2 = _PyLong_DigitValue[bytes.byteAt(hex_index + 1)];
+        if (digit1 < 16 && digit2 < 16) {
+          *i += 2;
+          return (digit1 << 4) + digit2;
+        }
+      }
+      return -2;
+    }
+    default:
+      *invalid_escape_index = *i - 1;
+      return ch;
+  }
+}
+
+RawObject UnderCodecsModule::underEscapeDecode(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object bytes_obj(&scope, args.get(0));
+  Object errors_obj(&scope, args.get(1));
+  Object recode_obj(&scope, args.get(2));
+  Runtime* runtime = thread->runtime();
+  if (runtime->isInstanceOfStr(*bytes_obj)) {
+    // TODO(T44739505): Make sure we can decode a str
+    UNIMPLEMENTED("_codecs.escape_decode with a str");
+  }
+  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
+         "First arg to _escape_decode must be str or bytes");
+  DCHECK(runtime->isInstanceOfStr(*errors_obj),
+         "Second arg to _escape_decode must be str");
+  DCHECK(runtime->isInstanceOfStr(*recode_obj),
+         "Third arg to _escape_decode must be str");
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
+  Str errors(&scope, strUnderlying(thread, errors_obj));
+
+  ByteArray dst(&scope, runtime->newByteArray());
+  word length = bytes.length();
+  runtime->byteArrayEnsureCapacity(thread, dst, length);
+  word first_invalid_escape_index = -1;
+  for (word i = 0; i < length;) {
+    byte ch = bytes.byteAt(i++);
+    if (ch != '\\') {
+      // TODO(T45134397): Support the recode_encoding parameter
+      if (ch <= kMaxASCII) {
+        byteArrayAdd(thread, runtime, dst, ch);
+        continue;
+      }
+      Str temp(&scope, SmallStr::fromCodePoint(ch));
+      byteArrayAdd(thread, runtime, dst, temp.charAt(0));
+      byteArrayAdd(thread, runtime, dst, temp.charAt(1));
+      continue;
+    }
+    if (i >= length) {
+      return runtime->newStrFromCStr("Trailing \\ in string");
+    }
+    word invalid_escape_index = -1;
+    int32_t decoded = decodeEscaped(bytes, &i, &invalid_escape_index);
+    if (invalid_escape_index != -1) {
+      byteArrayAdd(thread, runtime, dst, '\\');
+      if (first_invalid_escape_index == -1) {
+        first_invalid_escape_index = invalid_escape_index;
+      }
+    }
+    if (decoded >= 0) {
+      byteArrayAdd(thread, runtime, dst, decoded);
+      continue;
+    }
+    if (decoded == -1) {
+      continue;
+    }
+    SymbolId error_id = lookupSymbolForErrorHandler(errors);
+    switch (error_id) {
+      case SymbolId::kStrict:
+        return runtime->newStrFromFmt("invalid \\x escape at position %d",
+                                      i - 2);
+      case SymbolId::kReplace: {
+        byteArrayAdd(thread, runtime, dst, '?');
+        break;
+      }
+      case SymbolId::kIgnore:
+        break;
+      default:
+        return runtime->newStrFromFmt(
+            "decoding error; unknown error handling code: %S", &errors);
+    }
+    if (i < length && (_Py_ctype_table[bytes.byteAt(i)] & 0x10)) {
+      i++;
+    }
+  }
+  Tuple result(&scope, runtime->newTuple(3));
+  result.atPut(0, byteArrayAsBytes(thread, runtime, dst));
+  result.atPut(1, runtime->newInt(length));
+  result.atPut(2, runtime->newInt(first_invalid_escape_index));
   return *result;
 }
 

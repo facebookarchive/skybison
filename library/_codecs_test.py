@@ -246,6 +246,50 @@ class DecodeASCIITests(unittest.TestCase):
         self.assertEqual(consumed, 4)
 
 
+class DecodeEscapeTests(unittest.TestCase):
+    def test_decode_escape_with_non_bytes_first_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.escape_decode([])
+
+    def test_decode_escape_with_non_string_second_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.escape_decode(b"", [])
+
+    def test_decode_escape_with_zero_length_returns_empty_string(self):
+        decoded, consumed = _codecs.escape_decode(b"")
+        self.assertEqual(decoded, b"")
+        self.assertEqual(consumed, 0)
+
+    def test_decode_escape_with_well_formed_latin_1_returns_string(self):
+        decoded, consumed = _codecs.escape_decode(b"hello\x95")
+        self.assertEqual(decoded, b"hello\xC2\x95")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_escape_with_end_of_string_slash_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _codecs.escape_decode(b"ab\\")
+        self.assertEqual(str(context.exception), "Trailing \\ in string")
+
+    def test_decode_escape_with_truncated_hex_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _codecs.escape_decode(b"ab\\x1h")
+        self.assertEqual(str(context.exception), "invalid \\x escape at position 2")
+
+    def test_decode_escape_with_truncated_hex_unknown_error_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            _codecs.escape_decode(b"ab\\x1h", "unknown")
+        self.assertEqual(
+            str(context.exception),
+            "decoding error; unknown error handling code: unknown",
+        )
+
+    def test_decode_escape_stateful_returns_first_invalid_escape(self):
+        decoded, consumed, first_invalid = _codecs._escape_decode_stateful(b"ab\\yc")
+        self.assertEqual(decoded, b"ab\\yc")
+        self.assertEqual(consumed, 5)
+        self.assertEqual(first_invalid, 3)
+
+
 class DecodeUnicodeEscapeTests(unittest.TestCase):
     def test_decode_unicode_escape_with_non_bytes_first_raises_type_error(self):
         with self.assertRaises(TypeError):

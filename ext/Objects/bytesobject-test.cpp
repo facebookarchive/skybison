@@ -213,6 +213,22 @@ TEST_F(BytesExtensionApiTest, ConcatAndDelDecrefsSecondArg) {
   Py_DECREF(bar);
 }
 
+TEST_F(BytesExtensionApiTest, DecodeEscapeReturnsString) {
+  PyObjectPtr bytes(
+      PyBytes_DecodeEscape("hello \\\nworld", 13, nullptr, 0, nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "hello world");
+}
+
+TEST_F(BytesExtensionApiTest, UnderDecodeEscapeReturnsFirstInvalid) {
+  const char* invalid;
+  PyObjectPtr bytes(_PyBytes_DecodeEscape("hello \\yworld", 13, nullptr, 0,
+                                          nullptr, &invalid));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_STREQ(PyBytes_AsString(bytes), "hello \\yworld");
+  EXPECT_EQ(*invalid, 'y');
+}
+
 TEST_F(BytesExtensionApiTest, FromFormatWithNoSpecifiersReturnsBytes) {
   PyObjectPtr bytes(PyBytes_FromFormat("hello world"));
   ASSERT_TRUE(PyBytes_Check(bytes));
