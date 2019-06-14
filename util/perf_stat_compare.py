@@ -120,6 +120,12 @@ def main():
     results = []
     for binary in args.binary:
         output = measure_binary(binary, args.repeat, args.event, args.common_arg)
+        if "nmi_watchdog" in output:
+            # Results reported when the nmi_watchdog interfered are useless.
+            sys.stderr.write("\n\nError: perf stat complained about nmi_watchdog:\n")
+            sys.stderr.write(output)
+            sys.stderr.write("\n\nAborting\n")
+            sys.exit(1)
         results.append(parse_perf_stat_output(output))
     diff_perf_stats(args.binary, results)
 
