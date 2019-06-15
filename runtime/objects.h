@@ -2308,6 +2308,8 @@ class RawValueCell : public RawHeapObject {
   void setValue(RawObject object) const;
   RawObject dependencyLink() const;
   void setDependencyLink(RawObject object) const;
+  bool isPlaceholder() const;
+  void makePlaceholder() const;
 
   // Layout.
   static const int kValueOffset = RawHeapObject::kSize;
@@ -4938,6 +4940,7 @@ inline RawObject RawValueCell::value() const {
 
 inline void RawValueCell::setValue(RawObject object) const {
   // TODO(T44801497): Disallow a ValueCell in another ValueCell.
+  DCHECK(*this != object, "ValueCell can't self-reference itself");
   instanceVariableAtPut(kValueOffset, object);
 }
 
@@ -4948,6 +4951,12 @@ inline RawObject RawValueCell::dependencyLink() const {
 inline void RawValueCell::setDependencyLink(RawObject object) const {
   instanceVariableAtPut(kDependencyLinkOffset, object);
 }
+
+inline void RawValueCell::makePlaceholder() const {
+  instanceVariableAtPut(kValueOffset, *this);
+}
+
+inline bool RawValueCell::isPlaceholder() const { return *this == value(); }
 
 // RawSetBase
 

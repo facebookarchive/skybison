@@ -20,6 +20,7 @@ using SliceTest = RuntimeFixture;
 using StrTest = RuntimeFixture;
 using StringTest = RuntimeFixture;
 using TupleTest = RuntimeFixture;
+using ValueCellTest = RuntimeFixture;
 using WeakRefTest = RuntimeFixture;
 
 TEST_F(ByteArrayTest, DownsizeMaintainsCapacity) {
@@ -907,6 +908,14 @@ TEST_F(StringTest, CompareWithUnicode) {
   HandleScope scope(thread_);
   Str small(&scope, runtime_.newStrFromCStr(u8"hello\u2028"));
   EXPECT_TRUE(small.equalsCStr("hello\u2028"));
+}
+
+TEST_F(ValueCellTest, SetPlaceholderRendersIsPlaceholderToReturnTrue) {
+  HandleScope scope(thread_);
+  ValueCell value_cell(&scope, runtime_.newValueCell());
+  ASSERT_FALSE(value_cell.isPlaceholder());
+  value_cell.makePlaceholder();
+  EXPECT_TRUE(value_cell.isPlaceholder());
 }
 
 TEST_F(WeakRefTest, EnqueueAndDequeue) {

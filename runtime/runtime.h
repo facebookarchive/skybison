@@ -285,6 +285,11 @@ class Runtime {
   RawObject lookupNameInModule(Thread* thread, SymbolId module_name,
                                SymbolId name);
 
+  // Returns ValueCell that key is mapped to if it's found or ErrorNotFound if
+  // no key is present or the key maps to a placeholder.
+  RawObject moduleDictValueCellAt(Thread* thread, const Dict& dict,
+                                  const Object& key);
+  // Returns the value mapped to key if found. Returns ErrorNotFound otherwise.
   RawObject moduleDictAt(Thread* thread, const Dict& dict, const Object& key);
   RawObject moduleDictAtPut(Thread* thread, const Dict& dict, const Object& key,
                             const Object& value);

@@ -1775,16 +1775,26 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
   return moduleAtById(module, name);
 }
 
-RawObject Runtime::moduleDictAt(Thread* thread, const Dict& dict,
-                                const Object& key) {
+RawObject Runtime::moduleDictValueCellAt(Thread* thread, const Dict& dict,
+                                         const Object& key) {
   HandleScope scope(thread);
-  Object value_cell(&scope, dictAt(thread, dict, key));
-  if (value_cell.isError()) {
+  Object result(&scope, dictAt(thread, dict, key));
+  DCHECK(result.isErrorNotFound() || result.isValueCell(),
+         "global dict lookup result must return either ErrorNotFound or "
+         "ValueCell");
+  if (result.isErrorNotFound() || ValueCell::cast(*result).isPlaceholder()) {
     return Error::notFound();
   }
-  DCHECK(value_cell.isValueCell(),
-         "dict in moduleDictAt should return ValueCell");
-  return ValueCell::cast(*value_cell).value();
+  return *result;
+}
+
+RawObject Runtime::moduleDictAt(Thread* thread, const Dict& dict,
+                                const Object& key) {
+  RawObject result = moduleDictValueCellAt(thread, dict, key);
+  if (result.isErrorNotFound()) {
+    return Error::notFound();
+  }
+  return ValueCell::cast(result).value();
 }
 
 RawObject Runtime::moduleAt(const Module& module, const Object& key) {
@@ -2046,7 +2056,8 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   // such as "module" or "function"
   Dict module_dict(&scope, module.dict());
   Object dunder_import_name(&scope, symbols()->DunderImport());
-  dunder_import_ = dictAt(thread, module_dict, dunder_import_name);
+  dunder_import_ =
+      moduleDictValueCellAt(thread, module_dict, dunder_import_name);
 
   Type object(&scope, typeAt(LayoutId::kObject));
   Dict object_dict(&scope, object.dict());

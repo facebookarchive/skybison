@@ -183,6 +183,55 @@ c = C()
       raised(runtime_.attributeAt(thread_, c, foo), LayoutId::kUserWarning));
 }
 
+TEST_F(RuntimeTest, ModuleDictValueCellAtReturnsValueCell) {
+  HandleScope scope(thread_);
+  Dict globals(&scope, runtime_.newDict());
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  runtime_.moduleDictAtPut(thread_, globals, key, value);
+  Object result(&scope, runtime_.moduleDictValueCellAt(thread_, globals, key));
+  ASSERT_TRUE(result.isValueCell());
+  EXPECT_EQ(ValueCell::cast(*result).value(), value);
+}
+
+TEST_F(RuntimeTest, ModuleDictValueCellAtReturnsErrorNotFoundForPlaceholder) {
+  HandleScope scope(thread_);
+  Dict globals(&scope, runtime_.newDict());
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  runtime_.moduleDictAtPut(thread_, globals, key, value);
+  Object value_cell_obj(&scope, runtime_.dictAt(thread_, globals, key));
+  ASSERT_TRUE(value_cell_obj.isValueCell());
+  ValueCell value_cell(&scope, *value_cell_obj);
+  value_cell.makePlaceholder();
+  Object result(&scope, runtime_.moduleDictValueCellAt(thread_, globals, key));
+  EXPECT_TRUE(result.isErrorNotFound());
+}
+
+TEST_F(RuntimeTest, ModuleDictAtReturnsValueCellValue) {
+  HandleScope scope(thread_);
+  Dict globals(&scope, runtime_.newDict());
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  runtime_.moduleDictAtPut(thread_, globals, key, value);
+  Object result(&scope, runtime_.moduleDictAt(thread_, globals, key));
+  EXPECT_EQ(result, value);
+}
+
+TEST_F(RuntimeTest, ModuleDictAtReturnsErrorNotFoundForPlaceholder) {
+  HandleScope scope(thread_);
+  Dict globals(&scope, runtime_.newDict());
+  Object key(&scope, runtime_.newStrFromCStr("a"));
+  Object value(&scope, runtime_.newStrFromCStr("a's value"));
+  runtime_.moduleDictAtPut(thread_, globals, key, value);
+  Object value_cell_obj(&scope, runtime_.dictAt(thread_, globals, key));
+  ASSERT_TRUE(value_cell_obj.isValueCell());
+  ValueCell value_cell(&scope, *value_cell_obj);
+  value_cell.makePlaceholder();
+  Object result(&scope, runtime_.moduleDictAt(thread_, globals, key));
+  EXPECT_TRUE(result.isErrorNotFound());
+}
+
 TEST_F(RuntimeTest, ModuleDictBuiltinsReturnsDunderBuiltins) {
   HandleScope scope(thread_);
   Dict globals(&scope, runtime_.newDict());

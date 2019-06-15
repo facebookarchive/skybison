@@ -3636,7 +3636,8 @@ result = foo()
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 400));
 }
 
-TEST(InterpreterTestNoFixture, LoadGlobalCachedReturnsBuiltinDictValue) {
+TEST(InterpreterTestNoFixture,
+     LoadGlobalCachedReturnsBuiltinDictValueAndSetsPlaceholder) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -3656,6 +3657,12 @@ result = foo()
   Tuple caches(&scope, function.caches());
   EXPECT_TRUE(
       isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 400));
+
+  Dict globals(&scope, function.globals());
+  Str key(&scope, SmallStr::fromCStr("a"));
+  Object module_dict_entry(&scope, runtime.dictAt(thread, globals, key));
+  ASSERT_TRUE(module_dict_entry.isValueCell());
+  EXPECT_TRUE(ValueCell::cast(*module_dict_entry).isPlaceholder());
 }
 
 TEST(InterpreterTestNoFixture,
