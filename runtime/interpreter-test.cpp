@@ -3912,4 +3912,23 @@ c = C()
       70));
 }
 
+TEST(InterpreterTestNoFixture, DoLoadImmediate) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+def test():
+  return None
+
+result = test()
+)")
+                   .isError());
+  Function test_function(&scope, moduleAt(&runtime, "__main__", "test"));
+  MutableBytes bytecode(&scope, test_function.rewrittenBytecode());
+  // Verify that rewriting replaces LOAD_CONST for LOAD_IMMEDIATE.
+  EXPECT_EQ(bytecode.byteAt(0), LOAD_IMMEDIATE);
+  EXPECT_EQ(bytecode.byteAt(1), static_cast<byte>(NoneType::object().raw()));
+  EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNoneType());
+}
+
 }  // namespace python

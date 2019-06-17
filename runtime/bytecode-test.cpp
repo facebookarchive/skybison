@@ -35,4 +35,25 @@ TEST_F(BytecodeTest, NextBytecodeOpReturnsNextBytecodeOpPair) {
   EXPECT_EQ(bc.arg, 0x01020304);
 }
 
+TEST_F(BytecodeTest, OpargFromObject) {
+  EXPECT_EQ(NoneType::object(),
+            objectFromOparg(opargFromObject(NoneType::object())));
+  EXPECT_EQ(Bool::trueObj(), objectFromOparg(opargFromObject(Bool::trueObj())));
+  EXPECT_EQ(Bool::falseObj(),
+            objectFromOparg(opargFromObject(Bool::falseObj())));
+  EXPECT_EQ(SmallInt::fromWord(-1),
+            objectFromOparg(opargFromObject(SmallInt::fromWord(-1))));
+  EXPECT_EQ(SmallInt::fromWord(-64),
+            objectFromOparg(opargFromObject(SmallInt::fromWord(-64))));
+  EXPECT_EQ(SmallInt::fromWord(0),
+            objectFromOparg(opargFromObject(SmallInt::fromWord(0))));
+  EXPECT_EQ(SmallInt::fromWord(63),
+            objectFromOparg(opargFromObject(SmallInt::fromWord(63))));
+  EXPECT_EQ(SmallStr::fromCStr(""),
+            objectFromOparg(opargFromObject(SmallStr::fromCStr(""))));
+  // Not immediate since it doesn't fit in byte.
+  EXPECT_NE(SmallInt::fromWord(64),
+            objectFromOparg(opargFromObject(SmallInt::fromWord(64))));
+}
+
 }  // namespace python

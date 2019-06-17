@@ -408,6 +408,7 @@ class Interpreter {
   static bool doLoadClassDeref(Context* ctx, word arg);
   static bool doLoadClosure(Context* ctx, word arg);
   static bool doLoadConst(Context* ctx, word arg);
+  static bool doLoadImmediate(Context* ctx, word arg);
   static bool doLoadGlobal(Context* ctx, word arg);
   static bool doLoadGlobalCached(Context* ctx, word arg);
   static bool doMakeFunction(Context* ctx, word arg);

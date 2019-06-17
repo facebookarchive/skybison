@@ -259,7 +259,7 @@ namespace python {
   V(UNUSED_BYTECODE_240, 240, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_241, 241, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_242, 242, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_243, 243, doInvalidBytecode)                               \
+  V(LOAD_IMMEDIATE, 243, doLoadImmediate)                                      \
   V(STORE_FAST_REVERSE, 244, doStoreFastReverse)                               \
   V(LOAD_FAST_REVERSE, 245, doLoadFastReverse)                                 \
   V(LOAD_METHOD_CACHED, 246, doLoadMethodCached)                               \
@@ -325,5 +325,12 @@ struct BytecodeOp {
 };
 
 BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index);
+
+// Convert an immediate RawObject into a byte, and back to the original
+// object. If the object fits in a byte,
+// objectFromOparg(opargFromObject(obj) == obj will hold.
+int8_t opargFromObject(RawObject object);
+
+RawObject objectFromOparg(word arg);
 
 }  // namespace python

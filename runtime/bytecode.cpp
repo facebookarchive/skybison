@@ -23,4 +23,13 @@ BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index) {
   return BytecodeOp{bc, arg};
 }
 
+int8_t opargFromObject(RawObject object) {
+  DCHECK(!object.isHeapObject(), "Heap objects are disallowed");
+  return static_cast<int8_t>(object.raw());
+}
+
+RawObject objectFromOparg(word arg) {
+  return RawObject(static_cast<uword>(static_cast<int8_t>(arg)));
+}
+
 }  // namespace python

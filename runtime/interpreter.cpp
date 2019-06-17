@@ -2298,6 +2298,11 @@ HANDLER_INLINE bool Interpreter::doLoadConst(Context* ctx, word arg) {
   return false;
 }
 
+HANDLER_INLINE bool Interpreter::doLoadImmediate(Context* ctx, word arg) {
+  ctx->frame->pushValue(objectFromOparg(arg));
+  return false;
+}
+
 HANDLER_INLINE bool Interpreter::doLoadName(Context* ctx, word arg) {
   Thread* thread = ctx->thread;
   Frame* frame = ctx->frame;

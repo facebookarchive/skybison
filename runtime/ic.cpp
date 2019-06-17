@@ -124,7 +124,17 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
       int32_t reverse_arg = total_locals - op.arg - 1;
       return RewrittenOp{STORE_FAST_REVERSE, reverse_arg, false};
     }
-
+    case LOAD_CONST: {
+      RawObject arg_obj =
+          Tuple::cast(Code::cast(function.code()).consts()).at(op.arg);
+      if (!arg_obj.isHeapObject() &&
+          // This condition is true only the object fits in a byte. Some
+          // immediate values of SmallInt and SmallStr do not satify this
+          // condition.
+          arg_obj == objectFromOparg(opargFromObject(arg_obj))) {
+        return RewrittenOp{LOAD_IMMEDIATE, opargFromObject(arg_obj), false};
+      }
+    } break;
     case BINARY_OP_CACHED:
     case COMPARE_OP_CACHED:
     case FOR_ITER_CACHED:

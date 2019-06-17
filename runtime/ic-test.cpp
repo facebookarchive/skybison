@@ -103,6 +103,57 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesZeroArgMethodCalls) {
   EXPECT_EQ(icOriginalArg(*function, 2), 4);
 }
 
+TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadConstOperations) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST, 2, LOAD_CONST, 3,
+      LOAD_CONST, 4, LOAD_CONST, 5, LOAD_CONST, 6,
+  };
+  code.setCode(runtime.newBytesWithAll(bytecode));
+
+  Tuple consts(&scope, runtime.newTuple(10));
+  // Immediate objects.
+  consts.atPut(0, NoneType::object());
+  consts.atPut(1, Bool::trueObj());
+  consts.atPut(2, Bool::falseObj());
+  consts.atPut(3, SmallInt::fromWord(0));
+  consts.atPut(4, SmallStr::fromCStr(""));
+  // Not immediate since it doesn't fit in byte.
+  consts.atPut(5, SmallInt::fromWord(64));
+  // Not immediate since it's a heap object.
+  consts.atPut(6, runtime.newTuple(4));
+  code.setConsts(*consts);
+
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime.newDict());
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals));
+
+  byte expected[] = {
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(NoneType::object())),
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(Bool::trueObj())),
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(Bool::falseObj())),
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(SmallInt::fromWord(0))),
+      LOAD_IMMEDIATE,
+      static_cast<byte>(opargFromObject(SmallStr::fromCStr(""))),
+      LOAD_CONST,
+      5,
+      LOAD_CONST,
+      6,
+  };
+  MutableBytes rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+}
+
 TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadMethodOperations) {
   Runtime runtime(/*cache_enabled=*/true);
   Thread* thread = Thread::current();
