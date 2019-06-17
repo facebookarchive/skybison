@@ -30,6 +30,10 @@ struct ListEntry {
   ListEntry* next;
 };
 
+struct NativeObjectNode : ListEntry {
+  void* native_ptr;
+};
+
 using AtExitFn = void (*)();
 
 using NativeMethodType = RawObject (*)(Thread* thread, Frame* frame,
@@ -264,6 +268,16 @@ class Runtime {
   // Untracks extension's native objects for gcmodule.
   // Returns true if a tracked entry becomes untracked, false, otherwise.
   bool untrackObject(ListEntry* entry);
+
+  // TODO(T46009495): Remove once native objects are handled at a lower level
+  // Tracks extension's native objects in managed code
+  // Returns true if an untracked entry becomes tracked, false, otherwise.
+  bool trackNativeObject(void* native);
+
+  // TODO(T46009495): Remove once native objects are handled at a lower level
+  // Tracks extension's native objects in managed code
+  // Returns true if a tracked entry becomes untracked, false, otherwise.
+  bool untrackNativeObject(void* native);
 
   void setStderrFile(FILE* new_file) { stderr_file_ = new_file; }
   FILE* stderrFile() { return stderr_file_; }
@@ -929,6 +943,12 @@ class Runtime {
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(Thread* thread, const Type& type, SymbolId name);
 
+  // Inserts an entry into the linked list as the new root
+  static bool listEntryInsert(ListEntry* entry, ListEntry** root);
+
+  // Removes an entry from the linked list
+  static bool listEntryRemove(ListEntry* entry, ListEntry** root);
+
   // The size newCapacity grows to if array is empty. Must be large enough to
   // guarantee a LargeBytes/LargeStr for ByteArray/StrArray.
   static const int kInitialEnsuredCapacity = kWordSize * 2;
@@ -941,6 +961,11 @@ class Runtime {
 
   // Linked list of tracked extension objects.
   ListEntry* tracked_objects_ = nullptr;
+
+  // TODO(T46009495): This is a temporary list tracking native objects to
+  // correctly free their memory at runtime destruction. However, this should
+  // be moved to a lower level abstraction in the C-API such as PyObject_Malloc.
+  ListEntry* tracked_native_objects_ = nullptr;
 
   // A List of Layout objects, indexed by layout id.
   RawObject layouts_;

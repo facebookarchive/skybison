@@ -161,9 +161,11 @@ TEST_F(CApiHandlesTest, PyObjectReturnsExtensionInstance) {
   Type type(&scope, initializeExtensionType(&extension_type));
   PyObject* extension_type_ref = ApiHandle::newReference(thread_, *type);
 
-  PyObject pyobj = {nullptr, 1,
-                    reinterpret_cast<PyTypeObject*>(extension_type_ref)};
-  Object handle_obj(&scope, ApiHandle::fromPyObject(&pyobj)->asObject());
+  PyObject* pyobj = static_cast<PyObject*>(std::malloc(sizeof(PyObject)));
+  pyobj->reference_ = nullptr;
+  pyobj->ob_refcnt = 1;
+  pyobj->ob_type = reinterpret_cast<PyTypeObject*>(extension_type_ref);
+  Object handle_obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
   EXPECT_TRUE(handle_obj.isInstance());
 }
 

@@ -25,6 +25,9 @@ PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
   }
   PyTypeObject* type = reinterpret_cast<PyTypeObject*>(PyObject_Type(obj));
   auto dealloc = bit_cast<destructor>(PyType_GetSlot(type, Py_tp_dealloc));
+  if (obj->reference_ != nullptr) {
+    Thread::current()->runtime()->untrackNativeObject(obj);
+  }
   dealloc(obj);
   Py_DECREF(type);
 }

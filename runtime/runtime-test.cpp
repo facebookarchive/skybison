@@ -1072,6 +1072,24 @@ TEST_F(RuntimeTest, TrackObjectAndUnTrackObject) {
   EXPECT_EQ(entry1.next, nullptr);
 }
 
+TEST_F(RuntimeTest, TrackObjectAndUnTrackNativeObject) {
+  void* native0 = std::calloc(sizeof(PyObject), 1);
+  void* native1 = std::calloc(sizeof(PyObject), 1);
+
+  EXPECT_TRUE(runtime_.trackNativeObject(native0));
+  EXPECT_TRUE(runtime_.trackNativeObject(native1));
+
+  // Objects are only tracked once
+  EXPECT_FALSE(runtime_.trackNativeObject(native0));
+  EXPECT_FALSE(runtime_.trackNativeObject(native1));
+
+  EXPECT_TRUE(runtime_.untrackNativeObject(native0));
+  EXPECT_TRUE(runtime_.untrackNativeObject(native1));
+
+  std::free(native0);
+  std::free(native1);
+}
+
 TEST_F(RuntimeTest, HashCodeSizeCheck) {
   RawObject code = newEmptyCode();
   ASSERT_TRUE(code.isHeapObject());

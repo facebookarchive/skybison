@@ -140,10 +140,6 @@ bar = Bar()
   ASSERT_NE(bar, nullptr);
   BarObject* barobj = reinterpret_cast<BarObject*>(bar.get());
   EXPECT_EQ(barobj->value, 30);
-  EXPECT_EQ(Py_REFCNT(barobj), 2);
-  // TODO(T42827325): This DECREF is here to make up for a reference counting
-  // bug in our handle code.
-  Py_DECREF(barobj);
 }
 
 TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
@@ -1679,18 +1675,6 @@ except RuntimeError as e:
   EXPECT_EQ(PyErr_GivenExceptionMatches(exc, PyExc_RuntimeError), 1);
 }
 
-// TODO(T42827325): This destroyBar rountine is here to make up for a reference
-// counting bug in our handle code. Therefore, all tests using this function
-// will only work with Pyro until the bug is fixed.
-static void destroyBar() {
-  PyObjectPtr type(moduleGet("__main__", "Bar"));
-  PyObject* b = moduleGet("__main__", "b");
-  auto des = reinterpret_cast<destructor>(PyType_GetSlot(
-      reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_dealloc));
-  ASSERT_NE(des, nullptr);
-  des(b);
-}
-
 static void createBarTypeWithMembers() {
   struct BarObject {
     PyObject_HEAD int t_bool;
@@ -1824,7 +1808,6 @@ r2 = b.t_bool
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyBool_Check(r2), 1);
   EXPECT_EQ(r2, Py_False);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberBytePyro) {
@@ -1842,7 +1825,6 @@ r2 = b.t_byte
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberUBytePyro) {
@@ -1860,7 +1842,6 @@ r2 = b.t_ubyte
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberShortPyro) {
@@ -1878,7 +1859,6 @@ r2 = b.t_short
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberUShortPyro) {
@@ -1896,7 +1876,6 @@ r2 = b.t_ushort
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 21));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberIntPyro) {
@@ -1914,7 +1893,6 @@ r2 = b.t_int
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberUIntPyro) {
@@ -1933,7 +1911,6 @@ r2 = b.t_uint
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberLongPyro) {
@@ -1951,7 +1928,6 @@ r2 = b.t_long
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, 4321));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberULongPyro) {
@@ -1970,7 +1946,6 @@ r2 = b.t_ulong
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLong(r2), 4321);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberLongLongPyro) {
@@ -1988,7 +1963,6 @@ r2 = b.t_longlong
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_TRUE(isLongEqualsLong(r2, -4321));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberULongLongPyro) {
@@ -2007,7 +1981,6 @@ r2 = b.t_ulonglong
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsUnsignedLongLong(r2), 4321);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberFloatPyro) {
@@ -2025,7 +1998,6 @@ r2 = b.t_float
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyFloat_Check(r2), 1);
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberDoublePyro) {
@@ -2043,7 +2015,6 @@ r2 = b.t_double
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyFloat_Check(r2), 1);
   EXPECT_EQ(PyFloat_AsDouble(r2), 1.5);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberCharPyro) {
@@ -2061,7 +2032,6 @@ r2 = b.t_char
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyUnicode_Check(r2), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberStringPyro) {
@@ -2074,7 +2044,6 @@ r1 = b.t_string
   PyObjectPtr r1(moduleGet("__main__", "r1"));
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberStringRaisesTypeErrorPyro) {
@@ -2095,7 +2064,6 @@ r1 = b.t_string
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "foo"));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectPyro) {
@@ -2117,7 +2085,6 @@ r2 = b.t_object
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   EXPECT_EQ(PyTuple_Size(r2), 0);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectWithNullPyro) {
@@ -2129,7 +2096,6 @@ r1 = b.t_object_null
             0);
   PyObjectPtr r1(moduleGet("__main__", "r1"));
   EXPECT_EQ(r1, Py_None);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectExPyro) {
@@ -2151,7 +2117,6 @@ r2 = b.t_objectex
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyTuple_Check(r2), 1);
   EXPECT_EQ(PyTuple_Size(r2), 0);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberObjectExWithNullRaisesAttributeErrorPyro) {
@@ -2168,7 +2133,6 @@ except AttributeError:
             0);
   PyObjectPtr raised(moduleGet("__main__", "raised"));
   EXPECT_EQ(raised, Py_True);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberPySsizeTPyro) {
@@ -2186,7 +2150,6 @@ r2 = b.t_pyssize
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsSsize_t(r2), 4321);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberReadOnlyRaisesAttributeErrorPyro) {
@@ -2207,7 +2170,6 @@ except AttributeError:
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
   PyObjectPtr raised(moduleGet("__main__", "raised"));
   EXPECT_EQ(raised, Py_True);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberIntSetIncorrectTypeRaisesTypeErrorPyro) {
@@ -2228,7 +2190,6 @@ r1 = b.t_int
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_TRUE(isLongEqualsLong(r1, -1234));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberCharIncorrectSizeRaisesTypeErrorPyro) {
@@ -2249,7 +2210,6 @@ r1 = b.t_char
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyUnicode_Check(r1), 1);
   EXPECT_TRUE(isUnicodeEqualsCStr(r1, "a"));
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, MemberUnknownRaisesSystemErrorPyro) {
@@ -2361,7 +2321,6 @@ r2 = b.attribute
   PyObjectPtr r2(moduleGet("__main__", "r2"));
   ASSERT_EQ(PyLong_Check(r2), 1);
   EXPECT_EQ(PyLong_AsLong(r2), 321);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, GetSetReadonlyAttributePyro) {
@@ -2382,7 +2341,6 @@ r1 = b.readonly_attribute
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsLong(r1), 456);
-  destroyBar();
 }
 
 TEST_F(TypeExtensionApiTest, GetSetRaiseAttributePyro) {
@@ -2403,7 +2361,6 @@ r1 = b.raise_attribute
   EXPECT_EQ(raised, Py_True);
   ASSERT_EQ(PyLong_Check(r1), 1);
   EXPECT_EQ(PyLong_AsLong(r1), 123);
-  destroyBar();
 }
 
 }  // namespace python

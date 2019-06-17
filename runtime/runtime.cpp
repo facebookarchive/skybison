@@ -1202,25 +1202,24 @@ void Runtime::setArgv(Thread* thread, int argc, const char** argv) {
   moduleAddGlobal(sys_module, SymbolId::kArgv, argv_value);
 }
 
-bool Runtime::trackObject(ListEntry* entry) {
+bool Runtime::listEntryInsert(ListEntry* entry, ListEntry** root) {
   // If already tracked, do nothing.
-  if (entry->prev != nullptr || entry->next != nullptr ||
-      entry == tracked_objects_) {
+  if (entry->prev != nullptr || entry->next != nullptr || entry == *root) {
     return false;
   }
   entry->prev = nullptr;
-  entry->next = tracked_objects_;
-  if (tracked_objects_ != nullptr) {
-    tracked_objects_->prev = entry;
+  entry->next = *root;
+  if (*root != nullptr) {
+    (*root)->prev = entry;
   }
-  tracked_objects_ = entry;
+  *root = entry;
   return true;
 }
 
-bool Runtime::untrackObject(ListEntry* entry) {
+bool Runtime::listEntryRemove(ListEntry* entry, ListEntry** root) {
   // The node is the first node of the list.
-  if (tracked_objects_ == entry) {
-    tracked_objects_ = entry->next;
+  if (*root == entry) {
+    *root = entry->next;
   } else if (entry->prev == nullptr && entry->next == nullptr) {
     // This is an already untracked object.
     return false;
@@ -1233,6 +1232,38 @@ bool Runtime::untrackObject(ListEntry* entry) {
   }
   entry->prev = nullptr;
   entry->next = nullptr;
+  return true;
+}
+
+bool Runtime::trackObject(ListEntry* entry) {
+  return listEntryInsert(entry, &tracked_objects_);
+}
+
+bool Runtime::untrackObject(ListEntry* entry) {
+  return listEntryRemove(entry, &tracked_objects_);
+}
+
+bool Runtime::trackNativeObject(void* native) {
+  // This is an already untracked object.
+  if (reinterpret_cast<PyObject*>(native)->reference_ != nullptr) {
+    return false;
+  }
+  NativeObjectNode* entry = reinterpret_cast<NativeObjectNode*>(
+      std::malloc(sizeof(NativeObjectNode)));
+  entry->prev = nullptr;
+  entry->next = nullptr;
+  entry->native_ptr = native;
+  reinterpret_cast<PyObject*>(native)->reference_ = entry;
+  return listEntryInsert(entry, &tracked_native_objects_);
+}
+
+bool Runtime::untrackNativeObject(void* native) {
+  ListEntry* entry = reinterpret_cast<ListEntry*>(
+      reinterpret_cast<PyObject*>(native)->reference_);
+  if (!listEntryRemove(entry, &tracked_native_objects_)) {
+    return false;
+  }
+  std::free(entry);
   return true;
 }
 
@@ -4012,6 +4043,15 @@ void Runtime::freeApiHandles() {
     std::free(handle->cache());
     std::free(handle);
     Dict::Bucket::setTombstone(*buckets, i);
+  }
+
+  // Clear native objects that are still alive
+  while (tracked_native_objects_ != nullptr) {
+    NativeObjectNode* entry =
+        static_cast<NativeObjectNode*>(tracked_native_objects_);
+    void* native = entry->native_ptr;
+    untrackNativeObject(native);
+    std::free(native);
   }
 }
 

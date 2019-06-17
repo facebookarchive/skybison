@@ -213,9 +213,7 @@ RawObject ApiHandle::asInstance(RawObject type) {
   Object object_ptr(&scope, runtime->newIntFromCPtr(static_cast<void*>(this)));
   Object attr_name(&scope, runtime->symbols()->ExtensionPtr());
   instanceSetAttr(thread, instance, attr_name, object_ptr);
-  // TODO(T42827325): incref this before returning to represent the reference
-  // stored in ___extension___.
-
+  if (runtime->trackNativeObject(reinterpret_cast<void*>(this))) incref();
   return *instance;
 }
 
