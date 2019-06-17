@@ -2162,9 +2162,8 @@ void Runtime::createSysModule(Thread* thread) {
     num_external_modules++;
   }
   uword num_builtin_modules = 2;
-  for (; Runtime::kBuiltinModules[num_builtin_modules].name !=
-         SymbolId::kSentinelId;
-       num_builtin_modules++) {
+  for (int i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
+    num_builtin_modules++;
   }
 
   uword num_modules = num_builtin_modules + num_external_modules;
@@ -2174,7 +2173,7 @@ void Runtime::createSysModule(Thread* thread) {
   builtins_tuple.atPut(0, symbols()->Builtins());
   builtins_tuple.atPut(1, symbols()->Sys());
   for (uword i = 2; i < num_builtin_modules; i++) {
-    Object module_name(&scope, symbols()->at(Runtime::kBuiltinModules[i].name));
+    Object module_name(&scope, symbols()->at(kBuiltinModules[i - 2].name));
     builtins_tuple.atPut(i, *module_name);
   }
 
