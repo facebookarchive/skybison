@@ -339,13 +339,13 @@ bool RawTuple::contains(RawObject object) const {
   return false;
 }
 
-void RawTuple::copyTo(RawObject array) const {
-  RawTuple dst = RawTuple::cast(array);
+void RawTuple::copyTo(RawObject dst) const {
+  RawTuple dst_tuple = RawTuple::cast(dst);
   word len = length();
-  DCHECK_BOUND(len, dst.length());
+  DCHECK_BOUND(len, dst_tuple.length());
   for (word i = 0; i < len; i++) {
     RawObject elem = at(i);
-    dst.atPut(i, elem);
+    dst_tuple.atPut(i, elem);
   }
 }
 

@@ -443,7 +443,7 @@ class RawInt : public RawObject {
   // Returns a positive value if 'this' is greater than 'other', zero if it
   // is the same, a negavite value if smaller. The value does not have to be
   // -1, 0, or 1.
-  word compare(RawInt other) const;
+  word compare(RawInt that) const;
 
   word bitLength() const;
 
@@ -1161,7 +1161,7 @@ class RawLargeStr : public RawArray {
 
   // Getters and setters.
   byte charAt(word index) const;
-  void copyTo(byte* bytes, word length) const;
+  void copyTo(byte* dst, word length) const;
 
   // Equality checks.
   bool equals(RawObject that) const;
@@ -1218,7 +1218,7 @@ class RawLargeInt : public RawHeapObject {
   word numDigits() const;
 
   // Copies digits bytewise to `dst`. Returns number of bytes copied.
-  word copyTo(byte* dst, word max_length) const;
+  word copyTo(byte* dst, word copy_length) const;
 
   // Copy 'bytes' array into digits; if the array is too small set remaining
   // data to 'sign_extension' byte.
@@ -2350,8 +2350,8 @@ class RawWeakRef : public RawHeapObject {
   RawObject link() const;
   void setLink(RawObject reference) const;
 
-  static void enqueueReference(RawObject reference, RawObject* list);
-  static RawObject dequeueReference(RawObject* list);
+  static void enqueueReference(RawObject reference, RawObject* tail);
+  static RawObject dequeueReference(RawObject* tail);
   static RawObject spliceQueue(RawObject tail1, RawObject tail2);
 
   // Layout.
