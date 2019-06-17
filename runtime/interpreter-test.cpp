@@ -1146,6 +1146,27 @@ TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
   EXPECT_TRUE(isIntEqualsWord(result.at(3), 1));
 }
 
+TEST_F(InterpreterTest, DoStoreSubscrWithNoSetitemRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "1[5] = 'foo'"),
+                            LayoutId::kTypeError,
+                            "'int' object does not support item assignment"));
+}
+
+TEST_F(InterpreterTest, DoStoreSubscrWithDescriptorPropagatesException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class A:
+  def __get__(self, *args):
+    raise RuntimeError("foo")
+
+class B:
+  __setitem__ = A()
+
+b = B()
+b[5] = 'foo'
+)"),
+                            LayoutId::kRuntimeError, "foo"));
+}
+
 TEST_F(InterpreterTest, SequenceContains) {
   HandleScope scope(thread_);
 

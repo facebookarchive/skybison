@@ -1470,7 +1470,12 @@ HANDLER_INLINE bool Interpreter::doStoreSubscr(Context* ctx, word) {
   Object setitem(
       &scope, lookupMethod(thread, frame, container, SymbolId::kDunderSetitem));
   if (setitem.isError()) {
-    UNIMPLEMENTED("throw TypeError");
+    if (setitem.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "'%T' object does not support item assignment",
+                           &container);
+    }
+    return unwind(ctx);
   }
   Object value(&scope, frame->popValue());
   if (callMethod3(thread, frame, setitem, container, key, value).isError()) {
