@@ -586,7 +586,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     assert(PyBytes_Check(lnotab_obj));
     lnotab = (unsigned char*)PyBytes_AS_STRING(lnotab_obj);
     tabsiz = PyBytes_GET_SIZE(lnotab_obj);
-    assert(tabsiz == 0 || Py_REFCNT(lnotab_obj) == 1);
     if (memchr(lnotab, 255, tabsiz) != NULL) {
         /* 255 value are used for multibyte bytecode instructions */
         goto exitUnchanged;

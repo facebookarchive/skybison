@@ -11,7 +11,39 @@ typedef struct {
     PyCapsule_Destructor destructor;
 } PyCapsule;
 
+typedef struct {
+    PyObject *PyCapsule_Type;
+} capsulestate;
 
+#define capsulestate(o) ((capsulestate *)PyModule_GetState(o))
+
+#define capsulestate_global ((capsulestate *)PyModule_GetState(PyState_FindModule(&capsulemodule)))
+
+static int capsule_clear(PyObject *module) {
+    Py_CLEAR(capsulestate(module)->PyCapsule_Type);
+    return 0;
+}
+
+static int capsule_traverse(PyObject *module, visitproc visit, void* arg) {
+    Py_VISIT(capsulestate(module)->PyCapsule_Type);
+    return 0;
+}
+
+static void capsule_free(void *module) {
+    capsule_clear((PyObject *)module);
+}
+
+static struct PyModuleDef capsulemodule = {
+    PyModuleDef_HEAD_INIT,
+    "_capsule",
+    NULL,
+    sizeof(capsulestate),
+    NULL,
+    NULL,
+    capsule_traverse,
+    capsule_clear,
+    capsule_free,
+};
 
 static int
 _is_legal_capsule(PyCapsule *capsule, const char *invalid_capsule)
@@ -50,7 +82,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
         return NULL;
     }
 
-    capsule = PyObject_NEW(PyCapsule, &PyCapsule_Type);
+    capsule = PyObject_NEW(PyCapsule, (PyTypeObject *)capsulestate_global->PyCapsule_Type);
     if (capsule == NULL) {
         return NULL;
     }
@@ -296,29 +328,38 @@ to other extension modules, so that extension modules can use the\n\
 Python import mechanism to link to one another.\n\
 ");
 
-PyTypeObject PyCapsule_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "PyCapsule",                /*tp_name*/
-    sizeof(PyCapsule),          /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    /* methods */
-    capsule_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
-    capsule_repr, /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash*/
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    0,                          /*tp_flags*/
-    PyCapsule_Type__doc__       /*tp_doc*/
+static PyType_Slot PyCapsule_Type_slots[] = {
+    {Py_tp_dealloc, capsule_dealloc},
+    {Py_tp_repr, capsule_repr},
+    {Py_tp_doc, PyCapsule_Type__doc__},
+    {0, 0},
 };
 
+static PyType_Spec PyCapsule_Type_spec = {
+    "PyCapsule",
+    sizeof(PyCapsule),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    PyCapsule_Type_slots
+};
 
+PyMODINIT_FUNC PyInit__capsule(void) {
+    PyObject *mod;
+    PyTypeObject *PyCapsule_Type;
+
+    mod = PyState_FindModule(&capsulemodule);
+    if (mod != NULL) {
+        return mod;
+    }
+    mod = PyModule_Create(&capsulemodule);
+    if (mod == NULL) {
+        return NULL;
+    }
+    PyCapsule_Type = (PyTypeObject*)PyType_FromSpec(&PyCapsule_Type_spec);
+    if (PyCapsule_Type == NULL) {
+        return NULL;
+    }
+    Py_INCREF(PyCapsule_Type);
+    capsulestate(mod)->PyCapsule_Type = (PyObject*)PyCapsule_Type;
+    return mod;
+}

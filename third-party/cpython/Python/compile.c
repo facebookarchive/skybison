@@ -305,6 +305,10 @@ compiler_init(struct compiler *c)
         return 0;
     }
 
+    if (PyImport_ImportModule("_capsule") == NULL) {
+        return 0;
+    }
+
     return 1;
 }
 

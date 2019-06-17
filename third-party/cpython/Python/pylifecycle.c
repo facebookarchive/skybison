@@ -432,6 +432,10 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
 
     import_init(interp, sysmod);
 
+    /* Initialize _capsule */
+    if (PyImport_ImportModule("_capsule") == NULL)
+        Py_FatalError("Py_Initialize: can't initialize _capsule");
+
     /* initialize the faulthandler module */
     if (_PyFaulthandler_Init())
         Py_FatalError("Py_Initialize: can't initialize faulthandler");

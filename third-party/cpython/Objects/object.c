@@ -1742,9 +1742,6 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&_PyNamespace_Type) < 0)
         Py_FatalError("Can't initialize namespace type");
 
-    if (PyType_Ready(&PyCapsule_Type) < 0)
-        Py_FatalError("Can't initialize capsule type");
-
     if (PyType_Ready(&PyLongRangeIter_Type) < 0)
         Py_FatalError("Can't initialize long range iterator type");
 

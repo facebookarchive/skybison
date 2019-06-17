@@ -3228,19 +3228,16 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 int i;
                 size_t len;
                 char *s;
-                PyObject *uni;
+                PyObject *bytes;
+                _PyBytesWriter writer;
 
                 len = 0;
                 for (i = 0; i < NCH(n); i += 2)
                     /* length of string plus one for the dot */
                     len += strlen(STR(CHILD(n, i))) + 1;
                 len--; /* the last name doesn't have a dot */
-                str = PyBytes_FromStringAndSize(NULL, len);
-                if (!str)
-                    return NULL;
-                s = PyBytes_AS_STRING(str);
-                if (!s)
-                    return NULL;
+                _PyBytesWriter_Init(&writer);
+                s = _PyBytesWriter_Alloc(&writer, len);
                 for (i = 0; i < NCH(n); i += 2) {
                     char *sch = STR(CHILD(n, i));
                     strcpy(s, STR(CHILD(n, i)));
@@ -3249,13 +3246,13 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 }
                 --s;
                 *s = '\0';
-                uni = PyUnicode_DecodeUTF8(PyBytes_AS_STRING(str),
-                                           PyBytes_GET_SIZE(str),
+                bytes = _PyBytesWriter_Finish(&writer, s);
+                _PyBytesWriter_Dealloc(&writer);
+                str = PyUnicode_DecodeUTF8(PyBytes_AS_STRING(bytes),
+                                           PyBytes_GET_SIZE(bytes),
                                            NULL);
-                Py_DECREF(str);
-                if (!uni)
+                if (!str)
                     return NULL;
-                str = uni;
                 PyUnicode_InternInPlace(&str);
                 if (PyArena_AddPyObject(c->c_arena, str) < 0) {
                     Py_DECREF(str);
@@ -4165,9 +4162,10 @@ static PyObject *
 decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
                             size_t len)
 {
-    PyObject *v, *u;
+    PyObject *v;
     char *buf;
     char *p;
+    _PyBytesWriter writer;
     const char *end;
 
     /* check for integer overflow */
@@ -4175,10 +4173,8 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
         return NULL;
     /* "ä" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
        "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */
-    u = PyBytes_FromStringAndSize((char *)NULL, len * 6);
-    if (u == NULL)
-        return NULL;
-    p = buf = PyBytes_AsString(u);
+    _PyBytesWriter_Init(&writer);
+    p = buf = _PyBytesWriter_Alloc(&writer, len * 6);
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
@@ -4197,7 +4193,7 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
             Py_ssize_t len, i;
             w = decode_utf8(c, &s, end);
             if (w == NULL) {
-                Py_DECREF(u);
+                _PyBytesWriter_Dealloc(&writer);
                 return NULL;
             }
             kind = PyUnicode_KIND(w);
@@ -4209,7 +4205,7 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
                 p += 10;
             }
             /* Should be impossible to overflow */
-            assert(p - buf <= Py_SIZE(u));
+            assert(p - buf <= writer.min_size);
             Py_DECREF(w);
         } else {
             *p++ = *s++;
@@ -4225,12 +4221,12 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
         if (warn_invalid_escape_sequence(c, n, *first_invalid_escape) < 0) {
             /* We have not decref u before because first_invalid_escape points
                inside u. */
-            Py_XDECREF(u);
+            _PyBytesWriter_Dealloc(&writer);
             Py_DECREF(v);
             return NULL;
         }
     }
-    Py_XDECREF(u);
+    _PyBytesWriter_Dealloc(&writer);
     return v;
 }
 
