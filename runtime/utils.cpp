@@ -35,10 +35,10 @@ class TracebackPrinter : public FrameVisitor {
       // Extract filename
       if (code.filename().isStr()) {
         char* filename = Str::cast(code.filename()).toCStr();
-        line << "  File '" << filename << "', ";
+        line << "  File \"" << filename << "\", ";
         std::free(filename);
       } else {
-        line << "  File '<unknown>',  ";
+        line << "  File \"<unknown>\",  ";
       }
 
       // Extract line number unless it is a native functions.
@@ -79,7 +79,7 @@ class TracebackPrinter : public FrameVisitor {
   }
 
   void print(std::ostream* os) {
-    *os << "Traceback (most recent call last)\n";
+    *os << "Traceback (most recent call last):\n";
     for (auto it = lines_.rbegin(); it != lines_.rend(); it++) {
       *os << *it << '\n';
     }

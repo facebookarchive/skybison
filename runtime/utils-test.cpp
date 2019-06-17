@@ -117,11 +117,11 @@ result = foo('a', 99)
   void* fptr = bit_cast<void*>(&testPrintStacktrace);
   Dl_info info = Dl_info();
   std::stringstream expected;
-  expected << R"(Traceback (most recent call last)
-  File '<test string>', line 11, in <module>
-  File '<test string>', line 6, in foo
-  File '<test string>', line 10, in bar
-  File '<test string>', in traceback  <native function at )"
+  expected << R"(Traceback (most recent call last):
+  File "<test string>", line 11, in <module>
+  File "<test string>", line 6, in foo
+  File "<test string>", line 10, in bar
+  File "<test string>", in traceback  <native function at )"
            << fptr << " (";
   if (dladdr(fptr, &info) && info.dli_sname != nullptr) {
     EXPECT_NE(std::strstr(info.dli_sname, "testPrintStacktrace"), nullptr);
@@ -141,7 +141,7 @@ TEST_F(UtilsTest, PrintTracebackPrintsInvalidFrame) {
 
   std::ostringstream stream;
   Utils::printTraceback(&stream);
-  EXPECT_EQ(stream.str(), R"(Traceback (most recent call last)
+  EXPECT_EQ(stream.str(), R"(Traceback (most recent call last):
   Invalid frame (bad previousFrame field)
 )");
 }
@@ -167,7 +167,7 @@ TEST_F(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
 
   std::ostringstream stream;
   Utils::printTraceback(&stream);
-  EXPECT_EQ(stream.str(), R"(Traceback (most recent call last)
+  EXPECT_EQ(stream.str(), R"(Traceback (most recent call last):
   Invalid frame (bad function)
 )");
 }

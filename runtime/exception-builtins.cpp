@@ -337,7 +337,10 @@ static RawObject printSingleException(Thread* thread, const Object& file,
 
   BaseException exc(&scope, *value);
   Object tb(&scope, exc.traceback());
-  if (!tb.isNoneType()) {
+  if (tb.isStr()) {
+    // TODO(T39919701): Delete this once we can print real tracebacks.
+    MAY_RAISE(fileWriteObjectStr(thread, file, tb));
+  } else if (!tb.isNoneType()) {
     // TODO(T40171960): Print the traceback
     MAY_RAISE(fileWriteString(thread, file, "<traceback>\n"));
   }
