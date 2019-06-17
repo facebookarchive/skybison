@@ -4018,34 +4018,41 @@ RawObject Runtime::layoutDeleteAttribute(Thread* thread, const Layout& layout,
 }
 
 void Runtime::freeApiHandles() {
-  HandleScope scope;
-  Dict dict(&scope, apiHandles());
-  Tuple buckets(&scope, dict.data());
-
-  // Call C Extension finalizers
-  word i = Dict::Bucket::kFirst;
-  while (Dict::Bucket::nextItem(*buckets, &i)) {
-    Object key(&scope, Dict::Bucket::key(*buckets, i));
-    Object value(&scope, Dict::Bucket::value(*buckets, i));
-    auto handle = static_cast<ApiHandle*>(Int::cast(*value).asCPtr());
-    if (key.isModule()) {
-      auto def = reinterpret_cast<PyModuleDef*>(
-          Int::cast(Module::cast(*key).def()).asCPtr());
-      if (def && def->m_free != nullptr) def->m_free(handle);
+  // Dealloc the Module handles first as they are the handle roots
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Dict modules(&scope, modules_);
+  Tuple modules_buckets(&scope, modules.data());
+  for (word i = Dict::Bucket::kFirst;
+       Dict::Bucket::nextItem(*modules_buckets, &i);) {
+    Module module(&scope, Dict::Bucket::value(*modules_buckets, i));
+    Object module_def(&scope, module.def());
+    if (module_def.isInt() && Int::cast(*module_def).asCPtr() != nullptr) {
+      auto def =
+          reinterpret_cast<PyModuleDef*>(Int::cast(module.def()).asCPtr());
+      ApiHandle* handle = ApiHandle::borrowedReference(thread, *module);
+      if (def->m_free != nullptr) def->m_free(handle);
+      handle->dispose();
     }
   }
 
-  // Clear the allocated ApiHandles
-  i = Dict::Bucket::kFirst;
-  while (Dict::Bucket::nextItem(*buckets, &i)) {
-    Object value(&scope, Dict::Bucket::value(*buckets, i));
-    auto handle = static_cast<ApiHandle*>(Int::cast(*value).asCPtr());
-    std::free(handle->cache());
-    std::free(handle);
-    Dict::Bucket::setTombstone(*buckets, i);
+  // Cleanly free all the handles that have a reference count of zero.
+  // These can be safely deallocated as they are not referenced by any other
+  // native object or handle.
+  Dict dict(&scope, apiHandles());
+  Tuple buckets(&scope, dict.data());
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*buckets, &i);) {
+    Object key(&scope, Dict::Bucket::key(*buckets, i));
+    ApiHandle* handle = ApiHandle::borrowedReference(thread, *key);
+    if (ApiHandle::nativeRefcnt(handle) == 0) handle->dispose();
   }
 
-  // Clear native objects that are still alive
+  // Finally, skip trying to cleanly deallocate the object. Just free
+  // the memory without calling the deallocation functions.
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*buckets, &i);) {
+    Object key(&scope, Dict::Bucket::key(*buckets, i));
+    ApiHandle::borrowedReference(thread, *key)->dispose();
+  }
   while (tracked_native_objects_ != nullptr) {
     NativeObjectNode* entry =
         static_cast<NativeObjectNode*>(tracked_native_objects_);

@@ -12,6 +12,13 @@ using namespace testing;
 using TypeExtensionApiTest = ExtensionApi;
 using TypeExtensionApiDeathTest = ExtensionApi;
 
+// Common deallocation function for types with only primitive members
+static void deallocLeafObject(PyObject* self) {
+  PyTypeObject* type = Py_TYPE(self);
+  PyObject_Del(self);
+  Py_DECREF(type);
+}
+
 TEST_F(TypeExtensionApiTest, PyTypeCheckOnLong) {
   PyObjectPtr pylong(PyLong_FromLong(10));
   EXPECT_FALSE(PyType_Check(pylong));
@@ -109,18 +116,11 @@ TEST_F(TypeExtensionApiTest, CallExtensionTypeReturnsExtensionInstancePyro) {
     reinterpret_cast<BarObject*>(self)->value = 30;
     return 0;
   };
-  destructor dealloc_func = [](PyObject* self) {
-    PyObjectPtr type(PyObject_Type(self));
-    void* slot =
-        PyType_GetSlot(reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free);
-    return reinterpret_cast<freefunc>(slot)(self);
-  };
   PyType_Slot slots[] = {
       {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
       {Py_tp_new, reinterpret_cast<void*>(new_func)},
       {Py_tp_init, reinterpret_cast<void*>(init_func)},
-      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
-      {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)},
+      {Py_tp_dealloc, reinterpret_cast<void*>(deallocLeafObject)},
       {0, nullptr},
   };
   static PyType_Spec spec;
@@ -147,15 +147,8 @@ TEST_F(TypeExtensionApiTest, GenericAllocationReturnsMallocMemory) {
   // The values in this test are abitrary and are usally set with `sizeof(Foo)`
   int basic_size = 10;
   int item_size = 5;
-  destructor dealloc_func = [](PyObject* self) {
-    PyObjectPtr type(PyObject_Type(self));
-    auto free_function = reinterpret_cast<freefunc>(PyType_GetSlot(
-        reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free));
-    return free_function(self);
-  };
   PyType_Slot slots[] = {
-      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
-      {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)},
+      {Py_tp_dealloc, reinterpret_cast<void*>(deallocLeafObject)},
       {0, nullptr},
   };
   static PyType_Spec spec;
@@ -921,17 +914,10 @@ TEST_F(TypeExtensionApiTest, GenericNewReturnsExtensionInstance) {
     PyObject_HEAD
   };
   // clang-format on
-  destructor dealloc_func = [](PyObject* self) {
-    PyObjectPtr type(PyObject_Type(self));
-    auto free_func = reinterpret_cast<freefunc>(PyType_GetSlot(
-        reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free));
-    return free_func(self);
-  };
   PyType_Slot slots[] = {
       {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
       {Py_tp_new, reinterpret_cast<void*>(PyType_GenericNew)},
-      {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
-      {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)},
+      {Py_tp_dealloc, reinterpret_cast<void*>(deallocLeafObject)},
       {0, nullptr},
   };
   static PyType_Spec spec;
@@ -1767,22 +1753,15 @@ static void createBarTypeWithMembers() {
     reinterpret_cast<BarObject*>(self)->t_ulonglong = -1;
     return 0;
   };
-  destructor dealloc_func = [](PyObject* self) {
-    PyObjectPtr type(PyObject_Type(self));
-    void* slot =
-        PyType_GetSlot(reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free);
-    return reinterpret_cast<freefunc>(slot)(self);
-  };
-  static PyType_Slot slots[7];
+  static PyType_Slot slots[6];
   // TODO(T40540469): Most of functions should be inherited from object.
   // However, inheritance is not supported yet. For now, just set them manually.
   slots[0] = {Py_tp_new, reinterpret_cast<void*>(new_func)};
   slots[1] = {Py_tp_init, reinterpret_cast<void*>(init_func)};
   slots[2] = {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
-  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
-  slots[4] = {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)};
-  slots[5] = {Py_tp_members, reinterpret_cast<void*>(members)};
-  slots[6] = {0, nullptr};
+  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(deallocLeafObject)};
+  slots[4] = {Py_tp_members, reinterpret_cast<void*>(members)};
+  slots[5] = {0, nullptr};
   static PyType_Spec spec;
   spec = {
       "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,
@@ -2280,22 +2259,15 @@ static void createBarTypeWithGetSetObject() {
     reinterpret_cast<BarObject*>(self)->readonly_attribute = 456;
     return 0;
   };
-  destructor dealloc_func = [](PyObject* self) {
-    PyObjectPtr type(PyObject_Type(self));
-    void* slot =
-        PyType_GetSlot(reinterpret_cast<PyTypeObject*>(type.get()), Py_tp_free);
-    return reinterpret_cast<freefunc>(slot)(self);
-  };
-  static PyType_Slot slots[7];
+  static PyType_Slot slots[6];
   // TODO(T40540469): Most of functions should be inherited from object.
   // However, inheritance is not supported yet. For now, just set them manually.
   slots[0] = {Py_tp_new, reinterpret_cast<void*>(new_func)};
   slots[1] = {Py_tp_init, reinterpret_cast<void*>(init_func)};
   slots[2] = {Py_tp_alloc, reinterpret_cast<void*>(PyType_GenericAlloc)},
-  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)};
-  slots[4] = {Py_tp_free, reinterpret_cast<void*>(PyObject_Del)};
-  slots[5] = {Py_tp_getset, reinterpret_cast<void*>(getsets)};
-  slots[6] = {0, nullptr};
+  slots[3] = {Py_tp_dealloc, reinterpret_cast<void*>(deallocLeafObject)};
+  slots[4] = {Py_tp_getset, reinterpret_cast<void*>(getsets)};
+  slots[5] = {0, nullptr};
   static PyType_Spec spec;
   spec = {
       "__main__.Bar", sizeof(BarObject), 0, Py_TPFLAGS_DEFAULT, slots,

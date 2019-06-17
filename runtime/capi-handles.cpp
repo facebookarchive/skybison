@@ -1,5 +1,6 @@
 #include "capi-handles.h"
 
+#include "cpython-data.h"
 #include "cpython-func.h"
 #include "cpython-types.h"
 #include "object-builtins.h"
@@ -269,6 +270,9 @@ void ApiHandle::dispose() {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
+
+  // TODO(T46009838): If a module handle is being disposed, this should register
+  // a weakref to call the module's m_free once's the module is collected
 
   Object key(&scope, asObject());
   Object key_hash(&scope, runtime->hash(*key));

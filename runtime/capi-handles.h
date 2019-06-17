@@ -58,7 +58,7 @@ class ApiHandle : public PyObject {
   }
 
   // Returns the reference count of this object by masking the ManagedBit
-  static word maskedRefcnt(const PyObject* obj) {
+  static word nativeRefcnt(const PyObject* obj) {
     return obj->ob_refcnt & ~kManagedBit;
   }
 

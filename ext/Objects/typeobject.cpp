@@ -1602,6 +1602,13 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (addGetSet(thread, type).isError()) return nullptr;
 
+  // Add the default tp_dealloc slot if none exists
+  if (extensionSlot(type, ExtensionSlot::kDealloc).isNoneType()) {
+    Object default_dealloc(
+        &scope, runtime->newIntFromCPtr(bit_cast<void*>(&PyObject_Del)));
+    setExtensionSlot(type, ExtensionSlot::kDealloc, *default_dealloc);
+  }
+
   return ApiHandle::newReference(thread, *type);
 }
 
