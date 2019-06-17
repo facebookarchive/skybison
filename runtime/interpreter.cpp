@@ -1493,7 +1493,12 @@ HANDLER_INLINE bool Interpreter::doDeleteSubscr(Context* ctx, word) {
   Object delitem(
       &scope, lookupMethod(thread, frame, container, SymbolId::kDunderDelitem));
   if (delitem.isError()) {
-    UNIMPLEMENTED("throw TypeError");
+    if (delitem.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kTypeError,
+                           "'%T' object does not support item deletion",
+                           &container);
+    }
+    return unwind(ctx);
   }
   Object result(&scope, callMethod2(thread, frame, delitem, container, key));
   if (result.isError()) return unwind(ctx);

@@ -1167,6 +1167,27 @@ b[5] = 'foo'
                             LayoutId::kRuntimeError, "foo"));
 }
 
+TEST_F(InterpreterTest, DoDeleteSubscrWithNoDelitemRaisesTypeError) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "del 1[5]"),
+                            LayoutId::kTypeError,
+                            "'int' object does not support item deletion"));
+}
+
+TEST_F(InterpreterTest, DoDeleteSubscrWithDescriptorPropagatesException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class A:
+  def __get__(self, *args):
+    raise RuntimeError("foo")
+
+class B:
+  __delitem__ = A()
+
+b = B()
+del b[5]
+)"),
+                            LayoutId::kRuntimeError, "foo"));
+}
+
 TEST_F(InterpreterTest, SequenceContains) {
   HandleScope scope(thread_);
 
