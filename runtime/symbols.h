@@ -153,7 +153,15 @@ class Runtime;
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
   V(UnderDescrClassMethod, "_descrclassmethod")                                \
+  V(UnderDictBucketInsert, "_dict_bucket_insert")                              \
+  V(UnderDictBucketKey, "_dict_bucket_key")                                    \
+  V(UnderDictBucketUpdate, "_dict_bucket_update")                              \
+  V(UnderDictBucketValue, "_dict_bucket_value")                                \
   V(UnderDictCheck, "_dict_check")                                             \
+  V(UnderDictGetItem, "_dict_getitem")                                         \
+  V(UnderDictLookup, "_dict_lookup")                                           \
+  V(UnderDictLookupNext, "_dict_lookup_next")                                  \
+  V(UnderDictSetItem, "_dict_setitem")                                         \
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \

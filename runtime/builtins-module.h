@@ -43,7 +43,17 @@ class BuiltinsModule {
   static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
+  static RawObject underDictBucketInsert(Thread* thread, Frame* frame,
+                                         word nargs);
+  static RawObject underDictBucketKey(Thread* thread, Frame* frame, word nargs);
+  static RawObject underDictBucketUpdate(Thread* thread, Frame* frame,
+                                         word nargs);
+  static RawObject underDictBucketValue(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underDictCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underDictLookup(Thread* thread, Frame* frame, word nargs);
+  static RawObject underDictLookupNext(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underFrozenSetCheck(Thread* thread, Frame* frame,
                                        word nargs);

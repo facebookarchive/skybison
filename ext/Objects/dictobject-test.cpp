@@ -127,6 +127,157 @@ c = C(4)
   EXPECT_EQ(result, v);
 }
 
+TEST_F(DictExtensionApiTest, GetItemWithSameIdentityReturnsObject) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+  def __hash__(self):
+    return 5
+c = C()
+d = {}
+d[c] = 4
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_False);
+  EXPECT_EQ(PyLong_AsLong(result), 4);
+}
+
+TEST_F(DictExtensionApiTest, GetItemWithDifferentHashReturnsNull) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __init__(self, h):
+      self.h = h
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return True
+  def __hash__(self):
+    return self.h
+
+c = C(1)
+d = {}
+d[C(2)] = 2
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_False);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(DictExtensionApiTest, GetItemWithDunderEqReturnsObject) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return True
+  def __hash__(self):
+    return 5
+
+d = {}
+c = C()
+d[C()] = 4
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(PyLong_AsLong(result), 4);
+}
+
+TEST_F(DictExtensionApiTest, GetItemWithFalseDunderEqReturnsNull) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return False
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[C()] = 4
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(DictExtensionApiTest,
+       GetItemWithExceptionDunderEqSwallowsAndReturnsNull) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    raise ValueError('foo')
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[C()] = 4
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(DictExtensionApiTest, GetItemWithNotImplementedDunderEqReturnsNull) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return NotImplemented
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[C()] = 4
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(result, nullptr);
+}
+
 TEST_F(DictExtensionApiTest, GetItemKnownHashFromNonDictRaisesSystemError) {
   // Pass a non dictionary
   PyObject* result = _PyDict_GetItem_KnownHash(Py_None, Py_None, 0);
@@ -253,6 +404,169 @@ c = C(4)
   PyObjectPtr dict(PyDict_New());
   EXPECT_EQ(PyDict_SetItem(dict, c, v), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithSameIdentitySupersedesValue) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[c] = 0
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr value(PyLong_FromLong(1));
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_False);
+  EXPECT_EQ(value, result);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithDifferentHashInsertsValue) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __init__(self, h):
+      self.h = h
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return True
+  def __hash__(self):
+    return self.h
+
+c = C(1)
+d = {}
+d[C(2)] = 2
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr value(PyLong_FromLong(1));
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_False);
+  EXPECT_EQ(PyDict_Size(dict), 2);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithDunderEqSupersedesValue) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return True
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[C()] = 0
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr value(PyLong_FromLong(1));
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyDict_Size(dict), 1);
+  PyObject* result = PyDict_GetItem(dict, c);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(value, result);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithFalseDunderEqInsertsValue) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return False
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[C()] = 0
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr value(PyLong_FromLong(1));
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(PyDict_Size(dict), 2);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithExceptionDunderEqRaisesException) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    raise ValueError('foo')
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[C()] = 0
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr value(PyLong_FromLong(1));
+  EXPECT_EQ(PyDict_SetItem(dict, c, value), -1);
+  EXPECT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+  PyErr_Clear();
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(PyDict_Size(dict), 1);
+}
+
+TEST_F(DictExtensionApiTest, SetItemWithNotImplementedDunderEqInsertsValue) {
+  ASSERT_EQ(PyRun_SimpleString(R"(
+called_dunder_eq = False
+class C:
+  def __eq__(self, other):
+    global called_dunder_eq
+    called_dunder_eq = True
+    return NotImplemented
+  def __hash__(self):
+    return 5
+
+c = C()
+d = {}
+d[C()] = 0
+)"),
+            0);
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  PyObjectPtr dict(moduleGet("__main__", "d"));
+  PyObjectPtr value(PyLong_FromLong(1));
+  ASSERT_EQ(PyDict_SetItem(dict, c, value), 0);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr called_dunder_eq(moduleGet("__main__", "called_dunder_eq"));
+  ASSERT_EQ(called_dunder_eq, Py_True);
+  EXPECT_EQ(PyDict_Size(dict), 2);
 }
 
 TEST_F(DictExtensionApiTest, SizeWithNonDictReturnsNegative) {

@@ -822,6 +822,10 @@ class Runtime {
   RawObject layoutGetOverflowDict(Thread* thread, const HeapObject& instance,
                                   const Layout& layout);
 
+  // TODO(T46009010): Make this into a private function after making
+  // 'builtins._dict_setitem' into a dict builtin function
+  void dictEnsureCapacity(Thread* thread, const Dict& dict);
+
  private:
   void initializeApiData();
   void initializeExceptionTypes();
@@ -846,9 +850,6 @@ class Runtime {
   RawObject valueHash(RawObject object);
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
-
-  // The given dict gets grown if dict reaches its load factor.
-  void dictEnsureCapacity(Thread* thread, const Dict& dict);
 
   static bool dictHasEmptyItem(const Tuple& data);
 

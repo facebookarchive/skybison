@@ -437,8 +437,109 @@ class _descrclassmethod:
 
 
 @_patch
+def _dict_bucket_insert(self, index, key, key_hash, value):
+    pass
+
+
+@_patch
+def _dict_bucket_key(self, index):
+    pass
+
+
+@_patch
+def _dict_bucket_update(self, index, key, key_hash, value):
+    pass
+
+
+@_patch
+def _dict_bucket_value(self, index):
+    pass
+
+
+@_patch
 def _dict_check(obj) -> bool:
     pass
+
+
+def _dict_getitem(self, key):
+    # Fast path. From the probing strategy, most dictionary lookups will
+    # successfully match the first non-empty bucket it finds or completely
+    # fail to find a single match.
+    key_type = _type(key)
+    key_hash = key_type.__hash__(key)
+    index = _dict_lookup(self, key, key_hash)
+    if index < 0:  # No match in the entire dict
+        return _Unbound
+    other_key = _dict_bucket_key(self, index)
+    if key is other_key:  # Identity has higher precedence than __eq__
+        return _dict_bucket_value(self, index)
+    key_eq = key_type.__eq__
+    res = key_eq(key, other_key)
+    if res and res is not NotImplemented:
+        return _dict_bucket_value(self, index)
+
+    # Slow path. The first non-empty bucket did not contain a match. Restart
+    # the probe at the point where it found the last non-empty bucket until
+    # a match is found or all buckets have been probed
+    index, perturb = _dict_lookup_next(self, index, key, key_hash, _Unbound)
+    while index >= 0:
+        other_key = _dict_bucket_key(self, index)
+        if key is other_key:  # Identity has higher precedence than __eq__
+            return _dict_bucket_value(self, index)
+        res = key_eq(key, other_key)
+        if res and res is not NotImplemented:
+            return _dict_bucket_value(self, index)
+        index, perturb = _dict_lookup_next(self, index, key, key_hash, perturb)
+
+    return _Unbound
+
+
+@_patch
+def _dict_lookup(self, key, key_hash):
+    pass
+
+
+@_patch
+def _dict_lookup_next(self, index, key, key_hash, perturb):
+    pass
+
+
+def _dict_setitem(self, key, value):
+    # Fast path. From the probing strategy, most dictionary lookups will
+    # successfully match the first non-empty bucket it finds or completely
+    # fail to find a single match.
+    key_type = _type(key)
+    key_hash = key_type.__hash__(key)
+    index = _dict_lookup(self, key, key_hash)
+    if index < 0:  # No match in the entire dict
+        _dict_bucket_insert(self, index, key, key_hash, value)
+        return
+    other_key = _dict_bucket_key(self, index)
+    if key is other_key:  # Identity has higher precedence than __eq__
+        _dict_bucket_update(self, index, key, key_hash, value)
+        return
+    key_eq = key_type.__eq__
+    res = key_eq(key, other_key)
+    if res and res is not NotImplemented:
+        _dict_bucket_update(self, index, key, key_hash, value)
+        return
+
+    # Slow path. The first non-empty bucket did not contain a match. Restart
+    # the probe at the point where it found the last non-empty bucket until
+    # a match is found or all buckets have been probed
+    index, perturb = _dict_lookup_next(self, index, key, key_hash, _Unbound)
+    while index >= 0:
+        other_key = _dict_bucket_key(self, index)
+        if key is other_key:  # Identity has higher precedence than __eq__
+            _dict_bucket_update(self, index, key, key_hash, value)
+            return
+        res = key_eq(key, other_key)
+        if res and res is not NotImplemented:
+            _dict_bucket_update(self, index, key, key_hash, value)
+            return
+        index, perturb = _dict_lookup_next(self, index, key, key_hash, perturb)
+
+    _dict_bucket_insert(self, index, key, key_hash, value)
 
 
 # TODO(T43319065): Re-write the non-dict-dict case in managed code in

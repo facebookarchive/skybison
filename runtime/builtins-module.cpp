@@ -97,7 +97,13 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
     {SymbolId::kUnderComplexImag, complexGetImag},
     {SymbolId::kUnderComplexReal, complexGetReal},
+    {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
+    {SymbolId::kUnderDictBucketKey, underDictBucketKey},
+    {SymbolId::kUnderDictBucketUpdate, underDictBucketUpdate},
+    {SymbolId::kUnderDictBucketValue, underDictBucketValue},
     {SymbolId::kUnderDictCheck, underDictCheck},
+    {SymbolId::kUnderDictLookup, underDictLookup},
+    {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
@@ -872,10 +878,171 @@ RawObject BuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
 }
 
+// TODO(T46009010): Move this method body into the dictionary API
+RawObject BuiltinsModule::underDictBucketInsert(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Dict dict(&scope, args.get(0));
+  Tuple data(&scope, dict.data());
+  word index = ~Int::cast(args.get(1)).asWord();
+  Object key(&scope, args.get(2));
+  Object key_hash(&scope, args.get(3));
+  key_hash = SmallInt::fromWordTruncated(
+      Int::cast(intUnderlying(thread, key_hash)).digitAt(0));
+  Object value(&scope, args.get(4));
+  bool has_empty_slot = Dict::Bucket::isEmpty(*data, index);
+  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  dict.setNumItems(dict.numItems() + 1);
+  if (has_empty_slot) {
+    dict.decrementNumUsableItems();
+    thread->runtime()->dictEnsureCapacity(thread, dict);
+  }
+  return NoneType::object();
+}
+
+RawObject BuiltinsModule::underDictBucketKey(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Dict dict(&scope, args.get(0));
+  Tuple data(&scope, dict.data());
+  word index = Int::cast(args.get(1)).asWord();
+  return Dict::Bucket::key(*data, index);
+}
+
+RawObject BuiltinsModule::underDictBucketValue(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Dict dict(&scope, args.get(0));
+  Tuple data(&scope, dict.data());
+  word index = Int::cast(args.get(1)).asWord();
+  return Dict::Bucket::value(*data, index);
+}
+
+RawObject BuiltinsModule::underDictBucketUpdate(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Dict dict(&scope, args.get(0));
+  Tuple data(&scope, dict.data());
+  word index = Int::cast(args.get(1)).asWord();
+  Object key(&scope, args.get(2));
+  Object key_hash(&scope, args.get(3));
+  key_hash = SmallInt::fromWordTruncated(
+      Int::cast(intUnderlying(thread, key_hash)).digitAt(0));
+  Object value(&scope, args.get(4));
+  Dict::Bucket::set(*data, index, *key_hash, *key, *value);
+  return NoneType::object();
+}
+
 RawObject BuiltinsModule::underDictCheck(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfDict(args.get(0)));
+}
+
+RawObject BuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
+                                          word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object dict_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfDict(*dict_obj)) {
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "_dict_lookup expected a 'dict' self but got '%T'", &dict_obj);
+  }
+  Dict dict(&scope, *dict_obj);
+  Object key(&scope, args.get(1));
+  Object key_hash(&scope, args.get(2));
+  if (!runtime->isInstanceOfInt(*key_hash)) {
+    return thread->raiseRequiresType(key_hash, SymbolId::kInt);
+  }
+  key_hash = intUnderlying(thread, key_hash);
+  key_hash = SmallInt::fromWordTruncated(Int::cast(*key_hash).digitAt(0));
+  if (dict.capacity() == 0) {
+    dict.setData(runtime->newTuple(Runtime::kInitialDictCapacity *
+                                   Dict::Bucket::kNumPointers));
+    dict.resetNumUsableItems();
+  }
+  Tuple data(&scope, dict.data());
+  word bucket_mask = Dict::Bucket::bucketMask(data.length());
+  uword perturb = static_cast<uword>(RawSmallInt::cast(*key_hash).value());
+  word index = Dict::Bucket::reduceIndex(data.length(), perturb);
+  // Track the first place where an item could be inserted. This might be
+  // the index zero. Therefore, all negative insertion indexes will be
+  // offset by one to distinguish the zero index.
+  uword insert_idx = 0;
+  for (;;) {
+    if (Dict::Bucket::isEmpty(*data, index)) {
+      if (insert_idx == 0) insert_idx = ~index;
+      return SmallInt::fromWord(insert_idx);
+    }
+    if (Dict::Bucket::isTombstone(*data, index)) {
+      if (insert_idx == 0) insert_idx = ~index;
+    } else {
+      if (key.raw() == Dict::Bucket::key(*data, index).raw()) {
+        return SmallInt::fromWord(index);
+      }
+      if (SmallInt::cast(*key_hash).value() ==
+          SmallInt::cast(Dict::Bucket::hash(*data, index)).value()) {
+        return SmallInt::fromWord(index);
+      }
+    }
+    index = Dict::Bucket::nextBucket(index / Dict::Bucket::kNumPointers,
+                                     bucket_mask, &perturb) *
+            Dict::Bucket::kNumPointers;
+  }
+}
+
+RawObject BuiltinsModule::underDictLookupNext(Thread* thread, Frame* frame,
+                                              word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Dict dict(&scope, args.get(0));
+  Tuple data(&scope, dict.data());
+  word index = Int::cast(args.get(1)).asWord();
+  Object key(&scope, args.get(2));
+  Object key_hash(&scope, args.get(3));
+  key_hash = SmallInt::fromWordTruncated(
+      Int::cast(intUnderlying(thread, key_hash)).digitAt(0));
+  uword perturb;
+  if (args.get(4).isUnbound()) {
+    perturb = static_cast<uword>(RawSmallInt::cast(*key_hash).value());
+  } else {
+    perturb = Int::cast(args.get(4)).asWord();
+  }
+  word bucket_mask = Dict::Bucket::bucketMask(data.length());
+  Tuple result(&scope, thread->runtime()->newTuple(2));
+  word insert_idx = 0;
+  for (;;) {
+    index = Dict::Bucket::nextBucket(index / Dict::Bucket::kNumPointers,
+                                     bucket_mask, &perturb) *
+            Dict::Bucket::kNumPointers;
+    if (Dict::Bucket::isEmpty(*data, index)) {
+      if (insert_idx == 0) insert_idx = ~index;
+      result.atPut(0, SmallInt::fromWord(insert_idx));
+      result.atPut(1, SmallInt::fromWord(perturb));
+      return *result;
+    }
+    if (Dict::Bucket::isTombstone(*data, index)) {
+      if (insert_idx == 0) insert_idx = ~index;
+      continue;
+    }
+    if (key.raw() == Dict::Bucket::key(*data, index).raw()) {
+      result.atPut(0, SmallInt::fromWord(index));
+      result.atPut(1, SmallInt::fromWord(perturb));
+      return *result;
+    }
+    if (SmallInt::cast(*key_hash).value() ==
+        SmallInt::cast(Dict::Bucket::hash(*data, index)).value()) {
+      result.atPut(0, SmallInt::fromWord(index));
+      result.atPut(1, SmallInt::fromWord(perturb));
+      return *result;
+    }
+  }
 }
 
 RawObject BuiltinsModule::underFloatCheck(Thread* thread, Frame* frame,

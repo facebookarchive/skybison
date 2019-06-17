@@ -2020,6 +2020,17 @@ class RawDict::Bucket {
     return *bucket_mask & value;
   }
 
+  static word bucketMask(word data_length) {
+    word nbuckets = data_length / kNumPointers;
+    DCHECK(Utils::isPowerOfTwo(nbuckets), "%ld is not a power of 2", nbuckets);
+    DCHECK(nbuckets > 0, "bucket size <= 0");
+    return nbuckets - 1;
+  }
+
+  static word reduceIndex(word data_length, uword perturb) {
+    return (bucketMask(data_length) & perturb) * kNumPointers;
+  }
+
   static word nextBucket(word current, word bucket_mask, uword* perturb) {
     // Given that current stands for the index of a bucket, this advances
     // current to (5 * bucket + 1 + perturb). Note that it's guaranteed that
