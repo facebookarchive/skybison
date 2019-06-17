@@ -841,10 +841,15 @@ RawObject Interpreter::sequenceContains(Thread* thread, Frame* caller,
   return sequenceIterSearch(thread, caller, value, container);
 }
 
-RawObject Interpreter::isTrue(Thread* thread, RawObject value_obj) {
-  if (value_obj.isBool()) return value_obj;
+HANDLER_INLINE USED RawObject Interpreter::isTrue(Thread* thread,
+                                                  RawObject value_obj) {
+  if (value_obj == Bool::trueObj()) return Bool::trueObj();
+  if (value_obj == Bool::falseObj()) return Bool::falseObj();
   if (value_obj.isNoneType()) return Bool::falseObj();
+  return isTrueSlowPath(thread, value_obj);
+}
 
+RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
   HandleScope scope(thread);
   Object value(&scope, value_obj);
   Object result(&scope, thread->invokeMethod1(value, SymbolId::kDunderBool));
@@ -1269,12 +1274,17 @@ HANDLER_INLINE bool Interpreter::doUnaryNegative(Context* ctx, word) {
 HANDLER_INLINE bool Interpreter::doUnaryNot(Context* ctx, word) {
   Frame* frame = ctx->frame;
   RawObject value = frame->topValue();
-  if (!value.isBool()) {
-    value = isTrue(ctx->thread, value);
-    if (value.isError()) return unwind(ctx);
+  value = isTrue(ctx->thread, value);
+  if (value == Bool::trueObj()) {
+    frame->setTopValue(Bool::falseObj());
+    return false;
   }
-  frame->setTopValue(RawBool::negate(value));
-  return false;
+  if (value == Bool::falseObj()) {
+    frame->setTopValue(Bool::trueObj());
+    return false;
+  }
+  DCHECK(value.isError(), "value must be an error");
+  return unwind(ctx);
 }
 
 HANDLER_INLINE bool Interpreter::doUnaryInvert(Context* ctx, word) {
@@ -2621,31 +2631,33 @@ HANDLER_INLINE bool Interpreter::doJumpForward(Context* ctx, word arg) {
 HANDLER_INLINE bool Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject value = frame->topValue();
-  if (!value.isBool()) {
-    value = isTrue(ctx->thread, value);
-    if (value.isError()) return unwind(ctx);
-  }
-  if (value == Bool::falseObj()) {
+  value = isTrue(ctx->thread, value);
+  if (LIKELY(value == Bool::falseObj())) {
     ctx->pc = arg;
-  } else {
-    frame->popValue();
+    return false;
   }
-  return false;
+  if (value == Bool::trueObj()) {
+    frame->popValue();
+    return false;
+  }
+  DCHECK(value.isError(), "value must be error");
+  return unwind(ctx);
 }
 
 HANDLER_INLINE bool Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject value = frame->topValue();
-  if (!value.isBool()) {
-    value = isTrue(ctx->thread, value);
-    if (value.isError()) return unwind(ctx);
-  }
-  if (value == Bool::trueObj()) {
+  value = isTrue(ctx->thread, value);
+  if (LIKELY(value == Bool::trueObj())) {
     ctx->pc = arg;
-  } else {
-    frame->popValue();
+    return false;
   }
-  return false;
+  if (value == Bool::falseObj()) {
+    frame->popValue();
+    return false;
+  }
+  DCHECK(value.isError(), "value must be error");
+  return unwind(ctx);
 }
 
 HANDLER_INLINE bool Interpreter::doJumpAbsolute(Context* ctx, word arg) {
@@ -2654,29 +2666,31 @@ HANDLER_INLINE bool Interpreter::doJumpAbsolute(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
-  RawObject value = frame->popValue();
-  if (!value.isBool()) {
-    value = isTrue(ctx->thread, value);
-    if (value.isError()) return unwind(ctx);
-  }
-  if (value == Bool::falseObj()) {
+  RawObject value = ctx->frame->popValue();
+  value = isTrue(ctx->thread, value);
+  if (LIKELY(value == Bool::falseObj())) {
     ctx->pc = arg;
+    return false;
   }
-  return false;
+  if (value == Bool::trueObj()) {
+    return false;
+  }
+  DCHECK(value.isError(), "value must be error");
+  return unwind(ctx);
 }
 
 HANDLER_INLINE bool Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
-  Frame* frame = ctx->frame;
-  RawObject value = frame->popValue();
-  if (!value.isBool()) {
-    value = isTrue(ctx->thread, value);
-    if (value.isError()) return unwind(ctx);
-  }
-  if (value == Bool::trueObj()) {
+  RawObject value = ctx->frame->popValue();
+  value = isTrue(ctx->thread, value);
+  if (LIKELY(value == Bool::trueObj())) {
     ctx->pc = arg;
+    return false;
   }
-  return false;
+  if (value == Bool::falseObj()) {
+    return false;
+  }
+  DCHECK(value.isError(), "value must be error");
+  return unwind(ctx);
 }
 
 HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {

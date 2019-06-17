@@ -451,6 +451,9 @@ class Interpreter {
   // negative index.
   static bool forIterUpdateCache(Context* ctx, word arg, word index);
 
+  // Slow path for isTrue check. Does a __bool__ method call, etc.
+  static RawObject isTrueSlowPath(Thread* thread, RawObject value_obj);
+
   // Given a non-Function object in `callable`, attempt to normalize it to a
   // Function by either unpacking a BoundMethod or looking up the object's
   // __call__ method, iterating multiple times if necessary.
