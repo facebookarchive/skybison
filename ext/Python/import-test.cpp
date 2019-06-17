@@ -49,7 +49,7 @@ TEST_F(ImportExtensionApiTest,
 }
 
 TEST_F(ImportExtensionApiTest, ImportInvalidModuleReturnsNull) {
-  PyObject* module = PyImport_ImportModule("foo");
+  PyObject* module = PyImport_ImportModule("this_file_should_not_exist");
   ASSERT_EQ(module, nullptr);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ModuleNotFoundError));
