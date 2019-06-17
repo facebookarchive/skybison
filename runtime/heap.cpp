@@ -89,7 +89,7 @@ RawObject Heap::createType(LayoutId metaclass_id) {
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawType>();
   result.setHeader(Header::from(RawType::kSize / kPointerSize, 0, metaclass_id,
-                                ObjectFormat::kObjectInstance));
+                                ObjectFormat::kObjects));
   result.initialize(RawType::kSize, NoneType::object());
   DCHECK(Thread::current()->runtime()->isInstanceOfType(result),
          "Invalid Type");
@@ -100,9 +100,8 @@ RawObject Heap::createComplex(double real, double imag) {
   RawObject raw = allocate(allocationSize<RawComplex>(), RawHeader::kSize);
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawComplex>();
-  result.setHeader(Header::from(RawComplex::kSize / kPointerSize, 0,
-                                LayoutId::kComplex,
-                                ObjectFormat::kDataInstance));
+  result.setHeader(Header::from(RawComplex::kSize, 0, LayoutId::kComplex,
+                                ObjectFormat::kData));
   result.initialize(real, imag);
   return Complex::cast(result);
 }
@@ -111,8 +110,8 @@ RawObject Heap::createFloat(double value) {
   RawObject raw = allocate(allocationSize<RawFloat>(), RawHeader::kSize);
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawFloat>();
-  result.setHeader(Header::from(RawFloat::kSize / kPointerSize, 0,
-                                LayoutId::kFloat, ObjectFormat::kDataInstance));
+  result.setHeader(
+      Header::from(RawFloat::kSize, 0, LayoutId::kFloat, ObjectFormat::kData));
   result.initialize(value);
   return Float::cast(result);
 }
@@ -121,9 +120,8 @@ RawObject Heap::createEllipsis() {
   RawObject raw = allocate(allocationSize<RawEllipsis>(), RawHeader::kSize);
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawEllipsis>();
-  result.setHeader(Header::from(RawEllipsis::kSize / kPointerSize, 0,
-                                LayoutId::kEllipsis,
-                                ObjectFormat::kDataInstance));
+  result.setHeader(Header::from(RawEllipsis::kSize, 0, LayoutId::kEllipsis,
+                                ObjectFormat::kData));
   return Ellipsis::cast(result);
 }
 
@@ -133,7 +131,7 @@ RawObject Heap::createInstance(LayoutId layout_id, word num_attributes) {
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawInstance>();
   result.setHeaderAndOverflow(num_attributes, 0, layout_id,
-                              ObjectFormat::kObjectInstance);
+                              ObjectFormat::kObjects);
   result.initialize(num_attributes * kPointerSize, NoneType::object());
   return result;
 }
@@ -145,7 +143,7 @@ RawObject Heap::createLargeBytes(word length) {
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawLargeBytes>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kLargeBytes,
-                              ObjectFormat::kDataArray8);
+                              ObjectFormat::kData);
   return LargeBytes::cast(result);
 }
 
@@ -155,8 +153,8 @@ RawObject Heap::createLargeInt(word num_digits) {
   RawObject raw = allocate(size, LargeInt::headerSize(num_digits));
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawLargeInt>();
-  result.setHeaderAndOverflow(num_digits, 0, LayoutId::kLargeInt,
-                              ObjectFormat::kDataArray64);
+  result.setHeaderAndOverflow(num_digits * kWordSize, 0, LayoutId::kLargeInt,
+                              ObjectFormat::kData);
   return LargeInt::cast(result);
 }
 
@@ -168,7 +166,7 @@ RawObject Heap::createLargeStr(word length) {
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawLargeStr>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kLargeStr,
-                              ObjectFormat::kDataArray8);
+                              ObjectFormat::kData);
   return LargeStr::cast(result);
 }
 
@@ -178,7 +176,7 @@ RawObject Heap::createLayout(LayoutId layout_id) {
   auto result = raw.rawCast<RawLayout>();
   result.setHeader(Header::from(RawLayout::kSize / kPointerSize,
                                 static_cast<word>(layout_id), LayoutId::kLayout,
-                                ObjectFormat::kObjectInstance));
+                                ObjectFormat::kObjects));
   result.initialize(RawLayout::kSize, NoneType::object());
   return Layout::cast(result);
 }
@@ -190,7 +188,7 @@ RawObject Heap::createMutableBytes(word length) {
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawMutableBytes>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kMutableBytes,
-                              ObjectFormat::kDataArray8);
+                              ObjectFormat::kData);
   return MutableBytes::cast(result);
 }
 
@@ -201,7 +199,7 @@ RawObject Heap::createTuple(word length, RawObject value) {
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawTuple>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kTuple,
-                              ObjectFormat::kObjectArray);
+                              ObjectFormat::kObjects);
   result.initialize(length * kPointerSize, value);
   return Tuple::cast(result);
 }
@@ -210,8 +208,8 @@ RawObject Heap::createRange() {
   RawObject raw = allocate(allocationSize<RawRange>(), RawHeader::kSize);
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawRange>();
-  result.setHeader(Header::from(RawRange::kSize / kPointerSize, 0,
-                                LayoutId::kRange, ObjectFormat::kDataInstance));
+  result.setHeader(
+      Header::from(RawRange::kSize, 0, LayoutId::kRange, ObjectFormat::kData));
   return Range::cast(result);
 }
 

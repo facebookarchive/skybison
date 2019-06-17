@@ -534,18 +534,10 @@ class RawSmallInt : public RawObject {
 };
 
 enum class ObjectFormat {
-  // Arrays that do not contain objects, one per element width
-  kDataArray8 = 0,
-  kDataArray16 = 1,
-  kDataArray32 = 2,
-  kDataArray64 = 3,
-  kDataArray128 = 4,
-  // Arrays that contain objects
-  kObjectArray = 5,
   // Instances that do not contain objects
-  kDataInstance = 6,
+  kData = 0,
   // Instances that contain objects
-  kObjectInstance = 7,
+  kObjects = 1,
 };
 
 /**
@@ -562,9 +554,9 @@ enum class ObjectFormat {
  * Name      Size  Description
  * ----------------------------------------------------------------------------
  * Tag          3   tag for a header object
- * Format       3   enumeration describing the object encoding
+ * Format       1   enumeration describing the object encoding
  * LayoutId    20   identifier for the layout, allowing 2^20 unique layouts
- * Hash        30   bits to use for an identity hash code
+ * Hash        32   bits to use for an identity hash code
  * Count        8   number of array elements or instance variables
  */
 class RawHeader : public RawObject {
@@ -585,7 +577,7 @@ class RawHeader : public RawObject {
                         ObjectFormat format);
 
   // Layout.
-  static const int kFormatBits = 3;
+  static const int kFormatBits = 1;
   static const int kFormatOffset = kPrimaryTagBits;
   static const uword kFormatMask = (1 << kFormatBits) - 1;
 
@@ -593,13 +585,16 @@ class RawHeader : public RawObject {
   static const int kLayoutIdOffset = kFormatOffset + kFormatBits;
   static const uword kLayoutIdMask = (1 << kLayoutIdBits) - 1;
 
-  static const int kHashCodeBits = 30;
+  static const int kHashCodeBits = 32;
   static const int kHashCodeOffset = kLayoutIdOffset + kLayoutIdBits;
-  static const uword kHashCodeMask = (1 << kHashCodeBits) - 1U;
+  static const uword kHashCodeMask = (1UL << kHashCodeBits) - 1;
 
   static const int kCountBits = 8;
   static const int kCountOffset = kHashCodeOffset + kHashCodeBits;
   static const uword kCountMask = (1 << kCountBits) - 1;
+
+  static const int kTotalBits = kCountOffset + kCountBits;
+  static_assert(kTotalBits == 64, "Header should be exactly 64 bits");
 
   static const int kCountOverflowFlag = (1 << kCountBits) - 1;
   static const int kCountMax = kCountOverflowFlag - 1;
@@ -3535,24 +3530,10 @@ inline word RawHeapObject::size() const {
   word count = headerCountOrOverflow();
   word result = headerSize(count);
   switch (header().format()) {
-    case ObjectFormat::kDataArray8:
+    case ObjectFormat::kData:
       result += count;
       break;
-    case ObjectFormat::kDataArray16:
-      result += count * 2;
-      break;
-    case ObjectFormat::kDataArray32:
-      result += count * 4;
-      break;
-    case ObjectFormat::kDataArray64:
-      result += count * 8;
-      break;
-    case ObjectFormat::kDataArray128:
-      result += count * 16;
-      break;
-    case ObjectFormat::kObjectArray:
-    case ObjectFormat::kDataInstance:
-    case ObjectFormat::kObjectInstance:
+    case ObjectFormat::kObjects:
       result += count * kPointerSize;
       break;
   }
@@ -3575,8 +3556,7 @@ inline void RawHeapObject::initialize(word size, RawObject value) const {
 }
 
 inline bool RawHeapObject::isRoot() const {
-  return header().format() == ObjectFormat::kObjectArray ||
-         header().format() == ObjectFormat::kObjectInstance;
+  return header().format() == ObjectFormat::kObjects;
 }
 
 inline bool RawHeapObject::isForwarding() const {
@@ -4194,7 +4174,9 @@ inline void RawLargeInt::digitAtPut(word index, uword digit) const {
   reinterpret_cast<uword*>(address() + kValueOffset)[index] = digit;
 }
 
-inline word RawLargeInt::numDigits() const { return headerCountOrOverflow(); }
+inline word RawLargeInt::numDigits() const {
+  return headerCountOrOverflow() / kWordSize;
+}
 
 inline word RawLargeInt::allocationSize(word num_digits) {
   word size = headerSize(num_digits) + num_digits * kPointerSize;
