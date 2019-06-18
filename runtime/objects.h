@@ -505,6 +505,7 @@ class RawSmallInt : public RawObject {
   void* asCPtr() const;
   // Converts a `SmallInt` created by `fromAlignedCPtr()` back to a pointer.
   void* asAlignedCPtr() const;
+  word asReinterpretedWord() const;
 
   // If this fits in T, get its value as a T. If not, indicate what went wrong.
   template <typename T>
@@ -515,6 +516,11 @@ class RawSmallInt : public RawObject {
   // Conversion.
   static RawSmallInt fromWord(word value);
   static RawSmallInt fromWordTruncated(word value);
+
+  // Reinterpret a word value with the lowest `kSmallIntTagBits` cleared
+  // directly as a `RawSmallInt` value, without performing the usual shift.
+  static RawSmallInt fromReinterpretedWord(word value);
+
   // Create a `SmallInt` from an aligned C pointer.
   // This is slightly faster than `Runtime::newIntFromCPtr()` but only works for
   // pointers with an alignment of at least `2**kSmallIntTagBits`.
@@ -3278,7 +3284,11 @@ inline void* RawSmallInt::asCPtr() const {
 }
 
 inline void* RawSmallInt::asAlignedCPtr() const {
-  return reinterpret_cast<void*>(raw());
+  return reinterpret_cast<void*>(asReinterpretedWord());
+}
+
+inline word RawSmallInt::asReinterpretedWord() const {
+  return static_cast<word>(raw());
 }
 
 template <typename T>
@@ -3313,9 +3323,12 @@ inline RawSmallInt RawSmallInt::fromWordTruncated(word value) {
   return cast(RawObject{static_cast<uword>(value) << kSmallIntTagBits});
 }
 
+inline RawSmallInt RawSmallInt::fromReinterpretedWord(word value) {
+  return cast(RawObject{static_cast<uword>(value)});
+}
+
 inline RawSmallInt RawSmallInt::fromAlignedCPtr(void* ptr) {
-  uword raw = reinterpret_cast<uword>(ptr);
-  return cast(RawObject(raw));
+  return fromReinterpretedWord(reinterpret_cast<word>(ptr));
 }
 
 // RawHeader

@@ -261,7 +261,9 @@ class Frame {
   static const int kFunctionOffsetFromLocals = 1;
   static const int kImplicitGlobalsOffsetFromLocals = 2;
 
-  static const word kFinishedGeneratorPC = RawSmallInt::kMinValue;
+  // A large PC value represents finished generators. It must be an even number
+  // to fit the constraints of `setVirtualPC()`/`virtualPD()`.
+  static const word kFinishedGeneratorPC = RawSmallInt::kMaxValue - 1;
   static const word kCodeUnitSize = 2;
 
  private:
@@ -321,11 +323,13 @@ inline RawFunction Frame::function() {
 }
 
 inline word Frame::virtualPC() {
-  return SmallInt::cast(at(kVirtualPCOffset)).value();
+  return SmallInt::cast(at(kVirtualPCOffset)).asReinterpretedWord();
 }
 
 inline void Frame::setVirtualPC(word pc) {
-  atPut(kVirtualPCOffset, SmallInt::fromWord(pc));
+  // We re-interpret the PC value as a small int. This works because it must
+  // be an even number and naturally has the lowest bit cleared.
+  atPut(kVirtualPCOffset, SmallInt::fromReinterpretedWord(pc));
 }
 
 inline RawObject Frame::implicitGlobals() {
