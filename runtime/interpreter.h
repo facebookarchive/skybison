@@ -439,6 +439,16 @@ class Interpreter {
   // Slow path for isTrue check. Does a __bool__ method call, etc.
   static RawObject isTrueSlowPath(Thread* thread, RawObject value_obj);
 
+  // Perform a method call at the end of an opcode handler. The benefit over
+  // using `callMethod1()` is that we avoid recursively starting a new
+  // interpreter loop when the target is a python function.
+  static bool tailcallMethod1(Context* ctx, RawObject method, RawObject self);
+
+  // Call method with 2 parameters at the end of an opcode handler. See
+  // `tailcallMethod1()`.
+  static bool tailcallMethod2(Context* ctx, RawObject method, RawObject self,
+                              RawObject arg1);
+
   // Given a non-Function object in `callable`, attempt to normalize it to a
   // Function by either unpacking a BoundMethod or looking up the object's
   // __call__ method, iterating multiple times if necessary.

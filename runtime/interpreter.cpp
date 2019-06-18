@@ -429,6 +429,33 @@ RawObject Interpreter::callMethod4(Thread* thread, Frame* caller,
   return call(thread, caller, nargs);
 }
 
+HANDLER_INLINE
+bool Interpreter::tailcallMethod1(Context* ctx, RawObject method,
+                                  RawObject self) {
+  word nargs = 0;
+  Frame* frame = ctx->frame;
+  frame->pushValue(method);
+  if (method.isFunction()) {
+    frame->pushValue(self);
+    nargs++;
+  }
+  return doCallFunction(ctx, nargs);
+}
+
+HANDLER_INLINE
+bool Interpreter::tailcallMethod2(Context* ctx, RawObject method,
+                                  RawObject self, RawObject arg1) {
+  word nargs = 1;
+  Frame* frame = ctx->frame;
+  frame->pushValue(method);
+  if (method.isFunction()) {
+    frame->pushValue(self);
+    nargs++;
+  }
+  frame->pushValue(arg1);
+  return doCallFunction(ctx, nargs);
+}
+
 static RawObject raiseUnaryOpTypeError(Thread* thread, const Object& object,
                                        SymbolId selector) {
   HandleScope scope(thread);
@@ -1371,7 +1398,7 @@ HANDLER_INLINE bool Interpreter::doGetAiter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
-  Object obj(&scope, frame->topValue());
+  Object obj(&scope, frame->popValue());
   Object method(&scope,
                 lookupMethod(thread, frame, obj, SymbolId::kDunderAiter));
   if (method.isError()) {
@@ -1380,17 +1407,14 @@ HANDLER_INLINE bool Interpreter::doGetAiter(Context* ctx, word) {
         "'async for' requires an object with __aiter__ method");
     return unwind(ctx);
   }
-  Object aiter(&scope, callMethod1(thread, frame, method, obj));
-  if (aiter.isError()) return unwind(ctx);
-  frame->setTopValue(*aiter);
-  return false;
+  return tailcallMethod1(ctx, *method, *obj);
 }
 
 HANDLER_INLINE bool Interpreter::doGetAnext(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
-  Object obj(&scope, frame->topValue());
+  Object obj(&scope, frame->popValue());
   Object anext(&scope,
                lookupMethod(thread, frame, obj, SymbolId::kDunderAnext));
   if (anext.isError()) {
@@ -1412,11 +1436,7 @@ HANDLER_INLINE bool Interpreter::doGetAnext(Context* ctx, word) {
         "'async for' received an invalid object from __anext__");
     return unwind(ctx);
   }
-  Object aiter(&scope, callMethod1(thread, frame, await, awaitable));
-  if (aiter.isError()) return unwind(ctx);
-
-  frame->setTopValue(*aiter);
-  return false;
+  return tailcallMethod1(ctx, *await, *obj);
 }
 
 HANDLER_INLINE bool Interpreter::doBeforeAsyncWith(Context* ctx, word) {
@@ -1440,10 +1460,7 @@ HANDLER_INLINE bool Interpreter::doBeforeAsyncWith(Context* ctx, word) {
   if (enter.isError()) {
     UNIMPLEMENTED("throw TypeError");
   }
-  Object result(&scope, callMethod1(thread, frame, enter, manager));
-  if (result.isError()) return unwind(ctx);
-  frame->pushValue(*result);
-  return false;
+  return tailcallMethod1(ctx, *enter, *manager);
 }
 
 HANDLER_INLINE bool Interpreter::doInplaceAdd(Context* ctx, word) {
@@ -1501,10 +1518,7 @@ HANDLER_INLINE bool Interpreter::doDeleteSubscr(Context* ctx, word) {
     }
     return unwind(ctx);
   }
-  Object result(&scope, callMethod2(thread, frame, delitem, container, key));
-  if (result.isError()) return unwind(ctx);
-  frame->pushValue(*result);
-  return false;
+  return tailcallMethod2(ctx, *delitem, *container, *key);
 }
 
 HANDLER_INLINE bool Interpreter::doBinaryLshift(Context* ctx, word) {
@@ -1535,17 +1549,14 @@ HANDLER_INLINE bool Interpreter::doGetIter(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
-  Object iterable(&scope, frame->topValue());
+  Object iterable(&scope, frame->popValue());
   Object method(&scope,
                 lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (method.isError()) {
     thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
     return unwind(ctx);
   }
-  Object iterator(&scope, callMethod1(thread, frame, method, iterable));
-  if (iterator.isError()) return unwind(ctx);
-  frame->setTopValue(*iterator);
-  return false;
+  return tailcallMethod1(ctx, *method, *iterable);
 }
 
 HANDLER_INLINE bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
@@ -1568,16 +1579,14 @@ HANDLER_INLINE bool Interpreter::doGetYieldFromIter(Context* ctx, word) {
     return false;
   }
 
+  frame->dropValues(1);
   Object method(&scope,
                 lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (method.isError()) {
     thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
     return unwind(ctx);
   }
-  Object iterator(&scope, callMethod1(thread, frame, method, iterable));
-  if (iterator.isError()) return unwind(ctx);
-  frame->setTopValue(*iterator);
-  return false;
+  return tailcallMethod1(ctx, *method, *iterable);
 }
 
 HANDLER_INLINE bool Interpreter::doPrintExpr(Context* ctx, word) {
@@ -1648,7 +1657,7 @@ HANDLER_INLINE bool Interpreter::doGetAwaitable(Context* ctx, word) {
   Thread* thread = ctx->thread;
   HandleScope scope(thread);
   Frame* frame = ctx->frame;
-  Object obj(&scope, frame->topValue());
+  Object obj(&scope, frame->popValue());
 
   // TODO(T33628943): Check if `obj` is a native or generator-based
   // coroutine and if it is, no need to call __await__
@@ -1659,11 +1668,7 @@ HANDLER_INLINE bool Interpreter::doGetAwaitable(Context* ctx, word) {
                          "object can't be used in 'await' expression");
     return unwind(ctx);
   }
-  Object iter(&scope, callMethod1(thread, frame, await, obj));
-  if (iter.isError()) return unwind(ctx);
-
-  frame->setTopValue(*iter);
-  return false;
+  return tailcallMethod1(ctx, *await, *obj);
 }
 
 HANDLER_INLINE bool Interpreter::doInplaceLshift(Context* ctx, word) {
@@ -2585,12 +2590,14 @@ HANDLER_INLINE bool Interpreter::doImportName(Context* ctx, word arg) {
   ValueCell dunder_import_cell(&scope, runtime->dunderImport());
   DCHECK(!dunder_import_cell.isUnbound(), "builtins module not initialized");
   Object dunder_import(&scope, dunder_import_cell.value());
-  Object result(&scope,
-                callFunction5(thread, frame, dunder_import, name,
-                              dict_no_value_cells, locals, fromlist, level));
-  if (result.isError()) return unwind(ctx);
-  frame->pushValue(*result);
-  return false;
+
+  frame->pushValue(*dunder_import);
+  frame->pushValue(*name);
+  frame->pushValue(*dict_no_value_cells);
+  frame->pushValue(*locals);
+  frame->pushValue(*fromlist);
+  frame->pushValue(*level);
+  return doCallFunction(ctx, 5);
 }
 
 HANDLER_INLINE bool Interpreter::doImportFrom(Context* ctx, word arg) {
