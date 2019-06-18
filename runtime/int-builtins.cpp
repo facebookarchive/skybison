@@ -89,7 +89,7 @@ RawObject convertBoolToInt(RawObject object) {
 }
 
 static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
-                             RawObject (*op)(Thread* thread, const Int& left,
+                             RawObject (*op)(Thread* t, const Int& left,
                                              const Int& right)) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
@@ -108,7 +108,7 @@ static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
 }
 
 static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
-                            RawObject (*op)(Thread* thread, const Int& self)) {
+                            RawObject (*op)(Thread* t, const Int& self)) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -119,77 +119,78 @@ static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
   return op(thread, self);
 }
 
-RawObject IntBuiltins::dunderInt(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread*, const Int& self) -> RawObject {
-    if (self.isBool()) {
-      return convertBoolToInt(*self);
-    }
-    return *self;
+RawObject IntBuiltins::dunderInt(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(thread, frame, nargs,
+                    [](Thread*, const Int& self) -> RawObject {
+                      if (self.isBool()) {
+                        return convertBoolToInt(*self);
+                      }
+                      return *self;
+                    });
+}
+
+RawObject IntBuiltins::bitLength(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+    return t->runtime()->newInt(self.bitLength());
   });
 }
 
-RawObject IntBuiltins::bitLength(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
-    return thread->runtime()->newInt(self.bitLength());
-  });
-}
-
-RawObject IntBuiltins::dunderAbs(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs,
-                    [](Thread* thread, const Int& self) -> RawObject {
+RawObject IntBuiltins::dunderAbs(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(thread, frame, nargs,
+                    [](Thread* t, const Int& self) -> RawObject {
                       if (self.isNegative()) {
-                        return thread->runtime()->intNegate(thread, self);
+                        return t->runtime()->intNegate(t, self);
                       }
                       if (self.isBool()) return convertBoolToInt(*self);
                       return *self;
                     });
 }
 
-RawObject IntBuiltins::dunderAdd(Thread* t, Frame* frame, word nargs) {
-  return intBinaryOp(t, frame, nargs,
-                     [](Thread* thread, const Int& left, const Int& right) {
-                       return thread->runtime()->intAdd(thread, left, right);
+RawObject IntBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+  return intBinaryOp(thread, frame, nargs,
+                     [](Thread* t, const Int& left, const Int& right) {
+                       return t->runtime()->intAdd(t, left, right);
                      });
 }
 
-RawObject IntBuiltins::dunderAnd(Thread* t, Frame* frame, word nargs) {
-  return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
-        return thread->runtime()->intBinaryAnd(thread, left, right);
+RawObject IntBuiltins::dunderAnd(Thread* thread, Frame* frame, word nargs) {
+  return intBinaryOp(thread, frame, nargs,
+                     [](Thread* t, const Int& left, const Int& right) {
+                       return t->runtime()->intBinaryAnd(t, left, right);
+                     });
+}
+
+RawObject IntBuiltins::dunderBool(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(
+      thread, frame, nargs, [](Thread*, const Int& self) -> RawObject {
+        if (self.isBool()) return *self;
+        if (self.isSmallInt()) {
+          return Bool::fromBool(SmallInt::cast(*self).value() != 0);
+        }
+        DCHECK(self.isLargeInt(), "remaining case should be LargeInt");
+        return Bool::trueObj();
       });
 }
 
-RawObject IntBuiltins::dunderBool(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread*, const Int& self) -> RawObject {
-    if (self.isBool()) return *self;
-    if (self.isSmallInt()) {
-      return Bool::fromBool(SmallInt::cast(*self).value() != 0);
-    }
-    DCHECK(self.isLargeInt(), "remaining case should be LargeInt");
-    return Bool::trueObj();
-  });
-}
-
-RawObject IntBuiltins::dunderEq(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderEq(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
+      thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) == 0);
       });
 }
 
-RawObject IntBuiltins::dunderDivmod(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderDivmod(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
-      [](Thread* thread, const Int& left, const Int& right) -> RawObject {
-        HandleScope scope(thread);
+      thread, frame, nargs,
+      [](Thread* t, const Int& left, const Int& right) -> RawObject {
+        HandleScope scope(t);
         Object quotient(&scope, NoneType::object());
         Object remainder(&scope, NoneType::object());
-        Runtime* runtime = thread->runtime();
-        if (!runtime->intDivideModulo(thread, left, right, &quotient,
-                                      &remainder)) {
-          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
-                                      "integer division or modulo by zero");
+        Runtime* runtime = t->runtime();
+        if (!runtime->intDivideModulo(t, left, right, &quotient, &remainder)) {
+          return t->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                 "integer division or modulo by zero");
         }
         Tuple result(&scope, runtime->newTuple(2));
         result.atPut(0, *quotient);
@@ -198,40 +199,40 @@ RawObject IntBuiltins::dunderDivmod(Thread* t, Frame* frame, word nargs) {
       });
 }
 
-RawObject IntBuiltins::dunderFloat(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
-    HandleScope scope(thread);
+RawObject IntBuiltins::dunderFloat(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+    HandleScope scope(t);
     double value = 0.0;
-    Object maybe_error(&scope, convertIntToDouble(thread, self, &value));
+    Object maybe_error(&scope, convertIntToDouble(t, self, &value));
     if (!maybe_error.isNoneType()) return *maybe_error;
-    return thread->runtime()->newFloat(value);
+    return t->runtime()->newFloat(value);
   });
 }
 
-RawObject IntBuiltins::dunderInvert(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
-    return thread->runtime()->intInvert(thread, self);
+RawObject IntBuiltins::dunderInvert(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+    return t->runtime()->intInvert(t, self);
   });
 }
 
-RawObject IntBuiltins::dunderFloordiv(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderFloordiv(Thread* thread, Frame* frame,
+                                      word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
-      [](Thread* thread, const Int& left, const Int& right) -> RawObject {
-        HandleScope scope(thread);
+      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
+        HandleScope scope(t);
         Object quotient(&scope, NoneType::object());
-        if (!thread->runtime()->intDivideModulo(thread, left, right, &quotient,
-                                                nullptr)) {
-          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
-                                      "integer division or modulo by zero");
+        if (!t->runtime()->intDivideModulo(t, left, right, &quotient,
+                                           nullptr)) {
+          return t->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                 "integer division or modulo by zero");
         }
         return *quotient;
       });
 }
 
-RawObject IntBuiltins::dunderLe(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
+      thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) <= 0);
       });
@@ -309,121 +310,118 @@ RawObject IntBuiltins::toBytes(Thread* thread, Frame* frame, word nargs) {
                      Bool::cast(args.get(3)).value());
 }
 
-RawObject IntBuiltins::dunderLt(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderLt(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
+      thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) < 0);
       });
 }
 
-RawObject IntBuiltins::dunderGe(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderGe(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
+      thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) >= 0);
       });
 }
 
-RawObject IntBuiltins::dunderGt(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderGt(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
+      thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) > 0);
       });
 }
 
-RawObject IntBuiltins::dunderMod(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderMod(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
-      [](Thread* thread, const Int& left, const Int& right) -> RawObject {
-        HandleScope scope(thread);
+      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
+        HandleScope scope(t);
         Object remainder(&scope, NoneType::object());
-        if (!thread->runtime()->intDivideModulo(thread, left, right, nullptr,
-                                                &remainder)) {
-          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
-                                      "integer division or modulo by zero");
+        if (!t->runtime()->intDivideModulo(t, left, right, nullptr,
+                                           &remainder)) {
+          return t->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                 "integer division or modulo by zero");
         }
         return *remainder;
       });
 }
 
-RawObject IntBuiltins::dunderMul(Thread* t, Frame* frame, word nargs) {
-  return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
-        return thread->runtime()->intMultiply(thread, left, right);
-      });
+RawObject IntBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
+  return intBinaryOp(thread, frame, nargs,
+                     [](Thread* t, const Int& left, const Int& right) {
+                       return t->runtime()->intMultiply(t, left, right);
+                     });
 }
 
-RawObject IntBuiltins::dunderNe(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderNe(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs,
+      thread, frame, nargs,
       [](Thread*, const Int& left, const Int& right) -> RawObject {
         return Bool::fromBool(left.compare(*right) != 0);
       });
 }
 
-RawObject IntBuiltins::dunderNeg(Thread* t, Frame* frame, word nargs) {
-  return intUnaryOp(t, frame, nargs, [](Thread* thread, const Int& self) {
-    return thread->runtime()->intNegate(thread, self);
+RawObject IntBuiltins::dunderNeg(Thread* thread, Frame* frame, word nargs) {
+  return intUnaryOp(thread, frame, nargs, [](Thread* t, const Int& self) {
+    return t->runtime()->intNegate(t, self);
   });
 }
 
-RawObject IntBuiltins::dunderRshift(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderRshift(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         if (right.isNegative()) {
-          return thread->raiseWithFmt(LayoutId::kValueError,
-                                      "negative shift count");
+          return t->raiseWithFmt(LayoutId::kValueError, "negative shift count");
         }
-        return thread->runtime()->intBinaryRshift(thread, left, right);
+        return t->runtime()->intBinaryRshift(t, left, right);
       });
 }
 
-RawObject IntBuiltins::dunderSub(Thread* t, Frame* frame, word nargs) {
-  return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
-        return thread->runtime()->intSubtract(thread, left, right);
-      });
+RawObject IntBuiltins::dunderSub(Thread* thread, Frame* frame, word nargs) {
+  return intBinaryOp(thread, frame, nargs,
+                     [](Thread* t, const Int& left, const Int& right) {
+                       return t->runtime()->intSubtract(t, left, right);
+                     });
 }
 
-RawObject IntBuiltins::dunderTrueDiv(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderTrueDiv(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         if (right.isZero()) {
-          return thread->raiseWithFmt(LayoutId::kZeroDivisionError,
-                                      "division by zero");
+          return t->raiseWithFmt(LayoutId::kZeroDivisionError,
+                                 "division by zero");
         }
         if (left.isLargeInt() || right.isLargeInt()) {
           UNIMPLEMENTED("true division of LargeInts");  // TODO(T40072578)
         }
-        return thread->runtime()->newFloat(static_cast<double>(left.asWord()) /
-                                           right.asWord());
+        return t->runtime()->newFloat(static_cast<double>(left.asWord()) /
+                                      right.asWord());
       });
 }
 
-RawObject IntBuiltins::dunderXor(Thread* t, Frame* frame, word nargs) {
-  return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
-        return thread->runtime()->intBinaryXor(thread, left, right);
-      });
+RawObject IntBuiltins::dunderXor(Thread* thread, Frame* frame, word nargs) {
+  return intBinaryOp(thread, frame, nargs,
+                     [](Thread* t, const Int& left, const Int& right) {
+                       return t->runtime()->intBinaryXor(t, left, right);
+                     });
 }
 
-RawObject IntBuiltins::dunderOr(Thread* t, Frame* frame, word nargs) {
-  return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
-        return thread->runtime()->intBinaryOr(thread, left, right);
-      });
+RawObject IntBuiltins::dunderOr(Thread* thread, Frame* frame, word nargs) {
+  return intBinaryOp(thread, frame, nargs,
+                     [](Thread* t, const Int& left, const Int& right) {
+                       return t->runtime()->intBinaryOr(t, left, right);
+                     });
 }
 
-RawObject IntBuiltins::dunderLshift(Thread* t, Frame* frame, word nargs) {
+RawObject IntBuiltins::dunderLshift(Thread* thread, Frame* frame, word nargs) {
   return intBinaryOp(
-      t, frame, nargs, [](Thread* thread, const Int& left, const Int& right) {
+      thread, frame, nargs, [](Thread* t, const Int& left, const Int& right) {
         if (right.isNegative()) {
-          return thread->raiseWithFmt(LayoutId::kValueError,
-                                      "negative shift count");
+          return t->raiseWithFmt(LayoutId::kValueError, "negative shift count");
         }
-        return thread->runtime()->intBinaryLshift(thread, left, right);
+        return t->runtime()->intBinaryLshift(t, left, right);
       });
 }
 
