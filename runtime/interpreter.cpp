@@ -1074,7 +1074,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why, RawObject value) {
 
   TryBlock block = frame->blockStack()->peek();
   if (block.kind() == TryBlock::kLoop && why == TryBlock::Why::kContinue) {
-    ctx->pc = SmallInt::cast(value).value();
+    frame->setVirtualPC(SmallInt::cast(value).value());
     return true;
   }
 
@@ -1087,7 +1087,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why, RawObject value) {
 
   if (block.kind() == TryBlock::kLoop) {
     if (why == TryBlock::Why::kBreak) {
-      ctx->pc = block.handler();
+      frame->setVirtualPC(block.handler());
       return true;
     }
     return false;
@@ -1104,7 +1104,7 @@ bool Interpreter::popBlock(Context* ctx, TryBlock::Why why, RawObject value) {
     frame->pushValue(value);
   }
   frame->pushValue(SmallInt::fromWord(static_cast<word>(why)));
-  ctx->pc = block.handler();
+  frame->setVirtualPC(block.handler());
   return true;
 }
 
@@ -1210,7 +1210,7 @@ bool Interpreter::unwind(Context* ctx) {
       frame->pushValue(*traceback);
       frame->pushValue(*value);
       frame->pushValue(*type);
-      ctx->pc = block.handler();
+      frame->setVirtualPC(block.handler());
       return false;
     }
 
@@ -1229,12 +1229,12 @@ HANDLER_INLINE void Interpreter::popFrame(Context* ctx) {
   Frame* caller_frame = ctx->frame->previousFrame();
   ctx->frame = caller_frame;
   ctx->thread->popFrame();
-  ctx->pc = caller_frame->virtualPC();
 }
 
 static Bytecode currentBytecode(Interpreter::Context* ctx) {
-  word pc = ctx->pc - 2;
-  return static_cast<Bytecode>(ctx->frame->bytecode().byteAt(pc));
+  Frame* frame = ctx->frame;
+  word pc = frame->virtualPC() - Frame::kCodeUnitSize;
+  return static_cast<Bytecode>(frame->bytecode().byteAt(pc));
 }
 
 HANDLER_INLINE bool Interpreter::doInvalidBytecode(Context* ctx, word) {
@@ -1649,6 +1649,8 @@ HANDLER_INLINE bool Interpreter::doYieldFrom(Context* ctx, word) {
   // instruction to re-execute until the subiterator is exhausted.
   GeneratorBase gen(&scope, generatorFromStackFrame(frame));
   thread->runtime()->genSave(thread, gen);
+  HeapFrame heap_frame(&scope, gen.heapFrame());
+  heap_frame.setVirtualPC(heap_frame.virtualPC() - Frame::kCodeUnitSize);
   frame->pushValue(*result);
   return true;
 }
@@ -1800,7 +1802,6 @@ HANDLER_INLINE bool Interpreter::doYieldValue(Context* ctx, word) {
   HandleScope scope(thread);
 
   Object result(&scope, frame->popValue());
-  frame->setVirtualPC(ctx->pc);
   GeneratorBase gen(&scope, generatorFromStackFrame(frame));
   thread->runtime()->genSave(thread, gen);
   frame->pushValue(*result);
@@ -2026,7 +2027,7 @@ bool Interpreter::forIterUpdateCache(Context* ctx, word arg, word index) {
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       frame->popValue();
-      ctx->pc += arg;
+      frame->setVirtualPC(frame->virtualPC() + arg);
       return false;
     }
     return unwind(ctx);
@@ -2053,7 +2054,8 @@ HANDLER_INLINE bool Interpreter::doForIterCached(Context* ctx, word arg) {
       frame->popValue();
       // TODO(bsimmers): icOriginalArg() is only meant for slow paths, but we
       // currently have no other way of getting this information.
-      ctx->pc += icOriginalArg(frame->function(), arg);
+      frame->setVirtualPC(frame->virtualPC() +
+                          icOriginalArg(frame->function(), arg));
       return false;
     }
     return unwind(ctx);
@@ -2623,7 +2625,8 @@ HANDLER_INLINE bool Interpreter::doImportFrom(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doJumpForward(Context* ctx, word arg) {
-  ctx->pc += arg;
+  Frame* frame = ctx->frame;
+  frame->setVirtualPC(frame->virtualPC() + arg);
   return false;
 }
 
@@ -2632,7 +2635,7 @@ HANDLER_INLINE bool Interpreter::doJumpIfFalseOrPop(Context* ctx, word arg) {
   RawObject value = frame->topValue();
   value = isTrue(ctx->thread, value);
   if (LIKELY(value == Bool::falseObj())) {
-    ctx->pc = arg;
+    frame->setVirtualPC(arg);
     return false;
   }
   if (value == Bool::trueObj()) {
@@ -2648,7 +2651,7 @@ HANDLER_INLINE bool Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
   RawObject value = frame->topValue();
   value = isTrue(ctx->thread, value);
   if (LIKELY(value == Bool::trueObj())) {
-    ctx->pc = arg;
+    frame->setVirtualPC(arg);
     return false;
   }
   if (value == Bool::falseObj()) {
@@ -2660,15 +2663,16 @@ HANDLER_INLINE bool Interpreter::doJumpIfTrueOrPop(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doJumpAbsolute(Context* ctx, word arg) {
-  ctx->pc = arg;
+  ctx->frame->setVirtualPC(arg);
   return false;
 }
 
 HANDLER_INLINE bool Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
-  RawObject value = ctx->frame->popValue();
+  Frame* frame = ctx->frame;
+  RawObject value = frame->popValue();
   value = isTrue(ctx->thread, value);
   if (LIKELY(value == Bool::falseObj())) {
-    ctx->pc = arg;
+    frame->setVirtualPC(arg);
     return false;
   }
   if (value == Bool::trueObj()) {
@@ -2679,10 +2683,11 @@ HANDLER_INLINE bool Interpreter::doPopJumpIfFalse(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doPopJumpIfTrue(Context* ctx, word arg) {
-  RawObject value = ctx->frame->popValue();
+  Frame* frame = ctx->frame;
+  RawObject value = frame->popValue();
   value = isTrue(ctx->thread, value);
   if (LIKELY(value == Bool::trueObj())) {
-    ctx->pc = arg;
+    frame->setVirtualPC(arg);
     return false;
   }
   if (value == Bool::falseObj()) {
@@ -2751,7 +2756,8 @@ HANDLER_INLINE bool Interpreter::doSetupLoop(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(TryBlock(TryBlock::kLoop, ctx->pc + arg, stack_depth));
+  word handler_pc = frame->virtualPC() + arg;
+  block_stack->push(TryBlock(TryBlock::kLoop, handler_pc, stack_depth));
   return false;
 }
 
@@ -2759,7 +2765,8 @@ HANDLER_INLINE bool Interpreter::doSetupExcept(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackSize();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(TryBlock(TryBlock::kExcept, ctx->pc + arg, stack_depth));
+  word handler_pc = frame->virtualPC() + arg;
+  block_stack->push(TryBlock(TryBlock::kExcept, handler_pc, stack_depth));
   return false;
 }
 
@@ -2767,7 +2774,8 @@ HANDLER_INLINE bool Interpreter::doSetupFinally(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
+  word handler_pc = frame->virtualPC() + arg;
+  block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   return false;
 }
 
@@ -2883,9 +2891,7 @@ HANDLER_INLINE Frame* Interpreter::pushFrame(Context* ctx, RawFunction function,
   Frame* caller_frame = ctx->frame;
   caller_frame->setValueStackTop(post_call_sp);
 
-  caller_frame->setVirtualPC(ctx->pc);
   ctx->frame = callee_frame;
-  ctx->pc = callee_frame->virtualPC();
   return callee_frame;
 }
 
@@ -3168,7 +3174,8 @@ HANDLER_INLINE bool Interpreter::doSetupWith(Context* ctx, word arg) {
 
   word stack_depth = frame->valueStackBase() - frame->valueStackTop();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
+  word handler_pc = frame->virtualPC() + arg;
+  block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   frame->pushValue(*result);
   return false;
 }
@@ -3345,7 +3352,8 @@ HANDLER_INLINE bool Interpreter::doSetupAsyncWith(Context* ctx, word arg) {
   Object result(&scope, frame->popValue());
   word stack_depth = frame->valueStackSize();
   BlockStack* block_stack = frame->blockStack();
-  block_stack->push(TryBlock(TryBlock::kFinally, ctx->pc + arg, stack_depth));
+  word handler_pc = frame->virtualPC() + arg;
+  block_stack->push(TryBlock(TryBlock::kFinally, handler_pc, stack_depth));
   frame->pushValue(*result);
   return false;
 }
@@ -3702,7 +3710,6 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
   ctx.thread = thread;
   ctx.entry_frame = frame;
   ctx.frame = frame;
-  ctx.pc = frame->virtualPC();
 
   auto do_return = [&ctx] {
     RawObject return_val = ctx.frame->popValue();
@@ -3738,10 +3745,11 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
   int32_t arg;
   auto next_label = [&]() __attribute__((always_inline)) {
     Frame* current_frame = ctx.frame;
-    current_frame->setVirtualPC(ctx.pc);
+    word pc = current_frame->virtualPC();
     static_assert(endian::native == endian::little, "big endian unsupported");
-    arg = current_frame->bytecode().uint16At(ctx.pc);
-    ctx.pc += 2;
+    static_assert(Frame::kCodeUnitSize == sizeof(uint16_t), "matching type");
+    arg = current_frame->bytecode().uint16At(pc);
+    current_frame->setVirtualPC(pc + Frame::kCodeUnitSize);
     bc = static_cast<Bytecode>(arg & 0xFF);
     arg >>= 8;
     return dispatch_table[bc];
@@ -3751,10 +3759,12 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
 
 extendedArg:
   do {
-    static_assert(endian::native == endian::little, "big endian unsupported");
     Frame* current_frame = ctx.frame;
-    uint16_t bytes_at = current_frame->bytecode().uint16At(ctx.pc);
-    ctx.pc += 2;
+    word pc = current_frame->virtualPC();
+    static_assert(endian::native == endian::little, "big endian unsupported");
+    static_assert(Frame::kCodeUnitSize == sizeof(uint16_t), "matching type");
+    uint16_t bytes_at = current_frame->bytecode().uint16At(pc);
+    current_frame->setVirtualPC(pc + Frame::kCodeUnitSize);
     bc = static_cast<Bytecode>(bytes_at & 0xFF);
     arg = (arg << 8) | (bytes_at >> 8);
   } while (bc == EXTENDED_ARG);

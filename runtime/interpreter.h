@@ -52,11 +52,6 @@ class Interpreter {
     // returns, this is the same as thread->currentFrame().
     Frame* frame;
 
-    // The current program counter. Since it's updated as we decode an
-    // instruction, it usually points to the next instruction to execute while
-    // in a bytecode handler.
-    word pc;
-
     DISALLOW_HEAP_ALLOCATION();
   };
 
