@@ -447,6 +447,59 @@ TEST_F(UnderBuiltinsModuleTest,
       LayoutId::kValueError, "invalid literal for int() with base 4: '305'"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeInt) {
+  HandleScope scope(thread_);
+  const char* src = "1844674407370955161500";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(10));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  ASSERT_FALSE(result.isError());
+  EXPECT_TRUE(result.isInt());
+  const uword digits[] = {0xffffffffffffff9c, 0x63};
+  EXPECT_TRUE(isIntEqualsDigits(*result, digits));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeInt2) {
+  HandleScope scope(thread_);
+  const char* src = "46116860184273879030";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(10));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  ASSERT_FALSE(result.isError());
+  EXPECT_TRUE(result.isInt());
+  const uword digits[] = {0x7ffffffffffffff6, 0x2};
+  EXPECT_TRUE(isIntEqualsDigits(*result, digits));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithLargeIntWithInvalidDigitRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "461168601$84273879030";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError,
+      "invalid literal for int() with base 10: '461168601$84273879030'"));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeIntInfersBaseTen) {
+  HandleScope scope(thread_);
+  const char* src = "100";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  ASSERT_FALSE(result.isError());
+  EXPECT_EQ(*result, SmallInt::fromWord(100));
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderListDelItemWithNegativeIndexRemovesRelativeToEnd) {
   HandleScope scope(thread_);

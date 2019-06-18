@@ -840,7 +840,33 @@ RawObject UnderBuiltinsModule::underIntNewFromInt(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, value);
 }
 
-static RawObject intFromStr(Thread* /* t */, const Str& str, word base) {
+static RawObject largeIntFromStr(Thread* thread, const Str& str, word base) {
+  if (base == 0) {
+    // TODO(T46076026): Do some proper int parsing according to the CPython
+    // definition of "integer literals", eg 0xdeadbeef, 004, etc.
+    base = 10;
+  }
+  if (base != 10) {
+    // TODO(T46077363): Create integers from non-base-10 literals
+    UNIMPLEMENTED("non-base-10 largeIntFromStr");
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Int result(&scope, SmallInt::fromWord(0));
+  Int digit(&scope, SmallInt::fromWord(0));
+  Int base_obj(&scope, SmallInt::fromWord(base));
+  for (word i = 0; i < str.length(); i++) {
+    byte digit_char = str.charAt(i);
+    DCHECK(digit_char <= kMaxASCII, "digits should be ASCII");
+    if (digit_char < '0' || digit_char > '9') return Error::error();
+    digit = Int::cast(SmallInt::fromWord(digit_char - '0'));
+    result = runtime->intMultiply(thread, result, base_obj);
+    result = runtime->intAdd(thread, result, digit);
+  }
+  return *result;
+}
+
+static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
   if (str.length() == 0) {
     return Error::error();
@@ -857,7 +883,7 @@ static RawObject intFromStr(Thread* /* t */, const Str& str, word base) {
   if (SmallInt::isValid(res) && saved_errno != ERANGE) {
     return SmallInt::fromWord(res);
   }
-  UNIMPLEMENTED("LargeInt from str");
+  return largeIntFromStr(thread, str, base);
 }
 
 RawObject UnderBuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
