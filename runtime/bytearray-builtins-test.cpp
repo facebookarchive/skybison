@@ -1373,39 +1373,6 @@ TEST_F(ByteArrayBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
                             LayoutId::kTypeError, "object is not iterable"));
 }
 
-TEST_F(ByteArrayBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
-  HandleScope scope(thread_);
-  ByteArray self(&scope, runtime_.newByteArray());
-  byteArrayAdd(thread_, &runtime_, self, 'a');
-  Object iter(&scope, runtime_.emptyTuple());
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
-  EXPECT_TRUE(isByteArrayEqualsCStr(result, ""));
-}
-
-TEST_F(ByteArrayBuiltinsTest, JoinWithEmptySeparatorReturnsByteArray) {
-  HandleScope scope(thread_);
-  ByteArray self(&scope, runtime_.newByteArray());
-  Tuple iter(&scope, runtime_.newTuple(3));
-  iter.atPut(0, runtime_.newBytes(1, 'A'));
-  iter.atPut(1, runtime_.newBytes(2, 'B'));
-  iter.atPut(2, runtime_.newBytes(1, 'A'));
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
-  EXPECT_TRUE(isByteArrayEqualsCStr(result, "ABBA"));
-}
-
-TEST_F(ByteArrayBuiltinsTest, JoinWithNonEmptyReturnsByteArray) {
-  HandleScope scope(thread_);
-  ByteArray self(&scope, runtime_.newByteArray());
-  byteArrayAdd(thread_, &runtime_, self, ' ');
-  List iter(&scope, runtime_.newList());
-  Bytes value(&scope, runtime_.newBytes(1, '*'));
-  runtime_.listAdd(thread_, iter, value);
-  runtime_.listAdd(thread_, iter, value);
-  runtime_.listAdd(thread_, iter, value);
-  Object result(&scope, runBuiltin(ByteArrayBuiltins::join, self, iter));
-  EXPECT_TRUE(isByteArrayEqualsCStr(result, "* * *"));
-}
-
 TEST_F(ByteArrayBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "bytearray(b' ').join([1])"), LayoutId::kTypeError,

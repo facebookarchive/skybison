@@ -495,20 +495,6 @@ RawObject DictBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return *result;
 }
 
-RawObject underDictUpdateMapping(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Object other(&scope, args.get(1));
-  Runtime* runtime = thread->runtime();
-  DCHECK(runtime->isInstanceOfDict(*self_obj), "self must be instance of dict");
-  Type other_type(&scope, runtime->typeOf(*other));
-  DCHECK(!typeLookupSymbolInMro(thread, other_type, SymbolId::kKeys).isError(),
-         "other must have 'keys' method");
-  Dict self(&scope, *self_obj);
-  return dictMergeOverride(thread, self, other);
-}
-
 // TODO(T35787656): Instead of re-writing everything for every class, make a
 // helper function that takes a member function (type check) and string for the
 // Python symbol name

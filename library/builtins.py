@@ -6,13 +6,78 @@
 # process. The runtime imports them manually because __import__ has not been
 # defined yet in the execution of this module. flake8 has no knowledge about
 # their definitions and will complain without these circular assignments.
+_address = _address  # noqa: F821
+_bound_method = _bound_method  # noqa: F821
+_bytearray_check = _bytearray_check  # noqa: F821
+_bytearray_clear = _bytearray_clear  # noqa: F821
+_bytearray_join = _bytearray_join  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
+_bytes_from_ints = _bytes_from_ints  # noqa: F821
+_bytes_getitem = _bytes_getitem  # noqa: F821
+_bytes_getslice = _bytes_getslice  # noqa: F821
+_bytes_join = _bytes_join  # noqa: F821
+_bytes_maketrans = _bytes_maketrans  # noqa: F821
+_bytes_repeat = _bytes_repeat  # noqa: F821
+_complex_imag = _complex_imag  # noqa: F821
+_complex_real = _complex_real  # noqa: F821
+_dict_bucket_insert = _dict_bucket_insert  # noqa: F821
+_dict_bucket_key = _dict_bucket_key  # noqa: F821
+_dict_bucket_update = _dict_bucket_update  # noqa: F821
+_dict_bucket_value = _dict_bucket_value  # noqa: F821
+_dict_check = _dict_check  # noqa: F821
+_dict_lookup = _dict_lookup  # noqa: F821
+_dict_lookup_next = _dict_lookup_next  # noqa: F821
+_dict_update_mapping = _dict_update_mapping  # noqa: F821
+_float_check = _float_check  # noqa: F821
+_frozenset_check = _frozenset_check  # noqa: F821
+_get_member_byte = _get_member_byte  # noqa: F821
+_get_member_char = _get_member_char  # noqa: F821
+_get_member_double = _get_member_double  # noqa: F821
+_get_member_float = _get_member_float  # noqa: F821
+_get_member_int = _get_member_int  # noqa: F821
+_get_member_long = _get_member_long  # noqa: F821
+_get_member_pyobject = _get_member_pyobject  # noqa: F821
+_get_member_short = _get_member_short  # noqa: F821
+_get_member_string = _get_member_string  # noqa: F821
+_get_member_ubyte = _get_member_ubyte  # noqa: F821
+_get_member_uint = _get_member_uint  # noqa: F821
+_get_member_ulong = _get_member_ulong  # noqa: F821
+_get_member_ushort = _get_member_ushort  # noqa: F821
+_instance_getattr = _instance_getattr  # noqa: F821
+_instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_int_from_bytes = _int_from_bytes  # noqa: F821
+_int_new_from_bytearray = _int_new_from_bytearray  # noqa: F821
+_int_new_from_bytes = _int_new_from_bytes  # noqa: F821
+_int_new_from_int = _int_new_from_int  # noqa: F821
+_int_new_from_str = _int_new_from_str  # noqa: F821
+_list_check = _list_check  # noqa: F821
+_list_delitem = _list_delitem  # noqa: F821
+_list_delslice = _list_delslice  # noqa: F821
+_list_sort = _list_sort  # noqa: F821
 _patch = _patch  # noqa: F821
+_pyobject_offset = _pyobject_offset  # noqa: F821
+_repr_enter = _repr_enter  # noqa: F821
+_repr_leave = _repr_leave  # noqa: F821
+_set_check = _set_check  # noqa: F821
+_set_member_double = _set_member_double  # noqa: F821
+_set_member_float = _set_member_float  # noqa: F821
+_set_member_integral = _set_member_integral  # noqa: F821
+_set_member_pyobject = _set_member_pyobject  # noqa: F821
+_slice_check = _slice_check  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
+_str_find = _str_find  # noqa: F821
+_str_from_str = _str_from_str  # noqa: F821
+_str_replace = _str_replace  # noqa: F821
+_str_rfind = _str_rfind  # noqa: F821
+_str_splitlines = _str_splitlines  # noqa: F821
 _traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _type = _type  # noqa: F821
+_type_check = _type_check  # noqa: F821
+_type_check_exact = _type_check_exact  # noqa: F821
+_type_issubclass = _type_issubclass  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
 
@@ -339,56 +404,6 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     pass
 
 
-@_patch
-def _address(c):
-    pass
-
-
-@_patch
-def _bound_method(fn, owner):
-    pass
-
-
-@_patch
-def _bytearray_check(obj) -> bool:
-    pass
-
-
-@_patch
-def _bytearray_clear(self: bytearray):
-    pass
-
-
-@_patch
-def _bytearray_join(self: bytearray, iterable) -> bytearray:
-    pass
-
-
-@_patch
-def _bytes_from_ints(source) -> bytes:
-    pass
-
-
-@_patch
-def _bytes_getitem(self, index: int) -> int:
-    pass
-
-
-@_patch
-def _bytes_getslice(self, start: int, stop: int, step: int) -> bytes:
-    pass
-
-
-@_patch
-def _bytes_join(self: bytes, iterable) -> bytes:
-    pass
-
-
-@_patch
-def _bytes_maketrans(frm, to) -> bytes:
-    pass
-
-
 def _bytes_new(source) -> bytes:
     # source should be a bytes-like object (fast case), tuple/list of ints (fast case),
     # or an iterable of int-like objects (slow case)
@@ -402,21 +417,6 @@ def _bytes_new(source) -> bytes:
     except TypeError:
         raise TypeError(f"cannot convert '{_type(source).__name__}' object to bytes")
     return _bytes_from_ints([_index(x) for x in iterator])
-
-
-@_patch
-def _bytes_repeat(self: bytes, count: int) -> bytes:
-    pass
-
-
-@_patch
-def _complex_imag(c):
-    pass
-
-
-@_patch
-def _complex_real(c):
-    pass
 
 
 class _descrclassmethod:
@@ -436,31 +436,6 @@ class _descrclassmethod:
         if not issubclass(cls, self.cls):
             raise TypeError(f"Expected type {self.cls} not {self}")
         return self.fn(*args, **kwargs)
-
-
-@_patch
-def _dict_bucket_insert(self, index, key, key_hash, value):
-    pass
-
-
-@_patch
-def _dict_bucket_key(self, index):
-    pass
-
-
-@_patch
-def _dict_bucket_update(self, index, key, key_hash, value):
-    pass
-
-
-@_patch
-def _dict_bucket_value(self, index):
-    pass
-
-
-@_patch
-def _dict_check(obj) -> bool:
-    pass
 
 
 def _dict_getitem(self, key):
@@ -494,16 +469,6 @@ def _dict_getitem(self, key):
         index, perturb = _dict_lookup_next(self, index, key, key_hash, perturb)
 
     return _Unbound
-
-
-@_patch
-def _dict_lookup(self, key, key_hash):
-    pass
-
-
-@_patch
-def _dict_lookup_next(self, index, key, key_hash, perturb):
-    pass
 
 
 def _dict_setitem(self, key, value):
@@ -544,94 +509,12 @@ def _dict_setitem(self, key, value):
     _dict_bucket_insert(self, index, key, key_hash, value)
 
 
-# TODO(T43319065): Re-write the non-dict-dict case in managed code in
-# dict.update
-@_patch
-def _dict_update_mapping(self, seq):
-    pass
-
-
 def _dunder_bases_tuple_check(obj, msg) -> None:
     try:
         if not _tuple_check(obj.__bases__):
             raise TypeError(msg)
     except AttributeError:
         raise TypeError(msg)
-
-
-@_patch
-def _float_check(obj) -> bool:
-    pass
-
-
-@_patch
-def _frozenset_check(obj) -> bool:
-    pass
-
-
-@_patch
-def _get_member_byte(addr):
-    pass
-
-
-@_patch
-def _get_member_char(addr):
-    pass
-
-
-@_patch
-def _get_member_double(addr):
-    pass
-
-
-@_patch
-def _get_member_float(addr):
-    pass
-
-
-@_patch
-def _get_member_int(addr):
-    pass
-
-
-@_patch
-def _get_member_long(addr):
-    pass
-
-
-@_patch
-def _get_member_pyobject(addr, name):
-    pass
-
-
-@_patch
-def _get_member_short(addr):
-    pass
-
-
-@_patch
-def _get_member_string(addr):
-    pass
-
-
-@_patch
-def _get_member_ubyte(addr):
-    pass
-
-
-@_patch
-def _get_member_uint(addr):
-    pass
-
-
-@_patch
-def _get_member_ulong(addr):
-    pass
-
-
-@_patch
-def _get_member_ushort(addr):
-    pass
 
 
 def _index(obj) -> int:
@@ -649,16 +532,6 @@ def _index(obj) -> int:
         )
 
 
-@_patch
-def _instance_getattr(obj, name):
-    pass
-
-
-@_patch
-def _instance_setattr(obj, name, value):
-    pass
-
-
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
     obj_type = _type(obj)
@@ -671,31 +544,6 @@ def _int(obj) -> int:
     if result_type is int:
         return result
     raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
-
-
-@_patch
-def _int_from_bytes(cls: type, bytes: bytes, byteorder_big: bool, signed: bool) -> int:
-    pass
-
-
-@_patch
-def _int_new_from_bytearray(cls: type, x: bytearray, base: int) -> int:
-    pass
-
-
-@_patch
-def _int_new_from_bytes(cls: type, x: bytes, base: int) -> int:
-    pass
-
-
-@_patch
-def _int_new_from_int(cls: type, value: int) -> int:
-    pass
-
-
-@_patch
-def _int_new_from_str(cls: type, x: str, base: int) -> int:
-    pass
 
 
 def _isinstance_type(obj, ty: type, cls: type) -> bool:
@@ -724,26 +572,6 @@ def _issubclass_recursive(subclass, superclass) -> bool:
             if _issubclass_recursive(base, superclass):
                 return True
     return False
-
-
-@_patch
-def _list_check(obj) -> bool:
-    pass
-
-
-@_patch
-def _list_delitem(self, key: int) -> None:
-    pass
-
-
-@_patch
-def _list_delslice(self, start: int, stop: int, step: int) -> None:
-    pass
-
-
-@_patch
-def _list_sort(list):
-    pass
 
 
 def _new_member_get_bool(offset):
@@ -879,82 +707,12 @@ def _new_member_set_readonly_strings(name):
     return setter
 
 
-@_patch
-def _pyobject_offset(instance, offset):
-    pass
-
-
-@_patch
-def _repr_enter(obj: object) -> bool:
-    pass
-
-
-@_patch
-def _repr_leave(obj: object) -> None:
-    pass
-
-
-@_patch
-def _set_check(obj) -> bool:
-    pass
-
-
-@_patch
-def _set_member_double(addr, value):
-    pass
-
-
-@_patch
-def _set_member_float(addr, value):
-    pass
-
-
-@_patch
-def _set_member_integral(addr, value, num_bytes):
-    pass
-
-
-@_patch
-def _set_member_pyobject(addr, value):
-    pass
-
-
-@_patch
-def _slice_check(obj) -> bool:
-    pass
-
-
 def _slice_index(num) -> int:
     if hasattr(num, "__index__"):
         return _index(num)
     raise TypeError(
         "slice indices must be integers or None or have an __index__ method"
     )
-
-
-@_patch
-def _str_escape_non_ascii(s):
-    pass
-
-
-@_patch
-def _str_find(self, sub, start, end):
-    pass
-
-
-@_patch
-def _str_from_str(cls: type, value: str) -> str:
-    pass
-
-
-@_patch
-def _str_replace(self, old, newstr, count):
-    pass
-
-
-@_patch
-def _str_rfind(self, sub, start, end):
-    pass
 
 
 def _str_split_whitespace(self, maxsplit):
@@ -989,11 +747,6 @@ def _str_split_whitespace(self, maxsplit):
         else:
             break
     return res
-
-
-@_patch
-def _str_splitlines(self, keepends):
-    pass
 
 
 class _strarray(bootstrap=True):  # noqa: F821
@@ -1076,21 +829,6 @@ def _structseq_repr(self):
     # TODO(T40273054): Iterate attributes and return field names
     tuple_values = ", ".join([i.__repr__() for i in self])
     return f"{_type(self).__name__}({tuple_values})"
-
-
-@_patch
-def _type_check(obj) -> bool:
-    pass
-
-
-@_patch
-def _type_check_exact(obj) -> bool:
-    pass
-
-
-@_patch
-def _type_issubclass(subclass: type, superclass: type) -> bool:
-    pass
 
 
 def abs(x):

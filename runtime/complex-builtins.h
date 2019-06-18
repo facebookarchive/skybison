@@ -4,9 +4,6 @@
 
 namespace python {
 
-RawObject complexGetImag(Thread* thread, Frame* frame, word nargs);
-RawObject complexGetReal(Thread* thread, Frame* frame, word nargs);
-
 class ComplexBuiltins
     : public Builtins<ComplexBuiltins, SymbolId::kComplex, LayoutId::kComplex> {
  public:

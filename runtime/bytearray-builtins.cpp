@@ -606,37 +606,6 @@ RawObject ByteArrayBuiltins::hex(Thread* thread, Frame* frame, word nargs) {
   return bytesHex(thread, bytes, self.numItems());
 }
 
-RawObject ByteArrayBuiltins::join(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  ByteArray sep(&scope, args.get(0));
-  Bytes sep_bytes(&scope, sep.bytes());
-  Object iterable(&scope, args.get(1));
-  Object joined(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
-  if (iterable.isList()) {
-    List list(&scope, *iterable);
-    Tuple src(&scope, list.items());
-    joined = runtime->bytesJoin(thread, sep_bytes, sep.numItems(), src,
-                                list.numItems());
-  } else if (iterable.isTuple()) {
-    Tuple src(&scope, *iterable);
-    joined = runtime->bytesJoin(thread, sep_bytes, sep.numItems(), src,
-                                src.length());
-  }
-  // Check for error or slow path
-  if (!joined.isBytes()) return *joined;
-  ByteArray result(&scope, runtime->newByteArray());
-  Bytes joined_bytes(&scope, *joined);
-  if (joined.isSmallBytes()) {
-    runtime->byteArrayIadd(thread, result, joined_bytes, joined_bytes.length());
-  } else {
-    result.setBytes(*joined);
-    result.setNumItems(joined_bytes.length());
-  }
-  return *result;
-}
-
 RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
                                        word nargs) {
   HandleScope scope(thread);

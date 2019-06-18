@@ -15,30 +15,6 @@ void ComplexBuiltins::postInitialize(Runtime*, const Type& new_type) {
   new_type.setBuiltinBase(LayoutId::kComplex);
 }
 
-RawObject complexGetImag(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
-  }
-  Complex self(&scope, *self_obj);
-  return runtime->newFloat(self.imag());
-}
-
-RawObject complexGetReal(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self_obj(&scope, args.get(0));
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfComplex(*self_obj)) {
-    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
-  }
-  Complex self(&scope, *self_obj);
-  return runtime->newFloat(self.real());
-}
-
 RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

@@ -1160,60 +1160,6 @@ TEST_F(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
                             LayoutId::kTypeError, "object is not iterable"));
 }
 
-TEST_F(BytesBuiltinsTest, JoinWithEmptyIterableReturnsEmptyByteArray) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Bytes self(&scope, runtime_.newBytes(3, 'a'));
-  Object iter(&scope, runtime_.emptyTuple());
-  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
-  EXPECT_TRUE(isBytesEqualsCStr(result, ""));
-}
-
-TEST_F(BytesBuiltinsTest, JoinWithEmptySeparatorReturnsBytes) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Bytes self(&scope, Bytes::empty());
-  Tuple iter(&scope, runtime_.newTuple(3));
-  iter.atPut(0, runtime_.newBytes(1, 'A'));
-  iter.atPut(1, runtime_.newBytes(2, 'B'));
-  iter.atPut(2, runtime_.newBytes(1, 'A'));
-  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "ABBA"));
-}
-
-TEST_F(BytesBuiltinsTest, JoinWithNonEmptyListReturnsBytes) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Bytes self(&scope, runtime_.newBytes(1, ' '));
-  List iter(&scope, runtime_.newList());
-  Bytes value(&scope, runtime_.newBytes(1, '*'));
-  runtime_.listAdd(thread, iter, value);
-  runtime_.listAdd(thread, iter, value);
-  runtime_.listAdd(thread, iter, value);
-  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "* * *"));
-}
-
-TEST_F(BytesBuiltinsTest, JoinWithBytesSubclassesReturnsBytes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class Foo(bytes):
-  def join(self, iterable):
-    # this should not be called - expect bytes.join() instead
-    return 0
-sep = Foo(b"-")
-ac = Foo(b"AC")
-dc = Foo(b"DC")
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Bytes self(&scope, moduleAt(&runtime_, "__main__", "sep"));
-  Tuple iter(&scope, runtime_.newTuple(2));
-  iter.atPut(0, moduleAt(&runtime_, "__main__", "ac"));
-  iter.atPut(1, moduleAt(&runtime_, "__main__", "dc"));
-  Object result(&scope, runBuiltin(BytesBuiltins::join, self, iter));
-  EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
-}
-
 TEST_F(BytesBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "b' '.join([1])"), LayoutId::kTypeError,

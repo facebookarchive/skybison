@@ -44,8 +44,6 @@ RawObject dictKeyIteratorNext(Thread* thread, const DictKeyIterator& iter);
 // Returns Error::object() if there are no more objects
 RawObject dictValueIteratorNext(Thread* thread, const DictValueIterator& iter);
 
-RawObject underDictUpdateMapping(Thread* thread, Frame* frame, word nargs);
-
 class DictBuiltins
     : public Builtins<DictBuiltins, SymbolId::kDict, LayoutId::kDict> {
  public:
@@ -73,7 +71,6 @@ class DictItemIteratorBuiltins
     : public Builtins<DictItemIteratorBuiltins, SymbolId::kDictItemIterator,
                       LayoutId::kDictItemIterator> {
  public:
-
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
