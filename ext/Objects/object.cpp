@@ -192,6 +192,7 @@ PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
 
 PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   if (obj == nullptr) return PyErr_NoMemory();
+  obj->reference_ = nullptr;
   obj->ob_type = typeobj;
   if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
     Py_INCREF(typeobj);

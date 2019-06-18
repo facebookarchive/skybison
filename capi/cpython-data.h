@@ -275,6 +275,9 @@ extern const char* Py_FileSystemDefaultEncodeErrors;
 #define Py_TPFLAGS_READYING (1UL << 13)
 #define Py_TPFLAGS_HAVE_GC (1UL << 14)
 
+/* Compiler Flags */
+#define Py_file_input 257
+
 #ifdef __cplusplus
 }
 #endif

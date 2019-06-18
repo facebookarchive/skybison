@@ -243,6 +243,7 @@ set(
   "${CPYTHON_DIR}/Modules/xxmodule.c"
   "${CPYTHON_DIR}/Modules/xxsubtype.c"
   "${CPYTHON_DIR}/Objects/accu.c"
+  "${CPYTHON_DIR}/Objects/capsule.c"
   "${CPYTHON_DIR}/Parser/acceler.c"
   "${CPYTHON_DIR}/Parser/bitset.c"
   "${CPYTHON_DIR}/Parser/firstsets.c"

@@ -91,7 +91,6 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Objects/boolobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/bytearrayobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/bytesobject.cpp
-  ${CMAKE_SOURCE_DIR}/ext/Objects/capsule.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/classobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/codeobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/complexobject.cpp
@@ -227,6 +226,8 @@ add_library(
   runtime/code-builtins.h
   runtime/codecs-module.cpp
   runtime/codecs-module.h
+  runtime/compile.cpp
+  runtime/compile.h
   runtime/complex-builtins.cpp
   runtime/complex-builtins.h
   runtime/debugging.cpp
@@ -408,6 +409,7 @@ add_library(
   runtime/capi-handles-test.cpp
   runtime/code-builtins-test.cpp
   runtime/codecs-module-test.cpp
+  runtime/compile-test.cpp
   runtime/complex-builtins-test.cpp
   runtime/debugging-test.cpp
   runtime/descriptor-builtins-test.cpp
@@ -474,6 +476,7 @@ target_link_libraries(
 
 set(
   EXTENSION_TESTS
+  ext/Modules/config-test.cpp
   ext/Modules/gcmodule-test.cpp
   ext/Modules/posixmodule-test.cpp
   ext/Modules/sysmodule-test.cpp

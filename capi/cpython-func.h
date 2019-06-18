@@ -901,6 +901,10 @@ PyAPI_FUNC(int) _Py_normalize_encoding(const char*, char*, size_t);
 PyAPI_FUNC(void) _PyImport_AcquireLock();
 PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
+PyAPI_FUNC(struct _mod*) PyParser_ASTFromString(const char*, const char*, int,
+                                                PyCompilerFlags*, PyArena*);
+PyAPI_FUNC(PyCodeObject*)
+    PyAST_CompileEx(struct _mod*, const char*, PyCompilerFlags*, int, PyArena*);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);

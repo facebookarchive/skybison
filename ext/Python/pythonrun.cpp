@@ -3,8 +3,7 @@
 #include "exception-builtins.h"
 #include "runtime.h"
 
-struct mod_;
-typedef mod_* mod_ty;
+typedef struct _mod* mod_ty;
 struct grammar;
 
 // Prevent clang-format from reordering these order-sensitive includes.
