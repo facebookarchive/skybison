@@ -137,6 +137,7 @@ class Runtime;
   V(UnderBases, "_bases")                                                      \
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderBoundMethod, "_bound_method")                                         \
+  V(UnderBuiltins, "_builtins")                                                \
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayClear, "_bytearray_clear")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \

@@ -2,17 +2,16 @@
 
 # These values are injected by our boot process. flake8 has no knowledge about
 # their definitions and will complain without this gross circular helper here.
-_bytes_check = _bytes_check  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
-_int_check = _int_check  # noqa: F821
+_bytes_check = _bytes_check  # noqa: F821
 _index = _index  # noqa: F821
+_int_check = _int_check  # noqa: F821
 _patch = _patch  # noqa: F821
+_str_check = _str_check  # noqa: F821
 _strarray = _strarray  # noqa: F821
 _strarray_iadd = _strarray_iadd  # noqa: F821
-_str_check = _str_check  # noqa: F821
-_type = _type  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
-_unimplemented = _unimplemented  # noqa: F821
+_type = _type  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 
 

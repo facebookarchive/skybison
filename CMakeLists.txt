@@ -155,6 +155,7 @@ target_include_directories(
 
 set(
   FROZEN_MODULE_INPUT
+  library/_builtins.py
   library/_codecs.py
   library/_imp.py
   library/_io.py
@@ -313,6 +314,8 @@ add_library(
   runtime/tuple-builtins.cpp
   runtime/tuple-builtins.h
   runtime/type-builtins.cpp
+  runtime/under-builtins-module.cpp
+  runtime/under-builtins-module.h
   runtime/utils.cpp
   runtime/utils.h
   runtime/vector.h
@@ -452,6 +455,7 @@ add_library(
   runtime/trampolines-test.cpp
   runtime/tuple-builtins-test.cpp
   runtime/type-builtins-test.cpp
+  runtime/under-builtins-module-test.cpp
   runtime/utils-test.cpp
   runtime/vector-test.cpp
   runtime/warnings-module-test.cpp)

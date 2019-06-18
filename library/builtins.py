@@ -2,12 +2,19 @@
 """Built-in classes, functions, and constants."""
 
 
-# This is the patch decorator, injected by our boot process. flake8 has no
-# knowledge about its definition and will complain without this gross circular
-# helper here.
-_Unbound = _Unbound  # noqa: F821
+# These values, which live in the _builtins module, are injected by our boot
+# process. The runtime imports them manually because __import__ has not been
+# defined yet in the execution of this module. flake8 has no knowledge about
+# their definitions and will complain without these circular assignments.
+_bytes_check = _bytes_check  # noqa: F821
+_int_check = _int_check  # noqa: F821
 _patch = _patch  # noqa: F821
+_str_check = _str_check  # noqa: F821
 _traceback = _traceback  # noqa: F821
+_tuple_check = _tuple_check  # noqa: F821
+_type = _type  # noqa: F821
+_Unbound = _Unbound  # noqa: F821
+_unimplemented = _unimplemented  # noqa: F821
 
 
 # Begin: Early definitions that are necessary to process the rest of the file:
@@ -358,11 +365,6 @@ def _bytearray_join(self: bytearray, iterable) -> bytearray:
 
 
 @_patch
-def _bytes_check(obj) -> bool:
-    pass
-
-
-@_patch
 def _bytes_from_ints(source) -> bytes:
     pass
 
@@ -672,11 +674,6 @@ def _int(obj) -> int:
 
 
 @_patch
-def _int_check(obj) -> bool:
-    pass
-
-
-@_patch
 def _int_from_bytes(cls: type, bytes: bytes, byteorder_big: bool, signed: bool) -> int:
     pass
 
@@ -936,11 +933,6 @@ def _slice_index(num) -> int:
 
 
 @_patch
-def _str_check(obj) -> bool:
-    pass
-
-
-@_patch
 def _str_escape_non_ascii(s):
     pass
 
@@ -1020,11 +1012,6 @@ class _strarray(bootstrap=True):  # noqa: F821
         pass
 
 
-@_patch
-def _strarray_iadd(self, other):
-    pass
-
-
 class _structseq_field:
     def __get__(self, instance, owner):
         if self.index is not None:
@@ -1092,16 +1079,6 @@ def _structseq_repr(self):
 
 
 @_patch
-def _tuple_check(obj) -> bool:
-    pass
-
-
-@_patch
-def _type(obj):
-    pass
-
-
-@_patch
 def _type_check(obj) -> bool:
     pass
 
@@ -1113,12 +1090,6 @@ def _type_check_exact(obj) -> bool:
 
 @_patch
 def _type_issubclass(subclass: type, superclass: type) -> bool:
-    pass
-
-
-@_patch
-def _unimplemented():
-    """Prints a message and a stacktrace, and stops the program execution."""
     pass
 
 

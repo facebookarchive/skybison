@@ -11,8 +11,6 @@ RawObject getAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject hasAttribute(Thread* thread, const Object& self, const Object& name);
 RawObject setAttribute(Thread* thread, const Object& self, const Object& name,
                        const Object& value);
-void copyFunctionEntries(Thread* thread, const Function& base,
-                         const Function& patch);
 
 class BuiltinsModule {
  public:
@@ -35,7 +33,6 @@ class BuiltinsModule {
   static RawObject underAddress(Thread* thread, Frame* frame, word nargs);
   static RawObject underByteArrayCheck(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBoundMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGetItem(Thread* thread, Frame* frame, word nargs);
@@ -82,7 +79,6 @@ class BuiltinsModule {
                                         word nargs);
   static RawObject underInstanceSetattr(Thread* thread, Frame* frame,
                                         word nargs);
-  static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntFromBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntNewFromByteArray(Thread* thread, Frame* frame,
                                             word nargs);
@@ -94,7 +90,6 @@ class BuiltinsModule {
   static RawObject underListDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
-  static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
   static RawObject underPyObjectOffset(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
@@ -109,8 +104,6 @@ class BuiltinsModule {
   static RawObject underSetMemberPyObject(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
-  static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);
@@ -118,14 +111,11 @@ class BuiltinsModule {
   static RawObject underStrReplace(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
-  static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
-  static RawObject underType(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underTypeIsSubclass(Thread* thread, Frame* frame,
                                        word nargs);
-  static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinMethod kBuiltinMethods[];
   static const BuiltinType kBuiltinTypes[];

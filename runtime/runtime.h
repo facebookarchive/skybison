@@ -238,8 +238,10 @@ class Runtime {
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
 
   void createBuiltinsModule(Thread* thread);
+  void createEmptyBuiltinsModule(Thread* thread);
   void createImportlibModule(Thread* thread);
   void createSysModule(Thread* thread);
+  void createUnderBuiltinsModule(Thread* thread);
 
   RawObject internStr(Thread* thread, const Object& str);
   RawObject internStrFromCStr(Thread* thread, const char* c_str);

@@ -22,6 +22,7 @@
 #include "thread.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
+#include "under-builtins-module.h"
 
 namespace python {
 
@@ -88,7 +89,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
     {SymbolId::kUnderByteArrayClear, underByteArrayClear},
     {SymbolId::kUnderByteArrayJoin, ByteArrayBuiltins::join},
-    {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
     {SymbolId::kUnderBytesGetslice, underBytesGetSlice},
@@ -122,7 +122,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderGetMemberUShort, underGetMemberUShort},
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
-    {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntNewFromByteArray, underIntNewFromByteArray},
     {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
@@ -141,20 +140,15 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
     {SymbolId::kUnderSetMemberPyObject, underSetMemberPyObject},
     {SymbolId::kUnderSliceCheck, underSliceCheck},
-    {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
-    {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
-    {SymbolId::kUnderTupleCheck, underTupleCheck},
-    {SymbolId::kUnderType, underType},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
-    {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -254,7 +248,6 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kTypeError, LayoutId::kTypeError},
     {SymbolId::kUnboundLocalError, LayoutId::kUnboundLocalError},
     {SymbolId::kUnderStrArray, LayoutId::kStrArray},
-    {SymbolId::kUnderTraceback, LayoutId::kTraceback},
     {SymbolId::kUnicodeDecodeError, LayoutId::kUnicodeDecodeError},
     {SymbolId::kUnicodeEncodeError, LayoutId::kUnicodeEncodeError},
     {SymbolId::kUnicodeError, LayoutId::kUnicodeError},
@@ -270,45 +263,13 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
 const char* const BuiltinsModule::kFrozenData = kBuiltinsModuleData;
 
 const SymbolId BuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderDictCheck,      SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFrozenSetCheck, SymbolId::kUnderIntCheck,
+    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderDictCheck,
+    SymbolId::kUnderFloatCheck,     SymbolId::kUnderFrozenSetCheck,
     SymbolId::kUnderListCheck,      SymbolId::kUnderSetCheck,
-    SymbolId::kUnderSliceCheck,     SymbolId::kUnderStrCheck,
-    SymbolId::kUnderTupleCheck,     SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,      SymbolId::kUnderTypeCheckExact,
-    SymbolId::kIsInstance,          SymbolId::kSentinelId,
+    SymbolId::kUnderSliceCheck,     SymbolId::kUnderTypeCheck,
+    SymbolId::kUnderTypeCheckExact, SymbolId::kIsInstance,
+    SymbolId::kSentinelId,
 };
-
-static bool isPass(const Code& code) {
-  HandleScope scope;
-  Bytes bytes(&scope, code.code());
-  // const_loaded is the index into the consts array that is returned
-  word const_loaded = bytes.byteAt(1);
-  return bytes.length() == 4 && bytes.byteAt(0) == LOAD_CONST &&
-         Tuple::cast(code.consts()).at(const_loaded).isNoneType() &&
-         bytes.byteAt(2) == RETURN_VALUE && bytes.byteAt(3) == 0;
-}
-
-void copyFunctionEntries(Thread* thread, const Function& base,
-                         const Function& patch) {
-  HandleScope scope(thread);
-  Str method_name(&scope, base.name());
-  Code patch_code(&scope, patch.code());
-  Code base_code(&scope, base.code());
-  CHECK(isPass(patch_code),
-        "Redefinition of native code method '%s' in managed code",
-        method_name.toCStr());
-  CHECK(!base_code.code().isNoneType(),
-        "Useless declaration of native code method %s in managed code",
-        method_name.toCStr());
-  patch_code.setCode(base_code.code());
-  patch_code.setLnotab(Bytes::empty());
-  patch.setEntry(base.entry());
-  patch.setEntryKw(base.entryKw());
-  patch.setEntryEx(base.entryEx());
-  patch.setIsInterpreted(false);
-}
 
 static void patchTypeDict(Thread* thread, const Dict& base, const Dict& patch) {
   Runtime* runtime = thread->runtime();
@@ -736,12 +697,6 @@ RawObject BuiltinsModule::underByteArrayCheck(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfByteArray(args.get(0)));
-}
-
-RawObject BuiltinsModule::underBytesCheck(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
-  return Bool::fromBool(thread->runtime()->isInstanceOfBytes(args.get(0)));
 }
 
 RawObject BuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
@@ -1195,12 +1150,6 @@ RawObject BuiltinsModule::underInstanceSetattr(Thread* thread, Frame* frame,
   return instanceSetAttr(thread, instance, name, value);
 }
 
-RawObject BuiltinsModule::underIntCheck(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
-  return Bool::fromBool(thread->runtime()->isInstanceOfInt(args.get(0)));
-}
-
 static RawObject intOrUserSubclass(Thread* thread, const Type& type,
                                    const Object& value) {
   DCHECK(value.isSmallInt() || value.isLargeInt(),
@@ -1521,35 +1470,6 @@ RawObject BuiltinsModule::underBoundMethod(Thread* thread, Frame* frame,
   return thread->runtime()->newBoundMethod(function, owner);
 }
 
-RawObject BuiltinsModule::underPatch(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-
-  Object patch_fn_obj(&scope, args.get(0));
-  if (!patch_fn_obj.isFunction()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "_patch expects function argument");
-  }
-  Function patch_fn(&scope, *patch_fn_obj);
-  Str fn_name(&scope, patch_fn.name());
-  Runtime* runtime = thread->runtime();
-  Object module_name(&scope, patch_fn.module());
-  Module module(&scope, runtime->findModule(module_name));
-  Object base_fn_obj(&scope, runtime->moduleAt(module, fn_name));
-  if (!base_fn_obj.isFunction()) {
-    if (base_fn_obj.isErrorNotFound()) {
-      return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                  "function %S not found in module %S",
-                                  &fn_name, &module_name);
-    }
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "_patch can only patch functions");
-  }
-  Function base_fn(&scope, *base_fn_obj);
-  copyFunctionEntries(thread, base_fn, patch_fn);
-  return *patch_fn;
-}
-
 RawObject BuiltinsModule::underReprEnter(Thread* thread, Frame* frame,
                                          word nargs) {
   HandleScope scope(thread);
@@ -1613,23 +1533,6 @@ RawObject BuiltinsModule::underSetCheck(Thread* thread, Frame* frame,
 RawObject BuiltinsModule::underSliceCheck(Thread*, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isSlice());
-}
-
-RawObject BuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,
-                                            word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  StrArray self(&scope, args.get(0));
-  Object other_obj(&scope, args.get(1));
-  Str other(&scope, strUnderlying(thread, other_obj));
-  thread->runtime()->strArrayAddStr(thread, self, other);
-  return *self;
-}
-
-RawObject BuiltinsModule::underStrCheck(Thread* thread, Frame* frame,
-                                        word nargs) {
-  Arguments args(frame, nargs);
-  return Bool::fromBool(thread->runtime()->isInstanceOfStr(args.get(0)));
 }
 
 RawObject BuiltinsModule::underStrEscapeNonAscii(Thread* thread, Frame* frame,
@@ -1742,17 +1645,6 @@ RawObject BuiltinsModule::underStrSplitlines(Thread* thread, Frame* frame,
   return strSplitlines(thread, self, keepends);
 }
 
-RawObject BuiltinsModule::underTupleCheck(Thread* thread, Frame* frame,
-                                          word nargs) {
-  Arguments args(frame, nargs);
-  return Bool::fromBool(thread->runtime()->isInstanceOfTuple(args.get(0)));
-}
-
-RawObject BuiltinsModule::underType(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  return thread->runtime()->typeOf(args.get(0));
-}
-
 RawObject BuiltinsModule::underTypeCheck(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
@@ -1772,26 +1664,6 @@ RawObject BuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
   Type subclass(&scope, args.get(0));
   Type superclass(&scope, args.get(1));
   return Bool::fromBool(thread->runtime()->isSubclass(subclass, superclass));
-}
-
-RawObject BuiltinsModule::underUnimplemented(Thread* thread, Frame* frame,
-                                             word) {
-  python::Utils::printTracebackToStderr();
-
-  // Attempt to identify the calling function.
-  HandleScope scope(thread);
-  Object function_obj(&scope, frame->previousFrame()->function());
-  if (!function_obj.isError()) {
-    Function function(&scope, *function_obj);
-    Str function_name(&scope, function.name());
-    unique_c_ptr<char> name_cstr(function_name.toCStr());
-    fprintf(stderr, "\n'_unimplemented' called in function '%s'.\n",
-            name_cstr.get());
-  } else {
-    fputs("\n'_unimplemented' called.\n", stderr);
-  }
-
-  std::abort();
 }
 
 }  // namespace python

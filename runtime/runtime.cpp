@@ -57,6 +57,7 @@
 #include "time-module.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
+#include "under-builtins-module.h"
 #include "utils.h"
 #include "visitor.h"
 #include "warnings-module.h"
@@ -1872,6 +1873,8 @@ const ModuleInitializer Runtime::kBuiltinModules[] = {
 void Runtime::initializeModules() {
   Thread* thread = Thread::current();
   modules_ = newDict();
+  createEmptyBuiltinsModule(thread);
+  createUnderBuiltinsModule(thread);
   createBuiltinsModule(thread);
   createSysModule(thread);
   for (word i = 0; kBuiltinModules[i].name != SymbolId::kSentinelId; i++) {
@@ -2041,8 +2044,8 @@ void Runtime::moduleImportAllFrom(const Dict& dict, const Module& module) {
 
 void Runtime::createBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
-  Str name_str(&scope, symbols()->Builtins());
-  Module module(&scope, newModule(name_str));
+  // Find the module object created by Runtime::createEmptyBuiltinsModule()
+  Module module(&scope, findModuleById(SymbolId::kBuiltins));
   for (word i = 0;
        BuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId; i++) {
     moduleAddBuiltinFunction(module, BuiltinsModule::kBuiltinMethods[i].name,
@@ -2057,35 +2060,43 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   build_class_ = moduleAddBuiltinFunction(module, SymbolId::kDunderBuildClass,
                                           BuiltinsModule::dunderBuildClass);
 
-  // We have to patch _patch manually.
-  ValueCell under_patch(&scope,
-                        moduleAddBuiltinFunction(module, SymbolId::kUnderPatch,
-                                                 BuiltinsModule::underPatch));
-  {
-    Function function(&scope, under_patch.value());
-    function.setFlags(Code::Flags::SIMPLE_CALL);
-    function.setArgcount(1);
-    function.setTotalArgs(1);
-    function.setModule(symbols()->at(SymbolId::kBuiltins));
-    Code code(&scope, function.code());
-    code.setArgcount(1);
-    code.setNlocals(1);
-  }
-
   Object not_implemented(&scope, NotImplementedType::object());
   moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
 
-  Object unbound_value(&scope, Unbound::object());
-  moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
+  Dict module_dict(&scope, module.dict());
+  {
+    // Manually import all of the functions and types in the _builtins module.
+    Module under_builtins(&scope, findModuleById(SymbolId::kUnderBuiltins));
+    Object key(&scope, Unbound::object());
+    Object value(&scope, Unbound::object());
+    for (word i = 0;
+         UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
+         i++) {
+      key = symbols()->at(UnderBuiltinsModule::kBuiltinMethods[i].name);
+      value = moduleAt(under_builtins, key);
+      dictAtPutInValueCell(thread, module_dict, key, value);
+    }
+    for (word i = 0;
+         UnderBuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId;
+         i++) {
+      key = symbols()->at(UnderBuiltinsModule::kBuiltinTypes[i].name);
+      value = moduleAt(under_builtins, key);
+      dictAtPutInValueCell(thread, module_dict, key, value);
+    }
+    key = symbols()->UnderPatch();
+    value = moduleAt(under_builtins, key);
+    dictAtPutInValueCell(thread, module_dict, key, value);
+    key = symbols()->UnderUnbound();
+    value = moduleAt(under_builtins, key);
+    dictAtPutInValueCell(thread, module_dict, key, value);
+  }
 
   // Add and execute builtins module.
-  addModule(module);
   CHECK(!executeModule(BuiltinsModule::kFrozenData, module).isError(),
         "Failed to initialize builtins module");
 
   // TODO(T39575976): Create a consistent way to hide internal names
   // such as "module" or "function"
-  Dict module_dict(&scope, module.dict());
   Object dunder_import_name(&scope, symbols()->DunderImport());
   dunder_import_ =
       moduleDictValueCellAt(thread, module_dict, dunder_import_name);
@@ -2105,6 +2116,13 @@ void Runtime::createBuiltinsModule(Thread* thread) {
     Function::cast(moduleAtById(module, intrinsic_id))
         .setIntrinsicId(static_cast<word>(intrinsic_id));
   }
+}
+
+void Runtime::createEmptyBuiltinsModule(Thread* thread) {
+  HandleScope scope(thread);
+  Str name(&scope, symbols()->Builtins());
+  Module builtins(&scope, newModule(name));
+  addModule(builtins);
 }
 
 void Runtime::createImportlibModule(Thread* thread) {
@@ -2229,6 +2247,56 @@ void Runtime::createSysModule(Thread* thread) {
   Object stdout_name(&scope, symbols()->Stdout());
   sys_stdout_ = dictAt(thread, module_dict, stdout_name);
   CHECK(!sys_stdout_.isError(), "sys.stdout not found");
+}
+
+void Runtime::createUnderBuiltinsModule(Thread* thread) {
+  HandleScope scope(thread);
+  Str name_str(&scope, symbols()->UnderBuiltins());
+  Module module(&scope, newModule(name_str));
+  for (word i = 0;
+       UnderBuiltinsModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
+       i++) {
+    moduleAddBuiltinFunction(module,
+                             UnderBuiltinsModule::kBuiltinMethods[i].name,
+                             UnderBuiltinsModule::kBuiltinMethods[i].address);
+  }
+  for (word i = 0;
+       UnderBuiltinsModule::kBuiltinTypes[i].name != SymbolId::kSentinelId;
+       i++) {
+    moduleAddBuiltinType(module, UnderBuiltinsModule::kBuiltinTypes[i].name,
+                         UnderBuiltinsModule::kBuiltinTypes[i].type);
+  }
+
+  // We have to patch _patch manually.
+  ValueCell under_patch(
+      &scope, moduleAddBuiltinFunction(module, SymbolId::kUnderPatch,
+                                       UnderBuiltinsModule::underPatch));
+  {
+    Function function(&scope, under_patch.value());
+    function.setFlags(Code::Flags::SIMPLE_CALL);
+    function.setArgcount(1);
+    function.setTotalArgs(1);
+    function.setModule(symbols()->UnderBuiltins());
+    Code code(&scope, function.code());
+    code.setArgcount(1);
+    code.setNlocals(1);
+  }
+
+  Object unbound_value(&scope, Unbound::object());
+  moduleAddGlobal(module, SymbolId::kUnderUnbound, unbound_value);
+
+  // Mark functions that have an intrinsic implementation.
+  for (word i = 0;
+       UnderBuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId; i++) {
+    SymbolId intrinsic_id = UnderBuiltinsModule::kIntrinsicIds[i];
+    Function::cast(moduleAtById(module, intrinsic_id))
+        .setIntrinsicId(static_cast<word>(intrinsic_id));
+  }
+
+  // Add _builtins module.
+  addModule(module);
+  CHECK(!executeModule(UnderBuiltinsModule::kFrozenData, module).isError(),
+        "Failed to initialize _builtins module");
 }
 
 RawObject Runtime::createMainModule() {
