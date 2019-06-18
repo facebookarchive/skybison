@@ -56,6 +56,7 @@ _list_delitem = _list_delitem  # noqa: F821
 _list_delslice = _list_delslice  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _patch = _patch  # noqa: F821
+_property = _property  # noqa: F821
 _pyobject_offset = _pyobject_offset  # noqa: F821
 _repr_enter = _repr_enter  # noqa: F821
 _repr_leave = _repr_leave  # noqa: F821
@@ -198,7 +199,7 @@ class type(bootstrap=True):
 
 
 class object(bootstrap=True):  # noqa: E999
-    @property
+    @_property
     def __class__(self):
         return _type(self)
 
@@ -1373,11 +1374,11 @@ class complex(bootstrap=True):
     def __repr__(self):
         return f"({self.real}+{self.imag}j)"
 
-    @property
+    @_property
     def imag(self):
         return _complex_imag(self)
 
-    @property
+    @_property
     def real(self):
         return _complex_real(self)
 
@@ -2080,7 +2081,7 @@ class int(bootstrap=True):
     def conjugate(self) -> int:
         pass
 
-    @property
+    @_property
     def denominator(self) -> int:
         return 1  # noqa: T484
 
@@ -2123,7 +2124,7 @@ class int(bootstrap=True):
         signed_bool = True if signed else False
         return _int_from_bytes(cls, bytes, byteorder_big, signed_bool)
 
-    @property
+    @_property
     def imag(self) -> int:
         return 0  # noqa: T484
 

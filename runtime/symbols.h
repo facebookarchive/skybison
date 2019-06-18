@@ -234,6 +234,7 @@ class Runtime;
   V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderPatch, "_patch")                                                      \
+  V(UnderProperty, "_property")                                                \
   V(UnderPyObjectOffset, "_pyobject_offset")                                   \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \

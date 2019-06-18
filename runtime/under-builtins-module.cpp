@@ -94,6 +94,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
     {SymbolId::kUnderListSort, underListSort},
+    {SymbolId::kUnderProperty, underProperty},
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
@@ -1013,6 +1014,17 @@ RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,
   Function base_fn(&scope, *base_fn_obj);
   copyFunctionEntries(thread, base_fn, patch_fn);
   return *patch_fn;
+}
+
+RawObject UnderBuiltinsModule::underProperty(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object getter(&scope, args.get(0));
+  Object setter(&scope, args.get(1));
+  Object deleter(&scope, args.get(2));
+  // TODO(T42363565) Do something with the doc argument.
+  return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
 RawObject UnderBuiltinsModule::underPyObjectOffset(Thread* thread, Frame* frame,

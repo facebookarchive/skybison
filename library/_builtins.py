@@ -259,6 +259,12 @@ def _list_sort(list):
 
 
 @_patch
+def _property(fget=None, fset=None, fdel=None, doc=None):
+    """Has the same effect as property(), but can be used for bootstrapping."""
+    pass
+
+
+@_patch
 def _pyobject_offset(instance, offset):
     pass
 

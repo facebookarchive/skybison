@@ -85,6 +85,7 @@ class UnderBuiltinsModule {
   static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
+  static RawObject underProperty(Thread* thread, Frame* frame, word nargs);
   static RawObject underPyObjectOffset(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
