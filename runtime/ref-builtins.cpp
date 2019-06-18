@@ -26,10 +26,6 @@ RawObject RefBuiltins::dunderCall(Thread* thread, Frame* frame, word nargs) {
 }
 
 RawObject RefBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  if (nargs < 2 || nargs > 3) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "ref() expected 2 or 3 arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object referent(&scope, args.get(1));

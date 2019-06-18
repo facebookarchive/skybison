@@ -153,6 +153,7 @@ RawObject SetBaseBuiltins::intersection(Thread* thread, Frame* frame,
         "intersection() requires a 'set' or 'frozenset' object");
   }
   SetBase set(&scope, *self);
+  // TODO(T46058798): convert others to starargs
   if (nargs == 1) {
     // Return a copy of the set
     return setCopy(thread, set);
@@ -582,13 +583,11 @@ RawObject SetBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   if (!runtime->isInstanceOfSet(*self)) {
     return thread->raiseRequiresType(self, SymbolId::kSet);
   }
-  if (nargs == 2) {
-    Set set(&scope, *self);
-    Object iterable(&scope, args.get(1));
-    Object result(&scope, runtime->setUpdate(thread, set, iterable));
-    if (result.isError()) {
-      return *result;
-    }
+  Set set(&scope, *self);
+  Object iterable(&scope, args.get(1));
+  Object result(&scope, runtime->setUpdate(thread, set, iterable));
+  if (result.isError()) {
+    return *result;
   }
   return NoneType::object();
 }

@@ -106,11 +106,6 @@ RawObject PropertyBuiltins::deleter(Thread* thread, Frame* frame, word nargs) {
 
 RawObject PropertyBuiltins::dunderGet(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs < 3 || nargs > 4) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "property.__get__ expects 2-3 arguments");
-  }
-
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {
@@ -135,11 +130,6 @@ RawObject PropertyBuiltins::dunderGet(Thread* thread, Frame* frame,
 
 RawObject PropertyBuiltins::dunderSet(Thread* thread, Frame* frame,
                                       word nargs) {
-  if (nargs != 3) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "property.__set__ expects 2 arguments");
-  }
-
   HandleScope scope(thread);
   Arguments args(frame, nargs);
   if (!args.get(0).isProperty()) {

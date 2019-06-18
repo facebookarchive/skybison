@@ -623,11 +623,6 @@ RawObject BoolBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
                                 "bool.__new__(X): X is not bool");
   }
 
-  // If no arguments are given, return false.
-  if (nargs == 1) {
-    return Bool::falseObj();
-  }
-
   return Interpreter::isTrue(thread, args.get(1));
 }
 

@@ -507,10 +507,6 @@ const BuiltinMethod DictItemIteratorBuiltins::kBuiltinMethods[] = {
 
 RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                                word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -525,10 +521,6 @@ RawObject DictItemIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                                word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -548,10 +540,6 @@ RawObject DictItemIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 
 RawObject DictItemIteratorBuiltins::dunderLengthHint(Thread* thread,
                                                      Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__length_hint__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -573,10 +561,6 @@ const BuiltinMethod DictItemsBuiltins::kBuiltinMethods[] = {
 
 RawObject DictItemsBuiltins::dunderIter(Thread* thread, Frame* frame,
                                         word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -600,10 +584,6 @@ const BuiltinMethod DictKeyIteratorBuiltins::kBuiltinMethods[] = {
 
 RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                               word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -618,10 +598,6 @@ RawObject DictKeyIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                               word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -641,10 +617,6 @@ RawObject DictKeyIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 
 RawObject DictKeyIteratorBuiltins::dunderLengthHint(Thread* thread,
                                                     Frame* frame, word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__length_hint__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -666,10 +638,6 @@ const BuiltinMethod DictKeysBuiltins::kBuiltinMethods[] = {
 
 RawObject DictKeysBuiltins::dunderIter(Thread* thread, Frame* frame,
                                        word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -693,10 +661,6 @@ const BuiltinMethod DictValueIteratorBuiltins::kBuiltinMethods[] = {
 
 RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
                                                 word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -711,10 +675,6 @@ RawObject DictValueIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
 
 RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
                                                 word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__next__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -735,10 +695,6 @@ RawObject DictValueIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
 RawObject DictValueIteratorBuiltins::dunderLengthHint(Thread* thread,
                                                       Frame* frame,
                                                       word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__length_hint__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -760,10 +716,6 @@ const BuiltinMethod DictValuesBuiltins::kBuiltinMethods[] = {
 
 RawObject DictValuesBuiltins::dunderIter(Thread* thread, Frame* frame,
                                          word nargs) {
-  if (nargs != 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "__iter__() takes no arguments");
-  }
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
