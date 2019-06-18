@@ -204,6 +204,29 @@ x = X()
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(LongExtensionApiTest, FromStringReturnsLong) {
+  PyObjectPtr long0(PyLong_FromString("1", nullptr, 10));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(long0));
+  EXPECT_EQ(PyLong_AsSsize_t(long0), 1);
+
+  PyObjectPtr long1(PyLong_FromString("1000", nullptr, 10));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(long1));
+  EXPECT_EQ(PyLong_AsSsize_t(long1), 1000);
+
+  PyObjectPtr long2(PyLong_FromString("100", nullptr, 2));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyLong_CheckExact(long2));
+  EXPECT_EQ(PyLong_AsSsize_t(long2), 4);
+}
+
+TEST_F(LongExtensionApiTest, FromStringWithInvalidIntRaisesValueError) {
+  EXPECT_EQ(PyLong_FromString("foo", nullptr, 10), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
 TEST_F(LongExtensionApiTest, FromLongReturnsLong) {
   const int val = 10;
   PyObjectPtr pylong(PyLong_FromLong(val));

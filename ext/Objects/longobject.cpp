@@ -228,9 +228,24 @@ PY_EXPORT PyObject* PyLong_FromDouble(double /* l */) {
   UNIMPLEMENTED("PyLong_FromDouble");
 }
 
-PY_EXPORT PyObject* PyLong_FromString(const char* /* r */, char** /* pend */,
-                                      int /* e */) {
-  UNIMPLEMENTED("PyLong_FromString");
+PY_EXPORT PyObject* PyLong_FromString(const char* str, char** pend, int base) {
+  if (pend != nullptr) {
+    UNIMPLEMENTED("pend != NULL");
+  }
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Str str_obj(&scope, runtime->newStrFromCStr(str));
+  Int base_obj(&scope, runtime->newInt(base));
+  Type int_cls(&scope, runtime->typeAt(LayoutId::kInt));
+  Object result(&scope, thread->invokeFunction3(SymbolId::kBuiltins,
+                                                SymbolId::kUnderIntNewFromStr,
+                                                int_cls, str_obj, base_obj));
+  if (result.isError()) {
+    DCHECK(!result.isErrorNotFound(), "could not call _int_new_from_str");
+    return nullptr;
+  }
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT double PyLong_AsDouble(PyObject* obj) {
