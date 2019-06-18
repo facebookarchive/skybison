@@ -1172,7 +1172,7 @@ PY_EXPORT PyObject* PyUnicode_DecodeUnicodeEscape(const char* c_str,
                                                   Py_ssize_t size,
                                                   const char* errors) {
   DCHECK(c_str != nullptr, "c_str cannot be null");
-  const char* first_invalid_escape = nullptr;
+  const char* first_invalid_escape;
   PyObject* result = _PyUnicode_DecodeUnicodeEscape(c_str, size, errors,
                                                     &first_invalid_escape);
   if (result == nullptr) {
@@ -1195,6 +1195,10 @@ PY_EXPORT PyObject* _PyUnicode_DecodeUnicodeEscape(
   DCHECK(c_str != nullptr, "c_str cannot be null");
   DCHECK(first_invalid_escape != nullptr,
          "first_invalid_escape cannot be null");
+
+  // So we can remember if we've seen an invalid escape char or not
+  *first_invalid_escape = nullptr;
+
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object bytes(&scope, thread->runtime()->newBytesWithAll(View<byte>(
