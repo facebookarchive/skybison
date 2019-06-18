@@ -526,7 +526,7 @@ TEST_F(IcTest, IcLookupReturnsFirstCachedValue) {
   Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   caches.atPut(kIcEntryKeyOffset, layoutIdAsSmallInt(LayoutId::kSmallInt));
   caches.atPut(kIcEntryValueOffset, runtime_.newInt(44));
-  EXPECT_TRUE(isIntEqualsWord(icLookup(caches, 0, LayoutId::kSmallInt), 44));
+  EXPECT_TRUE(isIntEqualsWord(icLookup(*caches, 0, LayoutId::kSmallInt), 44));
 }
 
 TEST_F(IcTest, IcLookupReturnsFourthCachedValue) {
@@ -545,14 +545,14 @@ TEST_F(IcTest, IcLookupReturnsFourthCachedValue) {
                layoutIdAsSmallInt(LayoutId::kSmallInt));
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryValueOffset,
                runtime_.newInt(7));
-  EXPECT_TRUE(isIntEqualsWord(icLookup(caches, 1, LayoutId::kSmallInt), 7));
+  EXPECT_TRUE(isIntEqualsWord(icLookup(*caches, 1, LayoutId::kSmallInt), 7));
 }
 
 TEST_F(IcTest, IcLookupWithoutMatchReturnsErrorNotFound) {
   HandleScope scope(thread_);
 
   Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-  EXPECT_TRUE(icLookup(caches, 1, LayoutId::kSmallInt).isErrorNotFound());
+  EXPECT_TRUE(icLookup(*caches, 1, LayoutId::kSmallInt).isErrorNotFound());
 }
 
 static RawObject binopKey(LayoutId left, LayoutId right, IcBinopFlags flags) {
@@ -581,7 +581,7 @@ TEST_F(IcTest, IcLookupBinopReturnsCachedValue) {
 
   IcBinopFlags flags;
   EXPECT_TRUE(isStrEqualsCStr(
-      icLookupBinop(caches, 1, LayoutId::kSmallInt, LayoutId::kBytes, &flags),
+      icLookupBinop(*caches, 1, LayoutId::kSmallInt, LayoutId::kBytes, &flags),
       "xy"));
   EXPECT_EQ(flags, IC_BINOP_REFLECTED);
 }
@@ -591,9 +591,9 @@ TEST_F(IcTest, IcLookupBinopReturnsErrorNotFound) {
 
   Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
   IcBinopFlags flags;
-  EXPECT_TRUE(
-      icLookupBinop(caches, 0, LayoutId::kSmallInt, LayoutId::kSmallInt, &flags)
-          .isErrorNotFound());
+  EXPECT_TRUE(icLookupBinop(*caches, 0, LayoutId::kSmallInt,
+                            LayoutId::kSmallInt, &flags)
+                  .isErrorNotFound());
 }
 
 TEST_F(IcTest, IcLookupGlobalVar) {
@@ -603,8 +603,8 @@ TEST_F(IcTest, IcLookupGlobalVar) {
   cache.setValue(SmallInt::fromWord(99));
   caches.atPut(0, *cache);
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 99));
-  EXPECT_TRUE(icLookupGlobalVar(caches, 1).isNoneType());
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 99));
+  EXPECT_TRUE(icLookupGlobalVar(*caches, 1).isNoneType());
 }
 
 TEST_F(IcTest, IcUpdateSetsEmptyEntry) {
@@ -612,7 +612,7 @@ TEST_F(IcTest, IcUpdateSetsEmptyEntry) {
 
   Tuple caches(&scope, runtime_.newTuple(1 * kIcPointersPerCache));
   Object value(&scope, runtime_.newInt(88));
-  icUpdate(thread_, caches, 0, LayoutId::kSmallStr, value);
+  icUpdate(*caches, 0, LayoutId::kSmallStr, *value);
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryKeyOffset),
                               static_cast<word>(LayoutId::kSmallStr)));
   EXPECT_TRUE(isIntEqualsWord(caches.at(kIcEntryValueOffset), 88));
@@ -632,7 +632,7 @@ TEST_F(IcTest, IcUpdateUpdatesExistingEntry) {
   caches.atPut(cache_offset + 3 * kIcPointersPerEntry + kIcEntryKeyOffset,
                layoutIdAsSmallInt(LayoutId::kBytes));
   Object value(&scope, runtime_.newStrFromCStr("test"));
-  icUpdate(thread_, caches, 1, LayoutId::kSmallStr, value);
+  icUpdate(*caches, 1, LayoutId::kSmallStr, *value);
   EXPECT_TRUE(isIntEqualsWord(
       caches.at(cache_offset + 2 * kIcPointersPerEntry + kIcEntryKeyOffset),
       static_cast<word>(LayoutId::kSmallStr)));
@@ -663,7 +663,7 @@ result = f(container, 0)
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_EQ(icLookup(caches, 0, container.layoutId()), *getitem);
+  EXPECT_EQ(icLookup(*caches, 0, container.layoutId()), *getitem);
 
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 container2 = [4, 5, 6]
@@ -703,7 +703,7 @@ result = f(container, "hi")
   Tuple caches(&scope, f.caches());
   // Expect that BINARY_SUBSCR is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_TRUE(icLookup(caches, 0, container.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookup(*caches, 0, container.layoutId()).isErrorNotFound());
 
   ASSERT_FALSE(runFromCStr(&runtime, R"(
 container2 = Container()
@@ -721,8 +721,8 @@ TEST_F(IcTest, IcUpdateBinopSetsEmptyEntry) {
 
   Tuple caches(&scope, runtime_.newTuple(kIcPointersPerCache));
   Object value(&scope, runtime_.newInt(-44));
-  icUpdateBinop(thread_, caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes,
-                value, IC_BINOP_REFLECTED);
+  icUpdateBinop(*caches, 0, LayoutId::kSmallStr, LayoutId::kLargeBytes, *value,
+                IC_BINOP_REFLECTED);
   EXPECT_EQ(
       caches.at(kIcEntryKeyOffset),
       binopKey(LayoutId::kSmallStr, LayoutId::kLargeBytes, IC_BINOP_REFLECTED));
@@ -741,8 +741,8 @@ TEST_F(IcTest, IcUpdateBinopSetsExistingEntry) {
       cache_offset + 1 * kIcPointersPerEntry + kIcEntryKeyOffset,
       binopKey(LayoutId::kLargeInt, LayoutId::kSmallInt, IC_BINOP_REFLECTED));
   Object value(&scope, runtime_.newStrFromCStr("yyy"));
-  icUpdateBinop(thread_, caches, 1, LayoutId::kLargeInt, LayoutId::kSmallInt,
-                value, IC_BINOP_NONE);
+  icUpdateBinop(*caches, 1, LayoutId::kLargeInt, LayoutId::kSmallInt, *value,
+                IC_BINOP_NONE);
   EXPECT_TRUE(
       caches.at(cache_offset + 0 * kIcPointersPerEntry + kIcEntryValueOffset)
           .isNoneType());
@@ -778,7 +778,7 @@ result = f(container)
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_EQ(icLookup(caches, 0, iterator.layoutId()), *iter_next);
+  EXPECT_EQ(icLookup(*caches, 0, iterator.layoutId()), *iter_next);
 }
 
 TEST(IcTestNoFixture, ForIterUpdateCacheWithNonFunctionDoesntUpdateCache) {
@@ -814,7 +814,7 @@ result = f(container)
   Tuple caches(&scope, f.caches());
   // Expect that FOR_ITER is the only cached opcode in f().
   ASSERT_EQ(caches.length(), 1 * kIcPointersPerCache);
-  EXPECT_TRUE(icLookup(caches, 0, iterator.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookup(*caches, 0, iterator.layoutId()).isErrorNotFound());
 }
 
 static RawObject testingFunction(Thread* thread) {
@@ -983,24 +983,24 @@ TEST_F(IcTest,
   icUpdateGlobalVar(thread_, function1, 1, cache);
 
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 0)), 99));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches0, 0)), 99));
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches0, 1)), 123));
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches1, 0)), 123));
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 1)), 99));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches1, 1)), 99));
 
   // Invalidating cache makes it removed from both caches, and nobody depends on
   // it anymore.
   icInvalidateGlobalVar(thread_, cache);
 
-  EXPECT_TRUE(icLookupGlobalVar(caches0, 0).isNoneType());
+  EXPECT_TRUE(icLookupGlobalVar(*caches0, 0).isNoneType());
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches0, 1)), 123));
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
-  EXPECT_TRUE(icLookupGlobalVar(caches1, 1).isNoneType());
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches1, 0)), 123));
+  EXPECT_TRUE(icLookupGlobalVar(*caches1, 1).isNoneType());
   EXPECT_TRUE(cache.dependencyLink().isNoneType());
 }
 
@@ -1023,13 +1023,13 @@ TEST_F(IcTest, IcInvalidateGlobalVarDoNotDeferenceDeallocatedReferent) {
   icUpdateGlobalVar(thread_, function1, 1, cache);
 
   ASSERT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 0)), 99));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches0, 0)), 99));
   ASSERT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches0, 1)), 123));
   ASSERT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches1, 0)), 123));
   ASSERT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 1)), 99));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches1, 1)), 99));
 
   // Simulate GCing function1.
   WeakLink link(&scope, cache.dependencyLink());
@@ -1039,13 +1039,13 @@ TEST_F(IcTest, IcInvalidateGlobalVarDoNotDeferenceDeallocatedReferent) {
   // Invalidation cannot touch function1 anymore.
   icInvalidateGlobalVar(thread_, cache);
 
-  EXPECT_TRUE(icLookupGlobalVar(caches0, 0).isNoneType());
+  EXPECT_TRUE(icLookupGlobalVar(*caches0, 0).isNoneType());
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches0, 1)), 123));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches0, 1)), 123));
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 0)), 123));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches1, 0)), 123));
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches1, 1)), 99));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches1, 1)), 99));
   EXPECT_TRUE(cache.dependencyLink().isNoneType());
 }
 

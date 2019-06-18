@@ -533,9 +533,9 @@ TEST(InterpreterTestNoFixture, DoBinaryOpWithCacheHitCallsCachedMethod) {
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
   IcBinopFlags dummy;
-  ASSERT_FALSE(
-      icLookupBinop(caches, 0, LayoutId::kSmallInt, LayoutId::kSmallInt, &dummy)
-          .isErrorNotFound());
+  ASSERT_FALSE(icLookupBinop(*caches, 0, LayoutId::kSmallInt,
+                             LayoutId::kSmallInt, &dummy)
+                   .isErrorNotFound());
   // Call from inline cache.
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), function),
@@ -584,7 +584,7 @@ v1 = 7
   ASSERT_TRUE(function.caches().isTuple());
   Tuple caches(&scope, function.caches());
   IcBinopFlags dummy;
-  ASSERT_FALSE(icLookupBinop(caches, 0, v0.layoutId(), v1.layoutId(), &dummy)
+  ASSERT_FALSE(icLookupBinop(*caches, 0, v0.layoutId(), v1.layoutId(), &dummy)
                    .isErrorNotFound());
 
   // Should hit the cache for __sub__ and then call binaryOperationRetry().
@@ -3675,7 +3675,7 @@ result = foo()
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 400));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 }
 
 TEST(InterpreterTestNoFixture,
@@ -3698,7 +3698,7 @@ result = foo()
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
   EXPECT_TRUE(
-      isIntEqualsWord(valueCellValue(icLookupGlobalVar(caches, 0)), 400));
+      isIntEqualsWord(valueCellValue(icLookupGlobalVar(*caches, 0)), 400));
 
   Dict globals(&scope, function.globals());
   Str key(&scope, SmallStr::fromCStr("a"));
@@ -3731,7 +3731,7 @@ bar()
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
-  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+  EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
 TEST(InterpreterTestNoFixture, DeleteGlobalInvalidatesCachedValue) {
@@ -3755,7 +3755,7 @@ bar()
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
-  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+  EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
 TEST(InterpreterTestNoFixture, StoreNameInvalidatesCachedBuiltinToBeShadowed) {
@@ -3776,7 +3776,7 @@ a = 800
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
-  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+  EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
 TEST(InterpreterTestNoFixture, DeleteNameInvalidatesCachedGlobalVar) {
@@ -3796,7 +3796,7 @@ del a
   ASSERT_TRUE(isStrEqualsCStr(
       Tuple::cast(Code::cast(function.code()).names()).at(0), "a"));
   Tuple caches(&scope, function.caches());
-  EXPECT_TRUE(icLookupGlobalVar(caches, 0).isNoneType());
+  EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
 TEST_F(InterpreterTest, LoadMethodLoadingMethodFollowedByCallMethod) {
@@ -3857,13 +3857,13 @@ def test():
   Tuple caches(&scope, test_function.caches());
   // Cache miss.
   ASSERT_TRUE(
-      icLookup(caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+      icLookup(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       30));
 
   // Cache hit.
-  ASSERT_TRUE(icLookup(caches, bytecode.byteAt(3), layout_id).isSmallInt());
+  ASSERT_TRUE(icLookup(*caches, bytecode.byteAt(3), layout_id).isSmallInt());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       30));
@@ -3900,13 +3900,13 @@ c = C()
   LayoutId layout_id = c.layoutId();
   Tuple caches(&scope, test_function.caches());
   ASSERT_TRUE(
-      icLookup(caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
+      icLookup(*caches, bytecode.byteAt(3), layout_id).isErrorNotFound());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       70));
 
   // Cache hit.
-  ASSERT_TRUE(icLookup(caches, bytecode.byteAt(3), layout_id).isFunction());
+  ASSERT_TRUE(icLookup(*caches, bytecode.byteAt(3), layout_id).isFunction());
   EXPECT_TRUE(isIntEqualsWord(
       Interpreter::callFunction0(thread, thread->currentFrame(), test_function),
       70));

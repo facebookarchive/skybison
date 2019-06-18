@@ -1333,7 +1333,7 @@ bool Interpreter::binarySubscrUpdateCache(Context* ctx, word index) {
     return unwind(ctx);
   }
   if (index >= 0 && getitem.isFunction()) {
-    icUpdate(thread, ctx->caches, index, container.layoutId(), getitem);
+    icUpdate(*ctx->caches, index, container.layoutId(), *getitem);
   }
 
   getitem = resolveDescriptorGet(thread, getitem, container, type);
@@ -1349,7 +1349,7 @@ HANDLER_INLINE bool Interpreter::doBinarySubscr(Context* ctx, word) {
 HANDLER_INLINE bool Interpreter::doBinarySubscrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   LayoutId container_layout_id = frame->peek(1).layoutId();
-  RawObject cached = icLookup(ctx->caches, arg, container_layout_id);
+  RawObject cached = icLookup(*ctx->caches, arg, container_layout_id);
   if (cached.isErrorNotFound()) {
     return binarySubscrUpdateCache(ctx, arg);
   }
@@ -2022,7 +2022,7 @@ bool Interpreter::forIterUpdateCache(Context* ctx, word arg, word index) {
   }
 
   if (index >= 0 && next.isFunction()) {
-    icUpdate(thread, ctx->caches, index, iter.layoutId(), next);
+    icUpdate(*ctx->caches, index, iter.layoutId(), *next);
   }
 
   next = resolveDescriptorGet(thread, next, iter, type);
@@ -2043,7 +2043,7 @@ HANDLER_INLINE bool Interpreter::doForIterCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject iter = frame->topValue();
   LayoutId iter_layout_id = iter.layoutId();
-  RawObject cached = icLookup(ctx->caches, arg, iter_layout_id);
+  RawObject cached = icLookup(*ctx->caches, arg, iter_layout_id);
   if (cached.isErrorNotFound()) {
     return forIterUpdateCache(ctx, icOriginalArg(frame->function(), arg), arg);
   }
@@ -2195,7 +2195,7 @@ bool Interpreter::storeAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(thread, ctx->caches, arg, layout_id, location);
+    icUpdate(*ctx->caches, arg, layout_id, *location);
   }
   return false;
 }
@@ -2204,7 +2204,7 @@ HANDLER_INLINE bool Interpreter::doStoreAttrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
   if (cached.isError()) {
     return storeAttrUpdateCache(ctx, arg);
   }
@@ -2274,7 +2274,7 @@ HANDLER_INLINE bool Interpreter::doStoreGlobal(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doStoreGlobalCached(Context* ctx, word arg) {
-  RawObject cached = icLookupGlobalVar(ctx->caches, arg);
+  RawObject cached = icLookupGlobalVar(*ctx->caches, arg);
   DCHECK(cached.isValueCell(), "the cached value must not be a ValueCell");
   ValueCell::cast(cached).setValue(ctx->frame->popValue());
   return false;
@@ -2467,7 +2467,7 @@ bool Interpreter::loadAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(thread, ctx->caches, arg, layout_id, location);
+    icUpdate(*ctx->caches, arg, layout_id, *location);
   }
   frame->setTopValue(*result);
   return false;
@@ -2501,7 +2501,7 @@ HANDLER_INLINE bool Interpreter::doLoadAttrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
   if (cached.isErrorNotFound()) {
     return loadAttrUpdateCache(ctx, arg);
   }
@@ -2734,7 +2734,7 @@ HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doLoadGlobalCached(Context* ctx, word arg) {
-  RawObject cached = icLookupGlobalVar(ctx->caches, arg);
+  RawObject cached = icLookupGlobalVar(*ctx->caches, arg);
   DCHECK(cached.isValueCell(), "cached value must be a ValueCell");
   DCHECK(!ValueCell::cast(cached).isPlaceholder(),
          "cached ValueCell must not be a placeholder");
@@ -3497,7 +3497,7 @@ bool Interpreter::doLoadMethodCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver = frame->topValue();
   LayoutId layout_id = receiver.layoutId();
-  RawObject cached = icLookup(ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
   // A function object is cached only when LOAD_ATTR_CACHED is guaranteed to
   // push a BoundMethod with the function via objectGetAttributeSetLocation().
   // Otherwise, LOAD_ATTR_CACHED caches only attribute's offsets.
@@ -3542,7 +3542,7 @@ HANDLER_INLINE bool Interpreter::cachedBinaryOpImpl(
   LayoutId right_layout_id = right_raw.layoutId();
   IcBinopFlags flags;
   RawObject method =
-      icLookupBinop(ctx->caches, arg, left_layout_id, right_layout_id, &flags);
+      icLookupBinop(*ctx->caches, arg, left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     return update_cache(ctx, arg);
   }
@@ -3575,8 +3575,8 @@ bool Interpreter::compareOpUpdateCache(Context* ctx, word arg) {
   if (!method.isNoneType()) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
-    icUpdateBinop(thread, ctx->caches, arg, left_layout_id, right_layout_id,
-                  method, flags);
+    icUpdateBinop(*ctx->caches, arg, left_layout_id, right_layout_id, *method,
+                  flags);
   }
   frame->pushValue(result);
   return false;
@@ -3618,8 +3618,8 @@ bool Interpreter::inplaceOpUpdateCache(Context* ctx, word arg) {
   if (!method.isNoneType()) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
-    icUpdateBinop(thread, ctx->caches, arg, left_layout_id, right_layout_id,
-                  method, flags);
+    icUpdateBinop(*ctx->caches, arg, left_layout_id, right_layout_id, *method,
+                  flags);
   }
   if (result.isError()) return unwind(ctx);
   frame->pushValue(result);
@@ -3668,8 +3668,8 @@ bool Interpreter::binaryOpUpdateCache(Context* ctx, word arg) {
   Object result(&scope, binaryOperationSetMethod(thread, frame, op, left, right,
                                                  &method, &flags));
   if (!method.isNoneType()) {
-    icUpdateBinop(thread, ctx->caches, arg, left.layoutId(), right.layoutId(),
-                  method, flags);
+    icUpdateBinop(*ctx->caches, arg, left.layoutId(), right.layoutId(), *method,
+                  flags);
   }
   if (result.isErrorException()) return unwind(ctx);
   frame->pushValue(*result);

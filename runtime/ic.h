@@ -22,19 +22,18 @@ enum IcBinopFlags : uint8_t {
 
 // Looks for a cache entry with a `layout_id` key. Returns the cached value.
 // Returns `ErrorNotFound` if none was found.
-RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id);
+RawObject icLookup(RawTuple caches, word index, LayoutId layout_id);
 
 // Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
 // Returns the cached value comprising of an object reference and flags. Returns
 // `ErrorNotFound` if none was found.
-RawObject icLookupBinop(const Tuple& caches, word index,
-                        LayoutId left_layout_id, LayoutId right_layout_id,
-                        IcBinopFlags* flags_out);
+RawObject icLookupBinop(RawTuple caches, word index, LayoutId left_layout_id,
+                        LayoutId right_layout_id, IcBinopFlags* flags_out);
 
 // Looks for a cache entry for a global variable.
 // Returns a ValueCell in case of cache hit.
 // Returns the NoneType object otherwise.
-RawObject icLookupGlobalVar(const Tuple& caches, word index);
+RawObject icLookupGlobalVar(RawTuple caches, word index);
 
 // Returns the original argument of bytecode operations that were rewritten by
 // `rewriteBytecode()`.
@@ -48,14 +47,13 @@ word icOriginalArg(RawFunction function, word index);
 void icRewriteBytecode(Thread* thread, const Function& function);
 
 // Sets a cache entry to the given `layout_id` as key and `value` as value.
-void icUpdate(Thread* thread, const Tuple& caches, word index,
-              LayoutId layout_id, const Object& value);
+void icUpdate(RawTuple caches, word index, LayoutId layout_id, RawObject value);
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.
-void icUpdateBinop(Thread* thread, const Tuple& caches, word index,
-                   LayoutId left_layout_id, LayoutId right_layout_id,
-                   const Object& value, IcBinopFlags flags);
+void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
+                   LayoutId right_layout_id, RawObject value,
+                   IcBinopFlags flags);
 
 void insertDependency(Thread* thread, const Object& dependent,
                       const ValueCell& value_cell);
@@ -99,7 +97,7 @@ const int kIcPointersPerCache = kIcEntriesPerCache * kIcPointersPerEntry;
 const int kIcEntryKeyOffset = 0;
 const int kIcEntryValueOffset = 1;
 
-inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
+inline RawObject icLookup(RawTuple caches, word index, LayoutId layout_id) {
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
@@ -111,7 +109,7 @@ inline RawObject icLookup(const Tuple& caches, word index, LayoutId layout_id) {
   return Error::notFound();
 }
 
-inline RawObject icLookupBinop(const Tuple& caches, word index,
+inline RawObject icLookupBinop(RawTuple caches, word index,
                                LayoutId left_layout_id,
                                LayoutId right_layout_id,
                                IcBinopFlags* flags_out) {
@@ -136,7 +134,7 @@ inline RawObject icLookupBinop(const Tuple& caches, word index,
   return Error::notFound();
 }
 
-inline RawObject icLookupGlobalVar(const Tuple& caches, word index) {
+inline RawObject icLookupGlobalVar(RawTuple caches, word index) {
   return caches.at(index);
 }
 

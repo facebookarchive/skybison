@@ -211,39 +211,37 @@ void icRewriteBytecode(Thread* thread, const Function& function) {
   function.setOriginalArguments(*original_arguments);
 }
 
-void icUpdate(Thread* thread, const Tuple& caches, word index,
-              LayoutId layout_id, const Object& value) {
-  HandleScope scope(thread);
-  SmallInt key(&scope, SmallInt::fromWord(static_cast<word>(layout_id)));
-  Object entry_key(&scope, NoneType::object());
+void icUpdate(RawTuple caches, word index, LayoutId layout_id,
+              RawObject value) {
+  RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
+  RawObject entry_key = NoneType::object();
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
     entry_key = caches.at(i + kIcEntryKeyOffset);
     if (entry_key.isNoneType() || entry_key == key) {
-      caches.atPut(i + kIcEntryKeyOffset, *key);
-      caches.atPut(i + kIcEntryValueOffset, *value);
+      caches.atPut(i + kIcEntryKeyOffset, key);
+      caches.atPut(i + kIcEntryValueOffset, value);
       return;
     }
   }
 }
 
-void icUpdateBinop(Thread* thread, const Tuple& caches, word index,
-                   LayoutId left_layout_id, LayoutId right_layout_id,
-                   const Object& value, IcBinopFlags flags) {
-  HandleScope scope(thread);
+void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
+                   LayoutId right_layout_id, RawObject value,
+                   IcBinopFlags flags) {
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  Object entry_key(&scope, NoneType::object());
+  RawObject entry_key = NoneType::object();
   for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
        i < end; i += kIcPointersPerEntry) {
     entry_key = caches.at(i + kIcEntryKeyOffset);
     if (entry_key.isNoneType() ||
-        SmallInt::cast(*entry_key).value() >> kBitsPerByte == key_high_bits) {
+        SmallInt::cast(entry_key).value() >> kBitsPerByte == key_high_bits) {
       caches.atPut(i + kIcEntryKeyOffset,
                    SmallInt::fromWord(key_high_bits << kBitsPerByte |
                                       static_cast<word>(flags)));
-      caches.atPut(i + kIcEntryValueOffset, *value);
+      caches.atPut(i + kIcEntryValueOffset, value);
     }
   }
 }
