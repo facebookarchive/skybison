@@ -80,4 +80,26 @@ TEST_F(UnderWarningsExtensionApiTest,
   EXPECT_EQ(streams.err(), "bar:1: RuntimeWarning: foo\n");
 }
 
+TEST_F(UnderWarningsExtensionApiTest,
+       WarnExplicitObjectWithNullRegistryPassesNoneRegistry) {
+  CaptureStdStreams streams;
+  PyObjectPtr message(PyUnicode_FromString("foo"));
+  PyObjectPtr filename(PyUnicode_FromString("bar"));
+  PyObjectPtr module(PyUnicode_FromString("baz"));
+  EXPECT_EQ(PyErr_WarnExplicitObject(/*category=*/PyExc_FutureWarning, message,
+                                     filename,
+                                     /*lineno=*/1, module,
+                                     /*registry=*/nullptr),
+            0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyErr_WarnExplicitObject(/*category=*/PyExc_FutureWarning, message,
+                                     filename,
+                                     /*lineno=*/1, module,
+                                     /*registry=*/nullptr),
+            0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(streams.err(),
+            "bar:1: FutureWarning: foo\nbar:1: FutureWarning: foo\n");
+}
+
 }  // namespace python

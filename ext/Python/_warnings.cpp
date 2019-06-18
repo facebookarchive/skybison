@@ -97,8 +97,10 @@ PY_EXPORT int PyErr_WarnExplicitObject(PyObject* category, PyObject* message,
   Int lineno_obj(&scope, thread->runtime()->newInt(lineno));
   DCHECK(module != nullptr, "module cannot be null");
   Object module_obj(&scope, ApiHandle::fromPyObject(module)->asObject());
-  DCHECK(registry != nullptr, "registry cannot be null");
-  Object registry_obj(&scope, ApiHandle::fromPyObject(registry)->asObject());
+  Object registry_obj(&scope,
+                      registry == nullptr
+                          ? NoneType::object()
+                          : ApiHandle::fromPyObject(registry)->asObject());
   if (thread
           ->invokeFunction6(SymbolId::kWarnings, SymbolId::kWarnExplicit,
                             message_obj, category_obj, filename_obj, lineno_obj,
