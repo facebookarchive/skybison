@@ -565,20 +565,18 @@ TEST_F(ListBuiltinsTest, ListRemoveWithRaisingDunderBoolPropagatesException) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __bool__(self):
-    raise UserWarning('')
+    raise UserWarning('foo')
 class D:
   def __eq__(self, other):
-    raise C()
+    return C()
 value = D()
 list = [None]
 )")
                    .isError());
   Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
   List list(&scope, moduleAt(&runtime_, "__main__", "list"));
-  Object result(&scope, runBuiltin(ListBuiltins::remove, list, value));
-  EXPECT_TRUE(result.isError());
-  // TODO(T39221304) check for kUserWarning here once isTrue() propagates
-  // exceptions correctly.
+  EXPECT_TRUE(raisedWithStr(runBuiltin(ListBuiltins::remove, list, value),
+                            LayoutId::kUserWarning, "foo"));
 }
 
 TEST_F(ListBuiltinsTest, PrintList) {
