@@ -3,6 +3,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#include "node.h"
 // Unset Python-ast.h macros that conflict with gtest/gtest.h
 #undef Compare
 #undef Set
@@ -348,6 +349,15 @@ TEST_F(PythonrunExtensionApiTest, PyParserFromFileReturnsModuleNode) {
   EXPECT_NE(module, nullptr);
   EXPECT_EQ(module->kind, Module_kind);
   PyArena_Free(arena);
+}
+
+TEST_F(PythonrunExtensionApiTest,
+       PyParserSimpleParseStringFlagsFilenameReturnsNonNull) {
+  struct _node* node = PyParser_SimpleParseStringFlagsFilename(
+      "a = 123", "test", Py_file_input, /*flags=*/0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_NE(node, nullptr);
+  PyNode_Free(node);
 }
 
 }  // namespace python

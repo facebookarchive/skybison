@@ -86,29 +86,6 @@ PY_EXPORT struct _node* PyParser_SimpleParseStringFlags(const char* /* r */,
   UNIMPLEMENTED("PyParser_SimpleParseStringFlags");
 }
 
-PY_EXPORT struct _node* PyParser_SimpleParseStringFlagsFilename(
-    const char* /* r */, const char* /* e */, int /* t */, int /* s */) {
-  UNIMPLEMENTED("PyParser_SimpleParseStringFlagsFilename");
-}
-
-PY_EXPORT struct symtable* Py_SymtableString(const char* /* r */,
-                                             const char* /* r */, int /* t */) {
-  UNIMPLEMENTED("Py_SymtableString");
-}
-
-PY_EXPORT PyObject* PyRun_FileExFlags(FILE* /* p */, const char* /* r */,
-                                      int /* t */, PyObject* /* s */,
-                                      PyObject* /* s */, int /* t */,
-                                      PyCompilerFlags* /* s */) {
-  UNIMPLEMENTED("PyRun_FileExFlags");
-}
-
-PY_EXPORT PyObject* PyRun_StringFlags(const char* /* r */, int /* t */,
-                                      PyObject* /* s */, PyObject* /* s */,
-                                      PyCompilerFlags* /* s */) {
-  UNIMPLEMENTED("PyRun_StringFlags");
-}
-
 static void errInputCleanup(PyObject* msg_obj, perrdetail* err) {
   Py_XDECREF(msg_obj);
   if (err->text != nullptr) {
@@ -231,6 +208,34 @@ static void errInput(perrdetail* err) {
   Py_XDECREF(error_tuple);
   PyErr_SetObject(errtype, error_msg_tuple);
   Py_XDECREF(error_msg_tuple);
+}
+
+PY_EXPORT struct _node* PyParser_SimpleParseStringFlagsFilename(
+    const char* str, const char* filename, int start, int flags) {
+  perrdetail err;
+  node* mod = PyParser_ParseStringFlagsFilename(
+      str, filename, &_PyParser_Grammar, start, &err, flags);
+  if (mod == nullptr) errInput(&err);
+  Py_CLEAR(err.filename);
+  return mod;
+}
+
+PY_EXPORT struct symtable* Py_SymtableString(const char* /* r */,
+                                             const char* /* r */, int /* t */) {
+  UNIMPLEMENTED("Py_SymtableString");
+}
+
+PY_EXPORT PyObject* PyRun_FileExFlags(FILE* /* p */, const char* /* r */,
+                                      int /* t */, PyObject* /* s */,
+                                      PyObject* /* s */, int /* t */,
+                                      PyCompilerFlags* /* s */) {
+  UNIMPLEMENTED("PyRun_FileExFlags");
+}
+
+PY_EXPORT PyObject* PyRun_StringFlags(const char* /* r */, int /* t */,
+                                      PyObject* /* s */, PyObject* /* s */,
+                                      PyCompilerFlags* /* s */) {
+  UNIMPLEMENTED("PyRun_StringFlags");
 }
 
 static int parserFlags(PyCompilerFlags* flags) {
