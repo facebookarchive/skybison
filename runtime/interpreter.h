@@ -52,25 +52,10 @@ class Interpreter {
     // returns, this is the same as thread->currentFrame().
     Frame* frame;
 
-    // The bytecode for the current function.
-    MutableBytes bytecode;
-
-    // The caches for the current function.
-    Tuple caches;
-
     // The current program counter. Since it's updated as we decode an
     // instruction, it usually points to the next instruction to execute while
     // in a bytecode handler.
     word pc;
-
-    Context(HandleScope* scope, Thread* thread_in, Frame* frame_in,
-            RawObject bytecode_in, RawObject caches_in)
-        : thread(thread_in),
-          entry_frame(frame_in),
-          frame(frame_in),
-          bytecode(scope, bytecode_in),
-          caches(scope, caches_in),
-          pc(frame->virtualPC()) {}
 
     DISALLOW_HEAP_ALLOCATION();
   };
@@ -85,8 +70,8 @@ class Interpreter {
   // batch concat/join <num> string objects on the stack (no conversion)
   static RawObject stringJoin(Thread* thread, RawObject* sp, word num);
 
-  static bool isCacheEnabledForCurrentFunction(Context* ctx) {
-    return ctx->caches.length() > 0;
+  static bool isCacheEnabledForCurrentFunction(Frame* frame) {
+    return frame->caches().length() > 0;
   }
 
   static RawObject isTrue(Thread* thread, RawObject value_obj);

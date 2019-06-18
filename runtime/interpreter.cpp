@@ -1202,21 +1202,12 @@ HANDLER_INLINE void Interpreter::popFrame(Context* ctx) {
   Frame* caller_frame = ctx->frame->previousFrame();
   ctx->frame = caller_frame;
   ctx->thread->popFrame();
-
-  // Using Frame::function() in a critical path is a little sketchy, since
-  // it depends on a not-quite-invariant property of our system that the stack
-  // slot right above the current Frame contains the Function that was called to
-  // execute it. We can clean this up once we merge Code and Function
-  // and store a Function directly in the Frame.
-  RawFunction caller_func = Function::cast(caller_frame->function());
-  ctx->bytecode = caller_func.rewrittenBytecode();
-  ctx->caches = caller_func.caches();
   ctx->pc = caller_frame->virtualPC();
 }
 
 static Bytecode currentBytecode(Interpreter::Context* ctx) {
   word pc = ctx->pc - 2;
-  return static_cast<Bytecode>(ctx->bytecode.byteAt(pc));
+  return static_cast<Bytecode>(ctx->frame->bytecode().byteAt(pc));
 }
 
 HANDLER_INLINE bool Interpreter::doInvalidBytecode(Context* ctx, word) {
@@ -1333,7 +1324,7 @@ bool Interpreter::binarySubscrUpdateCache(Context* ctx, word index) {
     return unwind(ctx);
   }
   if (index >= 0 && getitem.isFunction()) {
-    icUpdate(*ctx->caches, index, container.layoutId(), *getitem);
+    icUpdate(frame->caches(), index, container.layoutId(), *getitem);
   }
 
   getitem = resolveDescriptorGet(thread, getitem, container, type);
@@ -1349,7 +1340,7 @@ HANDLER_INLINE bool Interpreter::doBinarySubscr(Context* ctx, word) {
 HANDLER_INLINE bool Interpreter::doBinarySubscrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   LayoutId container_layout_id = frame->peek(1).layoutId();
-  RawObject cached = icLookup(*ctx->caches, arg, container_layout_id);
+  RawObject cached = icLookup(frame->caches(), arg, container_layout_id);
   if (cached.isErrorNotFound()) {
     return binarySubscrUpdateCache(ctx, arg);
   }
@@ -1902,7 +1893,7 @@ HANDLER_INLINE bool Interpreter::doStoreName(Context* ctx, word arg) {
   Object value(&scope, frame->popValue());
   Runtime* runtime = thread->runtime();
   runtime->dictAtPutInValueCell(thread, implicit_globals, key, value);
-  if (isCacheEnabledForCurrentFunction(ctx) &&
+  if (isCacheEnabledForCurrentFunction(frame) &&
       frame->implicitGlobals() == frame->function().globals()) {
     Dict globals(&scope, frame->function().globals());
     Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
@@ -1944,7 +1935,7 @@ HANDLER_INLINE bool Interpreter::doDeleteName(Context* ctx, word arg) {
   // Only a module dict needs cache invalidation since a type dict entry is
   // only read via LOAD_NAME which never involves caching.
   Dict globals(&scope, frame->function().globals());
-  if (isCacheEnabledForCurrentFunction(ctx) &&
+  if (isCacheEnabledForCurrentFunction(frame) &&
       frame->implicitGlobals() == *globals) {
     DCHECK(result.isValueCell(), "result must be a ValueCell");
     ValueCell value_cell(&scope, *result);
@@ -2022,7 +2013,7 @@ bool Interpreter::forIterUpdateCache(Context* ctx, word arg, word index) {
   }
 
   if (index >= 0 && next.isFunction()) {
-    icUpdate(*ctx->caches, index, iter.layoutId(), *next);
+    icUpdate(frame->caches(), index, iter.layoutId(), *next);
   }
 
   next = resolveDescriptorGet(thread, next, iter, type);
@@ -2043,7 +2034,7 @@ HANDLER_INLINE bool Interpreter::doForIterCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject iter = frame->topValue();
   LayoutId iter_layout_id = iter.layoutId();
-  RawObject cached = icLookup(*ctx->caches, arg, iter_layout_id);
+  RawObject cached = icLookup(frame->caches(), arg, iter_layout_id);
   if (cached.isErrorNotFound()) {
     return forIterUpdateCache(ctx, icOriginalArg(frame->function(), arg), arg);
   }
@@ -2195,7 +2186,7 @@ bool Interpreter::storeAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(*ctx->caches, arg, layout_id, *location);
+    icUpdate(frame->caches(), arg, layout_id, *location);
   }
   return false;
 }
@@ -2204,7 +2195,7 @@ HANDLER_INLINE bool Interpreter::doStoreAttrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(frame->caches(), arg, layout_id);
   if (cached.isError()) {
     return storeAttrUpdateCache(ctx, arg);
   }
@@ -2252,7 +2243,7 @@ HANDLER_INLINE bool Interpreter::doStoreGlobal(Context* ctx, word arg) {
   Object value(&scope, frame->popValue());
   Dict globals(&scope, frame->function().globals());
   Runtime* runtime = thread->runtime();
-  if (!isCacheEnabledForCurrentFunction(ctx)) {
+  if (!isCacheEnabledForCurrentFunction(frame)) {
     runtime->moduleDictAtPut(thread, globals, key, value);
     return false;
   }
@@ -2274,9 +2265,10 @@ HANDLER_INLINE bool Interpreter::doStoreGlobal(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doStoreGlobalCached(Context* ctx, word arg) {
-  RawObject cached = icLookupGlobalVar(*ctx->caches, arg);
+  Frame* frame = ctx->frame;
+  RawObject cached = icLookupGlobalVar(frame->caches(), arg);
   DCHECK(cached.isValueCell(), "the cached value must not be a ValueCell");
-  ValueCell::cast(cached).setValue(ctx->frame->popValue());
+  ValueCell::cast(cached).setValue(frame->popValue());
   return false;
 }
 
@@ -2293,7 +2285,7 @@ HANDLER_INLINE bool Interpreter::doDeleteGlobal(Context* ctx, word arg) {
   if (result.isErrorNotFound()) {
     return raiseUndefinedName(ctx, key);
   }
-  if (isCacheEnabledForCurrentFunction(ctx)) {
+  if (isCacheEnabledForCurrentFunction(frame)) {
     ValueCell value_cell(&scope, *result);
     // TODO(T45091174): Move this into a module instance.
     icInvalidateGlobalVar(thread, value_cell);
@@ -2467,7 +2459,7 @@ bool Interpreter::loadAttrUpdateCache(Context* ctx, word arg) {
   if (result.isError()) return unwind(ctx);
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
-    icUpdate(*ctx->caches, arg, layout_id, *location);
+    icUpdate(frame->caches(), arg, layout_id, *location);
   }
   frame->setTopValue(*result);
   return false;
@@ -2501,7 +2493,7 @@ HANDLER_INLINE bool Interpreter::doLoadAttrCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver_raw = frame->topValue();
   LayoutId layout_id = receiver_raw.layoutId();
-  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(frame->caches(), arg, layout_id);
   if (cached.isErrorNotFound()) {
     return loadAttrUpdateCache(ctx, arg);
   }
@@ -2704,7 +2696,7 @@ HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {
   Object result(&scope, runtime->moduleDictValueCellAt(thread, globals, key));
   if (result.isValueCell()) {
     ValueCell value_cell(&scope, *result);
-    if (isCacheEnabledForCurrentFunction(ctx)) {
+    if (isCacheEnabledForCurrentFunction(frame)) {
       Function function(&scope, frame->function());
       icUpdateGlobalVar(thread, function, arg, value_cell);
     }
@@ -2716,7 +2708,7 @@ HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {
                         runtime->moduleDictValueCellAt(thread, builtins, key));
   if (builtin_result.isValueCell()) {
     ValueCell value_cell(&scope, *builtin_result);
-    if (isCacheEnabledForCurrentFunction(ctx)) {
+    if (isCacheEnabledForCurrentFunction(frame)) {
       Function function(&scope, frame->function());
       icUpdateGlobalVar(thread, function, arg, value_cell);
       // Insert a placeholder to the module dict to show that a builtins entry
@@ -2734,11 +2726,12 @@ HANDLER_INLINE bool Interpreter::doLoadGlobal(Context* ctx, word arg) {
 }
 
 HANDLER_INLINE bool Interpreter::doLoadGlobalCached(Context* ctx, word arg) {
-  RawObject cached = icLookupGlobalVar(*ctx->caches, arg);
+  Frame* frame = ctx->frame;
+  RawObject cached = icLookupGlobalVar(frame->caches(), arg);
   DCHECK(cached.isValueCell(), "cached value must be a ValueCell");
   DCHECK(!ValueCell::cast(cached).isPlaceholder(),
          "cached ValueCell must not be a placeholder");
-  ctx->frame->pushValue(ValueCell::cast(cached).value());
+  frame->pushValue(ValueCell::cast(cached).value());
   return false;
 }
 
@@ -2886,8 +2879,6 @@ HANDLER_INLINE Frame* Interpreter::pushFrame(Context* ctx, RawFunction function,
   caller_frame->setVirtualPC(ctx->pc);
   ctx->frame = callee_frame;
   ctx->pc = callee_frame->virtualPC();
-  ctx->bytecode = function.rewrittenBytecode();
-  ctx->caches = function.caches();
   return callee_frame;
 }
 
@@ -3497,7 +3488,7 @@ bool Interpreter::doLoadMethodCached(Context* ctx, word arg) {
   Frame* frame = ctx->frame;
   RawObject receiver = frame->topValue();
   LayoutId layout_id = receiver.layoutId();
-  RawObject cached = icLookup(*ctx->caches, arg, layout_id);
+  RawObject cached = icLookup(frame->caches(), arg, layout_id);
   // A function object is cached only when LOAD_ATTR_CACHED is guaranteed to
   // push a BoundMethod with the function via objectGetAttributeSetLocation().
   // Otherwise, LOAD_ATTR_CACHED caches only attribute's offsets.
@@ -3541,8 +3532,8 @@ HANDLER_INLINE bool Interpreter::cachedBinaryOpImpl(
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   IcBinopFlags flags;
-  RawObject method =
-      icLookupBinop(*ctx->caches, arg, left_layout_id, right_layout_id, &flags);
+  RawObject method = icLookupBinop(frame->caches(), arg, left_layout_id,
+                                   right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     return update_cache(ctx, arg);
   }
@@ -3575,8 +3566,8 @@ bool Interpreter::compareOpUpdateCache(Context* ctx, word arg) {
   if (!method.isNoneType()) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
-    icUpdateBinop(*ctx->caches, arg, left_layout_id, right_layout_id, *method,
-                  flags);
+    icUpdateBinop(frame->caches(), arg, left_layout_id, right_layout_id,
+                  *method, flags);
   }
   frame->pushValue(result);
   return false;
@@ -3618,8 +3609,8 @@ bool Interpreter::inplaceOpUpdateCache(Context* ctx, word arg) {
   if (!method.isNoneType()) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
-    icUpdateBinop(*ctx->caches, arg, left_layout_id, right_layout_id, *method,
-                  flags);
+    icUpdateBinop(frame->caches(), arg, left_layout_id, right_layout_id,
+                  *method, flags);
   }
   if (result.isError()) return unwind(ctx);
   frame->pushValue(result);
@@ -3668,8 +3659,8 @@ bool Interpreter::binaryOpUpdateCache(Context* ctx, word arg) {
   Object result(&scope, binaryOperationSetMethod(thread, frame, op, left, right,
                                                  &method, &flags));
   if (!method.isNoneType()) {
-    icUpdateBinop(*ctx->caches, arg, left.layoutId(), right.layoutId(), *method,
-                  flags);
+    icUpdateBinop(frame->caches(), arg, left.layoutId(), right.layoutId(),
+                  *method, flags);
   }
   if (result.isErrorException()) return unwind(ctx);
   frame->pushValue(*result);
@@ -3699,10 +3690,12 @@ bool Interpreter::doBinaryOpCached(Context* ctx, word arg) {
 
 RawObject Interpreter::execute(Thread* thread, Frame* frame,
                                const Function& function) {
-  HandleScope scope(thread);
   DCHECK(frame->code() == function.code(), "function should match code");
-  Context ctx(&scope, thread, frame, function.rewrittenBytecode(),
-              function.caches());
+  Context ctx;
+  ctx.thread = thread;
+  ctx.entry_frame = frame;
+  ctx.frame = frame;
+  ctx.pc = frame->virtualPC();
 
   auto do_return = [&ctx] {
     RawObject return_val = ctx.frame->popValue();
@@ -3737,9 +3730,10 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
   Bytecode bc;
   int32_t arg;
   auto next_label = [&]() __attribute__((always_inline)) {
-    ctx.frame->setVirtualPC(ctx.pc);
+    Frame* current_frame = ctx.frame;
+    current_frame->setVirtualPC(ctx.pc);
     static_assert(endian::native == endian::little, "big endian unsupported");
-    arg = ctx.bytecode.uint16At(ctx.pc);
+    arg = current_frame->bytecode().uint16At(ctx.pc);
     ctx.pc += 2;
     bc = static_cast<Bytecode>(arg & 0xFF);
     arg >>= 8;
@@ -3751,7 +3745,8 @@ RawObject Interpreter::execute(Thread* thread, Frame* frame,
 extendedArg:
   do {
     static_assert(endian::native == endian::little, "big endian unsupported");
-    uint16_t bytes_at = ctx.bytecode.uint16At(ctx.pc);
+    Frame* current_frame = ctx.frame;
+    uint16_t bytes_at = current_frame->bytecode().uint16At(ctx.pc);
     ctx.pc += 2;
     bc = static_cast<Bytecode>(bytes_at & 0xFF);
     arg = (arg << 8) | (bytes_at >> 8);

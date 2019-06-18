@@ -123,6 +123,8 @@ Frame* Thread::pushNativeFrame(word nargs) {
 Frame* Thread::pushCallFrame(RawFunction function) {
   Frame* result = openAndLinkFrame(function.totalArgs(), function.totalVars(),
                                    function.stacksize());
+  result->setBytecode(MutableBytes::cast(function.rewrittenBytecode()));
+  result->setCaches(Tuple::cast(function.caches()));
   result->setVirtualPC(0);
   return result;
 }

@@ -183,6 +183,12 @@ class Frame {
   // code does not have OPTIMIZED and NEWLOCALS flags set.
   RawObject implicitGlobals();
 
+  RawMutableBytes bytecode();
+  void setBytecode(RawMutableBytes bytecode);
+
+  RawTuple caches();
+  void setCaches(RawTuple caches);
+
   RawObject code();
 
   // A pointer to the previous frame or nullptr if this is the first frame
@@ -242,7 +248,9 @@ class Frame {
   // Returns nullptr if the frame is well formed, otherwise an error message.
   const char* isInvalid();
 
-  static const int kPreviousFrameOffset = 0;
+  static const int kBytecodeOffset = 0;
+  static const int kCachesOffset = kBytecodeOffset + kPointerSize;
+  static const int kPreviousFrameOffset = kCachesOffset + kPointerSize;
   static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
   static const int kVirtualPCOffset = kValueStackTopOffset + kPointerSize;
   static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
@@ -371,6 +379,18 @@ inline void Frame::resetLocals(word num_locals) {
 
 inline word Frame::numLocals() {
   return SmallInt::cast(at(kNumLocalsOffset)).value();
+}
+
+inline RawTuple Frame::caches() { return RawTuple::cast(at(kCachesOffset)); }
+
+inline void Frame::setCaches(RawTuple caches) { atPut(kCachesOffset, caches); }
+
+inline RawMutableBytes Frame::bytecode() {
+  return RawMutableBytes::cast(at(kBytecodeOffset));
+}
+
+inline void Frame::setBytecode(RawMutableBytes bytecode) {
+  atPut(kBytecodeOffset, bytecode);
 }
 
 inline Frame* Frame::previousFrame() {
