@@ -295,7 +295,7 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   if (length == 0 || times <= 0) {
     return runtime->emptyTuple();
   }
-  if (length == 1 || times == 1) {
+  if (times == 1) {
     return *self;
   }
 
@@ -307,6 +307,11 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
   }
 
   Tuple new_tuple(&scope, runtime->newTuple(new_length));
+  if (length == 1) {
+    // Fast path for single-element tuples
+    new_tuple.fill(self.at(0));
+    return *new_tuple;
+  }
   for (word i = 0; i < times; i++) {
     for (word j = 0; j < length; j++) {
       new_tuple.atPut(i * length + j, self.at(j));

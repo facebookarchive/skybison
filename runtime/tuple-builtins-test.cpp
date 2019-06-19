@@ -373,45 +373,73 @@ repr = Foo((1, 2, 3)).__repr__()
 }
 
 TEST_F(TupleBuiltinsTest, DunderMulWithOneElement) {
-  ASSERT_FALSE(runFromCStr(&runtime_, "a = (1,) * 4").isError());
   HandleScope scope(thread_);
-  Tuple a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Tuple tuple(&scope, runtime_.newTuple(1));
+  tuple.atPut(0, SmallInt::fromWord(1));
+  Int four(&scope, SmallInt::fromWord(4));
+  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, four));
+  ASSERT_FALSE(result_obj.isError());
+  Tuple result(&scope, *result_obj);
 
-  ASSERT_EQ(a.length(), 4);
-  EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(a.at(1), 1));
-  EXPECT_TRUE(isIntEqualsWord(a.at(2), 1));
-  EXPECT_TRUE(isIntEqualsWord(a.at(3), 1));
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 1));
 }
 
-TEST_F(TupleBuiltinsTest, DunderMulWithManyElements) {
-  ASSERT_FALSE(runFromCStr(&runtime_, "a = (1,2,3) * 2").isError());
+TEST_F(TupleBuiltinsTest, DunderMulWithLengthGreaterThanOneAndTimesIsOne) {
   HandleScope scope(thread_);
-  Tuple a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  Tuple tuple(&scope, tupleFromRange(0, 4));
+  Int one(&scope, SmallInt::fromWord(1));
+  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, one));
+  ASSERT_FALSE(result_obj.isError());
+  Tuple result(&scope, *result_obj);
 
-  ASSERT_EQ(a.length(), 6);
-  EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(a.at(1), 2));
-  EXPECT_TRUE(isIntEqualsWord(a.at(2), 3));
-  EXPECT_TRUE(isIntEqualsWord(a.at(3), 1));
-  EXPECT_TRUE(isIntEqualsWord(a.at(4), 2));
-  EXPECT_TRUE(isIntEqualsWord(a.at(5), 3));
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 0));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 3));
+}
+
+TEST_F(TupleBuiltinsTest,
+       DunderMulWithLengthGreaterThanOneAndTimesGreaterThanOne) {
+  HandleScope scope(thread_);
+  Tuple tuple(&scope, tupleFromRange(1, 4));
+  Int two(&scope, SmallInt::fromWord(2));
+  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, two));
+  ASSERT_FALSE(result_obj.isError());
+  Tuple result(&scope, *result_obj);
+
+  ASSERT_EQ(result.length(), 6);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 3));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(4), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(5), 3));
 }
 
 TEST_F(TupleBuiltinsTest, DunderMulWithEmptyTuple) {
-  ASSERT_FALSE(runFromCStr(&runtime_, "a = () * 5").isError());
   HandleScope scope(thread_);
-  Tuple a(&scope, moduleAt(&runtime_, "__main__", "a"));
-
-  EXPECT_EQ(a.length(), 0);
+  Tuple tuple(&scope, runtime_.emptyTuple());
+  Int five(&scope, SmallInt::fromWord(5));
+  Object result_obj(&scope, runBuiltin(TupleBuiltins::dunderMul, tuple, five));
+  ASSERT_FALSE(result_obj.isError());
+  Tuple result(&scope, *result_obj);
+  EXPECT_EQ(result.length(), 0);
 }
 
 TEST_F(TupleBuiltinsTest, DunderMulWithNegativeTimes) {
-  ASSERT_FALSE(runFromCStr(&runtime_, "a = (1,2,3) * -2").isError());
   HandleScope scope(thread_);
-  Tuple a(&scope, moduleAt(&runtime_, "__main__", "a"));
-
-  EXPECT_EQ(a.length(), 0);
+  Tuple tuple(&scope, tupleFromRange(1, 4));
+  Int negative(&scope, SmallInt::fromWord(-2));
+  Object result_obj(&scope,
+                    runBuiltin(TupleBuiltins::dunderMul, tuple, negative));
+  ASSERT_FALSE(result_obj.isError());
+  Tuple result(&scope, *result_obj);
+  EXPECT_EQ(result.length(), 0);
 }
 
 TEST_F(TupleBuiltinsTest, DunderMulWithTupleSubclassReturnsTuple) {
