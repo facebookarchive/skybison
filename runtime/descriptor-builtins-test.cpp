@@ -159,6 +159,29 @@ print(c1.x, c2.x)
   EXPECT_EQ(output, "24 42\n");
 }
 
+TEST_F(DescriptorBuiltinsTest, PropertyNoDeleterRaisesAttributeError) {
+  const char* src = R"(
+class C:
+  def __init__(self, x):
+      self.__x = x
+
+  def getx(self):
+      return self.__x
+
+  def setx(self, value):
+      self.__x = value
+
+  x = property(getx, setx)
+
+c1 = C(24)
+del c1.x
+)";
+
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
+                            LayoutId::kAttributeError,
+                            "can't delete attribute"));
+}
+
 TEST_F(DescriptorBuiltinsTest, PropertyNoGetterRaisesAttributeErrorUnreadable) {
   const char* src = R"(
 class C:
@@ -269,6 +292,23 @@ x = c1.x
 
   Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
   EXPECT_TRUE(isIntEqualsWord(*x, 42));
+}
+
+TEST_F(DescriptorBuiltinsTest, PropertyWithCallableDeleterDeletesValue) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+def deleter(obj):
+    del obj.y
+
+class Foo:
+    x = property(None, None, deleter, doc="documentation")
+    y = 123
+
+foo = Foo()
+del foo.x
+foo.y
+)"),
+                            LayoutId::kAttributeError,
+                            "'Foo' object has no attribute 'y'"));
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyWithCallableGetterReturnsValue) {

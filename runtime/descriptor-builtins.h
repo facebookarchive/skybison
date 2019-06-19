@@ -33,9 +33,10 @@ class StaticMethodBuiltins
 class PropertyBuiltins : public Builtins<PropertyBuiltins, SymbolId::kProperty,
                                          LayoutId::kProperty> {
  public:
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderDelete(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGet(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderInit(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderSet(Thread* thread, Frame* frame, word nargs);
   static RawObject deleter(Thread* thread, Frame* frame, word nargs);
   static RawObject getter(Thread* thread, Frame* frame, word nargs);

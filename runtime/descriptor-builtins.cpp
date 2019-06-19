@@ -78,103 +78,69 @@ RawObject StaticMethodBuiltins::dunderInit(Thread* thread, Frame* frame,
 
 // clang-format off
 const BuiltinMethod PropertyBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDeleter, deleter},
+    {SymbolId::kDunderDelete, dunderDelete},
     {SymbolId::kDunderGet, dunderGet},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderSet, dunderSet},
+    {SymbolId::kDeleter, deleter},
     {SymbolId::kGetter, getter},
     {SymbolId::kSetter, setter},
     {SymbolId::kSentinelId, nullptr},
 };
 // clang-format on
 
-RawObject PropertyBuiltins::deleter(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  if (!args.get(0).isProperty()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'deleter' requires a 'property' object");
-  }
-
+RawObject PropertyBuiltins::dunderDelete(Thread* thread, Frame* frame,
+                                         word nargs) {
   HandleScope scope(thread);
-  Property property(&scope, args.get(0));
-  Object getter(&scope, property.getter());
-  Object setter(&scope, property.setter());
-  Object deleter(&scope, args.get(1));
-  return thread->runtime()->newProperty(getter, setter, deleter);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isProperty()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+  }
+  Property self(&scope, *self_obj);
+  Object deleter(&scope, self.deleter());
+  if (deleter.isNoneType()) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "can't delete attribute");
+  }
+  Object instance(&scope, args.get(1));
+  return Interpreter::callFunction1(thread, frame, deleter, instance);
 }
 
 RawObject PropertyBuiltins::dunderGet(Thread* thread, Frame* frame,
                                       word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
-  if (!args.get(0).isProperty()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__get__' requires a 'property' object");
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isProperty()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
   }
-  Property property(&scope, args.get(0));
-  Object obj(&scope, args.get(1));
-
-  if (property.getter() == NoneType::object()) {
+  Property self(&scope, *self_obj);
+  Object getter(&scope, self.getter());
+  if (getter.isNoneType()) {
     return thread->raiseWithFmt(LayoutId::kAttributeError,
                                 "unreadable attribute");
   }
-
-  if (obj.isNoneType()) {
-    return *property;
+  Object instance(&scope, args.get(1));
+  if (instance.isNoneType()) {
+    return *self;
   }
-
-  Object getter(&scope, property.getter());
-  return Interpreter::callFunction1(thread, frame, getter, obj);
-}
-
-RawObject PropertyBuiltins::dunderSet(Thread* thread, Frame* frame,
-                                      word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  if (!args.get(0).isProperty()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__set__' requires a 'property' object");
-  }
-  Property property(&scope, args.get(0));
-  Object obj(&scope, args.get(1));
-  Object value(&scope, args.get(2));
-
-  if (property.setter().isNoneType()) {
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "can't set attribute");
-  }
-
-  Object setter(&scope, property.setter());
-  return Interpreter::callFunction2(thread, frame, setter, obj, value);
-}
-
-RawObject PropertyBuiltins::getter(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  if (!args.get(0).isProperty()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'getter' requires a 'property' object");
-  }
-  HandleScope scope(thread);
-  Property property(&scope, args.get(0));
-  Object getter(&scope, args.get(1));
-  Object setter(&scope, property.setter());
-  Object deleter(&scope, property.deleter());
-  return thread->runtime()->newProperty(getter, setter, deleter);
+  return Interpreter::callFunction1(thread, frame, getter, instance);
 }
 
 RawObject PropertyBuiltins::dunderInit(Thread* thread, Frame* frame,
                                        word nargs) {
-  Arguments args(frame, nargs);
-  if (!args.get(0).isProperty()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'__init__' requires a 'property' object");
-  }
   HandleScope scope(thread);
-  Property property(&scope, args.get(0));
-  property.setGetter(args.get(1));
-  property.setSetter(args.get(2));
-  property.setDeleter(args.get(3));
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isProperty()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+  }
+  Property self(&scope, *self_obj);
+  self.setGetter(args.get(1));
+  self.setSetter(args.get(2));
+  self.setDeleter(args.get(3));
   // TODO(T42363565) Do something with the doc argument.
   return NoneType::object();
 }
@@ -185,17 +151,64 @@ RawObject PropertyBuiltins::dunderNew(Thread* thread, Frame*, word) {
   return thread->runtime()->newProperty(none, none, none);
 }
 
-RawObject PropertyBuiltins::setter(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  if (!args.get(0).isProperty()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'setter' requires a 'property' object");
-  }
+RawObject PropertyBuiltins::dunderSet(Thread* thread, Frame* frame,
+                                      word nargs) {
   HandleScope scope(thread);
-  Property property(&scope, args.get(0));
-  Object getter(&scope, property.getter());
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isProperty()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+  }
+  Property self(&scope, *self_obj);
+  Object setter(&scope, self.setter());
+  if (setter.isNoneType()) {
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "can't set attribute");
+  }
+  Object obj(&scope, args.get(1));
+  Object value(&scope, args.get(2));
+  return Interpreter::callFunction2(thread, frame, setter, obj, value);
+}
+
+RawObject PropertyBuiltins::deleter(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isProperty()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+  }
+  Property self(&scope, *self_obj);
+  Object getter(&scope, self.getter());
+  Object setter(&scope, self.setter());
+  Object deleter(&scope, args.get(1));
+  return thread->runtime()->newProperty(getter, setter, deleter);
+}
+
+RawObject PropertyBuiltins::getter(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isProperty()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+  }
+  Property self(&scope, *self_obj);
+  Object getter(&scope, args.get(1));
+  Object setter(&scope, self.setter());
+  Object deleter(&scope, self.deleter());
+  return thread->runtime()->newProperty(getter, setter, deleter);
+}
+
+RawObject PropertyBuiltins::setter(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isProperty()) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kProperty);
+  }
+  Property self(&scope, *self_obj);
+  Object getter(&scope, self.getter());
   Object setter(&scope, args.get(1));
-  Object deleter(&scope, property.deleter());
+  Object deleter(&scope, self.deleter());
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 

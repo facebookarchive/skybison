@@ -122,7 +122,10 @@ class classmethod(bootstrap=True):
 
 
 class property(bootstrap=True):
-    def __get__(self, instance, owner):
+    def __delete__(self, instance):
+        pass
+
+    def __get__(self, instance, owner=None):
         pass
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
