@@ -738,6 +738,24 @@ class SetTests(unittest.TestCase):
         set.remove(s, 1)
         self.assertNotIn(1, s)
 
+    def test_inplace_with_non_set_raises_type_error(self):
+        a = frozenset()
+        self.assertRaises(TypeError, set.__ior__, a, set())
+
+    def test_inplace_with_non_set_as_other_returns_unimplemented(self):
+        a = set()
+        result = set.__ior__(a, 1)
+        self.assertEqual(len(a), 0)
+        self.assertIs(result, NotImplemented)
+
+    def test_inplace_or_modifies_self(self):
+        a = set()
+        b = {"foo"}
+        result = set.__ior__(a, b)
+        self.assertIs(result, a)
+        self.assertEqual(len(a), 1)
+        self.assertIn("foo", a)
+
 
 class StrTests(unittest.TestCase):
     def test_format_single_open_curly_brace_raises_value_error(self):

@@ -2681,6 +2681,19 @@ class set(bootstrap=True):
     def __new__(cls, iterable=()):
         pass
 
+    def __ior__(self, other):
+        if not _set_check(self):
+            raise TypeError(
+                "'__ior__' requires a 'set' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        if not _set_check(other) and not _frozenset_check(other):
+            return NotImplemented
+        if self is other:
+            return self
+        set.update(self, other)
+        return self
+
     def __or__(self, other):
         if not _set_check(self) and not _frozenset_check(self):
             return NotImplemented
