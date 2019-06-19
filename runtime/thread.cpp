@@ -165,10 +165,11 @@ void Thread::pushInitialFrame() {
   currentFrame_ = initialFrame_;
 }
 
-void Thread::popFrame() {
+Frame* Thread::popFrame() {
   Frame* frame = currentFrame_;
   DCHECK(!frame->isSentinelFrame(), "cannot pop initial frame");
   currentFrame_ = frame->previousFrame();
+  return currentFrame_;
 }
 
 RawObject Thread::exec(const Code& code, const Dict& globals,

@@ -54,7 +54,7 @@ class Thread {
   Frame* pushClassFunctionFrame(const Handle<RawFunction>& function);
   void checkStackOverflow(word max_size);
 
-  void popFrame();
+  Frame* popFrame();
 
   // Runs a code object on the current thread.
   RawObject exec(const Handle<RawCode>& code, const Handle<RawDict>& globals,

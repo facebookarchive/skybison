@@ -40,20 +40,6 @@ class Interpreter {
     YIELD,
   };
 
-  // Interpreter-internal execution state, containing the information necessary
-  // for running bytecode.
-  struct Context {
-    // The current thread.
-    Thread* thread;
-
-    // The frame currently being executed. Unless there is another interpreter
-    // nested below this one, and except for a brief window during calls and
-    // returns, this is the same as thread->currentFrame().
-    Frame* frame;
-
-    DISALLOW_HEAP_ALLOCATION();
-  };
-
   static RawObject execute(Thread* thread, Frame* entry_frame,
                            const Function& function);
 
@@ -221,7 +207,7 @@ class Interpreter {
 
   // Process the operands to the RAISE_VARARGS bytecode into a pending exception
   // on ctx->thread.
-  static void raise(Context* ctx, RawObject exc_obj, RawObject cause_obj);
+  static void raise(Thread* thread, RawObject exc_obj, RawObject cause_obj);
 
   static RawObject storeAttrSetLocation(Thread* thread, const Object& object,
                                         const Object& name_str,
@@ -236,7 +222,7 @@ class Interpreter {
   // Returns true if the exception escaped frames owned by the current
   // Interpreter instance, indicating that an Error should be returned to the
   // caller.
-  static bool unwind(Context* ctx, Frame* entry_frame);
+  static bool unwind(Thread* thread, Frame* entry_frame);
 
   // Unwind an ExceptHandler from the stack, restoring the previous handler
   // state.
@@ -254,17 +240,19 @@ class Interpreter {
   // return to the dispatch loop (the "handler" is either a loop for
   // break/continue, or a finally block for break/continue/return). Returns
   // false if the popped block was not relevant to the given Why.
-  static bool popBlock(Context* ctx, TryBlock::Why why, RawObject value);
+  static bool popBlock(Thread* thread, TryBlock::Why why, RawObject value);
 
   // Pop from the block stack until a handler that cares about 'return' is
   // found, or the stack is emptied. The return value is meant to be used
   // directly as the return value of an opcode handler (see "Opcode handlers"
   // below for an explanation).
-  static bool handleReturn(Context* ctx, RawObject retval, Frame* entry_frame);
+  static bool handleReturn(Thread* thread, RawObject retval,
+                           Frame* entry_frame);
 
   // Pop from the block stack until a handler that cares about 'break' or
   // 'continue' is found.
-  static void handleLoopExit(Context* ctx, TryBlock::Why why, RawObject retval);
+  static void handleLoopExit(Thread* thread, TryBlock::Why why,
+                             RawObject retval);
 
  private:
   // Opcode handlers
@@ -279,154 +267,154 @@ class Interpreter {
   //
   // A return value of false means execution should continue as normal in the
   // current Frame.
-  static Continue doBeforeAsyncWith(Context* ctx, word arg);
-  static Continue doBinaryAdd(Context* ctx, word arg);
-  static Continue doBinaryAnd(Context* ctx, word arg);
-  static Continue doBinaryFloorDivide(Context* ctx, word arg);
-  static Continue doBinaryLshift(Context* ctx, word arg);
-  static Continue doBinaryMatrixMultiply(Context* ctx, word arg);
-  static Continue doBinaryModulo(Context* ctx, word arg);
-  static Continue doBinaryMultiply(Context* ctx, word arg);
-  static Continue doBinaryOpCached(Context* ctx, word arg);
-  static Continue doBinaryOr(Context* ctx, word arg);
-  static Continue doBinaryPower(Context* ctx, word arg);
-  static Continue doBinaryRshift(Context* ctx, word arg);
-  static Continue doBinarySubscr(Context* ctx, word arg);
-  static Continue doBinarySubscrCached(Context* ctx, word arg);
-  static Continue doBinarySubtract(Context* ctx, word arg);
-  static Continue doBinaryTrueDivide(Context* ctx, word arg);
-  static Continue doBinaryXor(Context* ctx, word arg);
-  static Continue doBuildListUnpack(Context* ctx, word arg);
-  static Continue doBuildMap(Context* ctx, word arg);
-  static Continue doBuildMapUnpack(Context* ctx, word arg);
-  static Continue doBuildMapUnpackWithCall(Context* ctx, word arg);
-  static Continue doBuildSet(Context* ctx, word arg);
-  static Continue doBuildSetUnpack(Context* ctx, word arg);
-  static Continue doBuildTupleUnpack(Context* ctx, word arg);
-  static Continue doCallFunction(Context* ctx, word arg);
-  static Continue doCallFunctionEx(Context* ctx, word arg);
-  static Continue doCallFunctionKw(Context* ctx, word arg);
-  static Continue doCallMethod(Context* ctx, word arg);
-  static Continue doCompareOp(Context* ctx, word arg);
-  static Continue doCompareOpCached(Context* ctx, word arg);
-  static Continue doDeleteAttr(Context* ctx, word arg);
-  static Continue doDeleteSubscr(Context* ctx, word arg);
-  static Continue doEndFinally(Context* ctx, word arg);
-  static Continue doForIter(Context* ctx, word arg);
-  static Continue doForIterCached(Context* ctx, word arg);
-  static Continue doFormatValue(Context* ctx, word arg);
-  static Continue doGetAiter(Context* ctx, word arg);
-  static Continue doGetAnext(Context* ctx, word arg);
-  static Continue doGetAwaitable(Context* ctx, word arg);
-  static Continue doGetIter(Context* ctx, word arg);
-  static Continue doGetYieldFromIter(Context* ctx, word arg);
-  static Continue doImportFrom(Context* ctx, word arg);
-  static Continue doImportName(Context* ctx, word arg);
-  static Continue doInplaceAdd(Context* ctx, word arg);
-  static Continue doInplaceAnd(Context* ctx, word arg);
-  static Continue doInplaceFloorDivide(Context* ctx, word arg);
-  static Continue doInplaceLshift(Context* ctx, word arg);
-  static Continue doInplaceMatrixMultiply(Context* ctx, word arg);
-  static Continue doInplaceModulo(Context* ctx, word arg);
-  static Continue doInplaceMultiply(Context* ctx, word arg);
-  static Continue doInplaceOpCached(Context* ctx, word arg);
-  static Continue doInplaceOr(Context* ctx, word arg);
-  static Continue doInplacePower(Context* ctx, word arg);
-  static Continue doInplaceRshift(Context* ctx, word arg);
-  static Continue doInplaceSubtract(Context* ctx, word arg);
-  static Continue doInplaceTrueDivide(Context* ctx, word arg);
-  static Continue doInplaceXor(Context* ctx, word arg);
-  static Continue doInvalidBytecode(Context* ctx, word arg);
-  static Continue doLoadAttr(Context* ctx, word arg);
-  static Continue doLoadAttrCached(Context* ctx, word arg);
-  static Continue doLoadDeref(Context* ctx, word arg);
-  static Continue doLoadFast(Context* ctx, word arg);
-  static Continue doLoadFastReverse(Context* ctx, word arg);
-  static Continue doLoadMethod(Context* ctx, word arg);
-  static Continue doLoadMethodCached(Context* ctx, word arg);
-  static Continue doLoadName(Context* ctx, word arg);
-  static Continue doPopExcept(Context* ctx, word arg);
-  static Continue doRaiseVarargs(Context* ctx, word arg);
-  static Continue doReturnValue(Context* ctx, word arg);
-  static Continue doSetupWith(Context* ctx, word arg);
-  static Continue doStoreAttr(Context* ctx, word arg);
-  static Continue doStoreAttrCached(Context* ctx, word arg);
-  static Continue doStoreSubscr(Context* ctx, word arg);
-  static Continue doUnaryInvert(Context* ctx, word arg);
-  static Continue doUnaryNegative(Context* ctx, word arg);
-  static Continue doUnaryNot(Context* ctx, word arg);
-  static Continue doUnaryPositive(Context* ctx, word arg);
-  static Continue doUnpackEx(Context* ctx, word arg);
-  static Continue doUnpackSequence(Context* ctx, word arg);
-  static Continue doWithCleanupFinish(Context* ctx, word arg);
-  static Continue doWithCleanupStart(Context* ctx, word arg);
-  static Continue doYieldFrom(Context* ctx, word arg);
-  static Continue doYieldValue(Context* ctx, word arg);
-  static Continue doBreakLoop(Context* ctx, word arg);
-  static Continue doBuildConstKeyMap(Context* ctx, word arg);
-  static Continue doBuildList(Context* ctx, word arg);
-  static Continue doBuildSlice(Context* ctx, word arg);
-  static Continue doBuildString(Context* ctx, word arg);
-  static Continue doBuildTuple(Context* ctx, word arg);
-  static Continue doContinueLoop(Context* ctx, word arg);
-  static Continue doDeleteDeref(Context* ctx, word arg);
-  static Continue doDeleteFast(Context* ctx, word arg);
-  static Continue doDeleteGlobal(Context* ctx, word arg);
-  static Continue doDeleteName(Context* ctx, word arg);
-  static Continue doDupTop(Context* ctx, word arg);
-  static Continue doDupTopTwo(Context* ctx, word arg);
-  static Continue doImportStar(Context* ctx, word arg);
-  static Continue doJumpAbsolute(Context* ctx, word arg);
-  static Continue doJumpForward(Context* ctx, word arg);
-  static Continue doJumpIfFalseOrPop(Context* ctx, word arg);
-  static Continue doJumpIfTrueOrPop(Context* ctx, word arg);
-  static Continue doListAppend(Context* ctx, word arg);
-  static Continue doLoadBuildClass(Context* ctx, word arg);
-  static Continue doLoadClassDeref(Context* ctx, word arg);
-  static Continue doLoadClosure(Context* ctx, word arg);
-  static Continue doLoadConst(Context* ctx, word arg);
-  static Continue doLoadGlobal(Context* ctx, word arg);
-  static Continue doLoadGlobalCached(Context* ctx, word arg);
-  static Continue doLoadImmediate(Context* ctx, word arg);
-  static Continue doMakeFunction(Context* ctx, word arg);
-  static Continue doMapAdd(Context* ctx, word arg);
-  static Continue doNop(Context* ctx, word arg);
-  static Continue doPopBlock(Context* ctx, word arg);
-  static Continue doPopJumpIfFalse(Context* ctx, word arg);
-  static Continue doPopJumpIfTrue(Context* ctx, word arg);
-  static Continue doPopTop(Context* ctx, word arg);
-  static Continue doPrintExpr(Context* ctx, word arg);
-  static Continue doRotThree(Context* ctx, word arg);
-  static Continue doRotTwo(Context* ctx, word arg);
-  static Continue doSetAdd(Context* ctx, word arg);
-  static Continue doSetupAnnotations(Context* ctx, word arg);
-  static Continue doSetupAsyncWith(Context* ctx, word arg);
-  static Continue doSetupExcept(Context* ctx, word arg);
-  static Continue doSetupFinally(Context* ctx, word arg);
-  static Continue doSetupLoop(Context* ctx, word arg);
-  static Continue doStoreAnnotation(Context* ctx, word arg);
-  static Continue doStoreDeref(Context* ctx, word arg);
-  static Continue doStoreFast(Context* ctx, word arg);
-  static Continue doStoreFastReverse(Context* ctx, word arg);
-  static Continue doStoreGlobal(Context* ctx, word arg);
-  static Continue doStoreGlobalCached(Context* ctx, word arg);
-  static Continue doStoreName(Context* ctx, word arg);
+  static Continue doBeforeAsyncWith(Thread* thread, word arg);
+  static Continue doBinaryAdd(Thread* thread, word arg);
+  static Continue doBinaryAnd(Thread* thread, word arg);
+  static Continue doBinaryFloorDivide(Thread* thread, word arg);
+  static Continue doBinaryLshift(Thread* thread, word arg);
+  static Continue doBinaryMatrixMultiply(Thread* thread, word arg);
+  static Continue doBinaryModulo(Thread* thread, word arg);
+  static Continue doBinaryMultiply(Thread* thread, word arg);
+  static Continue doBinaryOpCached(Thread* thread, word arg);
+  static Continue doBinaryOr(Thread* thread, word arg);
+  static Continue doBinaryPower(Thread* thread, word arg);
+  static Continue doBinaryRshift(Thread* thread, word arg);
+  static Continue doBinarySubscr(Thread* thread, word arg);
+  static Continue doBinarySubscrCached(Thread* thread, word arg);
+  static Continue doBinarySubtract(Thread* thread, word arg);
+  static Continue doBinaryTrueDivide(Thread* thread, word arg);
+  static Continue doBinaryXor(Thread* thread, word arg);
+  static Continue doBuildListUnpack(Thread* thread, word arg);
+  static Continue doBuildMap(Thread* thread, word arg);
+  static Continue doBuildMapUnpack(Thread* thread, word arg);
+  static Continue doBuildMapUnpackWithCall(Thread* thread, word arg);
+  static Continue doBuildSet(Thread* thread, word arg);
+  static Continue doBuildSetUnpack(Thread* thread, word arg);
+  static Continue doBuildTupleUnpack(Thread* thread, word arg);
+  static Continue doCallFunction(Thread* thread, word arg);
+  static Continue doCallFunctionEx(Thread* thread, word arg);
+  static Continue doCallFunctionKw(Thread* thread, word arg);
+  static Continue doCallMethod(Thread* thread, word arg);
+  static Continue doCompareOp(Thread* thread, word arg);
+  static Continue doCompareOpCached(Thread* thread, word arg);
+  static Continue doDeleteAttr(Thread* thread, word arg);
+  static Continue doDeleteSubscr(Thread* thread, word arg);
+  static Continue doEndFinally(Thread* thread, word arg);
+  static Continue doForIter(Thread* thread, word arg);
+  static Continue doForIterCached(Thread* thread, word arg);
+  static Continue doFormatValue(Thread* thread, word arg);
+  static Continue doGetAiter(Thread* thread, word arg);
+  static Continue doGetAnext(Thread* thread, word arg);
+  static Continue doGetAwaitable(Thread* thread, word arg);
+  static Continue doGetIter(Thread* thread, word arg);
+  static Continue doGetYieldFromIter(Thread* thread, word arg);
+  static Continue doImportFrom(Thread* thread, word arg);
+  static Continue doImportName(Thread* thread, word arg);
+  static Continue doInplaceAdd(Thread* thread, word arg);
+  static Continue doInplaceAnd(Thread* thread, word arg);
+  static Continue doInplaceFloorDivide(Thread* thread, word arg);
+  static Continue doInplaceLshift(Thread* thread, word arg);
+  static Continue doInplaceMatrixMultiply(Thread* thread, word arg);
+  static Continue doInplaceModulo(Thread* thread, word arg);
+  static Continue doInplaceMultiply(Thread* thread, word arg);
+  static Continue doInplaceOpCached(Thread* thread, word arg);
+  static Continue doInplaceOr(Thread* thread, word arg);
+  static Continue doInplacePower(Thread* thread, word arg);
+  static Continue doInplaceRshift(Thread* thread, word arg);
+  static Continue doInplaceSubtract(Thread* thread, word arg);
+  static Continue doInplaceTrueDivide(Thread* thread, word arg);
+  static Continue doInplaceXor(Thread* thread, word arg);
+  static Continue doInvalidBytecode(Thread* thread, word arg);
+  static Continue doLoadAttr(Thread* thread, word arg);
+  static Continue doLoadAttrCached(Thread* thread, word arg);
+  static Continue doLoadDeref(Thread* thread, word arg);
+  static Continue doLoadFast(Thread* thread, word arg);
+  static Continue doLoadFastReverse(Thread* thread, word arg);
+  static Continue doLoadMethod(Thread* thread, word arg);
+  static Continue doLoadMethodCached(Thread* thread, word arg);
+  static Continue doLoadName(Thread* thread, word arg);
+  static Continue doPopExcept(Thread* thread, word arg);
+  static Continue doRaiseVarargs(Thread* thread, word arg);
+  static Continue doReturnValue(Thread* thread, word arg);
+  static Continue doSetupWith(Thread* thread, word arg);
+  static Continue doStoreAttr(Thread* thread, word arg);
+  static Continue doStoreAttrCached(Thread* thread, word arg);
+  static Continue doStoreSubscr(Thread* thread, word arg);
+  static Continue doUnaryInvert(Thread* thread, word arg);
+  static Continue doUnaryNegative(Thread* thread, word arg);
+  static Continue doUnaryNot(Thread* thread, word arg);
+  static Continue doUnaryPositive(Thread* thread, word arg);
+  static Continue doUnpackEx(Thread* thread, word arg);
+  static Continue doUnpackSequence(Thread* thread, word arg);
+  static Continue doWithCleanupFinish(Thread* thread, word arg);
+  static Continue doWithCleanupStart(Thread* thread, word arg);
+  static Continue doYieldFrom(Thread* thread, word arg);
+  static Continue doYieldValue(Thread* thread, word arg);
+  static Continue doBreakLoop(Thread* thread, word arg);
+  static Continue doBuildConstKeyMap(Thread* thread, word arg);
+  static Continue doBuildList(Thread* thread, word arg);
+  static Continue doBuildSlice(Thread* thread, word arg);
+  static Continue doBuildString(Thread* thread, word arg);
+  static Continue doBuildTuple(Thread* thread, word arg);
+  static Continue doContinueLoop(Thread* thread, word arg);
+  static Continue doDeleteDeref(Thread* thread, word arg);
+  static Continue doDeleteFast(Thread* thread, word arg);
+  static Continue doDeleteGlobal(Thread* thread, word arg);
+  static Continue doDeleteName(Thread* thread, word arg);
+  static Continue doDupTop(Thread* thread, word arg);
+  static Continue doDupTopTwo(Thread* thread, word arg);
+  static Continue doImportStar(Thread* thread, word arg);
+  static Continue doJumpAbsolute(Thread* thread, word arg);
+  static Continue doJumpForward(Thread* thread, word arg);
+  static Continue doJumpIfFalseOrPop(Thread* thread, word arg);
+  static Continue doJumpIfTrueOrPop(Thread* thread, word arg);
+  static Continue doListAppend(Thread* thread, word arg);
+  static Continue doLoadBuildClass(Thread* thread, word arg);
+  static Continue doLoadClassDeref(Thread* thread, word arg);
+  static Continue doLoadClosure(Thread* thread, word arg);
+  static Continue doLoadConst(Thread* thread, word arg);
+  static Continue doLoadGlobal(Thread* thread, word arg);
+  static Continue doLoadGlobalCached(Thread* thread, word arg);
+  static Continue doLoadImmediate(Thread* thread, word arg);
+  static Continue doMakeFunction(Thread* thread, word arg);
+  static Continue doMapAdd(Thread* thread, word arg);
+  static Continue doNop(Thread* thread, word arg);
+  static Continue doPopBlock(Thread* thread, word arg);
+  static Continue doPopJumpIfFalse(Thread* thread, word arg);
+  static Continue doPopJumpIfTrue(Thread* thread, word arg);
+  static Continue doPopTop(Thread* thread, word arg);
+  static Continue doPrintExpr(Thread* thread, word arg);
+  static Continue doRotThree(Thread* thread, word arg);
+  static Continue doRotTwo(Thread* thread, word arg);
+  static Continue doSetAdd(Thread* thread, word arg);
+  static Continue doSetupAnnotations(Thread* thread, word arg);
+  static Continue doSetupAsyncWith(Thread* thread, word arg);
+  static Continue doSetupExcept(Thread* thread, word arg);
+  static Continue doSetupFinally(Thread* thread, word arg);
+  static Continue doSetupLoop(Thread* thread, word arg);
+  static Continue doStoreAnnotation(Thread* thread, word arg);
+  static Continue doStoreDeref(Thread* thread, word arg);
+  static Continue doStoreFast(Thread* thread, word arg);
+  static Continue doStoreFastReverse(Thread* thread, word arg);
+  static Continue doStoreGlobal(Thread* thread, word arg);
+  static Continue doStoreGlobalCached(Thread* thread, word arg);
+  static Continue doStoreName(Thread* thread, word arg);
 
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations
-  static Continue doBinaryOperation(BinaryOp op, Context* ctx);
-  static Continue doInplaceOperation(BinaryOp op, Context* ctx);
-  static Continue doUnaryOperation(SymbolId selector, Context* ctx);
+  static Continue doBinaryOperation(BinaryOp op, Thread* thread);
+  static Continue doInplaceOperation(BinaryOp op, Thread* thread);
+  static Continue doUnaryOperation(SymbolId selector, Thread* thread);
 
   // Slow path for the BINARY_SUBSCR opcode that updates the cache at the given
   // index when appropriate. May also be used as a non-caching slow path by
   // passing a negative index.
-  static Continue binarySubscrUpdateCache(Context* ctx, word index);
+  static Continue binarySubscrUpdateCache(Thread* thread, word index);
 
   // Slow path for the FOR_ITER opcode that updates the cache at the given index
   // when appropriate. May also be used as a non-caching slow path by passing a
   // negative index.
-  static bool forIterUpdateCache(Context* ctx, word arg, word index);
+  static bool forIterUpdateCache(Thread* thread, word arg, word index);
 
   // Slow path for isTrue check. Does a __bool__ method call, etc.
   static RawObject isTrueSlowPath(Thread* thread, RawObject value_obj);
@@ -434,12 +422,12 @@ class Interpreter {
   // Perform a method call at the end of an opcode handler. The benefit over
   // using `callMethod1()` is that we avoid recursively starting a new
   // interpreter loop when the target is a python function.
-  static Continue tailcallMethod1(Context* ctx, RawObject method,
+  static Continue tailcallMethod1(Thread* thread, RawObject method,
                                   RawObject self);
 
   // Call method with 2 parameters at the end of an opcode handler. See
   // `tailcallMethod1()`.
-  static Continue tailcallMethod2(Context* ctx, RawObject method,
+  static Continue tailcallMethod2(Thread* thread, RawObject method,
                                   RawObject self, RawObject arg1);
 
   // Given a non-Function object in `callable`, attempt to normalize it to a
@@ -463,22 +451,22 @@ class Interpreter {
 
   // Perform a positional or keyword call. Used by doCallFunction() and
   // doCallFunctionKw().
-  static Continue handleCall(Context* ctx, word argc, word callable_idx,
+  static Continue handleCall(Thread* thread, word argc, word callable_idx,
                              word num_extra_pop, PrepareCallFunc prepare_args,
                              Function::Entry (RawFunction::*get_entry)() const);
 
   // Call a function through its trampoline, pushing the result on the stack.
-  static Continue callTrampoline(Context* ctx, Function::Entry entry, word argc,
-                                 RawObject* post_call_sp);
+  static Continue callTrampoline(Thread* thread, Function::Entry entry,
+                                 word argc, RawObject* post_call_sp);
 
   // After a callable is prepared and all arguments are processed, push a frame
   // for the callee and update the Context to begin executing it.
-  static Frame* pushFrame(Context* ctx, RawFunction function,
+  static Frame* pushFrame(Thread* thread, RawFunction function,
                           RawObject* post_call_sp);
 
   // Pop the current Frame, restoring the execution context of the previous
   // Frame.
-  static void popFrame(Context* ctx);
+  static Frame* popFrame(Thread* thread);
 
   // Resolve a callable object to a function (resolving `__call__` descriptors
   // as necessary).
@@ -490,22 +478,25 @@ class Interpreter {
                                                  word callable_idx,
                                                  word* nargs);
 
-  static Continue loadAttrUpdateCache(Context* ctx, word arg);
-  static Continue storeAttrUpdateCache(Context* ctx, word arg);
+  static Continue loadAttrUpdateCache(Thread* thread, word arg);
+  static Continue storeAttrUpdateCache(Thread* thread, word arg);
 
-  using OpcodeHandler = Continue (*)(Context* ctx, word arg);
-  using BinopFallbackHandler = Continue (*)(Context* ctx, word arg,
+  using OpcodeHandler = Continue (*)(Thread* thread, word arg);
+  using BinopFallbackHandler = Continue (*)(Thread* thread, word arg,
                                             IcBinopFlags flags);
-  static Continue cachedBinaryOpImpl(Context* ctx, word arg,
+  static Continue cachedBinaryOpImpl(Thread* thread, word arg,
                                      OpcodeHandler update_cache,
                                      BinopFallbackHandler fallback);
 
-  static Continue binaryOpUpdateCache(Context* ctx, word arg);
-  static Continue binaryOpFallback(Context* ctx, word arg, IcBinopFlags flags);
-  static Continue compareOpUpdateCache(Context* ctx, word arg);
-  static Continue compareOpFallback(Context* ctx, word arg, IcBinopFlags flags);
-  static Continue inplaceOpUpdateCache(Context* ctx, word arg);
-  static Continue inplaceOpFallback(Context* ctx, word arg, IcBinopFlags flags);
+  static Continue binaryOpUpdateCache(Thread* thread, word arg);
+  static Continue binaryOpFallback(Thread* thread, word arg,
+                                   IcBinopFlags flags);
+  static Continue compareOpUpdateCache(Thread* thread, word arg);
+  static Continue compareOpFallback(Thread* thread, word arg,
+                                    IcBinopFlags flags);
+  static Continue inplaceOpUpdateCache(Thread* thread, word arg);
+  static Continue inplaceOpFallback(Thread* thread, word arg,
+                                    IcBinopFlags flags);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };
