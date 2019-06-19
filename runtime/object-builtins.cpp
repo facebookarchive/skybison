@@ -303,14 +303,25 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
 
 RawObject ObjectBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
-  if (nargs < 1) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "object.__new__() takes no arguments");
-  }
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
-  Layout layout(&scope, type.instanceLayout());
-  return thread->runtime()->newInstance(layout);
+  if (!type.hasFlag(Type::Flag::kIsAbstract)) {
+    Layout layout(&scope, type.instanceLayout());
+    return thread->runtime()->newInstance(layout);
+  }
+  // `type` is an abstract class and cannot be instantiated.
+  Object name(&scope, type.name());
+  Object comma(&scope, SmallStr::fromCStr(", "));
+  Object methods(&scope, type.abstractMethods());
+  Object sorted(&scope, thread->invokeFunction1(SymbolId::kBuiltins,
+                                                SymbolId::kSorted, methods));
+  if (sorted.isError()) return *sorted;
+  Object joined(&scope, thread->invokeMethod2(comma, SymbolId::kJoin, sorted));
+  if (joined.isError()) return *joined;
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
+      "Can't instantiate abstract class %S with abstract methods %S", &name,
+      &joined);
 }
 
 RawObject ObjectBuiltins::dunderSetattr(Thread* thread, Frame* frame,

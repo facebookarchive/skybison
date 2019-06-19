@@ -360,6 +360,21 @@ def _type(obj):
 
 
 @_patch
+def _type_abstractmethods_del(self):
+    pass
+
+
+@_patch
+def _type_abstractmethods_get(self):
+    pass
+
+
+@_patch
+def _type_abstractmethods_set(self, value):
+    pass
+
+
+@_patch
 def _type_check(obj):
     pass
 

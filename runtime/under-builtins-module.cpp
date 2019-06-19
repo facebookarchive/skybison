@@ -114,6 +114,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderType, underType},
+    {SymbolId::kUnderTypeAbstractMethodsDel, underTypeAbstractMethodsDel},
+    {SymbolId::kUnderTypeAbstractMethodsGet, underTypeAbstractMethodsGet},
+    {SymbolId::kUnderTypeAbstractMethodsSet, underTypeAbstractMethodsSet},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
@@ -1270,6 +1273,54 @@ RawObject UnderBuiltinsModule::underType(Thread* thread, Frame* frame,
                                          word nargs) {
   Arguments args(frame, nargs);
   return thread->runtime()->typeOf(args.get(0));
+}
+
+RawObject UnderBuiltinsModule::underTypeAbstractMethodsDel(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  if (type.abstractMethods().isUnbound()) {
+    return thread->raiseWithId(LayoutId::kAttributeError,
+                               SymbolId::kDunderAbstractMethods);
+  }
+  type.setAbstractMethods(Unbound::object());
+  type.setFlagsAndBuiltinBase(
+      static_cast<Type::Flag>(type.flags() & ~Type::Flag::kIsAbstract),
+      type.builtinBase());
+  return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underTypeAbstractMethodsGet(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Object methods(&scope, type.abstractMethods());
+  if (!methods.isUnbound()) {
+    return *methods;
+  }
+  return thread->raiseWithId(LayoutId::kAttributeError,
+                             SymbolId::kDunderAbstractMethods);
+}
+
+RawObject UnderBuiltinsModule::underTypeAbstractMethodsSet(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Object abstract(&scope, Interpreter::isTrue(thread, args.get(1)));
+  if (abstract.isError()) return *abstract;
+  type.setAbstractMethods(args.get(1));
+  if (Bool::cast(*abstract).value()) {
+    type.setFlagsAndBuiltinBase(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kIsAbstract),
+        type.builtinBase());
+  }
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underTypeCheck(Thread* thread, Frame* frame,

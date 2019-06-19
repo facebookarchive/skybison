@@ -155,8 +155,9 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
     Type cur(&scope, mro.at(i));
     flags |= cur.flags();
   }
-  type.setFlagsAndBuiltinBase(static_cast<RawType::Flag>(flags),
-                              base_layout_id);
+  type.setFlagsAndBuiltinBase(
+      static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
+      base_layout_id);
   type.setBases(*bases);
   return *type;
 }

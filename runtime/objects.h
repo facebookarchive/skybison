@@ -998,8 +998,12 @@ class RawUnicodeTranslateError : public RawUnicodeErrorBase {
 class RawType : public RawHeapObject {
  public:
   enum Flag : word {
-    // If you add a flag, keep in mind that bits 0-7 are reserved to hold a
-    // LayoutId.
+    kNone = 0,
+
+    // Bits 0-7 are reserved to hold a LayoutId.
+
+    // Has non-empty __abstractmethods__
+    kIsAbstract = 1 << 8,
   };
 
   // Getters and setters.
@@ -1040,6 +1044,9 @@ class RawType : public RawHeapObject {
   RawObject extensionSlots() const;
   void setExtensionSlots(RawObject slots) const;
 
+  RawObject abstractMethods() const;
+  void setAbstractMethods(RawObject methods) const;
+
   bool isBaseExceptionSubclass() const;
 
   // Seal the attributes of the type. Sets the layout's overflowAttributes to
@@ -1055,7 +1062,8 @@ class RawType : public RawHeapObject {
   static const int kFlagsOffset = kDocOffset + kPointerSize;
   static const int kDictOffset = kFlagsOffset + kPointerSize;
   static const int kExtensionSlotsOffset = kDictOffset + kPointerSize;
-  static const int kSize = kExtensionSlotsOffset + kPointerSize;
+  static const int kAbstractMethods = kExtensionSlotsOffset + kPointerSize;
+  static const int kSize = kAbstractMethods + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
 
@@ -3793,6 +3801,14 @@ inline RawObject RawType::extensionSlots() const {
 
 inline void RawType::setExtensionSlots(RawObject slots) const {
   instanceVariableAtPut(kExtensionSlotsOffset, slots);
+}
+
+inline RawObject RawType::abstractMethods() const {
+  return instanceVariableAt(kAbstractMethods);
+}
+
+inline void RawType::setAbstractMethods(RawObject methods) const {
+  instanceVariableAtPut(kAbstractMethods, methods);
 }
 
 inline bool RawType::isBuiltin() const {

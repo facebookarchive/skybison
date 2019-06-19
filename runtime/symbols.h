@@ -10,6 +10,7 @@ class Runtime;
 // List of predefined symbols, one per line
 #define FOREACH_SYMBOL(V)                                                      \
   V(DunderAbs, "__abs__")                                                      \
+  V(DunderAbstractMethods, "__abstractmethods__")                              \
   V(DunderAdd, "__add__")                                                      \
   V(DunderAenter, "__aenter__")                                                \
   V(DunderAexit, "__aexit__")                                                  \
@@ -269,6 +270,9 @@ class Runtime;
   V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderTraceback, "_traceback")                                              \
   V(UnderType, "_type")                                                        \
+  V(UnderTypeAbstractMethodsDel, "_type_abstractmethods_del")                  \
+  V(UnderTypeAbstractMethodsGet, "_type_abstractmethods_get")                  \
+  V(UnderTypeAbstractMethodsSet, "_type_abstractmethods_set")                  \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
@@ -548,6 +552,7 @@ class Runtime;
   V(SmallBytes, "smallbytes")                                                  \
   V(SmallInt, "smallint")                                                      \
   V(SmallStr, "smallstr")                                                      \
+  V(Sorted, "sorted")                                                          \
   V(Split, "split")                                                            \
   V(Start, "start")                                                            \
   V(StaticMethod, "staticmethod")                                              \

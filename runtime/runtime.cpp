@@ -261,7 +261,9 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
   subclass.setInstanceLayout(*layout);
   Type superclass(&scope, typeAt(superclass_id));
   LayoutId builtin_base = attrs_len == 0 ? superclass_id : subclass_id;
-  subclass.setFlagsAndBuiltinBase(superclass.flags(), builtin_base);
+  Type::Flag flags =
+      static_cast<Type::Flag>(superclass.flags() & ~Type::Flag::kIsAbstract);
+  subclass.setFlagsAndBuiltinBase(flags, builtin_base);
 
   Tuple bases(&scope, newTuple(1));
   bases.atPut(0, *superclass);
@@ -330,10 +332,10 @@ RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
   HandleScope scope(thread);
   Type result(&scope, heap()->createType(metaclass_id));
   Dict dict(&scope, newDict());
-  result.setFlagsAndBuiltinBase(static_cast<RawType::Flag>(0),
-                                LayoutId::kObject);
+  result.setFlagsAndBuiltinBase(Type::Flag::kNone, LayoutId::kObject);
   result.setDict(*dict);
   result.setDoc(NoneType::object());
+  result.setAbstractMethods(Unbound::object());
   return *result;
 }
 
@@ -350,12 +352,10 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
   Type type(&scope, *receiver);
   // TODO(mpage): This needs to handle built-in extension types.
   if (type.isBuiltin()) {
-    // TODO(T25140871): Refactor this into something that includes the type name
-    // like:
-    //     thread->throwImmutableTypeManipulationError(type)
+    Str type_name(&scope, type.name());
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
-        "can't set attributes of built-in/extension type");
+        "can't set attributes of built-in/extension type '%S'", &type_name);
   }
 
   // Check for a delete descriptor

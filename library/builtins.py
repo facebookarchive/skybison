@@ -76,6 +76,9 @@ _str_splitlines = _str_splitlines  # noqa: F821
 _traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _type = _type  # noqa: F821
+_type_abstractmethods_del = _type_abstractmethods_del  # noqa: F821
+_type_abstractmethods_get = _type_abstractmethods_get  # noqa: F821
+_type_abstractmethods_set = _type_abstractmethods_set  # noqa: F821
 _type_check = _type_check  # noqa: F821
 _type_check_exact = _type_check_exact  # noqa: F821
 _type_issubclass = _type_issubclass  # noqa: F821
@@ -159,6 +162,10 @@ class staticmethod(bootstrap=True):
 
 
 class type(bootstrap=True):
+    __abstractmethods__ = _property(
+        _type_abstractmethods_get, _type_abstractmethods_set, _type_abstractmethods_del
+    )
+
     def __call__(self, *args, **kwargs):
         pass
 

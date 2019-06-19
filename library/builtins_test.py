@@ -915,6 +915,52 @@ class SumTests(unittest.TestCase):
         self.assertEqual(result, 0)
 
 
+class TypeTests(unittest.TestCase):
+    def test_abstract_methods_get_with_builtin_type_raises_attribute_error(self):
+        with self.assertRaises(AttributeError) as context:
+            type.__abstractmethods__
+        self.assertEqual(str(context.exception), "__abstractmethods__")
+
+    def test_abstract_methods_get_with_type_subclass_raises_attribute_error(self):
+        class Foo(type):
+            pass
+
+        with self.assertRaises(AttributeError) as context:
+            Foo.__abstractmethods__
+        self.assertEqual(str(context.exception), "__abstractmethods__")
+
+    def test_abstract_methods_set_with_builtin_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            int.__abstractmethods__ = ["foo"]
+        self.assertEqual(
+            str(context.exception),
+            "can't set attributes of built-in/extension type 'int'",
+        )
+
+    def test_abstract_methods_get_with_type_subclass_sets_attribute(self):
+        class Foo(type):
+            pass
+
+        Foo.__abstractmethods__ = 1
+        self.assertEqual(Foo.__abstractmethods__, 1)
+
+    def test_abstract_methods_del_with_builtin_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            del str.__abstractmethods__
+        self.assertEqual(
+            str(context.exception),
+            "can't set attributes of built-in/extension type 'str'",
+        )
+
+    def test_abstract_methods_del_unset_with_type_subclass_raises_attribute_error(self):
+        class Foo(type):
+            pass
+
+        with self.assertRaises(AttributeError) as context:
+            del Foo.__abstractmethods__
+        self.assertEqual(str(context.exception), "__abstractmethods__")
+
+
 class RangeTests(unittest.TestCase):
     def test_range_attrs_are_set(self):
         obj = range(0, 1, 2)

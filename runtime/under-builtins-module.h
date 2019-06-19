@@ -111,6 +111,12 @@ class UnderBuiltinsModule {
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underType(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTypeAbstractMethodsDel(Thread* thread, Frame* frame,
+                                               word nargs);
+  static RawObject underTypeAbstractMethodsGet(Thread* thread, Frame* frame,
+                                               word nargs);
+  static RawObject underTypeAbstractMethodsSet(Thread* thread, Frame* frame,
+                                               word nargs);
   static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
                                        word nargs);
