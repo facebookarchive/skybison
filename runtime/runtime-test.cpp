@@ -2851,8 +2851,7 @@ def gen():
   Object frame_obj(&scope, runtime_.newHeapFrame(gen));
   ASSERT_TRUE(frame_obj.isHeapFrame());
   HeapFrame heap_frame(&scope, *frame_obj);
-  Code code(&scope, gen.code());
-  EXPECT_EQ(heap_frame.maxStackSize(), code.stacksize());
+  EXPECT_EQ(heap_frame.maxStackSize(), gen.stacksize());
 }
 
 extern "C" struct _inittab _PyImport_Inittab[];

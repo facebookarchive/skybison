@@ -956,11 +956,14 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
   word total_args = code.totalArgs();
   word total_vars =
       code.nlocals() - total_args + code.numCellvars() + code.numFreevars();
+  // HACK: Reserve one extra stack slot for the case where we need to unwrap a
+  // bound method.
+  word stacksize = code.stacksize() + 1;
 
   Function function(
       &scope, runtime->newInterpreterFunction(
                   thread, name, qualname_str, code, flags, code.argcount(),
-                  total_args, total_vars, code.stacksize(), closure_tuple,
+                  total_args, total_vars, stacksize, closure_tuple,
                   annotations_dict, kw_defaults_dict, defaults_tuple, globals,
                   entry, entry_kw, entry_ex));
 

@@ -77,9 +77,6 @@ inline Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   DCHECK(num_args >= 0, "must have 0 or more arguments");
   DCHECK(num_vars >= 0, "must have 0 or more locals");
   DCHECK(stack_depth >= 0, "stack depth cannot be negative");
-  // HACK: Reserve one extra stack slot for the case where we need to unwrap a
-  // bound method
-  stack_depth += 1;
 
   checkStackOverflow(Frame::kSize + (num_vars + stack_depth) * kPointerSize);
 
