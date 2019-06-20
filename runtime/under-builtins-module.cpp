@@ -843,30 +843,31 @@ RawObject UnderBuiltinsModule::underIntNewFromInt(Thread* thread, Frame* frame,
   return intOrUserSubclass(thread, type, value);
 }
 
-static RawObject largeIntFromStr(Thread* thread, const Str& str, word base) {
-  if (base == 0) {
-    // TODO(T46076026): Do some proper int parsing according to the CPython
-    // definition of "integer literals", eg 0xdeadbeef, 004, etc.
-    base = 10;
+static word digitValue(byte digit, word base) {
+  if ('0' <= digit && digit < '0' + base) return digit - '0';
+  // Bases 2-10 are limited to numerals, but all greater bases can use letters
+  // too.
+  if (base <= 10) return -1;
+  if ('a' <= digit && digit < 'a' + base) return digit - 'a' + 10;
+  if ('A' <= digit && digit < 'A' + base) return digit - 'A' + 10;
+  return -1;
+}
+
+static word inferBase(const Str& str, word start) {
+  if (str.charAt(start) == '0') {
+    switch (str.charAt(start + 1)) {
+      case 'x':
+      case 'X':
+        return 16;
+      case 'o':
+      case 'O':
+        return 8;
+      case 'b':
+      case 'B':
+        return 2;
+    }
   }
-  if (base != 10) {
-    // TODO(T46077363): Create integers from non-base-10 literals
-    UNIMPLEMENTED("non-base-10 largeIntFromStr");
-  }
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Int result(&scope, SmallInt::fromWord(0));
-  Int digit(&scope, SmallInt::fromWord(0));
-  Int base_obj(&scope, SmallInt::fromWord(base));
-  for (word i = 0; i < str.length(); i++) {
-    byte digit_char = str.charAt(i);
-    DCHECK(digit_char <= kMaxASCII, "digits should be ASCII");
-    if (digit_char < '0' || digit_char > '9') return Error::error();
-    digit = Int::cast(SmallInt::fromWord(digit_char - '0'));
-    result = runtime->intMultiply(thread, result, base_obj);
-    result = runtime->intAdd(thread, result, digit);
-  }
-  return *result;
+  return 10;
 }
 
 static RawObject intFromStr(Thread* thread, const Str& str, word base) {
@@ -874,19 +875,64 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   if (str.length() == 0) {
     return Error::error();
   }
-  unique_c_ptr<char> c_str(str.toCStr());  // for strtol()
-  char* end_ptr;
-  errno = 0;
-  long res = std::strtol(c_str.get(), &end_ptr, base);
-  int saved_errno = errno;
-  bool is_complete = (*end_ptr == '\0');
-  if (!is_complete || (res == 0 && saved_errno == EINVAL)) {
-    return Error::error();
+  if (str.length() == 1) {
+    // Single digit
+    word result = digitValue(str.charAt(0), base == 0 ? 10 : base);
+    if (result == -1) return Error::error();
+    return SmallInt::fromWord(result);
   }
-  if (SmallInt::isValid(res) && saved_errno != ERANGE) {
-    return SmallInt::fromWord(res);
+  DCHECK(str.length() >= 2, "str must be >= 2 bytes long");
+  word sign = 1;
+  word start = 0;
+  if (str.charAt(start) == '-') {
+    sign = -1;
+    start += 1;
   }
-  return largeIntFromStr(thread, str, base);
+  if (str.length() - start == 1) {
+    // Negative single digit
+    word result = digitValue(str.charAt(start), base == 0 ? 10 : base);
+    if (result == -1) return Error::error();
+    return SmallInt::fromWord(-result);
+  }
+  // Decimal literals start at the index 0 (no prefix).
+  // Octal literals (0oFOO), hex literals (0xFOO), and binary literals (0bFOO)
+  // start at index 2.
+  word inferred_base = inferBase(str, start);
+  if (inferred_base == 2 || inferred_base == 8 || inferred_base == 16) {
+    if (str.length() - start == 2) {
+      // User provided just the prefix: 0x, 0b, 0o, etc
+      return Error::error();
+    }
+    if (base == 0 || base == inferred_base) {
+      // This handles cases like int("0b1", 0) and int("0b1", 8) and
+      // int("0b1", 16) where
+      // a) we must infer the base from the literal prefix or
+      // b) the prefix indicates one base but the user has provided another
+      //    base instead. In the latter two cases, we should count the prefix
+      //    as part of the number, since eg 0b1 is a valid hexadecimal literal.
+      start += 2;
+    }
+  }
+  if (base == 0) {
+    base = inferred_base;
+  }
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Int result(&scope, SmallInt::fromWord(0));
+  Int digit(&scope, SmallInt::fromWord(0));
+  Int base_obj(&scope, SmallInt::fromWord(base));
+  for (word i = start; i < str.length(); i++) {
+    byte digit_char = str.charAt(i);
+    word digit_val = digitValue(digit_char, base);
+    if (digit_val == -1) return Error::error();
+    digit = Int::cast(SmallInt::fromWord(digit_val));
+    result = runtime->intMultiply(thread, result, base_obj);
+    result = runtime->intAdd(thread, result, digit);
+  }
+  if (sign < 0) {
+    result = runtime->intNegate(thread, result);
+  }
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
@@ -904,7 +950,7 @@ RawObject UnderBuiltinsModule::underIntNewFromStr(Thread* thread, Frame* frame,
     Str repr(&scope, thread->invokeMethod1(str, SymbolId::kDunderRepr));
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "invalid literal for int() with base %w: %S",
-                                base, &repr);
+                                base == 0 ? 10 : base, &repr);
   }
   return intOrUserSubclass(thread, type, result);
 }
