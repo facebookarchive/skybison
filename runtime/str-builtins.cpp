@@ -522,6 +522,14 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
   return SmallInt::fromWord(-1);
 }
 
+word strFindFirstNonWhitespace(const Str& str) {
+  word i = 0;
+  while (i < str.length() && isAsciiSpace(str.charAt(i))) {
+    i++;
+  }
+  return i;
+}
+
 RawObject strRFind(const Str& haystack, const Str& needle, word start,
                    word end) {
   if (end < 0 || start < 0) {

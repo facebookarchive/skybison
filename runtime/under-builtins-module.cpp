@@ -872,11 +872,12 @@ static word inferBase(const Str& str, word start) {
 
 static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   DCHECK(base == 0 || (base >= 2 && base <= 36), "invalid base");
-  if (str.length() == 0) {
+  // CPython allows leading whitespace in the integer literal
+  word start = strFindFirstNonWhitespace(str);
+  if (str.length() - start == 0) {
     return Error::error();
   }
   word sign = 1;
-  word start = 0;
   if (str.charAt(start) == '-') {
     sign = -1;
     start += 1;

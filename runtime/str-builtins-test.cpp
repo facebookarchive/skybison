@@ -2301,6 +2301,24 @@ TEST_F(StrBuiltinsTest, StripRight) {
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str, "bcdHello Worl"));
 }
 
+TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithEmptyStringReturnsZero) {
+  HandleScope scope(thread_);
+  Str str(&scope, Str::empty());
+  EXPECT_EQ(strFindFirstNonWhitespace(str), 0);
+}
+
+TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithOnlyWhitespaceReturnsLength) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("     "));
+  EXPECT_EQ(strFindFirstNonWhitespace(str), str.length());
+}
+
+TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceFindsFirstNonWhitespaceChar) {
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("     foo   "));
+  EXPECT_EQ(strFindFirstNonWhitespace(str), 5);
+}
+
 TEST_F(StrBuiltinsTest, FindWithEmptyNeedleReturnsZero) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = "hello".find("")

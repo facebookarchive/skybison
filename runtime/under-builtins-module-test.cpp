@@ -532,6 +532,30 @@ TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLargeIntInfersBaseTen) {
   EXPECT_TRUE(isIntEqualsWord(*result, 100));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithLeadingSpacesRemovesSpaces) {
+  HandleScope scope(thread_);
+  const char* src = "      100";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 100));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithOnlySpacesRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "    ";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 10: '    '"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithPlusReturnsPositiveInt) {
   HandleScope scope(thread_);
   const char* src = "+100";

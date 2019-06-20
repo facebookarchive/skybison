@@ -13,6 +13,10 @@ RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
 // index found in that range, or -1 if needle was not found.
 RawObject strFind(const Str& haystack, const Str& needle, word start, word end);
 
+// Find the index of the first non-whitespace character in the string. If there
+// are no non-whitespace characters, return the length of the string.
+word strFindFirstNonWhitespace(const Str& str);
+
 // Intern strings in place in a tuple of strings
 void strInternInTuple(Thread* thread, const Object& items);
 // Intern strings in place in a tuple of nested constant structures (str,
