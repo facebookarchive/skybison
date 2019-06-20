@@ -1111,16 +1111,20 @@ bool Interpreter::popBlock(Thread* thread, TryBlock::Why why, RawObject value) {
   return true;
 }
 
-// If the current frame is executing a Generator, mark it as finished.
-static void finishCurrentGenerator(Thread* thread) {
-  Frame* frame = thread->currentFrame();
-  if (!frame->function().isGenerator()) return;
-
+static void markGeneratorFinished(Frame* frame) {
   // Write to the Generator's HeapFrame directly so we don't have to save the
   // live frame to it one last time.
   RawGeneratorBase gen = generatorFromStackFrame(frame);
   RawHeapFrame heap_frame = HeapFrame::cast(gen.heapFrame());
   heap_frame.setVirtualPC(Frame::kFinishedGeneratorPC);
+}
+
+// If the current frame is executing a Generator, mark it as finished.
+HANDLER_INLINE
+static void finishCurrentGenerator(Frame* frame) {
+  if (frame->function().isGenerator()) {
+    markGeneratorFinished(frame);
+  }
 }
 
 bool Interpreter::handleReturn(Thread* thread, RawObject retval,
@@ -1131,8 +1135,8 @@ bool Interpreter::handleReturn(Thread* thread, RawObject retval,
       return false;
     }
   }
+  finishCurrentGenerator(frame);
   if (frame == entry_frame) {
-    finishCurrentGenerator(thread);
     frame->pushValue(retval);
     return true;
   }
@@ -1218,16 +1222,16 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
     }
 
     if (frame == entry_frame) break;
+    finishCurrentGenerator(frame);
     frame = popFrame(thread);
   }
 
-  finishCurrentGenerator(thread);
-  thread->currentFrame()->pushValue(Error::exception());
+  finishCurrentGenerator(frame);
+  frame->pushValue(Error::exception());
   return true;
 }
 
 HANDLER_INLINE Frame* Interpreter::popFrame(Thread* thread) {
-  finishCurrentGenerator(thread);
   return thread->popFrame();
 }
 
