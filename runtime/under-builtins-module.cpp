@@ -854,7 +854,7 @@ static word digitValue(byte digit, word base) {
 }
 
 static word inferBase(const Str& str, word start) {
-  if (str.charAt(start) == '0') {
+  if (str.charAt(start) == '0' && start + 1 < str.length()) {
     switch (str.charAt(start + 1)) {
       case 'x':
       case 'X':
@@ -875,24 +875,19 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   if (str.length() == 0) {
     return Error::error();
   }
-  if (str.length() == 1) {
-    // Single digit
-    word result = digitValue(str.charAt(0), base == 0 ? 10 : base);
-    if (result == -1) return Error::error();
-    return SmallInt::fromWord(result);
-  }
-  DCHECK(str.length() >= 2, "str must be >= 2 bytes long");
   word sign = 1;
   word start = 0;
   if (str.charAt(start) == '-') {
     sign = -1;
     start += 1;
+  } else if (str.charAt(start) == '+') {
+    start += 1;
   }
   if (str.length() - start == 1) {
-    // Negative single digit
+    // Single digit, potentially with +/-
     word result = digitValue(str.charAt(start), base == 0 ? 10 : base);
     if (result == -1) return Error::error();
-    return SmallInt::fromWord(-result);
+    return SmallInt::fromWord(sign * result);
   }
   // Decimal literals start at the index 0 (no prefix).
   // Octal literals (0oFOO), hex literals (0xFOO), and binary literals (0bFOO)
