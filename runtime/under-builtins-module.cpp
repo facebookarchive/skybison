@@ -884,6 +884,10 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   } else if (str.charAt(start) == '+') {
     start += 1;
   }
+  if (str.length() - start == 0) {
+    // Just the sign
+    return Error::error();
+  }
   if (str.length() - start == 1) {
     // Single digit, potentially with +/-
     word result = digitValue(str.charAt(start), base == 0 ? 10 : base);
@@ -894,23 +898,25 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   // Octal literals (0oFOO), hex literals (0xFOO), and binary literals (0bFOO)
   // start at index 2.
   word inferred_base = inferBase(str, start);
-  if (inferred_base == 2 || inferred_base == 8 || inferred_base == 16) {
-    if (str.length() - start == 2) {
-      // User provided just the prefix: 0x, 0b, 0o, etc
-      return Error::error();
-    }
-    if (base == 0 || base == inferred_base) {
-      // This handles cases like int("0b1", 0) and int("0b1", 8) and
-      // int("0b1", 16) where
-      // a) we must infer the base from the literal prefix or
-      // b) the prefix indicates one base but the user has provided another
-      //    base instead. In the latter two cases, we should count the prefix
-      //    as part of the number, since eg 0b1 is a valid hexadecimal literal.
-      start += 2;
-    }
-  }
   if (base == 0) {
     base = inferred_base;
+  }
+  if (base == 2 || base == 8 || base == 16) {
+    if (base == inferred_base) {
+      // This handles integer literals with a base prefix, e.g.
+      // * int("0b1", 0) => 1, where the base is inferred from the prefix
+      // * int("0b1", 2) => 1, where the prefix matches the provided base
+      //
+      // If the prefix does not match the provided base, then we treat it as
+      // part as part of the number, e.g.
+      // * int("0b1", 10) => ValueError
+      // * int("0b1", 16) => 177
+      start += 2;
+    }
+    if (str.length() - start == 0) {
+      // Just the prefix: 0x, 0b, 0o, etc
+      return Error::error();
+    }
   }
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -919,6 +925,13 @@ static RawObject intFromStr(Thread* thread, const Str& str, word base) {
   Int base_obj(&scope, SmallInt::fromWord(base));
   for (word i = start; i < str.length(); i++) {
     byte digit_char = str.charAt(i);
+    if (digit_char == '_') {
+      // No leading underscores unless the number has a prefix
+      if (i == start && inferred_base == 10) return Error::error();
+      // No trailing underscores
+      if (i + 1 == str.length()) return Error::error();
+      digit_char = str.charAt(++i);
+    }
     word digit_val = digitValue(digit_char, base);
     if (digit_val == -1) return Error::error();
     digit = Int::cast(SmallInt::fromWord(digit_val));

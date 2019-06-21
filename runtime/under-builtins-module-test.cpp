@@ -488,6 +488,18 @@ TEST_F(UnderBuiltinsModuleTest,
       "invalid literal for int() with base 10: '461168601$84273879030'"));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithOnlySignRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "-";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 10: '-'"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithLengthOneInfersBase10) {
   HandleScope scope(thread_);
   const char* src = "8";
@@ -640,6 +652,103 @@ TEST_F(UnderBuiltinsModuleTest,
       LayoutId::kValueError, "invalid literal for int() with base 16: '+0x'"));
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithJustPrefixAndUnderscoreRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "0x_";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(16));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 16: '0x_'"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithUnderscoreIgnoresUnderscore) {
+  HandleScope scope(thread_);
+  const char* src = "0x_deadbeef";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xdeadbeef));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithUnderscoresIgnoresUnderscoresBaseSixteen) {
+  HandleScope scope(thread_);
+  const char* src = "0x_d_e_a_d_b_eef";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xdeadbeef));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithUnderscoresIgnoresUnderscoresBaseTen) {
+  HandleScope scope(thread_);
+  const char* src = "100_000_000_000";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(0));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 100000000000));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithLeadingUnderscoreBaseTenRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "_100";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 10: '_100'"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithTrailingUnderscoreBaseTenRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "100_";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 10: '100_'"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithDoubleUnderscoreBaseTenRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "1__00";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(10));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError,
+      "invalid literal for int() with base 10: '1__00'"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithLeadingUnderscoreNoPrefixRaisesValueError) {
+  HandleScope scope(thread_);
+  const char* src = "_abc";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(16));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underIntNewFromStr, type, str, base),
+      LayoutId::kValueError, "invalid literal for int() with base 16: '_abc'"));
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderIntNewFromStrWithNegativeZeroReturnsZero) {
   HandleScope scope(thread_);
   const char* src = "-0";
@@ -784,6 +893,18 @@ TEST_F(
   Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
                                    type, str, base));
   EXPECT_TRUE(isIntEqualsWord(*result, 177));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderIntNewFromStrWithBinaryLiteralBaseSixteenReturnsEleven) {
+  HandleScope scope(thread_);
+  const char* src = "0b";
+  Type type(&scope, runtime_.typeAt(LayoutId::kInt));
+  Str str(&scope, runtime_.newStrFromCStr(src));
+  Int base(&scope, SmallInt::fromWord(16));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underIntNewFromStr,
+                                   type, str, base));
+  EXPECT_TRUE(isIntEqualsWord(*result, 11));
 }
 
 TEST_F(UnderBuiltinsModuleTest,
