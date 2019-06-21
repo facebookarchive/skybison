@@ -1,12 +1,14 @@
 #include "complex-builtins.h"
 
 #include "frame.h"
+#include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
 
 const BuiltinMethod ComplexBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -65,6 +67,32 @@ RawObject ComplexBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     UNIMPLEMENTED("Convert non-numeric to numeric");
   }
   return runtime->newComplex(real, imag);
+}
+
+RawObject ComplexBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfComplex(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kComplex);
+  }
+  if (!self_obj.isComplex()) {
+    UNIMPLEMENTED("Subclasses of complex");
+  }
+  Complex self(&scope, *self_obj);
+  Object other_obj(&scope, args.get(1));
+  double other_real, other_imag;
+  if (runtime->isInstanceOfInt(*other_obj)) {
+    Int other_int(&scope, intUnderlying(thread, other_obj));
+    Object result(&scope, convertIntToDouble(thread, other_int, &other_real));
+    if (result.isError()) return *result;
+    other_imag = 0.0;
+  } else {
+    UNIMPLEMENTED("complex.__add__(non-int)");
+  }
+  return runtime->newComplex(self.real() + other_real,
+                             self.imag() + other_imag);
 }
 
 }  // namespace python

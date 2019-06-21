@@ -1378,8 +1378,13 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
 
 
 class complex(bootstrap=True):
+    def __add__(self, other):
+        pass
+
     def __new__(cls, real=0.0, imag=0.0):
         pass
+
+    __radd__ = __add__
 
     def __repr__(self):
         return f"({self.real}+{self.imag}j)"
