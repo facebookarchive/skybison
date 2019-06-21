@@ -24,7 +24,7 @@ class TracebackPrinter : public FrameVisitor {
       return false;
     }
 
-    DCHECK(!frame->isSentinelFrame(), "should not be called for sentinel");
+    DCHECK(!frame->isSentinel(), "should not be called for sentinel");
     Thread* thread = Thread::current();
     HandleScope scope(thread);
     Function function(&scope, frame->function());

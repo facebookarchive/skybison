@@ -13,7 +13,7 @@ const char* Frame::isInvalid() {
   if (!at(kNumLocalsOffset).isSmallInt()) {
     return "bad numLocals field";
   }
-  if (!isSentinelFrame() && !(locals() + 1)->isFunction()) {
+  if (!isSentinel() && !(locals() + 1)->isFunction()) {
     return "bad function";
   }
   return nullptr;

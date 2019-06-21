@@ -1141,7 +1141,7 @@ bool Interpreter::handleReturn(Thread* thread, RawObject retval,
     return true;
   }
 
-  frame = popFrame(thread);
+  frame = thread->popFrame();
   frame->pushValue(retval);
   return false;
 }
@@ -1223,16 +1223,12 @@ bool Interpreter::unwind(Thread* thread, Frame* entry_frame) {
 
     if (frame == entry_frame) break;
     finishCurrentGenerator(frame);
-    frame = popFrame(thread);
+    frame = thread->popFrame();
   }
 
   finishCurrentGenerator(frame);
   frame->pushValue(Error::exception());
   return true;
-}
-
-HANDLER_INLINE Frame* Interpreter::popFrame(Thread* thread) {
-  return thread->popFrame();
 }
 
 static Bytecode currentBytecode(Thread* thread) {

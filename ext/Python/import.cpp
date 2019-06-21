@@ -145,7 +145,7 @@ PY_EXPORT PyObject* PyImport_Import(PyObject* module_name) {
   Object name_obj(&scope, ApiHandle::fromPyObject(module_name)->asObject());
   Dict globals_obj(&scope, runtime->newDict());
   Frame* current_frame = thread->currentFrame();
-  if (!current_frame->isSentinelFrame() &&
+  if (!current_frame->isSentinel() &&
       current_frame->function().globals().isDict()) {
     Dict globals(&scope, current_frame->function().globals());
     Object key(&scope, NoneType::object());

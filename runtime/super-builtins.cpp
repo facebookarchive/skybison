@@ -104,12 +104,12 @@ RawObject SuperBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
   if (args.get(1).isUnbound()) {
     // frame is for __init__, previous frame is __call__
     // this will break if it's not invoked through __call__
-    if (frame->previousFrame() == nullptr) {
+    if (frame->isSentinel()) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): no current frame");
     }
     Frame* caller_frame = frame->previousFrame();
-    if (caller_frame->previousFrame() == nullptr) {
+    if (caller_frame->isSentinel()) {
       return thread->raiseWithFmt(LayoutId::kRuntimeError,
                                   "super(): no current frame");
     }

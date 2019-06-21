@@ -29,7 +29,6 @@ thread_local Thread* Thread::current_thread_ = nullptr;
 
 Thread::Thread(word size)
     : size_(Utils::roundUp(size, kPointerSize)),
-      initialFrame_(nullptr),
       next_(nullptr),
       runtime_(nullptr),
       pending_exc_type_(NoneType::object()),
@@ -40,7 +39,7 @@ Thread::Thread(word size)
   start_ = new byte[size];
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
-  pushInitialFrame();
+  currentFrame_ = pushInitialFrame();
 }
 
 Thread::~Thread() { delete[] start_; }
@@ -150,21 +149,18 @@ Frame* Thread::pushClassFunctionFrame(const Function& function) {
   return result;
 }
 
-void Thread::pushInitialFrame() {
-  DCHECK(initialFrame_ == nullptr, "initial frame already pushed");
-
+Frame* Thread::pushInitialFrame() {
   byte* sp = end_ - Frame::kSize;
   CHECK(sp > start_, "no space for initial frame");
-  initialFrame_ = reinterpret_cast<Frame*>(sp);
-  initialFrame_->makeSentinel();
-  initialFrame_->setValueStackTop(reinterpret_cast<RawObject*>(sp));
-
-  currentFrame_ = initialFrame_;
+  Frame* frame = reinterpret_cast<Frame*>(sp);
+  frame->makeSentinel();
+  frame->setValueStackTop(reinterpret_cast<RawObject*>(sp));
+  return frame;
 }
 
 Frame* Thread::popFrame() {
   Frame* frame = currentFrame_;
-  DCHECK(!frame->isSentinelFrame(), "cannot pop initial frame");
+  DCHECK(!frame->isSentinel(), "cannot pop initial frame");
   currentFrame_ = frame->previousFrame();
   return currentFrame_;
 }
@@ -547,7 +543,7 @@ bool Thread::isErrorValueOk(RawObject obj) {
 
 void Thread::visitFrames(FrameVisitor* visitor) {
   Frame* frame = currentFrame();
-  while (!frame->isSentinelFrame()) {
+  while (!frame->isSentinel()) {
     if (!visitor->visit(frame)) {
       break;
     }

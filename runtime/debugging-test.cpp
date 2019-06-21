@@ -416,7 +416,7 @@ def func(arg0, arg1):
   builtin.setTotalArgs(0);
 
   Frame* root = thread_->currentFrame();
-  ASSERT_TRUE(root->isSentinelFrame());
+  ASSERT_TRUE(root->isSentinel());
   root->setVirtualPC(8);
   root->pushValue(NoneType::object());
   root->pushValue(*builtin);

@@ -464,10 +464,6 @@ class Interpreter {
   static Frame* pushFrame(Thread* thread, RawFunction function,
                           RawObject* post_call_sp);
 
-  // Pop the current Frame, restoring the execution context of the previous
-  // Frame.
-  static Frame* popFrame(Thread* thread);
-
   // Resolve a callable object to a function (resolving `__call__` descriptors
   // as necessary).
   // This is only a helper for the `prepareCallableCall` implementation:

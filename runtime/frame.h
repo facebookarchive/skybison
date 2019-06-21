@@ -226,7 +226,7 @@ class Frame {
   // Push locals at [offset, offset + count) onto the stack
   void pushLocals(word count, word offset);
 
-  bool isSentinelFrame();
+  bool isSentinel();
   void makeSentinel();
 
   // Versions of valueStackTop() and popValue() for a Frame that's had
@@ -477,7 +477,7 @@ inline RawObject Frame::peek(word offset) {
   return *(valueStackTop() + offset);
 }
 
-inline bool Frame::isSentinelFrame() {
+inline bool Frame::isSentinel() {
   // This is the same as `previousFrame() == nullptr` but will not fail
   // assertion checks if the field is not a SmallInt.
   return at(kPreviousFrameOffset) == SmallInt::fromWord(0);

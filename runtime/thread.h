@@ -70,8 +70,6 @@ class Thread {
 
   Runtime* runtime() { return runtime_; }
 
-  Frame* initialFrame() { return initialFrame_; }
-
   Frame* currentFrame() { return currentFrame_; }
 
   // The stack pointer is computed by taking the value stack top of the current
@@ -279,7 +277,7 @@ class Thread {
   void setRecursionLimit(int limit) { recursion_limit_ = limit; }
 
  private:
-  void pushInitialFrame();
+  Frame* pushInitialFrame();
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);
 
   Handles handles_;
@@ -288,13 +286,7 @@ class Thread {
   byte* start_;
   byte* end_;
 
-  // initialFrame_ is a sentinel frame (all zeros) that is pushed onto the
-  // stack when the thread is created.
-  Frame* initialFrame_;
-
-  // currentFrame_ always points to the top-most frame on the stack. When there
-  // are no activations (e.g. immediately after the thread is created) this
-  // points at initialFrame_.
+  // currentFrame_ always points to the top-most frame on the stack.
   Frame* currentFrame_;
   Thread* next_;
   Runtime* runtime_;

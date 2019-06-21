@@ -402,7 +402,7 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   Tuple freevar_names(&scope, thread->runtime()->emptyTuple());
   Tuple cellvar_names(&scope, thread->runtime()->emptyTuple());
   bool output_pc = true;
-  if (frame->previousFrame() == nullptr) {
+  if (frame->isSentinel()) {
     os << "- initial frame\n";
   } else if (!frame->function().isFunction()) {
     os << "- function: <invalid>\n";

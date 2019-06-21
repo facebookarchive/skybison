@@ -266,7 +266,7 @@ TEST_F(ThreadTest, PushPopFrame) {
   Frame* frame = thread_->pushCallFrame(*function);
 
   // Verify frame invariants post-push
-  EXPECT_EQ(frame->previousFrame(), thread_->initialFrame());
+  EXPECT_TRUE(frame->previousFrame()->isSentinel());
   EXPECT_EQ(frame->valueStackTop(), reinterpret_cast<RawObject*>(frame));
   EXPECT_EQ(frame->valueStackBase(), frame->valueStackTop());
   EXPECT_EQ(frame->numLocals(), 2);

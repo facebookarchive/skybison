@@ -24,7 +24,7 @@ TEST_F(InterpreterTest, IsTrueBool) {
 
   Frame* frame = thread_->currentFrame();
 
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
 
   Object true_value(&scope, Bool::trueObj());
   EXPECT_EQ(Interpreter::isTrue(thread_, *true_value), Bool::trueObj());
@@ -38,7 +38,7 @@ TEST_F(InterpreterTest, IsTrueInt) {
 
   Frame* frame = thread_->currentFrame();
 
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
 
   Object true_value(&scope, runtime_.newInt(1234));
   EXPECT_EQ(Interpreter::isTrue(thread_, *true_value), Bool::trueObj());
@@ -99,7 +99,7 @@ TEST_F(InterpreterTest, IsTrueDunderLen) {
 
   Frame* frame = thread_->currentFrame();
 
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
 
   List nonempty_list(&scope, runtime_.newList());
   Object elt(&scope, NoneType::object());
@@ -800,7 +800,7 @@ c20 = C(20)
 
   Frame* frame = thread_->currentFrame();
 
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
 
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object left(&scope, moduleAt(&runtime_, main, "c10"));
@@ -830,7 +830,7 @@ c20 = C(20)
 
   Frame* frame = thread_->currentFrame();
 
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
 
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object left(&scope, moduleAt(&runtime_, main, "c10"));
@@ -890,7 +890,7 @@ c = C()
                    .isError());
 
   Frame* frame = thread_->currentFrame();
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
 
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object a(&scope, moduleAt(&runtime_, main, "a"));
@@ -1201,7 +1201,7 @@ c = 3
 
   Frame* frame = thread_->currentFrame();
 
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object container(&scope, moduleAt(&runtime_, main, "a"));
   Object b(&scope, moduleAt(&runtime_, main, "b"));
@@ -1532,7 +1532,7 @@ c = C()
   )")
                    .isError());
   Frame* frame = thread_->currentFrame();
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object c(&scope, moduleAt(&runtime_, main, "c"));
   Object f(&scope, moduleAt(&runtime_, main, "f"));
@@ -1641,7 +1641,7 @@ result = c(42)
   )")
                    .isError());
   Frame* frame = thread_->currentFrame();
-  ASSERT_TRUE(frame->isSentinelFrame());
+  ASSERT_TRUE(frame->isSentinel());
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object result(&scope, moduleAt(&runtime_, main, "result"));
   EXPECT_EQ(*result, SmallInt::fromWord(42));
