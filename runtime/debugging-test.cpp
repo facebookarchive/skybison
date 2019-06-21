@@ -408,32 +408,49 @@ def func(arg0, arg1):
                    .isError());
   Function func(&scope, moduleAt(&runtime_, "__main__", "func"));
 
+  Str qualname(&scope, runtime_.newStrFromCStr("test._bytearray_check"));
+  Function builtin(&scope,
+                   runtime_.newBuiltinFunction(SymbolId::kUnderByteArrayCheck,
+                                               qualname, nullptr));
+  builtin.setArgcount(0);
+  builtin.setTotalArgs(0);
+
   Frame* root = thread_->currentFrame();
+  ASSERT_TRUE(root->isSentinelFrame());
   root->setVirtualPC(8);
   root->pushValue(NoneType::object());
-  Function function(&scope, makeTestFunction(thread_));
-  root->pushValue(*function);
-  root->pushValue(runtime_.newStrFromCStr("foo bar"));
-  root->pushValue(runtime_.emptyTuple());
-  root->pushValue(runtime_.newDict());
-  ASSERT_EQ(root->previousFrame(), nullptr);
+  root->pushValue(*builtin);
+  Frame* frame0 = thread_->pushNativeFrame(0);
 
-  Frame* frame0 = thread_->pushCallFrame(*function);
-  frame0->setVirtualPC(42);
-  frame0->setLocal(3, runtime_.newStrFromCStr("bar foo"));
-  frame0->pushValue(*func);
-  frame0->pushValue(runtime_.newInt(-9));
-  frame0->pushValue(runtime_.newInt(17));
-  Frame* frame1 = thread_->pushCallFrame(*func);
-  frame1->setVirtualPC(4);
-  frame1->setLocal(2, runtime_.newStrFromCStr("world"));
+  Function function(&scope, makeTestFunction(thread_));
+  frame0->pushValue(*function);
+  frame0->pushValue(runtime_.newStrFromCStr("foo bar"));
+  frame0->pushValue(runtime_.emptyTuple());
+  frame0->pushValue(runtime_.newDict());
+
+  Frame* frame1 = thread_->pushCallFrame(*function);
+  frame1->setVirtualPC(42);
+  frame1->setLocal(3, runtime_.newStrFromCStr("bar foo"));
+  frame1->setLocal(4, runtime_.newInt(88));
+  frame1->setLocal(5, runtime_.newInt(-99));
+  frame1->pushValue(*func);
+  frame1->pushValue(runtime_.newInt(-9));
+  frame1->pushValue(runtime_.newInt(17));
+  Frame* frame2 = thread_->pushCallFrame(*func);
+  frame2->setVirtualPC(4);
+  frame2->setLocal(2, runtime_.newStrFromCStr("world"));
 
   std::stringstream ss;
   ss << thread_->currentFrame();
   EXPECT_EQ(ss.str(), R"(- initial frame
   pc: 8
   stack:
-    4: None
+    1: None
+    0: <function "test._bytearray_check">
+- function: <function "test._bytearray_check">
+  code: "_bytearray_check"
+  pc: n/a (native)
+  stack:
     3: <function "footype.baz">
     2: "foo bar"
     1: ()
@@ -446,8 +463,8 @@ def func(arg0, arg1):
     1 "varargs": ()
     2 "varkeyargs": {}
     3 "variable0": "bar foo"
-    4 "freevar0": 0
-    5 "cellvar0": 0
+    4 "freevar0": 88
+    5 "cellvar0": -99
   stack:
     2: <function "func">
     1: -9

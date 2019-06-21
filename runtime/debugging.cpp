@@ -412,17 +412,20 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
     if (function.code().isCode()) {
       Code code(&scope, function.code());
       os << "  code: " << code.name() << '\n';
-      os << "  pc: " << frame->virtualPC();
+      if (code.isNative()) {
+        os << "  pc: n/a (native)\n";
+      } else {
+        word pc = frame->virtualPC();
+        os << "  pc: " << pc;
 
-      // Print filename and line number, if possible.
-      os << " (" << code.filename();
-      if (code.lnotab().isBytes()) {
-        os << ":"
-           << thread->runtime()->codeOffsetToLineNum(thread, code,
-                                                     frame->virtualPC());
+        // Print filename and line number, if possible.
+        os << " (" << code.filename();
+        if (code.lnotab().isBytes()) {
+          os << ":" << thread->runtime()->codeOffsetToLineNum(thread, code, pc);
+        }
+        os << ")";
+        os << '\n';
       }
-      os << ")";
-      os << '\n';
       output_pc = false;
 
       if (code.varnames().isTuple()) {
