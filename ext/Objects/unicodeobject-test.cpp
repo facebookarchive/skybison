@@ -484,6 +484,20 @@ TEST_F(UnicodeExtensionApiTest, READCHARReturnsCharAtIndex) {
   EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 2), 'o');
 }
 
+TEST_F(UnicodeExtensionApiTest, READCHARReturnsUnicodeCodePointAtIndex) {
+  PyObjectPtr str(PyUnicode_FromString("\xF0\x90\x8D\x88"));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(str.get()), 1);
+  EXPECT_EQ(PyUnicode_READ_CHAR(str.get(), 0), 0x10348);
+
+  PyObjectPtr dessert(PyUnicode_FromString("cr\xc3\xa9me"));
+  EXPECT_EQ(PyUnicode_GET_LENGTH(dessert.get()), 5);
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 0), 'c');
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 1), 'r');
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 2), 0xe9);
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 3), 'm');
+  EXPECT_EQ(PyUnicode_READ_CHAR(dessert.get(), 4), 'e');
+}
+
 TEST_F(UnicodeExtensionApiTest, READReadsCharsFromDATA) {
   PyObjectPtr str(PyUnicode_FromString("foo"));
   void* data = PyUnicode_DATA(str.get());

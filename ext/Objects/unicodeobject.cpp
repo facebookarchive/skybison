@@ -1885,8 +1885,9 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject* obj, Py_ssize_t index) {
   DCHECK(thread->runtime()->isInstanceOfStr(*str_obj),
          "PyUnicode_READ_CHAR must receive a unicode object");
   Str str(&scope, strUnderlying(thread, str_obj));
+  word byte_offset = str.offsetByCodePoints(0, index);
   word num_bytes;
-  return reinterpret_cast<Py_UCS4>(str.codePointAt(index, &num_bytes));
+  return reinterpret_cast<Py_UCS4>(str.codePointAt(byte_offset, &num_bytes));
 }
 
 PY_EXPORT int PyUnicode_IS_ASCII_Func(PyObject* obj) {
