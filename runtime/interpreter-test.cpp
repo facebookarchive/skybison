@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "bytecode.h"
+#include "compile.h"
 #include "frame.h"
 #include "handles.h"
 #include "ic.h"
@@ -2265,9 +2266,8 @@ def public_symbol2():
 
   // Preload the module
   Object name(&scope, runtime_.newStrFromCStr("test_module"));
-  std::unique_ptr<char[]> buffer(
-      Runtime::compileFromCStr(module_src, "<test string>"));
-  ASSERT_FALSE(runtime_.importModuleFromBuffer(buffer.get(), name).isError());
+  Code code(&scope, compileFromCStr(module_src, "<test string>"));
+  ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 from test_module import *
@@ -2295,9 +2295,8 @@ def _private_symbol():
 
   // Preload the module
   Object name(&scope, runtime_.newStrFromCStr("test_module"));
-  std::unique_ptr<char[]> buffer(
-      Runtime::compileFromCStr(module_src, "<test string>"));
-  ASSERT_FALSE(runtime_.importModuleFromBuffer(buffer.get(), name).isError());
+  Code code(&scope, compileFromCStr(module_src, "<test string>"));
+  ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
   const char* main_src = R"(
 from test_module import *
@@ -2903,12 +2902,11 @@ for i in yield_from_func():
 TEST_F(InterpreterTest, MakeFunctionSetsDunderModule) {
   HandleScope scope(thread_);
   Object module_name(&scope, runtime_.newStrFromCStr("foo"));
-  std::unique_ptr<char[]> buffer(Runtime::compileFromCStr(R"(
+  Code code(&scope, compileFromCStr(R"(
 def bar(): pass
 )",
-                                                          "<test string>"));
-  ASSERT_FALSE(
-      runtime_.importModuleFromBuffer(buffer.get(), module_name).isError());
+                                    "<test string>"));
+  ASSERT_FALSE(runtime_.importModuleFromCode(code, module_name).isError());
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 import foo
 def baz(): pass

@@ -1,3 +1,4 @@
+#include "compile.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
 #include "exception-builtins.h"
@@ -35,10 +36,12 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
     UNIMPLEMENTED("Can't specify compiler flags");
   }
   Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Code code(&scope, compileFromCStr(str, "<string>"));
   Runtime* runtime = thread->runtime();
-  RawObject result =
-      runtime->run(Runtime::compileFromCStr(str, "<string>").get());
-  DCHECK(thread->isErrorValueOk(result), "Error/pending exception mismatch");
+  Module main_module(&scope, runtime->findOrCreateMainModule());
+  Object result(&scope, runtime->executeModule(code, main_module));
+  DCHECK(thread->isErrorValueOk(*result), "Error/pending exception mismatch");
   if (!result.isError()) return 0;
   printPendingExceptionWithSysLastVars(thread);
   return -1;

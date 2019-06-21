@@ -13,22 +13,6 @@ using namespace testing;
 
 using ImportlibTest = RuntimeFixture;
 
-TEST_F(ImportlibTest, ImportFrozenModuleDoesNotLoadImportlib) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-import operator
-)")
-                   .isError());
-  HandleScope scope(thread_);
-  Object foo_obj(&scope, moduleAt(&runtime_, "__main__", "operator"));
-  ASSERT_TRUE(foo_obj.isModule());
-  Module foo(&scope, *foo_obj);
-  EXPECT_TRUE(isStrEqualsCStr(foo.name(), "operator"));
-  EXPECT_TRUE(
-      runtime_.findModuleById(SymbolId::kUnderFrozenImportlib).isNoneType());
-  EXPECT_TRUE(runtime_.findModuleById(SymbolId::kUnderFrozenImportlibExternal)
-                  .isNoneType());
-}
-
 TEST_F(ImportlibTest, SimpleImport) {
   TemporaryDirectory tempdir;
   writeFile(tempdir.path + "foo.py", "x = 42");

@@ -1597,32 +1597,43 @@ void Runtime::processCallbacks() {
   }
 }
 
-RawObject Runtime::run(const char* buffer) {
+RawObject Runtime::findOrCreateMainModule() {
   HandleScope scope;
-
-  Object name(&scope, symbols()->DunderMain());
-  Object main(&scope, findModule(name));
+  Object main(&scope, findModuleById(SymbolId::kDunderMain));
   if (main.isNoneType()) {
     main = createMainModule();
   }
-  Module main_module(&scope, *main);
-  Object result(&scope, executeModule(buffer, main_module));
+  return *main;
+}
+
+RawObject Runtime::run(const char* buffer) {
+  HandleScope scope;
+  Marshal::Reader reader(&scope, this, buffer);
+  reader.readLong();
+  reader.readLong();
+  reader.readLong();
+  Code code(&scope, reader.readObject());
+  Module main_module(&scope, findOrCreateMainModule());
+  Object result(&scope, executeModule(code, main_module));
   DCHECK(Thread::current()->isErrorValueOk(*result),
          "error/exception mismatch");
   return *result;
 }
 
-RawObject Runtime::executeModule(const char* buffer, const Module& module) {
+RawObject Runtime::executeFrozenModule(const char* buffer,
+                                       const Module& module) {
   HandleScope scope;
   Marshal::Reader reader(&scope, this, buffer);
-
   reader.readLong();
   reader.readLong();
   reader.readLong();
-
   Code code(&scope, reader.readObject());
-  DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
+  return executeModule(code, module);
+}
 
+RawObject Runtime::executeModule(const Code& code, const Module& module) {
+  HandleScope scope;
+  DCHECK(code.argcount() == 0, "invalid argcount %ld", code.argcount());
   Dict globals(&scope, module.dict());
   return Thread::current()->exec(code, globals, globals);
 }
@@ -1635,8 +1646,7 @@ RawObject Runtime::printTraceback(Thread* /* thread */,
   return NoneType::object();
 }
 
-RawObject Runtime::importModuleFromBuffer(const char* buffer,
-                                          const Object& name) {
+RawObject Runtime::importModuleFromCode(const Code& code, const Object& name) {
   HandleScope scope;
   Object cached_module(&scope, findModule(name));
   if (!cached_module.isNoneType()) {
@@ -1645,7 +1655,7 @@ RawObject Runtime::importModuleFromBuffer(const char* buffer,
 
   Module module(&scope, newModule(name));
   addModule(module);
-  Object result(&scope, executeModule(buffer, module));
+  Object result(&scope, executeModule(code, module));
   if (result.isError()) return *result;
   return *module;
 }
@@ -2092,7 +2102,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   }
 
   // Add and execute builtins module.
-  CHECK(!executeModule(BuiltinsModule::kFrozenData, module).isError(),
+  CHECK(!executeFrozenModule(BuiltinsModule::kFrozenData, module).isError(),
         "Failed to initialize builtins module");
 
   // TODO(T39575976): Create a consistent way to hide internal names
@@ -2136,7 +2146,7 @@ void Runtime::createImportlibModule(Thread* thread) {
   // Run _bootstrap.py
   Str importlib_name(&scope, symbols()->UnderFrozenImportlib());
   Module importlib(&scope, newModule(importlib_name));
-  CHECK(!executeModule(kUnderBootstrapModuleData, importlib).isError(),
+  CHECK(!executeFrozenModule(kUnderBootstrapModuleData, importlib).isError(),
         "Failed to initialize _bootstrap module");
   addModule(importlib);
 
@@ -2145,10 +2155,10 @@ void Runtime::createImportlibModule(Thread* thread) {
                               symbols()->UnderFrozenImportlibExternal());
   Module importlib_external(&scope, newModule(importlib_external_name));
   moduleAddGlobal(importlib_external, SymbolId::kUnderBootstrap, importlib);
-  CHECK(
-      !executeModule(kUnderBootstrapUnderExternalModuleData, importlib_external)
-           .isError(),
-      "Failed to initialize _bootstrap_external module");
+  CHECK(!executeFrozenModule(kUnderBootstrapUnderExternalModuleData,
+                             importlib_external)
+             .isError(),
+        "Failed to initialize _bootstrap_external module");
   addModule(importlib_external);
 
   // Run _bootstrap._install(sys, _imp)
@@ -2237,7 +2247,7 @@ void Runtime::createSysModule(Thread* thread) {
   moduleAddGlobal(module, SymbolId::kBuiltinModuleNames, builtins);
   // Add and execute sys module.
   addModule(module);
-  CHECK(!executeModule(SysModule::kFrozenData, module).isError(),
+  CHECK(!executeFrozenModule(SysModule::kFrozenData, module).isError(),
         "Failed to initialize sys module");
 
   Dict module_dict(&scope, module.dict());
@@ -2295,8 +2305,9 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
 
   // Add _builtins module.
   addModule(module);
-  CHECK(!executeModule(UnderBuiltinsModule::kFrozenData, module).isError(),
-        "Failed to initialize _builtins module");
+  CHECK(
+      !executeFrozenModule(UnderBuiltinsModule::kFrozenData, module).isError(),
+      "Failed to initialize _builtins module");
 }
 
 RawObject Runtime::createMainModule() {

@@ -322,10 +322,10 @@ class Runtime {
   // Else, return Error.
   RawObject printTraceback(Thread* thread, const Object& file);
 
-  // importModuleFromBuffer is exposed for use by the tests. We may be able to
+  // importModuleFromCode is exposed for use by the tests. We may be able to
   // remove this later.
-  NODISCARD RawObject importModuleFromBuffer(const char* buffer,
-                                             const Object& name);
+  NODISCARD RawObject importModuleFromCode(const Code& code,
+                                           const Object& name);
 
   // Gets the internal notion of type, rather than the user-visible type.
   RawObject concreteTypeAt(LayoutId layout_id);
@@ -825,7 +825,13 @@ class Runtime {
   // testing.
   word nextModuleIndex();
 
-  NODISCARD RawObject executeModule(const char* buffer, const Module& module);
+  // If the main module has already been initialized and added, return it.
+  // Else, create and add it to the runtime.
+  RawObject findOrCreateMainModule();
+
+  // Execute the code object that represents the code for the top-level module
+  // (eg the result of compiling some_file.py). Return the result.
+  NODISCARD RawObject executeModule(const Code& code, const Module& module);
 
   // Check if the layout's overflow attributes point to a dict offset
   //
@@ -868,6 +874,10 @@ class Runtime {
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
 
   static bool dictHasEmptyItem(const Tuple& data);
+
+  // Execute a frozen module by marshalling it into a code object and then
+  // executing it.
+  RawObject executeFrozenModule(const char* buffer, const Module& module);
 
   // Looks up the supplied key
   //
@@ -1093,7 +1103,7 @@ class ModuleBase : public ModuleBaseBase {
                                     T::kBuiltinTypes[i].type);
     }
     runtime->addModule(module);
-    CHECK(!runtime->executeModule(T::kFrozenData, module).isError(),
+    CHECK(!runtime->executeFrozenModule(T::kFrozenData, module).isError(),
           "Failed to initialize %s module", name_str.toCStr());
   }
 };

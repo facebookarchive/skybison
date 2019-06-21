@@ -12,6 +12,7 @@
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "compile.h"
 #include "debugging.h"
 #include "exception-builtins.h"
 #include "frame.h"
@@ -375,9 +376,9 @@ RawObject runCode(const Code& code) {
 RawObject runFromCStr(Runtime* runtime, const char* c_str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object result(
-      &scope,
-      runtime->run(Runtime::compileFromCStr(c_str, "<test string>").get()));
+  Code code(&scope, compileFromCStr(c_str, "<test string>"));
+  Module main_module(&scope, runtime->findOrCreateMainModule());
+  Object result(&scope, runtime->executeModule(code, main_module));
 
   // Barebones emulation of the top-level SystemExit handling, to allow for
   // testing of handleSystemExit().
@@ -598,7 +599,7 @@ RawObject listFromRange(word start, word stop) {
 
 ::testing::AssertionResult raisedWithStr(RawObject return_value,
                                          LayoutId layout_id,
-                                         const char* expected) {
+                                         const char* message) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -625,7 +626,7 @@ RawObject listFromRange(word start, word stop) {
            << "\nexpected:\n  " << expected_name << "\n";
   }
 
-  if (expected == nullptr) return ::testing::AssertionSuccess();
+  if (message == nullptr) return ::testing::AssertionSuccess();
 
   Object exc_value(&scope, thread->pendingExceptionValue());
   if (!runtime->isInstanceOfStr(*exc_value)) {
@@ -646,10 +647,10 @@ RawObject listFromRange(word start, word stop) {
   }
 
   Str exc_msg(&scope, *exc_value);
-  if (!exc_msg.equalsCStr(expected)) {
+  if (!exc_msg.equalsCStr(message)) {
     return ::testing::AssertionFailure()
            << "\npending exception value:\n  '" << exc_msg
-           << "'\nexpected:\n  '" << expected << "'\n";
+           << "'\nexpected:\n  '" << message << "'\n";
   }
 
   return ::testing::AssertionSuccess();

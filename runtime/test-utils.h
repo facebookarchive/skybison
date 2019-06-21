@@ -124,7 +124,7 @@ RawObject callFunction(const Function& func, const Tuple& args);
 
 bool tupleContains(const Tuple& object_array, const Object& key);
 
-bool listContains(const Object& list, const Object& key);
+bool listContains(const Object& list_obj, const Object& key);
 
 // Get the module bound to name in the given runtime. Returns Error::object() if
 // not found.
@@ -192,7 +192,7 @@ RawObject listFromRange(word start, word stop);
                                                   View<byte> expected);
 
 ::testing::AssertionResult isByteArrayEqualsCStr(const Object& result,
-                                                 const char* str);
+                                                 const char* expected);
 
 ::testing::AssertionResult isBytesEqualsBytes(const Object& result,
                                               View<byte> expected);
@@ -201,9 +201,9 @@ RawObject listFromRange(word start, word stop);
                                                      View<byte> expected);
 
 ::testing::AssertionResult isBytesEqualsCStr(const Object& result,
-                                             const char* str);
+                                             const char* expected);
 
-::testing::AssertionResult isStrEquals(const Object& s1, const Object& s2);
+::testing::AssertionResult isStrEquals(const Object& str1, const Object& str2);
 
 ::testing::AssertionResult isStrEqualsCStr(RawObject obj, const char* c_str);
 

@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "bytecode.h"
+#include "compile.h"
 #include "frame.h"
 #include "globals.h"
 #include "interpreter.h"
@@ -1498,11 +1499,9 @@ hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  std::unique_ptr<char[]> module_buf(
-      Runtime::compileFromCStr(module_src, "<test string>"));
+  Code code(&scope, compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
-  ASSERT_FALSE(
-      runtime_.importModuleFromBuffer(module_buf.get(), name).isError());
+  ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
   std::string output = compileAndRunToString(&runtime_, main_src);
   EXPECT_EQ(output, "hello\n");
@@ -1533,11 +1532,9 @@ hello.foo()
 )";
 
   // Pre-load the hello module so is cached.
-  std::unique_ptr<char[]> module_buf(
-      Runtime::compileFromCStr(module_src, "<test string>"));
+  Code code(&scope, compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
-  ASSERT_FALSE(
-      runtime_.importModuleFromBuffer(module_buf.get(), name).isError());
+  ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, main_src),
                             LayoutId::kAttributeError,
@@ -1561,11 +1558,9 @@ hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
-  std::unique_ptr<char[]> module_buf(
-      Runtime::compileFromCStr(module_src, "<test string>"));
+  Code code(&scope, compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
-  ASSERT_FALSE(
-      runtime_.importModuleFromBuffer(module_buf.get(), name).isError());
+  ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
 
   std::string output = compileAndRunToString(&runtime_, main_src);
   EXPECT_EQ(output, "goodbye\n");
