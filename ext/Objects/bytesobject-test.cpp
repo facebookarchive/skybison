@@ -220,6 +220,14 @@ TEST_F(BytesExtensionApiTest, DecodeEscapeReturnsString) {
   EXPECT_STREQ(PyBytes_AsString(bytes), "hello world");
 }
 
+TEST_F(BytesExtensionApiTest, UnderDecodeEscapeSetsFirstInvalidEscapeToNull) {
+  const char* invalid = reinterpret_cast<const char*>(0x100);
+  EXPECT_NE(_PyBytes_DecodeEscape("hello", 5, nullptr, 0, nullptr, &invalid),
+            nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(invalid, nullptr);
+}
+
 TEST_F(BytesExtensionApiTest, UnderDecodeEscapeReturnsFirstInvalid) {
   const char* invalid;
   PyObjectPtr bytes(_PyBytes_DecodeEscape("hello \\yworld", 13, nullptr, 0,

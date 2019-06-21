@@ -96,7 +96,7 @@ PY_EXPORT void PyBytes_ConcatAndDel(PyObject** pyobj, PyObject* newpart) {
 PY_EXPORT PyObject* PyBytes_DecodeEscape(const char* c_str, Py_ssize_t size,
                                          const char* errors, Py_ssize_t unicode,
                                          const char* recode_encoding) {
-  const char* first_invalid_escape = nullptr;
+  const char* first_invalid_escape;
   PyObject* result = _PyBytes_DecodeEscape(
       c_str, size, errors, unicode, recode_encoding, &first_invalid_escape);
   if (result == nullptr) return nullptr;
@@ -119,6 +119,10 @@ PY_EXPORT PyObject* _PyBytes_DecodeEscape(const char* c_str, Py_ssize_t size,
   DCHECK(c_str != nullptr, "c_str cannot be null");
   DCHECK(first_invalid_escape != nullptr,
          "first_invalid_escape cannot be null");
+
+  // So we can remember if we've seen an invalid escape char or not
+  *first_invalid_escape = nullptr;
+
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
