@@ -23,7 +23,7 @@ work. One should use importlib as the public-facing version of this module.
 # Bootstrap-related code ######################################################
 
 # Avoid lint warnings. These values are inserted directly into the namespace
-# @lint-ignore-every PYTHON3COMPATIMPORTS1
+# @lint-ignore-every PYTHON3COMPATIMPORTS
 _io = None
 _os = None
 _relax_case = None
