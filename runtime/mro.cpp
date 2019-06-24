@@ -3,32 +3,31 @@
 
 namespace python {
 
-static word populateMergeLists(const Tuple& merge_lists, const Tuple& parents,
+// Fills merge_lists with the MROs of the parents, followed by the parents list.
+static word populateMergeLists(Thread* thread, const Tuple& merge_lists,
+                               const Tuple& parents,
                                Vector<word>* merge_list_indices /* out */) {
-  HandleScope scope;
-  // MROs contain at least the class itself, and Object.
-  word new_mro_length = 2;
-  for (word i = 0; i < parents.length(); i++) {
-    Type parent_class(&scope, parents.at(i));
-    Tuple parent_mro(&scope, parent_class.mro());
+  word num_parents = parents.length();
+  DCHECK(merge_lists.length() == num_parents + 1,
+         "merge the linearizations of each parent with the parent list");
+  HandleScope scope(thread);
+  word new_mro_length = 2;  // C + ... + object
+  for (word i = 0; i < num_parents; i++) {
+    Type parent_class(&scope, parents.at(i));      // B_i
+    Tuple parent_mro(&scope, parent_class.mro());  // L[B_i]
 
     new_mro_length += parent_mro.length();
     merge_lists.atPut(i, *parent_mro);
     merge_list_indices->push_back(0);
   }
-  merge_lists.atPut(parents.length(), *parents);
+  merge_lists.atPut(num_parents, *parents);  // B_1 B_2 ... B_n
   merge_list_indices->push_back(0);
-  new_mro_length -= parents.length();  // all parent MROs end with RawObject.
-  return new_mro_length;
+  return new_mro_length - num_parents;  // all parent MROs end with object
 }
 
 // Returns true if there is an i such that mro->at(i) == cls, i > head_idx.
 static bool tailContains(const Tuple& mro, const Object& cls, word head_idx) {
-  auto const len = mro.length();
-  if (head_idx >= len) {
-    return false;
-  }
-  for (word i = head_idx + 1; i < len; i++) {
+  for (word i = head_idx + 1, length = mro.length(); i < length; i++) {
     if (mro.at(i) == *cls) {
       return true;
     }
@@ -39,20 +38,20 @@ static bool tailContains(const Tuple& mro, const Object& cls, word head_idx) {
 // Looks for a head class in merge_lists (i.e. the class indicated by the
 // corresponding index in merge_list_indices) which does not appear in any of
 // the merge_lists at a position *after* the head class of that list.
-static RawObject findNext(const Tuple& merge_lists,
+static RawObject findNext(Thread* thread, const Tuple& merge_lists,
                           const Vector<word>& merge_list_indices) {
-  HandleScope scope;
-  for (word i = 0; i < merge_list_indices.size(); i++) {
-    auto cur_idx = merge_list_indices[i];
+  HandleScope scope(thread);
+  Object candidate_head(&scope, Unbound::object());
+  for (word i = 0, length = merge_lists.length(); i < length; i++) {
+    word cur_idx = merge_list_indices[i];
     Tuple cur_mro(&scope, merge_lists.at(i));
 
     if (cur_idx >= cur_mro.length()) {
       continue;
     }
 
-    Object candidate_head(&scope, cur_mro.at(cur_idx));
-
-    for (word j = 0; j < merge_list_indices.size(); j++) {
+    candidate_head = cur_mro.at(cur_idx);
+    for (word j = 0; j < length; j++) {
       if (j == i) {
         continue;
       }
@@ -70,25 +69,26 @@ static RawObject findNext(const Tuple& merge_lists,
 }
 
 RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
+  HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  HandleScope scope;
-
-  Object object_class(
-      &scope,
-      Layout::cast(runtime->layoutAt(LayoutId::kObject)).describedType());
 
   // Special case for no explicit ancestors.
   if (parents.length() == 0) {
     Tuple new_mro(&scope, runtime->newTuple(2));
     new_mro.atPut(0, *type);
-    new_mro.atPut(1, *object_class);
+    new_mro.atPut(1, runtime->typeAt(LayoutId::kObject));
     return *new_mro;
   }
 
   Vector<word> merge_list_indices;
-  Tuple merge_lists(&scope, runtime->newTuple(parents.length() + 1));
+  word merge_list_length = parents.length() + 1;
+  merge_list_indices.reserve(merge_list_length);
+  Tuple merge_lists(&scope, runtime->newTuple(merge_list_length));
   word new_mro_length =
-      populateMergeLists(merge_lists, parents, &merge_list_indices);
+      populateMergeLists(thread, merge_lists, parents, &merge_list_indices);
+  DCHECK(merge_list_indices.size() == merge_list_length,
+         "expected %ld indices, got %ld", merge_list_length,
+         merge_list_indices.size());
 
   // The length of new_mro will be longer than necessary when there is overlap
   // between the MROs of the parents.
@@ -104,9 +104,10 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   // CPython's implementation, so we can rest assured no real program
   // is going to cause a major problem here.
   RawObject next_head = Error::notFound();
-  while (!(next_head = findNext(merge_lists, merge_list_indices)).isError()) {
+  while (!(next_head = findNext(thread, merge_lists, merge_list_indices))
+              .isError()) {
     Type next_head_cls(&scope, next_head);
-    for (word i = 0; i < merge_list_indices.size(); i++) {
+    for (word i = 0; i < merge_list_length; i++) {
       auto& cur_idx = merge_list_indices[i];
       Tuple cur_mro(&scope, merge_lists.at(i));
       if (cur_idx < cur_mro.length() && cur_mro.at(cur_idx) == *next_head_cls) {
@@ -117,7 +118,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
     next_idx++;
   }
 
-  for (word i = 0; i < merge_list_indices.size(); i++) {
+  for (word i = 0; i < merge_list_length; i++) {
     if (merge_list_indices[i] != Tuple::cast(merge_lists.at(i)).length()) {
       // TODO(T36404516): list bases in error message.
       return thread->raiseWithFmt(
@@ -127,12 +128,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   }
 
   // Copy the mro to an array of exact size. (new_mro_length is an upper bound).
-  Tuple ret_mro(&scope, runtime->newTuple(next_idx));
-  for (word i = 0; i < next_idx; i++) {
-    ret_mro.atPut(i, new_mro.at(i));
-  }
-
-  return *ret_mro;
+  return runtime->tupleSubseq(thread, new_mro, 0, next_idx);
 }
 
 }  // namespace python
