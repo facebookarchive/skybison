@@ -96,6 +96,8 @@ class Thread {
   // argument(s). Returns Error<NotFound> if the method can't be found, or the
   // result of the call otheriwse (which may be Error<Exception>).
   // ex: str.foo(receiver, arg1, ...)
+  RawObject invokeMethodStatic1(LayoutId type, SymbolId method_name,
+                                const Handle<RawObject>& receiver);
   RawObject invokeMethodStatic2(LayoutId type, SymbolId method_name,
                                 const Handle<RawObject>& receiver,
                                 const Handle<RawObject>& arg1);

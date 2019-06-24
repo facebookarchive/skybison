@@ -2105,4 +2105,22 @@ TEST_F(UnicodeExtensionApiTest, IsAsciiWithNonAsciiCharsReturnsZero) {
   EXPECT_EQ(PyUnicode_IS_ASCII(unicode.get()), 0);
 }
 
+TEST_F(UnicodeExtensionApiTest, IsIdentifierWithEmptyStringReturnsFalse) {
+  PyObjectPtr unicode(PyUnicode_FromString(""));
+  EXPECT_EQ(PyUnicode_IsIdentifier(unicode), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, IsIdentifierWithValidIdentifierReturnsTrue) {
+  PyObjectPtr unicode(PyUnicode_FromString("foo"));
+  EXPECT_EQ(PyUnicode_IsIdentifier(unicode), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(UnicodeExtensionApiTest, IsIdentifierWithInvalidIdentifierReturnsFalse) {
+  PyObjectPtr unicode(PyUnicode_FromString("b$ar"));
+  EXPECT_EQ(PyUnicode_IsIdentifier(unicode), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 }  // namespace python

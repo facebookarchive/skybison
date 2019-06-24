@@ -443,6 +443,7 @@ class Runtime;
   V(IsDisjoint, "isdisjoint")                                                  \
   V(IsFrozen, "is_frozen")                                                     \
   V(IsFrozenPackage, "is_frozen_package")                                      \
+  V(IsIdentifier, "isidentifier")                                              \
   V(IsInstance, "isinstance")                                                  \
   V(IsSubclass, "issubclass")                                                  \
   V(Isub, "isub")                                                              \

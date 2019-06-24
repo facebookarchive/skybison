@@ -1565,8 +1565,19 @@ PY_EXPORT void PyUnicode_InternInPlace(PyObject** pobj) {
   }
 }
 
-PY_EXPORT int PyUnicode_IsIdentifier(PyObject* /* f */) {
-  UNIMPLEMENTED("PyUnicode_IsIdentifier");
+PY_EXPORT int PyUnicode_IsIdentifier(PyObject* str) {
+  DCHECK(str != nullptr, "str must not be null");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
+  if (str_obj.isStr() && Str::cast(*str_obj).length() == 0) {
+    return false;
+  }
+  Object result(&scope, thread->invokeMethodStatic1(
+                            LayoutId::kStr, SymbolId::kIsIdentifier, str_obj));
+  DCHECK(!result.isErrorNotFound(), "could not call str.isidentifier");
+  CHECK(!result.isError(), "this function should not error");
+  return Bool::cast(*result).value();
 }
 
 PY_EXPORT PyObject* PyUnicode_Join(PyObject* sep, PyObject* seq) {
