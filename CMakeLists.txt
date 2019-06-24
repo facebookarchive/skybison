@@ -9,6 +9,13 @@ if (${PYRO_ASAN})
   endif()
 endif()
 
+option(PYRO_STATIC_LIBSTDCXX "Link all dependencies statically" OFF)
+if (PYRO_STATIC_LIBSTDCXX)
+  set(PYRO_STATIC_LINKING "-static-libstdc++")
+else()
+  set(PYRO_STATIC_LINKING "")
+endif()
+
 set(BENCHMARK_ENABLE_TESTING CACHE BOOL OFF)
 set(BENCHMARK_ENABLE_EXCEPTIONS CACHE BOOL OFF)
 set(BENCHMARK_ENABLE_INSTALL CACHE BOOL OFF)
@@ -383,7 +390,8 @@ target_link_libraries(
   python
   PRIVATE
   runtime
-  modules)
+  modules
+  ${PYRO_STATIC_LINKING})
 
 add_executable(
   test_lldb_support
