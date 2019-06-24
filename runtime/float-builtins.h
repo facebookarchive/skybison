@@ -16,6 +16,9 @@ namespace python {
  */
 RawObject asFloatObject(Thread* thread, const Object& obj);
 
+// Grabs the base float value from an instance of float.
+RawObject floatUnderlying(Thread* thread, const Object& obj);
+
 class FloatBuiltins
     : public Builtins<FloatBuiltins, SymbolId::kFloat, LayoutId::kFloat> {
  public:

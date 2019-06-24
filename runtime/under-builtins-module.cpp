@@ -1150,7 +1150,7 @@ RawObject UnderBuiltinsModule::underSetMemberDouble(Thread*, Frame* frame,
                                                     word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
-  double value = RawFloat::cast(args.get(1)).value();
+  double value = Float::cast(args.get(1)).value();
   std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
   return NoneType::object();
 }
@@ -1159,7 +1159,7 @@ RawObject UnderBuiltinsModule::underSetMemberFloat(Thread*, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   auto addr = Int::cast(args.get(0)).asCPtr();
-  float value = RawFloat::cast(args.get(1)).value();
+  float value = Float::cast(args.get(1)).value();
   std::memcpy(reinterpret_cast<void*>(addr), &value, sizeof(value));
   return NoneType::object();
 }

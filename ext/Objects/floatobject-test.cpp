@@ -8,6 +8,8 @@
 
 namespace python {
 
+using namespace testing;
+
 using FloatExtensionApiTest = ExtensionApi;
 
 TEST_F(FloatExtensionApiTest, FromDoubleReturnsFloat) {
@@ -52,6 +54,22 @@ f = FloatLikeClass();
   PyObject* f = testing::moduleGet("__main__", "f");
   double res = PyFloat_AsDouble(f);
   EXPECT_EQ(res, 1.5);
+}
+
+TEST_F(FloatExtensionApiTest, AsDoubleWithDunderFloatPropagatesException) {
+  PyRun_SimpleString(R"(
+class FloatLikeClass:
+  @property
+  def __float__(self):
+    raise KeyError
+
+f = FloatLikeClass();
+  )");
+  PyObjectPtr f(moduleGet("__main__", "f"));
+  EXPECT_EQ(PyFloat_AsDouble(f), -1.0);
+
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_KeyError));
 }
 
 TEST_F(FloatExtensionApiTest, AsDoubleFromFloatSubclassReturnsFloat) {

@@ -1278,12 +1278,12 @@ class RawUserBytesBase : public RawHeapObject {
 class RawUserFloatBase : public RawHeapObject {
  public:
   // Getters and setters.
-  RawObject floatValue() const;
-  void setFloatValue(RawObject value) const;
+  RawObject value() const;
+  void setValue(RawObject value) const;
 
   // RawLayout.
-  static const int kFloatOffset = RawHeapObject::kSize;
-  static const int kSize = kFloatOffset + kPointerSize;
+  static const int kValueOffset = RawHeapObject::kSize;
+  static const int kSize = kValueOffset + kPointerSize;
 
   RAW_OBJECT_COMMON_NO_CAST(UserFloatBase);
 };
@@ -4260,13 +4260,13 @@ inline void RawUserBytesBase::setValue(RawObject value) const {
 
 // RawUserFloatBase
 
-inline RawObject RawUserFloatBase::floatValue() const {
-  return instanceVariableAt(kFloatOffset);
+inline RawObject RawUserFloatBase::value() const {
+  return instanceVariableAt(kValueOffset);
 }
 
-inline void RawUserFloatBase::setFloatValue(RawObject value) const {
+inline void RawUserFloatBase::setValue(RawObject value) const {
   DCHECK(value.isFloat(), "Only float type is permitted as a value");
-  instanceVariableAtPut(kFloatOffset, value);
+  instanceVariableAtPut(kValueOffset, value);
 }
 
 // RawUserIntBase

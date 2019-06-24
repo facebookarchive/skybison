@@ -187,6 +187,23 @@ TEST_F(FloatBuiltinsTest, AddWithNonFloatOtherRaisesTypeError) {
                             "float.__add__(NoneType) is not supported"));
 }
 
+TEST_F(FloatBuiltinsTest, DunderAddWithFloatSubclassReturnsFloatSum) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class SubFloat(float):
+  pass
+
+left = SubFloat(1.0)
+right = SubFloat(2.0)
+)")
+                   .isError());
+  Object left(&scope, moduleAt(&runtime_, "__main__", "left"));
+  Object right(&scope, moduleAt(&runtime_, "__main__", "right"));
+  Object result(&scope, runBuiltin(FloatBuiltins::dunderAdd, left, right));
+  ASSERT_TRUE(result.isFloat());
+  EXPECT_EQ(Float::cast(*result).value(), 3.0);
+}
+
 TEST_F(FloatBuiltinsTest, DunderBoolWithZeroReturnsFalse) {
   HandleScope scope(thread_);
   Float self(&scope, runtime_.newFloat(0.0));
@@ -404,10 +421,8 @@ subfloat_foo = subfloat.foo
   ASSERT_FALSE(subfloat.isFloat());
   ASSERT_TRUE(runtime_.isInstanceOfFloat(*subfloat));
 
-  UserFloatBase user_float(&scope, *subfloat);
-  Object float_value(&scope, user_float.floatValue());
-  ASSERT_TRUE(float_value.isFloat());
-  EXPECT_EQ(Float::cast(*float_value).value(), 1.5);
+  Float flt(&scope, floatUnderlying(thread_, subfloat));
+  EXPECT_EQ(flt.value(), 1.5);
 
   Object foo_attr(&scope, moduleAt(&runtime_, "__main__", "subfloat_foo"));
   EXPECT_TRUE(isIntEqualsWord(*foo_attr, 3));
