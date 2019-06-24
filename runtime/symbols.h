@@ -151,6 +151,7 @@ class Runtime;
   V(UnderBytesMaketrans, "_bytes_maketrans")                                   \
   V(UnderBytesNew, "_bytes_new")                                               \
   V(UnderBytesRepeat, "_bytes_repeat")                                         \
+  V(UnderClassMethod, "_classmethod")                                          \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \

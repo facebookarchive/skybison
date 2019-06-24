@@ -29,6 +29,7 @@ class UnderBuiltinsModule {
   static RawObject underBytesMaketrans(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underBytesRepeat(Thread* thread, Frame* frame, word nargs);
+  static RawObject underClassMethod(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexReal(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictBucketInsert(Thread* thread, Frame* frame,

@@ -18,6 +18,7 @@ _bytes_getslice = _bytes_getslice  # noqa: F821
 _bytes_join = _bytes_join  # noqa: F821
 _bytes_maketrans = _bytes_maketrans  # noqa: F821
 _bytes_repeat = _bytes_repeat  # noqa: F821
+_classmethod = _classmethod  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
 _dict_bucket_insert = _dict_bucket_insert  # noqa: F821
@@ -188,6 +189,10 @@ class type(bootstrap=True):
 
     def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound):
         pass
+
+    @_classmethod
+    def __prepare__(self, *args, **kwargs):
+        return {}
 
     def __repr__(self):
         return f"<class '{self.__name__}'>"

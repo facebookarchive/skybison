@@ -69,6 +69,11 @@ def _bytes_repeat(self, count):
 
 
 @_patch
+def _classmethod(function):
+    pass
+
+
+@_patch
 def _complex_imag(c):
     pass
 

@@ -57,6 +57,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesJoin, underBytesJoin},
     {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
+    {SymbolId::kUnderClassMethod, underClassMethod},
     {SymbolId::kUnderComplexImag, underComplexImag},
     {SymbolId::kUnderComplexReal, underComplexReal},
     {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
@@ -364,6 +365,15 @@ RawObject UnderBuiltinsModule::underBytesRepeat(Thread* thread, Frame* frame,
     return thread->raiseWithFmt(LayoutId::kValueError, "negative count");
   }
   return thread->runtime()->bytesRepeat(thread, self, self.length(), count);
+}
+
+RawObject UnderBuiltinsModule::underClassMethod(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  ClassMethod result(&scope, thread->runtime()->newClassMethod());
+  result.setFunction(args.get(0));
+  return *result;
 }
 
 RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,
