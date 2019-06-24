@@ -29,7 +29,7 @@ class BenchmarkRunner:
 
     def register_measurement_tools(self, args):
         sys.path.append(self.path)
-        registered_tools = __import__("_benchmark_tools").REGISTERED_TOOLS
+        registered_tools = __import__("_tools").REGISTERED_TOOLS
         sys.path.pop()
         for k, v in registered_tools.items():
             if k in args["tools"]:
@@ -61,7 +61,7 @@ def main():
 
     path = sys.argv[0].rsplit("/", 1)[0]
     runner = BenchmarkRunner(path)
-    benchmarks_path = f"{path.rsplit('/', 1)[0]}/benchmarks"
+    benchmarks_path = f"{path}/benchmarks"
     runner.register_benchmarks(benchmarks_path, args["benchmarks"])
     runner.register_measurement_tools(args)
     results = runner.run_benchmarks()
