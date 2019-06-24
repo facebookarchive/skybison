@@ -39,11 +39,6 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 RawObject typeSetAttr(Thread* thread, const Type& type,
                       const Object& name_interned_str, const Object& value);
 
-// Returns the "user-visible" type of an object. This hides the smallint,
-// smallstr, largeint, largestr types and pretends the object is of type
-// str/int instead.
-RawObject userVisibleTypeOf(Thread* thread, const Object& obj);
-
 class TypeBuiltins
     : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {
  public:
