@@ -244,7 +244,7 @@ typedef struct {
   double imag;
 } Py_complex;
 
-typedef int Py_UCS4;
+typedef unsigned int Py_UCS4;
 typedef wchar_t Py_UNICODE;
 
 typedef struct {

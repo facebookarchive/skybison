@@ -1899,7 +1899,7 @@ PY_EXPORT Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject* obj, Py_ssize_t index) {
   word byte_offset = str.offsetByCodePoints(0, index);
   if (byte_offset == str.length()) return Py_UCS4{0};
   word num_bytes;
-  return reinterpret_cast<Py_UCS4>(str.codePointAt(byte_offset, &num_bytes));
+  return static_cast<Py_UCS4>(str.codePointAt(byte_offset, &num_bytes));
 }
 
 PY_EXPORT int PyUnicode_IS_ASCII_Func(PyObject* obj) {
