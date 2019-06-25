@@ -75,9 +75,9 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op) {
         case CompareOp::GE:
           return RewrittenOp{COMPARE_OP_CACHED, op.arg, true};
         case CompareOp::IS:
-          return RewrittenOp{COMPARE_IS, op.arg, false};
+          return RewrittenOp{COMPARE_IS, 0, false};
         case CompareOp::IS_NOT:
-          return RewrittenOp{COMPARE_IS_NOT, op.arg, false};
+          return RewrittenOp{COMPARE_IS_NOT, 0, false};
       }
       break;
     case FOR_ITER:

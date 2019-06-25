@@ -406,8 +406,8 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesCompareOpOpcodes) {
       COMPARE_OP_CACHED, 5,
       COMPARE_OP,        CompareOp::IN,
       COMPARE_OP,        CompareOp::NOT_IN,
-      COMPARE_IS,        CompareOp::IS,
-      COMPARE_IS_NOT,    CompareOp::IS_NOT,
+      COMPARE_IS,        0,
+      COMPARE_IS_NOT,    0,
       COMPARE_OP,        CompareOp::EXC_MATCH,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
