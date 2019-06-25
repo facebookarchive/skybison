@@ -331,6 +331,8 @@ BytecodeOp nextBytecodeOp(const MutableBytes& bytecode, word* index);
 // objectFromOparg(opargFromObject(obj) == obj will hold.
 int8_t opargFromObject(RawObject object);
 
-RawObject objectFromOparg(word arg);
+inline RawObject objectFromOparg(word arg) {
+  return RawObject(static_cast<uword>(static_cast<int8_t>(arg)));
+}
 
 }  // namespace python

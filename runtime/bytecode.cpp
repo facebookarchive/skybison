@@ -28,8 +28,4 @@ int8_t opargFromObject(RawObject object) {
   return static_cast<int8_t>(object.raw());
 }
 
-RawObject objectFromOparg(word arg) {
-  return RawObject(static_cast<uword>(static_cast<int8_t>(arg)));
-}
-
 }  // namespace python
