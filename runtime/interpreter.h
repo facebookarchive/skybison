@@ -295,6 +295,8 @@ class Interpreter {
   static Continue doCallFunctionEx(Thread* thread, word arg);
   static Continue doCallFunctionKw(Thread* thread, word arg);
   static Continue doCallMethod(Thread* thread, word arg);
+  static Continue doCompareIs(Thread* thread, word arg);
+  static Continue doCompareIsNot(Thread* thread, word arg);
   static Continue doCompareOp(Thread* thread, word arg);
   static Continue doCompareOpCached(Thread* thread, word arg);
   static Continue doDeleteAttr(Thread* thread, word arg);

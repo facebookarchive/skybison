@@ -257,8 +257,8 @@ namespace python {
   V(UNUSED_BYTECODE_238, 238, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_239, 239, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_240, 240, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_241, 241, doInvalidBytecode)                               \
-  V(UNUSED_BYTECODE_242, 242, doInvalidBytecode)                               \
+  V(COMPARE_IS_NOT, 241, doCompareIsNot)                                       \
+  V(COMPARE_IS, 242, doCompareIs)                                              \
   V(LOAD_IMMEDIATE, 243, doLoadImmediate)                                      \
   V(STORE_FAST_REVERSE, 244, doStoreFastReverse)                               \
   V(LOAD_FAST_REVERSE, 245, doLoadFastReverse)                                 \

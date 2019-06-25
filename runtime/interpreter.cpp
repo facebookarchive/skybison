@@ -2513,6 +2513,22 @@ static RawObject excMatch(Thread* thread, const Object& left,
   return Bool::fromBool(givenExceptionMatches(thread, left, right));
 }
 
+HANDLER_INLINE Continue Interpreter::doCompareIs(Thread* thread, word) {
+  Frame* frame = thread->currentFrame();
+  RawObject right = frame->popValue();
+  RawObject left = frame->popValue();
+  frame->pushValue(Bool::fromBool(left == right));
+  return Continue::NEXT;
+}
+
+HANDLER_INLINE Continue Interpreter::doCompareIsNot(Thread* thread, word) {
+  Frame* frame = thread->currentFrame();
+  RawObject right = frame->popValue();
+  RawObject left = frame->popValue();
+  frame->pushValue(Bool::fromBool(left != right));
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
