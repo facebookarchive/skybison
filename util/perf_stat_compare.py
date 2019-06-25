@@ -115,7 +115,7 @@ def main():
     if not args.event:
         args.event = ["cycles", "instructions", "branches", "branch-misses"]
     if not args.common_arg:
-        args.common_arg = ["benchmarks/richards.py"]
+        args.common_arg = ["benchmarks/benchmarks/richards.py"]
 
     results = []
     for binary in args.binary:
