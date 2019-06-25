@@ -929,6 +929,7 @@ PyAPI_FUNC(int) PyIndex_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyIter_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyList_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyList_Check_Func(PyObject*);
+PyAPI_FUNC(int) PyList_SET_ITEM_Func(PyObject*, Py_ssize_t, PyObject*);
 PyAPI_FUNC(int) PyLong_CheckExact_Func(PyObject*);
 PyAPI_FUNC(int) PyLong_Check_Func(PyObject*);
 PyAPI_FUNC(int) PyMemoryView_Check_Func(PyObject*);
@@ -1024,11 +1025,13 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall_Func();
 
 #define PyList_GET_ITEM(op, i) PyList_GetItem((PyObject*)op, i)
 #define PyList_GET_SIZE(op) PyList_Size((PyObject*)op)
+#define PyList_SET_ITEM(op, i, v) PyList_SET_ITEM_Func((PyObject*)op, i, v)
 
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 
 #define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
 #define PyTuple_GET_ITEM(op, i) PyTuple_GetItem((PyObject*)op, i)
+// TODO(T46331042): Make SET_ITEM more similar to CPython implementation
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SetItem((PyObject*)op, i, v)
 
 #define PyStructSequence_GET_ITEM(op, i)                                       \

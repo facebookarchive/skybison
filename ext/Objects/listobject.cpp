@@ -92,6 +92,19 @@ PY_EXPORT int PyList_Reverse(PyObject* pylist) {
   return 0;
 }
 
+PY_EXPORT int PyList_SET_ITEM_Func(PyObject* pylist, Py_ssize_t i,
+                                   PyObject* item) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object list_obj(&scope, ApiHandle::fromPyObject(pylist)->asObject());
+  DCHECK(runtime->isInstanceOfList(*list_obj), "pylist must be a list");
+  List list(&scope, *list_obj);
+  DCHECK_INDEX(i, list.numItems());
+  list.atPut(i, ApiHandle::fromPyObject(item)->asObject());
+  return 0;
+}
+
 PY_EXPORT int PyList_SetItem(PyObject* pylist, Py_ssize_t i, PyObject* item) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
