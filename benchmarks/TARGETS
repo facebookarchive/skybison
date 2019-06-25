@@ -1,0 +1,77 @@
+load("@fbcode_macros//build_defs:python_binary.bzl", "python_binary")
+load("@fbcode_macros//build_defs:python_library.bzl", "python_library")
+load("@fbcode_macros//build_defs:python_unittest.bzl", "python_unittest")
+load("@fbcode_macros//build_defs:thrift_library.bzl", "thrift_library")
+
+thrift_library(
+    name = "rpc",
+    languages = ["py3"],
+    py3_namespace = "pyro.benchmarks",
+    py_base_module = "pyro.benchmarks",
+    thrift_srcs = {"rpc.thrift": ["PyroBenchmarks"]},
+    deps = ["//common/fb303/if:fb303"],
+)
+
+python_library(
+    name = "server_handler",
+    srcs = [
+        "server_handler.py",
+    ],
+    deps = [
+        ":rpc-py3-services",
+        "//common/fb303/py3:fb303",
+    ],
+)
+
+python_library(
+    name = "benchmarks",
+    srcs = [
+        "benchmarks/deltablue.py",
+        "benchmarks/fannkuch.py",
+        "benchmarks/pystone.py",
+        "benchmarks/richards.py",
+    ],
+)
+
+python_binary(
+    name = "server",
+    srcs = [
+        "_benchmark_runner.py",
+        "_tools.py",
+        "run.py",
+        "server.py",
+    ],
+    main_module = "pyro.benchmarks.server",
+    deps = [
+        ":server_handler",
+        "//common/services/py3:tls",
+    ],
+)
+
+python_binary(
+    name = "client",
+    srcs = [
+        "client.py",
+    ],
+    main_module = "pyro.benchmarks.client",
+    deps = [
+        ":benchmarks",
+        ":rpc-py3-clients",
+        "//libfb/py/pyinit:pyinit",
+        "//servicerouter/client/py3:get_client",
+    ],
+)
+
+python_unittest(
+    name = "server_test",
+    srcs = [
+        "server_test.py",
+    ],
+    py_version = "3.6",
+    deps = [
+        ":server_handler",
+        "//ame/py3:base_server",
+        "//libfb/py:testutil",
+        "//libfb/py/asyncio:unittest",
+    ],
+)
