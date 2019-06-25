@@ -3,6 +3,7 @@
 #include <cerrno>
 
 #include "bytes-builtins.h"
+#include "compile.h"
 #include "exception-builtins.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
@@ -396,34 +397,21 @@ RawObject BuiltinsModule::chr(Thread* thread, Frame* frame, word nargs) {
   return SmallStr::fromCodePoint(static_cast<int32_t>(code_point));
 }
 
-static RawObject compileToBytecode(Thread* thread, const char* source,
-                                   const Str& filename) {
-  HandleScope scope(thread);
-  unique_c_ptr<char[]> filename_c_str(filename.toCStr());
-  std::unique_ptr<char[]> bytecode_str(
-      Runtime::compileFromCStr(source, filename_c_str.get()));
-  Marshal::Reader reader(&scope, thread->runtime(), bytecode_str.get());
-  reader.readLong();  // magic
-  reader.readLong();  // mtime
-  reader.readLong();  // size
-  return reader.readObject();
-}
-
-static RawObject compileBytes(Thread* thread, const Bytes& source,
-                              const Str& filename) {
+static RawObject compileBytes(const Bytes& source, const Str& filename) {
   word bytes_len = source.length();
   unique_c_ptr<byte[]> source_bytes(
       static_cast<byte*>(std::malloc(bytes_len + 1)));
   source.copyTo(source_bytes.get(), bytes_len);
   source_bytes[bytes_len] = '\0';
-  return compileToBytecode(thread, reinterpret_cast<char*>(source_bytes.get()),
-                           filename);
+  unique_c_ptr<char[]> filename_str(filename.toCStr());
+  return compileFromCStr(reinterpret_cast<char*>(source_bytes.get()),
+                         filename_str.get());
 }
 
-static RawObject compileStr(Thread* thread, const Str& source,
-                            const Str& filename) {
+static RawObject compileStr(const Str& source, const Str& filename) {
   unique_c_ptr<char[]> source_str(source.toCStr());
-  return compileToBytecode(thread, source_str.get(), filename);
+  unique_c_ptr<char[]> filename_str(filename.toCStr());
+  return compileFromCStr(source_str.get(), filename_str.get());
 }
 
 RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
@@ -465,10 +453,10 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
 
   if (data.isStr()) {
     Str source_str(&scope, *data);
-    return compileStr(thread, source_str, filename);
+    return compileStr(source_str, filename);
   }
   Bytes source_bytes(&scope, bytesUnderlying(thread, data));
-  return compileBytes(thread, source_bytes, filename);
+  return compileBytes(source_bytes, filename);
 }
 
 RawObject BuiltinsModule::divmod(Thread*, Frame*, word) {
@@ -524,7 +512,7 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   if (source_obj.isStr()) {
     Str source(&scope, *source_obj);
     Str filename(&scope, runtime->newStrFromCStr("<exec string>"));
-    source_obj = compileStr(thread, source, filename);
+    source_obj = compileStr(source, filename);
     DCHECK(source_obj.isCode(), "compileStr must return code object");
   }
   Code code(&scope, *source_obj);
