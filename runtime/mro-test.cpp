@@ -71,4 +71,23 @@ class C(A, B): pass
   EXPECT_EQ(result.at(3), runtime_.typeAt(LayoutId::kObject));
 }
 
+TEST_F(MroTest, ComputeMroWithIncompatibleBasesRaisesTypeError) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A: pass
+class B(A): pass
+)")
+                   .isError());
+  Object a_obj(&scope, moduleAt(&runtime_, "__main__", "A"));
+  Object b_obj(&scope, moduleAt(&runtime_, "__main__", "B"));
+  Type c(&scope, runtime_.newType());
+  Tuple parents(&scope, runtime_.newTuple(2));
+  parents.atPut(0, *a_obj);
+  parents.atPut(1, *b_obj);
+  EXPECT_TRUE(raisedWithStr(computeMro(thread_, c, parents),
+                            LayoutId::kTypeError,
+                            "Cannot create a consistent method resolution "
+                            "order (MRO) for bases A, B"));
+}
+
 }  // namespace python

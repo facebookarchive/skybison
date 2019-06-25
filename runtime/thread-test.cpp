@@ -1336,9 +1336,9 @@ class B(A): pass
 class C(A, B): pass
 )";
 
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, src), LayoutId::kTypeError,
-      "Cannot create a consistent method resolution order (MRO)"));
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
+                            "Cannot create a consistent method resolution "
+                            "order (MRO) for bases A, B"));
 }
 
 // iteration

@@ -73,7 +73,8 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   Runtime* runtime = thread->runtime();
 
   // Special case for no explicit ancestors.
-  if (parents.length() == 0) {
+  word num_parents = parents.length();
+  if (num_parents == 0) {
     Tuple new_mro(&scope, runtime->newTuple(2));
     new_mro.atPut(0, *type);
     new_mro.atPut(1, runtime->typeAt(LayoutId::kObject));
@@ -81,7 +82,7 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
   }
 
   Vector<word> merge_list_indices;
-  word merge_list_length = parents.length() + 1;
+  word merge_list_length = num_parents + 1;
   merge_list_indices.reserve(merge_list_length);
   Tuple merge_lists(&scope, runtime->newTuple(merge_list_length));
   word new_mro_length =
@@ -120,10 +121,18 @@ RawObject computeMro(Thread* thread, const Type& type, const Tuple& parents) {
 
   for (word i = 0; i < merge_list_length; i++) {
     if (merge_list_indices[i] != Tuple::cast(merge_lists.at(i)).length()) {
-      // TODO(T36404516): list bases in error message.
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError,
-          "Cannot create a consistent method resolution order (MRO)");
+      Tuple names(&scope, runtime->newTuple(num_parents));
+      Type parent(&scope, runtime->typeAt(LayoutId::kNoneType));
+      for (word j = 0; j < num_parents; j++) {
+        parent = parents.at(j);
+        names.atPut(j, parent.name());
+      }
+      Str sep(&scope, SmallStr::fromCStr(", "));
+      Object bases(&scope, runtime->strJoin(thread, sep, names, num_parents));
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "Cannot create a consistent method "
+                                  "resolution order (MRO) for bases %S",
+                                  &bases);
     }
   }
 
