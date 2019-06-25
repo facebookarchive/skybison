@@ -1606,20 +1606,6 @@ RawObject Runtime::findOrCreateMainModule() {
   return *main;
 }
 
-RawObject Runtime::run(const char* buffer) {
-  HandleScope scope;
-  Marshal::Reader reader(&scope, this, buffer);
-  reader.readLong();
-  reader.readLong();
-  reader.readLong();
-  Code code(&scope, reader.readObject());
-  Module main_module(&scope, findOrCreateMainModule());
-  Object result(&scope, executeModule(code, main_module));
-  DCHECK(Thread::current()->isErrorValueOk(*result),
-         "error/exception mismatch");
-  return *result;
-}
-
 RawObject Runtime::executeFrozenModule(const char* buffer,
                                        const Module& module) {
   HandleScope scope;

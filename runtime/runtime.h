@@ -252,8 +252,6 @@ class Runtime {
 
   void collectGarbage();
 
-  NODISCARD RawObject run(const char* buffer);
-
   RawObject hash(RawObject object);
   word siphash24(View<byte> array);
 
