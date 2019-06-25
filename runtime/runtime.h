@@ -553,22 +553,6 @@ class Runtime {
     return &new_value_cell_callback_;
   }
 
-  // Compile the given source code string into a marshaled code object,
-  // pretending it came from the given filename.
-  //
-  // If PYRO_COMPILE_CACHE is set in the environment or ~/.pyro-compile-cache is
-  // a writable directory, the result will be cached on disk to speed up future
-  // calls with the same source.
-  static std::unique_ptr<char[]> compile(View<char> src, const char* filename);
-
-  static std::unique_ptr<char[]> compileFromCStr(const char* src,
-                                                 const char* filename);
-
-  // Like compile(), but bypass the cache and return the length of the resuling
-  // buffer in len.
-  static std::unique_ptr<char[]> compileWithLen(View<char> src, word* len,
-                                                const char* filename);
-
   // Performs a simple scan of the bytecode and collects all attributes that
   // are set via `self.<attribute> =` into attributes.
   void collectAttributes(const Code& code, const Dict& attributes);
