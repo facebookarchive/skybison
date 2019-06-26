@@ -11,6 +11,7 @@ _bound_method = _bound_method  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
 _bytearray_join = _bytearray_join  # noqa: F821
+_bytearray_setitem = _bytearray_setitem  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
 _bytes_from_ints = _bytes_from_ints  # noqa: F821
 _bytes_getitem = _bytes_getitem  # noqa: F821
@@ -955,6 +956,20 @@ class bytearray(bootstrap=True):
         return bytearray.__mul__(self, n)
 
     def __setitem__(self, key, value):
+        if not _bytearray_check(self):
+            raise TypeError(
+                f"'__setitem__' requires a 'bytearray' instance but got "
+                f"'{_type(self).__name__}'"
+            )
+        if _int_check(key):
+            if not _int_check(value):
+                raise TypeError(
+                    f"'__setitem__' requires an 'int' instance but got "
+                    f"'{_type(value).__name__}'"
+                )
+            return _bytearray_setitem(self, key, value)
+        # TODO(T46473889): Implement bytearray.__setitem__ with slice key
+        # TODO(T46473949): Implement bytearray.__setitem__ with index key
         _unimplemented()
 
     def append(self, item):

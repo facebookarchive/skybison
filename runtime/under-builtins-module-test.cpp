@@ -103,6 +103,96 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetitemWithLargeIntRaisesIndexError) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  Int key(&scope, runtime_.newInt(SmallInt::kMaxValue + 1));
+  Int value(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      LayoutId::kIndexError, "cannot fit 'int' into an index-sized integer"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetitemWithKeyLargerThanMaxIndexRaisesIndexError) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, ' ');
+  Int key(&scope, runtime_.newInt(self.numItems()));
+  Int value(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      LayoutId::kIndexError, "index out of range"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetitemWithNegativeValueRaisesValueError) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, ' ');
+  Int key(&scope, runtime_.newInt(0));
+  Int value(&scope, SmallInt::fromWord(-1));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      LayoutId::kValueError, "byte must be in range(0, 256)"));
+}
+
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderByteArraySetitemWithKeySmallerThanNegativeLengthValueRaisesValueError) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, ' ');
+  Int key(&scope, runtime_.newInt(-self.numItems() - 1));
+  Int value(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      LayoutId::kIndexError, "index out of range"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetitemWithValueGreaterThanKMaxByteRaisesValueError) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, ' ');
+  Int key(&scope, runtime_.newInt(0));
+  Int value(&scope, SmallInt::fromWord(kMaxByte + 1));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value),
+      LayoutId::kValueError, "byte must be in range(0, 256)"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetitemWithNegativeKeyIndexesBackwards) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, 'a');
+  byteArrayAdd(thread_, &runtime_, self, 'b');
+  byteArrayAdd(thread_, &runtime_, self, 'c');
+  Int key(&scope, SmallInt::fromWord(-1));
+  Int value(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(
+      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value)
+          .isNoneType());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "ab\001"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderByteArraySetitemWithNegativeKeySetsItemAtIndex) {
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  byteArrayAdd(thread_, &runtime_, self, 'a');
+  byteArrayAdd(thread_, &runtime_, self, 'b');
+  byteArrayAdd(thread_, &runtime_, self, 'c');
+  Int key(&scope, SmallInt::fromWord(1));
+  Int value(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(
+      runBuiltin(UnderBuiltinsModule::underByteArraySetItem, self, key, value)
+          .isNoneType());
+  EXPECT_TRUE(isByteArrayEqualsCStr(self, "a\001c"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderBytesJoinWithEmptyIterableReturnsEmptyByteArray) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

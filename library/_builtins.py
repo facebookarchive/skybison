@@ -34,6 +34,11 @@ def _bytearray_join(self, iterable):
 
 
 @_patch
+def _bytearray_setitem(self, key, value):
+    pass
+
+
+@_patch
 def _bytes_check(obj):
     pass
 

@@ -2,6 +2,22 @@
 import unittest
 
 
+class ByteArrayTest(unittest.TestCase):
+    def test_dunder_setitem_with_non_bytearray_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.__setitem__(None, 1, 5)
+
+    def test_dunder_setitem_with_non_int_value_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            ba = bytearray(b"foo")
+            bytearray.__setitem__(ba, 1, b"x")
+
+    def test_dunder_setitem_with_int_key_sets_value_at_index(self):
+        ba = bytearray(b"foo")
+        bytearray.__setitem__(ba, 1, 1)
+        self.assertEqual(ba, bytearray(b"f\01o"))
+
+
 class BytesTest(unittest.TestCase):
     def test_dunder_add_with_bytes_like_other_returns_bytes(self):
         self.assertEqual(b"123".__add__(bytearray(b"456")), b"123456")

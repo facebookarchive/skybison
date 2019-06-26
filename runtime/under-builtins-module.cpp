@@ -50,6 +50,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
     {SymbolId::kUnderByteArrayClear, underByteArrayClear},
     {SymbolId::kUnderByteArrayJoin, underByteArrayJoin},
+    {SymbolId::kUnderByteArraySetitem, underByteArraySetItem},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
@@ -171,6 +172,37 @@ RawObject UnderBuiltinsModule::underByteArrayCheck(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfByteArray(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,
+                                                     Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  ByteArray self(&scope, args.get(0));
+  Object key_obj(&scope, args.get(1));
+  Int key(&scope, intUnderlying(thread, key_obj));
+  Object value_obj(&scope, args.get(2));
+  Int value(&scope, intUnderlying(thread, value_obj));
+  word index = key.asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key_obj);
+  }
+  word length = self.numItems();
+  if (index < 0) {
+    index += length;
+  }
+  if (index < 0 || index >= length) {
+    return thread->raiseWithFmt(LayoutId::kIndexError, "index out of range");
+  }
+  word val = value.asWordSaturated();
+  if (val < 0 || val > kMaxByte) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "byte must be in range(0, 256)");
+  }
+  self.byteAtPut(index, val);
+  return NoneType::object();
 }
 
 RawObject UnderBuiltinsModule::underBytesCheck(Thread* thread, Frame* frame,

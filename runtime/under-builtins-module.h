@@ -21,6 +21,8 @@ class UnderBuiltinsModule {
   static RawObject underByteArrayClear(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underByteArrayJoin(Thread* thread, Frame* frame, word nargs);
+  static RawObject underByteArraySetItem(Thread* thread, Frame* frame,
+                                         word nargs);
   static RawObject underBytesCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesFromInts(Thread* thread, Frame* frame, word nargs);
   static RawObject underBytesGetItem(Thread* thread, Frame* frame, word nargs);
