@@ -724,6 +724,8 @@ def _new_member_set_readonly_strings(name):
 
 
 def _slice_index(num) -> int:
+    if _int_check(num):
+        return num
     if hasattr(num, "__index__"):
         return _index(num)
     raise TypeError(
