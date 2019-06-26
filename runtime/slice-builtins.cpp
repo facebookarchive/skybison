@@ -1,10 +1,19 @@
 #include "slice-builtins.h"
 
 #include "frame.h"
+#include "int-builtins.h"
 #include "objects.h"
 #include "runtime.h"
 
 namespace python {
+
+static ALWAYS_INLINE RawObject sliceIndex(Thread* thread, const Object& obj) {
+  if (thread->runtime()->isInstanceOfInt(*obj)) {
+    return *obj;
+  }
+  return thread->invokeFunction1(SymbolId::kBuiltins,
+                                 SymbolId::kUnderSliceIndex, obj);
+}
 
 RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
                       word* stop, word* step) {
@@ -13,8 +22,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   if (step_obj.isNoneType()) {
     *step = 1;
   } else {
-    step_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                       SymbolId::kUnderSliceIndex, step_obj);
+    step_obj = sliceIndex(thread, step_obj);
     if (step_obj.isError()) return *step_obj;
     Int index(&scope, *step_obj);
     if (index.isZero()) {
@@ -40,8 +48,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   if (start_obj.isNoneType()) {
     *start = (*step < 0) ? SmallInt::kMaxValue : 0;
   } else {
-    start_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                        SymbolId::kUnderSliceIndex, start_obj);
+    start_obj = sliceIndex(thread, start_obj);
     if (start_obj.isError()) return *start_obj;
     Int index(&scope, *start_obj);
     word start_word = index.asWordSaturated();
@@ -58,8 +65,7 @@ RawObject sliceUnpack(Thread* thread, const Slice& slice, word* start,
   if (stop_obj.isNoneType()) {
     *stop = (*step < 0) ? SmallInt::kMinValue : SmallInt::kMaxValue;
   } else {
-    stop_obj = thread->invokeFunction1(SymbolId::kBuiltins,
-                                       SymbolId::kUnderSliceIndex, stop_obj);
+    stop_obj = sliceIndex(thread, stop_obj);
     if (stop_obj.isError()) return *stop_obj;
     Int index(&scope, *stop_obj);
     word stop_word = index.asWordSaturated();
