@@ -2,6 +2,7 @@
 
 import argparse
 import collections
+import os
 import re
 import subprocess
 import sys
@@ -18,12 +19,15 @@ def measure_binary(binary, repetitions, events, common_args):
     for event in events:
         events_args += ["-e", event]
     print(f"Running {' '.join([binary] + common_args)}", file=sys.stderr)
+    env = dict(os.environ)
+    env.update({"PYRO_ENABLE_CACHE": "1", "PYTHONHASHSEED": "0"})
+
     return subprocess.run(
         ["perf", "stat", "-r", repetitions, *events_args, binary, *common_args],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         encoding=sys.stderr.encoding,
-        env={"PYRO_ENABLE_CACHE": "1", "PYTHONHASHSEED": "0"},
+        env=env,
         check=True,
     ).stderr
 
