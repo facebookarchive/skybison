@@ -76,9 +76,9 @@ python_binary(
 )
 
 python_unittest(
-    name = "server_test",
+    name = "test_server",
     srcs = [
-        "server_test.py",
+        "test_server.py",
     ],
     py_version = "3.6",
     deps = [
