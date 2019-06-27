@@ -788,7 +788,7 @@ RawObject Runtime::newTuple(word length) {
   if (length == 0) {
     return emptyTuple();
   }
-  return heap()->createTuple(length, NoneType::object());
+  return heap()->createTuple(length);
 }
 
 RawObject Runtime::newInt(word value) {
@@ -1655,7 +1655,7 @@ void Runtime::initializeThreads() {
 }
 
 void Runtime::initializePrimitiveInstances() {
-  empty_tuple_ = heap()->createTuple(0, NoneType::object());
+  empty_tuple_ = heap()->createTuple(0);
   empty_frozen_set_ = newFrozenSet();
   empty_mutable_bytes_ = heap()->createMutableBytes(0);
   ellipsis_ = heap()->createEllipsis();

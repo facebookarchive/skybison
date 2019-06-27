@@ -192,15 +192,14 @@ RawObject Heap::createMutableBytes(word length) {
   return MutableBytes::cast(result);
 }
 
-RawObject Heap::createTuple(word length, RawObject value) {
-  DCHECK(!value.isHeapObject(), "value must be an immediate object");
+RawObject Heap::createTuple(word length) {
   word size = Tuple::allocationSize(length);
   RawObject raw = allocate(size, HeapObject::headerSize(length));
   CHECK(!raw.isError(), "out of memory");
   auto result = raw.rawCast<RawTuple>();
   result.setHeaderAndOverflow(length, 0, LayoutId::kTuple,
                               ObjectFormat::kObjects);
-  result.initialize(length * kPointerSize, value);
+  result.initialize(length * kPointerSize, NoneType::object());
   return Tuple::cast(result);
 }
 
