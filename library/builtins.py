@@ -210,8 +210,7 @@ class type(bootstrap=True):
             type._merge_class_dict_keys(base, result)
 
     def mro(self):
-        # TODO(T42302401): Call Runtime computeMro when we support metaclasses.
-        return list(self.__mro__)
+        pass
 
 
 class object(bootstrap=True):  # noqa: E999

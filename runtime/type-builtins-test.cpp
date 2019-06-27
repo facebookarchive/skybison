@@ -483,6 +483,42 @@ result = C.mro()
   EXPECT_EQ(result.at(1), runtime_.typeAt(LayoutId::kObject));
 }
 
+TEST_F(TypeBuiltinsTest, MroWithMultipleInheritanceReturnsLinearization) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  pass
+class B:
+  pass
+class C(A, B):
+  pass
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object atype(&scope, moduleAt(&runtime_, "__main__", "A"));
+  Object btype(&scope, moduleAt(&runtime_, "__main__", "B"));
+  Object ctype(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object result_obj(&scope, runBuiltin(TypeBuiltins::mro, ctype));
+  ASSERT_TRUE(result_obj.isList());
+  List result(&scope, *result_obj);
+  EXPECT_EQ(result.at(0), *ctype);
+  EXPECT_EQ(result.at(1), *atype);
+  EXPECT_EQ(result.at(2), *btype);
+  EXPECT_EQ(result.at(3), runtime_.typeAt(LayoutId::kObject));
+}
+
+TEST_F(TypeBuiltinsTest, MroWithInvalidLinearizationRaisesTypeError) {
+  HandleScope scope(thread_);
+  Type type(&scope, runtime_.newType());
+  Tuple bases(&scope, runtime_.newTuple(2));
+  bases.atPut(0, runtime_.typeAt(LayoutId::kObject));
+  bases.atPut(1, runtime_.typeAt(LayoutId::kInt));
+  type.setBases(*bases);
+  EXPECT_TRUE(raisedWithStr(runBuiltin(TypeBuiltins::mro, type),
+                            LayoutId::kTypeError,
+                            "Cannot create a consistent method resolution "
+                            "order (MRO) for bases object, int"));
+}
+
 TEST_F(TypeBuiltinsTest, TypeGetAttributeReturnsAttributeValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(

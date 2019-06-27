@@ -8,6 +8,7 @@
 #include "objects.h"
 #include "runtime.h"
 #include "thread.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
@@ -116,9 +117,21 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setName(*name);
+  type.setBases(*bases);
 
   // Compute MRO
-  Object maybe_mro(&scope, computeMro(thread, type, bases));
+  Object maybe_mro(&scope, Error::error());
+  if (metaclass_id == LayoutId::kType) {
+    // Fast path: call computeMro directly when metaclass is type
+    maybe_mro = computeMro(thread, type, bases);
+  } else {
+    maybe_mro = thread->invokeMethodStatic1(metaclass_id, SymbolId::kMro, type);
+    if (maybe_mro.isError()) {
+      DCHECK(!maybe_mro.isErrorNotFound(), "all metaclasses must define mro()");
+      return *maybe_mro;
+    }
+    maybe_mro = sequenceAsTuple(thread, maybe_mro);
+  }
   if (maybe_mro.isError()) {
     return *maybe_mro;
   }
@@ -158,7 +171,6 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   type.setFlagsAndBuiltinBase(
       static_cast<Type::Flag>(flags & ~Type::Flag::kIsAbstract),
       base_layout_id);
-  type.setBases(*bases);
   return *type;
 }
 
@@ -211,6 +223,7 @@ const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderSetattr, dunderSetattr},
+    {SymbolId::kMro, mro},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -341,6 +354,26 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   name = runtime->internStr(thread, name);
   Object value(&scope, args.get(2));
   return typeSetAttr(thread, self, name, value);
+}
+
+RawObject TypeBuiltins::mro(Thread* thread, Frame* frame, word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self)) {
+    return thread->raiseRequiresType(self, SymbolId::kType);
+  }
+  Type type(&scope, *self);
+  Tuple parents(&scope, type.bases());
+  Object mro(&scope, computeMro(thread, type, parents));
+  if (mro.isError()) {
+    return *mro;
+  }
+  List result(&scope, runtime->newList());
+  result.setItems(*mro);
+  result.setNumItems(Tuple::cast(*mro).length());
+  return *result;
 }
 
 }  // namespace python

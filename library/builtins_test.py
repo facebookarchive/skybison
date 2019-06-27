@@ -994,6 +994,16 @@ class TypeTests(unittest.TestCase):
             del Foo.__abstractmethods__
         self.assertEqual(str(context.exception), "__abstractmethods__")
 
+    def test_mro_with_custom_method_propagates_exception(self):
+        class Meta(type):
+            def mro(cls):
+                raise KeyError
+
+        with self.assertRaises(KeyError):
+
+            class Foo(metaclass=Meta):
+                pass
+
 
 class RangeTests(unittest.TestCase):
     def test_range_attrs_are_set(self):

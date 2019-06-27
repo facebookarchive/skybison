@@ -489,6 +489,7 @@ class Runtime;
   V(Module, "module")                                                          \
   V(ModuleNotFoundError, "ModuleNotFoundError")                                \
   V(Modules, "modules")                                                        \
+  V(Mro, "mro")                                                                \
   V(Msg, "msg")                                                                \
   V(Mul, "mul")                                                                \
   V(NFields, "n_fields")                                                       \
