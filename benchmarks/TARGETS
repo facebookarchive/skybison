@@ -17,6 +17,7 @@ python_library(
     srcs = [
         "blob_storage.py",
     ],
+    py_version = "3.6",
     deps = [
         "//everstore/client/py:everstore_client",
     ],
@@ -27,6 +28,7 @@ python_library(
     srcs = [
         "server_handler.py",
     ],
+    py_version = "3.6",
     deps = [
         ":blob_storage",
         ":rpc-py3-services",
@@ -42,18 +44,32 @@ python_library(
         "benchmarks/pystone.py",
         "benchmarks/richards.py",
     ],
+    py_version = "3.6",
+)
+
+python_library(
+    name = "run",
+    srcs = [
+        "_benchmark_runner.py",
+        "_tools.py",
+        "run.py",
+    ],
+    py_version = "3.6",
+    deps = [
+        ":benchmarks",
+    ],
 )
 
 python_binary(
     name = "server",
     srcs = [
-        "_benchmark_runner.py",
-        "_tools.py",
-        "run.py",
         "server.py",
     ],
     main_module = "pyro.benchmarks.server",
+    par_style = "xar",
+    py_version = "3.6",
     deps = [
+        ":run",
         ":server_handler",
         "//common/services/py3:tls",
     ],
@@ -65,8 +81,9 @@ python_binary(
         "client.py",
     ],
     main_module = "pyro.benchmarks.client",
+    par_style = "xar",
+    py_version = "3.6",
     deps = [
-        ":benchmarks",
         ":blob_storage",
         ":rpc-py3-clients",
         "//everstore/client/py:everstore_client",
