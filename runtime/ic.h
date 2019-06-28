@@ -51,15 +51,45 @@ void icUpdate(RawTuple caches, word index, LayoutId layout_id, RawObject value);
 
 // Insert dependent into dependentLink of the given value_cell. Returns true if
 // depdent didn't exist in dependencyLink, and false otherwise.
-bool insertDependentToValueCellDependencyLink(Thread* thread,
-                                              const Object& dependent,
-                                              const ValueCell& value_cell);
+bool icInsertDependentToValueCellDependencyLink(Thread* thread,
+                                                const Object& dependent,
+                                                const ValueCell& value_cell);
 
 // Perform the same lookup operation as typeLookupNameInMro as we're inserting
 // dependent into the ValueCell in each visited type dictionary.
 void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
                                           const Object& name_str,
                                           const Object& dependent);
+
+// Delete all caches for the given index.
+void icInvalidateCache(RawTuple caches, word index);
+
+// Delete dependent in ValueCell's dependencyLink.
+void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
+                                  const Object& dependent);
+
+// Delete dependent in all ValueCells in mro's type dictionaries under
+// attribute_name.
+void icDeleteDependentInMro(Thread* thread, const Object& attribute_name,
+                            const Tuple& mro, const Object& dependent);
+
+// Delete caches for attribute_name to be shadowed by an update to
+// type[attribute_name] in dependent's cache entries, and delete obsolete
+// dependencies between dependent and other type attributes in caches' mro.
+void icDeleteCacheForTypeAttrInDependent(Thread* thread, const Type& type,
+                                         const Str& attribute_name,
+                                         bool data_descriptor,
+                                         const Function& dependent);
+
+// Invalidate caches to be shadowed by a type attribute update made to
+// type[attribute_name]. data_descriptor is set to true when the newly assigned
+// value to the attribute is a data descriptor. This function is expected to be
+// called after the type attribute update is already made.
+//
+// Refer to https://fb.quip.com/q568ASVbNIad for the details of this process.
+void icInvalidateCachesForTypeAttr(Thread* thread, const Type& type,
+                                   const Str& attribute_name,
+                                   bool data_descriptor);
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.

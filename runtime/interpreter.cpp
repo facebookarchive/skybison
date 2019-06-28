@@ -2163,8 +2163,21 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
     return objectSetAttrSetLocation(thread, object, name_str, value,
                                     location_out);
   }
-  return thread->invokeMethod3(object, SymbolId::kDunderSetattr, name_str,
-                               value);
+  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetattr,
+                                              name_str, value));
+  // Invalidate attribute caches for type attribute changes.
+  if (!result.isError() && object.isType()) {
+    // TODO(T46243890): Disable attribute caching when fundamental objects are
+    // modified (e.g., object.__getattribute__).
+    // TODO(T46362789): Move cache invalidation logic into dict API.
+    Type type_object(&scope, *object);
+    DCHECK(name_str.isStr(), "attribute name must be Str");
+    Str attr_name(&scope, *name_str);
+    Type value_type(&scope, thread->runtime()->typeOf(*value));
+    icInvalidateCachesForTypeAttr(thread, type_object, attr_name,
+                                  typeIsDataDescriptor(thread, value_type));
+  }
+  return *result;
 }
 
 Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
@@ -2200,7 +2213,7 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrCached(Thread* thread,
   if (cached.isError()) {
     return storeAttrUpdateCache(thread, arg);
   }
-
+  DCHECK(!receiver_raw.isType(), "type attributes must not be cached");
   RawObject value_raw = frame->peek(1);
   frame->dropValues(2);
   storeAttrWithLocation(thread, receiver_raw, cached, value_raw);

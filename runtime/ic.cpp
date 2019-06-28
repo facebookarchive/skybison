@@ -239,9 +239,9 @@ static bool dependentIncluded(RawObject dependent, RawObject link) {
   return false;
 }
 
-bool insertDependentToValueCellDependencyLink(Thread* thread,
-                                              const Object& dependent,
-                                              const ValueCell& value_cell) {
+bool icInsertDependentToValueCellDependencyLink(Thread* thread,
+                                                const Object& dependent,
+                                                const ValueCell& value_cell) {
   HandleScope scope(thread);
   Object link(&scope, value_cell.dependencyLink());
   if (dependentIncluded(*dependent, *link)) {
@@ -266,8 +266,7 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
   Tuple mro(&scope, type.mro());
   NoneType none(&scope, NoneType::object());
   for (word i = 0; i < mro.length(); i++) {
-    Type mro_type(&scope, mro.at(i));
-    Dict dict(&scope, mro_type.dict());
+    Dict dict(&scope, Type::cast(mro.at(i)).dict());
     // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
     // probings.
     Object result(&scope, runtime->dictAt(thread, dict, name_str));
@@ -278,12 +277,158 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
       ValueCell::cast(*result).makePlaceholder();
     }
     ValueCell value_cell(&scope, *result);
-    insertDependentToValueCellDependencyLink(thread, dependent, value_cell);
+    icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
     if (!value_cell.isPlaceholder()) {
       // Attribute lookup terminates here. Therefore, no dependency tracking is
       // needed afterwards.
       return;
     }
+  }
+}
+
+void icInvalidateCache(RawTuple caches, word index) {
+  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
+       i < end; i += kIcPointersPerEntry) {
+    caches.atPut(i + kIcEntryKeyOffset, NoneType::object());
+    caches.atPut(i + kIcEntryValueOffset, NoneType::object());
+  }
+}
+
+void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
+                                  const Object& dependent) {
+  HandleScope scope(thread);
+  Object link(&scope, value_cell.dependencyLink());
+  Object prev(&scope, NoneType::object());
+  while (!link.isNoneType()) {
+    WeakLink weak_link(&scope, *link);
+    if (weak_link.referent() == *dependent) {
+      if (weak_link.next().isWeakLink()) {
+        WeakLink::cast(weak_link.next()).setPrev(*prev);
+      }
+      if (prev.isWeakLink()) {
+        WeakLink::cast(*prev).setNext(weak_link.next());
+      } else {
+        value_cell.setDependencyLink(weak_link.next());
+      }
+      break;
+    }
+    prev = *link;
+    link = weak_link.next();
+  }
+}
+
+void icDeleteDependentInMro(Thread* thread, const Object& attribute_name,
+                            const Tuple& mro, const Object& dependent) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  for (word i = 0; i < mro.length(); ++i) {
+    Type mro_type(&scope, mro.at(i));
+    Dict dict(&scope, mro_type.dict());
+    Object result(&scope, runtime->dictAt(thread, dict, attribute_name));
+    if (!result.isValueCell()) {
+      // No ValueCell found, implying no dependencies in this type dict and
+      // above.
+      break;
+    }
+    ValueCell value_cell(&scope, *result);
+    icDeleteDependentInValueCell(thread, value_cell, dependent);
+  }
+}
+
+static bool isTypeInMro(RawType type, RawTuple mro) {
+  for (word i = 0; i < mro.length(); ++i) {
+    if (type == mro.at(i)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void icDeleteCacheForTypeAttrInDependent(Thread* thread, const Type& type,
+                                         const Str& attribute_name,
+                                         bool data_descriptor,
+                                         const Function& dependent) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple names(&scope, Code::cast(dependent.code()).names());
+  Tuple caches(&scope, dependent.caches());
+  // Scan through all attribute caches and delete caches whose mro matches the
+  // given type & attribute_name.
+  MutableBytes bytecode(&scope, dependent.rewrittenBytecode());
+  word bytecode_length = bytecode.length();
+  for (word i = 0; i < bytecode_length;) {
+    BytecodeOp op = nextBytecodeOp(bytecode, &i);
+    if (op.bc != LOAD_ATTR_CACHED && op.bc != LOAD_METHOD_CACHED &&
+        op.bc != STORE_ATTR_CACHED) {
+      continue;
+    }
+    for (word j = op.arg * kIcPointersPerCache, end = j + kIcPointersPerCache;
+         j < end; j += kIcPointersPerEntry) {
+      Object cache_key(&scope, caches.at(j + kIcEntryKeyOffset));
+      // Unfilled cache.
+      if (cache_key.isNoneType()) {
+        continue;
+      }
+      // Attribute name doesn't match.
+      if (!attribute_name.equals(names.at(icOriginalArg(*dependent, op.arg)))) {
+        continue;
+      }
+      // A cache offset has a higher precedence than a non-data descriptor.
+      if (caches.at(j + kIcEntryValueOffset).isSmallInt() && !data_descriptor) {
+        continue;
+      }
+      Type cache_type(&scope, runtime->typeAt(static_cast<LayoutId>(
+                                  SmallInt::cast(*cache_key).value())));
+      Tuple cache_mro(&scope, cache_type.mro());
+      // The type of the attribute being modified may not not appear in the mro
+      // of the type of the cache. See the following example.
+      //
+      // class A:
+      //   def foo(self): return 100
+      // class B:
+      //   def foo(self): return 200
+      //
+      // a = A()
+      // b = B()
+      // tmp0 = a.foo (*)
+      // tmp1 = b.foo (+)
+      // A.foo = lambda self: -100 (@)
+      //
+      // In the example above, (*) caches A.foo, (=) caches B.foo.
+      // (@) should only invalidate (*) not, (+) although they share the same
+      // attribute name since their types are unrelated.
+      // TODO(djang): Delete caches for type attribute values (function) only if
+      // naming shadowing actually happens. For instance offset caches, this
+      // check is enough since creating a data descriptor type attribute shadows
+      // them.
+      if (!isTypeInMro(*type, *cache_mro)) {
+        continue;
+      }
+
+      icInvalidateCache(*caches, op.arg);
+
+      // Delete all direct/indirect dependencies from the deleted cache to
+      // dependent since such dependencies are gone now.
+      icDeleteDependentInMro(thread, attribute_name, cache_mro, dependent);
+    }
+  }
+}
+
+void icInvalidateCachesForTypeAttr(Thread* thread, const Type& type,
+                                   const Str& attribute_name,
+                                   bool data_descriptor) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Dict dict(&scope, type.dict());
+  ValueCell type_attr_cell(&scope,
+                           runtime->dictAt(thread, dict, attribute_name));
+  // Delete caches for attribute_name to be shadowed by the type[attribute_name]
+  // change in all dependents that depend on the attribute being updated.
+  for (Object link(&scope, type_attr_cell.dependencyLink()); !link.isNoneType();
+       link = WeakLink::cast(*link).next()) {
+    Function dependent(&scope, WeakLink::cast(*link).referent());
+    icDeleteCacheForTypeAttrInDependent(thread, type, attribute_name,
+                                        data_descriptor, dependent);
   }
 }
 
@@ -313,7 +458,7 @@ void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
   Tuple caches(&scope, function.caches());
   DCHECK(caches.at(index).isNoneType(),
          "cache entry must be empty one before update");
-  insertDependentToValueCellDependencyLink(thread, function, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread, function, value_cell);
   caches.atPut(index, *value_cell);
 
   // Update all global variable access to the cached value in the function.

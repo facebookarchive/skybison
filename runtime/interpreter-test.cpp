@@ -3828,6 +3828,213 @@ del a
   EXPECT_TRUE(icLookupGlobalVar(*caches, 0).isNoneType());
 }
 
+TEST(InterpreterTestNoFixture,
+     StoreAttrCachedInvalidatesInstanceOffsetCachesByAssigningTypeDescriptor) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 400
+
+def get_foo(c):
+  return c.foo
+
+def do_not_invalidate0():
+  C.bar = property (lambda self: "data descriptor in a different attr")
+
+def do_not_invalidate1():
+  C.foo = 9999
+
+def invalidate():
+  C.foo = property (lambda self: "data descriptor")
+
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Function get_foo(&scope, moduleAt(&runtime, "__main__", "get_foo"));
+  Function do_not_invalidate0(
+      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate0"));
+  Function do_not_invalidate1(
+      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate1"));
+  Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
+  Tuple caches(&scope, get_foo.caches());
+  // Load the cache
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      400));
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+
+  // Assign a data descriptor to a different attribute name.
+  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+                                         do_not_invalidate0)
+                  .isNoneType());
+  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+
+  // Assign a non-data descriptor to the cache's attribute name.
+  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+                                         do_not_invalidate1)
+                  .isNoneType());
+  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+
+  // Assign a data descriptor the cache's attribute name that actually causes
+  // invalidation.
+  ASSERT_TRUE(
+      Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
+          .isNoneType());
+  // Verify that the cache is empty and calling get_foo() returns a fresh value.
+  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(isStrEqualsCStr(
+      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      "data descriptor"));
+}
+
+TEST(InterpreterTestNoFixture,
+     StoreAttrCachedInvalidatesTypeAttrCachesByUpdatingTypeAttribute) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def foo(self):
+    return 400;
+
+def call_foo(c):
+  return c.foo()
+
+def do_not_invalidate():
+  C.bar = lambda c: "new type attr"
+
+def invalidate():
+  C.foo = lambda c: "new type attr"
+
+old_foo = C.foo
+c = C()
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Function old_foo(&scope, moduleAt(&runtime, "__main__", "old_foo"));
+  Function call_foo(&scope, moduleAt(&runtime, "__main__", "call_foo"));
+  Function do_not_invalidate(
+      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate"));
+  Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
+  Tuple caches(&scope, call_foo.caches());
+  // Load the cache
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread, thread->currentFrame(), call_foo, c),
+      400));
+  ASSERT_EQ(icLookup(*caches, 1, c.layoutId()), *old_foo);
+
+  // Assign a non-data descriptor to different attribute name.
+  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+                                         do_not_invalidate)
+                  .isNoneType());
+  ASSERT_EQ(icLookup(*caches, 1, c.layoutId()), *old_foo);
+
+  // Invalidate the cache.
+  ASSERT_TRUE(
+      Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
+          .isNoneType());
+  // Verify that the cache is empty and calling get_foo() returns a fresh value.
+  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(isStrEqualsCStr(
+      Interpreter::callFunction1(thread, thread->currentFrame(), call_foo, c),
+      "new type attr"));
+}
+
+TEST(
+    InterpreterTestNoFixture,
+    StoreAttrCachedInvalidatesAttributeCachesByUpdatingMatchingTypeAttributesOfSuperclass) {
+  Runtime runtime(/*cache_enabled=*/true);
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class B:
+  pass
+
+class C(B):
+  def __init__(self):
+    self.foo = 400
+
+class D(C):
+  pass
+
+def get_foo(c):
+  return c.foo
+
+def do_not_invalidate():
+  D.foo = property (lambda self: "data descriptor")
+
+def invalidate():
+  B.foo = property (lambda self: "data descriptor")
+
+c = C()
+)")
+                   .isError());
+  Type type_b(&scope, moduleAt(&runtime, "__main__", "B"));
+  Type type_c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Function get_foo(&scope, moduleAt(&runtime, "__main__", "get_foo"));
+  Function do_not_invalidate(
+      &scope, moduleAt(&runtime, "__main__", "do_not_invalidate"));
+  Function invalidate(&scope, moduleAt(&runtime, "__main__", "invalidate"));
+  Tuple caches(&scope, get_foo.caches());
+  // Load the cache.
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(isIntEqualsWord(
+      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      400));
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+
+  // Updating a subclass' type attribute doesn't invalidate the cache.
+  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+                                         do_not_invalidate)
+                  .isNoneType());
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+
+  // Verify that all type dictionaries in C's mro have dependentices to get_foo.
+  Dict type_b_dict(&scope, type_b.dict());
+  Dict type_c_dict(&scope, type_c.dict());
+  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
+  Object result(&scope, runtime.dictAt(thread, type_b_dict, foo_name));
+  ASSERT_TRUE(result.isValueCell());
+  ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
+  EXPECT_EQ(
+      WeakLink::cast(ValueCell::cast(*result).dependencyLink()).referent(),
+      *get_foo);
+
+  result = runtime.dictAt(thread, type_c_dict, foo_name);
+  ASSERT_TRUE(result.isValueCell());
+  ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
+  EXPECT_EQ(
+      WeakLink::cast(ValueCell::cast(*result).dependencyLink()).referent(),
+      *get_foo);
+
+  // Invalidate the cache.
+  ASSERT_TRUE(
+      Interpreter::callFunction0(thread, thread->currentFrame(), invalidate)
+          .isNoneType());
+  // Verify that the cache is empty and calling get_foo() returns a fresh value.
+  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(isStrEqualsCStr(
+      Interpreter::callFunction1(thread, thread->currentFrame(), get_foo, c),
+      "data descriptor"));
+
+  // Verify that all type dictionaries in C's mro dropped dependencies to
+  // get_foo.
+  result = runtime.dictAt(thread, type_b_dict, foo_name);
+  ASSERT_TRUE(result.isValueCell());
+  EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
+
+  result = runtime.dictAt(thread, type_c_dict, foo_name);
+  ASSERT_TRUE(result.isValueCell());
+  EXPECT_TRUE(ValueCell::cast(*result).dependencyLink().isNoneType());
+}
+
 TEST_F(InterpreterTest, LoadMethodLoadingMethodFollowedByCallMethod) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(&runtime_, R"(

@@ -689,6 +689,406 @@ class C(B):
   EXPECT_TRUE(c_link.next().isNoneType());
 }
 
+TEST_F(IcTest, IcInvalidateCacheDeletesAllCacheEntriesForIndex) {
+  HandleScope scope(thread_);
+  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
+
+  Object value0(&scope, runtime_.newInt(88));
+  Object value1(&scope, runtime_.newFloat(3.14));
+  icUpdate(*caches, 0, value0.layoutId(), *value0);
+  icUpdate(*caches, 0, value1.layoutId(), *value1);
+  icUpdate(*caches, 1, value0.layoutId(), *value0);
+  icUpdate(*caches, 1, value1.layoutId(), *value1);
+
+  ASSERT_EQ(icLookup(*caches, 0, value0.layoutId()), value0);
+  ASSERT_EQ(icLookup(*caches, 0, value1.layoutId()), value1);
+  ASSERT_EQ(icLookup(*caches, 1, value0.layoutId()), value0);
+  ASSERT_EQ(icLookup(*caches, 1, value1.layoutId()), value1);
+
+  icInvalidateCache(*caches, 1);
+
+  EXPECT_EQ(icLookup(*caches, 0, value0.layoutId()), value0);
+  EXPECT_EQ(icLookup(*caches, 0, value1.layoutId()), value1);
+  EXPECT_TRUE(icLookup(*caches, 1, value0.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookup(*caches, 1, value1.layoutId()).isErrorNotFound());
+}
+
+TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
+  HandleScope scope(thread_);
+  ValueCell value_cell(&scope, runtime_.newValueCell());
+  Object dependent0(&scope, runtime_.newTuple(4));
+  Object dependent1(&scope, runtime_.newTuple(5));
+  Object dependent2(&scope, runtime_.newTuple(6));
+  Object dependent3(&scope, runtime_.newTuple(7));
+  icInsertDependentToValueCellDependencyLink(thread_, dependent3, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent2, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent1, value_cell);
+  icInsertDependentToValueCellDependencyLink(thread_, dependent0, value_cell);
+
+  // Delete the head.
+  icDeleteDependentInValueCell(thread_, value_cell, dependent0);
+
+  WeakLink link(&scope, value_cell.dependencyLink());
+  EXPECT_EQ(link.referent(), *dependent1);
+  EXPECT_TRUE(link.prev().isNoneType());
+  EXPECT_EQ(WeakLink::cast(link.next()).referent(), *dependent2);
+  EXPECT_EQ(WeakLink::cast(link.next()).prev(), *link);
+
+  // Delete the dependent in the middle.
+  icDeleteDependentInValueCell(thread_, value_cell, dependent2);
+
+  link = value_cell.dependencyLink();
+  EXPECT_EQ(link.referent(), *dependent1);
+  EXPECT_EQ(WeakLink::cast(link.next()).referent(), *dependent3);
+  EXPECT_EQ(WeakLink::cast(link.next()).prev(), *link);
+
+  // Delete the tail.
+  icDeleteDependentInValueCell(thread_, value_cell, dependent3);
+
+  link = value_cell.dependencyLink();
+  EXPECT_EQ(link.referent(), *dependent1);
+  EXPECT_TRUE(link.next().isNoneType());
+
+  // Delete the last node.
+  icDeleteDependentInValueCell(thread_, value_cell, dependent1);
+  EXPECT_TRUE(value_cell.dependencyLink().isNoneType());
+}
+
+TEST_F(IcTest, IcDeleteDependentInMroDeletesDependentUnderAttributeNameInMro) {
+  HandleScope scope(thread_);
+  Dict type_dict_a(&scope, runtime_.newDict());
+  Dict type_dict_b(&scope, runtime_.newDict());
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
+  Object dependent_x(&scope, runtime_.newTuple(1));
+  Object dependent_y(&scope, runtime_.newTuple(2));
+
+  // foo -> x, bar -> y in A.
+  ValueCell foo_in_a(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
+                                                         foo_in_a));
+  runtime_.dictAtPut(thread_, type_dict_a, foo_name, foo_in_a);
+
+  ValueCell bar_in_a(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_y,
+                                                         bar_in_a));
+  runtime_.dictAtPut(thread_, type_dict_a, bar_name, bar_in_a);
+
+  // foo -> y, bar -> x in B.
+  ValueCell foo_in_b(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_y,
+                                                         foo_in_b));
+  runtime_.dictAtPut(thread_, type_dict_b, foo_name, foo_in_b);
+
+  ValueCell bar_in_b(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
+                                                         bar_in_b));
+  runtime_.dictAtPut(thread_, type_dict_b, bar_name, bar_in_b);
+
+  Type type_a(&scope, runtime_.newType());
+  type_a.setDict(*type_dict_a);
+
+  Type type_b(&scope, runtime_.newType());
+  type_b.setDict(*type_dict_b);
+
+  Tuple mro(&scope, runtime_.newTuple(2));
+  mro.atPut(0, *type_a);
+  mro.atPut(1, *type_b);
+
+  // Delete dependent_x under name "foo".
+  icDeleteDependentInMro(thread_, foo_name, mro, dependent_x);
+  EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
+  EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
+  EXPECT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(), *dependent_y);
+  EXPECT_EQ(WeakLink::cast(bar_in_b.dependencyLink()).referent(), *dependent_x);
+
+  // Delete dependent_x under name "bar" this time.
+  icDeleteDependentInMro(thread_, bar_name, mro, dependent_x);
+  EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
+  EXPECT_EQ(WeakLink::cast(bar_in_a.dependencyLink()).referent(), *dependent_y);
+  EXPECT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(), *dependent_y);
+  EXPECT_TRUE(bar_in_b.dependencyLink().isNoneType());
+}
+
+TEST_F(
+    IcTest,
+    IcDeleteDependentInMroDoesNotIcDeleteDependentAcrossFailedDictLookupInMro) {
+  HandleScope scope(thread_);
+  Dict type_dict_a(&scope, runtime_.newDict());
+  Dict type_dict_empty(&scope, runtime_.newDict());
+  Dict type_dict_b(&scope, runtime_.newDict());
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Object dependent_x(&scope, runtime_.newTuple(1));
+
+  // foo -> x in A.
+  ValueCell foo_in_a(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
+                                                         foo_in_a));
+  runtime_.dictAtPut(thread_, type_dict_a, foo_name, foo_in_a);
+
+  // foo -> x in B.
+  ValueCell foo_in_b(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(icInsertDependentToValueCellDependencyLink(thread_, dependent_x,
+                                                         foo_in_b));
+  runtime_.dictAtPut(thread_, type_dict_b, foo_name, foo_in_b);
+
+  Type type_a(&scope, runtime_.newType());
+  type_a.setDict(*type_dict_a);
+
+  Type type_empty(&scope, runtime_.newType());
+  type_empty.setDict(*type_dict_empty);
+
+  Type type_b(&scope, runtime_.newType());
+  type_b.setDict(*type_dict_b);
+
+  Tuple mro(&scope, runtime_.newTuple(3));
+  mro.atPut(0, *type_a);
+  // Type dict lookups always fail here.
+  mro.atPut(1, *type_empty);
+  mro.atPut(2, *type_b);
+
+  // Delete dependent_x under name "foo".
+  icDeleteDependentInMro(thread_, foo_name, mro, dependent_x);
+  EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
+  // Didn't delete this since type lookup cannot reach B since any type
+  // attribute lookup fails at type_empty.
+  EXPECT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(), *dependent_x);
+}
+
+// Create a function that maps cache index 1 to the given attribute name.
+static RawObject testingFunctionCachingAttributes(Thread* thread,
+                                                  Str& attribute_name) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Object name(&scope, Str::empty());
+  Code code(&scope, newEmptyCode());
+  Object none(&scope, NoneType::object());
+  Dict globals(&scope, runtime->newDict());
+  MutableBytes rewritten_bytecode(&scope,
+                                  runtime->newMutableBytesUninitialized(8));
+  rewritten_bytecode.byteAtPut(0, LOAD_ATTR_CACHED);
+  rewritten_bytecode.byteAtPut(1, 1);
+
+  Function function(
+      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
+                                        none, globals));
+  function.setRewrittenBytecode(*rewritten_bytecode);
+
+  Tuple original_arguments(&scope, runtime->newTuple(2));
+  original_arguments.atPut(1, SmallInt::fromWord(0));
+  function.setOriginalArguments(*original_arguments);
+
+  Tuple names(&scope, runtime->newTuple(2));
+  names.atPut(0, *attribute_name);
+  code.setNames(*names);
+
+  Tuple caches(&scope, runtime->newTuple(2 * kIcPointersPerCache));
+  function.setCaches(*caches);
+
+  return *function;
+}
+
+TEST_F(
+    IcTest,
+    IcDeleteCacheForTypeAttrInDependentDeletesCachesForMatchingAttributeName) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+
+c = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Dict type_dict(&scope, type.dict());
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
+  Function dependent(&scope,
+                     testingFunctionCachingAttributes(thread_, foo_name));
+
+  // foo -> dependent.
+  ValueCell foo(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(
+      icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
+  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+
+  // Create an attribute cache for an instance of C, under name "foo".
+  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Tuple caches(&scope, dependent.caches());
+  icUpdate(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
+  ASSERT_EQ(icLookup(*caches, 1, instance.layoutId()),
+            SmallInt::fromWord(1234));
+
+  // Deleting caches for "bar" doesn't affect the cache for "foo".
+  icDeleteCacheForTypeAttrInDependent(thread_, type, bar_name, true, dependent);
+  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
+            SmallInt::fromWord(1234));
+
+  // Deleting caches for "foo".
+  icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, true, dependent);
+  EXPECT_TRUE(icLookup(*caches, 1, instance.layoutId()).isErrorNotFound());
+}
+
+TEST_F(
+    IcTest,
+    IcDeleteCacheForTypeAttrInDependentDeletesCachesForInstanceOffsetOnlyWhenDataDesciptorIsTrue) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+
+c = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Dict type_dict(&scope, type.dict());
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Function dependent(&scope,
+                     testingFunctionCachingAttributes(thread_, foo_name));
+
+  // foo -> dependent.
+  ValueCell foo(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(
+      icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
+  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+
+  // Create an instance offset cache for an instance of C, under name "foo".
+  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Tuple caches(&scope, dependent.caches());
+  icUpdate(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
+  ASSERT_EQ(icLookup(*caches, 1, instance.layoutId()),
+            SmallInt::fromWord(1234));
+
+  // An attempt to delete caches for "foo" with data_descriptor == false doesn't
+  // affect it.
+  icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, false,
+                                      dependent);
+  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
+            SmallInt::fromWord(1234));
+
+  // Delete caches for "foo" with data_descriptor == true actually deletes it.
+  icDeleteCacheForTypeAttrInDependent(thread_, type, foo_name, true, dependent);
+  EXPECT_TRUE(icLookup(*caches, 1, instance.layoutId()).isErrorNotFound());
+}
+
+TEST_F(IcTest,
+       IcDeleteCacheForTypeAttrInDependentDeletesCachesForMatchingType) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class B: pass
+
+class C(B): pass
+
+class D(C): pass
+
+class X: pass
+
+c = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Dict type_dict(&scope, type.dict());
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Function dependent(&scope,
+                     testingFunctionCachingAttributes(thread_, foo_name));
+
+  // foo -> dependent.
+  ValueCell foo(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(
+      icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
+  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+
+  // Create an instance offset cache for an instance of C, under name "foo".
+  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Tuple caches(&scope, dependent.caches());
+  icUpdate(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
+  ASSERT_EQ(icLookup(*caches, 1, instance.layoutId()),
+            SmallInt::fromWord(1234));
+
+  // Subclass doesn't affect superclass's caches.
+  Type subclass_type(&scope, moduleAt(&runtime_, "__main__", "D"));
+  icDeleteCacheForTypeAttrInDependent(thread_, subclass_type, foo_name, true,
+                                      dependent);
+  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
+            SmallInt::fromWord(1234));
+
+  // Unrelated class doesn't affect superclass's caches.
+  Type unrelated_type(&scope, moduleAt(&runtime_, "__main__", "X"));
+  icDeleteCacheForTypeAttrInDependent(thread_, unrelated_type, foo_name, true,
+                                      dependent);
+  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
+            SmallInt::fromWord(1234));
+
+  // Superclass change deletes subclasses' caches.
+  Type superclass_type(&scope, moduleAt(&runtime_, "__main__", "B"));
+  icDeleteCacheForTypeAttrInDependent(thread_, superclass_type, foo_name, true,
+                                      dependent);
+  EXPECT_TRUE(icLookup(*caches, 1, instance.layoutId()).isErrorNotFound());
+}
+
+// Verify if IcInvalidateCachesForTypeAttr calls
+// DeleteCachesForTypeAttrInDependent with all dependents.
+TEST_F(IcTest, IcInvalidateCachesForTypeAttrProcessesAllDependents) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+
+c = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Dict type_dict(&scope, type.dict());
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  Str bar_name(&scope, runtime_.newStrFromCStr("bar"));
+  Function dependent0(&scope,
+                      testingFunctionCachingAttributes(thread_, foo_name));
+  Function dependent1(&scope,
+                      testingFunctionCachingAttributes(thread_, bar_name));
+
+  // foo -> dependent0.
+  ValueCell foo(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(
+      icInsertDependentToValueCellDependencyLink(thread_, dependent0, foo));
+  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+
+  // bar -> dependent1.
+  ValueCell bar(&scope, runtime_.newValueCell());
+  ASSERT_TRUE(
+      icInsertDependentToValueCellDependencyLink(thread_, dependent1, bar));
+  runtime_.dictAtPut(thread_, type_dict, bar_name, bar);
+
+  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Tuple dependent0_caches(&scope, dependent0.caches());
+  {
+    // Create an attribute cache for an instance of C, under name "foo" in
+    // dependent0.
+    icUpdate(*dependent0_caches, 1, instance.layoutId(),
+             SmallInt::fromWord(1234));
+    ASSERT_EQ(icLookup(*dependent0_caches, 1, instance.layoutId()),
+              SmallInt::fromWord(1234));
+  }
+
+  Tuple dependent1_caches(&scope, dependent1.caches());
+  {
+    // Create an attribute cache for an instance of C, under name "bar" in
+    // dependent0.
+    icUpdate(*dependent1_caches, 1, instance.layoutId(),
+             SmallInt::fromWord(5678));
+    ASSERT_EQ(icLookup(*dependent1_caches, 1, instance.layoutId()),
+              SmallInt::fromWord(5678));
+  }
+
+  icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
+  EXPECT_TRUE(
+      icLookup(*dependent0_caches, 1, instance.layoutId()).isErrorNotFound());
+  EXPECT_EQ(icLookup(*dependent1_caches, 1, instance.layoutId()),
+            SmallInt::fromWord(5678));
+
+  icInvalidateCachesForTypeAttr(thread_, type, bar_name, true);
+  EXPECT_TRUE(
+      icLookup(*dependent0_caches, 1, instance.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(
+      icLookup(*dependent1_caches, 1, instance.layoutId()).isErrorNotFound());
+}
+
 TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -894,7 +1294,8 @@ static RawObject testingFunction(Thread* thread) {
   return *function;
 }
 
-TEST_F(IcTest, insertDependentToValueCellDependencyLinkInsertsDependentAsHead) {
+TEST_F(IcTest,
+       IcInsertDependentToValueCellDependencyLinkInsertsDependentAsHead) {
   HandleScope scope(thread_);
   Function function0(&scope, testingFunction(thread_));
   Function function1(&scope, testingFunction(thread_));
@@ -903,33 +1304,34 @@ TEST_F(IcTest, insertDependentToValueCellDependencyLinkInsertsDependentAsHead) {
   ASSERT_TRUE(cache.dependencyLink().isNoneType());
 
   EXPECT_TRUE(
-      insertDependentToValueCellDependencyLink(thread_, function0, cache));
+      icInsertDependentToValueCellDependencyLink(thread_, function0, cache));
   WeakLink link0(&scope, cache.dependencyLink());
   EXPECT_EQ(link0.referent(), *function0);
   EXPECT_TRUE(link0.prev().isNoneType());
   EXPECT_TRUE(link0.next().isNoneType());
 
   EXPECT_TRUE(
-      insertDependentToValueCellDependencyLink(thread_, function1, cache));
+      icInsertDependentToValueCellDependencyLink(thread_, function1, cache));
   WeakLink link1(&scope, cache.dependencyLink());
   EXPECT_EQ(link1.referent(), *function1);
   EXPECT_TRUE(link1.prev().isNoneType());
   EXPECT_EQ(link1.next(), *link0);
 }
 
-TEST_F(IcTest,
-       insertDependentToValueCellDependencyLinkDoesNotInsertExistingDependent) {
+TEST_F(
+    IcTest,
+    IcInsertDependentToValueCellDependencyLinkDoesNotInsertExistingDependent) {
   HandleScope scope(thread_);
   Function function0(&scope, testingFunction(thread_));
   Function function1(&scope, testingFunction(thread_));
 
   ValueCell cache(&scope, runtime_.newValueCell());
   EXPECT_TRUE(
-      insertDependentToValueCellDependencyLink(thread_, function0, cache));
+      icInsertDependentToValueCellDependencyLink(thread_, function0, cache));
   EXPECT_TRUE(
-      insertDependentToValueCellDependencyLink(thread_, function1, cache));
+      icInsertDependentToValueCellDependencyLink(thread_, function1, cache));
   EXPECT_FALSE(
-      insertDependentToValueCellDependencyLink(thread_, function0, cache));
+      icInsertDependentToValueCellDependencyLink(thread_, function0, cache));
 
   WeakLink link(&scope, cache.dependencyLink());
   EXPECT_EQ(link.referent(), *function1);

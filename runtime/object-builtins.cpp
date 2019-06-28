@@ -88,6 +88,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
                                 "'%S' attribute is read-only", &name_interned);
   }
 
+  DCHECK(!instance.isType(), "must not cache type attributes");
   // Store the attribute
   if (info.isInObject()) {
     instance.instanceVariableAtPut(info.offset(), *value);
@@ -179,6 +180,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
   if (!type_attr.isError()) {
     Type type_attr_type(&scope, runtime->typeOf(*type_attr));
     if (typeIsDataDescriptor(thread, type_attr_type)) {
+      // Do not cache data descriptors.
       Object set_result(
           &scope, Interpreter::callDescriptorSet(thread, thread->currentFrame(),
                                                  type_attr, object, value));
@@ -187,7 +189,7 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
     }
   }
 
-  // No data descriptor found, store on the instance
+  // No data descriptor found, store on the instance.
   if (object.isHeapObject()) {
     HeapObject instance(&scope, *object);
     return instanceSetAttrSetLocation(thread, instance, name_interned_str,
