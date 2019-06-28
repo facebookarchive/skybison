@@ -277,6 +277,7 @@ extern const char* Py_FileSystemDefaultEncodeErrors;
 
 /* Compiler Flags */
 #define Py_file_input 257
+#define Py_single_input 256
 
 #ifdef __cplusplus
 }

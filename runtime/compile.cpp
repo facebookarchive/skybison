@@ -33,4 +33,10 @@ RawObject compileFromCStr(const char* buffer, const char* file_name) {
   return ApiHandle::fromPyObject(pycode)->asObject();
 }
 
+int runInteractive(FILE* fp) {
+  PyCompilerFlags flags;
+  flags.cf_flags = 0;
+  return PyRun_AnyFileExFlags(fp, /*filename=*/nullptr, /*closeit=*/0, &flags);
+}
+
 }  // namespace python

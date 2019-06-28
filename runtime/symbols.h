@@ -400,6 +400,7 @@ class Runtime;
   V(Float, "float")                                                            \
   V(FloatingPointError, "FloatingPointError")                                  \
   V(Floordiv, "floordiv")                                                      \
+  V(Flush, "flush")                                                            \
   V(Format, "format")                                                          \
   V(Frame, "frame")                                                            \
   V(FromBytes, "from_bytes")                                                   \

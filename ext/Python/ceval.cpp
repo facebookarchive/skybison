@@ -18,6 +18,8 @@ PY_EXPORT void PyEval_AcquireThread(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyEval_AcquireThread");
 }
 
+// NOTE: This function only accepts module dictionaries (ie with ValueCells),
+// not normal user-facing dictionaries.
 PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
                                     PyObject* locals) {
   Thread* thread = Thread::current();

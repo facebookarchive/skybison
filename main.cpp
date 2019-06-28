@@ -10,9 +10,6 @@
 #include "runtime/view.h"
 
 int main(int argc, const char** argv) {
-  if (argc < 2) {
-    return EXIT_FAILURE;
-  }
   bool cache_enabled = false;
   const char* enable_cache = std::getenv("PYRO_ENABLE_CACHE");
   if (enable_cache != nullptr && enable_cache[0] != '\0') {
@@ -22,6 +19,9 @@ int main(int argc, const char** argv) {
   python::Runtime runtime(cache_enabled);
   python::Thread* thread = python::Thread::current();
   runtime.setArgv(thread, argc, argv);
+  if (argc < 2) {
+    return python::runInteractive(stdin);
+  }
   const char* file_name = argv[1];
   word file_len;
   std::unique_ptr<char[]> buffer(python::OS::readFile(file_name, &file_len));

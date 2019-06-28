@@ -566,8 +566,13 @@ PyAPI_FUNC(struct _node*)
     PyParser_SimpleParseStringFlags(const char*, int, int);
 PyAPI_FUNC(struct _node*)
     PyParser_SimpleParseStringFlagsFilename(const char*, const char*, int, int);
+PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE*, const char*, int, PyCompilerFlags*);
+PyAPI_FUNC(int)
+    PyRun_InteractiveLoopFlags(FILE*, const char*, PyCompilerFlags*);
 PyAPI_FUNC(PyObject*) PyRun_FileExFlags(FILE*, const char*, int, PyObject*,
                                         PyObject*, int, PyCompilerFlags*);
+PyAPI_FUNC(int)
+    PyRun_SimpleFileExFlags(FILE*, const char*, int, PyCompilerFlags*);
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char*, PyCompilerFlags*);
 PyAPI_FUNC(PyObject*)
     PyRun_StringFlags(const char*, int, PyObject*, PyObject*, PyCompilerFlags*);
@@ -904,8 +909,13 @@ PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
 PyAPI_FUNC(struct _mod*) PyParser_ASTFromString(const char*, const char*, int,
                                                 PyCompilerFlags*, PyArena*);
+PyAPI_FUNC(struct _mod*)
+    PyParser_ASTFromFileObject(FILE*, PyObject*, const char*, int, const char*,
+                               const char*, PyCompilerFlags*, int*, PyArena*);
 PyAPI_FUNC(PyCodeObject*)
     PyAST_CompileEx(struct _mod*, const char*, PyCompilerFlags*, int, PyArena*);
+PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
+                                              PyCompilerFlags*, int, PyArena*);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);

@@ -30,6 +30,157 @@ extern grammar _PyParser_Grammar;
 
 namespace python {
 
+PY_EXPORT int PyRun_AnyFileExFlags(FILE* fp, const char* filename, int closeit,
+                                   PyCompilerFlags* flags) {
+  if (filename == nullptr) {
+    filename = "???";
+  }
+  if (Py_FdIsInteractive(fp, filename)) {
+    int err = PyRun_InteractiveLoopFlags(fp, filename, flags);
+    if (closeit) fclose(fp);
+    return err;
+  }
+  return PyRun_SimpleFileExFlags(fp, filename, closeit, flags);
+}
+
+static PyObject* runMod(mod_ty mod, PyObject* filename, PyObject* globals,
+                        PyObject* locals, PyCompilerFlags* flags,
+                        PyArena* arena) {
+  PyCodeObject* code = PyAST_CompileObject(mod, filename, flags, -1, arena);
+  if (code == nullptr) return nullptr;
+  PyObject* v =
+      PyEval_EvalCode(reinterpret_cast<PyObject*>(code), globals, locals);
+  Py_DECREF(code);
+  return v;
+}
+
+static void flushIO(void) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+
+  // PyErr_Fetch
+  Object exc(&scope, thread->pendingExceptionType());
+  Object val(&scope, thread->pendingExceptionValue());
+  Object tb(&scope, thread->pendingExceptionTraceback());
+  thread->clearPendingException();
+
+  Runtime* runtime = thread->runtime();
+  Module sys(&scope, runtime->findModuleById(SymbolId::kSys));
+  Object stderr_obj(&scope, runtime->moduleAtById(sys, SymbolId::kStderr));
+  if (!stderr_obj.isErrorNotFound()) {
+    if (thread->invokeMethod1(stderr_obj, SymbolId::kFlush)
+            .isErrorException()) {
+      thread->clearPendingException();
+    }
+  }
+  Object stdout_obj(&scope, runtime->moduleAtById(sys, SymbolId::kStdout));
+  if (!stdout_obj.isErrorNotFound()) {
+    if (thread->invokeMethod1(stdout_obj, SymbolId::kFlush)
+            .isErrorException()) {
+      thread->clearPendingException();
+    }
+  }
+
+  // PyErr_Restore
+  thread->setPendingExceptionType(*exc);
+  thread->setPendingExceptionValue(*val);
+  thread->setPendingExceptionTraceback(*tb);
+}
+
+// A PyRun_InteractiveOneObject() auxiliary function that does not print the
+// error on failure.
+static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
+                                        PyCompilerFlags* flags) {
+  PyObject* mod_name = PyUnicode_InternFromString("__main__"); /* borrowed */
+  if (mod_name == nullptr) {
+    return -1;
+  }
+  // TODO(T46532201): If fp == stdin, fetch encoding from sys.stdin if possible
+  // TODO(T46358395): Read sys.ps{1,2} from sys module and decode
+  const char* ps1 = ">>> ";
+  const char* ps2 = "... ";
+  PyArena* arena = PyArena_New();
+  if (arena == nullptr) {
+    return -1;
+  }
+  char* enc = nullptr;
+  int errcode = 0;
+  mod_ty mod = PyParser_ASTFromFileObject(fp, filename, enc, Py_single_input,
+                                          ps1, ps2, flags, &errcode, arena);
+  if (mod == nullptr) {
+    PyArena_Free(arena);
+    if (errcode == E_EOF) {
+      PyErr_Clear();
+      return E_EOF;
+    }
+    return -1;
+  }
+  PyObject* module = PyImport_AddModuleObject(mod_name);
+  if (module == nullptr) {
+    PyArena_Free(arena);
+    return -1;
+  }
+  // NOTE: This must be a Pyro module dictionary (ie one with ValueCells), not
+  // any old user-facing dictionary.
+  PyObject* module_dict = PyModule_GetDict(module);
+  PyObject* result = runMod(mod, filename, /*globals=*/module_dict,
+                            /*locals=*/module_dict, flags, arena);
+  PyArena_Free(arena);
+  if (result == nullptr) {
+    return -1;
+  }
+  Py_DECREF(result);
+  flushIO();
+  return 0;
+}
+
+PY_EXPORT int PyRun_InteractiveLoopFlags(FILE* fp, const char* filename,
+                                         PyCompilerFlags* flags) {
+  PyObject* filename_str = PyUnicode_DecodeFSDefault(filename);
+  if (filename_str == nullptr) {
+    PyErr_Print();
+    return -1;
+  }
+
+  PyCompilerFlags local_flags;
+  if (flags == nullptr) {
+    flags = &local_flags;
+    local_flags.cf_flags = 0;
+  }
+  // TODO(T46358395): Set sys.ps{1,2} in sys module if they don't exist
+  int err = 0;
+  int ret;
+  int nomem_count = 0;
+  do {
+    ret = PyRun_InteractiveOneObjectEx(fp, filename_str, flags);
+    if (ret == -1 && PyErr_Occurred()) {
+      // Prevent an endless loop after multiple consecutive MemoryErrors while
+      // still allowing an interactive command to fail with a MemoryError.
+      if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+        if (++nomem_count > 16) {
+          PyErr_Clear();
+          err = -1;
+          break;
+        }
+      } else {
+        nomem_count = 0;
+      }
+      PyErr_Print();
+      flushIO();
+    } else {
+      nomem_count = 0;
+    }
+  } while (ret != E_EOF);
+  Py_DECREF(filename_str);
+  return err;
+}
+
+PY_EXPORT int PyRun_SimpleFileExFlags(FILE* /*fp*/, const char* /*filename*/,
+                                      int /*closeit*/,
+                                      PyCompilerFlags* /*flags*/) {
+  UNIMPLEMENTED("PyRun_SimpleFileExFlags");
+}
+
 PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   // TODO(eelizondo): Implement the usage of flags
   if (flags != nullptr) {
@@ -281,19 +432,20 @@ PY_EXPORT mod_ty PyParser_ASTFromFileObject(FILE* fp, PyObject* filename,
     PyNode_Free(parse_tree);
   }
   Py_CLEAR(err.filename);
+  PyObject_FREE(err.text);
   return mod;
 }
 
-PY_EXPORT mod_ty PyParser_ASTFromFile(FILE* fp, const char* filename_str,
+PY_EXPORT mod_ty PyParser_ASTFromFile(FILE* fp, const char* filename,
                                       const char* enc, int start,
                                       const char* ps1, const char* ps2,
                                       PyCompilerFlags* flags, int* errcode,
                                       PyArena* arena) {
-  PyObject* filename = PyUnicode_DecodeFSDefault(filename_str);
-  if (filename == nullptr) return nullptr;
-  mod_ty mod = PyParser_ASTFromFileObject(fp, filename, enc, start, ps1, ps2,
-                                          flags, errcode, arena);
-  Py_DECREF(filename);
+  PyObject* filename_str = PyUnicode_DecodeFSDefault(filename);
+  if (filename_str == nullptr) return nullptr;
+  mod_ty mod = PyParser_ASTFromFileObject(fp, filename_str, enc, start, ps1,
+                                          ps2, flags, errcode, arena);
+  Py_DECREF(filename_str);
   return mod;
 }
 
@@ -321,13 +473,14 @@ PY_EXPORT mod_ty PyParser_ASTFromStringObject(const char* s, PyObject* filename,
   return mod;
 }
 
-PY_EXPORT mod_ty PyParser_ASTFromString(const char* s, const char* filename_str,
+PY_EXPORT mod_ty PyParser_ASTFromString(const char* s, const char* filename,
                                         int start, PyCompilerFlags* flags,
                                         PyArena* arena) {
-  PyObject* filename = PyUnicode_DecodeFSDefault(filename_str);
-  if (filename == nullptr) return nullptr;
-  mod_ty mod = PyParser_ASTFromStringObject(s, filename, start, flags, arena);
-  Py_DECREF(filename);
+  PyObject* filename_str = PyUnicode_DecodeFSDefault(filename);
+  if (filename_str == nullptr) return nullptr;
+  mod_ty mod =
+      PyParser_ASTFromStringObject(s, filename_str, start, flags, arena);
+  Py_DECREF(filename_str);
   return mod;
 }
 
