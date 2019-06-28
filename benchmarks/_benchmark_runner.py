@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import sys
 
 
@@ -18,14 +17,12 @@ class BenchmarkRunner:
         self.benchmarks = []
         self.tools = []
 
-    def register_benchmarks(self, benchmarks_path, names):
-        for f in os.listdir(benchmarks_path):
-            if os.path.isfile(f"{benchmarks_path}/{f}") and f.endswith(".py"):
-                name = f.split(".")[0]
-                if name not in names:
-                    continue
-                benchmark = Benchmark(benchmarks_path, name)
-                self.benchmarks.append(benchmark)
+    def register_benchmarks(self, benchmarks_path):
+        for b_path in benchmarks_path:
+            benchmark_path, _, name_and_ext = b_path.rpartition("/")
+            name, _, _ = name_and_ext.rpartition(".")
+            benchmark = Benchmark(benchmark_path, name)
+            self.benchmarks.append(benchmark)
 
     def register_measurement_tools(self, args):
         sys.path.append(self.path)
@@ -61,8 +58,7 @@ def main():
 
     path = sys.argv[0].rsplit("/", 1)[0]
     runner = BenchmarkRunner(path)
-    benchmarks_path = f"{path}/benchmarks"
-    runner.register_benchmarks(benchmarks_path, args["benchmarks"])
+    runner.register_benchmarks(args["benchmarks"])
     runner.register_measurement_tools(args)
     results = runner.run_benchmarks()
 
