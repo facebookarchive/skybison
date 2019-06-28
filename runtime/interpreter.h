@@ -40,8 +40,7 @@ class Interpreter {
     YIELD,
   };
 
-  static RawObject execute(Thread* thread, Frame* entry_frame,
-                           const Function& function);
+  static RawObject execute(Thread* thread);
 
   static RawObject call(Thread* thread, Frame* frame, word nargs);
   static RawObject callKw(Thread* thread, Frame* frame, word nargs);
@@ -216,8 +215,7 @@ class Interpreter {
   static void storeAttrWithLocation(Thread* thread, RawObject receiver,
                                     RawObject location, RawObject value);
 
-  // Unwind the stack for a pending exception. Intended to be tail-called by a
-  // bytecode handler that is raising an exception.
+  // Unwind the stack for a pending exception.
   //
   // Returns true if the exception escaped frames owned by the current
   // Interpreter instance, indicating that an Error should be returned to the
@@ -243,11 +241,9 @@ class Interpreter {
   static bool popBlock(Thread* thread, TryBlock::Why why, RawObject value);
 
   // Pop from the block stack until a handler that cares about 'return' is
-  // found, or the stack is emptied. The return value is meant to be used
-  // directly as the return value of an opcode handler (see "Opcode handlers"
-  // below for an explanation).
-  static bool handleReturn(Thread* thread, RawObject retval,
-                           Frame* entry_frame);
+  // found, or the stack is emptied. The return value is meant to be
+  // interpreted like unwind()'s return value.
+  static bool handleReturn(Thread* thread, Frame* entry_frame);
 
   // Pop from the block stack until a handler that cares about 'break' or
   // 'continue' is found.
@@ -495,6 +491,8 @@ class Interpreter {
   static Continue inplaceOpUpdateCache(Thread* thread, word arg);
   static Continue inplaceOpFallback(Thread* thread, word arg,
                                     IcBinopFlags flags);
+
+  static void executeImpl(Thread* thread, Frame* entry_frame);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(Interpreter);
 };

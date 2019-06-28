@@ -3306,8 +3306,7 @@ RawObject Runtime::genSend(Thread* thread, const GeneratorBase& gen,
   exc_state.setPrevious(thread->caughtExceptionState());
   thread->setCaughtExceptionState(*exc_state);
 
-  Function function(&scope, live_frame->function());
-  Object result(&scope, Interpreter::execute(thread, live_frame, function));
+  Object result(&scope, Interpreter::execute(thread));
   thread->setCaughtExceptionState(exc_state.previous());
   exc_state.setPrevious(NoneType::object());
   return *result;

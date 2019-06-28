@@ -1127,9 +1127,9 @@ static void finishCurrentGenerator(Frame* frame) {
   }
 }
 
-bool Interpreter::handleReturn(Thread* thread, RawObject retval,
-                               Frame* entry_frame) {
+bool Interpreter::handleReturn(Thread* thread, Frame* entry_frame) {
   Frame* frame = thread->currentFrame();
+  RawObject retval = frame->popValue();
   while (frame->blockStack()->depth() > 0) {
     if (popBlock(thread, TryBlock::Why::kReturn, retval)) {
       return false;
@@ -3713,16 +3713,15 @@ Continue Interpreter::doBinaryOpCached(Thread* thread, word arg) {
   return cachedBinaryOpImpl(thread, arg, binaryOpUpdateCache, binaryOpFallback);
 }
 
-RawObject Interpreter::execute(Thread* thread, Frame* entry_frame,
-                               const Function& function) {
-  DCHECK(entry_frame->code() == function.code(), "function should match code");
-
+RawObject Interpreter::execute(Thread* thread) {
   auto do_return = [thread] {
     Frame* frame = thread->currentFrame();
     RawObject return_val = frame->popValue();
     thread->popFrame();
     return return_val;
   };
+
+  Frame* entry_frame = thread->currentFrame();
 
   // TODO(bsimmers): This check is only relevant for generators, and each
   // callsite of Interpreter::execute() can know statically whether or not an
@@ -3737,6 +3736,11 @@ RawObject Interpreter::execute(Thread* thread, Frame* entry_frame,
     if (unwind(thread, entry_frame)) return do_return();
   }
 
+  executeImpl(thread, entry_frame);
+  return do_return();
+}
+
+void Interpreter::executeImpl(Thread* thread, Frame* entry_frame) {
   // Silence warnings about computed goto
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -3787,17 +3791,12 @@ extendedArg:
 
 handle_return_or_unwind:
   if (cont == Continue::UNWIND) {
-    if (unwind(thread, entry_frame)) {
-      return do_return();
-    }
+    if (unwind(thread, entry_frame)) return;
   } else if (cont == Continue::RETURN) {
-    RawObject return_value = thread->currentFrame()->popValue();
-    if (handleReturn(thread, return_value, entry_frame)) {
-      return do_return();
-    }
+    if (handleReturn(thread, entry_frame)) return;
   } else {
     DCHECK(cont == Continue::YIELD, "expected RETURN, UNWIND or YIELD");
-    return do_return();
+    return;
   }
   goto* next_label();
 #pragma GCC diagnostic pop

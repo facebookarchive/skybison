@@ -193,8 +193,8 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
   currentFrame()->pushValue(*locals);
   // Push function to be available from frame.function().
   currentFrame()->pushValue(*function);
-  Frame* frame = pushCallFrame(*function);
-  Object result(&scope, Interpreter::execute(this, frame, function));
+  pushCallFrame(*function);
+  Object result(&scope, Interpreter::execute(this));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");
   DCHECK(currentFrame()->peek(1) == *locals, "stack mismatch");
   currentFrame()->dropValues(2);
@@ -209,8 +209,8 @@ RawObject Thread::runClassFunction(const Function& function, const Dict& dict) {
   // Push implicit globals and function.
   currentFrame()->pushValue(*dict);
   currentFrame()->pushValue(*function);
-  Frame* frame = pushClassFunctionFrame(function);
-  Object result(&scope, Interpreter::execute(this, frame, function));
+  pushClassFunctionFrame(function);
+  Object result(&scope, Interpreter::execute(this));
   DCHECK(currentFrame()->topValue() == function, "stack mismatch");
   DCHECK(currentFrame()->peek(1) == *dict, "stack mismatch");
   currentFrame()->dropValues(2);
