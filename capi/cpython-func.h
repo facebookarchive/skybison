@@ -302,6 +302,7 @@ PyAPI_FUNC(PyObject*) PyException_GetTraceback(PyObject*);
 PyAPI_FUNC(void) PyException_SetCause(PyObject*, PyObject*);
 PyAPI_FUNC(void) PyException_SetContext(PyObject*, PyObject*);
 PyAPI_FUNC(int) PyException_SetTraceback(PyObject*, PyObject*);
+PyAPI_FUNC(int) Py_FdIsInteractive(FILE*, const char*);
 PyAPI_FUNC(PyObject*) PyFile_GetLine(PyObject*, int);
 PyAPI_FUNC(int) PyFile_WriteObject(PyObject*, PyObject*, int);
 PyAPI_FUNC(int) PyFile_WriteString(const char*, PyObject*);

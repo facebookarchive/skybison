@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <cstdio>
 
 #include "runtime.h"
@@ -63,6 +64,21 @@ PY_EXPORT void Py_InitializeEx(int /* s */) {
 }
 
 PY_EXPORT int Py_IsInitialized() { UNIMPLEMENTED("Py_IsInitialized"); }
+
+// The file descriptor fd is considered ``interactive'' if either:
+//   a) isatty(fd) is TRUE, or
+//   b) the -i flag was given, and the filename associated with the descriptor
+//      is NULL or "<stdin>" or "???".
+PY_EXPORT int Py_FdIsInteractive(FILE* fp, const char* filename) {
+  if (::isatty(fileno(fp))) {
+    return 1;
+  }
+  if (!Py_InteractiveFlag) {
+    return 0;
+  }
+  return filename == nullptr || std::strcmp(filename, "<stdin>") == 0 ||
+         std::strcmp(filename, "???") == 0;
+}
 
 PY_EXPORT PyThreadState* Py_NewInterpreter() {
   UNIMPLEMENTED("Py_NewInterpreter");
