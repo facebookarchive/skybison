@@ -641,6 +641,54 @@ TEST_F(IcTest, IcUpdateUpdatesExistingEntry) {
       "test"));
 }
 
+TEST_F(IcTest, IcInsertDependencyForTypeLookupInMroAddsDependencyFollowingMro) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A:
+  pass
+
+class B(A):
+  foo = "class B"
+
+class C(B):
+  bar = "class C"
+)")
+                   .isError());
+  Type a(&scope, moduleAt(&runtime_, "__main__", "A"));
+  Type b(&scope, moduleAt(&runtime_, "__main__", "B"));
+  Type c(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Object foo(&scope, runtime_.newStrFromCStr("foo"));
+  Object dependent(&scope, SmallInt::fromWord(1234));
+
+  // Inserting dependent adds dependent to a new Placeholder in C for 'foo', and
+  // to the existing ValueCell in B. A won't be affected since it's not visited
+  // during MRO traversal.
+  icInsertDependencyForTypeLookupInMro(thread_, c, foo, dependent);
+
+  Tuple mro(&scope, c.mro());
+  ASSERT_EQ(mro.length(), 4);
+  ASSERT_EQ(mro.at(0), c);
+  ASSERT_EQ(mro.at(1), b);
+  ASSERT_EQ(mro.at(2), a);
+
+  Dict a_dict(&scope, a.dict());
+  EXPECT_TRUE(runtime_.dictAt(thread_, a_dict, foo).isErrorNotFound());
+
+  Dict b_dict(&scope, b.dict());
+  ValueCell b_entry(&scope, runtime_.dictAt(thread_, b_dict, foo));
+  EXPECT_FALSE(b_entry.isPlaceholder());
+  WeakLink b_link(&scope, b_entry.dependencyLink());
+  EXPECT_EQ(b_link.referent(), dependent);
+  EXPECT_TRUE(b_link.next().isNoneType());
+
+  Dict c_dict(&scope, c.dict());
+  ValueCell c_entry(&scope, runtime_.dictAt(thread_, c_dict, foo));
+  EXPECT_TRUE(c_entry.isPlaceholder());
+  WeakLink c_link(&scope, c_entry.dependencyLink());
+  EXPECT_EQ(c_link.referent(), dependent);
+  EXPECT_TRUE(c_link.next().isNoneType());
+}
+
 TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(
@@ -846,7 +894,7 @@ static RawObject testingFunction(Thread* thread) {
   return *function;
 }
 
-TEST_F(IcTest, insertDependencyInsertsDependentAsHead) {
+TEST_F(IcTest, insertDependentToValueCellDependencyLinkInsertsDependentAsHead) {
   HandleScope scope(thread_);
   Function function0(&scope, testingFunction(thread_));
   Function function1(&scope, testingFunction(thread_));
@@ -854,17 +902,40 @@ TEST_F(IcTest, insertDependencyInsertsDependentAsHead) {
   ValueCell cache(&scope, runtime_.newValueCell());
   ASSERT_TRUE(cache.dependencyLink().isNoneType());
 
-  insertDependency(thread_, function0, cache);
+  EXPECT_TRUE(
+      insertDependentToValueCellDependencyLink(thread_, function0, cache));
   WeakLink link0(&scope, cache.dependencyLink());
   EXPECT_EQ(link0.referent(), *function0);
   EXPECT_TRUE(link0.prev().isNoneType());
   EXPECT_TRUE(link0.next().isNoneType());
 
-  insertDependency(thread_, function1, cache);
+  EXPECT_TRUE(
+      insertDependentToValueCellDependencyLink(thread_, function1, cache));
   WeakLink link1(&scope, cache.dependencyLink());
   EXPECT_EQ(link1.referent(), *function1);
   EXPECT_TRUE(link1.prev().isNoneType());
   EXPECT_EQ(link1.next(), *link0);
+}
+
+TEST_F(IcTest,
+       insertDependentToValueCellDependencyLinkDoesNotInsertExistingDependent) {
+  HandleScope scope(thread_);
+  Function function0(&scope, testingFunction(thread_));
+  Function function1(&scope, testingFunction(thread_));
+
+  ValueCell cache(&scope, runtime_.newValueCell());
+  EXPECT_TRUE(
+      insertDependentToValueCellDependencyLink(thread_, function0, cache));
+  EXPECT_TRUE(
+      insertDependentToValueCellDependencyLink(thread_, function1, cache));
+  EXPECT_FALSE(
+      insertDependentToValueCellDependencyLink(thread_, function0, cache));
+
+  WeakLink link(&scope, cache.dependencyLink());
+  EXPECT_EQ(link.referent(), *function1);
+  EXPECT_TRUE(link.prev().isNoneType());
+  EXPECT_EQ(WeakLink::cast(link.next()).referent(), *function0);
+  EXPECT_TRUE(WeakLink::cast(link.next()).next().isNoneType());
 }
 
 TEST_F(IcTest, IcUpdateGlobalVarFillsCacheLineAndReplaceOpcode) {

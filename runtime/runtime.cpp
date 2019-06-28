@@ -1925,13 +1925,13 @@ RawObject Runtime::typeAt(LayoutId layout_id) {
 RawObject Runtime::typeDictAt(Thread* thread, const Dict& dict,
                               const Object& key) {
   HandleScope scope(thread);
-  Object value_cell(&scope, dictAt(thread, dict, key));
-  if (value_cell.isError()) {
+  Object value(&scope, dictAt(thread, dict, key));
+  DCHECK(value.isErrorNotFound() || value.isValueCell(),
+         "type dictionaries must return either ErrorNotFound or ValueCell");
+  if (value.isErrorNotFound() || ValueCell::cast(*value).isPlaceholder()) {
     return Error::notFound();
   }
-  DCHECK(value_cell.isValueCell(),
-         "dict in typeDictAt should return ValueCell");
-  return ValueCell::cast(*value_cell).value();
+  return ValueCell::cast(*value).value();
 }
 
 RawObject Runtime::typeDictAtPut(Thread* thread, const Dict& dict,

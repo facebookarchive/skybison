@@ -49,14 +49,23 @@ void icRewriteBytecode(Thread* thread, const Function& function);
 // Sets a cache entry to the given `layout_id` as key and `value` as value.
 void icUpdate(RawTuple caches, word index, LayoutId layout_id, RawObject value);
 
+// Insert dependent into dependentLink of the given value_cell. Returns true if
+// depdent didn't exist in dependencyLink, and false otherwise.
+bool insertDependentToValueCellDependencyLink(Thread* thread,
+                                              const Object& dependent,
+                                              const ValueCell& value_cell);
+
+// Perform the same lookup operation as typeLookupNameInMro as we're inserting
+// dependent into the ValueCell in each visited type dictionary.
+void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
+                                          const Object& name_str,
+                                          const Object& dependent);
+
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.
 void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
                    LayoutId right_layout_id, RawObject value,
                    IcBinopFlags flags);
-
-void insertDependency(Thread* thread, const Object& dependent,
-                      const ValueCell& value_cell);
 
 // Sets a cache entry for a global variable.
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,

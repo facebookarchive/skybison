@@ -2183,6 +2183,10 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
     icUpdate(frame->caches(), arg, layout_id, *location);
+    Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
+    Object dependent(&scope, frame->function());
+    icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
+                                         dependent);
   }
   return Continue::NEXT;
 }
@@ -2448,6 +2452,10 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
   if (!location.isNoneType()) {
     LayoutId layout_id = receiver.layoutId();
     icUpdate(frame->caches(), arg, layout_id, *location);
+    Type receiver_type(&scope, thread->runtime()->typeOf(*receiver));
+    Object dependent(&scope, frame->function());
+    icInsertDependencyForTypeLookupInMro(thread, receiver_type, name,
+                                         dependent);
   }
   frame->setTopValue(*result);
   return Continue::NEXT;

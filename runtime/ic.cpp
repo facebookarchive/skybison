@@ -230,6 +230,63 @@ void icUpdate(RawTuple caches, word index, LayoutId layout_id,
   }
 }
 
+static bool dependentIncluded(RawObject dependent, RawObject link) {
+  for (; !link.isNoneType(); link = WeakLink::cast(link).next()) {
+    if (WeakLink::cast(link).referent() == dependent) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool insertDependentToValueCellDependencyLink(Thread* thread,
+                                              const Object& dependent,
+                                              const ValueCell& value_cell) {
+  HandleScope scope(thread);
+  Object link(&scope, value_cell.dependencyLink());
+  if (dependentIncluded(*dependent, *link)) {
+    // Already included.
+    return false;
+  }
+  Object none(&scope, NoneType::object());
+  WeakLink new_link(
+      &scope, thread->runtime()->newWeakLink(thread, dependent, none, link));
+  if (link.isWeakLink()) {
+    WeakLink::cast(*link).setPrev(*new_link);
+  }
+  value_cell.setDependencyLink(*new_link);
+  return true;
+}
+
+void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
+                                          const Object& name_str,
+                                          const Object& dependent) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Tuple mro(&scope, type.mro());
+  NoneType none(&scope, NoneType::object());
+  for (word i = 0; i < mro.length(); i++) {
+    Type mro_type(&scope, mro.at(i));
+    Dict dict(&scope, mro_type.dict());
+    // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
+    // probings.
+    Object result(&scope, runtime->dictAt(thread, dict, name_str));
+    DCHECK(result.isErrorNotFound() || result.isValueCell(),
+           "value must be ValueCell if found");
+    if (result.isErrorNotFound()) {
+      result = runtime->dictAtPutInValueCell(thread, dict, name_str, none);
+      ValueCell::cast(*result).makePlaceholder();
+    }
+    ValueCell value_cell(&scope, *result);
+    insertDependentToValueCellDependencyLink(thread, dependent, value_cell);
+    if (!value_cell.isPlaceholder()) {
+      // Attribute lookup terminates here. Therefore, no dependency tracking is
+      // needed afterwards.
+      return;
+    }
+  }
+}
+
 void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
                    LayoutId right_layout_id, RawObject value,
                    IcBinopFlags flags) {
@@ -250,26 +307,13 @@ void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
   }
 }
 
-void insertDependency(Thread* thread, const Object& dependent,
-                      const ValueCell& value_cell) {
-  HandleScope scope(thread);
-  Object link(&scope, value_cell.dependencyLink());
-  Object none(&scope, NoneType::object());
-  WeakLink new_link(
-      &scope, thread->runtime()->newWeakLink(thread, dependent, none, link));
-  if (link.isWeakLink()) {
-    WeakLink::cast(*link).setPrev(*new_link);
-  }
-  value_cell.setDependencyLink(*new_link);
-}
-
 void icUpdateGlobalVar(Thread* thread, const Function& function, word index,
                        const ValueCell& value_cell) {
   HandleScope scope(thread);
   Tuple caches(&scope, function.caches());
   DCHECK(caches.at(index).isNoneType(),
          "cache entry must be empty one before update");
-  insertDependency(thread, function, value_cell);
+  insertDependentToValueCellDependencyLink(thread, function, value_cell);
   caches.atPut(index, *value_cell);
 
   // Update all global variable access to the cached value in the function.

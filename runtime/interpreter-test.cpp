@@ -3960,4 +3960,83 @@ result = test()
   EXPECT_TRUE(moduleAt(&runtime, "__main__", "result").isNoneType());
 }
 
+TEST(InterpreterTestNoFixture,
+     LoadAttrCachedInsertsExecutingFunctionAsDependent) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 400
+
+def cache_attribute(c):
+  return c.foo
+
+c = C()
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type_c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Function cache_attribute(&scope,
+                           moduleAt(&runtime, "__main__", "cache_attribute"));
+  Tuple caches(&scope, cache_attribute.caches());
+  ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
+
+  // Load the cache.
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(
+      isIntEqualsWord(Interpreter::callFunction1(thread, thread->currentFrame(),
+                                                 cache_attribute, c),
+                      400));
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+
+  // Verify that cache_attribute function is added as a dependent.
+  Dict type_c_dict(&scope, type_c.dict());
+  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
+  ValueCell value_cell(&scope, runtime.dictAt(thread, type_c_dict, foo_name));
+  ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
+  EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
+            *cache_attribute);
+}
+
+TEST(InterpreterTestNoFixture,
+     StoreAttrCachedInsertsExecutingFunctionAsDependent) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __init__(self):
+    self.foo = 400
+
+def cache_attribute(c):
+  c.foo = 500
+
+c = C()
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type_c(&scope, moduleAt(&runtime, "__main__", "C"));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Function cache_attribute(&scope,
+                           moduleAt(&runtime, "__main__", "cache_attribute"));
+  Tuple caches(&scope, cache_attribute.caches());
+  ASSERT_EQ(caches.length(), 2 * kIcPointersPerCache);
+
+  // Load the cache.
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
+  ASSERT_TRUE(Interpreter::callFunction1(thread, thread->currentFrame(),
+                                         cache_attribute, c)
+                  .isNoneType());
+  ASSERT_TRUE(icLookup(*caches, 1, c.layoutId()).isSmallInt());
+
+  // Verify that cache_attribute function is added as a dependent.
+  Dict type_c_dict(&scope, type_c.dict());
+  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
+  ValueCell value_cell(&scope, runtime.dictAt(thread, type_c_dict, foo_name));
+  ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
+  EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
+            *cache_attribute);
+}
+
 }  // namespace python
