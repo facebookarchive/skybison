@@ -2758,6 +2758,7 @@ static PyMemberDef pattern_members[] = {
     {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY},
     {"flags",      T_INT,       PAT_OFF(flags),         READONLY},
     {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY},
+    {"__weaklistoffset__", T_NONE, PAT_OFF(weakreflist), READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -2915,7 +2916,6 @@ PyMODINIT_FUNC PyInit__sre(void)
     if (Pattern_Type == NULL) {
         return NULL;
     }
-    Pattern_Type->tp_weaklistoffset = offsetof(PatternObject, weakreflist);
     PyTypeObject *Match_Type = (PyTypeObject *)PyType_FromSpec(&Match_Type_spec);
     if (Match_Type == NULL) {
         return NULL;
