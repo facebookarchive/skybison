@@ -1189,6 +1189,37 @@ del b[5]
                             LayoutId::kRuntimeError, "foo"));
 }
 
+TEST_F(InterpreterTest, DoDeleteSubscrDoesntPushToStack) {
+  HandleScope scope(thread_);
+
+  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime_.newTuple(3));
+  List list(&scope, runtime_.newList());
+  Int one(&scope, runtime_.newInt(1));
+  runtime_.listEnsureCapacity(thread_, list, 1);
+  list.setNumItems(1);
+  list.atPut(0, *one);
+  consts.atPut(0, SmallInt::fromWord(42));
+  consts.atPut(1, *list);
+  consts.atPut(2, SmallInt::fromWord(0));
+  code.setConsts(*consts);
+
+  Tuple varnames(&scope, runtime_.newTuple(0));
+  code.setVarnames(*varnames);
+  code.setNlocals(0);
+  const byte bytecode[] = {
+      LOAD_CONST,    0, LOAD_CONST,   1, LOAD_CONST, 2,
+      DELETE_SUBSCR, 0, RETURN_VALUE, 0,
+  };
+  code.setCode(runtime_.newBytesWithAll(bytecode));
+
+  Object result_obj(&scope, runCode(code));
+  ASSERT_TRUE(result_obj.isInt());
+  Int result(&scope, *result_obj);
+  EXPECT_EQ(result.asWord(), 42);
+  EXPECT_EQ(list.numItems(), 0);
+}
+
 TEST_F(InterpreterTest, SequenceContains) {
   HandleScope scope(thread_);
 

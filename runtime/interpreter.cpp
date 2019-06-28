@@ -1516,7 +1516,10 @@ HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
     }
     return Continue::UNWIND;
   }
-  return tailcallMethod2(thread, *delitem, *container, *key);
+  if (callMethod2(thread, frame, delitem, container, key).isError()) {
+    return Continue::UNWIND;
+  }
+  return Continue::NEXT;
 }
 
 HANDLER_INLINE Continue Interpreter::doBinaryLshift(Thread* thread, word) {
