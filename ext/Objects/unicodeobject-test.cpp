@@ -541,6 +541,22 @@ TEST_F(UnicodeExtensionApiTest, ReplaceWithReplstrOfNonStringTypeReturnsNull) {
 }
 
 TEST_F(UnicodeExtensionApiTest,
+       ReplaceWithStrSubclassReturnStrWithSameContent) {
+  PyRun_SimpleString(R"(
+class SubStr(str): pass
+
+subclass_instance = SubStr("hello world!")
+)");
+  PyObjectPtr subclass_instance(moduleGet("__main__", "subclass_instance"));
+  PyObjectPtr substr(PyUnicode_FromString("some string"));
+  PyObjectPtr replstr(PyUnicode_FromString("some string"));
+  PyObjectPtr result(PyUnicode_Replace(subclass_instance, substr, replstr, -1));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyUnicode_CheckExact(result));
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "hello world!"));
+}
+
+TEST_F(UnicodeExtensionApiTest,
        ReplaceWithNegativeMaxcountReturnsResultReplacingAllSubstr) {
   PyObjectPtr str(PyUnicode_FromString("22122122122122122"));
   PyObjectPtr substr(PyUnicode_FromString("22"));

@@ -1692,8 +1692,6 @@ PY_EXPORT PyObject* PyUnicode_Replace(PyObject* str, PyObject* substr,
   Str str_str(&scope, strUnderlying(thread, str_obj));
   Str substr_str(&scope, strUnderlying(thread, substr_obj));
   Str replstr_str(&scope, strUnderlying(thread, replstr_obj));
-  // TODO(T42259916): Make sure the return value is of 'str' type once str
-  // subclass is supported.
   Object result(&scope, runtime->strReplace(thread, str_str, substr_str,
                                             replstr_str, maxcount));
   return ApiHandle::newReference(thread, *result);
