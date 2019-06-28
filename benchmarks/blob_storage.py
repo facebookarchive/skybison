@@ -34,7 +34,7 @@ class PyroBlobStorage:
     async def download_blob(self, blob_handle, file_path):
         try:
             content = await self.client.async_read(
-                context_id=self.context_id, handle=self.blob_handle
+                context_id=self.context_id, handle=blob_handle
             )
         except RuntimeError:
             print("Invalid everstore handle: ", blob_handle)
