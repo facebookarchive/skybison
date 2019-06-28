@@ -39,6 +39,10 @@ class PyroBlobStorage:
         except RuntimeError:
             print("Invalid everstore handle: ", blob_handle)
             return False
+
+        if not os.path.isdir(os.path.dirname(file_path)):
+            os.mkdir(os.path.dirname(file_path))
+
         with open(file_path, "wb") as f:
             f.write(content)
         os.chmod(file_path, 0o775)  # Make executable
