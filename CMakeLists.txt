@@ -519,6 +519,7 @@ set(
   ext/Objects/typeobject-test.cpp
   ext/Objects/unicodeobject-test.cpp
   ext/Objects/weakrefobject-test.cpp
+  ext/Python/ceval-test.cpp
   ext/Python/codecs-test.cpp
   ext/Python/errors-test.cpp
   ext/Python/getargs-ssizet-test.cpp

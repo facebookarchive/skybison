@@ -18,9 +18,42 @@ PY_EXPORT void PyEval_AcquireThread(PyThreadState* /* e */) {
   UNIMPLEMENTED("PyEval_AcquireThread");
 }
 
-PY_EXPORT PyObject* PyEval_EvalCode(PyObject* /* o */, PyObject* /* s */,
-                                    PyObject* /* s */) {
-  UNIMPLEMENTED("PyEval_EvalCode");
+PY_EXPORT PyObject* PyEval_EvalCode(PyObject* code, PyObject* globals,
+                                    PyObject* locals) {
+  Thread* thread = Thread::current();
+  if (globals == nullptr) {
+    thread->raiseWithFmt(LayoutId::kSystemError,
+                         "PyEval_EvalCode: NULL globals");
+    return nullptr;
+  }
+  // All of the below nullptr and type checks happen inside #ifdef Py_DEBUG in
+  // CPython (PyFrame_New) but we check no matter what.
+  if (code == nullptr) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  HandleScope scope(thread);
+  Object code_obj(&scope, ApiHandle::fromPyObject(code)->asObject());
+  DCHECK(code_obj.isCode(), "code must be a code object");
+  Code code_code(&scope, *code_obj);
+  Object globals_obj(&scope, ApiHandle::fromPyObject(globals)->asObject());
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfDict(*globals_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Dict globals_dict(&scope, *globals_obj);
+  CHECK(!code_code.hasOptimizedOrNewLocals(),
+        "Thread::exec can't run CO_OPTIMIZED or CO_NEWLOCALS");
+  locals = locals ? locals : globals;
+  Object locals_obj(&scope, ApiHandle::fromPyObject(locals)->asObject());
+  if (!runtime->isMapping(thread, locals_obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Object result(&scope, thread->exec(code_code, globals_dict, locals_obj));
+  if (result.isError()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyEval_EvalCodeEx(PyObject* /* o */, PyObject* /* s */,
