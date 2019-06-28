@@ -27,9 +27,11 @@ typedef struct {
 #define myreadlinestate_global ((myreadlinestate *)PyModule_GetState(PyState_FindModule(&myreadlinemodule)))
 
 static int myreadline_clear(PyObject *module) {
-    myreadlinestate(module)->_PyOS_ReadlineTState = NULL;
-    myreadlinestate(module)->_PyOS_ReadlineLock = NULL;
-    return 0;
+     myreadlinestate* state = myreadlinestate(module);
+     state->_PyOS_ReadlineTState = NULL;
+     PyThread_free_lock(state->_PyOS_ReadlineLock);
+     state->_PyOS_ReadlineLock = NULL;
+     return 0;
 }
 
 static void myreadline_free(void *module) {
