@@ -97,16 +97,6 @@ const BuiltinMethod SysModule::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
-RawObject SysModule::displayhook(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object obj(&scope, args.get(0));
-  if (obj.isNoneType()) {
-    return NoneType::object();
-  }
-  UNIMPLEMENTED("sys.displayhook()");
-}
-
 RawObject SysModule::excepthook(Thread* thread, Frame* frame, word nargs) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);

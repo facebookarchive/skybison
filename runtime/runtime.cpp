@@ -2161,8 +2161,6 @@ void Runtime::createSysModule(Thread* thread) {
   HandleScope scope(thread);
   Str name_str(&scope, symbols()->Sys());
   Module module(&scope, newModule(name_str));
-  display_hook_ = moduleAddBuiltinFunction(module, SymbolId::kDisplayhook,
-                                           SysModule::displayhook);
   for (word i = 0; SysModule::kBuiltinMethods[i].name != SymbolId::kSentinelId;
        i++) {
     moduleAddBuiltinFunction(module, SysModule::kBuiltinMethods[i].name,
@@ -2243,6 +2241,9 @@ void Runtime::createSysModule(Thread* thread) {
   Object stdout_name(&scope, symbols()->Stdout());
   sys_stdout_ = dictAt(thread, module_dict, stdout_name);
   CHECK(!sys_stdout_.isError(), "sys.stdout not found");
+  Object display_hook_name(&scope, symbols()->Displayhook());
+  display_hook_ = dictAt(thread, module_dict, display_hook_name);
+  CHECK(!display_hook_.isError(), "sys.displayhook not found");
 }
 
 void Runtime::createUnderBuiltinsModule(Thread* thread) {

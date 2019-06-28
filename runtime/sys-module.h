@@ -30,7 +30,6 @@ RawObject initialSysPath(Thread* thread);
 
 class SysModule {
  public:
-  static RawObject displayhook(Thread* thread, Frame* frame, word nargs);
   static RawObject excInfo(Thread* thread, Frame* frame, word nargs);
   static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
   static RawObject underFdWrite(Thread* thread, Frame* frame, word nargs);

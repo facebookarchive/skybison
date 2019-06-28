@@ -94,9 +94,25 @@ implementation = ImplementationType()
 dont_write_bytecode = False
 
 
-@_patch
 def displayhook(value):
-    pass
+    if value is None:
+        return
+    # Set '_' to None to avoid recursion
+    import builtins
+
+    builtins._ = None
+    text = repr(value)
+    try:
+        stdout.write(text)
+    except UnicodeEncodeError:
+        bytes = text.encode(stdout.encoding, "backslashreplace")
+        if hasattr(stdout, "buffer"):
+            stdout.buffer.write(bytes)
+        else:
+            text = bytes.decode(stdout.encoding, "strict")
+            stdout.write(text)
+    stdout.write("\n")
+    builtins._ = value
 
 
 @_patch
