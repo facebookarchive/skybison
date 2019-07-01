@@ -36,7 +36,7 @@ Thread::Thread(word size)
       pending_exc_traceback_(NoneType::object()),
       caught_exc_stack_(NoneType::object()),
       api_repr_list_(NoneType::object()) {
-  start_ = new byte[size];
+  start_ = new byte[size]();  // Zero-initialize the stack
   // Stack growns down in order to match machine convention
   end_ = start_ + size;
   currentFrame_ = pushInitialFrame();
@@ -56,6 +56,7 @@ void Thread::visitRoots(PointerVisitor* visitor) {
 void Thread::visitStackRoots(PointerVisitor* visitor) {
   auto address = reinterpret_cast<uword>(stackPtr());
   auto end = reinterpret_cast<uword>(end_);
+  std::memset(start_, 0, reinterpret_cast<byte*>(address) - start_);
   for (; address < end; address += kPointerSize) {
     visitor->visitPointer(reinterpret_cast<RawObject*>(address));
   }
