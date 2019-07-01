@@ -96,9 +96,32 @@ static int PyRun_InteractiveOneObjectEx(FILE* fp, PyObject* filename,
     return -1;
   }
   // TODO(T46532201): If fp == stdin, fetch encoding from sys.stdin if possible
-  // TODO(T46358395): Read sys.ps{1,2} from sys module and decode
-  const char* ps1 = ">>> ";
-  const char* ps2 = "... ";
+  const char* ps1 = "";
+  const char* ps2 = "";
+  PyObject* ps1_obj = PySys_GetObject("ps1");
+  if (ps1_obj != nullptr) {
+    if ((ps1_obj = PyObject_Str(ps1_obj)) == nullptr) {
+      PyErr_Clear();
+    } else if (PyUnicode_Check(ps1_obj)) {
+      if ((ps1 = PyUnicode_AsUTF8(ps1_obj)) == nullptr) {
+        PyErr_Clear();
+        ps1 = "";
+      }
+    }
+    Py_XDECREF(ps1_obj);
+  }
+  PyObject* ps2_obj = PySys_GetObject("ps2");
+  if (ps2_obj != nullptr) {
+    if ((ps2_obj = PyObject_Str(ps2_obj)) == nullptr) {
+      PyErr_Clear();
+    } else if (PyUnicode_Check(ps2_obj)) {
+      if ((ps2 = PyUnicode_AsUTF8(ps2_obj)) == nullptr) {
+        PyErr_Clear();
+        ps2 = "";
+      }
+    }
+    Py_XDECREF(ps2_obj);
+  }
   PyArena* arena = PyArena_New();
   if (arena == nullptr) {
     return -1;
