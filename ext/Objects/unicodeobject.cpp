@@ -1570,7 +1570,7 @@ PY_EXPORT int PyUnicode_IsIdentifier(PyObject* str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object str_obj(&scope, ApiHandle::fromPyObject(str)->asObject());
-  if (str_obj.isStr() && Str::cast(*str_obj).length() == 0) {
+  if (str_obj == Str::empty()) {
     return false;
   }
   Object result(&scope, thread->invokeMethodStatic1(
