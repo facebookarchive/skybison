@@ -23,8 +23,16 @@ PY_EXPORT size_t _PySys_GetSizeOf(PyObject* o) {
   return static_cast<size_t>(result.asWord());
 }
 
-PY_EXPORT PyObject* PySys_GetObject(const char* /* e */) {
-  UNIMPLEMENTED("PySys_GetObject");
+PY_EXPORT PyObject* PySys_GetObject(const char* name) {
+  DCHECK(name != nullptr, "name must not be nullptr");
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Module module(&scope, runtime->findModuleById(SymbolId::kSys));
+  Object name_obj(&scope, runtime->newStrFromCStr(name));
+  Object result(&scope, runtime->moduleAt(module, name_obj));
+  if (result.isErrorNotFound()) return nullptr;
+  return ApiHandle::borrowedReference(thread, *result);
 }
 
 PY_EXPORT void PySys_AddWarnOption(const wchar_t* /* s */) {

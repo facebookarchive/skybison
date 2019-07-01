@@ -10,6 +10,21 @@ using namespace testing;
 
 using SysModuleExtensionApiTest = ExtensionApi;
 
+TEST_F(SysModuleExtensionApiTest, GetObjectWithNonExistentNameReturnsNull) {
+  EXPECT_EQ(PySys_GetObject("foo_bar_not_a_real_name"), nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(SysModuleExtensionApiTest, GetObjectReturnsValueFromSysModule) {
+  PyRun_SimpleString(R"(
+import sys
+sys.foo = 'bar'
+)");
+  PyObject* result = PySys_GetObject("foo");  // borrowed reference
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isUnicodeEqualsCStr(result, "bar"));
+}
+
 TEST_F(SysModuleExtensionApiTest, GetSizeOfPropagatesException) {
   PyRun_SimpleString(R"(
 class C:
