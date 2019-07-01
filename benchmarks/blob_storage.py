@@ -40,8 +40,8 @@ class PyroBlobStorage:
             print("Invalid everstore handle: ", blob_handle)
             return False
 
-        if not os.path.isdir(os.path.dirname(file_path)):
-            os.mkdir(os.path.dirname(file_path))
+        if not os.path.exists(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
 
         with open(file_path, "wb") as f:
             f.write(content)

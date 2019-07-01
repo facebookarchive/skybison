@@ -159,10 +159,6 @@ class TimeTool(PerformanceTool):
                 br["time_sec_mean"] = format(round(br["time_sec_mean"], 6), "0.6f")
                 br["time_sec_stdev"] = format(round(br["time_sec_stdev"], 6), "0.6f")
 
-            # Remove num_iters and num_repetitions for a more compacted local result
-            del br["num_iters"]
-            del br["num_repetitions"]
-
         return benchmark_results
 
     @staticmethod

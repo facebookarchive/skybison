@@ -51,6 +51,7 @@ python_library(
     name = "run",
     srcs = [
         "_benchmark_runner.py",
+        "_display_results.py",
         "_tools.py",
         "run.py",
     ],
@@ -86,6 +87,7 @@ python_binary(
     deps = [
         ":blob_storage",
         ":rpc-py3-clients",
+        ":run",
         "//everstore/client/py:everstore_client",
         "//libfb/py/pyinit:pyinit",
         "//servicerouter/client/py3:get_client",
