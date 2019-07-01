@@ -88,8 +88,12 @@ python_binary(
         ":blob_storage",
         ":rpc-py3-clients",
         ":run",
+        "//ci_experiences/signalhub/if:signal_hub_thrift-py3-types",
+        "//ci_experiences/signalhub/utils:signal_hub_service_util",
         "//everstore/client/py:everstore_client",
         "//libfb/py/pyinit:pyinit",
+        "//nodeapi/projects/phabricator_py:phabricator",
+        "//nodeapi/py:base",
         "//servicerouter/client/py3:get_client",
     ],
 )
