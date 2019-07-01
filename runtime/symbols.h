@@ -152,6 +152,8 @@ class Runtime;
   V(UnderBytesMaketrans, "_bytes_maketrans")                                   \
   V(UnderBytesNew, "_bytes_new")                                               \
   V(UnderBytesRepeat, "_bytes_repeat")                                         \
+  V(UnderByteslikeFindByteslike, "_byteslike_find_byteslike")                  \
+  V(UnderByteslikeFindInt, "_byteslike_find_int")                              \
   V(UnderClassMethod, "_classmethod")                                          \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \

@@ -19,6 +19,8 @@ _bytes_getslice = _bytes_getslice  # noqa: F821
 _bytes_join = _bytes_join  # noqa: F821
 _bytes_maketrans = _bytes_maketrans  # noqa: F821
 _bytes_repeat = _bytes_repeat  # noqa: F821
+_byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
+_byteslike_find_int = _byteslike_find_int  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
@@ -1005,8 +1007,25 @@ class bytearray(bootstrap=True):
     def extend(self, iterable_of_ints):
         _unimplemented()
 
-    def find(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def find(self, sub, start=None, end=None) -> int:
+        if not _bytearray_check(self):
+            raise TypeError(
+                "'find' requires a 'bytearray' object"
+                f"but received a '{_type(self).__name__}'"
+            )
+        start = 0 if start is None else _index(start)
+        end = bytearray.__len__(self) if end is None else _index(end)
+        # TODO(T38246066) allow any bytes-like object
+        if _bytes_check(sub) or _bytearray_check(sub):
+            return _byteslike_find_byteslike(self, sub, start, end)
+        if _int_check(sub):
+            return _byteslike_find_int(self, sub, start, end)
+        if hasattr(_type(sub), "__int__") or hasattr(_type(sub), "__float__"):
+            try:
+                return _byteslike_find_int(self, _index(sub), start, end)
+            except TypeError:
+                pass
+        raise TypeError(f"a bytes-like object is required, not '{_type(sub).__name__}'")
 
     @classmethod
     def fromhex(cls, string):
@@ -1265,8 +1284,25 @@ class bytes(bootstrap=True):
     def expandtabs(self, tabsize=8):
         _unimplemented()
 
-    def find(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def find(self, sub, start=None, end=None) -> int:
+        if not _bytes_check(self):
+            raise TypeError(
+                "'find' requires a 'bytes' object"
+                f"but received a '{_type(self).__name__}'"
+            )
+        start = 0 if start is None else _index(start)
+        end = bytes.__len__(self) if end is None else _index(end)
+        # TODO(T38246066) allow any bytes-like object
+        if _bytes_check(sub) or _bytearray_check(sub):
+            return _byteslike_find_byteslike(self, sub, start, end)
+        if _int_check(sub):
+            return _byteslike_find_int(self, sub, start, end)
+        if hasattr(_type(sub), "__int__") or hasattr(_type(sub), "__float__"):
+            try:
+                return _byteslike_find_int(self, _index(sub), start, end)
+            except TypeError:
+                pass
+        raise TypeError(f"a bytes-like object is required, not '{_type(sub).__name__}'")
 
     @classmethod
     def fromhex(cls, string):

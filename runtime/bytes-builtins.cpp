@@ -5,8 +5,34 @@
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
+#include "utils.h"
 
 namespace python {
+
+RawObject bytesFind(const Bytes& haystack, word haystack_len,
+                    const Bytes& needle, word needle_len, word start,
+                    word end) {
+  DCHECK_BOUND(haystack_len, haystack.length());
+  DCHECK_BOUND(needle_len, needle.length());
+  if (start < 0) {
+    start = Utils::maximum(start + haystack_len, 0l);
+  }
+  if (end > haystack_len) {
+    end = haystack_len;
+  } else if (end < 0) {
+    end = Utils::maximum(end + haystack_len, 0l);
+  }
+  for (word i = start; i <= end - needle_len; i++) {
+    bool has_match = true;
+    for (word j = 0; has_match && j < needle_len; j++) {
+      has_match = haystack.byteAt(i + j) == needle.byteAt(j);
+    }
+    if (has_match) {
+      return SmallInt::fromWord(i);
+    }
+  }
+  return SmallInt::fromWord(-1);
+}
 
 RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   HandleScope scope(thread);

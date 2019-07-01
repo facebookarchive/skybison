@@ -17,6 +17,86 @@ class ByteArrayTest(unittest.TestCase):
         bytearray.__setitem__(ba, 1, 1)
         self.assertEqual(ba, bytearray(b"f\01o"))
 
+    def test_find_with_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.find(b"", bytearray())
+
+    def test_find_with_empty_sub_returns_start(self):
+        haystack = bytearray(b"abc")
+        needle = b""
+        self.assertEqual(haystack.find(needle, 1), 1)
+
+    def test_find_with_missing_returns_negative(self):
+        haystack = bytearray(b"abc")
+        needle = b"d"
+        self.assertEqual(haystack.find(needle), -1)
+
+    def test_find_with_missing_stays_within_bounds(self):
+        haystack = bytearray(b"abc")
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.find(needle, None, 2), -1)
+
+    def test_find_with_large_start_returns_negative(self):
+        haystack = bytearray(b"abc")
+        needle = bytearray(b"")
+        self.assertEqual(haystack.find(needle, 10), -1)
+
+    def test_find_with_negative_bounds_returns_index(self):
+        haystack = bytearray(b"ababa")
+        needle = b"a"
+        self.assertEqual(haystack.find(needle, -4, -1), 2)
+
+    def test_find_with_multiple_matches_returns_first_index_in_range(self):
+        haystack = bytearray(b"abbabbabba")
+        needle = bytearray(b"abb")
+        self.assertEqual(haystack.find(needle, 1), 3)
+
+    def test_find_with_nonbyte_int_raises_value_error(self):
+        haystack = bytearray()
+        needle = 266
+        with self.assertRaises(ValueError):
+            haystack.find(needle)
+
+    def test_find_with_string_raises_type_error(self):
+        haystack = bytearray()
+        needle = "133"
+        with self.assertRaises(TypeError):
+            haystack.find(needle)
+
+    def test_find_with_non_number_index_raises_type_error(self):
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        with self.assertRaises(TypeError):
+            haystack.find(needle)
+
+    def test_find_with_dunder_int_calls_dunder_index(self):
+        class Idx:
+            def __int__(self):
+                raise NotImplementedError("called __int__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        self.assertEqual(haystack.find(needle), 0)
+
+    def test_find_with_dunder_float_calls_dunder_index(self):
+        class Idx:
+            def __float__(self):
+                raise NotImplementedError("called __float__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = bytearray(b"abc")
+        needle = Idx()
+        self.assertEqual(haystack.find(needle), 0)
+
 
 class BytesTest(unittest.TestCase):
     def test_dunder_add_with_bytes_like_other_returns_bytes(self):
@@ -36,6 +116,86 @@ class BytesTest(unittest.TestCase):
 
     def test_dunder_new_with_ignore_errors_returns_bytes(self):
         self.assertEqual(bytes("fo\x80o", "ascii", "ignore"), b"foo")
+
+    def test_find_with_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.find(bytearray(), b"")
+
+    def test_find_with_empty_sub_returns_start(self):
+        haystack = b"abc"
+        needle = bytearray()
+        self.assertEqual(haystack.find(needle, 1), 1)
+
+    def test_find_with_missing_returns_negative(self):
+        haystack = b"abc"
+        needle = b"d"
+        self.assertEqual(haystack.find(needle), -1)
+
+    def test_find_with_missing_stays_within_bounds(self):
+        haystack = b"abc"
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.find(needle, None, 2), -1)
+
+    def test_find_with_large_start_returns_negative(self):
+        haystack = b"abc"
+        needle = bytearray(b"c")
+        self.assertEqual(haystack.find(needle, 10), -1)
+
+    def test_find_with_negative_bounds_returns_index(self):
+        haystack = b"foobar"
+        needle = bytearray(b"o")
+        self.assertEqual(haystack.find(needle, -6, -1), 1)
+
+    def test_find_with_multiple_matches_returns_first_index_in_range(self):
+        haystack = b"abbabbabba"
+        needle = bytearray(b"abb")
+        self.assertEqual(haystack.find(needle, 1), 3)
+
+    def test_find_with_nonbyte_int_raises_value_error(self):
+        haystack = b""
+        needle = 266
+        with self.assertRaises(ValueError):
+            haystack.find(needle)
+
+    def test_find_with_string_raises_type_error(self):
+        haystack = b""
+        needle = "133"
+        with self.assertRaises(TypeError):
+            haystack.find(needle)
+
+    def test_find_with_non_number_index_raises_type_error(self):
+        class Idx:
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        with self.assertRaises(TypeError):
+            haystack.find(needle)
+
+    def test_find_with_dunder_int_calls_dunder_index(self):
+        class Idx:
+            def __int__(self):
+                raise NotImplementedError("called __int__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.find(needle), 0)
+
+    def test_find_with_dunder_float_calls_dunder_index(self):
+        class Idx:
+            def __float__(self):
+                raise NotImplementedError("called __float__")
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.find(needle), 0)
 
 
 class DictTests(unittest.TestCase):

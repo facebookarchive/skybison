@@ -74,6 +74,16 @@ def _bytes_repeat(self, count):
 
 
 @_patch
+def _byteslike_find_byteslike(self, sub, start, end):
+    pass
+
+
+@_patch
+def _byteslike_find_int(self, sub, start, end):
+    pass
+
+
+@_patch
 def _classmethod(function):
     pass
 
