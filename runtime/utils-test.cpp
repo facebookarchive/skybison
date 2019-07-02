@@ -177,4 +177,9 @@ TEST_F(UtilsTest, RoundUpDiv) {
   EXPECT_EQ(Utils::roundUpDiv(17, 2), 9);
 }
 
+TEST(UtilsTestNoFixture, FailedDcheckWithNoThread) {
+  EXPECT_EXIT(CHECK(false, "something went wrong!"),
+              ::testing::KilledBySignal(SIGABRT), "something went wrong!");
+}
+
 }  // namespace python

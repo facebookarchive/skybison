@@ -107,14 +107,16 @@ void Utils::printDebugInfoAndAbort() {
   }
   aborting = true;
 
-  printTracebackToStderr();
   Thread* thread = Thread::current();
-  if (thread && thread->hasPendingException()) {
-    std::cerr << "Pending exception\n  Type      : "
-              << thread->pendingExceptionType()
-              << "\n  Value     : " << thread->pendingExceptionValue()
-              << "\n  Traceback : " << thread->pendingExceptionTraceback()
-              << "\n";
+  if (thread != nullptr) {
+    printTracebackToStderr();
+    if (thread->hasPendingException()) {
+      std::cerr << "Pending exception\n  Type      : "
+                << thread->pendingExceptionType()
+                << "\n  Value     : " << thread->pendingExceptionValue()
+                << "\n  Traceback : " << thread->pendingExceptionTraceback()
+                << "\n";
+    }
   }
   std::abort();
 }
