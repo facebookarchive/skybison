@@ -3511,7 +3511,8 @@ HANDLER_INLINE Continue Interpreter::doLoadMethod(Thread* thread, word arg) {
 //
 // In case of cache miss, LOAD_METHOD_CACHED shapes the stack in the same way as
 // LOAD_METHOD.
-Continue Interpreter::doLoadMethodCached(Thread* thread, word arg) {
+HANDLER_INLINE Continue Interpreter::doLoadMethodCached(Thread* thread,
+                                                        word arg) {
   Frame* frame = thread->currentFrame();
   RawObject receiver = frame->topValue();
   LayoutId layout_id = receiver.layoutId();
