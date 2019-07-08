@@ -279,6 +279,7 @@ class Runtime;
   V(UnderTypeAbstractMethodsSet, "_type_abstractmethods_set")                  \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
+  V(UnderTypeDictKeys, "_type_dict_keys")                                      \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnicodeEscapeDecode, "_unicode_escape_decode")                        \

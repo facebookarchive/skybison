@@ -127,6 +127,7 @@ class UnderBuiltinsModule {
   static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underTypeDictKeys(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeIsSubclass(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underUnimplemented(Thread* thread, Frame* frame, word nargs);

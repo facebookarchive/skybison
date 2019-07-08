@@ -405,6 +405,11 @@ def _type_check_exact(obj):
 
 
 @_patch
+def _type_dict_keys(obj):
+    pass
+
+
+@_patch
 def _type_issubclass(subclass, superclass):
     pass
 

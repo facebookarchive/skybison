@@ -85,6 +85,7 @@ _type_abstractmethods_get = _type_abstractmethods_get  # noqa: F821
 _type_abstractmethods_set = _type_abstractmethods_set  # noqa: F821
 _type_check = _type_check  # noqa: F821
 _type_check_exact = _type_check_exact  # noqa: F821
+_type_dict_keys = _type_dict_keys  # noqa: F821
 _type_issubclass = _type_issubclass  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
@@ -207,7 +208,8 @@ class type(bootstrap=True):
         return _issubclass(subclass, self)
 
     def _merge_class_dict_keys(self, result):
-        result.update(self.__dict__.keys())
+        # TODO(T46144425): Remove _type_dict_keys in favor of .keys()
+        result.update(_type_dict_keys(self.__dict__))
         for base in self.__bases__:
             type._merge_class_dict_keys(base, result)
 

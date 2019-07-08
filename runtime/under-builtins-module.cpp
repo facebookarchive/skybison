@@ -123,6 +123,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeAbstractMethodsSet, underTypeAbstractMethodsSet},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
+    {SymbolId::kUnderTypeDictKeys, underTypeDictKeys},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kSentinelId, nullptr},
@@ -1506,6 +1507,25 @@ RawObject UnderBuiltinsModule::underTypeCheckExact(Thread*, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isType());
+}
+
+RawObject UnderBuiltinsModule::underTypeDictKeys(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Dict dict(&scope, args.get(0));
+  Tuple data(&scope, dict.data());
+  Runtime* runtime = thread->runtime();
+  List keys(&scope, runtime->newList());
+  Object key(&scope, NoneType::object());
+  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+    RawObject value = Dict::Bucket::value(*data, i);
+    DCHECK(value.isValueCell(), "values in type dict should be ValueCells");
+    if (ValueCell::cast(value).isPlaceholder()) continue;
+    key = Dict::Bucket::key(*data, i);
+    runtime->listAdd(thread, keys, key);
+  }
+  return *keys;
 }
 
 RawObject UnderBuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,
