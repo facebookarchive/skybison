@@ -261,7 +261,6 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
   // Destructively pop the tuple of kwarg names
   Tuple keywords(&scope, caller->topValue());
   caller->popValue();
-  DCHECK(keywords.length() >= 0, "Invalid keyword name tuple");
   Code code(&scope, function.code());
   word expected_args = function.argcount() + code.kwonlyargcount();
   word num_keyword_args = keywords.length();
