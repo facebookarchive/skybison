@@ -97,6 +97,29 @@ class ByteArrayTest(unittest.TestCase):
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
 
+    def test_index_with_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytearray.index(b"", bytearray())
+
+    def test_index_with_subsequence_returns_first_in_range(self):
+        haystack = bytearray(b"-a---a-aa")
+        needle = ord("a")
+        self.assertEqual(haystack.index(needle, 3), 5)
+
+    def test_index_with_missing_raises_value_error(self):
+        haystack = bytearray(b"abc")
+        needle = b"d"
+        with self.assertRaises(ValueError) as context:
+            haystack.index(needle)
+        self.assertEqual(str(context.exception), "subsection not found")
+
+    def test_index_outside_of_bounds_raises_value_error(self):
+        haystack = bytearray(b"abc")
+        needle = bytearray(b"c")
+        with self.assertRaises(ValueError) as context:
+            haystack.index(needle, 0, 2)
+        self.assertEqual(str(context.exception), "subsection not found")
+
 
 class BytesTest(unittest.TestCase):
     def test_dunder_add_with_bytes_like_other_returns_bytes(self):
@@ -196,6 +219,29 @@ class BytesTest(unittest.TestCase):
         haystack = b"abc"
         needle = Idx()
         self.assertEqual(haystack.find(needle), 0)
+
+    def test_index_with_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            bytes.index(bytearray(), b"")
+
+    def test_index_with_subsequence_returns_first_in_range(self):
+        haystack = b"-a---a-aa"
+        needle = ord("a")
+        self.assertEqual(haystack.index(needle, 3), 5)
+
+    def test_index_with_missing_raises_value_error(self):
+        haystack = b"abc"
+        needle = b"d"
+        with self.assertRaises(ValueError) as context:
+            haystack.index(needle)
+        self.assertEqual(str(context.exception), "subsection not found")
+
+    def test_index_outside_of_bounds_raises_value_error(self):
+        haystack = b"abc"
+        needle = bytearray(b"c")
+        with self.assertRaises(ValueError) as context:
+            haystack.index(needle, 0, 2)
+        self.assertEqual(str(context.exception), "subsection not found")
 
 
 class DictTests(unittest.TestCase):

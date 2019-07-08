@@ -1034,8 +1034,16 @@ class bytearray(bootstrap=True):
     def hex(self) -> str:
         pass
 
-    def index(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def index(self, sub, start=None, end=None) -> int:
+        if not _bytearray_check(self):
+            raise TypeError(
+                "'index' requires a 'bytearray' object"
+                f"but received a '{_type(self).__name__}'"
+            )
+        result = bytearray.find(self, sub, start, end)
+        if result is -1:
+            raise ValueError("subsection not found")
+        return result
 
     def insert(self, index, item):
         _unimplemented()
@@ -1311,8 +1319,16 @@ class bytes(bootstrap=True):
     def hex(self) -> str:
         pass
 
-    def index(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def index(self, sub, start=None, end=None) -> int:
+        if not _bytes_check(self):
+            raise TypeError(
+                "'index' requires a 'bytes' object"
+                f"but received a '{_type(self).__name__}'"
+            )
+        result = bytes.find(self, sub, start, end)
+        if result is -1:
+            raise ValueError("subsection not found")
+        return result
 
     def isalnum(self):
         _unimplemented()
