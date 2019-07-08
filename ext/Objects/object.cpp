@@ -41,6 +41,7 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
 }
 
 PY_EXPORT int PyCallable_Check(PyObject* obj) {
+  if (obj == nullptr) return 0;
   return PyObject_HasAttrString(obj, "__call__");
 }
 

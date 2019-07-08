@@ -94,6 +94,34 @@ TEST_F(ObjectExtensionApiTest, BytesWithStringRaisesTypeError) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
 }
 
+TEST_F(ObjectExtensionApiTest, CallableCheckWithNullReturnsZero) {
+  EXPECT_EQ(PyCallable_Check(nullptr), 0);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest, CallableCheckWithNoneDunderCallReturnsOne) {
+  PyRun_SimpleString(R"(
+class C:
+  __call__ = None
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyCallable_Check(c), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ObjectExtensionApiTest,
+       CallableCheckWithNonCallableDunderCallReturnsOne) {
+  PyRun_SimpleString(R"(
+class C:
+  __call__ = 5
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyCallable_Check(c), 1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ObjectExtensionApiTest, SetAttrWithInvalidTypeReturnsNegative) {
   PyObject* key = PyUnicode_FromString("a_key");
   PyObject* value = PyLong_FromLong(5);
