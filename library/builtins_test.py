@@ -1210,6 +1210,21 @@ class TypeTests(unittest.TestCase):
             class Foo(metaclass=Meta):
                 pass
 
+    def test_setattr_with_metaclass_does_not_abort(self):
+        class Meta(type):
+            pass
+
+        class C(metaclass=Meta):
+            __slots__ = "attr"
+
+            def __init__(self, data):
+                self.attr = data
+
+        m = C("foo")
+        self.assertEqual(m.attr, "foo")
+        m.attr = "bar"
+        self.assertEqual(m.attr, "bar")
+
 
 class RangeTests(unittest.TestCase):
     def test_range_attrs_are_set(self):

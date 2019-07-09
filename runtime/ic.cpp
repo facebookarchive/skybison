@@ -266,7 +266,8 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
   Tuple mro(&scope, type.mro());
   NoneType none(&scope, NoneType::object());
   for (word i = 0; i < mro.length(); i++) {
-    Dict dict(&scope, Type::cast(mro.at(i)).dict());
+    Type mro_type(&scope, mro.at(i));
+    Dict dict(&scope, mro_type.dict());
     // TODO(T46428372): Consider using a specialized dict lookup to avoid 2
     // probings.
     Object result(&scope, runtime->dictAt(thread, dict, name_str));
