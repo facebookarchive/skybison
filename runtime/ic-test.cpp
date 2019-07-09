@@ -1089,6 +1089,17 @@ c = C()
       icLookup(*dependent1_caches, 1, instance.layoutId()).isErrorNotFound());
 }
 
+TEST_F(IcTest, IcInvalidateCachesForTypeAttrDoesNothingForNotFoundTypeAttr) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C: pass
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
+  icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
+}
+
 TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(

@@ -420,8 +420,12 @@ void icInvalidateCachesForTypeAttr(Thread* thread, const Type& type,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Dict dict(&scope, type.dict());
-  ValueCell type_attr_cell(&scope,
-                           runtime->dictAt(thread, dict, attribute_name));
+  Object value(&scope, runtime->dictAt(thread, dict, attribute_name));
+  if (value.isErrorNotFound()) {
+    return;
+  }
+  DCHECK(value.isValueCell(), "value must be ValueCell");
+  ValueCell type_attr_cell(&scope, *value);
   // Delete caches for attribute_name to be shadowed by the type[attribute_name]
   // change in all dependents that depend on the attribute being updated.
   for (Object link(&scope, type_attr_cell.dependencyLink()); !link.isNoneType();
