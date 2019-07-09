@@ -400,14 +400,14 @@ PY_EXPORT int PyNumber_Check(PyObject* obj) {
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Frame* frame = thread->currentFrame();
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  if (!Interpreter::lookupMethod(thread, frame, num, SymbolId::kDunderInt)
-           .isError()) {
+  Type type(&scope, thread->runtime()->typeOf(*num));
+  if (!typeLookupSymbolInMro(thread, type, SymbolId::kDunderInt)
+           .isErrorNotFound()) {
     return true;
   }
-  if (!Interpreter::lookupMethod(thread, frame, num, SymbolId::kDunderFloat)
-           .isError()) {
+  if (!typeLookupSymbolInMro(thread, type, SymbolId::kDunderFloat)
+           .isErrorNotFound()) {
     return true;
   }
   return false;

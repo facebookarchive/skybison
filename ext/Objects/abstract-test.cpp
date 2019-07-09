@@ -488,6 +488,36 @@ TEST_F(AbstractExtensionApiTest, PyNumberCheckWithNonNumberReturnsFalse) {
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyNumberCheckWithDunderIntDescriptorThatRaisesReturnsTrue) {
+  PyRun_SimpleString(R"(
+class Desc:
+  def __get__(self, obj, type):
+    raise UserWarning("foo")
+class C:
+  __int__ = Desc()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyNumber_Check(c), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(AbstractExtensionApiTest,
+       PyNumberCheckWithDunderFloatDescriptorThatRaisesReturnsTrue) {
+  PyRun_SimpleString(R"(
+class Desc:
+  def __get__(self, obj, type):
+    raise UserWarning("foo")
+class C:
+  __float__ = Desc()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyNumber_Check(c), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberCheckWithNullReturnsFalse) {
   EXPECT_EQ(PyNumber_Check(nullptr), 0);
   ASSERT_EQ(PyErr_Occurred(), nullptr);
