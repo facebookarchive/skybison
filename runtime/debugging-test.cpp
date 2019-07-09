@@ -66,6 +66,7 @@ static RawObject makeTestFunction(Thread* thread) {
   Function func(&scope, Interpreter::makeFunction(
                             thread, qualname, code, closure, annotations,
                             kw_defaults, defaults, globals));
+  func.setIntrinsicId(static_cast<word>(SymbolId::kList));
   func.setModule(runtime->newStrFromCStr("barmodule"));
   func.setName(runtime->newStrFromCStr("baz"));
   Dict attrs(&scope, runtime->newDict());
@@ -115,6 +116,7 @@ TEST(DebuggingTestsNoFixture, DumpExtendedFunction) {
   closure: ()
   defaults: (-9,)
   kwdefaults: {"name0": None}
+  intrinsic_id: list
   dict: {"funcattr0": 4}
   code: code "name0":
     flags: optimized newlocals varargs varkeyargs nested

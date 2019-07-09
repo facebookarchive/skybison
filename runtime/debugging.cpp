@@ -82,6 +82,14 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
   return os;
 }
 
+static std::ostream& operator<<(std::ostream& os, SymbolId value) {
+  os << (value == SymbolId::kInvalid
+             ? "<invalid>"
+             : Thread::current()->runtime()->symbols()->predefinedSymbolAt(
+                   value));
+  return os;
+}
+
 std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
   HandleScope scope;
   Function function(&scope, value);
@@ -92,6 +100,8 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
      << "  closure: " << function.closure() << '\n'
      << "  defaults: " << function.defaults() << '\n'
      << "  kwdefaults: " << function.kwDefaults() << '\n'
+     << "  intrinsic_id: " << static_cast<SymbolId>(function.intrinsicId())
+     << '\n'
      << "  dict: " << function.dict() << '\n'
      << "  code: ";
   if (function.code().isCode()) {
