@@ -8,9 +8,6 @@ import subprocess
 import sys
 
 
-STAT_REGEX = re.compile(r"([\d,]+)\s+([-\w]+)\s+(?:#.+)?\s+\( \+-\s*([\d.]+)% \)")
-
-
 Stat = collections.namedtuple("Stat", ["count", "stddev", "min", "max"])
 
 
@@ -18,12 +15,21 @@ def measure_binary(binary, repetitions, events, common_args):
     events_args = []
     for event in events:
         events_args += ["-e", event]
-    print(f"Running {' '.join([binary] + common_args)}", file=sys.stderr)
     env = dict(os.environ)
     env.update({"PYRO_ENABLE_CACHE": "1", "PYTHONHASHSEED": "0"})
 
     return subprocess.run(
-        ["perf", "stat", "-r", repetitions, *events_args, binary, *common_args],
+        [
+            "perf",
+            "stat",
+            "--field-separator",
+            ";",
+            "--repeat",
+            repetitions,
+            *events_args,
+            binary,
+            *common_args,
+        ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         encoding=sys.stderr.encoding,
@@ -32,16 +38,35 @@ def measure_binary(binary, repetitions, events, common_args):
     ).stderr
 
 
+class RetryMeasurement(Exception):
+    pass
+
+
+IGNORE_LINES = {
+    "Using perf wrapper that supports hot-text. Try perf.real if you encounter any issues.",
+    "",
+}
+
+
 def parse_perf_stat_output(output):
     stats = {}
-
     for line in output.split("\n"):
-        match = STAT_REGEX.search(line)
-        if match:
-            count = int(match[1].replace(",", ""))
-            counter = match[2]
-            stddev = float(match[3]) * count / 100
-            stats[counter] = Stat(count, stddev, count - stddev, count + stddev)
+        line = line.strip()
+        if line in IGNORE_LINES:
+            continue
+        parts = line.split(";")
+        if len(parts) != 8 and len(parts) != 10:
+            print(f"Unexpected line: {line}", file=sys.stderr)
+            sys.exit(1)
+
+        run_ratio = float(parts[5].replace("%", ""))
+        if run_ratio != 100.0:
+            raise RetryMeasurement()
+
+        count = int(parts[0])
+        counter = parts[2]
+        stddev = float(parts[3].replace("%", "")) / 100 * count
+        stats[counter] = Stat(count, stddev, count - stddev, count + stddev)
 
     return stats
 
@@ -114,6 +139,29 @@ is used to indicate a probably-insignificant result.
     return parser.parse_args()
 
 
+def collect_events(binary, repeat, events, common_args):
+    tries = 10
+    while True:
+        output = measure_binary(binary, repeat, events, common_args)
+        if "nmi_watchdog" in output:
+            # Results reported when the nmi_watchdog interfered are useless.
+            sys.stderr.write("\n\nError: perf stat complained about nmi_watchdog\n")
+            sys.stderr.write(output)
+            sys.stderr.write("\n\nAborting\n")
+            sys.exit(1)
+        try:
+            return parse_perf_stat_output(output)
+        except RetryMeasurement:
+            if tries == 1:
+                print(f"Failed to measure {events} for {binary}", file=sys.stderr)
+                sys.exit(1)
+            tries -= 1
+            print(
+                f"Re-measuring {events} for {binary}, {tries} attempts left",
+                file=sys.stderr,
+            )
+
+
 def main():
     args = parse_args()
     if not args.event:
@@ -121,16 +169,18 @@ def main():
     if not args.common_arg:
         args.common_arg = ["benchmarks/benchmarks/richards.py"]
 
+    group_size = 2
+    event_groups = [
+        args.event[i : i + group_size] for i in range(0, len(args.event), group_size)
+    ]
     results = []
     for binary in args.binary:
-        output = measure_binary(binary, args.repeat, args.event, args.common_arg)
-        if "nmi_watchdog" in output:
-            # Results reported when the nmi_watchdog interfered are useless.
-            sys.stderr.write("\n\nError: perf stat complained about nmi_watchdog:\n")
-            sys.stderr.write(output)
-            sys.stderr.write("\n\nAborting\n")
-            sys.exit(1)
-        results.append(parse_perf_stat_output(output))
+        print(f"Measuring {' '.join([binary] + args.common_arg)}", file=sys.stderr)
+        stats = {}
+        for events in event_groups:
+            stats.update(collect_events(binary, args.repeat, events, args.common_arg))
+        results.append(stats)
+
     diff_perf_stats(args.binary, results)
 
 
