@@ -53,7 +53,7 @@ class Marshal {
     RawObject readAndInternStr(word length);
     RawObject readLongObject();
 
-    RawObject doSetElements(int32_t length, RawObject set);
+    RawObject doSetElements(int32_t length, RawObject set_obj);
     RawObject doTupleElements(int32_t length);
 
     Runtime* runtime_;

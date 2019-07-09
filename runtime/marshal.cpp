@@ -361,14 +361,14 @@ RawObject Marshal::Reader::readTypeFrozenSet() {
   return doSetElements(n, runtime_->newFrozenSet());
 }
 
-RawObject Marshal::Reader::doSetElements(int32_t n, RawObject raw_set) {
+RawObject Marshal::Reader::doSetElements(int32_t length, RawObject set_obj) {
   if (isRef_) {
-    addRef(raw_set);
+    addRef(set_obj);
   }
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  SetBase set(&scope, raw_set);
-  for (int32_t i = 0; i < n; i++) {
+  SetBase set(&scope, set_obj);
+  for (int32_t i = 0; i < length; i++) {
     Object value(&scope, readObject());
     RawObject result = runtime_->setAdd(thread, set, value);
     if (result.isError()) {
