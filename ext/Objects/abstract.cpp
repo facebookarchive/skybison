@@ -144,9 +144,9 @@ PY_EXPORT int PyIndex_Check_Func(PyObject* obj) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object num(&scope, ApiHandle::fromPyObject(obj)->asObject());
-  return !Interpreter::lookupMethod(thread, thread->currentFrame(), num,
-                                    SymbolId::kDunderIndex)
-              .isError();
+  Type type(&scope, thread->runtime()->typeOf(*num));
+  return !typeLookupSymbolInMro(thread, type, SymbolId::kDunderIndex)
+              .isErrorNotFound();
 }
 
 // PyIter_Next

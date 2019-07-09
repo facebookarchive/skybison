@@ -117,6 +117,21 @@ idx = C()
   ASSERT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyIndexCheckWithDunderIndexDescriptorThatRaisesReturnsTrue) {
+  PyRun_SimpleString(R"(
+class Desc:
+  def __get__(self, obj, type):
+    raise UserWarning("foo")
+class C:
+  __index__ = Desc()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyIndex_Check(c.get()), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+}
+
 // PyIter_Next
 
 TEST_F(AbstractExtensionApiTest, PyIterNextReturnsNext) {
