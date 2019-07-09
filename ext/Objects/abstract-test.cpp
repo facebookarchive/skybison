@@ -582,6 +582,22 @@ x = C(4.2)
   EXPECT_EQ(PyFloat_AsDouble(flt), 4.2);
 }
 
+TEST_F(AbstractExtensionApiTest,
+       PyNumberFloatWithDescriptorThatRaisesPropagatesException) {
+  PyRun_SimpleString(R"(
+class Desc:
+  def __get__(self, obj, type):
+    raise UserWarning("foo")
+class C:
+  __float__ = Desc()
+c = C()
+)");
+  PyObjectPtr c(moduleGet("__main__", "c"));
+  EXPECT_EQ(PyNumber_Float(c), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
 TEST_F(AbstractExtensionApiTest, PyNumberFloorDivideWithNonIntRaisesTypeError) {
   PyObjectPtr x(PyUnicode_FromString("foo"));
   PyObjectPtr y(PyLong_FromLong(2));

@@ -118,9 +118,12 @@ RawObject FloatBuiltins::floatFromObject(Thread* thread, Frame* frame,
   Object method(&scope, Interpreter::lookupMethod(thread, frame, obj,
                                                   SymbolId::kDunderFloat));
   if (method.isError()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "TypeError: float() argument must have a __float__");
+    if (method.isErrorNotFound()) {
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "TypeError: float() argument must have a __float__");
+    }
+    return *method;
   }
 
   Object converted(&scope,

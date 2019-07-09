@@ -391,6 +391,19 @@ a = float.__new__(float, Foo())
   EXPECT_EQ(a.value(), 1.0);
 }
 
+TEST_F(FloatBuiltinsTest,
+       DunderNewWithDescriptorRaisingDescriptorDunderFloatPropagatesException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class Desc:
+  def __get__(self, obj, type):
+    raise UserWarning("foo")
+class Foo:
+  __float__ = Desc()
+a = float.__new__(float, Foo())
+)"),
+                            LayoutId::kUserWarning, "foo"));
+}
+
 TEST_F(FloatBuiltinsTest, DunderNewWithStringReturnsFloat) {
   HandleScope scope(thread_);
 
