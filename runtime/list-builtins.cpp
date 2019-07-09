@@ -225,7 +225,7 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self_obj, SymbolId::kList);
   }
   Object other_obj(&scope, args.get(1));
-  if (!other_obj.isList()) {
+  if (!runtime->isInstanceOfList(*other_obj)) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "can only concatenate list to list");
   }

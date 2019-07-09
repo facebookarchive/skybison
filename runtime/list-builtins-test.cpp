@@ -172,6 +172,20 @@ c = a + b
   EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
 }
 
+TEST_F(ListBuiltinsTest, AddWithListSubclassReturnsList) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(list):
+  pass
+a = []
+b = C([1, 2, 3])
+c = a + b
+)")
+                   .isError());
+  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
+  EXPECT_PYLIST_EQ(c, {1, 2, 3});
+}
+
 TEST_F(ListBuiltinsTest, AddWithNonListSelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "list.__add__(None, [])"), LayoutId::kTypeError,
