@@ -1240,6 +1240,42 @@ class SumTests(unittest.TestCase):
         self.assertEqual(result, 0)
 
 
+class TupleTests(unittest.TestCase):
+    def test_dunder_new_with_no_iterable_arg_returns_empty_tuple(self):
+        result = tuple.__new__(tuple)
+        self.assertIs(result, ())
+
+    def test_dunder_new_with_iterable_returns_tuple_with_elements(self):
+        result = tuple.__new__(tuple, [1, 2, 3])
+        self.assertEqual(result, (1, 2, 3))
+
+    def test_dunder_new_with_raising_dunder_iter_descriptor_raises_type_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise UserWarning("foo")
+
+        class C:
+            __iter__ = Desc()
+
+        with self.assertRaises(TypeError) as context:
+            tuple(C())
+        self.assertEqual(str(context.exception), "'C' object is not iterable")
+
+    def test_dunder_new_with_raising_dunder_next_descriptor_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise UserWarning("foo")
+
+        class C:
+            def __iter__(self):
+                return self
+
+            __next__ = Desc()
+
+        with self.assertRaises(UserWarning):
+            tuple(C())
+
+
 class TypeTests(unittest.TestCase):
     def test_abstract_methods_get_with_builtin_type_raises_attribute_error(self):
         with self.assertRaises(AttributeError) as context:

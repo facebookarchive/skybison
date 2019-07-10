@@ -48,7 +48,11 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterable, SymbolId::kDunderIter));
   if (iter_method.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+    if (iter_method.isErrorNotFound()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "object is not iterable");
+    }
+    return *iter_method;
   }
   Object iterator(&scope,
                   Interpreter::callMethod1(thread, thread->currentFrame(),
@@ -60,8 +64,11 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
       &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
                                         iterator, SymbolId::kDunderNext));
   if (next_method.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "iter() returned a non-iterator");
+    if (next_method.isErrorNotFound()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "iter() returned a non-iterator");
+    }
+    return *next_method;
   }
   Object value(&scope, NoneType::object());
   for (;;) {
@@ -234,10 +241,10 @@ RawObject ListBuiltins::dunderAdd(Thread* thread, Frame* frame, word nargs) {
   List new_list(&scope, runtime->newList());
   runtime->listEnsureCapacity(thread, new_list,
                               self.numItems() + other.numItems());
-  new_list = listExtend(thread, new_list, self);
-  if (!new_list.isError()) {
-    new_list = listExtend(thread, new_list, other);
-  }
+  Object result(&scope, listExtend(thread, new_list, self));
+  if (result.isError()) return *result;
+  result = listExtend(thread, new_list, other);
+  if (result.isError()) return *result;
   return *new_list;
 }
 
@@ -306,10 +313,8 @@ RawObject ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
   }
   List list(&scope, *self);
   Object value(&scope, args.get(1));
-  list = listExtend(thread, list, value);
-  if (list.isError()) {
-    return *list;
-  }
+  Object result(&scope, listExtend(thread, list, value));
+  if (result.isError()) return *result;
   return NoneType::object();
 }
 

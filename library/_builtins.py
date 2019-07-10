@@ -390,6 +390,11 @@ def _tuple_checkexact(obj):
 
 
 @_patch
+def _tuple_new(cls, iterable):
+    pass
+
+
+@_patch
 def _type(obj):
     pass
 

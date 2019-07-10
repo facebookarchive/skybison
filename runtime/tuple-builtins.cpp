@@ -65,7 +65,6 @@ const BuiltinMethod TupleBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderMul, dunderMul},
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
@@ -318,96 +317,6 @@ RawObject TupleBuiltins::dunderMul(Thread* thread, Frame* frame, word nargs) {
     }
   }
   return *new_tuple;
-}
-
-static RawObject newTupleOrUserSubclass(Thread* thread, const Tuple& tuple,
-                                        const Type& type) {
-  if (type.isBuiltin()) return *tuple;
-  HandleScope scope(thread);
-  Layout layout(&scope, type.instanceLayout());
-  UserTupleBase instance(&scope, thread->runtime()->newInstance(layout));
-  instance.setTupleValue(*tuple);
-  return *instance;
-}
-
-RawObject TupleBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object type_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfType(*type_obj)) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "tuple.__new__(X): X is not a type object");
-  }
-
-  Type type(&scope, *type_obj);
-  if (type.builtinBase() != LayoutId::kTuple) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError, "tuple.__new__(X): X is not a subclass of tuple");
-  }
-
-  // If no iterable is given as an argument, return an empty zero tuple.
-  if (args.get(1).isUnbound()) {
-    Tuple tuple(&scope, runtime->emptyTuple());
-    return newTupleOrUserSubclass(thread, tuple, type);
-  }
-
-  // Construct a new tuple from the iterable.
-  Object iterable(&scope, args.get(1));
-  Object dunder_iter(&scope, Interpreter::lookupMethod(thread, frame, iterable,
-                                                       SymbolId::kDunderIter));
-  if (dunder_iter.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
-  }
-  Object iterator(
-      &scope, Interpreter::callMethod1(thread, frame, dunder_iter, iterable));
-  Object dunder_next(&scope, Interpreter::lookupMethod(thread, frame, iterator,
-                                                       SymbolId::kDunderNext));
-  word max_len = 10;
-  // If the iterator has a __length_hint__, use that as max_len to avoid
-  // resizes.
-  Type iter_type(&scope, runtime->typeOf(*iterator));
-  Object length_hint(
-      &scope,
-      typeLookupSymbolInMro(thread, iter_type, SymbolId::kDunderLengthHint));
-  if (length_hint.isSmallInt()) {
-    max_len = SmallInt::cast(*length_hint).value();
-  }
-
-  word curr = 0;
-  Tuple result(&scope, runtime->newTuple(max_len));
-  // Iterate through the iterable, copying elements into the tuple.
-  for (;;) {
-    Object elem(&scope,
-                Interpreter::callMethod1(thread, frame, dunder_next, iterator));
-    if (elem.isError()) {
-      if (thread->clearPendingStopIteration()) break;
-      return *elem;
-    }
-    // If the capacity of the current result is reached, create a new larger
-    // tuple and copy over the contents.
-    if (curr == max_len) {
-      max_len *= 2;
-      Tuple new_tuple(&scope, runtime->newTuple(max_len));
-      for (word i = 0; i < curr; i++) {
-        new_tuple.atPut(i, result.at(i));
-      }
-      result = *new_tuple;
-    }
-    result.atPut(curr++, *elem);
-  }
-
-  // If the result is perfectly sized, return it.
-  if (curr == max_len) {
-    return newTupleOrUserSubclass(thread, result, type);
-  }
-
-  // The result was over-allocated, shrink it.
-  Tuple new_tuple(&scope, runtime->newTuple(curr));
-  for (word i = 0; i < curr; i++) {
-    new_tuple.atPut(i, result.at(i));
-  }
-  return newTupleOrUserSubclass(thread, new_tuple, type);
 }
 
 RawObject TupleBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

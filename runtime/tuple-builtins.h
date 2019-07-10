@@ -31,7 +31,6 @@ class TupleBuiltins
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
   static RawObject slice(Thread* thread, const Tuple& tuple,
                          const Slice& slice);

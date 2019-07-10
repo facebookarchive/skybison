@@ -303,28 +303,6 @@ TEST_F(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
   ASSERT_EQ(*test1, *tuple1);
 }
 
-TEST_F(TupleBuiltinsTest, DunderNewWithNoIterableArgReturnsEmptyTuple) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = tuple.__new__(tuple)").isError());
-  Tuple ret(&scope, moduleAt(&runtime_, "__main__", "result"));
-  EXPECT_EQ(ret.length(), 0);
-}
-
-TEST_F(TupleBuiltinsTest, DunderNewWithIterableReturnsTuple) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-a = tuple.__new__(tuple, [1, 2, 3])
-)")
-                   .isError());
-  Tuple a(&scope, moduleAt(&runtime_, "__main__", "a"));
-
-  ASSERT_EQ(a.length(), 3);
-  EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(a.at(1), 2));
-  EXPECT_TRUE(isIntEqualsWord(a.at(2), 3));
-}
-
 TEST_F(TupleBuiltinsTest, DunderReprWithManyPrimitives) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = (1, 2, 3).__repr__()

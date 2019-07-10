@@ -10,6 +10,7 @@
 #include "list-builtins.h"
 #include "object-builtins.h"
 #include "str-builtins.h"
+#include "tuple-builtins.h"
 #include "type-builtins.h"
 
 namespace python {
@@ -120,6 +121,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
+    {SymbolId::kUnderTupleNew, underTupleNew},
     {SymbolId::kUnderType, underType},
     {SymbolId::kUnderTypeAbstractMethodsDel, underTypeAbstractMethodsDel},
     {SymbolId::kUnderTypeAbstractMethodsGet, underTypeAbstractMethodsGet},
@@ -1468,6 +1470,30 @@ RawObject UnderBuiltinsModule::underTupleCheckExact(Thread*, Frame* frame,
                                                     word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isTuple());
+}
+
+RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Object iterable(&scope, args.get(1));
+  Tuple tuple(&scope, runtime->emptyTuple());
+  if (runtime->isInstanceOfTuple(*iterable)) {
+    tuple = tupleUnderlying(thread, iterable);
+  } else {
+    DCHECK(runtime->isInstanceOfList(*iterable),
+           "iterable must be a tuple or a list");
+    List list(&scope, *iterable);
+    Tuple items(&scope, list.items());
+    tuple = runtime->tupleSubseq(thread, items, 0, list.numItems());
+  }
+  if (type.isBuiltin()) return *tuple;
+  Layout layout(&scope, type.instanceLayout());
+  UserTupleBase instance(&scope, thread->runtime()->newInstance(layout));
+  instance.setTupleValue(*tuple);
+  return *instance;
 }
 
 RawObject UnderBuiltinsModule::underType(Thread* thread, Frame* frame,

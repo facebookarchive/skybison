@@ -82,6 +82,7 @@ _str_splitlines = _str_splitlines  # noqa: F821
 _traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _tuple_checkexact = _tuple_checkexact  # noqa: F821
+_tuple_new = _tuple_new  # noqa: F821
 _type = _type  # noqa: F821
 _type_abstractmethods_del = _type_abstractmethods_del  # noqa: F821
 _type_abstractmethods_get = _type_abstractmethods_get  # noqa: F821
@@ -3516,7 +3517,23 @@ class tuple(bootstrap=True):
         pass
 
     def __new__(cls, iterable=_Unbound):
-        pass
+        if not _type_check(cls):
+            raise TypeError(
+                f"tuple.__new__(X): X is not a type object ({_type(cls).__name__})"
+            )
+        if not _type_issubclass(cls, tuple):
+            raise TypeError(
+                f"tuple.__new__(X): {_type(cls).__name__} is not a subtype of tuple"
+            )
+        if iterable is _Unbound:
+            return _tuple_new(cls, ())
+        if _tuple_check(iterable) or _list_check(iterable):
+            return _tuple_new(cls, iterable)
+        try:
+            it = iter(iterable)
+        except Exception:
+            raise TypeError(f"'{_type(iterable).__name__}' object is not iterable")
+        return _tuple_new(cls, list(it))
 
     def __repr__(self):
         if _repr_enter(self):

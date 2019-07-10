@@ -276,6 +276,7 @@ class Runtime;
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderTupleCheckExact, "_tuple_checkexact")                                 \
+  V(UnderTupleNew, "_tuple_new")                                               \
   V(UnderTraceback, "_traceback")                                              \
   V(UnderType, "_type")                                                        \
   V(UnderTypeAbstractMethodsDel, "_type_abstractmethods_del")                  \

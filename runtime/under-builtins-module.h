@@ -123,6 +123,7 @@ class UnderBuiltinsModule {
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheckExact(Thread* thread, Frame* frame,
                                         word nargs);
+  static RawObject underTupleNew(Thread* thread, Frame* frame, word nargs);
   static RawObject underType(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeAbstractMethodsDel(Thread* thread, Frame* frame,
                                                word nargs);
