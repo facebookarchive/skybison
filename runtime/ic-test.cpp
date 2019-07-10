@@ -1098,6 +1098,25 @@ result = container[0]
                             LayoutId::kUserWarning, "foo"));
 }
 
+TEST(IcTestNoFixture,
+     ForIterUpdateCacheWithRaisingDescriptorDunderNextPropagatesException) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Desc:
+  def __get__(self, instance, type):
+    raise UserWarning("foo")
+
+class C:
+  def __iter__(self):
+    return self
+  __next__ = Desc()
+
+container = C()
+result = [x for x in container]
+)"),
+                            LayoutId::kUserWarning, "foo"));
+}
+
 TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(

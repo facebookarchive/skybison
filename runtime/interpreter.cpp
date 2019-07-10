@@ -2014,6 +2014,7 @@ bool Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
   }
 
   next = resolveDescriptorGet(thread, next, iter, type);
+  if (next.isError()) return true;
   Object result(&scope, callFunction0(thread, frame, next));
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
