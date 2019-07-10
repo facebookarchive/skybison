@@ -1554,7 +1554,9 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
   Object method(&scope,
                 lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (method.isError()) {
-    thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+    if (method.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+    }
     return Continue::UNWIND;
   }
   return tailcallMethod1(thread, *method, *iterable);

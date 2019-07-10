@@ -1220,6 +1220,22 @@ TEST_F(InterpreterTest, DoDeleteSubscrDoesntPushToStack) {
   EXPECT_EQ(list.numItems(), 0);
 }
 
+TEST_F(InterpreterTest,
+       GetIterWithRaisingDescriptorDunderIterPropagatesException) {
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
+class Desc:
+  def __get__(self, obj, type):
+    raise UserWarning("foo")
+
+class C:
+  __iter__ = Desc()
+
+it = C()
+result = [x for x in it]
+)"),
+                            LayoutId::kUserWarning, "foo"));
+}
+
 TEST_F(InterpreterTest, SequenceContains) {
   HandleScope scope(thread_);
 
