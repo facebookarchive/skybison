@@ -1131,6 +1131,58 @@ class StrTests(unittest.TestCase):
         result = str.format("1{a}2{b}3{c}4{b}5", a="a", b="b", c="c")
         self.assertEqual(result, "1a2b3c4b5")
 
+    def test_join_with_raising_descriptor_dunder_iter_raises_type_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise UserWarning("foo")
+
+        class C:
+            __iter__ = Desc()
+
+        with self.assertRaises(TypeError):
+            str.join("", C())
+
+    def test_join_with_non_string_in_items_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.join(",", ["hello", 1])
+        self.assertEqual(
+            str(context.exception), "sequence item 1: expected str instance, int found"
+        )
+
+    def test_join_with_non_string_separator_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.join(None, ["hello", "world"])
+        self.assertTrue(
+            str(context.exception).endswith(
+                "'join' requires a 'str' object but received a 'NoneType'"
+            )
+        )
+
+    def test_join_with_empty_items_returns_empty_string(self):
+        result = str.join(",", ())
+        self.assertEqual(result, "")
+
+    def test_join_with_one_item_returns_item(self):
+        result = str.join(",", ("foo",))
+        self.assertEqual(result, "foo")
+
+    def test_join_with_empty_separator_uses_empty_string(self):
+        result = str.join("", ("1", "2", "3"))
+        self.assertEqual(result, "123")
+
+    def test_join_with_tuple_joins_elements(self):
+        result = str.join(",", ("1", "2", "3"))
+        self.assertEqual(result, "1,2,3")
+
+    def test_join_with_tuple_subclass_calls_dunder_iter(self):
+        class C(tuple):
+            def __iter__(self):
+                return ("a", "b", "c").__iter__()
+
+        elements = C(("p", "q", "r"))
+        result = "".join(elements)
+        self.assertEqual(result, "abc")
+
     def test_splitlines_with_non_str_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.splitlines(None)

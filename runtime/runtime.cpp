@@ -3526,8 +3526,9 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   for (word i = 0; i < allocated; ++i) {
     Object elt(&scope, items.at(i));
     if (!elt.isStr() && !isInstanceOfStr(*elt)) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "sequence item %w: expected str instance", i);
+      return thread->raiseWithFmt(
+          LayoutId::kTypeError,
+          "sequence item %w: expected str instance, %T found", i, &elt);
     }
     Str str(&scope, items.at(i));
     result_len += str.length();

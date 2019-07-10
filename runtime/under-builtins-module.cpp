@@ -113,6 +113,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceCheck, underSliceCheck},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
+    {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
@@ -1399,6 +1400,23 @@ RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
   UserStrBase instance(&scope, thread->runtime()->newInstance(type_layout));
   instance.setValue(*value);
   return *instance;
+}
+
+RawObject UnderBuiltinsModule::underStrJoin(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Runtime* runtime = thread->runtime();
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Str sep(&scope, args.get(0));
+  Object iterable(&scope, args.get(1));
+  if (iterable.isTuple()) {
+    Tuple tuple(&scope, *iterable);
+    return runtime->strJoin(thread, sep, tuple, tuple.length());
+  }
+  DCHECK(iterable.isList(), "iterable must be tuple or list");
+  List list(&scope, *iterable);
+  Tuple tuple(&scope, list.items());
+  return runtime->strJoin(thread, sep, tuple, list.numItems());
 }
 
 RawObject UnderBuiltinsModule::underStrReplace(Thread* thread, Frame* frame,

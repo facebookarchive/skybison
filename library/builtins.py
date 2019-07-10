@@ -73,6 +73,7 @@ _set_member_integral = _set_member_integral  # noqa: F821
 _set_member_pyobject = _set_member_pyobject  # noqa: F821
 _slice_check = _slice_check  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
 _str_from_str = _str_from_str  # noqa: F821
@@ -3213,7 +3214,18 @@ class str(bootstrap=True):
         return True
 
     def join(self, items) -> str:
-        pass
+        if not _str_check(self):
+            raise TypeError(
+                "'join' requires a 'str' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        if _tuple_checkexact(tuple) or _list_checkexact(items):
+            return _str_join(self, items)
+        try:
+            it = iter(items)
+        except Exception:
+            raise TypeError("can only join an iterable")
+        return _str_join(self, list(it))
 
     def ljust(self, width, fillchar):
         _unimplemented()

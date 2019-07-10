@@ -113,6 +113,7 @@ class UnderBuiltinsModule {
   static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underStrFind(Thread* thread, Frame* frame, word nargs);

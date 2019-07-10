@@ -262,6 +262,7 @@ class Runtime;
   V(UnderStrArray, "_strarray")                                                \
   V(UnderStrArrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
+  V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
   V(UnderStrFromStr, "_str_from_str")                                          \

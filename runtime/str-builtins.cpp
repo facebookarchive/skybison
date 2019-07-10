@@ -272,7 +272,6 @@ const BuiltinMethod StrBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderMul, dunderMul},
     {SymbolId::kDunderNe, dunderNe},
     {SymbolId::kDunderRepr, dunderRepr},
-    {SymbolId::kJoin, join},
     {SymbolId::kLower, lower},
     {SymbolId::kLStrip, lstrip},
     {SymbolId::kRStrip, rstrip},
@@ -577,34 +576,6 @@ RawObject strRFind(const Str& haystack, const Str& needle, word start,
     i = next;
   }
   return SmallInt::fromWord(last_index);
-}
-
-RawObject StrBuiltins::join(Thread* thread, Frame* frame, word nargs) {
-  Runtime* runtime = thread->runtime();
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object sep_obj(&scope, args.get(0));
-  if (!runtime->isInstanceOfStr(*sep_obj)) {
-    return thread->raiseRequiresType(sep_obj, SymbolId::kStr);
-  }
-  Str sep(&scope, *sep_obj);
-  Object iterable(&scope, args.get(1));
-  // Tuples of strings
-  if (iterable.isTuple()) {
-    Tuple tuple(&scope, *iterable);
-    return runtime->strJoin(thread, sep, tuple, tuple.length());
-  }
-  // Lists of strings
-  if (iterable.isList()) {
-    List list(&scope, *iterable);
-    Tuple tuple(&scope, list.items());
-    return runtime->strJoin(thread, sep, tuple, list.numItems());
-  }
-  // Iterators of strings
-  List list(&scope, runtime->newList());
-  listExtend(thread, list, iterable);
-  Tuple tuple(&scope, list.items());
-  return runtime->strJoin(thread, sep, tuple, list.numItems());
 }
 
 RawObject StrBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {

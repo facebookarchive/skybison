@@ -345,6 +345,11 @@ def _str_check(obj):
 
 
 @_patch
+def _str_join(sep, iterable):
+    pass
+
+
+@_patch
 def _str_escape_non_ascii(s):
     pass
 
