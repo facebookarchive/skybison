@@ -853,6 +853,51 @@ class IsSubclassTests(unittest.TestCase):
         self.assertIs(issubclass(A(), list), True)
 
 
+class IterTests(unittest.TestCase):
+    def test_iter_with_no_dunder_iter_raises_type_error(self):
+        class C:
+            pass
+
+        c = C()
+
+        with self.assertRaises(TypeError) as context:
+            iter(c)
+
+        self.assertEqual(str(context.exception), "'C' object is not iterable")
+
+    def test_iter_with_dunder_iter_calls_dunder_iter(self):
+        class C:
+            def __iter__(self):
+                raise UserWarning("foo")
+
+        c = C()
+
+        with self.assertRaises(UserWarning) as context:
+            iter(c)
+
+        self.assertEqual(str(context.exception), "foo")
+
+    def test_iter_with_raising_descriptor_dunder_iter_raises_type_error(self):
+        dunder_get_called = False
+
+        class Desc:
+            def __get__(self, obj, type):
+                nonlocal dunder_get_called
+                dunder_get_called = True
+                raise UserWarning("foo")
+
+        class C:
+            __iter__ = Desc()
+
+        c = C()
+
+        with self.assertRaises(TypeError) as context:
+            iter(c)
+
+        self.assertEqual(str(context.exception), "'C' object is not iterable")
+        self.assertTrue(dunder_get_called)
+
+
 class ReversedTests(unittest.TestCase):
     def test_reversed_iterates_backwards_over_iterable(self):
         it = reversed([1, 2, 3])

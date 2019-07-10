@@ -2270,7 +2270,7 @@ def iter(obj, sentinel=None):
     if sentinel is None:
         try:
             dunder_iter = _type(obj).__iter__
-        except AttributeError:
+        except Exception:
             raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
         return dunder_iter(obj)
 
