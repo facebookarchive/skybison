@@ -61,9 +61,6 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
                                           const Object& name_str,
                                           const Object& dependent);
 
-// Delete all caches for the given index.
-void icInvalidateCache(RawTuple caches, word index);
-
 // Delete dependent in ValueCell's dependencyLink.
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
                                   const Object& dependent);

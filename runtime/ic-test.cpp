@@ -689,30 +689,6 @@ class C(B):
   EXPECT_TRUE(c_link.next().isNoneType());
 }
 
-TEST_F(IcTest, IcInvalidateCacheDeletesAllCacheEntriesForIndex) {
-  HandleScope scope(thread_);
-  Tuple caches(&scope, runtime_.newTuple(2 * kIcPointersPerCache));
-
-  Object value0(&scope, runtime_.newInt(88));
-  Object value1(&scope, runtime_.newFloat(3.14));
-  icUpdate(*caches, 0, value0.layoutId(), *value0);
-  icUpdate(*caches, 0, value1.layoutId(), *value1);
-  icUpdate(*caches, 1, value0.layoutId(), *value0);
-  icUpdate(*caches, 1, value1.layoutId(), *value1);
-
-  ASSERT_EQ(icLookup(*caches, 0, value0.layoutId()), value0);
-  ASSERT_EQ(icLookup(*caches, 0, value1.layoutId()), value1);
-  ASSERT_EQ(icLookup(*caches, 1, value0.layoutId()), value0);
-  ASSERT_EQ(icLookup(*caches, 1, value1.layoutId()), value1);
-
-  icInvalidateCache(*caches, 1);
-
-  EXPECT_EQ(icLookup(*caches, 0, value0.layoutId()), value0);
-  EXPECT_EQ(icLookup(*caches, 0, value1.layoutId()), value1);
-  EXPECT_TRUE(icLookup(*caches, 1, value0.layoutId()).isErrorNotFound());
-  EXPECT_TRUE(icLookup(*caches, 1, value1.layoutId()).isErrorNotFound());
-}
-
 TEST_F(IcTest, IcDeleteDependentInValueCellDependencyLinkDeletesDependent) {
   HandleScope scope(thread_);
   ValueCell value_cell(&scope, runtime_.newValueCell());
@@ -980,12 +956,13 @@ class D(C): pass
 
 class X: pass
 
+x = X()
 c = C()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Type type(&scope, moduleAt(&runtime_, "__main__", "C"));
-  Dict type_dict(&scope, type.dict());
+  Type c_type(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Dict c_type_dict(&scope, c_type.dict());
   Str foo_name(&scope, runtime_.newStrFromCStr("foo"));
   Function dependent(&scope,
                      testingFunctionCachingAttributes(thread_, foo_name));
@@ -994,34 +971,38 @@ c = C()
   ValueCell foo(&scope, runtime_.newValueCell());
   ASSERT_TRUE(
       icInsertDependentToValueCellDependencyLink(thread_, dependent, foo));
-  runtime_.dictAtPut(thread_, type_dict, foo_name, foo);
+  runtime_.dictAtPut(thread_, c_type_dict, foo_name, foo);
 
   // Create an instance offset cache for an instance of C, under name "foo".
-  Object instance(&scope, moduleAt(&runtime_, "__main__", "c"));
+  Object c(&scope, moduleAt(&runtime_, "__main__", "c"));
   Tuple caches(&scope, dependent.caches());
-  icUpdate(*caches, 1, instance.layoutId(), SmallInt::fromWord(1234));
-  ASSERT_EQ(icLookup(*caches, 1, instance.layoutId()),
-            SmallInt::fromWord(1234));
+  icUpdate(*caches, 1, c.layoutId(), SmallInt::fromWord(1234));
+  ASSERT_EQ(icLookup(*caches, 1, c.layoutId()), SmallInt::fromWord(1234));
+
+  // Create an instance offset cache for an instance of X, under name "foo".
+  Object x(&scope, moduleAt(&runtime_, "__main__", "x"));
+  icUpdate(*caches, 1, x.layoutId(), SmallInt::fromWord(5678));
+  ASSERT_EQ(icLookup(*caches, 1, x.layoutId()), SmallInt::fromWord(5678));
+
+  // Unrelated class doesn't affect attribute caches of any other types, but
+  // only delete caches matching type.
+  Type x_type(&scope, moduleAt(&runtime_, "__main__", "X"));
+  icDeleteCacheForTypeAttrInDependent(thread_, x_type, foo_name, true,
+                                      dependent);
+  EXPECT_TRUE(icLookup(*caches, 1, x.layoutId()).isErrorNotFound());
+  EXPECT_EQ(icLookup(*caches, 1, c.layoutId()), SmallInt::fromWord(1234));
 
   // Subclass doesn't affect superclass's caches.
-  Type subclass_type(&scope, moduleAt(&runtime_, "__main__", "D"));
-  icDeleteCacheForTypeAttrInDependent(thread_, subclass_type, foo_name, true,
+  Type d_type(&scope, moduleAt(&runtime_, "__main__", "D"));
+  icDeleteCacheForTypeAttrInDependent(thread_, d_type, foo_name, true,
                                       dependent);
-  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
-            SmallInt::fromWord(1234));
-
-  // Unrelated class doesn't affect superclass's caches.
-  Type unrelated_type(&scope, moduleAt(&runtime_, "__main__", "X"));
-  icDeleteCacheForTypeAttrInDependent(thread_, unrelated_type, foo_name, true,
-                                      dependent);
-  EXPECT_EQ(icLookup(*caches, 1, instance.layoutId()),
-            SmallInt::fromWord(1234));
+  EXPECT_EQ(icLookup(*caches, 1, c.layoutId()), SmallInt::fromWord(1234));
 
   // Superclass change deletes subclasses' caches.
-  Type superclass_type(&scope, moduleAt(&runtime_, "__main__", "B"));
-  icDeleteCacheForTypeAttrInDependent(thread_, superclass_type, foo_name, true,
+  Type b_type(&scope, moduleAt(&runtime_, "__main__", "B"));
+  icDeleteCacheForTypeAttrInDependent(thread_, b_type, foo_name, true,
                                       dependent);
-  EXPECT_TRUE(icLookup(*caches, 1, instance.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(icLookup(*caches, 1, c.layoutId()).isErrorNotFound());
 }
 
 // Verify if IcInvalidateCachesForTypeAttr calls

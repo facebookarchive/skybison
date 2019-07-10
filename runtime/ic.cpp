@@ -287,14 +287,6 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
   }
 }
 
-void icInvalidateCache(RawTuple caches, word index) {
-  for (word i = index * kIcPointersPerCache, end = i + kIcPointersPerCache;
-       i < end; i += kIcPointersPerEntry) {
-    caches.atPut(i + kIcEntryKeyOffset, NoneType::object());
-    caches.atPut(i + kIcEntryValueOffset, NoneType::object());
-  }
-}
-
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
                                   const Object& dependent) {
   HandleScope scope(thread);
@@ -406,7 +398,8 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread, const Type& type,
         continue;
       }
 
-      icInvalidateCache(*caches, op.arg);
+      caches.atPut(j + kIcEntryKeyOffset, NoneType::object());
+      caches.atPut(j + kIcEntryValueOffset, NoneType::object());
 
       // Delete all direct/indirect dependencies from the deleted cache to
       // dependent since such dependencies are gone now.
