@@ -1311,7 +1311,9 @@ class bytes(bootstrap=True):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
-        if hasattr(_type(sub), "__int__") or hasattr(_type(sub), "__float__"):
+        if _object_type_hasattr(sub, "__int__") or _object_type_hasattr(
+            sub, "__float__"
+        ):
             try:
                 return _byteslike_find_int(self, _index(sub), start, end)
             except TypeError:

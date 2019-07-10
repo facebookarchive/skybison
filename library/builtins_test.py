@@ -196,6 +196,46 @@ class BytesTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             haystack.find(needle)
 
+    def test_find_with_raising_descriptor_dunder_int_does_not_call_dunder_get(self):
+        dunder_get_called = False
+
+        class Desc:
+            def __get__(self, obj, type):
+                nonlocal dunder_get_called
+                dunder_get_called = True
+                raise UserWarning("foo")
+
+        class Idx:
+            __int__ = Desc()
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.find(needle), 0)
+        self.assertFalse(dunder_get_called)
+
+    def test_find_with_raising_descriptor_dunder_float_does_not_call_dunder_get(self):
+        dunder_get_called = False
+
+        class Desc:
+            def __get__(self, obj, type):
+                nonlocal dunder_get_called
+                dunder_get_called = True
+                raise UserWarning("foo")
+
+        class Idx:
+            __float__ = Desc()
+
+            def __index__(self):
+                return ord("a")
+
+        haystack = b"abc"
+        needle = Idx()
+        self.assertEqual(haystack.find(needle), 0)
+        self.assertFalse(dunder_get_called)
+
     def test_find_with_dunder_int_calls_dunder_index(self):
         class Idx:
             def __int__(self):
