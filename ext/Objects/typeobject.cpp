@@ -1787,8 +1787,23 @@ PY_EXPORT PyObject* _PyObject_LookupSpecial(PyObject* /* f */,
   UNIMPLEMENTED("_PyObject_LookupSpecial");
 }
 
-PY_EXPORT const char* _PyType_Name(PyTypeObject* /* type */) {
-  UNIMPLEMENTED("_PyType_Name");
+PY_EXPORT const char* _PyType_Name(PyTypeObject* type) {
+  Thread* thread = Thread::current();
+  if (type == nullptr) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  HandleScope scope(thread);
+  Object obj(
+      &scope,
+      ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
+  if (!thread->runtime()->isInstanceOfType(*obj)) {
+    thread->raiseBadInternalCall();
+    return nullptr;
+  }
+  Type type_obj(&scope, *obj);
+  return PyUnicode_AsUTF8(
+      ApiHandle::borrowedReference(thread, type_obj.name()));
 }
 
 PY_EXPORT PyObject* _PyType_Lookup(PyTypeObject* /* type */,

@@ -2335,4 +2335,42 @@ r1 = b.raise_attribute
   EXPECT_EQ(PyLong_AsLong(r1), 123);
 }
 
+TEST_F(TypeExtensionApiTest, PyTypeNameWithNullTypeRaisesSystemError) {
+  EXPECT_EQ(_PyType_Name(nullptr), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(TypeExtensionApiTest, PyTypeNameWithNonTypeRaisesSystemError) {
+  PyObjectPtr long_obj(PyLong_FromLong(5));
+  EXPECT_EQ(_PyType_Name(reinterpret_cast<PyTypeObject*>(long_obj.get())),
+            nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(TypeExtensionApiTest, PyTypeNameWithBuiltinTypeReturnsName) {
+  PyObjectPtr long_obj(PyLong_FromLong(5));
+  const char* name = _PyType_Name(Py_TYPE(long_obj));
+  EXPECT_STREQ(name, "int");
+}
+
+TEST_F(TypeExtensionApiTest, PyTypeNameReturnsSamePointerEachCall) {
+  PyObjectPtr long_obj(PyLong_FromLong(5));
+  const char* name = _PyType_Name(Py_TYPE(long_obj));
+  EXPECT_STREQ(name, "int");
+  const char* name2 = _PyType_Name(Py_TYPE(long_obj));
+  EXPECT_EQ(name, name2);
+}
+
+TEST_F(TypeExtensionApiTest, PyTypeNameWithUserDefinedTypeReturnsName) {
+  PyRun_SimpleString(R"(
+class FooBarTheBaz:
+  pass
+)");
+  PyObjectPtr c(moduleGet("__main__", "FooBarTheBaz"));
+  const char* name = _PyType_Name(reinterpret_cast<PyTypeObject*>(c.get()));
+  EXPECT_STREQ(name, "FooBarTheBaz");
+}
+
 }  // namespace python
