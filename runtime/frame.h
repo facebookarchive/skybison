@@ -97,12 +97,12 @@ class BlockStack {
 
   TryBlock peek();
 
-  void setDepth(word new_top);
+  void setDepth(word new_depth);
 
   static const int kStackOffset = 0;
-  static const int kTopOffset =
+  static const int kDepthOffset =
       kStackOffset + kMaxBlockStackDepth * kPointerSize;
-  static const int kSize = kTopOffset + kPointerSize;
+  static const int kSize = kDepthOffset + kPointerSize;
 
  private:
   uword address();
@@ -538,12 +538,12 @@ inline void BlockStack::atPut(int offset, RawObject value) {
 }
 
 inline word BlockStack::depth() {
-  return SmallInt::cast(at(kTopOffset)).value();
+  return SmallInt::cast(at(kDepthOffset)).value();
 }
 
-inline void BlockStack::setDepth(word new_top) {
-  DCHECK_INDEX(new_top, kMaxBlockStackDepth);
-  atPut(kTopOffset, SmallInt::fromWord(new_top));
+inline void BlockStack::setDepth(word new_depth) {
+  DCHECK_INDEX(new_depth, kMaxBlockStackDepth);
+  atPut(kDepthOffset, SmallInt::fromWord(new_depth));
 }
 
 inline TryBlock BlockStack::peek() {
