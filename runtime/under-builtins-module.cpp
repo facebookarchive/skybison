@@ -95,6 +95,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderIntNewFromInt, underIntNewFromInt},
     {SymbolId::kUnderIntNewFromStr, underIntNewFromStr},
     {SymbolId::kUnderListCheck, underListCheck},
+    {SymbolId::kUnderListCheckExact, underListCheckExact},
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
     {SymbolId::kUnderListSort, underListSort},
@@ -118,6 +119,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
+    {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
     {SymbolId::kUnderType, underType},
     {SymbolId::kUnderTypeAbstractMethodsDel, underTypeAbstractMethodsDel},
     {SymbolId::kUnderTypeAbstractMethodsGet, underTypeAbstractMethodsGet},
@@ -138,13 +140,14 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderDictCheck,      SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFrozenSetCheck, SymbolId::kUnderIntCheck,
-    SymbolId::kUnderListCheck,      SymbolId::kUnderSetCheck,
-    SymbolId::kUnderSliceCheck,     SymbolId::kUnderStrCheck,
-    SymbolId::kUnderTupleCheck,     SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,      SymbolId::kUnderTypeCheckExact,
+    SymbolId::kUnderByteArrayCheck,  SymbolId::kUnderBytesCheck,
+    SymbolId::kUnderDictCheck,       SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFrozenSetCheck,  SymbolId::kUnderIntCheck,
+    SymbolId::kUnderListCheck,       SymbolId::kUnderListCheckExact,
+    SymbolId::kUnderSetCheck,        SymbolId::kUnderSliceCheck,
+    SymbolId::kUnderStrCheck,        SymbolId::kUnderTupleCheck,
+    SymbolId::kUnderTupleCheckExact, SymbolId::kUnderType,
+    SymbolId::kUnderTypeCheck,       SymbolId::kUnderTypeCheckExact,
     SymbolId::kSentinelId,
 };
 
@@ -1090,6 +1093,12 @@ RawObject UnderBuiltinsModule::underListCheck(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfList(args.get(0)));
 }
 
+RawObject UnderBuiltinsModule::underListCheckExact(Thread*, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isList());
+}
+
 RawObject UnderBuiltinsModule::underListDelItem(Thread* thread, Frame* frame,
                                                 word nargs) {
   Arguments args(frame, nargs);
@@ -1453,6 +1462,12 @@ RawObject UnderBuiltinsModule::underTupleCheck(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfTuple(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underTupleCheckExact(Thread*, Frame* frame,
+                                                    word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isTuple());
 }
 
 RawObject UnderBuiltinsModule::underType(Thread* thread, Frame* frame,

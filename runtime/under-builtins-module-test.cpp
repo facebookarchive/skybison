@@ -1009,6 +1009,27 @@ TEST_F(UnderBuiltinsModuleTest,
       LayoutId::kValueError, "invalid literal for int() with base 8: '0b1'"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderListCheckExactWithExactListReturnsTrue) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newList());
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underListCheckExact, obj),
+            Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderListCheckExactWithListSubclassReturnsFalse) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(list):
+  pass
+obj = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underListCheckExact, obj),
+            Bool::falseObj());
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderListDelItemWithNegativeIndexRemovesRelativeToEnd) {
   HandleScope scope(thread_);
@@ -1340,6 +1361,27 @@ TEST_F(UnderBuiltinsModuleTest,
 
   List result(&scope, runBuiltin(UnderBuiltinsModule::underTypeDictKeys, dict));
   EXPECT_PYLIST_EQ(result, {"foo"});
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderTupleCheckExactWithExactTupleReturnsTrue) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newTuple(0));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underTupleCheckExact, obj),
+            Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderTupleCheckExactWithTupleSubclassReturnsFalse) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C(tuple):
+  pass
+obj = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  EXPECT_EQ(runBuiltin(UnderBuiltinsModule::underTupleCheckExact, obj),
+            Bool::falseObj());
 }
 
 TEST_F(UnderBuiltinsModuleDeathTest, UnderUnimplementedAbortsProgram) {

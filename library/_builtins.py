@@ -261,6 +261,11 @@ def _list_check(obj):
 
 
 @_patch
+def _list_checkexact(obj):
+    pass
+
+
+@_patch
 def _list_delitem(self, key):
     pass
 
@@ -376,6 +381,11 @@ def _strarray_iadd(self, other):
 
 @_patch
 def _tuple_check(obj):
+    pass
+
+
+@_patch
+def _tuple_checkexact(obj):
     pass
 
 

@@ -2958,6 +2958,9 @@ static bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       frame->setTopValue(
           Bool::fromBool(runtime->isInstanceOfList(frame->popValue())));
       return true;
+    case SymbolId::kUnderListCheckExact:
+      frame->setTopValue(Bool::fromBool(frame->popValue().isList()));
+      return true;
     case SymbolId::kUnderSetCheck:
       frame->setTopValue(
           Bool::fromBool(runtime->isInstanceOfSet(frame->popValue())));
@@ -2972,6 +2975,9 @@ static bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
     case SymbolId::kUnderTupleCheck:
       frame->setTopValue(
           Bool::fromBool(runtime->isInstanceOfTuple(frame->popValue())));
+      return true;
+    case SymbolId::kUnderTupleCheckExact:
+      frame->setTopValue(Bool::fromBool(frame->popValue().isTuple()));
       return true;
     case SymbolId::kUnderType:
       frame->setTopValue(runtime->typeOf(frame->popValue()));

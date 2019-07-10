@@ -209,6 +209,7 @@ class Runtime;
   V(UnderIo, "_io")                                                            \
   V(UnderLatin1Encode, "_latin_1_encode")                                      \
   V(UnderListCheck, "_list_check")                                             \
+  V(UnderListCheckExact, "_list_checkexact")                                   \
   V(UnderListDelitem, "_list_delitem")                                         \
   V(UnderListDelslice, "_list_delslice")                                       \
   V(UnderListSort, "_list_sort")                                               \
@@ -274,6 +275,7 @@ class Runtime;
   V(UnderStructseqRepr, "_structseq_repr")                                     \
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
+  V(UnderTupleCheckExact, "_tuple_checkexact")                                 \
   V(UnderTraceback, "_traceback")                                              \
   V(UnderType, "_type")                                                        \
   V(UnderTypeAbstractMethodsDel, "_type_abstractmethods_del")                  \

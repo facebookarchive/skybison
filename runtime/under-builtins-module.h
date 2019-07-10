@@ -88,6 +88,8 @@ class UnderBuiltinsModule {
   static RawObject underIntNewFromInt(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntNewFromStr(Thread* thread, Frame* frame, word nargs);
   static RawObject underListCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListCheckExact(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underListDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
@@ -119,6 +121,8 @@ class UnderBuiltinsModule {
   static RawObject underStrRFind(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrSplitlines(Thread* thread, Frame* frame, word nargs);
   static RawObject underTupleCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTupleCheckExact(Thread* thread, Frame* frame,
+                                        word nargs);
   static RawObject underType(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeAbstractMethodsDel(Thread* thread, Frame* frame,
                                                word nargs);
