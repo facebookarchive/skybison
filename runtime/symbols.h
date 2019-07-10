@@ -437,6 +437,7 @@ class Runtime;
   V(IndexError, "IndexError")                                                  \
   V(IndexOf, "indexOf")                                                        \
   V(Insert, "insert")                                                          \
+  V(Instance, "instance")                                                      \
   V(Int, "int")                                                                \
   V(InterruptedError, "InterruptedError")                                      \
   V(Intersection, "intersection")                                              \
@@ -459,9 +460,11 @@ class Runtime;
   V(Itruediv, "itruediv")                                                      \
   V(Ixor, "ixor")                                                              \
   V(Join, "join")                                                              \
+  V(Key, "key")                                                                \
   V(KeyError, "KeyError")                                                      \
   V(KeyboardInterrupt, "KeyboardInterrupt")                                    \
   V(Keys, "keys")                                                              \
+  V(Kwargs, "kwargs")                                                          \
   V(LStrip, "lstrip")                                                          \
   V(LargeBytes, "largebytes")                                                  \
   V(LargeInt, "largeint")                                                      \
@@ -519,6 +522,7 @@ class Runtime;
   V(OrUnder, "or_")                                                            \
   V(Ord, "ord")                                                                \
   V(OverflowError, "OverflowError")                                            \
+  V(Owner, "owner")                                                            \
   V(Partition, "partition")                                                    \
   V(Path, "path")                                                              \
   V(PendingDeprecationWarning, "PendingDeprecationWarning")                    \
@@ -549,6 +553,7 @@ class Runtime;
   V(Rshift, "rshift")                                                          \
   V(RuntimeError, "RuntimeError")                                              \
   V(RuntimeWarning, "RuntimeWarning")                                          \
+  V(Self, "self")                                                              \
   V(Send, "send")                                                              \
   V(SeqIterator, "iterator")                                                   \
   V(Set, "set")                                                                \

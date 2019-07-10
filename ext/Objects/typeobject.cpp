@@ -741,106 +741,155 @@ struct SlotDef {
   // Our equivalent of the slot id from PyType_Slot.
   ExtensionSlot id;
 
+  // List of parameter names/symbols.
+  const SymbolId* parameters;
+  word num_parameters;
+
   // The wrapper function for this slot.
   Function::Entry wrapper;
 
-  // True if and only if the function expect varargs and varkwargs.
-  bool is_varkw;
+  // RawCode::Flags to be set on slot function.
+  word flags;
 
   // Doc string for the function.
   const char* doc;
 };
+
+static const SymbolId kParamsSelfArgsKwargs[] = {
+    SymbolId::kSelf, SymbolId::kArgs, SymbolId::kKwargs};
+static const SymbolId kParamsSelfInstanceOwner[] = {
+    SymbolId::kSelf, SymbolId::kInstance, SymbolId::kOwner};
+static const SymbolId kParamsSelfInstanceValue[] = {
+    SymbolId::kSelf, SymbolId::kInstance, SymbolId::kValue};
+static const SymbolId kParamsSelfInstance[] = {SymbolId::kSelf,
+                                               SymbolId::kInstance};
+static const SymbolId kParamsSelfKeyValue[] = {SymbolId::kSelf, SymbolId::kKey,
+                                               SymbolId::kValue};
+static const SymbolId kParamsSelfKey[] = {SymbolId::kSelf, SymbolId::kKey};
+static const SymbolId kParamsSelfNameValue[] = {
+    SymbolId::kSelf, SymbolId::kName, SymbolId::kValue};
+static const SymbolId kParamsSelfName[] = {SymbolId::kSelf, SymbolId::kName};
+static const SymbolId kParamsSelfValueMod[] = {
+    SymbolId::kSelf, SymbolId::kValue, SymbolId::kMod};
+static const SymbolId kParamsSelfValue[] = {SymbolId::kSelf, SymbolId::kValue};
+static const SymbolId kParamsSelf[] = {SymbolId::kSelf};
+static const SymbolId kParamsTypeArgsKwargs[] = {
+    SymbolId::kType, SymbolId::kArgs, SymbolId::kKwargs};
 
 // These macros currently ignore the FUNCTION argument, which is still the
 // function name inherited from CPython. This will be cleaned up when we add
 // default slot implementations that delegate to the corresponding Python
 // method, along with logic to update slots as needed when a user assigns to a
 // type dict.
-#define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC)                             \
-  { SymbolId::NAME, ExtensionSlot::SLOT, WRAPPER, false, DOC }
-#define KWSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC)                             \
-  { SymbolId::NAME, ExtensionSlot::SLOT, WRAPPER, true, DOC }
+#define TPSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
+  {                                                                            \
+    SymbolId::NAME, ExtensionSlot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS),    \
+        WRAPPER, 0, DOC                                                        \
+  }
+#define KWSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
+  {                                                                            \
+    SymbolId::NAME, ExtensionSlot::SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS),    \
+        WRAPPER, Code::Flags::VARARGS | Code::Flags::VARKEYARGS, DOC           \
+  }
 #define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
-  TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, C_NAME "($self, /)\n--\n\n" DOC)
+  TPSLOT(NAME, SLOT, kParamsSelf, FUNCTION, WRAPPER,                           \
+         C_NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, C_NAME, SLOT, FUNCTION, WRAPPER, DOC)                     \
-  TPSLOT(NAME, SLOT, FUNCTION, WRAPPER,                                        \
+  TPSLOT(NAME, SLOT, kParamsSelfValue, FUNCTION, WRAPPER,                      \
          C_NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
 #define BINSLOT(NAME, C_NAME, SLOT, FUNCTION, DOC)                             \
-  TPSLOT(NAME, SLOT, FUNCTION, wrapBinaryfunc,                                 \
+  TPSLOT(NAME, SLOT, kParamsSelfValue, FUNCTION, wrapBinaryfunc,               \
          C_NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
 #define RBINSLOT(NAME, C_NAME, SLOT, FUNCTION, DOC)                            \
-  TPSLOT(NAME, SLOT, FUNCTION, wrapBinaryfuncSwapped,                          \
+  TPSLOT(NAME, SLOT, kParamsSelfValue, FUNCTION, wrapBinaryfuncSwapped,        \
          C_NAME "($self, value, /)\n--\n\nReturn value" DOC "self.")
 #define BINSLOTNOTINFIX(NAME, C_NAME, SLOT, FUNCTION, DOC)                     \
-  TPSLOT(NAME, SLOT, FUNCTION, wrapBinaryfunc,                                 \
+  TPSLOT(NAME, SLOT, kParamsSelfValue, FUNCTION, wrapBinaryfunc,               \
          C_NAME "($self, value, /)\n--\n\n" DOC)
 #define RBINSLOTNOTINFIX(NAME, C_NAME, SLOT, FUNCTION, DOC)                    \
-  TPSLOT(NAME, SLOT, FUNCTION, wrapBinaryfuncSwapped,                          \
+  TPSLOT(NAME, SLOT, kParamsSelfValue, FUNCTION, wrapBinaryfuncSwapped,        \
          C_NAME "($self, value, /)\n--\n\n" DOC)
 
-const SlotDef kSlotdefs[] = {
-    TPSLOT(kDunderGetattribute, kGetattr, nullptr, nullptr, ""),
-    TPSLOT(kDunderGetattr, kGetattr, nullptr, nullptr, ""),
-    TPSLOT(kDunderSetattr, kSetattr, nullptr, nullptr, ""),
-    TPSLOT(kDunderDelattr, kSetattr, nullptr, nullptr, ""),
-    TPSLOT(kDunderRepr, kRepr, slot_tp_repr, wrapUnaryfunc,
+static const SlotDef kSlotdefs[] = {
+    TPSLOT(kDunderGetattribute, kGetattr, kParamsSelfName, nullptr,
+           bit_cast<Function::Entry>(nullptr), ""),
+    TPSLOT(kDunderGetattr, kGetattr, kParamsSelfName, nullptr, nullptr, ""),
+    TPSLOT(kDunderSetattr, kSetattr, kParamsSelfNameValue, nullptr, nullptr,
+           ""),
+    TPSLOT(kDunderDelattr, kSetattr, kParamsSelfName, nullptr, nullptr, ""),
+    TPSLOT(kDunderRepr, kRepr, kParamsSelf, slot_tp_repr, wrapUnaryfunc,
            "__repr__($self, /)\n--\n\nReturn repr(self)."),
-    TPSLOT(kDunderHash, kHash, slot_tp_hash, wrapHashfunc,
+    TPSLOT(kDunderHash, kHash, kParamsSelf, slot_tp_hash, wrapHashfunc,
            "__hash__($self, /)\n--\n\nReturn hash(self)."),
     KWSLOT(
-        kDunderCall, kCall, slot_tp_call, wrapVarkwTernaryfunc,
+        kDunderCall, kCall, kParamsSelfArgsKwargs, slot_tp_call,
+        wrapVarkwTernaryfunc,
         "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function."),
-    TPSLOT(kDunderStr, kStr, slot_tp_str, wrapUnaryfunc,
+    TPSLOT(kDunderStr, kStr, kParamsSelfArgsKwargs, slot_tp_str, wrapUnaryfunc,
            "__str__($self, /)\n--\n\nReturn str(self)."),
-    TPSLOT(kDunderGetattribute, kGetattro, slot_tp_getattr_hook, wrapBinaryfunc,
+    TPSLOT(kDunderGetattribute, kGetattro, kParamsSelfName,
+           slot_tp_getattr_hook, wrapBinaryfunc,
            "__getattribute__($self, name, /)\n--\n\nReturn getattr(self, "
            "name)."),
-    TPSLOT(kDunderGetattr, kGetattro, slot_tp_getattr_hook, nullptr, ""),
-    TPSLOT(kDunderSetattr, kSetattro, slot_tp_setattro, wrapSetattr,
+    TPSLOT(kDunderGetattr, kGetattro, kParamsSelfName, slot_tp_getattr_hook,
+           nullptr, ""),
+    TPSLOT(kDunderSetattr, kSetattro, kParamsSelfNameValue, slot_tp_setattro,
+           wrapSetattr,
            "__setattr__($self, name, value, /)\n--\n\nImplement setattr(self, "
            "name, value)."),
-    TPSLOT(kDunderDelattr, kSetattro, slot_tp_setattro, wrapDelattr,
+    TPSLOT(kDunderDelattr, kSetattro, kParamsSelfName, slot_tp_setattro,
+           wrapDelattr,
            "__delattr__($self, name, /)\n--\n\nImplement delattr(self, name)."),
-    TPSLOT(kDunderLt, kRichcompare, slot_tp_richcompare, wrapRichcompare<LT>,
+    TPSLOT(kDunderLt, kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<LT>,
            "__lt__($self, value, /)\n--\n\nReturn self<value."),
-    TPSLOT(kDunderLe, kRichcompare, slot_tp_richcompare, wrapRichcompare<LE>,
+    TPSLOT(kDunderLe, kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<LE>,
            "__le__($self, value, /)\n--\n\nReturn self<=value."),
-    TPSLOT(kDunderEq, kRichcompare, slot_tp_richcompare, wrapRichcompare<EQ>,
+    TPSLOT(kDunderEq, kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<EQ>,
            "__eq__($self, value, /)\n--\n\nReturn self==value."),
-    TPSLOT(kDunderNe, kRichcompare, slot_tp_richcompare, wrapRichcompare<NE>,
+    TPSLOT(kDunderNe, kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<NE>,
            "__ne__($self, value, /)\n--\n\nReturn self!=value."),
-    TPSLOT(kDunderGt, kRichcompare, slot_tp_richcompare, wrapRichcompare<GT>,
+    TPSLOT(kDunderGt, kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<GT>,
            "__gt__($self, value, /)\n--\n\nReturn self>value."),
-    TPSLOT(kDunderGe, kRichcompare, slot_tp_richcompare, wrapRichcompare<GE>,
+    TPSLOT(kDunderGe, kRichcompare, kParamsSelfValue, slot_tp_richcompare,
+           wrapRichcompare<GE>,
            "__ge__($self, value, /)\n--\n\nReturn self>=value."),
-    TPSLOT(kDunderIter, kIter, slot_tp_iter, wrapUnaryfunc,
+    TPSLOT(kDunderIter, kIter, kParamsSelfValue, slot_tp_iter, wrapUnaryfunc,
            "__iter__($self, /)\n--\n\nImplement iter(self)."),
-    TPSLOT(kDunderNext, kIternext, slot_tp_iternext, wrapNext,
+    TPSLOT(kDunderNext, kIternext, kParamsSelf, slot_tp_iternext, wrapNext,
            "__next__($self, /)\n--\n\nImplement next(self)."),
-    TPSLOT(kDunderGet, kDescrGet, slot_tp_descr_get, wrapDescrGet,
+    TPSLOT(kDunderGet, kDescrGet, kParamsSelfInstanceOwner, slot_tp_descr_get,
+           wrapDescrGet,
            "__get__($self, instance, owner, /)\n--\n\nReturn an attribute of "
            "instance, which is of type owner."),
-    TPSLOT(kDunderSet, kDescrSet, slot_tp_descr_set, wrapDescrSet,
+    TPSLOT(kDunderSet, kDescrSet, kParamsSelfInstanceValue, slot_tp_descr_set,
+           wrapDescrSet,
            "__set__($self, instance, value, /)\n--\n\nSet an attribute of "
            "instance to value."),
-    TPSLOT(kDunderDelete, kDescrSet, slot_tp_descr_set, wrapDescrDelete,
+    TPSLOT(kDunderDelete, kDescrSet, kParamsSelfInstance, slot_tp_descr_set,
+           wrapDescrDelete,
            "__delete__($self, instance, /)\n--\n\nDelete an attribute of "
            "instance."),
-    KWSLOT(kDunderInit, kInit, slot_tp_init, wrapInit,
+    KWSLOT(kDunderInit, kInit, kParamsSelfArgsKwargs, slot_tp_init, wrapInit,
            "__init__($self, /, *args, **kwargs)\n--\n\nInitialize self.  See "
            "help(type(self)) for accurate signature."),
-    KWSLOT(kDunderNew, kNew, slot_tp_new, wrapVarkwTernaryfunc,
+    KWSLOT(kDunderNew, kNew, kParamsTypeArgsKwargs, slot_tp_new,
+           wrapVarkwTernaryfunc,
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate "
            "signature."),
-    TPSLOT(kDunderDel, kFinalize, slot_tp_finalize, wrapDel, ""),
-    TPSLOT(kDunderAwait, kAsyncAwait, slot_am_await, wrapUnaryfunc,
+    TPSLOT(kDunderDel, kFinalize, kParamsSelf, slot_tp_finalize, wrapDel, ""),
+    TPSLOT(kDunderAwait, kAsyncAwait, kParamsSelf, slot_am_await, wrapUnaryfunc,
            "__await__($self, /)\n--\n\nReturn an iterator to be used in await "
            "expression."),
-    TPSLOT(kDunderAiter, kAsyncAiter, slot_am_aiter, wrapUnaryfunc,
+    TPSLOT(kDunderAiter, kAsyncAiter, kParamsSelf, slot_am_aiter, wrapUnaryfunc,
            "__aiter__($self, /)\n--\n\nReturn an awaitable, that resolves in "
            "asynchronous iterator."),
-    TPSLOT(kDunderAnext, kAsyncAnext, slot_am_anext, wrapUnaryfunc,
+    TPSLOT(kDunderAnext, kAsyncAnext, kParamsSelf, slot_am_anext, wrapUnaryfunc,
            "__anext__($self, /)\n--\n\nReturn a value or raise "
            "StopAsyncIteration."),
     BINSLOT(kDunderAdd, "__add__", kNumberAdd, slot_nb_add, "+"),
@@ -855,10 +904,12 @@ const SlotDef kSlotdefs[] = {
                     "Return divmod(self, value)."),
     RBINSLOTNOTINFIX(kDunderRdivmod, "__rdivmod__", kNumberDivmod,
                      slot_nb_divmod, "Return divmod(value, self)."),
-    TPSLOT(kDunderPow, kNumberPower, slot_nb_power, wrapTernaryfunc,
+    TPSLOT(kDunderPow, kNumberPower, kParamsSelfValueMod, slot_nb_power,
+           wrapTernaryfunc,
            "__pow__($self, value, mod=None, /)\n--\n\nReturn pow(self, value, "
            "mod)."),
-    TPSLOT(kDunderRpow, kNumberPower, slot_nb_power, wrapTernaryfuncSwapped,
+    TPSLOT(kDunderRpow, kNumberPower, kParamsSelfValueMod, slot_nb_power,
+           wrapTernaryfuncSwapped,
            "__rpow__($self, value, mod=None, /)\n--\n\nReturn pow(value, self, "
            "mod)."),
     UNSLOT(kDunderNeg, "__neg__", kNumberNegative, slot_nb_negative,
@@ -919,7 +970,8 @@ const SlotDef kSlotdefs[] = {
            slot_nb_inplace_floor_divide, wrapBinaryfunc, "//="),
     IBSLOT(kDunderItruediv, "__itruediv__", kNumberInplaceTrueDivide,
            slot_nb_inplace_true_divide, wrapBinaryfunc, "/="),
-    TPSLOT(kDunderIndex, kNumberIndex, slot_nb_index, wrapUnaryfunc,
+    TPSLOT(kDunderIndex, kNumberIndex, kParamsSelf, slot_nb_index,
+           wrapUnaryfunc,
            "__index__($self, /)\n--\n\n"
            "Return self converted to an integer, if self is suitable "
            "for use as an index into a list."),
@@ -929,63 +981,97 @@ const SlotDef kSlotdefs[] = {
              slot_nb_matrix_multiply, "@"),
     IBSLOT(kDunderImatmul, "__imatmul__", kNumberInplaceMatrixMultiply,
            slot_nb_inplace_matrix_multiply, wrapBinaryfunc, "@="),
-    TPSLOT(kDunderLen, kMapLength, slot_mp_length, wrapLenfunc,
+    TPSLOT(kDunderLen, kMapLength, kParamsSelf, slot_mp_length, wrapLenfunc,
            "__len__($self, /)\n--\n\nReturn len(self)."),
-    TPSLOT(kDunderGetitem, kMapSubscript, slot_mp_subscript, wrapBinaryfunc,
+    TPSLOT(kDunderGetitem, kMapSubscript, kParamsSelfKey, slot_mp_subscript,
+           wrapBinaryfunc,
            "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
-    TPSLOT(kDunderSetitem, kMapAssSubscript, slot_mp_ass_subscript,
-           wrapObjobjargproc,
+    TPSLOT(kDunderSetitem, kMapAssSubscript, kParamsSelfKeyValue,
+           slot_mp_ass_subscript, wrapObjobjargproc,
            "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
-    TPSLOT(kDunderDelitem, kMapAssSubscript, slot_mp_ass_subscript, wrapDelitem,
+    TPSLOT(kDunderDelitem, kMapAssSubscript, kParamsSelfKey,
+           slot_mp_ass_subscript, wrapDelitem,
            "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
-    TPSLOT(kDunderLen, kSequenceLength, slot_sq_length, wrapLenfunc,
-           "__len__($self, /)\n--\n\nReturn len(self)."),
-    TPSLOT(kDunderAdd, kSequenceConcat, nullptr, wrapBinaryfunc,
+    TPSLOT(kDunderLen, kSequenceLength, kParamsSelf, slot_sq_length,
+           wrapLenfunc, "__len__($self, /)\n--\n\nReturn len(self)."),
+    TPSLOT(kDunderAdd, kSequenceConcat, kParamsSelfValue, nullptr,
+           wrapBinaryfunc,
            "__add__($self, value, /)\n--\n\nReturn self+value."),
-    TPSLOT(kDunderMul, kSequenceRepeat, nullptr, wrapIndexargfunc,
+    TPSLOT(kDunderMul, kSequenceRepeat, kParamsSelfValue, nullptr,
+           wrapIndexargfunc,
            "__mul__($self, value, /)\n--\n\nReturn self*value."),
-    TPSLOT(kDunderRmul, kSequenceRepeat, nullptr, wrapIndexargfunc,
+    TPSLOT(kDunderRmul, kSequenceRepeat, kParamsSelfValue, nullptr,
+           wrapIndexargfunc,
            "__rmul__($self, value, /)\n--\n\nReturn value*self."),
-    TPSLOT(kDunderGetitem, kSequenceItem, slot_sq_item, wrapSqItem,
-           "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
-    TPSLOT(kDunderSetitem, kSequenceAssItem, slot_sq_ass_item, wrapSqSetitem,
+    TPSLOT(kDunderGetitem, kSequenceItem, kParamsSelfKey, slot_sq_item,
+           wrapSqItem, "__getitem__($self, key, /)\n--\n\nReturn self[key]."),
+    TPSLOT(kDunderSetitem, kSequenceAssItem, kParamsSelfKeyValue,
+           slot_sq_ass_item, wrapSqSetitem,
            "__setitem__($self, key, value, /)\n--\n\nSet self[key] to value."),
-    TPSLOT(kDunderDelitem, kSequenceAssItem, slot_sq_ass_item, wrapSqDelitem,
+    TPSLOT(kDunderDelitem, kSequenceAssItem, kParamsSelfKey, slot_sq_ass_item,
+           wrapSqDelitem,
            "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
-    TPSLOT(kDunderContains, kSequenceContains, slot_sq_contains, wrapObjobjproc,
+    TPSLOT(kDunderContains, kSequenceContains, kParamsSelfKey, slot_sq_contains,
+           wrapObjobjproc,
            "__contains__($self, key, /)\n--\n\nReturn key in self."),
-    TPSLOT(kDunderIadd, kSequenceInplaceConcat, nullptr, wrapBinaryfunc,
+    TPSLOT(kDunderIadd, kSequenceInplaceConcat, kParamsSelfValue, nullptr,
+           wrapBinaryfunc,
            "__iadd__($self, value, /)\n--\n\nImplement self+=value."),
-    TPSLOT(kDunderImul, kSequenceInplaceRepeat, nullptr, wrapIndexargfunc,
+    TPSLOT(kDunderImul, kSequenceInplaceRepeat, kParamsSelfValue, nullptr,
+           wrapIndexargfunc,
            "__imul__($self, value, /)\n--\n\nImplement self*=value."),
 };
 
-static RawObject newExtCode(Thread* thread, const Object& name, void* fptr,
-                            const Object& slot_value) {
+static RawObject newExtCode(Thread* thread, const Object& name,
+                            const SymbolId* parameters, word num_parameters,
+                            word flags, void* fptr, const Object& slot_value) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object code_code(&scope, runtime->newIntFromCPtr(fptr));
   Tuple empty_tuple(&scope, runtime->emptyTuple());
+
+  // TODO(T41024929): Many of the slot parameters should be positional only,
+  // but we cannot express this in code objects (yet).
+  Tuple varnames(&scope, runtime->newTuple(num_parameters));
+  for (word i = 0; i < num_parameters; i++) {
+    varnames.atPut(i, runtime->symbols()->at(parameters[i]));
+  }
+
+  word argcount = num_parameters - ((flags & Code::Flags::VARARGS) != 0) -
+                  ((flags & Code::Flags::VARKEYARGS) != 0);
+  flags |= Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
+
   Object filename(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
   Tuple consts(&scope, runtime->newTuple(1));
   consts.atPut(0, *slot_value);
-  return runtime->newCode(0,            // argcount
-                          0,            // kwonlyargcount
-                          0,            // nlocals
-                          0,            // stacksize
-                          0,            // flags
-                          code_code,    // code
-                          consts,       // consts
-                          empty_tuple,  // names
-                          empty_tuple,  // varnames
-                          empty_tuple,  // freevars
-                          empty_tuple,  // cellvars
-                          filename,     // filename
-                          name,         // name
-                          0,            // firlineno
-                          lnotab        // lnotab
-  );
+  return runtime->newCode(argcount, /*kwonlyargcount=*/0,
+                          /*nlocals=*/num_parameters,
+                          /*stacksize=*/0, flags, code_code, consts,
+                          /*names=*/empty_tuple, varnames,
+                          /*freevars=*/empty_tuple, /*cellvars=*/empty_tuple,
+                          filename, name, /*firstlineno=*/0, lnotab);
+}
+
+static RawObject newSlotFunction(Thread* thread, const Object& qualname,
+                                 const Code& code, Function::Entry entry,
+                                 Function::Entry entry_kw,
+                                 Function::Entry entry_ex) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Function function(&scope, runtime->newFunction());
+  function.setCode(*code);
+  function.setFlags(code.flags());
+  function.setArgcount(code.argcount());
+  function.setTotalArgs(code.nlocals());
+  function.setTotalVars(0);
+  function.setStacksize(0);
+  function.setName(code.name());
+  function.setQualname(*qualname);
+  function.setEntry(entry);
+  function.setEntryKw(entry_kw);
+  function.setEntryEx(entry_ex);
+  return *function;
 }
 
 // For every entry in kSlotdefs with a non-null wrapper function, a slot id
@@ -1021,15 +1107,21 @@ RawObject addOperators(Thread* thread, const Type& type) {
     // Create the wrapper function.
     Str qualname(&scope,
                  runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
-    Object code(&scope, newExtCode(thread, slot_name,
-                                   bit_cast<void*>(slot.wrapper), slot_value));
-    Function func(&scope, runtime->newFunction());
-    func.setName(*slot_name);
-    func.setQualname(*qualname);
-    func.setEntry(slot.is_varkw ? varkwSlotTrampoline : slotTrampoline);
-    func.setEntryKw(slot.is_varkw ? varkwSlotTrampolineKw : slotTrampolineKw);
-    func.setEntryEx(slot.is_varkw ? varkwSlotTrampolineEx : slotTrampolineEx);
-    func.setCode(*code);
+    Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
+                                 slot.num_parameters, slot.flags,
+                                 bit_cast<void*>(slot.wrapper), slot_value));
+    bool is_varkw = (slot.flags & Code::Flags::VARKEYARGS);
+    Function func(
+        &scope,
+        newSlotFunction(thread, qualname, code,
+                        is_varkw ? varkwSlotTrampoline : slotTrampoline,
+                        is_varkw ? varkwSlotTrampolineKw : slotTrampolineKw,
+                        is_varkw ? varkwSlotTrampolineEx : slotTrampolineEx));
+
+    if (slot.id == ExtensionSlot::kNumberPower) {
+      Tuple defaults(&scope, runtime->newTuple(1));
+      func.setDefaults(*defaults);
+    }
 
     // __new__ is the one special-case static method, so wrap it
     // appropriately.
@@ -1442,18 +1534,17 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
   if (def.get == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Function function(&scope, runtime->newFunction());
-  function.setName(*name);
-  function.setEntry(slotTrampoline);
-  function.setEntryKw(slotTrampolineKw);
-  function.setEntryEx(slotTrampolineEx);
+  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.get)));
+  Code code(&scope,
+            newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
+                       /*flags=*/0, bit_cast<void*>(&getterWrapper), value));
+  Function function(&scope,
+                    newSlotFunction(thread, name, code, slotTrampoline,
+                                    slotTrampolineKw, slotTrampolineEx));
   if (def.doc != nullptr) {
     Object doc(&scope, runtime->newStrFromCStr(def.doc));
     function.setDoc(*doc);
   }
-  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.get)));
-  function.setCode(
-      newExtCode(thread, name, bit_cast<void*>(&getterWrapper), value));
   return *function;
 }
 
@@ -1462,18 +1553,18 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
   if (def.set == nullptr) return NoneType::object();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Function function(&scope, runtime->newFunction());
-  function.setName(*name);
-  function.setEntry(slotTrampoline);
-  function.setEntryKw(slotTrampolineKw);
-  function.setEntryEx(slotTrampolineEx);
+  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.set)));
+  Code code(
+      &scope,
+      newExtCode(thread, name, kParamsSelfValue, ARRAYSIZE(kParamsSelfValue),
+                 /*flags=*/0, bit_cast<void*>(&setterWrapper), value));
+  Function function(&scope,
+                    newSlotFunction(thread, name, code, slotTrampoline,
+                                    slotTrampolineKw, slotTrampolineEx));
   if (def.doc != nullptr) {
     Object doc(&scope, runtime->newStrFromCStr(def.doc));
     function.setDoc(*doc);
   }
-  Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.set)));
-  function.setCode(
-      newExtCode(thread, name, bit_cast<void*>(&setterWrapper), value));
   return *function;
 }
 
