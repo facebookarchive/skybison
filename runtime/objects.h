@@ -1047,6 +1047,9 @@ class RawType : public RawHeapObject {
   RawObject abstractMethods() const;
   void setAbstractMethods(RawObject methods) const;
 
+  RawObject subclasses() const;
+  void setSubclasses(RawObject subclasses) const;
+
   bool isBaseExceptionSubclass() const;
 
   // Seal the attributes of the type. Sets the layout's overflowAttributes to
@@ -1063,7 +1066,8 @@ class RawType : public RawHeapObject {
   static const int kDictOffset = kFlagsOffset + kPointerSize;
   static const int kExtensionSlotsOffset = kDictOffset + kPointerSize;
   static const int kAbstractMethods = kExtensionSlotsOffset + kPointerSize;
-  static const int kSize = kAbstractMethods + kPointerSize;
+  static const int kSubclassesOffset = kAbstractMethods + kPointerSize;
+  static const int kSize = kSubclassesOffset + kPointerSize;
 
   static const int kBuiltinBaseMask = 0xff;
 
@@ -3809,6 +3813,14 @@ inline RawObject RawType::abstractMethods() const {
 
 inline void RawType::setAbstractMethods(RawObject methods) const {
   instanceVariableAtPut(kAbstractMethods, methods);
+}
+
+inline RawObject RawType::subclasses() const {
+  return instanceVariableAt(kSubclassesOffset);
+}
+
+inline void RawType::setSubclasses(RawObject subclasses) const {
+  instanceVariableAtPut(kSubclassesOffset, subclasses);
 }
 
 inline bool RawType::isBuiltin() const {

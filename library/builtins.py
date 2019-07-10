@@ -207,6 +207,9 @@ class type(bootstrap=True):
     def __subclasscheck__(self, subclass) -> bool:
         return _issubclass(subclass, self)
 
+    def __subclasses__(self):
+        pass
+
     def _merge_class_dict_keys(self, result):
         # TODO(T46144425): Remove _type_dict_keys in favor of .keys()
         result.update(_type_dict_keys(self.__dict__))

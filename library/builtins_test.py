@@ -1200,6 +1200,27 @@ class TypeTests(unittest.TestCase):
             del Foo.__abstractmethods__
         self.assertEqual(str(context.exception), "__abstractmethods__")
 
+    def test_dunder_subclasses_with_leaf_type_returns_empty_list(self):
+        class C:
+            pass
+
+        self.assertEqual(C.__subclasses__(), [])
+
+    def test_dunder_subclasses_with_supertype_returns_list(self):
+        class C:
+            pass
+
+        class D(C):
+            pass
+
+        self.assertEqual(C.__subclasses__(), [D])
+
+    def test_dunder_subclasses_returns_new_list(self):
+        class C:
+            pass
+
+        self.assertIsNot(C.__subclasses__(), C.__subclasses__())
+
     def test_mro_with_custom_method_propagates_exception(self):
         class Meta(type):
             def mro(cls):

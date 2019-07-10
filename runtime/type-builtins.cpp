@@ -1,6 +1,7 @@
 #include "type-builtins.h"
 
 #include "bytecode.h"
+#include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
 #include "mro.h"
@@ -111,6 +112,21 @@ RawObject typeGetAttribute(Thread* thread, const Type& type,
   return Error::notFound();
 }
 
+static void addSubclass(Thread* thread, const Type& base, const Type& type) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  if (base.subclasses().isNoneType()) {
+    base.setSubclasses(runtime->newDict());
+  }
+  DCHECK(base.subclasses().isDict(), "direct subclasses must be dict");
+  Dict subclasses(&scope, base.subclasses());
+  LayoutId type_id = Layout::cast(type.instanceLayout()).id();
+  Object key(&scope, SmallInt::fromWord(static_cast<word>(type_id)));
+  Object none(&scope, NoneType::object());
+  Object value(&scope, runtime->newWeakRef(thread, type, none));
+  runtime->dictAtPut(thread, subclasses, key, value);
+}
+
 RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                   const Tuple& bases, const Dict& dict) {
   HandleScope scope(thread);
@@ -160,6 +176,13 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
                 runtime->computeInitialLayout(thread, type, base_layout_id));
   layout.setDescribedType(*type);
   type.setInstanceLayout(*layout);
+
+  // Add this type as a direct subclass of each of its bases
+  Type base_type(&scope, *type);
+  for (word i = 0; i < bases.length(); i++) {
+    base_type = bases.at(i);
+    addSubclass(thread, base_type, type);
+  }
 
   // Copy down class flags from bases
   Tuple mro(&scope, *maybe_mro);
@@ -223,6 +246,7 @@ const BuiltinMethod TypeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderSetattr, dunderSetattr},
+    {SymbolId::kDunderSubclasses, dunderSubclasses},
     {SymbolId::kMro, mro},
     {SymbolId::kSentinelId, nullptr},
 };
@@ -354,6 +378,36 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   name = runtime->internStr(thread, name);
   Object value(&scope, args.get(2));
   return typeSetAttr(thread, self, name, value);
+}
+
+RawObject TypeBuiltins::dunderSubclasses(Thread* thread, Frame* frame,
+                                         word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kType);
+  }
+  Type self(&scope, *self_obj);
+  Object subclasses_obj(&scope, self.subclasses());
+  if (subclasses_obj.isNoneType()) {
+    return runtime->newList();
+  }
+  Dict subclasses(&scope, *subclasses_obj);
+  DictValueIterator iter(&scope,
+                         runtime->newDictValueIterator(thread, subclasses));
+  List result(&scope, runtime->newList());
+  Object value(&scope, Unbound::object());
+  while (!(value = dictValueIteratorNext(thread, iter)).isErrorNoMoreItems()) {
+    DCHECK(value.isWeakRef(), "__subclasses__ element is not a WeakRef");
+    WeakRef ref(&scope, *value);
+    value = ref.referent();
+    if (!value.isNoneType()) {
+      runtime->listAdd(thread, result, value);
+    }
+  }
+  return *result;
 }
 
 RawObject TypeBuiltins::mro(Thread* thread, Frame* frame, word nargs) {

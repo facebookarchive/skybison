@@ -456,6 +456,32 @@ name = ty.__name__
   EXPECT_TRUE(isStrEqualsCStr(*name, "foo"));
 }
 
+TEST_F(TypeBuiltinsTest, TypeNewAddsToBaseSubclasses) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class A: pass
+class B: pass
+class C(A, B): pass
+class D(A): pass
+)")
+                   .isError());
+  Type a(&scope, moduleAt(&runtime_, "__main__", "A"));
+  Type b(&scope, moduleAt(&runtime_, "__main__", "B"));
+  Type c(&scope, moduleAt(&runtime_, "__main__", "C"));
+  Type d(&scope, moduleAt(&runtime_, "__main__", "D"));
+
+  ASSERT_TRUE(a.subclasses().isDict());
+  Dict a_subclasses(&scope, a.subclasses());
+  EXPECT_EQ(a_subclasses.numItems(), 2);
+
+  ASSERT_TRUE(b.subclasses().isDict());
+  Dict b_subclasses(&scope, b.subclasses());
+  EXPECT_EQ(b_subclasses.numItems(), 1);
+
+  EXPECT_EQ(c.subclasses(), NoneType::object());
+  EXPECT_EQ(d.subclasses(), NoneType::object());
+}
+
 TEST_F(TypeBuiltinsTest, TypeCallWithInitReturningNonNoneRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class C:
