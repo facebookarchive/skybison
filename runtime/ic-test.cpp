@@ -1081,6 +1081,23 @@ class C: pass
   icInvalidateCachesForTypeAttr(thread_, type, foo_name, true);
 }
 
+TEST(IcTestNoFixture,
+     BinarySubscrUpdateCacheWithRaisingDescriptorPropagatesException) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime, R"(
+class Desc:
+  def __get__(self, instance, type):
+    raise UserWarning("foo")
+
+class C:
+  __getitem__ = Desc()
+
+container = C()
+result = container[0]
+)"),
+                            LayoutId::kUserWarning, "foo"));
+}
+
 TEST(IcTestNoFixture, BinarySubscrUpdateCacheWithFunctionUpdatesCache) {
   Runtime runtime(/*cache_enabled=*/true);
   ASSERT_FALSE(runFromCStr(&runtime, R"(

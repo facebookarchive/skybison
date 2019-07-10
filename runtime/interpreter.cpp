@@ -1356,6 +1356,7 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
   }
 
   getitem = resolveDescriptorGet(thread, getitem, container, type);
+  if (getitem.isError()) return Continue::UNWIND;
   // Tail-call getitem(key)
   frame->setValueAt(*getitem, 1);
   return doCallFunction(thread, 1);
