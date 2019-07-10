@@ -98,6 +98,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
     {SymbolId::kUnderListSort, underListSort},
+    {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderProperty, underProperty},
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
     {SymbolId::kUnderReprEnter, underReprEnter},
@@ -1187,6 +1188,17 @@ RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,
         "Unsupported argument type for 'ls'");
   List list(&scope, args.get(0));
   return listSort(thread, list);
+}
+
+RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Type type(&scope, thread->runtime()->typeOf(args.get(0)));
+  Str name(&scope, args.get(1));
+  Object result(&scope, typeLookupNameInMro(thread, type, name));
+  return Bool::fromBool(!result.isErrorNotFound());
 }
 
 RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,

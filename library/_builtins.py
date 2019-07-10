@@ -275,6 +275,11 @@ def _list_sort(list):
     pass
 
 
+@_patch
+def _object_type_hasattr(obj, name):
+    pass
+
+
 # _patch is patched manually to avoid circularity problems
 
 

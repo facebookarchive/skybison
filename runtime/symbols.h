@@ -239,6 +239,7 @@ class Runtime;
   V(UnderNewMemberSetPyObject, "_new_member_set_pyobject")                     \
   V(UnderNewMemberSetReadonly, "_new_member_set_readonly")                     \
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
+  V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderPatch, "_patch")                                                      \
   V(UnderProperty, "_property")                                                \
   V(UnderPyObjectOffset, "_pyobject_offset")                                   \

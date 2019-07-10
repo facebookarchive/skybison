@@ -59,6 +59,7 @@ _list_check = _list_check  # noqa: F821
 _list_delitem = _list_delitem  # noqa: F821
 _list_delslice = _list_delslice  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
+_object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
 _property = _property  # noqa: F821
 _pyobject_offset = _pyobject_offset  # noqa: F821

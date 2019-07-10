@@ -1183,6 +1183,72 @@ TEST_F(UnderBuiltinsModuleTest,
   EXPECT_PYLIST_EQ(list, {1, 2, 3, 4});
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectTypeHasattrWithNonexistentAttrReturnsFalse) {
+  HandleScope scope(thread_);
+  Object obj(&scope, SmallInt::fromWord(0));
+  Str name(&scope, runtime_.newStrFromCStr("__foo_bar_baz__"));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
+                                   obj, name));
+  EXPECT_EQ(result, Bool::falseObj());
+  EXPECT_FALSE(thread_->hasPendingException());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectTypeHasattrWithInstanceAttrReturnsFalse) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+  def __init__(self):
+    self.foobarbaz = 5
+obj = C()
+)")
+                   .isError());
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
+                                   obj, name));
+  EXPECT_EQ(result, Bool::falseObj());
+  EXPECT_FALSE(thread_->hasPendingException());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectTypeHasattrWithExistentAttrReturnsTrue) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class C:
+    foobarbaz = 5
+obj = C()
+)")
+                   .isError());
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
+                                   obj, name));
+  EXPECT_EQ(result, Bool::trueObj());
+  EXPECT_FALSE(thread_->hasPendingException());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderObjectTypeHasattrWithRaisingDescriptorDoesNotRaise) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class Desc:
+  def __get__(self, obj, type):
+    raise UserWarning("foo")
+class C:
+    foobarbaz = Desc()
+obj = C()
+)")
+                   .isError());
+  Object obj(&scope, moduleAt(&runtime_, "__main__", "obj"));
+  Str name(&scope, runtime_.newStrFromCStr("foobarbaz"));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underObjectTypeHasattr,
+                                   obj, name));
+  EXPECT_EQ(result, Bool::trueObj());
+  EXPECT_FALSE(thread_->hasPendingException());
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
   HandleScope scope(thread_);
   Object not_func(&scope, runtime_.newInt(12));
