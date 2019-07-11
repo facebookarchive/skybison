@@ -238,6 +238,9 @@ void ObjectBuiltins::initialize(Runtime* runtime) {
 }
 
 void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
+  // Add object as the implicit base class for new types.
+  runtime->initializeImplicitBases();
+
   // Manually set argcount to avoid bootstrap problems.
   Thread* thread = Thread::current();
   HandleScope scope(thread);

@@ -1443,6 +1443,30 @@ class TypeTests(unittest.TestCase):
             del Foo.__abstractmethods__
         self.assertEqual(str(context.exception), "__abstractmethods__")
 
+    def test_dunder_bases_get_with_builtin_type_returns_tuple(self):
+        self.assertEqual(object.__bases__, ())
+        self.assertEqual(type.__bases__, (object,))
+        self.assertEqual(int.__bases__, (object,))
+        self.assertEqual(bool.__bases__, (int,))
+
+    def test_dunder_bases_get_with_user_type_returns_tuple(self):
+        class A:
+            pass
+
+        class B:
+            pass
+
+        class C(A):
+            pass
+
+        class D(C, B):
+            pass
+
+        self.assertEqual(A.__bases__, (object,))
+        self.assertEqual(B.__bases__, (object,))
+        self.assertEqual(C.__bases__, (A,))
+        self.assertEqual(D.__bases__, (C, B))
+
     def test_dunder_subclasses_with_leaf_type_returns_empty_list(self):
         class C:
             pass

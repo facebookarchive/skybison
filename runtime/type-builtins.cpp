@@ -133,7 +133,7 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->newTypeWithMetaclass(metaclass_id));
   type.setName(*name);
-  type.setBases(*bases);
+  type.setBases(bases.length() > 0 ? *bases : runtime->implicitBases());
 
   // Compute MRO
   Object maybe_mro(&scope, Error::error());

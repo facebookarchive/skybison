@@ -325,6 +325,10 @@ class Runtime {
   NODISCARD RawObject importModuleFromCode(const Code& code,
                                            const Object& name);
 
+  // Stores the implicit bases for a new class.
+  RawObject implicitBases() { return implicit_bases_; }
+  void initializeImplicitBases();
+
   // Gets the internal notion of type, rather than the user-visible type.
   RawObject concreteTypeAt(LayoutId layout_id);
   inline RawObject concreteTypeOf(RawObject object) {
@@ -980,6 +984,7 @@ class Runtime {
   RawObject empty_frozen_set_;
   RawObject empty_mutable_bytes_;
   RawObject empty_tuple_;
+  RawObject implicit_bases_;
   RawObject object_dunder_getattribute_;
   RawObject object_dunder_setattr_;
   RawObject sys_stderr_;

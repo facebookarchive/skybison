@@ -1662,6 +1662,12 @@ void Runtime::initializePrimitiveInstances() {
   callbacks_ = NoneType::object();
 }
 
+void Runtime::initializeImplicitBases() {
+  DCHECK(!implicit_bases_.isTuple(), "implicit bases already initialized");
+  implicit_bases_ = heap()->createTuple(1);
+  Tuple::cast(implicit_bases_).atPut(0, typeAt(LayoutId::kObject));
+}
+
 void Runtime::initializeInterned() { interned_ = newSet(); }
 
 void Runtime::initializeRandom() {
@@ -1736,6 +1742,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_frozen_set_);
   visitor->visitPointer(&empty_mutable_bytes_);
   visitor->visitPointer(&empty_tuple_);
+  visitor->visitPointer(&implicit_bases_);
   visitor->visitPointer(&object_dunder_getattribute_);
   visitor->visitPointer(&object_dunder_setattr_);
   visitor->visitPointer(&sys_stderr_);
