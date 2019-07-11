@@ -455,11 +455,11 @@ class Assembler {
 #undef REGULAR_INSTRUCTION
   RA(Q, movsxd, 0x63)
   RR(Q, movsxd, 0x63)
-  AR(L, movb, 0x88)
+  AR(B, movb, 0x88)
   AR(L, movl, 0x89)
   AR(Q, movq, 0x89)
   AR(W, movw, 0x89)
-  RA(L, movb, 0x8a)
+  RA(B, movb, 0x8a)
   RA(L, movl, 0x8b)
   RA(Q, movq, 0x8b)
   RR(L, movl, 0x8b)
@@ -673,6 +673,7 @@ class Assembler {
   void op##q(Address dst, Register src) { emitQ(src, dst, c * 8 + 1); }        \
   void op##l(Register dst, Immediate imm) { aluL(c, dst, imm); }               \
   void op##q(Register dst, Immediate imm) { aluQ(c, c * 8 + 3, dst, imm); }    \
+  void op##b(Register dst, Immediate imm) { aluB(c, dst, imm); }               \
   void op##b(Address dst, Immediate imm) { aluB(c, dst, imm); }                \
   void op##w(Address dst, Immediate imm) { aluW(c, dst, imm); }                \
   void op##l(Address dst, Immediate imm) { aluL(c, dst, imm); }                \
@@ -760,6 +761,7 @@ class Assembler {
   static void initializeMemoryWithBreakpoints(uword data, word length);
 
  private:
+  void aluB(uint8_t modrm_opcode, Register dst, Immediate imm);
   void aluL(uint8_t modrm_opcode, Register dst, Immediate imm);
   void aluB(uint8_t modrm_opcode, Address dst, Immediate imm);
   void aluW(uint8_t modrm_opcode, Address dst, Immediate imm);
@@ -778,6 +780,8 @@ class Assembler {
              int prefix1 = -1);
   void emitL(int reg, Address address, int opcode, int prefix2 = -1,
              int prefix1 = -1);
+  void emitB(Register reg, Address address, int opcode, int prefix2 = -1,
+             int prefix1 = -1);
   void emitW(Register reg, Address address, int opcode, int prefix2 = -1,
              int prefix1 = -1);
   void emitQ(int dst, int src, int opcode, int prefix2 = -1, int prefix1 = -1);
@@ -791,6 +795,8 @@ class Assembler {
   void emitUInt32(uint32_t value);
   void emitInt64(int64_t value);
 
+  static uint8_t byteRegisterREX(Register reg);
+
   void emitRegisterREX(Register reg, uint8_t rex, bool force_emit = false);
   void emitOperandREX(int rm, Operand operand, uint8_t rex);
   void emitRegisterOperand(int rm, int reg);
@@ -799,6 +805,7 @@ class Assembler {
   void emitRegRegRex(int reg, int base, uint8_t rex = REX_NONE);
   void emitOperand(int rm, Operand operand);
   void emitImmediate(Immediate imm);
+  void emitComplexB(int rm, Operand operand, Immediate imm);
   void emitComplex(int rm, Operand operand, Immediate immediate);
   void emitSignExtendedInt8(int rm, Operand operand, Immediate immediate);
   void emitLabel(Label* label, word instruction_size);
@@ -827,6 +834,11 @@ inline void Assembler::emitUInt32(uint32_t value) {
 
 inline void Assembler::emitInt64(int64_t value) {
   buffer_.emit<int64_t>(value);
+}
+
+inline uint8_t Assembler::byteRegisterREX(Register reg) {
+  // SPL, BPL, SIL, or DIL require a REX prefix.
+  return reg >= RSP && reg <= RDI ? REX_PREFIX : REX_NONE;
 }
 
 inline void Assembler::emitRegisterREX(Register reg, uint8_t rex,

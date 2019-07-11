@@ -69,5 +69,35 @@ TEST(AssemblerTest, Align) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+TEST(AssemblerTest, Cmpb) {
+  // 3c 12   cmpb    $18, %al
+  // 80 fb 34        cmpb    $52, %bl
+  // 40 80 ff 56     cmpb    $86, %dil
+  // 41 80 fa 78     cmpb    $120, %r10b
+  const byte expected[] = {0x3c, 0x12, 0x80, 0xfb, 0x34, 0x40, 0x80,
+                           0xff, 0x56, 0x41, 0x80, 0xfa, 0x78};
+  Assembler as;
+  as.cmpb(RAX, Immediate(0x12));
+  as.cmpb(RBX, Immediate(0x34));
+  as.cmpb(RDI, Immediate(0x56));
+  as.cmpb(R10, Immediate(0x78));
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
+TEST(AssemblerTest, MovbRexPrefix) {
+  // 40 8a 7a 12     movb    18(%rdx), %dil
+  // 41 8a 74 24 34  movb    52(%r12), %sil
+  // 40 88 6f 56     movb    %bpl, 86(%rdi)
+  // 44 88 7e 78     movb    %r15b, 120(%rsi)
+  const byte expected[] = {0x40, 0x8a, 0x7a, 0x12, 0x41, 0x8a, 0x74, 0x24, 0x34,
+                           0x40, 0x88, 0x6f, 0x56, 0x44, 0x88, 0x7e, 0x78};
+  Assembler as;
+  as.movb(RDI, Address(RDX, 0x12));
+  as.movb(RSI, Address(R12, 0x34));
+  as.movb(Address(RDI, 0x56), RBP);
+  as.movb(Address(RSI, 0x78), R15);
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
 }  // namespace x64
 }  // namespace python

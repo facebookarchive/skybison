@@ -74,6 +74,20 @@ void Assembler::emitQ(int reg, Address address, int opcode, int prefix2,
   emitOperand(reg & 7, address);
 }
 
+void Assembler::emitB(Register reg, Address address, int opcode, int prefix2,
+                      int prefix1) {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  if (prefix1 >= 0) {
+    emitUint8(prefix1);
+  }
+  emitOperandREX(reg, address, byteRegisterREX(reg));
+  if (prefix2 >= 0) {
+    emitUint8(prefix2);
+  }
+  emitUint8(opcode);
+  emitOperand(reg & 7, address);
+}
+
 void Assembler::emitL(int reg, Address address, int opcode, int prefix2,
                       int prefix1) {
   DCHECK(reg <= XMM15, "assert()");
@@ -328,6 +342,13 @@ void Assembler::testq(Register reg, Immediate imm) {
     }
     emitImmediate(imm);
   }
+}
+
+void Assembler::aluB(uint8_t modrm_opcode, Register dst, Immediate imm) {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  Operand dst_operand(dst);
+  emitOperandREX(modrm_opcode, dst_operand, byteRegisterREX(dst));
+  emitComplexB(modrm_opcode, dst_operand, imm);
 }
 
 void Assembler::aluL(uint8_t modrm_opcode, Register dst, Immediate imm) {
@@ -724,6 +745,19 @@ void Assembler::emitSignExtendedInt8(int rm, Operand operand,
   emitUint8(0x83);
   emitOperand(rm, operand);
   emitUint8(immediate.value() & 0xff);
+}
+
+void Assembler::emitComplexB(int rm, Operand operand, Immediate imm) {
+  DCHECK(rm >= 0 && rm < 8, "assert()");
+  DCHECK(imm.isUint8() || imm.isInt8(), "immediate too large");
+  if (operand.isRegister(RAX)) {
+    // Use short form if the destination is al.
+    emitUint8(0x04 + (rm << 3));
+  } else {
+    emitUint8(0x80);
+    emitOperand(rm, operand);
+  }
+  emitUint8(imm.value());
 }
 
 void Assembler::emitComplex(int rm, Operand operand, Immediate immediate) {
