@@ -220,6 +220,10 @@ endif()
 add_library(
   runtime
   STATIC
+  runtime/assembler-utils.cpp
+  runtime/assembler-utils.h
+  runtime/assembler-x64.cpp
+  runtime/assembler-x64.h
   runtime/builtins-module.cpp
   runtime/builtins-module.h
   runtime/bytearray-builtins.cpp
@@ -275,6 +279,8 @@ add_library(
   runtime/marshal-module.h
   runtime/marshal.cpp
   runtime/marshal.h
+  runtime/memory-region.cpp
+  runtime/memory-region.h
   runtime/memoryview-builtins.cpp
   runtime/memoryview-builtins.h
   runtime/module-builtins.cpp
@@ -412,6 +418,7 @@ target_include_directories(
 add_library(
   runtime-tests
   STATIC
+  runtime/assembler-x64-test.cpp
   runtime/builtins-module-test.cpp
   runtime/bytearray-builtins-test.cpp
   runtime/bytecode-test.cpp
@@ -441,6 +448,7 @@ add_library(
   runtime/marshal-module-test.cpp
   runtime/marshal-test.cpp
   runtime/memoryview-builtins-test.cpp
+  runtime/memory-region-test.cpp
   runtime/module-builtins-test.cpp
   runtime/mutex-test.cpp
   runtime/mro-test.cpp

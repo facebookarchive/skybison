@@ -96,6 +96,11 @@ class Utils {
   }
 
   template <typename T>
+  static bool fits(word value) {
+    return static_cast<word>(static_cast<T>(value)) == value;
+  }
+
+  template <typename T>
   static T roundDown(T x, int n) {
     DCHECK(isPowerOfTwo(n), "must be power of 2");
     return (x & -n);
