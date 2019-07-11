@@ -99,5 +99,77 @@ TEST(AssemblerTest, MovbRexPrefix) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+TEST(AssemblerTest, TestbWithRexPrefix) {
+  // 40 84 3e        testb   %dil, (%rsi)
+  // 41 84 2c 1a     testb   %bpl, (%r10,%rbx)
+  const byte expected[] = {0x40, 0x84, 0x3e, 0x41, 0x84, 0x2c, 0x1a};
+
+  Assembler as;
+  as.testb(Address(RSI, 0), RDI);
+  as.testb(Address(R10, RBX, TIMES_1, 0), RBP);
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
+TEST(AssemblerTest, TestqWithByteImm) {
+  // a8 12                   test   $0x12,%al
+  // f6 c3 34                test   $0x34,%bl
+  // 40 f6 c6 56             test   $0x56,%sil
+  // 41 f6 c2 78             test   $0x78,%r10b
+  // f6 00 90                testb  $0x90,(%rax)
+  // 41 f6 02 12             testb  $0x12,(%r10)
+  const byte expected[] = {0xa8, 0x12, 0xf6, 0xc3, 0x34, 0x40, 0xf6,
+                           0xc6, 0x56, 0x41, 0xf6, 0xc2, 0x78, 0xf6,
+                           0x00, 0x90, 0x41, 0xf6, 0x02, 0x12};
+
+  Assembler as;
+  as.testq(RAX, Immediate(0x12));
+  as.testq(RBX, Immediate(0x34));
+  as.testq(RSI, Immediate(0x56));
+  as.testq(R10, Immediate(0x78));
+  as.testq(Address(RAX, 0), Immediate(0x90));
+  as.testq(Address(R10, 0), Immediate(0x12));
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
+TEST(AssemblerTest, TestqWithUnsignedLongImm) {
+  // a9 34 12 00 00          test   $0x1234,%eax
+  // f7 c3 78 56 00 00       test   $0x5678,%ebx
+  // 41 f7 c0 12 90 00 00    test   $0x9012,%r10d
+  // f7 00 56 34 00 00       testl  $0x3456,(%rax)
+  // 41 f7 00 00 00 00 40    testl  $0x40000000,(%r10)
+  const byte expected[] = {0xa9, 0x34, 0x12, 0x00, 0x00, 0xf7, 0xc3, 0x78,
+                           0x56, 0x00, 0x00, 0x41, 0xf7, 0xc2, 0x12, 0x90,
+                           0x00, 0x00, 0xf7, 0x00, 0x56, 0x34, 0x00, 0x00,
+                           0x41, 0xf7, 0x02, 0x00, 0x00, 0x00, 0x40};
+
+  Assembler as;
+  as.testq(RAX, Immediate(0x1234));
+  as.testq(RBX, Immediate(0x5678));
+  as.testq(R10, Immediate(0x9012));
+  as.testq(Address(RAX, 0), Immediate(0x3456));
+  as.testq(Address(R10, 0), Immediate(0x40000000));
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
+TEST(AssemblerTest, TestqWithSignedLongImm) {
+  // 48 a9 ff ff ff ff       test   $0xffffffffffffffff,%rax
+  // 48 f7 c3 fe ff ff ff    test   $0xfffffffffffffffe,%rbx
+  // 49 f7 c2 fd ff ff ff    test   $0xfffffffffffffffd,%r10
+  // 48 f7 00 fc ff ff ff    testq  $0xfffffffffffffffc,(%rax)
+  // 49 f7 02 fb ff ff ff    testq  $0xfffffffffffffffb,(%r10)
+  const byte expected[] = {0x48, 0xa9, 0xff, 0xff, 0xff, 0xff, 0x48, 0xf7, 0xc3,
+                           0xfe, 0xff, 0xff, 0xff, 0x49, 0xf7, 0xc2, 0xfd, 0xff,
+                           0xff, 0xff, 0x48, 0xf7, 0x00, 0xfc, 0xff, 0xff, 0xff,
+                           0x49, 0xf7, 0x02, 0xfb, 0xff, 0xff, 0xff};
+
+  Assembler as;
+  as.testq(RAX, Immediate(-1));
+  as.testq(RBX, Immediate(-2));
+  as.testq(R10, Immediate(-3));
+  as.testq(Address(RAX, 0), Immediate(-4));
+  as.testq(Address(R10, 0), Immediate(-5));
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
 }  // namespace x64
 }  // namespace python

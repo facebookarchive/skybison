@@ -234,12 +234,24 @@ class Operand {
     return encoding_[index];
   }
 
-  // Returns whether or not this operand is really the given register in
-  // disguise. Used from the assembler to generate better encodings.
-  bool isRegister(Register reg) const {
-    return ((reg > 7 ? 1 : 0) == (rex_ & REX_B))  // REX.B match.
-           && ((encodingAt(0) & 0xf8) == 0xc0)  // Addressing mode is register.
-           && ((encodingAt(0) & 0x07) == reg);  // Register codes match.
+  // Returns whether or not this register is a direct register operand
+  // referencing a specific register. Used from the assembler to generate better
+  // encodings.
+  bool hasRegister(Register reg) const {
+    return isRegister() && this->reg() == reg;
+  }
+
+  // Returns whether or not this operand represents a direct register operand.
+  bool isRegister() const {
+    return (encodingAt(0) & 0xf8) == 0xc0;  // mod bits of ModR/M
+  }
+
+  // Returns the register represented by the rm field of this operand.
+  Register reg() const {
+    DCHECK(isRegister(), "reg() called on non-register Operand");
+    return static_cast<Register>(
+        (encodingAt(0) & 0x7) |         // r/m bits of ModR/M
+        ((rex_ & REX_B) ? 0x4 : 0x0));  // REX.B extension
   }
 
   friend class Assembler;
@@ -646,11 +658,17 @@ class Assembler {
   };
   void roundsd(XmmRegister dst, XmmRegister src, RoundingMode mode);
 
-  void testl(Register reg, Immediate imm) { testq(reg, imm); }
+  void testb(Register reg, Immediate imm);
   void testb(Address address, Immediate imm);
   void testb(Address address, Register reg);
 
+  void testl(Register reg, Immediate imm) { testq(reg, imm); }
+
+  // TODO(T47100904): These functions will emit a testl or a testb when possible
+  // based on the value of `imm`. This behavior is desired in most cases, but
+  // probably belongs in a differently-named function.
   void testq(Register reg, Immediate imm);
+  void testq(Address address, Immediate imm);
 
   void shldq(Register dst, Register src, Register shifter) {
     DCHECK(shifter == RCX, "assert()");
@@ -789,6 +807,8 @@ class Assembler {
   void emitW(Register dst, Register src, int opcode, int prefix2 = -1,
              int prefix1 = -1);
   void cmpPS(XmmRegister dst, XmmRegister src, int condition);
+  void emitTestB(Operand operand, Immediate imm);
+  void emitTestQ(Operand operand, Immediate imm);
 
   void emitUint8(uint8_t value);
   void emitInt32(int32_t value);
@@ -796,6 +816,7 @@ class Assembler {
   void emitInt64(int64_t value);
 
   static uint8_t byteRegisterREX(Register reg);
+  static uint8_t byteOperandREX(Operand operand);
 
   void emitRegisterREX(Register reg, uint8_t rex, bool force_emit = false);
   void emitOperandREX(int rm, Operand operand, uint8_t rex);
@@ -839,6 +860,11 @@ inline void Assembler::emitInt64(int64_t value) {
 inline uint8_t Assembler::byteRegisterREX(Register reg) {
   // SPL, BPL, SIL, or DIL require a REX prefix.
   return reg >= RSP && reg <= RDI ? REX_PREFIX : REX_NONE;
+}
+
+inline uint8_t Assembler::byteOperandREX(Operand operand) {
+  return operand.isRegister() ? byteRegisterREX(operand.reg())
+                              : uint8_t{REX_NONE};
 }
 
 inline void Assembler::emitRegisterREX(Register reg, uint8_t rex,

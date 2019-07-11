@@ -289,59 +289,70 @@ void Assembler::ffree(word value) {
   emitSimple(0xdd, 0xc0 + value);
 }
 
-void Assembler::testb(Address address, Immediate imm) {
+void Assembler::emitTestB(Operand operand, Immediate imm) {
   AssemblerBuffer::EnsureCapacity ensured(&buffer_);
-  emitOperandREX(0, address, REX_NONE);
-  emitUint8(0xf6);
-  emitOperand(0, address);
-  DCHECK(imm.isInt8(), "assert()");
-  emitUint8(imm.value() & 0xff);
+  if (operand.hasRegister(RAX)) {
+    emitUint8(0xa8);
+  } else {
+    emitOperandREX(0, operand, byteOperandREX(operand));
+    emitUint8(0xf6);
+    emitOperand(0, operand);
+  }
+  DCHECK(imm.isInt8(), "immediate too large");
+  emitUint8(imm.value());
+}
+
+void Assembler::testb(Register reg, Immediate imm) {
+  emitTestB(Operand(reg), imm);
+}
+
+void Assembler::testb(Address address, Immediate imm) {
+  emitTestB(address, imm);
 }
 
 void Assembler::testb(Address address, Register reg) {
   AssemblerBuffer::EnsureCapacity ensured(&buffer_);
-  emitOperandREX(reg, address, REX_NONE);
+  emitOperandREX(reg, address, byteRegisterREX(reg));
   emitUint8(0x84);
   emitOperand(reg & 7, address);
 }
 
-void Assembler::testq(Register reg, Immediate imm) {
-  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+void Assembler::emitTestQ(Operand operand, Immediate imm) {
+  // Try to emit a small instruction if the value of the immediate lets us. For
+  // Address operands, this relies on the fact that x86 is little-endian.
   if (imm.isUint8()) {
-    // Use zero-extended 8-bit immediate.
-    if (reg >= 4) {
-      // We need the Rex byte to give access to the SIL and DIL registers (the
-      // low bytes of RSI and RDI).
-      emitRegisterREX(reg, REX_NONE, /* force_emit = */ true);
-    }
-    if (reg == RAX) {
-      emitUint8(0xa8);
-    } else {
-      emitUint8(0xf6);
-      emitUint8(0xc0 + (reg & 7));
-    }
-    emitUint8(imm.value() & 0xff);
+    emitTestB(operand, Immediate(static_cast<int8_t>(imm.value())));
   } else if (imm.isUint32()) {
-    if (reg == RAX) {
+    AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+    if (operand.hasRegister(RAX)) {
       emitUint8(0xa9);
     } else {
-      emitRegisterREX(reg, REX_NONE);
+      emitOperandREX(0, operand, REX_NONE);
       emitUint8(0xf7);
-      emitUint8(0xc0 | (reg & 7));
+      emitOperand(0, operand);
     }
     emitUInt32(imm.value());
   } else {
+    AssemblerBuffer::EnsureCapacity ensured(&buffer_);
     // Sign extended version of 32 bit test.
     DCHECK(imm.isInt32(), "assert()");
-    emitRegisterREX(reg, REX_W);
-    if (reg == RAX) {
+    emitOperandREX(0, operand, REX_W);
+    if (operand.hasRegister(RAX)) {
       emitUint8(0xa9);
     } else {
       emitUint8(0xf7);
-      emitUint8(0xc0 | (reg & 7));
+      emitOperand(0, operand);
     }
-    emitImmediate(imm);
+    emitInt32(imm.value());
   }
+}
+
+void Assembler::testq(Register reg, Immediate imm) {
+  emitTestQ(Operand(reg), imm);
+}
+
+void Assembler::testq(Address address, Immediate imm) {
+  emitTestQ(address, imm);
 }
 
 void Assembler::aluB(uint8_t modrm_opcode, Register dst, Immediate imm) {
@@ -750,7 +761,7 @@ void Assembler::emitSignExtendedInt8(int rm, Operand operand,
 void Assembler::emitComplexB(int rm, Operand operand, Immediate imm) {
   DCHECK(rm >= 0 && rm < 8, "assert()");
   DCHECK(imm.isUint8() || imm.isInt8(), "immediate too large");
-  if (operand.isRegister(RAX)) {
+  if (operand.hasRegister(RAX)) {
     // Use short form if the destination is al.
     emitUint8(0x04 + (rm << 3));
   } else {
@@ -765,7 +776,7 @@ void Assembler::emitComplex(int rm, Operand operand, Immediate immediate) {
   DCHECK(immediate.isInt32(), "assert()");
   if (immediate.isInt8()) {
     emitSignExtendedInt8(rm, operand, immediate);
-  } else if (operand.isRegister(RAX)) {
+  } else if (operand.hasRegister(RAX)) {
     // Use short form if the destination is rax.
     emitUint8(0x05 + (rm << 3));
     emitImmediate(immediate);
