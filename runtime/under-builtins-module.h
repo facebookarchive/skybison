@@ -141,6 +141,9 @@ class UnderBuiltinsModule {
                                                word nargs);
   static RawObject underTypeAbstractMethodsSet(Thread* thread, Frame* frame,
                                                word nargs);
+  static RawObject underTypeBasesDel(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTypeBasesGet(Thread* thread, Frame* frame, word nargs);
+  static RawObject underTypeBasesSet(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underTypeCheckExact(Thread* thread, Frame* frame,
                                        word nargs);

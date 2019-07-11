@@ -232,7 +232,6 @@ RawObject typeSetAttr(Thread* thread, const Type& type,
 }
 
 const BuiltinAttribute TypeBuiltins::kAttributes[] = {
-    {SymbolId::kDunderBases, RawType::kBasesOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderDict, RawType::kDictOffset, AttributeFlags::kReadOnly},
     {SymbolId::kDunderDoc, RawType::kDocOffset},
     {SymbolId::kDunderFlags, RawType::kFlagsOffset, AttributeFlags::kReadOnly},

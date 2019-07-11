@@ -1443,6 +1443,22 @@ class TypeTests(unittest.TestCase):
             del Foo.__abstractmethods__
         self.assertEqual(str(context.exception), "__abstractmethods__")
 
+    def test_dunder_bases_del_with_builtin_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            del object.__bases__
+        self.assertEqual(
+            str(context.exception),
+            "can't set attributes of built-in/extension type 'object'",
+        )
+
+    def test_dunder_bases_del_with_user_type_raises_type_error(self):
+        class C:
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            del C.__bases__
+        self.assertEqual(str(context.exception), "can't delete C.__bases__")
+
     def test_dunder_bases_get_with_builtin_type_returns_tuple(self):
         self.assertEqual(object.__bases__, ())
         self.assertEqual(type.__bases__, (object,))

@@ -465,6 +465,21 @@ def _type_abstractmethods_set(self, value):
 
 
 @_patch
+def _type_bases_del(self):
+    pass
+
+
+@_patch
+def _type_bases_get(self):
+    pass
+
+
+@_patch
+def _type_bases_set(self, value):
+    pass
+
+
+@_patch
 def _type_check(obj):
     pass
 

@@ -136,6 +136,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeAbstractMethodsDel, underTypeAbstractMethodsDel},
     {SymbolId::kUnderTypeAbstractMethodsGet, underTypeAbstractMethodsGet},
     {SymbolId::kUnderTypeAbstractMethodsSet, underTypeAbstractMethodsSet},
+    {SymbolId::kUnderTypeBasesDel, underTypeBasesDel},
+    {SymbolId::kUnderTypeBasesGet, underTypeBasesGet},
+    {SymbolId::kUnderTypeBasesSet, underTypeBasesSet},
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
     {SymbolId::kUnderTypeDictKeys, underTypeDictKeys},
@@ -1676,6 +1679,27 @@ RawObject UnderBuiltinsModule::underTypeAbstractMethodsSet(Thread* thread,
         type.builtinBase());
   }
   return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underTypeBasesDel(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Type type(&scope, args.get(0));
+  Str name(&scope, type.name());
+  return thread->raiseWithFmt(LayoutId::kTypeError, "can't delete %S.__bases__",
+                              &name);
+}
+
+RawObject UnderBuiltinsModule::underTypeBasesGet(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  return Type(&scope, args.get(0)).bases();
+}
+
+RawObject UnderBuiltinsModule::underTypeBasesSet(Thread*, Frame*, word) {
+  UNIMPLEMENTED("type.__bases__ setter");
 }
 
 RawObject UnderBuiltinsModule::underTypeCheck(Thread* thread, Frame* frame,

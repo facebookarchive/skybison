@@ -95,6 +95,9 @@ _type = _type  # noqa: F821
 _type_abstractmethods_del = _type_abstractmethods_del  # noqa: F821
 _type_abstractmethods_get = _type_abstractmethods_get  # noqa: F821
 _type_abstractmethods_set = _type_abstractmethods_set  # noqa: F821
+_type_bases_del = _type_bases_del  # noqa: F821
+_type_bases_get = _type_bases_get  # noqa: F821
+_type_bases_set = _type_bases_set  # noqa: F821
 _type_check = _type_check  # noqa: F821
 _type_check_exact = _type_check_exact  # noqa: F821
 _type_dict_keys = _type_dict_keys  # noqa: F821
@@ -182,6 +185,8 @@ class type(bootstrap=True):
     __abstractmethods__ = _property(
         _type_abstractmethods_get, _type_abstractmethods_set, _type_abstractmethods_del
     )
+
+    __bases__ = _property(_type_bases_get, _type_bases_set, _type_bases_del)
 
     def __call__(self, *args, **kwargs):
         pass

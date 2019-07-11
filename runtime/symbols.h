@@ -292,6 +292,9 @@ class Runtime;
   V(UnderTypeAbstractMethodsDel, "_type_abstractmethods_del")                  \
   V(UnderTypeAbstractMethodsGet, "_type_abstractmethods_get")                  \
   V(UnderTypeAbstractMethodsSet, "_type_abstractmethods_set")                  \
+  V(UnderTypeBasesDel, "_type_bases_del")                                      \
+  V(UnderTypeBasesGet, "_type_bases_get")                                      \
+  V(UnderTypeBasesSet, "_type_bases_set")                                      \
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
   V(UnderTypeDictKeys, "_type_dict_keys")                                      \
