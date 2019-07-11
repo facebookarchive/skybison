@@ -3523,14 +3523,16 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
                            word allocated) {
   HandleScope scope(thread);
   word result_len = 0;
+  Object elt(&scope, NoneType::object());
+  Str str(&scope, Str::empty());
   for (word i = 0; i < allocated; ++i) {
-    Object elt(&scope, items.at(i));
-    if (!elt.isStr() && !isInstanceOfStr(*elt)) {
+    elt = items.at(i);
+    if (!isInstanceOfStr(*elt)) {
       return thread->raiseWithFmt(
           LayoutId::kTypeError,
           "sequence item %w: expected str instance, %T found", i, &elt);
     }
-    Str str(&scope, items.at(i));
+    str = strUnderlying(thread, elt);
     result_len += str.length();
   }
   if (allocated > 1) {
@@ -3540,7 +3542,8 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   if (result_len <= RawSmallStr::kMaxLength) {
     byte buffer[RawSmallStr::kMaxLength];
     for (word i = 0, offset = 0; i < allocated; ++i) {
-      Str str(&scope, items.at(i));
+      elt = items.at(i);
+      str = strUnderlying(thread, elt);
       word str_len = str.length();
       str.copyTo(&buffer[offset], str_len);
       offset += str_len;
@@ -3555,7 +3558,8 @@ RawObject Runtime::strJoin(Thread* thread, const Str& sep, const Tuple& items,
   // Large result
   LargeStr result(&scope, heap()->createLargeStr(result_len));
   for (word i = 0, offset = 0; i < allocated; ++i) {
-    Str str(&scope, items.at(i));
+    elt = items.at(i);
+    str = strUnderlying(thread, elt);
     word str_len = str.length();
     str.copyTo(reinterpret_cast<byte*>(result.address() + offset), str_len);
     offset += str_len;
