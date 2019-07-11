@@ -51,12 +51,14 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
     {SymbolId::kUnderByteArrayClear, underByteArrayClear},
     {SymbolId::kUnderByteArrayJoin, underByteArrayJoin},
+    {SymbolId::kUnderByteArrayLen, underByteArrayLen},
     {SymbolId::kUnderByteArraySetitem, underByteArraySetItem},
     {SymbolId::kUnderBytesCheck, underBytesCheck},
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
     {SymbolId::kUnderBytesGetslice, underBytesGetSlice},
     {SymbolId::kUnderBytesJoin, underBytesJoin},
+    {SymbolId::kUnderBytesLen, underBytesLen},
     {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
     {SymbolId::kUnderBytesRepeat, underBytesRepeat},
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
@@ -69,6 +71,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictBucketUpdate, underDictBucketUpdate},
     {SymbolId::kUnderDictBucketValue, underDictBucketValue},
     {SymbolId::kUnderDictCheck, underDictCheck},
+    {SymbolId::kUnderDictLen, underDictLen},
     {SymbolId::kUnderDictLookup, underDictLookup},
     {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
@@ -99,6 +102,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListCheckExact, underListCheckExact},
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
+    {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderProperty, underProperty},
@@ -106,6 +110,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
     {SymbolId::kUnderSetCheck, underSetCheck},
+    {SymbolId::kUnderSetLen, underSetLen},
     {SymbolId::kUnderSetMemberDouble, underSetMemberDouble},
     {SymbolId::kUnderSetMemberFloat, underSetMemberFloat},
     {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
@@ -117,11 +122,13 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
     {SymbolId::kUnderStrFromStr, underStrFromStr},
+    {SymbolId::kUnderStrLen, underStrLen},
     {SymbolId::kUnderStrReplace, underStrReplace},
     {SymbolId::kUnderStrRFind, underStrRFind},
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
+    {SymbolId::kUnderTupleLen, underTupleLen},
     {SymbolId::kUnderTupleNew, underTupleNew},
     {SymbolId::kUnderType, underType},
     {SymbolId::kUnderTypeAbstractMethodsDel, underTypeAbstractMethodsDel},
@@ -143,14 +150,29 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck,  SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderDictCheck,       SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFrozenSetCheck,  SymbolId::kUnderIntCheck,
-    SymbolId::kUnderListCheck,       SymbolId::kUnderListCheckExact,
-    SymbolId::kUnderSetCheck,        SymbolId::kUnderSliceCheck,
-    SymbolId::kUnderStrCheck,        SymbolId::kUnderTupleCheck,
-    SymbolId::kUnderTupleCheckExact, SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,       SymbolId::kUnderTypeCheckExact,
+    SymbolId::kUnderByteArrayCheck,
+    SymbolId::kUnderByteArrayLen,
+    SymbolId::kUnderBytesCheck,
+    SymbolId::kUnderBytesLen,
+    SymbolId::kUnderDictCheck,
+    SymbolId::kUnderDictLen,
+    SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFrozenSetCheck,
+    SymbolId::kUnderIntCheck,
+    SymbolId::kUnderListCheck,
+    SymbolId::kUnderListCheckExact,
+    SymbolId::kUnderListLen,
+    SymbolId::kUnderSetCheck,
+    SymbolId::kUnderSetLen,
+    SymbolId::kUnderSliceCheck,
+    SymbolId::kUnderStrCheck,
+    SymbolId::kUnderStrLen,
+    SymbolId::kUnderTupleCheck,
+    SymbolId::kUnderTupleCheckExact,
+    SymbolId::kUnderTupleLen,
+    SymbolId::kUnderType,
+    SymbolId::kUnderTypeCheck,
+    SymbolId::kUnderTypeCheckExact,
     SymbolId::kSentinelId,
 };
 
@@ -253,6 +275,14 @@ RawObject UnderBuiltinsModule::underByteArrayJoin(Thread* thread, Frame* frame,
   return *result;
 }
 
+RawObject UnderBuiltinsModule::underByteArrayLen(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  ByteArray self(&scope, args.get(0));
+  return SmallInt::fromWord(self.numItems());
+}
+
 RawObject UnderBuiltinsModule::underBytesFromInts(Thread* thread, Frame* frame,
                                                   word nargs) {
   HandleScope scope(thread);
@@ -344,6 +374,15 @@ RawObject UnderBuiltinsModule::underBytesJoin(Thread* thread, Frame* frame,
   }
   // Slow path: collect items into list in Python and call again
   return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underBytesLen(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  return SmallInt::fromWord(self.length());
 }
 
 RawObject UnderBuiltinsModule::underBytesMaketrans(Thread* thread, Frame* frame,
@@ -581,6 +620,14 @@ RawObject UnderBuiltinsModule::underDictCheck(Thread* thread, Frame* frame,
                                               word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfDict(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underDictLen(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Dict self(&scope, args.get(0));
+  return SmallInt::fromWord(self.numItems());
 }
 
 RawObject UnderBuiltinsModule::underDictLookup(Thread* thread, Frame* frame,
@@ -1192,6 +1239,14 @@ RawObject UnderBuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
   return NoneType::object();
 }
 
+RawObject UnderBuiltinsModule::underListLen(Thread* thread, Frame* frame,
+                                            word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  List self(&scope, args.get(0));
+  return SmallInt::fromWord(self.numItems());
+}
+
 RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
@@ -1287,6 +1342,14 @@ RawObject UnderBuiltinsModule::underSetCheck(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfSet(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underSetLen(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Set self(&scope, args.get(0));
+  return SmallInt::fromWord(self.numItems());
 }
 
 RawObject UnderBuiltinsModule::underSetMemberDouble(Thread*, Frame* frame,
@@ -1419,6 +1482,15 @@ RawObject UnderBuiltinsModule::underStrJoin(Thread* thread, Frame* frame,
   return runtime->strJoin(thread, sep, tuple, list.numItems());
 }
 
+RawObject UnderBuiltinsModule::underStrLen(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Str self(&scope, strUnderlying(thread, self_obj));
+  return SmallInt::fromWord(self.length());
+}
+
 RawObject UnderBuiltinsModule::underStrReplace(Thread* thread, Frame* frame,
                                                word nargs) {
   Runtime* runtime = thread->runtime();
@@ -1488,6 +1560,15 @@ RawObject UnderBuiltinsModule::underTupleCheckExact(Thread*, Frame* frame,
                                                     word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isTuple());
+}
+
+RawObject UnderBuiltinsModule::underTupleLen(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object self_obj(&scope, args.get(0));
+  Tuple self(&scope, tupleUnderlying(thread, self_obj));
+  return SmallInt::fromWord(self.length());
 }
 
 RawObject UnderBuiltinsModule::underTupleNew(Thread* thread, Frame* frame,

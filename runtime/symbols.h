@@ -143,6 +143,7 @@ class Runtime;
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayClear, "_bytearray_clear")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
+  V(UnderByteArrayLen, "_bytearray_len")                                       \
   V(UnderByteArraySetitem, "_bytearray_setitem")                               \
   V(UnderByteArrayStringAppend, "_bytearray_string_append")                    \
   V(UnderBytesCheck, "_bytes_check")                                           \
@@ -150,6 +151,7 @@ class Runtime;
   V(UnderBytesGetitem, "_bytes_getitem")                                       \
   V(UnderBytesGetslice, "_bytes_getslice")                                     \
   V(UnderBytesJoin, "_bytes_join")                                             \
+  V(UnderBytesLen, "_bytes_len")                                               \
   V(UnderBytesMaketrans, "_bytes_maketrans")                                   \
   V(UnderBytesNew, "_bytes_new")                                               \
   V(UnderBytesRepeat, "_bytes_repeat")                                         \
@@ -166,6 +168,7 @@ class Runtime;
   V(UnderDictBucketValue, "_dict_bucket_value")                                \
   V(UnderDictCheck, "_dict_check")                                             \
   V(UnderDictGetItem, "_dict_getitem")                                         \
+  V(UnderDictLen, "_dict_len")                                                 \
   V(UnderDictLookup, "_dict_lookup")                                           \
   V(UnderDictLookupNext, "_dict_lookup_next")                                  \
   V(UnderDictSetItem, "_dict_setitem")                                         \
@@ -212,6 +215,7 @@ class Runtime;
   V(UnderListCheckExact, "_list_checkexact")                                   \
   V(UnderListDelitem, "_list_delitem")                                         \
   V(UnderListDelslice, "_list_delslice")                                       \
+  V(UnderListLen, "_list_len")                                                 \
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
   V(UnderModuleRepr, "_module_repr")                                           \
@@ -250,6 +254,7 @@ class Runtime;
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
   V(UnderSetCheck, "_set_check")                                               \
+  V(UnderSetLen, "_set_len")                                                   \
   V(UnderSetMemberDouble, "_set_member_double")                                \
   V(UnderSetMemberFloat, "_set_member_float")                                  \
   V(UnderSetMemberIntegral, "_set_member_integral")                            \
@@ -266,6 +271,7 @@ class Runtime;
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
   V(UnderStrFromStr, "_str_from_str")                                          \
+  V(UnderStrLen, "_str_len")                                                   \
   V(UnderStrReplace, "_str_replace")                                           \
   V(UnderStrRFind, "_str_rfind")                                               \
   V(UnderStrSplitlines, "_str_splitlines")                                     \
@@ -277,6 +283,7 @@ class Runtime;
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderTupleCheckExact, "_tuple_checkexact")                                 \
+  V(UnderTupleLen, "_tuple_len")                                               \
   V(UnderTupleNew, "_tuple_new")                                               \
   V(UnderTraceback, "_traceback")                                              \
   V(UnderType, "_type")                                                        \

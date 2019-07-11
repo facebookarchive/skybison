@@ -34,6 +34,11 @@ def _bytearray_join(self, iterable):
 
 
 @_patch
+def _bytearray_len(self):
+    pass
+
+
+@_patch
 def _bytearray_setitem(self, key, value):
     pass
 
@@ -60,6 +65,11 @@ def _bytes_getslice(self, start, stop, step):
 
 @_patch
 def _bytes_join(self, iterable):
+    pass
+
+
+@_patch
+def _bytes_len(self):
     pass
 
 
@@ -120,6 +130,11 @@ def _dict_bucket_value(self, index):
 
 @_patch
 def _dict_check(obj):
+    pass
+
+
+@_patch
+def _dict_len(self):
     pass
 
 
@@ -276,6 +291,11 @@ def _list_delslice(self, start, stop, step):
 
 
 @_patch
+def _list_len(self):
+    pass
+
+
+@_patch
 def _list_sort(list):
     pass
 
@@ -311,6 +331,11 @@ def _repr_leave(obj):
 
 @_patch
 def _set_check(obj):
+    pass
+
+
+@_patch
+def _set_len(self):
     pass
 
 
@@ -365,6 +390,11 @@ def _str_from_str(cls, value):
 
 
 @_patch
+def _str_len(self):
+    pass
+
+
+@_patch
 def _str_replace(self, old, newstr, count):
     pass
 
@@ -391,6 +421,11 @@ def _tuple_check(obj):
 
 @_patch
 def _tuple_checkexact(obj):
+    pass
+
+
+@_patch
+def _tuple_len(self):
     pass
 
 

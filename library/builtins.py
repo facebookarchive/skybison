@@ -17,6 +17,7 @@ _bytes_from_ints = _bytes_from_ints  # noqa: F821
 _bytes_getitem = _bytes_getitem  # noqa: F821
 _bytes_getslice = _bytes_getslice  # noqa: F821
 _bytes_join = _bytes_join  # noqa: F821
+_bytes_len = _bytes_len  # noqa: F821
 _bytes_maketrans = _bytes_maketrans  # noqa: F821
 _bytes_repeat = _bytes_repeat  # noqa: F821
 _byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
@@ -59,6 +60,7 @@ _list_check = _list_check  # noqa: F821
 _list_checkexact = _list_checkexact  # noqa: F821
 _list_delitem = _list_delitem  # noqa: F821
 _list_delslice = _list_delslice  # noqa: F821
+_list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
@@ -67,6 +69,7 @@ _pyobject_offset = _pyobject_offset  # noqa: F821
 _repr_enter = _repr_enter  # noqa: F821
 _repr_leave = _repr_leave  # noqa: F821
 _set_check = _set_check  # noqa: F821
+_set_len = _set_len  # noqa: F821
 _set_member_double = _set_member_double  # noqa: F821
 _set_member_float = _set_member_float  # noqa: F821
 _set_member_integral = _set_member_integral  # noqa: F821
@@ -77,12 +80,14 @@ _str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
 _str_from_str = _str_from_str  # noqa: F821
+_str_len = _str_len  # noqa: F821
 _str_replace = _str_replace  # noqa: F821
 _str_rfind = _str_rfind  # noqa: F821
 _str_splitlines = _str_splitlines  # noqa: F821
 _traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _tuple_checkexact = _tuple_checkexact  # noqa: F821
+_tuple_len = _tuple_len  # noqa: F821
 _tuple_new = _tuple_new  # noqa: F821
 _type = _type  # noqa: F821
 _type_abstractmethods_del = _type_abstractmethods_del  # noqa: F821
@@ -351,7 +356,7 @@ class ImportError(bootstrap=True):
 
 class KeyError(bootstrap=True):
     def __str__(self):
-        if _tuple_check(self.args) and len(self.args) == 1:
+        if _tuple_check(self.args) and _tuple_len(self.args) == 1:
             return repr(self.args[0])
         return super(KeyError, self).__str__()
 
@@ -746,7 +751,7 @@ def _slice_index(num) -> int:
 
 
 def _str_split_whitespace(self, maxsplit):
-    length = len(self)
+    length = _str_len(self)
     i = 0
     res = []
     num_split = 0
@@ -821,7 +826,7 @@ def _structseq_getitem(self, pos):
 
 def _structseq_new(cls, sequence, dict={}):  # noqa B006
     seq_tuple = tuple(sequence)
-    seq_len = len(seq_tuple)
+    seq_len = _tuple_len(seq_tuple)
     max_len = cls.n_fields
     min_len = cls.n_sequence_fields
     if seq_len < min_len:
@@ -1195,7 +1200,7 @@ class bytes(bootstrap=True):
         if _int_check(key):
             return _bytes_getitem(self, key)
         if _slice_check(key):
-            return _bytes_getslice(self, *key.indices(len(self)))
+            return _bytes_getslice(self, *key.indices(_bytes_len(self)))
         try:
             return _bytes_getitem(self, _index(key))
         except TypeError:
@@ -1584,10 +1589,10 @@ class dict(bootstrap=True):
         idx = 0
         for x in iter(seq):
             item = tuple(x)
-            if len(item) != 2:
+            if _tuple_len(item) != 2:
                 raise ValueError(
                     f"dictionary update sequence element {idx} has length "
-                    f"{len(item)}; 2 is required"
+                    f"{_tuple_len(item)}; 2 is required"
                 )
             key = item[0]
             value = item[1]
@@ -2322,7 +2327,7 @@ class list(bootstrap=True):
         if _int_check(key):
             return _list_delitem(self, key)
         if _slice_check(key):
-            return _list_delslice(self, *key.indices(list.__len__(self)))
+            return _list_delslice(self, *key.indices(_list_len(self)))
         try:
             return _list_delitem(self, _index(key))
         except TypeError:
@@ -2339,8 +2344,8 @@ class list(bootstrap=True):
 
         if self is other:
             return True
-        length = list.__len__(self)
-        if length != list.__len__(other):
+        length = _list_len(self)
+        if length != _list_len(other):
             return False
         i = 0
         while i < length:
@@ -2403,7 +2408,12 @@ class list(bootstrap=True):
         pass
 
     def reverse(self):
-        length = len(self)
+        if not _list_check(self):
+            raise TypeError(
+                "'reverse' requires a 'list' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        length = _list_len(self)
         if length < 2:
             return
         left = 0
@@ -2422,7 +2432,7 @@ class list(bootstrap=True):
             list.reverse(self)
         if key:
             i = 0
-            length = len(self)
+            length = _list_len(self)
             while i < length:
                 item = list.__getitem__(self, i)
                 list.__setitem__(self, i, (key(item), item))
@@ -2796,9 +2806,14 @@ class set(bootstrap=True):
         return result
 
     def __repr__(self):
+        if not _set_check(self):
+            raise TypeError(
+                "'__repr__' requires a 'set' object but received a "
+                f"'{_type(self).__name__}'"
+            )
         if _repr_enter(self):
             return f"{_type(self).__name__}(...)"
-        if len(self) == 0:
+        if _set_len(self) == 0:
             _repr_leave(self)
             return f"{_type(self).__name__}()"
         result = f"{{{', '.join([item.__repr__() for item in self])}}}"
@@ -3054,7 +3069,7 @@ class str(bootstrap=True):
         def suffix_match(cmp, sfx, start, end):
             if not _str_check(sfx):
                 raise TypeError("endswith suffix must be a str")
-            sfx_len = len(sfx)
+            sfx_len = _str_len(sfx)
             # If the suffix is longer than the string its comparing against, it
             # can't be a match.
             if end - start < sfx_len:
@@ -3070,7 +3085,7 @@ class str(bootstrap=True):
                 i += 1
             return True
 
-        str_len = len(self)
+        str_len = _str_len(self)
         start, end = real_bounds_from_slice_bounds(start, end, str_len)
         if not _tuple_check(suffix):
             return suffix_match(self, suffix, start, end)
@@ -3248,12 +3263,12 @@ class str(bootstrap=True):
             )
         if not _str_check(sep):
             raise TypeError(f"must be str, not {_type(sep).__name__}")
-        sep_len = len(sep)
+        sep_len = _str_len(sep)
         if not sep_len:
             raise ValueError("empty separator")
         sep_0 = sep[0]
         i = 0
-        str_len = len(self)
+        str_len = _str_len(self)
         while i < str_len:
             if self[i] == sep_0:
                 j = 1
@@ -3329,15 +3344,15 @@ class str(bootstrap=True):
             return [self]
         if not _str_check(sep):
             raise TypeError("must be str or None")
-        sep_len = len(sep)
+        sep_len = _str_len(sep)
         if sep_len == 0:
             raise ValueError("empty separator")
 
         def strcmp(cmp, other, start):
             """Returns True if other is in cmp at the position start"""
             i = 0
-            cmp_len = len(cmp)
-            other_len = len(other)
+            cmp_len = _str_len(cmp)
+            other_len = _str_len(other)
             # If the other string is longer than the rest of the current string,
             # then it is not a match.
             if start + other_len > cmp_len:
@@ -3352,7 +3367,7 @@ class str(bootstrap=True):
         # is not efficient for UTF-8 strings.
         parts = []
         i = 0
-        str_len = len(self)
+        str_len = _str_len(self)
         # The index of the string starting after the last match.
         last_match = 0
         while i < str_len:
@@ -3400,7 +3415,7 @@ class str(bootstrap=True):
         def prefix_match(cmp, prefix, start, end):
             if not _str_check(prefix):
                 raise TypeError("startswith prefix must be a str")
-            prefix_len = len(prefix)
+            prefix_len = _str_len(prefix)
             # If the prefix is longer than the string its comparing against, it
             # can't be a match.
             if end - start < prefix_len:
@@ -3416,8 +3431,12 @@ class str(bootstrap=True):
                 i += 1
             return True
 
-        str_len = len(self)
-        start, end = real_bounds_from_slice_bounds(start, end, str_len)
+        if not _str_check(self):
+            raise TypeError(
+                "'startswith' requires a 'str' object by received a "
+                f"'{_type(self).__name__}'"
+            )
+        start, end = real_bounds_from_slice_bounds(start, end, _str_len(self))
         if not _tuple_check(prefix):
             return prefix_match(self, prefix, start, end)
 
@@ -3508,8 +3527,8 @@ class tuple(bootstrap=True):
             raise TypeError(f"__lt__ expected 'tuple' but got {_type(self).__name__}")
         if not _tuple_check(other):
             raise TypeError(f"__lt__ expected 'tuple' but got {_type(other).__name__}")
-        len_self = tuple.__len__(self)
-        len_other = tuple.__len__(other)
+        len_self = _tuple_len(self)
+        len_other = _tuple_len(other)
         # TODO(T42050051): Use builtin.min when it's developed
         min_len = len_self if len_self < len_other else len_other
         # Find the first non-equal item in the tuples
@@ -3548,9 +3567,14 @@ class tuple(bootstrap=True):
         return _tuple_new(cls, list(it))
 
     def __repr__(self):
+        if not _tuple_check(self):
+            raise TypeError(
+                "'__repr__' requires a 'tuple' object but received a "
+                f"'{_type(self).__name__}'"
+            )
         if _repr_enter(self):
             return "(...)"
-        num_elems = len(self)
+        num_elems = _tuple_len(self)
         output = "("
         i = 0
         while i < num_elems:
