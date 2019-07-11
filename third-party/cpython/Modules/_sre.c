@@ -1444,7 +1444,7 @@ _sre.compile
 
     pattern: object
     flags: int
-    code: object(subclass_of='&PyList_Type')
+    code: object
     groups: Py_ssize_t
     groupindex: object
     indexgroup: object
@@ -1462,6 +1462,14 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     PatternObject* self;
     Py_ssize_t i, n;
 
+    if (!PyList_Check(code)) {
+      char buf[90];
+      PyOS_snprintf(buf, sizeof(buf),
+                    "compile() argument 3 must be list, not %.50s",
+                    _PyType_Name(Py_TYPE(code)));
+      PyErr_SetString(PyExc_TypeError, buf);
+      return NULL;
+    }
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
     self = PyObject_NEW_VAR(PatternObject, (PyTypeObject *)_srestate(module)->Pattern_Type, n);
