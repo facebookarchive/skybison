@@ -138,6 +138,25 @@ void listReverse(Thread* thread, const List& list) {
   }
 }
 
+RawObject listSlice(Thread* thread, const List& list, word start, word stop,
+                    word step) {
+  Runtime* runtime = thread->runtime();
+  word length = Slice::length(start, stop, step);
+  if (length == 0) {
+    return runtime->newList();
+  }
+
+  HandleScope scope(thread);
+  Tuple items(&scope, runtime->newTuple(length));
+  for (word i = 0, j = start; i < length; i++, j += step) {
+    items.atPut(i, list.at(j));
+  }
+  List result(&scope, runtime->newList());
+  result.setItems(*items);
+  result.setNumItems(length);
+  return *result;
+}
+
 // TODO(T39107329): We should have a faster sorting algorithm than insertion
 // sort. Re-write as Timsort.
 RawObject listSort(Thread* thread, const List& list) {
@@ -192,7 +211,6 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderAdd, dunderAdd},
     {SymbolId::kDunderContains, dunderContains},
-    {SymbolId::kDunderGetitem, dunderGetItem},
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderMul, dunderMul},
@@ -429,56 +447,6 @@ RawObject ListBuiltins::remove(Thread* thread, Frame* frame, word nargs) {
   }
   return thread->raiseWithFmt(LayoutId::kValueError,
                               "list.remove(x) x not in list");
-}
-
-RawObject listSlice(Thread* thread, const List& list, const Slice& slice) {
-  HandleScope scope(thread);
-  word start, stop, step;
-  Object err(&scope, sliceUnpack(thread, slice, &start, &stop, &step));
-  if (err.isError()) return *err;
-  word length = Slice::adjustIndices(list.numItems(), &start, &stop, step);
-
-  Runtime* runtime = thread->runtime();
-  Tuple items(&scope, runtime->newTuple(length));
-  for (word i = 0, index = start; i < length; i++, index += step) {
-    items.atPut(i, list.at(index));
-  }
-
-  List result(&scope, runtime->newList());
-  result.setItems(*items);
-  result.setNumItems(items.length());
-  return *result;
-}
-
-RawObject ListBuiltins::dunderGetItem(Thread* thread, Frame* frame,
-                                      word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
-  }
-
-  List list(&scope, *self);
-  word length = list.numItems();
-  RawObject index = args.get(1);
-  if (index.isSmallInt()) {
-    word idx = SmallInt::cast(index).value();
-    if (idx < 0) {
-      idx += length;
-    }
-    if (idx < 0 || idx >= length) {
-      return thread->raiseWithFmt(LayoutId::kIndexError,
-                                  "list index out of range");
-    }
-    return list.at(idx);
-  }
-  if (index.isSlice()) {
-    Slice slice(&scope, index);
-    return listSlice(thread, list, slice);
-  }
-  return thread->raiseWithFmt(LayoutId::kTypeError,
-                              "list indices must be integers or slices");
 }
 
 RawObject ListBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {

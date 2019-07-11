@@ -95,6 +95,8 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underListDelItem(Thread* thread, Frame* frame, word nargs);
   static RawObject underListDelSlice(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListGetItem(Thread* thread, Frame* frame, word nargs);
+  static RawObject underListGetSlice(Thread* thread, Frame* frame, word nargs);
   static RawObject underListLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underListSort(Thread* thread, Frame* frame, word nargs);
   static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,

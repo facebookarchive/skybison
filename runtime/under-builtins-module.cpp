@@ -102,6 +102,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListCheckExact, underListCheckExact},
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
+    {SymbolId::kUnderListGetitem, underListGetItem},
+    {SymbolId::kUnderListGetslice, underListGetSlice},
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
@@ -150,29 +152,18 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck,
-    SymbolId::kUnderByteArrayLen,
-    SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderBytesLen,
-    SymbolId::kUnderDictCheck,
-    SymbolId::kUnderDictLen,
-    SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFrozenSetCheck,
-    SymbolId::kUnderIntCheck,
-    SymbolId::kUnderListCheck,
-    SymbolId::kUnderListCheckExact,
-    SymbolId::kUnderListLen,
-    SymbolId::kUnderSetCheck,
-    SymbolId::kUnderSetLen,
-    SymbolId::kUnderSliceCheck,
-    SymbolId::kUnderStrCheck,
-    SymbolId::kUnderStrLen,
-    SymbolId::kUnderTupleCheck,
-    SymbolId::kUnderTupleCheckExact,
-    SymbolId::kUnderTupleLen,
-    SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,
-    SymbolId::kUnderTypeCheckExact,
+    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderByteArrayLen,
+    SymbolId::kUnderBytesCheck,     SymbolId::kUnderBytesLen,
+    SymbolId::kUnderDictCheck,      SymbolId::kUnderDictLen,
+    SymbolId::kUnderFloatCheck,     SymbolId::kUnderFrozenSetCheck,
+    SymbolId::kUnderIntCheck,       SymbolId::kUnderListCheck,
+    SymbolId::kUnderListCheckExact, SymbolId::kUnderListGetitem,
+    SymbolId::kUnderListLen,        SymbolId::kUnderSetCheck,
+    SymbolId::kUnderSetLen,         SymbolId::kUnderSliceCheck,
+    SymbolId::kUnderStrCheck,       SymbolId::kUnderStrLen,
+    SymbolId::kUnderTupleCheck,     SymbolId::kUnderTupleCheckExact,
+    SymbolId::kUnderTupleLen,       SymbolId::kUnderType,
+    SymbolId::kUnderTypeCheck,      SymbolId::kUnderTypeCheckExact,
     SymbolId::kSentinelId,
 };
 
@@ -1237,6 +1228,44 @@ RawObject UnderBuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
   // Untrack all deleted elements
   list.clearFrom(new_length);
   return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  List self(&scope, args.get(0));
+  Object key_obj(&scope, args.get(1));
+  Int key(&scope, intUnderlying(thread, key_obj));
+  word index = key.asWordSaturated();
+  if (!SmallInt::isValid(index)) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "cannot fit '%T' into an index-sized integer",
+                                &key_obj);
+  }
+  word length = self.numItems();
+  if (index < 0) {
+    index += length;
+  }
+  if (index < 0 || index >= length) {
+    return thread->raiseWithFmt(LayoutId::kIndexError,
+                                "list index out of range");
+  }
+  return self.at(index);
+}
+
+RawObject UnderBuiltinsModule::underListGetSlice(Thread* thread, Frame* frame,
+                                                 word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  List self(&scope, args.get(0));
+  Object obj(&scope, args.get(1));
+  Int start(&scope, intUnderlying(thread, obj));
+  obj = args.get(2);
+  Int stop(&scope, intUnderlying(thread, obj));
+  obj = args.get(3);
+  Int step(&scope, intUnderlying(thread, obj));
+  return listSlice(thread, self, start.asWord(), stop.asWord(), step.asWord());
 }
 
 RawObject UnderBuiltinsModule::underListLen(Thread* thread, Frame* frame,

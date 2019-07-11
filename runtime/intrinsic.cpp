@@ -78,6 +78,29 @@ static bool underListCheckExact(Frame* frame) {
   return true;
 }
 
+static bool underListGetItem(Frame* frame) {
+  RawObject arg0 = frame->peek(1);
+  if (!arg0.isList()) {
+    return false;
+  }
+  RawObject arg1 = frame->peek(0);
+  word idx;
+  if (arg1.isSmallInt()) {
+    idx = SmallInt::cast(arg1).value();
+  } else if (arg1.isBool()) {
+    idx = Bool::cast(arg1).value();
+  } else {
+    return false;
+  }
+  RawList self = List::cast(arg0);
+  if (0 <= idx && idx < self.numItems()) {
+    frame->dropValues(2);
+    frame->setTopValue(self.at(idx));
+    return true;
+  }
+  return false;
+}
+
 static bool underListLen(Frame* frame) {
   RawObject arg = frame->popValue();
   if (arg.isList()) {
@@ -191,6 +214,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underListCheck(thread, frame);
     case SymbolId::kUnderListCheckExact:
       return underListCheckExact(frame);
+    case SymbolId::kUnderListGetitem:
+      return underListGetItem(frame);
     case SymbolId::kUnderListLen:
       return underListLen(frame);
     case SymbolId::kUnderSetCheck:

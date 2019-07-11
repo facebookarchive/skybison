@@ -27,7 +27,8 @@ RawObject listReplicate(Thread* thread, const List& list, word ntimes);
 void listReverse(Thread* thread, const List& list);
 
 // Returns a new list by slicing the given list
-RawObject listSlice(Thread* thread, const List& list, const Slice& slice);
+RawObject listSlice(Thread* thread, const List& list, word start, word stop,
+                    word step);
 
 // Sort a list in place.
 // Returns None when there has been no error, or throws a TypeError and returns
@@ -45,8 +46,6 @@ class ListBuiltins
   static RawObject extend(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderDelItem(Thread* thread, Frame* frame, word nargs);
-  static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderMul(Thread* thread, Frame* frame, word nargs);

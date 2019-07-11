@@ -291,6 +291,16 @@ def _list_delslice(self, start, stop, step):
 
 
 @_patch
+def _list_getitem(self, key):
+    pass
+
+
+@_patch
+def _list_getslice(self, start, stop, step):
+    pass
+
+
+@_patch
 def _list_len(self):
     pass
 

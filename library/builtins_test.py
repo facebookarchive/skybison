@@ -1016,6 +1016,76 @@ class ListTests(unittest.TestCase):
         del a[4 :: 1 << 333]
         self.assertEqual(a, [0, 1, 2, 3])
 
+    def test_getitem_with_int_subclass_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise ValueError("foo")
+
+        ls = list(range(5))
+        self.assertEqual(ls[C(3)], 3)
+
+    def test_getitem_with_string_raises_type_error(self):
+        ls = list(range(5))
+        with self.assertRaises(TypeError) as context:
+            ls["3"]
+        self.assertEqual(
+            str(context.exception), "list indices must be integers or slices, not str"
+        )
+
+    def test_getitem_with_dunder_index_calls_dunder_index(self):
+        class C:
+            def __index__(self):
+                return 2
+
+        ls = list(range(5))
+        self.assertEqual(ls[C()], 2)
+
+    def test_getslice_with_valid_indices_returns_sublist(self):
+        ls = list(range(5))
+        self.assertEqual(ls[2:-1:1], [2, 3])
+
+    def test_getslice_with_negative_start_returns_trailing(self):
+        ls = list(range(5))
+        self.assertEqual(ls[-2:], [3, 4])
+
+    def test_getslice_with_positive_stop_returns_leading(self):
+        ls = list(range(5))
+        self.assertEqual(ls[:2], [0, 1])
+
+    def test_getslice_with_negative_stop_returns_all_but_trailing(self):
+        ls = list(range(5))
+        self.assertEqual(ls[:-2], [0, 1, 2])
+
+    def test_getslice_with_positive_step_returns_forwards_list(self):
+        ls = list(range(5))
+        self.assertEqual(ls[::2], [0, 2, 4])
+
+    def test_getslice_with_negative_step_returns_backwards_list(self):
+        ls = list(range(5))
+        self.assertEqual(ls[::-2], [4, 2, 0])
+
+    def test_getslice_with_large_negative_start_returns_copy(self):
+        ls = list(range(5))
+        self.assertEqual(ls[-10:], ls)
+
+    def test_getslice_with_large_positive_start_returns_empty(self):
+        ls = list(range(5))
+        self.assertEqual(ls[10:], [])
+
+    def test_getslice_with_large_negative_start_returns_empty(self):
+        ls = list(range(5))
+        self.assertEqual(ls[:-10], [])
+
+    def test_getslice_with_large_positive_start_returns_copy(self):
+        ls = list(range(5))
+        self.assertEqual(ls[:10], ls)
+
+    def test_getslice_with_identity_slice_returns_copy(self):
+        ls = list(range(5))
+        copy = ls[::]
+        self.assertEqual(copy, ls)
+        self.assertIsNot(copy, ls)
+
 
 class SetTests(unittest.TestCase):
     def test_discard_with_non_set_raises_type_error(self):

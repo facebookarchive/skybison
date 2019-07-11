@@ -1204,6 +1204,35 @@ TEST_F(UnderBuiltinsModuleTest,
   EXPECT_PYLIST_EQ(list, {1, 2, 3, 4});
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderListGetItemWithNegativeIndex) {
+  HandleScope scope(thread_);
+  List list(&scope, listFromRange(1, 4));
+  Object idx(&scope, SmallInt::fromWord(-3));
+  Object result(&scope,
+                runBuiltin(UnderBuiltinsModule::underListGetItem, list, idx));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderListGetItemWithInvalidNegativeIndexRaisesIndexError) {
+  HandleScope scope(thread_);
+  List list(&scope, listFromRange(1, 4));
+  Object idx(&scope, SmallInt::fromWord(-4));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underListGetItem, list, idx),
+      LayoutId::kIndexError, "list index out of range"));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderListGetItemWithInvalidPositiveIndexRaisesIndexError) {
+  HandleScope scope(thread_);
+  List list(&scope, listFromRange(1, 4));
+  Object idx(&scope, SmallInt::fromWord(3));
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underListGetItem, list, idx),
+      LayoutId::kIndexError, "list index out of range"));
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderObjectTypeHasattrWithNonexistentAttrReturnsFalse) {
   HandleScope scope(thread_);

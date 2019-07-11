@@ -60,6 +60,8 @@ _list_check = _list_check  # noqa: F821
 _list_checkexact = _list_checkexact  # noqa: F821
 _list_delitem = _list_delitem  # noqa: F821
 _list_delslice = _list_delslice  # noqa: F821
+_list_getitem = _list_getitem  # noqa: F821
+_list_getslice = _list_getslice  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
@@ -2349,15 +2351,29 @@ class list(bootstrap=True):
             return False
         i = 0
         while i < length:
-            lhs = list.__getitem__(self, i)
-            rhs = list.__getitem__(other, i)
+            lhs = _list_getitem(self, i)
+            rhs = _list_getitem(other, i)
             if lhs is not rhs and not (lhs == rhs):
                 return False
             i += 1
         return True
 
     def __getitem__(self, key):
-        pass
+        if not _list_check(self):
+            raise TypeError(
+                "'__getitem__' requires a 'list' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        if _int_check(key):
+            return _list_getitem(self, key)
+        if _slice_check(key):
+            return _list_getslice(self, *key.indices(_list_len(self)))
+        try:
+            return _list_getitem(self, _index(key))
+        except TypeError:
+            raise TypeError(
+                f"list indices must be integers or slices, not {_type(key).__name__}"
+            )
 
     def __init__(self, iterable=()):
         self.extend(iterable)
@@ -2419,8 +2435,8 @@ class list(bootstrap=True):
         left = 0
         right = length - 1
         while left < right:
-            tmp = list.__getitem__(self, left)
-            list.__setitem__(self, left, list.__getitem__(self, right))
+            tmp = _list_getitem(self, left)
+            list.__setitem__(self, left, _list_getitem(self, right))
             list.__setitem__(self, right, tmp)
             left += 1
             right -= 1
@@ -2434,14 +2450,14 @@ class list(bootstrap=True):
             i = 0
             length = _list_len(self)
             while i < length:
-                item = list.__getitem__(self, i)
+                item = _list_getitem(self, i)
                 list.__setitem__(self, i, (key(item), item))
                 i += 1
         _list_sort(self)
         if key:
             i = 0
             while i < length:
-                item = list.__getitem__(self, i)
+                item = _list_getitem(self, i)
                 list.__setitem__(self, i, item[1])
                 i += 1
         if reverse:

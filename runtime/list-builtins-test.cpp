@@ -623,122 +623,28 @@ print(l[0], l[3], l[5])
   ASSERT_EQ(output, "1 4 6\n6 4 1\n");
 }
 
-TEST_F(ListBuiltinsTest, SlicePositiveStartIndex) {
+TEST_F(ListBuiltinsTest, SliceWithPositiveStepReturnsForwardsList) {
   HandleScope scope(thread_);
   List list1(&scope, listFromRange(1, 6));
 
   // Test [2:]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(SmallInt::fromWord(2));
-  List test(&scope, listSlice(thread_, list1, slice));
+  List test(&scope, listSlice(thread_, list1, 2, 5, 1));
   ASSERT_EQ(test.numItems(), 3);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 3));
   EXPECT_TRUE(isIntEqualsWord(test.at(1), 4));
   EXPECT_TRUE(isIntEqualsWord(test.at(2), 5));
 }
 
-TEST_F(ListBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
-  HandleScope scope(thread_);
-  List list1(&scope, listFromRange(1, 6));
-
-  // Test [-2:]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(SmallInt::fromWord(-2));
-  List test(&scope, listSlice(thread_, list1, slice));
-  ASSERT_EQ(test.numItems(), 2);
-  EXPECT_TRUE(isIntEqualsWord(test.at(0), 4));
-  EXPECT_TRUE(isIntEqualsWord(test.at(1), 5));
-}
-
-TEST_F(ListBuiltinsTest, SlicePositiveStopIndex) {
-  HandleScope scope(thread_);
-  List list1(&scope, listFromRange(1, 6));
-
-  // Test [:2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStop(SmallInt::fromWord(2));
-  List test(&scope, listSlice(thread_, list1, slice));
-  ASSERT_EQ(test.numItems(), 2);
-  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(test.at(1), 2));
-}
-
-TEST_F(ListBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
-  HandleScope scope(thread_);
-  List list1(&scope, listFromRange(1, 6));
-
-  // Test [:-2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStop(SmallInt::fromWord(-2));
-  List test(&scope, listSlice(thread_, list1, slice));
-  ASSERT_EQ(test.numItems(), 3);
-  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(test.at(1), 2));
-  EXPECT_TRUE(isIntEqualsWord(test.at(2), 3));
-}
-
-TEST_F(ListBuiltinsTest, SlicePositiveStep) {
-  HandleScope scope(thread_);
-  List list1(&scope, listFromRange(1, 6));
-
-  // Test [::2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(2));
-  List test(&scope, listSlice(thread_, list1, slice));
-  ASSERT_EQ(test.numItems(), 3);
-  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(test.at(1), 3));
-  EXPECT_TRUE(isIntEqualsWord(test.at(2), 5));
-}
-
-TEST_F(ListBuiltinsTest, SliceNegativeStepReversesOrder) {
+TEST_F(ListBuiltinsTest, SliceWithNegativeStepReturnsBackwardsList) {
   HandleScope scope(thread_);
   List list1(&scope, listFromRange(1, 6));
 
   // Test [::-2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(-2));
-  List test(&scope, listSlice(thread_, list1, slice));
+  List test(&scope, listSlice(thread_, list1, 4, -1, -2));
   ASSERT_EQ(test.numItems(), 3);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 5));
   EXPECT_TRUE(isIntEqualsWord(test.at(1), 3));
   EXPECT_TRUE(isIntEqualsWord(test.at(2), 1));
-}
-
-TEST_F(ListBuiltinsTest, SliceStartOutOfBounds) {
-  HandleScope scope(thread_);
-  List list1(&scope, listFromRange(1, 6));
-
-  // Test [10::]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(SmallInt::fromWord(10));
-  List test(&scope, listSlice(thread_, list1, slice));
-  ASSERT_EQ(test.numItems(), 0);
-}
-
-TEST_F(ListBuiltinsTest, SliceStopOutOfBounds) {
-  HandleScope scope(thread_);
-  List list1(&scope, listFromRange(1, 6));
-
-  // Test [:10]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStop(SmallInt::fromWord(10));
-  List test(&scope, listSlice(thread_, list1, slice));
-  ASSERT_EQ(test.numItems(), 5);
-  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
-  EXPECT_TRUE(isIntEqualsWord(test.at(4), 5));
-}
-
-TEST_F(ListBuiltinsTest, SliceStepOutOfBounds) {
-  HandleScope scope(thread_);
-  List list1(&scope, listFromRange(1, 6));
-
-  // Test [::10]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(10));
-  List test(&scope, listSlice(thread_, list1, slice));
-  ASSERT_EQ(test.numItems(), 1);
-  EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
 }
 
 TEST_F(ListBuiltinsTest, IdenticalSliceIsCopy) {
@@ -746,8 +652,7 @@ TEST_F(ListBuiltinsTest, IdenticalSliceIsCopy) {
   List list1(&scope, listFromRange(1, 6));
 
   // Test: t[::] is t
-  Slice slice(&scope, runtime_.newSlice());
-  List test(&scope, listSlice(thread_, list1, slice));
+  List test(&scope, listSlice(thread_, list1, 0, 5, 1));
   ASSERT_EQ(test.numItems(), 5);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
   EXPECT_TRUE(isIntEqualsWord(test.at(4), 5));
@@ -776,14 +681,6 @@ TEST_F(ListBuiltinsTest, SetItem) {
   EXPECT_TRUE(isIntEqualsWord(list.at(3), 2));
 }
 
-TEST_F(ListBuiltinsTest, GetItemWithNegativeIndex) {
-  HandleScope scope(thread_);
-  List list(&scope, listFromRange(1, 4));
-  Object idx(&scope, SmallInt::fromWord(-3));
-  Object result(&scope, runBuiltin(ListBuiltins::dunderGetItem, list, idx));
-  EXPECT_TRUE(isIntEqualsWord(*result, 1));
-}
-
 TEST_F(ListBuiltinsTest, SetItemWithNegativeIndex) {
   HandleScope scope(thread_);
   List list(&scope, listFromRange(1, 4));
@@ -796,14 +693,6 @@ TEST_F(ListBuiltinsTest, SetItemWithNegativeIndex) {
   EXPECT_TRUE(isIntEqualsWord(list.at(0), 0));
   EXPECT_TRUE(isIntEqualsWord(list.at(1), 2));
   EXPECT_TRUE(isIntEqualsWord(list.at(2), 3));
-}
-
-TEST_F(ListBuiltinsTest, GetItemWithInvalidNegativeIndexRaisesIndexError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-l = [1, 2, 3]
-l[-4]
-)"),
-                            LayoutId::kIndexError, "list index out of range"));
 }
 
 TEST_F(ListBuiltinsTest, DelItemWithInvalidNegativeIndexRaisesIndexError) {
@@ -822,14 +711,6 @@ l[-4] = 0
 )"),
                             LayoutId::kIndexError,
                             "list assignment index out of range"));
-}
-
-TEST_F(ListBuiltinsTest, GetItemWithInvalidIndexRaisesIndexError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-l = [1, 2, 3]
-l[5]
-)"),
-                            LayoutId::kIndexError, "list index out of range"));
 }
 
 TEST_F(ListBuiltinsTest, DelItemWithInvalidIndexRaisesIndexError) {
@@ -1031,15 +912,6 @@ result = a
   EXPECT_PYLIST_EQ(result, {0, 0, 0});
 }
 
-TEST_F(ListBuiltinsTest, GetItemWithTooFewArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-[].__getitem__()
-)"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'list.__getitem__' takes 2 positional "
-                            "arguments but 1 given"));
-}
-
 TEST_F(ListBuiltinsTest, DelItemWithTooFewArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 [].__delitem__()
@@ -1067,15 +939,6 @@ TEST_F(ListBuiltinsTest, DelItemWithTooManyArgumentsRaisesTypeError) {
                             "positional arguments but 3 given"));
 }
 
-TEST_F(ListBuiltinsTest, GetItemWithTooManyArgumentsRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-[].__getitem__(1, 2)
-)"),
-                            LayoutId::kTypeError,
-                            "TypeError: 'list.__getitem__' takes max 2 "
-                            "positional arguments but 3 given"));
-}
-
 TEST_F(ListBuiltinsTest, SetItemWithTooManyArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 [].__setitem__(1, 2, 3)
@@ -1083,14 +946,6 @@ TEST_F(ListBuiltinsTest, SetItemWithTooManyArgumentsRaisesTypeError) {
                             LayoutId::kTypeError,
                             "TypeError: 'list.__setitem__' takes max 3 "
                             "positional arguments but 4 given"));
-}
-
-TEST_F(ListBuiltinsTest, GetItemWithNonIntegralIndexRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-[].__getitem__("test")
-)"),
-                            LayoutId::kTypeError,
-                            "list indices must be integers or slices"));
 }
 
 TEST_F(ListBuiltinsTest, DelItemWithNonIntegralIndexRaisesTypeError) {
