@@ -88,9 +88,9 @@ RawObject convertBoolToInt(RawObject object) {
   return RawSmallInt::fromWord(object == RawBool::trueObj() ? 1 : 0);
 }
 
-inline static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
-                                    RawObject (*op)(Thread* t, const Int& left,
-                                                    const Int& right)) {
+static RawObject intBinaryOpSubclass(Thread* thread, Frame* frame, word nargs,
+                                     RawObject (*op)(Thread* t, const Int& left,
+                                                     const Int& right)) {
   Arguments args(frame, nargs);
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -105,6 +105,19 @@ inline static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
   Int self(&scope, intUnderlying(thread, self_obj));
   Int other(&scope, intUnderlying(thread, other_obj));
   return op(thread, self, other);
+}
+
+inline static RawObject intBinaryOp(Thread* thread, Frame* frame, word nargs,
+                                    RawObject (*op)(Thread* t, const Int& left,
+                                                    const Int& right)) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isInt() && args.get(1).isInt()) {
+    HandleScope scope(thread);
+    Int self(&scope, args.get(0));
+    Int other(&scope, args.get(1));
+    return op(thread, self, other);
+  }
+  return intBinaryOpSubclass(thread, frame, nargs, op);
 }
 
 static RawObject intUnaryOp(Thread* thread, Frame* frame, word nargs,
