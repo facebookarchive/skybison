@@ -270,6 +270,8 @@ add_library(
   runtime/int-builtins.h
   runtime/interpreter.cpp
   runtime/interpreter.h
+  runtime/intrinsic.cpp
+  runtime/intrinsic.h
   runtime/io-module.cpp
   runtime/io-module.h
   runtime/layout.h
