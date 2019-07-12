@@ -9,9 +9,11 @@ class OS {
  public:
   enum { kPageSize = 4 * kKiB };
 
-  enum Protection { kNoAccess, kReadWrite };
+  enum Protection { kNoAccess, kReadWrite, kReadExecute };
 
-  static byte* allocateMemory(word size);
+  // Allocate a page-sized chunk of memory. If allocated_size is not nullptr,
+  // the rounded-up size will be written to it.
+  static byte* allocateMemory(word size, word* allocated_size = nullptr);
 
   // Returns an absolute path to the current executable. The path may contain
   // unresolved symlinks.

@@ -39,6 +39,10 @@ class Interpreter {
     RETURN,
     YIELD,
   };
+  static const word kNumContinues = 4;
+
+  using AsmInterpreter = void (*)(Thread*, Frame*);
+  using OpcodeHandler = Continue (*)(Thread* thread, word arg);
 
   static RawObject execute(Thread* thread);
 
@@ -250,7 +254,6 @@ class Interpreter {
   static void handleLoopExit(Thread* thread, TryBlock::Why why,
                              RawObject retval);
 
- private:
   // Opcode handlers
   //
   // Handlers that never exit the Frame return void, while those that could
@@ -398,6 +401,7 @@ class Interpreter {
   static Continue doStoreGlobalCached(Thread* thread, word arg);
   static Continue doStoreName(Thread* thread, word arg);
 
+ private:
   // Common functionality for opcode handlers that dispatch to binary and
   // inplace operations
   static Continue doBinaryOperation(BinaryOp op, Thread* thread);
@@ -475,7 +479,6 @@ class Interpreter {
   static Continue loadAttrUpdateCache(Thread* thread, word arg);
   static Continue storeAttrUpdateCache(Thread* thread, word arg);
 
-  using OpcodeHandler = Continue (*)(Thread* thread, word arg);
   using BinopFallbackHandler = Continue (*)(Thread* thread, word arg,
                                             IcBinopFlags flags);
   static Continue cachedBinaryOpImpl(Thread* thread, word arg,

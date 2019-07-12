@@ -278,6 +278,8 @@ class Thread {
   }
   void setRecursionLimit(int limit) { recursion_limit_ = limit; }
 
+  static word currentFrameOffset() { return offsetof(Thread, currentFrame_); }
+
  private:
   Frame* pushInitialFrame();
   Frame* openAndLinkFrame(word num_args, word num_vars, word stack_depth);

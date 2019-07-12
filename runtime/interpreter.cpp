@@ -11,6 +11,7 @@
 #include "generator-builtins.h"
 #include "ic.h"
 #include "int-builtins.h"
+#include "interpreter-gen.h"
 #include "intrinsic.h"
 #include "list-builtins.h"
 #include "object-builtins.h"
@@ -30,7 +31,7 @@ using Continue = Interpreter::Continue;
 // We want opcode handlers inlined into the interpreter in optimized builds.
 // Keep them outlined for nicer debugging in debug builds.
 #ifdef NDEBUG
-#define HANDLER_INLINE ALWAYS_INLINE
+#define HANDLER_INLINE ALWAYS_INLINE __attribute__((used))
 #else
 #define HANDLER_INLINE __attribute__((noinline))
 #endif
@@ -3647,6 +3648,13 @@ Continue Interpreter::doBinaryOpCached(Thread* thread, word arg) {
   return cachedBinaryOpImpl(thread, arg, binaryOpUpdateCache, binaryOpFallback);
 }
 
+const Interpreter::AsmInterpreter kAsmInterpreter =
+    []() -> Interpreter::AsmInterpreter {
+  const char* env = getenv("PYRO_CPP_INTERPRETER");
+  if (env == nullptr || env[0] == '\0') return generateInterpreter();
+  return nullptr;
+}();
+
 RawObject Interpreter::execute(Thread* thread) {
   auto do_return = [thread] {
     Frame* frame = thread->currentFrame();
@@ -3670,7 +3678,11 @@ RawObject Interpreter::execute(Thread* thread) {
     if (unwind(thread, entry_frame)) return do_return();
   }
 
-  executeImpl(thread, entry_frame);
+  if (kAsmInterpreter != nullptr) {
+    kAsmInterpreter(thread, entry_frame);
+  } else {
+    executeImpl(thread, entry_frame);
+  }
   return do_return();
 }
 

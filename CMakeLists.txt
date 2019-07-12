@@ -218,6 +218,21 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     runtime/os-linux.cpp
     runtime/mutex-linux.cpp)
 endif()
+
+execute_process(
+  COMMAND uname -m
+  OUTPUT_VARIABLE MACHINE_NAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if ("${MACHINE_NAME}" STREQUAL "x86_64")
+  set(
+    RUNTIME_ARCH_SOURCES
+    runtime/interpreter-gen-x64.cpp
+  )
+else()
+  message(FATAL_ERROR "Unsupported architecture ${MACHINE_NAME}")
+endif()
+
 add_library(
   runtime
   STATIC
@@ -269,6 +284,7 @@ add_library(
   runtime/imp-module.h
   runtime/int-builtins.cpp
   runtime/int-builtins.h
+  runtime/interpreter-gen.h
   runtime/interpreter.cpp
   runtime/interpreter.h
   runtime/intrinsic.cpp
@@ -344,7 +360,8 @@ add_library(
   runtime/warnings-module.h
   runtime/weakref-module.cpp
   runtime/weakref-module.h
-  ${RUNTIME_OS_SOURCES})
+  ${RUNTIME_OS_SOURCES}
+  ${RUNTIME_ARCH_SOURCES})
 target_compile_options(
   runtime
   PRIVATE

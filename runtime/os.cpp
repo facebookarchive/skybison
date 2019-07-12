@@ -16,8 +16,9 @@
 
 namespace python {
 
-byte* OS::allocateMemory(word size) {
-  size = Utils::roundUp(size, 4 * kKiB);
+byte* OS::allocateMemory(word size, word* allocated_size) {
+  size = Utils::roundUp(size, kPageSize);
+  if (allocated_size != nullptr) *allocated_size = size;
   int prot = PROT_READ | PROT_WRITE;
   int flags = MAP_PRIVATE | MAP_ANONYMOUS;
   void* result = ::mmap(nullptr, size, prot, flags, -1, 0);
@@ -34,6 +35,9 @@ bool OS::protectMemory(byte* address, word size, Protection mode) {
       break;
     case kReadWrite:
       prot = PROT_READ | PROT_WRITE;
+      break;
+    case kReadExecute:
+      prot = PROT_READ | PROT_EXEC;
       break;
     default:
       std::abort();
