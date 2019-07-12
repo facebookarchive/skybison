@@ -7,11 +7,30 @@
 
 namespace python {
 
+PY_EXPORT double _Py_c_abs(Py_complex x) {
+  double result = std::hypot(x.real, x.imag);
+  if (std::isfinite(result)) {
+    errno = 0;
+    return result;
+  }
+  errno = 0;
+  if (std::isinf(x.real)) return std::fabs(x.real);
+  if (std::isinf(x.imag)) return std::fabs(x.imag);
+  return NAN;
+}
+
 PY_EXPORT Py_complex _Py_c_diff(Py_complex x, Py_complex y) {
   return {x.real - y.real, x.imag - y.imag};
 }
 
 PY_EXPORT Py_complex _Py_c_neg(Py_complex x) { return {-x.real, -x.imag}; }
+
+PY_EXPORT Py_complex _Py_c_prod(Py_complex x, Py_complex y) {
+  double real = x.real * y.real - x.imag * y.imag;
+  double imag = x.real * y.imag + x.imag * y.real;
+  return {real, imag};
+}
+
 PY_EXPORT Py_complex _Py_c_quot(Py_complex x, Py_complex y) {
   double real;
   double imag;
@@ -34,6 +53,10 @@ PY_EXPORT Py_complex _Py_c_quot(Py_complex x, Py_complex y) {
     imag = NAN;
   }
   return {real, imag};
+}
+
+PY_EXPORT Py_complex _Py_c_sum(Py_complex x, Py_complex y) {
+  return {x.real + y.real, x.imag + y.imag};
 }
 
 PY_EXPORT int PyComplex_CheckExact_Func(PyObject* p) {

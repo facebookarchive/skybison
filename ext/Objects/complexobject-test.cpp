@@ -13,6 +13,17 @@ using namespace testing;
 
 using ComplexExtensionApiTest = ExtensionApi;
 
+TEST_F(ComplexExtensionApiTest, PyCAbsReturnsComplexAbsoluteValue) {
+  EXPECT_EQ(_Py_c_abs({12, 0}), 12);
+  EXPECT_EQ(_Py_c_abs({0, 34}), 34);
+  EXPECT_EQ(_Py_c_abs({INFINITY, 56}), INFINITY);
+  EXPECT_EQ(_Py_c_abs({-INFINITY, 78}), INFINITY);
+  EXPECT_EQ(_Py_c_abs({90, INFINITY}), INFINITY);
+  EXPECT_EQ(_Py_c_abs({123, -INFINITY}), INFINITY);
+  EXPECT_TRUE(std::isnan(_Py_c_abs({456, NAN})));
+  EXPECT_TRUE(std::isnan(_Py_c_abs({NAN, 789})));
+}
+
 TEST_F(ComplexExtensionApiTest, PyCDiffReturnsComplexDifference) {
   Py_complex diff = _Py_c_diff({2.0, 5.0}, {4.0, -3.0});
   EXPECT_EQ(diff.real, -2.0);
@@ -23,6 +34,12 @@ TEST_F(ComplexExtensionApiTest, PyCNegReturnsComplexNegation) {
   Py_complex neg = _Py_c_neg({-123.0, 456.0});
   EXPECT_EQ(neg.real, 123.0);
   EXPECT_EQ(neg.imag, -456);
+}
+
+TEST_F(ComplexExtensionApiTest, PyCProdReturnsComplexProduct) {
+  Py_complex prod = _Py_c_prod({1.0, -2.0}, {-3.0, 4.0});
+  EXPECT_EQ(prod.real, 5.0);
+  EXPECT_EQ(prod.imag, 10.0);
 }
 
 TEST_F(ComplexExtensionApiTest, PyCQuotReturnsComplexQuotient) {
@@ -53,6 +70,12 @@ TEST_F(ComplexExtensionApiTest, PyCQuotReturnsComplexQuotient) {
   EXPECT_EQ(errno, 0);
   EXPECT_TRUE(std::isnan(q4.real));
   EXPECT_TRUE(std::isnan(q4.imag));
+}
+
+TEST_F(ComplexExtensionApiTest, PyCSumReturnsComplexSum) {
+  Py_complex sum = _Py_c_sum({2.0, 5.0}, {4.0, -3.0});
+  EXPECT_EQ(sum.real, 6.0);
+  EXPECT_EQ(sum.imag, 2.0);
 }
 
 TEST_F(ComplexExtensionApiTest, AsCComplexWithComplexReturnsValue) {
