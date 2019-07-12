@@ -50,8 +50,8 @@ python_library(
 python_library(
     name = "run",
     srcs = [
-        "_benchmark_runner.py",
         "_display_results.py",
+        "_time_tool.py",
         "_tools.py",
         "run.py",
     ],
