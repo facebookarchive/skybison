@@ -77,11 +77,12 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
       caller->pushValue(default_args.at(new_argc - positional_only));
     }
   }
+  Runtime* runtime = thread->runtime();
   if ((new_argc > function.argcount()) || function.hasVarargs()) {
     // VARARGS - spill extra positional args into the varargs tuple.
     if (function.hasVarargs()) {
       word len = Utils::maximum(word{0}, new_argc - function.argcount());
-      Tuple varargs(&scope, thread->runtime()->newTuple(len));
+      Tuple varargs(&scope, runtime->newTuple(len));
       for (word i = (len - 1); i >= 0; i--) {
         varargs.atPut(i, caller->topValue());
         caller->popValue();
@@ -107,7 +108,7 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
       word first_kw = function.argcount();
       for (word i = 0; i < code.kwonlyargcount(); i++) {
         Object name(&scope, formal_names.at(first_kw + i));
-        RawObject val = thread->runtime()->dictAt(thread, kw_defaults, name);
+        RawObject val = runtime->dictAt(thread, kw_defaults, name);
         if (!val.isError()) {
           caller->pushValue(val);
           new_argc++;
@@ -130,7 +131,7 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
   if (function.hasVarkeyargs()) {
     // VARKEYARGS - because we arrived via CALL_FUNCTION, no keyword arguments
     // provided.  Just add an empty dict.
-    Object kwdict(&scope, thread->runtime()->newDict());
+    Object kwdict(&scope, runtime->newDict());
     caller->pushValue(*kwdict);
     new_argc++;
   }
@@ -163,9 +164,9 @@ static word findName(RawObject name, RawTuple name_list) {
 // and number of names in the actual_names tuple to match.  Caller must pad
 // prior to calling to ensure this.
 // Return None::object() if successful, error object if not.
-static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
-                           const Tuple& actual_names, const Tuple& formal_names,
-                           word start) {
+static RawObject checkArgs(Thread* thread, const Function& function,
+                           RawObject* kw_arg_base, const Tuple& actual_names,
+                           const Tuple& formal_names, word start) {
   word num_actuals = actual_names.length();
   // Helper function to swap actual arguments and names
   auto swap = [&kw_arg_base, &actual_names](word arg_pos1,
@@ -181,6 +182,7 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
   auto arg_at = [&kw_arg_base](word idx) -> RawObject& {
     return *(kw_arg_base - idx);
   };
+  HandleScope scope(thread);
   for (word arg_pos = 0; arg_pos < num_actuals; arg_pos++) {
     if (actual_names.at(arg_pos) == formal_names.at(arg_pos + start)) {
       // We're good here: actual & formal arg names match.  Check the next one.
@@ -214,13 +216,12 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
       // If we were unable to find a slot to swap into, TypeError
       if (!arg_at(arg_pos).isError()) {
         // TODO(T40470525): Print out qualname and formal name in error message
-        return Thread::current()->raiseWithFmt(
+        return thread->raiseWithFmt(
             LayoutId::kTypeError,
             "TypeError: invalid keyword argument supplied");
       }
     }
     // Now, can we fill that slot with a default argument?
-    HandleScope scope;
     word absolute_pos = arg_pos + start;
     if (absolute_pos < function.argcount()) {
       word defaults_size = function.hasDefaults()
@@ -237,7 +238,6 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
     } else if (!function.kwDefaults().isNoneType()) {
       // How about a kwonly default?
       Dict kw_defaults(&scope, function.kwDefaults());
-      Thread* thread = Thread::current();
       Object name(&scope, formal_names.at(arg_pos + start));
       RawObject val = thread->runtime()->dictAt(thread, kw_defaults, name);
       if (!val.isError()) {
@@ -245,8 +245,8 @@ static RawObject checkArgs(const Function& function, RawObject* kw_arg_base,
         continue;  // Got it, move on to the next
       }
     }
-    return Thread::current()->raiseWithFmt(LayoutId::kTypeError,
-                                           "TypeError: missing argument");
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "TypeError: missing argument");
   }
   return NoneType::object();
 }
@@ -274,12 +274,13 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
   // normalize the odd forms into standard form and then handle them all
   // in the same place.
   if (function.hasVarargsOrVarkeyargs()) {
+    Runtime* runtime = thread->runtime();
     if (function.hasVarargs()) {
       // If we have more positional than expected, add the remainder to a tuple,
       // remove from the stack and close up the hole.
       word excess =
           Utils::maximum<word>(0, num_positional_args - function.argcount());
-      Tuple varargs(&scope, thread->runtime()->newTuple(excess));
+      Tuple varargs(&scope, runtime->newTuple(excess));
       if (excess > 0) {
         // Point to the leftmost excess argument
         RawObject* p =
@@ -308,11 +309,10 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
       }
       // If we have keyword arguments that don't appear in the formal parameter
       // list, add them to a keyword dict.
-      Dict dict(&scope, thread->runtime()->newDict());
-      List saved_keyword_list(&scope, thread->runtime()->newList());
-      List saved_values(&scope, thread->runtime()->newList());
+      Dict dict(&scope, runtime->newDict());
+      List saved_keyword_list(&scope, runtime->newList());
+      List saved_values(&scope, runtime->newList());
       word formal_parm_size = formal_parm_names.length();
-      Runtime* runtime = thread->runtime();
       RawObject* p = caller->valueStackTop() + (num_keyword_args - 1);
       for (word i = 0; i < num_keyword_args; i++) {
         Object key(&scope, keywords.at(i));
@@ -364,8 +364,8 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
     keywords = *padded_keywords;
   }
   // Now we've got the right number.  Do they match up?
-  RawObject res = checkArgs(function, kw_arg_base, keywords, formal_parm_names,
-                            num_positional_args);
+  RawObject res = checkArgs(thread, function, kw_arg_base, keywords,
+                            formal_parm_names, num_positional_args);
   if (res.isError()) {
     return res;  // TypeError created by checkArgs.
   }
