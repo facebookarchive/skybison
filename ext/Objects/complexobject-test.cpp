@@ -87,6 +87,26 @@ TEST_F(ComplexExtensionApiTest, AsCComplexWithComplexReturnsValue) {
 }
 
 TEST_F(ComplexExtensionApiTest,
+       AsComplexWithRaisingDescriptorPropagatesException) {
+  PyRun_SimpleString(R"(
+class Desc:
+  def __get__(self, owner, fn):
+    raise UserWarning("foo")
+  def __call__(self, *args, **kwargs):
+    raise "foo"
+class Foo:
+  __complex__ = Desc()
+foo = Foo()
+)");
+  PyObjectPtr foo(moduleGet("__main__", "foo"));
+  Py_complex result = PyComplex_AsCComplex(foo);
+  EXPECT_EQ(result.real, -1.0);
+  EXPECT_EQ(result.imag, 0.0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(ComplexExtensionApiTest,
        AsComplexWithMistypedDunderComplexRaisesTypeError) {
   PyRun_SimpleString(R"(
 class Foo:

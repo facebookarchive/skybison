@@ -80,16 +80,8 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
   }
 
   // Try calling __complex__
-  Frame* frame = thread->currentFrame();
-  Type type(&scope, runtime->typeOf(*obj));
-  Object comp_method(
-      &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderComplex));
-  if (!comp_method.isError()) {
-    Object result(&scope,
-                  Interpreter::callMethod1(thread, frame, comp_method, obj));
-    if (result.isError()) {
-      return {-1.0, 0.0};
-    }
+  Object result(&scope, thread->invokeMethod1(obj, SymbolId::kDunderComplex));
+  if (!result.isError()) {
     if (!runtime->isInstanceOfComplex(*result)) {
       thread->raiseWithFmt(LayoutId::kTypeError,
                            "__complex__ should returns a complex object");
@@ -99,12 +91,16 @@ PY_EXPORT Py_complex PyComplex_AsCComplex(PyObject* pycomplex) {
     Complex comp(&scope, *result);
     return {comp.real(), comp.imag()};
   }
-
-  // Try calling __float__ for the real part and set the imaginary part to 0
-  Object float_or_err(&scope, asFloatObject(thread, obj));
-  if (float_or_err.isError()) return {-1.0, 0.0};
-  Float flt(&scope, *float_or_err);
-  return {flt.value(), 0.0};
+  // If __complex__ is not defined, call __float__
+  if (result.isErrorNotFound()) {
+    // Use __float__ for the real part and set the imaginary part to 0
+    Object float_or_err(&scope, asFloatObject(thread, obj));
+    if (float_or_err.isError()) return {-1.0, 0.0};
+    Float flt(&scope, *float_or_err);
+    return {flt.value(), 0.0};
+  }
+  DCHECK(result.isErrorException(), "result should be an exception");
+  return {-1.0, 0.0};
 }
 
 PY_EXPORT PyObject* PyComplex_FromCComplex(Py_complex cmp) {
