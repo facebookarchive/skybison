@@ -90,6 +90,7 @@ TEST_F(TypeExtensionApiTest, FromSpecCreatesRuntimeType) {
 TEST_F(TypeExtensionApiTest, FromSpecWithInvalidSlotRaisesError) {
   PyType_Slot slots[] = {
       {-1, nullptr},
+      {0, nullptr},
   };
   static PyType_Spec spec;
   spec = {
