@@ -99,6 +99,46 @@ class TimeTool(PerformanceTool):
         return parser
 
 
+class PerfStat(PerformanceTool):
+    NAME = "perfstat"
+
+    def __init__(self, args):
+        pass
+
+    def execute(self, interpreter, benchmark):
+        command = pin_to_cpus()
+        command += ["perf", "stat"]
+        command += ["--field-separator", ";"]
+        command += ["--repeat", "5"]
+        command += ["--event", "task-clock"]
+        command += ["--event", "cycles"]
+        command += ["--event", "instructions"]
+        command += ["--event", "branches"]
+        command += ["--event", "branch-misses"]
+        command += [interpreter.binary, benchmark.filepath()]
+        completed_process = run(command, stderr=subprocess.PIPE)
+        if completed_process.returncode != 0:
+            log.error(f"Couldn't run: {completed_process.args}")
+            return {}
+        perfstat_output = completed_process.stderr.strip()
+        if ";" not in perfstat_output:
+            log.error(f"perf stat returned an error: {perfstat_output}")
+            return {}
+        events = [e.split(";") for e in perfstat_output.split("\n") if ";" in e]
+        return {event[2]: event[0] for event in events}
+
+    @staticmethod
+    def add_tool():
+        return f"""
+'{PerfStat.NAME}': Use `perf stat` to measure the execution time of
+a benchmark. This repeats the run 10 times to find a significant result
+"""
+
+    @staticmethod
+    def add_optional_arguments(parser):
+        return parser
+
+
 def add_tools_arguments(parser):
     measure_tools_help = "The measurement tool to use. Available Tools: \n"
     for tool in TOOLS:
@@ -124,4 +164,4 @@ def add_tools_arguments(parser):
 
 
 # Use this to register any new tools
-TOOLS = [TimeTool]
+TOOLS = [TimeTool, PerfStat]
