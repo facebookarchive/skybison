@@ -110,6 +110,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Objects/floatobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/frameobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/funcobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/genobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/iterobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/listobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/longobject.cpp
@@ -514,6 +515,7 @@ set(
   ext/Objects/floatobject-test.cpp
   ext/Objects/frameobject-test.cpp
   ext/Objects/funcobject-test.cpp
+  ext/Objects/genobject-test.cpp
   ext/Objects/iterobject-test.cpp
   ext/Objects/listobject-test.cpp
   ext/Objects/longobject-test.cpp
