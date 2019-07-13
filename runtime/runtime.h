@@ -88,12 +88,13 @@ class Runtime {
 
   RawObject newClassMethod();
 
-  RawObject newCode(word argcount, word kwonlyargcount, word nlocals,
-                    word stacksize, word flags, const Object& code,
-                    const Object& consts, const Object& names,
-                    const Object& varnames, const Object& freevars,
-                    const Object& cellvars, const Object& filename,
-                    const Object& name, word firstlineno, const Object& lnotab);
+  RawObject newCode(word argcount, word posonlyargcount, word kwonlyargcount,
+                    word nlocals, word stacksize, word flags,
+                    const Object& code, const Object& consts,
+                    const Object& names, const Object& varnames,
+                    const Object& freevars, const Object& cellvars,
+                    const Object& filename, const Object& name,
+                    word firstlineno, const Object& lnotab);
 
   RawObject newComplex(double real, double imag);
 

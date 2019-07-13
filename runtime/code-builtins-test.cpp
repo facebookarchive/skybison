@@ -29,14 +29,31 @@ static RawObject makeTestCode() {
   Object name(&scope, runtime->newStrFromCStr("name0"));
   byte lnotab_array[] = {'l', 'n', 'o', 't', 'a', 'b'};
   Object lnotab(&scope, runtime->newBytesWithAll(lnotab_array));
-  return runtime->newCode(0, 1, 2, 3, 4, bytes, consts, names, varnames,
-                          freevars, cellvars, filename, name, 5, lnotab);
+  word argcount = 0;
+  word posonlyargcount = 0;
+  word kwonlyargcount = 1;
+  word nlocals = 2;
+  word stacksize = 3;
+  word flags = Code::Flags::NESTED | Code::Flags::GENERATOR;
+  word firstlineno = 5;
+  return runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
+                          stacksize, flags, bytes, consts, names, varnames,
+                          freevars, cellvars, filename, name, firstlineno,
+                          lnotab);
 }
 
 TEST_F(CodeBuiltinsTest, CoArgcountReturnsArgcount) {
   HandleScope scope(thread_);
   Object code(&scope, makeTestCode());
   Object key(&scope, runtime_.newStrFromCStr("co_argcount"));
+  Object result(&scope, runtime_.attributeAt(thread_, code, key));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+}
+
+TEST_F(CodeBuiltinsTest, CoPosonlyargcountReturnsPosonlyargcount) {
+  HandleScope scope(thread_);
+  Object code(&scope, makeTestCode());
+  Object key(&scope, runtime_.newStrFromCStr("co_posonlyargcount"));
   Object result(&scope, runtime_.attributeAt(thread_, code, key));
   EXPECT_TRUE(isIntEqualsWord(*result, 0));
 }
@@ -70,7 +87,8 @@ TEST_F(CodeBuiltinsTest, CoFlagsReturnsFlags) {
   Object code(&scope, makeTestCode());
   Object key(&scope, runtime_.newStrFromCStr("co_flags"));
   Object result(&scope, runtime_.attributeAt(thread_, code, key));
-  EXPECT_TRUE(isIntEqualsWord(*result, 4));
+  EXPECT_TRUE(
+      isIntEqualsWord(*result, Code::Flags::NESTED | Code::Flags::GENERATOR));
 }
 
 TEST_F(CodeBuiltinsTest, CoCodeReturnsCode) {

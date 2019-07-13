@@ -362,6 +362,7 @@ class Runtime;
   V(CoName, "co_name")                                                         \
   V(CoNames, "co_names")                                                       \
   V(CoNlocals, "co_nlocals")                                                   \
+  V(CoPosonlyargcount, "co_posonlyargcount")                                   \
   V(CoStacksize, "co_stacksize")                                               \
   V(CoVarnames, "co_varnames")                                                 \
   V(Code, "code")                                                              \

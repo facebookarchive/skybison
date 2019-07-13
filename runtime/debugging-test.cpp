@@ -36,14 +36,15 @@ static RawObject makeTestCode(Thread* thread) {
   Str name(&scope, runtime->newStrFromCStr("name0"));
   Object lnotab(&scope, Bytes::empty());
   word argcount = 1;
+  word posonlyargcount = 0;
   word kwonlyargcount = 0;
   word nlocals = 4;
   word stacksize = 1;
   word flags = Code::NESTED | Code::OPTIMIZED | Code::NEWLOCALS |
                Code::VARARGS | Code::VARKEYARGS;
-  return runtime->newCode(argcount, kwonlyargcount, nlocals, stacksize, flags,
-                          bytes, consts, names, varnames, freevars, cellvars,
-                          filename, name, 0, lnotab);
+  return runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
+                          stacksize, flags, bytes, consts, names, varnames,
+                          freevars, cellvars, filename, name, 0, lnotab);
 }
 
 static RawObject makeTestFunction(Thread* thread) {
@@ -87,6 +88,7 @@ TEST_F(DebuggingTests, DumpExtendedCode) {
             R"(code "name0":
   flags: optimized newlocals varargs varkeyargs nested
   argcount: 1
+  posonlyargcount: 0
   kwonlyargcount: 0
   nlocals: 4
   stacksize: 1
@@ -121,6 +123,7 @@ TEST(DebuggingTestsNoFixture, DumpExtendedFunction) {
   code: code "name0":
     flags: optimized newlocals varargs varkeyargs nested
     argcount: 1
+    posonlyargcount: 0
     kwonlyargcount: 0
     nlocals: 4
     stacksize: 1

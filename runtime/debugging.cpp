@@ -64,6 +64,7 @@ std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
   if (flags & Code::SIMPLE_CALL) os << " simple_call";
   os << '\n';
   os << indent << "  argcount: " << code.argcount() << '\n'
+     << indent << "  posonlyargcount: " << code.posonlyargcount() << '\n'
      << indent << "  kwonlyargcount: " << code.kwonlyargcount() << '\n'
      << indent << "  nlocals: " << code.nlocals() << '\n'
      << indent << "  stacksize: " << code.stacksize() << '\n'

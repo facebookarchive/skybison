@@ -11,18 +11,16 @@ PY_EXPORT int PyCode_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isCode();
 }
 
-PY_EXPORT PyCodeObject* PyCode_New(int argcount, int kwonlyargcount,
-                                   int nlocals, int stacksize, int flags,
-                                   PyObject* code, PyObject* consts,
-                                   PyObject* names, PyObject* varnames,
-                                   PyObject* freevars, PyObject* cellvars,
-                                   PyObject* filename, PyObject* name,
-                                   int firstlineno, PyObject* lnotab) {
+PY_EXPORT PyCodeObject* PyCode_NewWithPosOnlyArgs(
+    int argcount, int posonlyargcount, int kwonlyargcount, int nlocals,
+    int stacksize, int flags, PyObject* code, PyObject* consts, PyObject* names,
+    PyObject* varnames, PyObject* freevars, PyObject* cellvars,
+    PyObject* filename, PyObject* name, int firstlineno, PyObject* lnotab) {
   Thread* thread = Thread::current();
-  if (argcount < 0 || kwonlyargcount < 0 || nlocals < 0 || code == nullptr ||
-      consts == nullptr || names == nullptr || varnames == nullptr ||
-      freevars == nullptr || cellvars == nullptr || name == nullptr ||
-      filename == nullptr || lnotab == nullptr) {
+  if (argcount < 0 || posonlyargcount < 0 || kwonlyargcount < 0 ||
+      nlocals < 0 || code == nullptr || consts == nullptr || names == nullptr ||
+      varnames == nullptr || freevars == nullptr || cellvars == nullptr ||
+      name == nullptr || filename == nullptr || lnotab == nullptr) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
@@ -55,10 +53,23 @@ PY_EXPORT PyCodeObject* PyCode_New(int argcount, int kwonlyargcount,
 
   return reinterpret_cast<PyCodeObject*>(ApiHandle::newReference(
       thread,
-      runtime->newCode(argcount, kwonlyargcount, nlocals, stacksize, flags,
-                       code_obj, consts_obj, names_obj, varnames_obj,
-                       freevars_obj, cellvars_obj, filename_obj, name_obj,
-                       firstlineno, lnotab_obj)));
+      runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
+                       stacksize, flags, code_obj, consts_obj, names_obj,
+                       varnames_obj, freevars_obj, cellvars_obj, filename_obj,
+                       name_obj, firstlineno, lnotab_obj)));
+}
+
+PY_EXPORT PyCodeObject* PyCode_New(int argcount, int kwonlyargcount,
+                                   int nlocals, int stacksize, int flags,
+                                   PyObject* code, PyObject* consts,
+                                   PyObject* names, PyObject* varnames,
+                                   PyObject* freevars, PyObject* cellvars,
+                                   PyObject* filename, PyObject* name,
+                                   int firstlineno, PyObject* lnotab) {
+  return PyCode_NewWithPosOnlyArgs(
+      argcount, /*posonlyargcount=*/0, kwonlyargcount, nlocals, stacksize,
+      flags, code, consts, names, varnames, freevars, cellvars, filename, name,
+      firstlineno, lnotab);
 }
 
 PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {

@@ -492,7 +492,8 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   Object empty_string(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
   Code code(&scope,
-            runtime.newCode(argcount, /*kwonlyargcount=*/0, nlocals,
+            runtime.newCode(argcount, /*posonlyargcount=*/0,
+                            /*kwonlyargcount=*/0, nlocals,
                             /*stacksize=*/0, /*flags=*/0, code_code,
                             /*consts=*/empty_tuple, /*names=*/empty_tuple,
                             varnames, freevars, cellvars,

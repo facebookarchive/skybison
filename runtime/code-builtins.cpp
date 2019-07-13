@@ -22,6 +22,8 @@ const BuiltinAttribute CodeBuiltins::kAttributes[] = {
     {SymbolId::kCoName, RawCode::kNameOffset, AttributeFlags::kReadOnly},
     {SymbolId::kCoNames, RawCode::kNamesOffset, AttributeFlags::kReadOnly},
     {SymbolId::kCoNlocals, RawCode::kNlocalsOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kCoPosonlyargcount, RawCode::kPosonlyargcountOffset,
+     AttributeFlags::kReadOnly},
     {SymbolId::kCoStacksize, RawCode::kStacksizeOffset,
      AttributeFlags::kReadOnly},
     {SymbolId::kCoVarnames, RawCode::kVarnamesOffset,

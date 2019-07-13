@@ -1538,6 +1538,10 @@ class RawCode : public RawHeapObject {
   void setArgcount(word value) const;
   word totalArgs() const;
 
+  // The number of positional only arguments.
+  word posonlyargcount() const;
+  void setPosonlyargcount(word value) const;
+
   RawObject cell2arg() const;
   void setCell2arg(RawObject value) const;
 
@@ -1594,7 +1598,9 @@ class RawCode : public RawHeapObject {
 
   // Layout.
   static const int kArgcountOffset = RawHeapObject::kSize;
-  static const int kKwonlyargcountOffset = kArgcountOffset + kPointerSize;
+  static const int kPosonlyargcountOffset = kArgcountOffset + kPointerSize;
+  static const int kKwonlyargcountOffset =
+      kPosonlyargcountOffset + kPointerSize;
   static const int kNlocalsOffset = kKwonlyargcountOffset + kPointerSize;
   static const int kStacksizeOffset = kNlocalsOffset + kPointerSize;
   static const int kFlagsOffset = kStacksizeOffset + kPointerSize;
@@ -3992,6 +3998,14 @@ inline word RawCode::argcount() const {
 
 inline void RawCode::setArgcount(word value) const {
   instanceVariableAtPut(kArgcountOffset, RawSmallInt::fromWord(value));
+}
+
+inline word RawCode::posonlyargcount() const {
+  return RawSmallInt::cast(instanceVariableAt(kPosonlyargcountOffset)).value();
+}
+
+inline void RawCode::setPosonlyargcount(word value) const {
+  instanceVariableAtPut(kPosonlyargcountOffset, RawSmallInt::fromWord(value));
 }
 
 inline RawObject RawCode::cell2arg() const {

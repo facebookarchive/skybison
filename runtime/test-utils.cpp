@@ -274,22 +274,18 @@ RawCode newEmptyCode() {
   Object empty_string(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
   word flags = Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
-  return Code::cast(runtime->newCode(0,             // argcount
-                                     0,             // kwonlyargcount
-                                     0,             // nlocals
-                                     0,             // stacksize
-                                     flags,         // flags
-                                     code,          // code
-                                     empty_tuple,   // consts
-                                     empty_tuple,   // names
-                                     empty_tuple,   // varnames
-                                     empty_tuple,   // freevars
-                                     empty_tuple,   // cellvars
-                                     empty_string,  // filename
-                                     empty_string,  // name
-                                     0,             // firlineno
-                                     empty_bytes    // lnotab
-                                     ));
+  return Code::cast(runtime->newCode(/*argcount=*/0, /*posonlyargcount=*/0,
+                                     /*kwonlyargcount=*/0, /*nlocals=*/0,
+                                     /*stacksize=*/0, flags, code,
+                                     /*consts=*/empty_tuple,
+                                     /*names=*/empty_tuple,
+                                     /*varnames=*/empty_tuple,
+                                     /*freevars=*/empty_tuple,
+                                     /*cellvars=*/empty_tuple,
+                                     /*filename=*/empty_string,
+                                     /*name=*/empty_string,
+                                     /*firstlineno=*/0,
+                                     /*lnotab=*/empty_bytes));
 }
 
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {

@@ -385,6 +385,7 @@ RawObject Marshal::Reader::readTypeCode() {
   }
   HandleScope scope;
   int32_t argcount = readLong();
+  int32_t posonlyargcount = 0;
   int32_t kwonlyargcount = readLong();
   int32_t nlocals = readLong();
   int32_t stacksize = readLong();
@@ -400,9 +401,10 @@ RawObject Marshal::Reader::readTypeCode() {
   int32_t firstlineno = readLong();
   Object lnotab(&scope, readObject());
   Code result(&scope,
-              runtime_->newCode(argcount, kwonlyargcount, nlocals, stacksize,
-                                flags, code, consts, names, varnames, freevars,
-                                cellvars, filename, name, firstlineno, lnotab));
+              runtime_->newCode(argcount, posonlyargcount, kwonlyargcount,
+                                nlocals, stacksize, flags, code, consts, names,
+                                varnames, freevars, cellvars, filename, name,
+                                firstlineno, lnotab));
   if (isRef_) {
     DCHECK(index != -1, "unexpected addRef result");
     setRef(index, *result);

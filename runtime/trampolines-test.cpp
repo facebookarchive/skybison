@@ -629,9 +629,13 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   Object empty_bytes(&scope, Bytes::empty());
   word flags = Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
   Code code(&scope,
-            runtime_.newCode(1, 0, nlocals, 0, flags, bc, empty_tuple,
-                             empty_tuple, varnames, empty_tuple, cellvars,
-                             empty_str, empty_str, 0, empty_bytes));
+            runtime_.newCode(/*argcount=*/1, /*posonlyargcount=*/0,
+                             /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
+                             flags, /*code=*/bc, /*consts=*/empty_tuple,
+                             /*names=*/empty_tuple, varnames,
+                             /*freevars=*/empty_tuple, cellvars,
+                             /*filename=*/empty_str, /*name=*/empty_str,
+                             /*firstlineno=*/0, /*lnotab=*/empty_bytes));
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   Object qualname(&scope, runtime_.newStrFromCStr("foo"));
@@ -673,9 +677,13 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesCellValue) {
   Object empty_bytes(&scope, Bytes::empty());
   Tuple empty_tuple(&scope, runtime_.emptyTuple());
   Code code(&scope,
-            runtime_.newCode(1, 0, nlocals, 0, 0, bc, consts, empty_tuple,
-                             varnames, empty_tuple, cellvars, empty_str,
-                             empty_str, 0, empty_bytes));
+            runtime_.newCode(/*argcount=*/1, /*posonlyargcount=*/0,
+                             /*kwonlyargcount=*/0, nlocals, /*stacksize=*/0,
+                             /*flags=*/0, /*code=*/bc, consts,
+                             /*names=*/empty_tuple, varnames,
+                             /*freevars=*/empty_tuple, cellvars,
+                             /*filename=*/empty_str, /*name=*/empty_str,
+                             /*firstlineno=*/0, /*lnotab=*/empty_bytes));
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   // Create a function

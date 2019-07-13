@@ -154,6 +154,10 @@ PyAPI_FUNC(PyCodeObject*)
     PyCode_New(int, int, int, int, int, PyObject*, PyObject*, PyObject*,
                PyObject*, PyObject*, PyObject*, PyObject*, PyObject*, int,
                PyObject*);
+PyAPI_FUNC(PyCodeObject*)
+    PyCode_NewWithPosOnlyArgs(int, int, int, int, int, int, PyObject*,
+                              PyObject*, PyObject*, PyObject*, PyObject*,
+                              PyObject*, PyObject*, PyObject*, int, PyObject*);
 PyAPI_FUNC(PyObject*) PyCodec_BackslashReplaceErrors(PyObject*);
 PyAPI_FUNC(PyObject*) PyCodec_Decode(PyObject*, const char*, const char*);
 PyAPI_FUNC(PyObject*) PyCodec_Decoder(const char*);

@@ -1045,7 +1045,8 @@ static RawObject newExtCode(Thread* thread, const Object& name,
   Object lnotab(&scope, Bytes::empty());
   Tuple consts(&scope, runtime->newTuple(1));
   consts.atPut(0, *slot_value);
-  return runtime->newCode(argcount, /*kwonlyargcount=*/0,
+  return runtime->newCode(argcount, /*posonlyargcount=*/num_parameters,
+                          /*kwonlyargcount=*/0,
                           /*nlocals=*/num_parameters,
                           /*stacksize=*/0, flags, code_code, consts,
                           /*names=*/empty_tuple, varnames,

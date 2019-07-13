@@ -489,13 +489,13 @@ bool Runtime::isSequence(Thread* thread, const Object& obj) {
               .isError();
 }
 
-RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
-                           word stacksize, word flags, const Object& code,
-                           const Object& consts, const Object& names,
-                           const Object& varnames, const Object& freevars,
-                           const Object& cellvars, const Object& filename,
-                           const Object& name, word firstlineno,
-                           const Object& lnotab) {
+RawObject Runtime::newCode(word argcount, word posonlyargcount,
+                           word kwonlyargcount, word nlocals, word stacksize,
+                           word flags, const Object& code, const Object& consts,
+                           const Object& names, const Object& varnames,
+                           const Object& freevars, const Object& cellvars,
+                           const Object& filename, const Object& name,
+                           word firstlineno, const Object& lnotab) {
   DCHECK(code.isInt() || isInstanceOfBytes(*code), "code must be bytes or int");
   DCHECK(isInstanceOfTuple(*consts), "expected tuple");
   DCHECK(isInstanceOfTuple(*names), "expected tuple");
@@ -505,6 +505,9 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
   DCHECK(isInstanceOfStr(*filename), "expected str");
   DCHECK(isInstanceOfStr(*name), "expected str");
   DCHECK(isInstanceOfBytes(*lnotab), "expected bytes");
+  DCHECK(posonlyargcount >= 0, "posonlyargcount must not be negative");
+  DCHECK(kwonlyargcount >= 0, "kwonlyargcount must not be negative");
+  DCHECK(nlocals >= 0, "nlocals must not be negative");
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -525,6 +528,7 @@ RawObject Runtime::newCode(word argcount, word kwonlyargcount, word nlocals,
 
   Code result(&scope, heap()->create<RawCode>());
   result.setArgcount(argcount);
+  result.setPosonlyargcount(posonlyargcount);
   result.setKwonlyargcount(kwonlyargcount);
   result.setNlocals(nlocals);
   result.setStacksize(stacksize);
@@ -582,22 +586,22 @@ RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
   Object empty_string(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
   Object name_str(&scope, symbols()->at(name));
-  Code code(&scope, newCode(-1,            // argcount
-                            0,             // kwonlyargcount
-                            0,             // nlocals
-                            0,             // stacksize
-                            0,             // flags
-                            entry_ptr,     // code
-                            empty_tuple,   // consts
-                            empty_tuple,   // names
-                            empty_tuple,   // varnames
-                            empty_tuple,   // freevars
-                            empty_tuple,   // cellvars
-                            empty_string,  // filename
-                            name_str,      // name
-                            0,             // firlineno
-                            empty_bytes    // lnotab
-                            ));
+  Code code(&scope, newCode(/*argcount=*/-1,
+                            /*posonlyargcount=*/0,
+                            /*kwonlyargcount=*/0,
+                            /*nlocals=*/0,
+                            /*stacksize=*/0,
+                            /*flags=*/0,
+                            /*code=*/entry_ptr,
+                            /*consts=*/empty_tuple,
+                            /*names=*/empty_tuple,
+                            /*varnames=*/empty_tuple,
+                            /*freevars=*/empty_tuple,
+                            /*cellvars=*/empty_tuple,
+                            /*filename=*/empty_string,
+                            /*name=*/name_str,
+                            /*firstlineno=*/0,
+                            /*lnotab=*/empty_bytes));
 
   Function function(&scope, heap()->create<RawFunction>());
   function.setFlags(0);
