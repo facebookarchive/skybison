@@ -1601,6 +1601,17 @@ void Runtime::processCallbacks() {
   }
 }
 
+RawObject Runtime::findOrCreateImportlibModule(Thread* thread) {
+  HandleScope scope(thread);
+  Object importlib_obj(&scope, findModuleById(SymbolId::kUnderFrozenImportlib));
+  // We may need to load and create `_frozen_importlib` if it doesn't exist.
+  if (importlib_obj.isNoneType()) {
+    createImportlibModule(thread);
+    importlib_obj = findModuleById(SymbolId::kUnderFrozenImportlib);
+  }
+  return *importlib_obj;
+}
+
 RawObject Runtime::findOrCreateMainModule() {
   HandleScope scope;
   Object main(&scope, findModuleById(SymbolId::kDunderMain));

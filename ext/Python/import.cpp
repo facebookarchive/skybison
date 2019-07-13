@@ -43,14 +43,7 @@ PY_EXPORT PyObject* PyImport_ImportModuleLevelObject(PyObject* name,
     return nullptr;
   }
 
-  Object importlib_obj(
-      &scope, runtime->findModuleById(SymbolId::kUnderFrozenImportlib));
-  // We may need to load and create `_frozen_importlib` if it doesn't exist.
-  if (importlib_obj.isNoneType()) {
-    runtime->createImportlibModule(thread);
-    importlib_obj = runtime->findModuleById(SymbolId::kUnderFrozenImportlib);
-  }
-  Module importlib(&scope, *importlib_obj);
+  Module importlib(&scope, runtime->findOrCreateImportlibModule(thread));
   Object dunder_import(
       &scope, runtime->moduleAtById(importlib, SymbolId::kDunderImport));
   if (dunder_import.isError()) return nullptr;

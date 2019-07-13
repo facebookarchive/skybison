@@ -240,7 +240,6 @@ class Runtime {
 
   void createBuiltinsModule(Thread* thread);
   void createEmptyBuiltinsModule(Thread* thread);
-  void createImportlibModule(Thread* thread);
   void createSysModule(Thread* thread);
   void createUnderBuiltinsModule(Thread* thread);
 
@@ -812,6 +811,10 @@ class Runtime {
   // testing.
   word nextModuleIndex();
 
+  // If the importlib module has already been initialized and added, return it.
+  // Else, create and add it to the runtime.
+  RawObject findOrCreateImportlibModule(Thread* thread);
+
   // If the main module has already been initialized and added, return it.
   // Else, create and add it to the runtime.
   RawObject findOrCreateMainModule();
@@ -849,6 +852,7 @@ class Runtime {
   void initializeThreads();
   void initializeTypes();
 
+  void createImportlibModule(Thread* thread);
   RawObject createMainModule();
 
   void visitRuntimeRoots(PointerVisitor* visitor);
