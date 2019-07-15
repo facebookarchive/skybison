@@ -7,7 +7,7 @@ from everstore.client.py import EverstoreClient
 EVERSTORE_TIER = "dfsrouter.common"
 EVERSTORE_PYRO_EXT = "txt"
 EVERSTORE_PYRO_CONTEXT = "pyro/binaries"
-EVERSTORE_PYRO_BINARIES = 27299  #  FbType for EVERSTORE_PYRO_BINARIES
+EVERSTORE_PYRO_BINARIES = 27299  # FbType for EVERSTORE_PYRO_BINARIES
 
 
 class PyroBlobStorage:
