@@ -938,6 +938,12 @@ class IterTests(unittest.TestCase):
         self.assertTrue(dunder_get_called)
 
 
+class ObjectTests(unittest.TestCase):
+    def test_dunder_subclasshook_returns_not_implemented(self):
+        self.assertIs(object.__subclasshook__(), NotImplemented)
+        self.assertIs(object.__subclasshook__(int), NotImplemented)
+
+
 class ReversedTests(unittest.TestCase):
     def test_reversed_iterates_backwards_over_iterable(self):
         it = reversed([1, 2, 3])

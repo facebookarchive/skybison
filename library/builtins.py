@@ -291,6 +291,10 @@ class object(bootstrap=True):  # noqa: E999
     def __str__(self):
         return _type(self).__repr__(self)
 
+    @classmethod
+    def __subclasshook__(cls, *args):
+        return NotImplemented
+
 
 # End: Early definitions
 
