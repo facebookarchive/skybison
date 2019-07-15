@@ -148,16 +148,6 @@ RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
   return *function;
 }
 
-static word findName(RawObject name, RawTuple name_list) {
-  word len = name_list.length();
-  for (word i = 0; i < len; i++) {
-    if (name == name_list.at(i)) {
-      return i;
-    }
-  }
-  return len;
-}
-
 // Verify correct number and order of arguments.  If order is wrong, try to
 // fix it.  If argument is missing (denoted by Error::object()), try to supply
 // it with a default.  This routine expects the number of args on the stack
@@ -167,6 +157,7 @@ static word findName(RawObject name, RawTuple name_list) {
 static RawObject checkArgs(Thread* thread, const Function& function,
                            RawObject* kw_arg_base, const Tuple& actual_names,
                            const Tuple& formal_names, word start) {
+  word posonlyargcount = RawCode::cast(function.code()).posonlyargcount();
   word num_actuals = actual_names.length();
   // Helper function to swap actual arguments and names
   auto swap = [&kw_arg_base, &actual_names](word arg_pos1,
@@ -183,16 +174,28 @@ static RawObject checkArgs(Thread* thread, const Function& function,
     return *(kw_arg_base - idx);
   };
   HandleScope scope(thread);
+  Object formal_name(&scope, NoneType::object());
   for (word arg_pos = 0; arg_pos < num_actuals; arg_pos++) {
-    if (actual_names.at(arg_pos) == formal_names.at(arg_pos + start)) {
-      // We're good here: actual & formal arg names match.  Check the next one.
-      continue;
+    word formal_pos = arg_pos + start;
+    formal_name = formal_names.at(formal_pos);
+    if (actual_names.at(arg_pos) == formal_name) {
+      if (formal_pos >= posonlyargcount) {
+        // We're good here: actual & formal arg names match.  Check the next
+        // one.
+        continue;
+      }
+      // A matching keyword arg but for a positional-only parameter.
+      return Thread::current()->raiseWithFmt(
+          LayoutId::kTypeError,
+          "TypeError: keyword argument specified for positional-only argument "
+          "'%S'",
+          &formal_name);
     }
     // Mismatch.  Try to fix it.  Note: args grow down.
     bool swapped = false;
     // Look for expected Formal name in Actuals tuple.
     for (word i = arg_pos + 1; i < num_actuals; i++) {
-      if (actual_names.at(i) == formal_names.at(arg_pos + start)) {
+      if (actual_names.at(i) == formal_name) {
         // Found it.  Swap both the stack and the actual_names tuple.
         swap(arg_pos, i);
         swapped = true;
@@ -223,11 +226,12 @@ static RawObject checkArgs(Thread* thread, const Function& function,
     }
     // Now, can we fill that slot with a default argument?
     word absolute_pos = arg_pos + start;
-    if (absolute_pos < function.argcount()) {
+    word argcount = function.argcount();
+    if (absolute_pos < argcount) {
       word defaults_size = function.hasDefaults()
                                ? Tuple::cast(function.defaults()).length()
                                : 0;
-      word defaults_start = function.argcount() - defaults_size;
+      word defaults_start = argcount - defaults_size;
       if (absolute_pos >= (defaults_start)) {
         // Set the default value
         Tuple default_args(&scope, function.defaults());
@@ -249,6 +253,16 @@ static RawObject checkArgs(Thread* thread, const Function& function,
                                 "TypeError: missing argument");
   }
   return NoneType::object();
+}
+
+static word findName(word posonlyargcount, RawObject name, RawTuple name_list) {
+  word len = name_list.length();
+  for (word i = posonlyargcount; i < len; i++) {
+    if (name == name_list.at(i)) {
+      return i;
+    }
+  }
+  return len;
 }
 
 // Converts the outgoing arguments of a keyword call into positional arguments
@@ -314,10 +328,12 @@ RawObject prepareKeywordCall(Thread* thread, RawFunction function_raw,
       List saved_values(&scope, runtime->newList());
       word formal_parm_size = formal_parm_names.length();
       RawObject* p = caller->valueStackTop() + (num_keyword_args - 1);
+      word posonlyargcount = code.posonlyargcount();
       for (word i = 0; i < num_keyword_args; i++) {
         Object key(&scope, keywords.at(i));
         Object value(&scope, *(p - i));
-        if (findName(*key, *formal_parm_names) < formal_parm_size) {
+        if (findName(posonlyargcount, *key, *formal_parm_names) <
+            formal_parm_size) {
           // Got a match, stash pair for future restoration on the stack
           runtime->listAdd(thread, saved_keyword_list, key);
           runtime->listAdd(thread, saved_values, value);

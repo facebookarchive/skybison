@@ -704,6 +704,149 @@ result = foo(1)
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
+static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
+  // Create:
+  //   def foo(a, /, b):
+  //     return (a, b)
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Str name(&scope, runtime->internStrFromCStr(thread, "foo"));
+  const byte bytecode[] = {LOAD_FAST,   0, LOAD_FAST,    1,
+                           BUILD_TUPLE, 2, RETURN_VALUE, 0};
+  Tuple varnames(&scope, runtime->newTuple(2));
+  varnames.atPut(0, runtime->internStrFromCStr(thread, "a"));
+  varnames.atPut(1, runtime->internStrFromCStr(thread, "b"));
+  Bytes bc(&scope, runtime->newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime->emptyTuple());
+  Object empty_str(&scope, Str::empty());
+  Object empty_bytes(&scope, Bytes::empty());
+  Code code(&scope,
+            runtime->newCode(/*argcount=*/2, /*posonlyargcount=*/1,
+                             /*kwonlyargcount=*/0, /*nlocals=*/2,
+                             /*stacksize=*/2,
+                             Code::Flags::NEWLOCALS | Code::Flags::OPTIMIZED,
+                             bc, /*consts=*/empty_tuple,
+                             /*names=*/empty_tuple, varnames,
+                             /*freevars=*/empty_tuple,
+                             /*cellvars=*/empty_tuple,
+                             /*filename=*/empty_str, name,
+                             /*firstlineno=*/0, /*lnotab=*/empty_bytes));
+  Dict annotations(&scope, runtime->newDict());
+  Dict kw_defaults(&scope, runtime->newDict());
+  Dict globals(&scope, runtime->newDict());
+  return Interpreter::makeFunction(thread, /*qualname_str=*/name, code,
+                                   /*closure_tuple=*/empty_tuple, annotations,
+                                   kw_defaults, /*defaults_tuple=*/empty_tuple,
+                                   globals);
+}
+
+TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
+  HandleScope scope(thread_);
+  Function function(&scope, makeFunctionWithPosOnlyArg(thread_));
+
+  // `foo(a=2, b=4)`
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(*function);
+  frame->pushValue(runtime_.newInt(2));
+  frame->pushValue(runtime_.newInt(4));
+  Tuple keywords(&scope, runtime_.newTuple(2));
+  keywords.atPut(0, runtime_.internStrFromCStr(thread_, "a"));
+  keywords.atPut(1, runtime_.internStrFromCStr(thread_, "b"));
+  frame->pushValue(*keywords);
+  Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
+  EXPECT_TRUE(raisedWithStr(*result_obj, LayoutId::kTypeError,
+                            "TypeError: keyword argument specified for "
+                            "positional-only argument 'a'"));
+}
+
+TEST_F(TrampolinesTest, KeywordCallAcceptsNonPositionalOnlyArgumentNames) {
+  HandleScope scope(thread_);
+  Function function(&scope, makeFunctionWithPosOnlyArg(thread_));
+
+  // `foo(2, b=9)`
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(*function);
+  frame->pushValue(runtime_.newInt(2));
+  frame->pushValue(runtime_.newInt(9));
+  Tuple keywords(&scope, runtime_.newTuple(1));
+  keywords.atPut(0, runtime_.internStrFromCStr(thread_, "b"));
+  frame->pushValue(*keywords);
+  Object result_obj(&scope, Interpreter::callKw(thread_, frame, 2));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 9));
+}
+
+TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
+  HandleScope scope(thread_);
+
+  // Create:
+  //   def foo(a, b=7, /, c=10, **kwargs):
+  //     return (a, b, c, kwargs)
+  Str name(&scope, runtime_.internStrFromCStr(thread_, "foo"));
+  const byte bytecode[] = {LOAD_FAST, 0, LOAD_FAST,   1, LOAD_FAST,    2,
+                           LOAD_FAST, 3, BUILD_TUPLE, 4, RETURN_VALUE, 0};
+  Tuple varnames(&scope, runtime_.newTuple(4));
+  varnames.atPut(0, runtime_.internStrFromCStr(thread_, "a"));
+  varnames.atPut(1, runtime_.internStrFromCStr(thread_, "b"));
+  varnames.atPut(2, runtime_.internStrFromCStr(thread_, "c"));
+  varnames.atPut(3, runtime_.internStrFromCStr(thread_, "kwargs"));
+  Bytes bc(&scope, runtime_.newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime_.emptyTuple());
+  Object empty_str(&scope, Str::empty());
+  Object empty_bytes(&scope, Bytes::empty());
+  Code code(&scope,
+            runtime_.newCode(/*argcount=*/3, /*posonlyargcount=*/2,
+                             /*kwonlyargcount=*/0, /*nlocals=*/4,
+                             /*stacksize=*/4,
+                             Code::Flags::NEWLOCALS | Code::Flags::OPTIMIZED |
+                                 Code::Flags::VARKEYARGS,
+                             bc,
+                             /*consts=*/empty_tuple,
+                             /*names=*/empty_tuple, varnames,
+                             /*freevars=*/empty_tuple,
+                             /*cellvars=*/empty_tuple,
+                             /*filename=*/empty_str, name,
+                             /*firstlineno=*/0, /*lnotab=*/empty_bytes));
+  Dict annotations(&scope, runtime_.newDict());
+  Dict kw_defaults(&scope, runtime_.newDict());
+  Tuple defaults(&scope, runtime_.newTuple(2));
+  defaults.atPut(0, runtime_.newInt(7));
+  defaults.atPut(1, runtime_.newInt(10));
+  Dict globals(&scope, runtime_.newDict());
+  Function foo(&scope, Interpreter::makeFunction(
+                           thread_, /*qualname_str=*/name, code,
+                           /*closure_tuple=*/empty_tuple, annotations,
+                           kw_defaults, defaults, globals));
+  // Call foo(1, c=13, b=5).
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(*foo);
+  frame->pushValue(runtime_.newInt(1));
+  frame->pushValue(runtime_.newInt(13));
+  frame->pushValue(runtime_.newInt(5));
+  Tuple keywords(&scope, runtime_.newTuple(2));
+  keywords.atPut(0, runtime_.internStrFromCStr(thread_, "c"));
+  keywords.atPut(1, runtime_.internStrFromCStr(thread_, "b"));
+  frame->pushValue(*keywords);
+  Object result_obj(&scope, Interpreter::callKw(thread_, frame, 3));
+
+  // Expect a `(1, 7, 13, {'b': 5})` result.
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 7));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 13));
+  ASSERT_TRUE(result.at(3).isDict());
+  Dict result_dict(&scope, result.at(3));
+  EXPECT_EQ(result_dict.numItems(), 1);
+  Str b_name(&scope, runtime_.internStrFromCStr(thread_, "b"));
+  EXPECT_TRUE(
+      isIntEqualsWord(runtime_.dictAt(thread_, result_dict, b_name), 5));
+}
+
 TEST_F(TrampolinesTest, ExplodeCallWithBadKeywordFails) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 def take_kwargs(a): pass
