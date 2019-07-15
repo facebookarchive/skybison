@@ -3384,7 +3384,7 @@ result = f(*args)
   EXPECT_PYLIST_EQ(result, {"b", "a"});
 }
 
-TEST_F(InterpreterDeathTest, ExplodeWithIterableCalls) {
+TEST_F(InterpreterTest, ExplodeWithIterableCalls) {
   HandleScope scope(thread_);
   EXPECT_FALSE(runFromCStr(&runtime_, R"(
 def f(a, b):
