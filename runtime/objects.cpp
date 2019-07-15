@@ -488,6 +488,17 @@ word RawSlice::adjustIndices(word length, word* start, word* stop, word step) {
   return RawSlice::length(*start, *stop, step);
 }
 
+void RawSlice::adjustSearchIndices(word* start, word* end, word length) {
+  if (*start < 0) {
+    *start = Utils::maximum(*start + length, word{0});
+  }
+  if (*end < 0) {
+    *end = Utils::maximum(*end + length, word{0});
+  } else if (*end > length) {
+    *end = length;
+  }
+}
+
 // RawStr
 
 word RawStr::compare(RawObject string) const {

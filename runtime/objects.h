@@ -1423,9 +1423,20 @@ class RawSlice : public RawHeapObject {
   // Calculate the number of items that a slice addresses
   static word length(word start, word stop, word step);
 
-  // Takes in the length of a list and the start, stop, and step values
-  // Returns the length of the new list and the corrected start and stop values
+  // Adjusts the slice indices to fit a collection with the given length.
+  // Returns the length of the slice, and modifies start and stop to fit within
+  // the bounds of the collection.
+  //
+  // If start or stop is negative, adjust them relative to length. If they are
+  // still negative, sets them to zero. Limits start and stop to the length of
+  // the collection if they are greater than the length.
   static word adjustIndices(word length, word* start, word* stop, word step);
+
+  // Adjusts the bounds for searching a collection of the given length.
+  //
+  // NOTE: While this function is mostly the same as adjustIndices(), it does
+  // not modify the start index when it is greater than the length.
+  static void adjustSearchIndices(word* start, word* end, word length);
 
   // Layout.
   static const int kStartOffset = RawHeapObject::kSize;

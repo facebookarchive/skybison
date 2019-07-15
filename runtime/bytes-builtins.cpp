@@ -14,14 +14,7 @@ RawObject bytesFind(const Bytes& haystack, word haystack_len,
                     word end) {
   DCHECK_BOUND(haystack_len, haystack.length());
   DCHECK_BOUND(needle_len, needle.length());
-  if (start < 0) {
-    start = Utils::maximum(start + haystack_len, 0l);
-  }
-  if (end > haystack_len) {
-    end = haystack_len;
-  } else if (end < 0) {
-    end = Utils::maximum(end + haystack_len, 0l);
-  }
+  Slice::adjustSearchIndices(&start, &end, haystack_len);
   for (word i = start; i <= end - needle_len; i++) {
     bool has_match = true;
     for (word j = 0; has_match && j < needle_len; j++) {

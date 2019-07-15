@@ -371,28 +371,6 @@ RawObject StrBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
   return runtime->hash(*self);
 }
 
-static void adjustIndices(const Str& str, word* startp, word* endp) {
-  DCHECK(*startp < 0 || *endp < 0,
-         "adjustIndices should not be called unless start or end is < 0");
-  word str_len = str.codePointLength();
-  word start = *startp;
-  word end = *endp;
-  if (end < 0) {
-    end += str_len;
-    if (end < 0) {
-      end = 0;
-    }
-    *endp = end;
-  }
-  if (start < 0) {
-    start += str_len;
-    if (start < 0) {
-      start = 0;
-    }
-    *startp = start;
-  }
-}
-
 void strInternInTuple(Thread* thread, const Object& items) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -476,7 +454,7 @@ bool strIsASCII(const Str& str) {
 RawObject strFind(const Str& haystack, const Str& needle, word start,
                   word end) {
   if (end < 0 || start < 0) {
-    adjustIndices(haystack, &start, &end);
+    Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   }
 
   word start_index = haystack.offsetByCodePoints(0, start);
@@ -532,7 +510,7 @@ word strFindFirstNonWhitespace(const Str& str) {
 RawObject strRFind(const Str& haystack, const Str& needle, word start,
                    word end) {
   if (end < 0 || start < 0) {
-    adjustIndices(haystack, &start, &end);
+    Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
   }
 
   word start_index = haystack.offsetByCodePoints(0, start);
