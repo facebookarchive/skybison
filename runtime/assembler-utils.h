@@ -18,7 +18,7 @@ class Assembler;
 }
 class AssemblerBuffer;
 
-class Label {
+class WARN_UNUSED Label {
  public:
   Label() : position_(0), unresolved_(0) {
 #ifndef NDEBUG
