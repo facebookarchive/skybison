@@ -1820,7 +1820,8 @@ RawObject Runtime::lookupNameInModule(Thread* thread, SymbolId module_name,
   HandleScope scope(thread);
   Object module_obj(&scope, findModuleById(module_name));
   DCHECK(module_obj.isModule(),
-         "The given module doesn't exist in modules dict");
+         "The given module '%s' doesn't exist in modules dict",
+         symbols()->predefinedSymbolAt(module_name));
   Module module(&scope, *module_obj);
   return moduleAtById(module, name);
 }

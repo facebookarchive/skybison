@@ -38,6 +38,21 @@ TEST_F(ImportExtensionApiTest, AddExistingModuleReturnsModule) {
   Py_DECREF(pyname);
 }
 
+TEST_F(ImportExtensionApiTest,
+       GetMagicNumberWithNonIntMagicNumberRaisesTypeError) {
+  PyObjectPtr importlib(PyImport_ImportModule("_frozen_importlib_external"));
+  ASSERT_EQ(PyObject_SetAttrString(importlib, "_RAW_MAGIC_NUMBER", Py_None), 0);
+  EXPECT_EQ(PyImport_GetMagicNumber(), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ImportExtensionApiTest,
+       GetMagicNumberReturnsMagicNumberFromImportlibExternal) {
+  EXPECT_NE(PyImport_GetMagicNumber(), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(ImportExtensionApiTest, PyImportAcquireLockAndReleaseLockDoesNothing) {
   _PyImport_AcquireLock();
   EXPECT_EQ(_PyImport_ReleaseLock(), 1);

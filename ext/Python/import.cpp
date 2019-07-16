@@ -1,5 +1,6 @@
 #include "cpython-func.h"
 #include "imp-module.h"
+#include "int-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -123,7 +124,14 @@ PY_EXPORT PyObject* PyImport_ExecCodeModuleWithPathnames(const char* /* e */,
 }
 
 PY_EXPORT long PyImport_GetMagicNumber() {
-  UNIMPLEMENTED("PyImport_GetMagicNumber");
+  PyObject* importlib = PyImport_ImportModule("_frozen_importlib_external");
+  if (importlib == nullptr) return -1;
+  PyObject* pyc_magic = PyObject_GetAttrString(importlib, "_RAW_MAGIC_NUMBER");
+  Py_DECREF(importlib);
+  if (pyc_magic == nullptr) return -1;
+  long res = PyLong_AsLong(pyc_magic);
+  Py_DECREF(pyc_magic);
+  return res;
 }
 
 PY_EXPORT const char* PyImport_GetMagicTag() {
