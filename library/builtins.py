@@ -209,6 +209,9 @@ class type(bootstrap=True):
         # Not a patch; just empty
         pass
 
+    def __instancecheck__(self, obj) -> bool:
+        return _isinstance_type(obj, self)
+
     def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound):
         pass
 
@@ -2264,8 +2267,9 @@ def isinstance(obj, type_or_tuple) -> bool:
             if isinstance(obj, item):
                 return True
         return False
-    # TODO(wmeehan): call __instancecheck__
-    # disabled since we do not support all of ABCMeta.__instancecheck__
+    if _object_type_hasattr(type_or_tuple, "__instancecheck__"):
+        return bool(_type(type_or_tuple).__instancecheck__(type_or_tuple, obj))
+    # according to CPython, this is probably never reached anymore
     if _type_check(type_or_tuple):
         return _isinstance_type(obj, ty, type_or_tuple)
     _dunder_bases_tuple_check(

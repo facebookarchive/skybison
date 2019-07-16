@@ -848,6 +848,30 @@ class IsInstanceTests(unittest.TestCase):
             "isinstance() arg 2 must be a type or tuple of types",
         )
 
+    def test_isinstance_calls_custom_instancecheck_true(self):
+        class Meta(type):
+            def __instancecheck__(cls, obj):
+                return [1]
+
+        class A(metaclass=Meta):
+            pass
+
+        self.assertIs(isinstance(0, A), True)
+
+    def test_isinstance_calls_custom_instancecheck_false(self):
+        class Meta(type):
+            def __instancecheck__(cls, obj):
+                return None
+
+        class A(metaclass=Meta):
+            pass
+
+        class B(A):
+            pass
+
+        self.assertIs(isinstance(A(), A), True)
+        self.assertIs(isinstance(B(), A), False)
+
 
 class IsSubclassTests(unittest.TestCase):
     def test_issubclass_with_same_types_returns_true(self):
