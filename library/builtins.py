@@ -60,6 +60,7 @@ _list_check = _list_check  # noqa: F821
 _list_checkexact = _list_checkexact  # noqa: F821
 _list_delitem = _list_delitem  # noqa: F821
 _list_delslice = _list_delslice  # noqa: F821
+_list_extend = _list_extend  # noqa: F821
 _list_getitem = _list_getitem  # noqa: F821
 _list_getslice = _list_getslice  # noqa: F821
 _list_len = _list_len  # noqa: F821
@@ -2421,7 +2422,14 @@ class list(bootstrap=True):
         return list(self)
 
     def extend(self, other):
-        pass
+        if not _list_check(self):
+            raise TypeError(
+                f"'extend' requires 'list' but received a {_type(self).__name__}"
+            )
+        if _tuple_checkexact(other) or _list_checkexact(other):
+            return _list_extend(self, other)
+        for item in other:
+            list.append(self, item)
 
     def insert(self, index, value):
         pass
@@ -3265,7 +3273,7 @@ class str(bootstrap=True):
             it = iter(items)
         except Exception:
             raise TypeError("can only join an iterable")
-        return _str_join(self, list(it))
+        return _str_join(self, [*it])
 
     def ljust(self, width, fillchar):
         _unimplemented()
@@ -3589,7 +3597,7 @@ class tuple(bootstrap=True):
             it = iter(iterable)
         except Exception:
             raise TypeError(f"'{_type(iterable).__name__}' object is not iterable")
-        return _tuple_new(cls, list(it))
+        return _tuple_new(cls, [*it])
 
     def __repr__(self):
         if not _tuple_check(self):

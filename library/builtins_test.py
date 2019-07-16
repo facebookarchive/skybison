@@ -979,6 +979,25 @@ class ReversedTests(unittest.TestCase):
 
 
 class ListTests(unittest.TestCase):
+    def test_extend_with_iterator_that_raises_partway_through_has_sideeffect(self):
+        class C:
+            def __init__(self):
+                self.n = 0
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.n > 4:
+                    raise UserWarning("foo")
+                self.n += 1
+                return self.n
+
+        result = [0]
+        with self.assertRaises(UserWarning):
+            result.extend(C())
+        self.assertEqual(result, [0, 1, 2, 3, 4, 5])
+
     def test_delitem_with_int_subclass_does_not_call_dunder_index(self):
         class C(int):
             def __index__(self):

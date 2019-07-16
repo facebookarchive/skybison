@@ -8,8 +8,8 @@
 
 namespace python {
 
-// Extends a list from an iterator.
-// Returns either the extended list or an Error object.
+// Extends a list from an exact tuple or exact list. Modifies dst in-place.
+// Returns either the None or an Error object if allocation failed.
 RawObject listExtend(Thread* thread, const List& dst, const Object& iterable);
 
 // Inserts an element to the specified index of the list.
@@ -43,7 +43,6 @@ class ListBuiltins
  public:
   static RawObject append(Thread* thread, Frame* frame, word nargs);
   static RawObject clear(Thread* thread, Frame* frame, word nargs);
-  static RawObject extend(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderAdd(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderContains(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);

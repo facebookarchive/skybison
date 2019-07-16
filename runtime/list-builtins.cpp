@@ -7,14 +7,15 @@
 #include "runtime.h"
 #include "slice-builtins.h"
 #include "thread.h"
+#include "tuple-builtins.h"
 
 namespace python {
 
 RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  // Special case for lists
-  if (iterable.isList()) {
+  if (runtime->isInstanceOfList(*iterable)) {
+    // Special case for lists
     List src(&scope, *iterable);
     word old_length = dst.numItems();
     word new_length = old_length + src.numItems();
@@ -27,60 +28,22 @@ RawObject listExtend(Thread* thread, const List& dst, const Object& iterable) {
         dst.atPut(j, src.at(i));
       }
     }
-    return *dst;
+    return NoneType::object();
   }
   // Special case for tuples
-  if (iterable.isTuple()) {
-    Tuple src(&scope, *iterable);
-    word old_length = dst.numItems();
-    word new_length = old_length + src.length();
-    if (new_length != old_length) {
-      runtime->listEnsureCapacity(thread, dst, new_length);
-      dst.setNumItems(new_length);
-      for (word i = 0, j = old_length; j < new_length; i++, j++) {
-        dst.atPut(j, src.at(i));
-      }
+  DCHECK(runtime->isInstanceOfTuple(*iterable),
+         "iterable must be list or tuple instance");
+  Tuple src(&scope, tupleUnderlying(thread, iterable));
+  word old_length = dst.numItems();
+  word new_length = old_length + src.length();
+  if (new_length != old_length) {
+    runtime->listEnsureCapacity(thread, dst, new_length);
+    dst.setNumItems(new_length);
+    for (word i = 0, j = old_length; j < new_length; i++, j++) {
+      dst.atPut(j, src.at(i));
     }
-    return *dst;
   }
-  // Generic case
-  Object iter_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterable, SymbolId::kDunderIter));
-  if (iter_method.isError()) {
-    if (iter_method.isErrorNotFound()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "object is not iterable");
-    }
-    return *iter_method;
-  }
-  Object iterator(&scope,
-                  Interpreter::callMethod1(thread, thread->currentFrame(),
-                                           iter_method, iterable));
-  if (iterator.isError()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
-  }
-  Object next_method(
-      &scope, Interpreter::lookupMethod(thread, thread->currentFrame(),
-                                        iterator, SymbolId::kDunderNext));
-  if (next_method.isError()) {
-    if (next_method.isErrorNotFound()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "iter() returned a non-iterator");
-    }
-    return *next_method;
-  }
-  Object value(&scope, NoneType::object());
-  for (;;) {
-    value = Interpreter::callMethod1(thread, thread->currentFrame(),
-                                     next_method, iterator);
-    if (value.isError()) {
-      if (thread->clearPendingStopIteration()) break;
-      return *value;
-    }
-    runtime->listAdd(thread, dst, value);
-  }
-  return *dst;
+  return NoneType::object();
 }
 
 void listInsert(Thread* thread, const List& list, const Object& value,
@@ -217,7 +180,6 @@ const BuiltinMethod ListBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderSetitem, dunderSetItem},
     {SymbolId::kAppend, append},
     {SymbolId::kClear, clear},
-    {SymbolId::kExtend, extend},
     {SymbolId::kInsert, insert},
     {SymbolId::kPop, pop},
     {SymbolId::kRemove, remove},
@@ -319,20 +281,6 @@ RawObject ListBuiltins::append(Thread* thread, Frame* frame, word nargs) {
   List list(&scope, *self);
   Object value(&scope, args.get(1));
   thread->runtime()->listAdd(thread, list, value);
-  return NoneType::object();
-}
-
-RawObject ListBuiltins::extend(Thread* thread, Frame* frame, word nargs) {
-  HandleScope scope(thread);
-  Arguments args(frame, nargs);
-  Object self(&scope, args.get(0));
-  if (!thread->runtime()->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, SymbolId::kList);
-  }
-  List list(&scope, *self);
-  Object value(&scope, args.get(1));
-  Object result(&scope, listExtend(thread, list, value));
-  if (result.isError()) return *result;
   return NoneType::object();
 }
 
@@ -541,9 +489,9 @@ static RawObject setItemSlice(Thread* thread, const List& list,
     result_list.atPut(i, list.at(i));
   }
   if (step == 1) {
-    Object extend_result(&scope, listExtend(thread, result_list, src));
-    if (extend_result.isError()) return *extend_result;
-    result_list = *extend_result;
+    RawObject result = thread->invokeMethodStatic2(
+        LayoutId::kList, SymbolId::kExtend, result_list, src);
+    if (result.isError()) return result;
   } else {
     Object iter_method(
         &scope, Interpreter::lookupMethod(thread, thread->currentFrame(), src,

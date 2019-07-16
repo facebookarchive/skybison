@@ -291,6 +291,11 @@ def _list_delslice(self, start, stop, step):
 
 
 @_patch
+def _list_extend(obj, other):
+    pass
+
+
+@_patch
 def _list_getitem(self, key):
     pass
 

@@ -102,6 +102,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListCheckExact, underListCheckExact},
     {SymbolId::kUnderListDelitem, underListDelItem},
     {SymbolId::kUnderListDelslice, underListDelSlice},
+    {SymbolId::kUnderListExtend, underListExtend},
     {SymbolId::kUnderListGetitem, underListGetItem},
     {SymbolId::kUnderListGetslice, underListGetSlice},
     {SymbolId::kUnderListLen, underListLen},
@@ -1231,6 +1232,15 @@ RawObject UnderBuiltinsModule::underListDelSlice(Thread* thread, Frame* frame,
   // Untrack all deleted elements
   list.clearFrom(new_length);
   return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underListExtend(Thread* thread, Frame* frame,
+                                               word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  List list(&scope, args.get(0));
+  Object value(&scope, args.get(1));
+  return listExtend(thread, list, value);
 }
 
 RawObject UnderBuiltinsModule::underListGetItem(Thread* thread, Frame* frame,

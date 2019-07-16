@@ -3189,7 +3189,9 @@ HANDLER_INLINE Continue Interpreter::doBuildListUnpack(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (listExtend(thread, list, obj).isError()) return Continue::UNWIND;
+    RawObject result = thread->invokeMethodStatic2(
+        LayoutId::kList, SymbolId::kExtend, list, obj);
+    if (result.isError()) return Continue::UNWIND;
   }
   frame->dropValues(arg - 1);
   frame->setTopValue(*list);
@@ -3265,12 +3267,12 @@ HANDLER_INLINE Continue Interpreter::doBuildTupleUnpack(Thread* thread,
   Object obj(&scope, NoneType::object());
   for (word i = arg - 1; i >= 0; i--) {
     obj = frame->peek(i);
-    if (listExtend(thread, list, obj).isError()) return Continue::UNWIND;
+    RawObject result = thread->invokeMethodStatic2(
+        LayoutId::kList, SymbolId::kExtend, list, obj);
+    if (result.isError()) return Continue::UNWIND;
   }
-  Tuple tuple(&scope, runtime->newTuple(list.numItems()));
-  for (word i = 0; i < list.numItems(); i++) {
-    tuple.atPut(i, list.at(i));
-  }
+  Tuple items(&scope, list.items());
+  Tuple tuple(&scope, runtime->tupleSubseq(thread, items, 0, list.numItems()));
   frame->dropValues(arg - 1);
   frame->setTopValue(*tuple);
   return Continue::NEXT;

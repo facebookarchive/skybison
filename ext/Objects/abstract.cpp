@@ -265,9 +265,7 @@ static RawObject sequenceFast(Thread* thread, const Object& seq,
     }
     return Error::exception();
   }
-  // TODO(T40274012): Re-write this function in terms of builtins.list
-  List result(&scope, runtime->newList());
-  return listExtend(thread, result, seq);
+  return thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kList, seq);
 }
 
 // TODO(T40432322): Delete
@@ -1261,18 +1259,10 @@ PY_EXPORT PyObject* PySequence_List(PyObject* seq) {
     return nullError(thread);
   }
   HandleScope scope(thread);
-  // TODO(T40274012): Re-write this function in terms of builtins.list
-  Object result_obj(&scope, thread->runtime()->newList());
-  if (result_obj.isError()) {
-    return nullptr;
-  }
-  List result(&scope, *result_obj);
   Object seq_obj(&scope, ApiHandle::fromPyObject(seq)->asObject());
-  result_obj = listExtend(thread, result, seq_obj);
-  if (result_obj.isError()) {
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result_obj);
+  RawObject result =
+      thread->invokeFunction1(SymbolId::kBuiltins, SymbolId::kList, seq_obj);
+  return result.isError() ? nullptr : ApiHandle::newReference(thread, result);
 }
 
 PY_EXPORT PyObject* PySequence_Repeat(PyObject* pyseq, Py_ssize_t count) {

@@ -215,6 +215,7 @@ class Runtime;
   V(UnderListCheckExact, "_list_checkexact")                                   \
   V(UnderListDelitem, "_list_delitem")                                         \
   V(UnderListDelslice, "_list_delslice")                                       \
+  V(UnderListExtend, "_list_extend")                                           \
   V(UnderListGetitem, "_list_getitem")                                         \
   V(UnderListGetslice, "_list_getslice")                                       \
   V(UnderListLen, "_list_len")                                                 \

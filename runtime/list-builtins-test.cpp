@@ -1196,23 +1196,6 @@ TEST_F(ListBuiltinsTest, ExtendList) {
   EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
 }
 
-TEST_F(ListBuiltinsTest, ExtendListIterator) {
-  HandleScope scope(thread_);
-  List list(&scope, runtime_.newList());
-  List list1(&scope, runtime_.newList());
-  for (int i = 0; i < 4; i++) {
-    Object value(&scope, SmallInt::fromWord(i));
-    Object value1(&scope, SmallInt::fromWord(i + 4));
-    runtime_.listAdd(thread_, list, value);
-    runtime_.listAdd(thread_, list1, value1);
-  }
-  EXPECT_EQ(list.numItems(), 4);
-  Object list1_handle(&scope, *list1);
-  Object list1_iterator(&scope, runtime_.newListIterator(list1_handle));
-  listExtend(Thread::current(), list, list1_iterator);
-  EXPECT_PYLIST_EQ(list, {0, 1, 2, 3, 4, 5, 6, 7});
-}
-
 TEST_F(ListBuiltinsTest, ExtendTuple) {
   HandleScope scope(thread_);
   List list(&scope, runtime_.newList());
@@ -1244,61 +1227,6 @@ TEST_F(ListBuiltinsTest, ExtendTuple) {
   EXPECT_EQ(list.at(6), SmallInt::fromWord(1));
   EXPECT_EQ(list.at(7), SmallInt::fromWord(2));
   EXPECT_EQ(list.at(8), SmallInt::fromWord(3));
-}
-
-TEST_F(ListBuiltinsTest, ExtendSet) {
-  HandleScope scope(thread_);
-  List list(&scope, runtime_.newList());
-  Set set(&scope, runtime_.newSet());
-  Object value(&scope, NoneType::object());
-  word sum = 0;
-
-  for (word i = 0; i < 16; i++) {
-    value = SmallInt::fromWord(i);
-    runtime_.setAdd(thread_, set, value);
-    sum += i;
-  }
-
-  Object set_obj(&scope, *set);
-  listExtend(Thread::current(), list, Object(&scope, *set_obj));
-  EXPECT_EQ(list.numItems(), 16);
-
-  for (word i = 0; i < 16; i++) {
-    sum -= SmallInt::cast(list.at(i)).value();
-  }
-  ASSERT_EQ(sum, 0);
-}
-
-TEST_F(ListBuiltinsTest, ExtendDict) {
-  HandleScope scope(thread_);
-  List list(&scope, runtime_.newList());
-  Dict dict(&scope, runtime_.newDict());
-  Object value(&scope, NoneType::object());
-  word sum = 0;
-
-  for (word i = 0; i < 16; i++) {
-    value = SmallInt::fromWord(i);
-    runtime_.dictAtPut(thread_, dict, value, value);
-    sum += i;
-  }
-
-  Object dict_obj(&scope, *dict);
-  listExtend(thread_, list, Object(&scope, *dict_obj));
-  EXPECT_EQ(list.numItems(), 16);
-
-  for (word i = 0; i < 16; i++) {
-    sum -= SmallInt::cast(list.at(i)).value();
-  }
-  ASSERT_EQ(sum, 0);
-}
-
-TEST_F(ListBuiltinsTest, ExtendIterator) {
-  HandleScope scope(thread_);
-  List list(&scope, runtime_.newList());
-  Object iterable(&scope, runtime_.newRange(1, 4, 1));
-  listExtend(thread_, list, iterable);
-
-  EXPECT_PYLIST_EQ(list, {1, 2, 3});
 }
 
 TEST_F(ListBuiltinsTest, SortEmptyListSucceeds) {
