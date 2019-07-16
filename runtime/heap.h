@@ -47,6 +47,8 @@ class Heap {
 
   RawObject createRange();
 
+  static int spaceOffset() { return offsetof(Heap, space_); };
+
  private:
   Space* space_;
 };

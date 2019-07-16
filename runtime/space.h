@@ -10,8 +10,12 @@ class Space {
   explicit Space(word size);
   ~Space();
 
+  static word roundAllocationSize(word size) {
+    return Utils::roundUp(size, kPointerSize * 2);
+  }
+
   uword allocate(word size) {
-    word rounded = Utils::roundUp(size, kPointerSize * 2);
+    word rounded = roundAllocationSize(size);
     word free = end() - fill();
     if (rounded > free) {
       return 0;
@@ -40,6 +44,10 @@ class Space {
   void reset();
 
   word size() { return end_ - start_; }
+
+  static int endOffset() { return offsetof(Space, end_); }
+
+  static int fillOffset() { return offsetof(Space, fill_); }
 
  private:
   uword start_;

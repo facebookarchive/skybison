@@ -99,7 +99,7 @@ static_assert(kNativeStackFrameSize % 16 == 0,
 // +----------------------+
 // | opcode 255 handler   | <- handlers_base + 255 * kHandlerSize
 // +----------------------+
-const word kHandlerSizeShift = 8;
+const word kHandlerSizeShift = 9;
 const word kHandlerSize = 1 << kHandlerSizeShift;
 
 const Interpreter::OpcodeHandler kCppHandlers[] = {
@@ -248,6 +248,260 @@ void emitGenericHandler(Assembler* as, Bytecode bc) {
 template <Bytecode bc>
 void emitHandler(Assembler* as) {
   emitGenericHandler(as, bc);
+}
+
+// Load the LayoutId of the RawObject in r_obj into r_dst.
+//
+// Writes to r_dst.
+void emitGetLayoutId(Assembler* as, Register r_dst, Register r_obj) {
+  Label done;
+  Label immediate;
+
+  static_assert(static_cast<int>(LayoutId::kSmallInt) == 0,
+                "Expected SmallInt LayoutId to be 0");
+  __ xorl(r_dst, r_dst);
+  __ testq(r_obj, Immediate(Object::kSmallIntTagMask));
+  __ jcc(ZERO, &done, Assembler::kNearJump);
+
+  __ testq(r_obj,
+           Immediate(Object::kPrimaryTagMask & ~Object::kSmallIntTagMask));
+  __ jcc(NOT_ZERO, &immediate, Assembler::kNearJump);
+  __ movq(r_dst, Address(r_obj, heapObjectDisp(HeapObject::kHeaderOffset)));
+  __ shrl(r_dst, Immediate(Header::kLayoutIdOffset));
+  __ andl(r_dst, Immediate(Header::kLayoutIdMask));
+  __ jmp(&done, Assembler::kNearJump);
+
+  __ bind(&immediate);
+  __ movl(r_dst, r_obj);
+  __ andl(r_dst, Immediate(Object::kImmediateTagMask));
+
+  __ bind(&done);
+}
+
+// Convert the given register from an int to a SmallInt, assuming it fits.
+void emitConvertToSmallInt(Assembler* as, Register reg) {
+  static_assert(Object::kSmallIntTag == 0, "Unexpected SmallInt tag");
+  __ shlq(reg, Immediate(Object::kSmallIntTagBits));
+}
+
+// Convert the given register from a SmallInt to an int.
+void emitConvertFromSmallInt(Assembler* as, Register reg) {
+  __ sarq(reg, Immediate(Object::kSmallIntTagBits));
+}
+
+// Look up an inline cache entry, like icLookup(). If found, the result will be
+// stored in r_dst. If not found, r_dst will be unmodified and the code will
+// jump to not_found. r_layout_id should contain the output of
+// emitGetLayoutId(), r_caches should hold the RawTuple of caches for the
+// current function, r_index should contain the opcode argument for the current
+// instruction, and r_scratch is used as scratch.
+//
+// Writes to r_dst, r_layout_id (to turn it into a SmallInt), r_caches, and
+// r_scratch.
+void emitIcLookup(Assembler* as, Label* not_found, Register r_dst,
+                  Register r_layout_id, Register r_caches, Register r_index,
+                  Register r_scratch) {
+  emitConvertToSmallInt(as, r_layout_id);
+
+  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerCache,
+  // without modifying r_index.
+  static_assert(kIcPointersPerCache * kPointerSize == 64,
+                "Unexpected kIcPointersPerCache");
+  __ leaq(r_scratch, Address(r_index, TIMES_8, 0));
+  __ leaq(r_caches, Address(r_caches, r_scratch, TIMES_8, heapObjectDisp(0)));
+  Label done;
+  for (int i = 0; i < kIcPointersPerCache; i += kIcPointersPerEntry) {
+    bool is_last = i + kIcPointersPerEntry == kIcPointersPerCache;
+    __ cmpl(Address(r_caches, (i + kIcEntryKeyOffset) * kPointerSize),
+            r_layout_id);
+    if (is_last) {
+      __ jcc(NOT_EQUAL, not_found);
+      __ movq(r_dst,
+              Address(r_caches, (i + kIcEntryValueOffset) * kPointerSize));
+    } else {
+      __ cmoveq(r_dst,
+                Address(r_caches, (i + kIcEntryValueOffset) * kPointerSize));
+      __ jcc(EQUAL, &done, Assembler::kNearJump);
+    }
+  }
+  __ bind(&done);
+}
+
+// Allocate and push a BoundMethod on the stack. If the heap is full and a GC
+// is needed, jump to slow_path instead. r_self and r_function will be used to
+// populate the BoundMethod. r_space and r_scratch are used as scratch
+// registers.
+//
+// Writes to r_space and r_scratch.
+void emitPushBoundMethod(Assembler* as, Label* slow_path, Register r_self,
+                         Register r_function, Register r_space,
+                         Register r_scratch) {
+  __ movq(r_space, Address(kThreadReg, Thread::runtimeOffset()));
+  __ movq(r_space,
+          Address(r_space, Runtime::heapOffset() + Heap::spaceOffset()));
+
+  __ movq(r_scratch, Address(r_space, Space::fillOffset()));
+  int num_attrs = BoundMethod::kSize / kPointerSize;
+  __ addq(r_scratch, Immediate(Space::roundAllocationSize(
+                         Instance::allocationSize(num_attrs))));
+  __ cmpq(r_scratch, Address(r_space, Space::endOffset()));
+  __ jcc(GREATER, slow_path);
+  __ xchgq(r_scratch, Address(r_space, Space::fillOffset()));
+  RawHeader header = Header::from(num_attrs, 0, LayoutId::kBoundMethod,
+                                  ObjectFormat::kObjects);
+  __ movq(r_space, Immediate(header.raw()));
+  __ movq(Address(r_scratch, 0), r_space);
+  __ leaq(r_scratch, Address(r_scratch, -BoundMethod::kHeaderOffset +
+                                            Object::kHeapObjectTag));
+  __ movq(Address(r_scratch, heapObjectDisp(BoundMethod::kSelfOffset)), r_self);
+  __ movq(Address(r_scratch, heapObjectDisp(BoundMethod::kFunctionOffset)),
+          r_function);
+  __ pushq(r_scratch);
+}
+
+// Given a RawObject in r_obj and its LayoutId (as a SmallInt) in r_layout_id,
+// load its overflow RawTuple into r_dst.
+//
+// Writes to r_dst.
+void emitLoadOverflowTuple(Assembler* as, Register r_dst, Register r_layout_id,
+                           Register r_obj) {
+  // Both uses of TIMES_4 in this function are a shortcut to multiply the value
+  // of a SmallInt by kPointerSize.
+  static_assert(kPointerSize >> Object::kSmallIntTagBits == 4,
+                "Unexpected values of kPointerSize and/or kSmallIntTagBits");
+
+  // TODO(bsimmers): This sequence of loads is pretty gross. See if we can make
+  // the information more accessible.
+
+  // Load thread->runtime()
+  __ movq(r_dst, Address(kThreadReg, Thread::runtimeOffset()));
+  // Load runtime->layouts_
+  __ movq(r_dst, Address(r_dst, Runtime::layoutsOffset()));
+  // Load layouts.items
+  __ movq(r_dst, Address(r_dst, heapObjectDisp(List::kItemsOffset)));
+  // Load items[r_layout_id]
+  __ movq(r_dst, Address(r_dst, r_layout_id, TIMES_4, heapObjectDisp(0)));
+  // Load layout.numInObjectAttributes
+  __ movq(r_dst,
+          Address(r_dst, heapObjectDisp(Layout::kNumInObjectAttributesOffset)));
+  __ movq(r_dst, Address(r_obj, r_dst, TIMES_4, heapObjectDisp(0)));
+}
+
+// Push/pop from/into an attribute of r_obj, given a SmallInt offset in r_offset
+// (which may be negative to signal an overflow attribute). r_layout_id should
+// contain the object's LayoutId as a SmallInt and is used to look up the
+// overflow tuple offset if needed.
+//
+// Emits the "next opcode" sequence after the in-object attribute case, binding
+// next at that location, and jumps to next at the end of the overflow attribute
+// case.
+//
+// Writes to r_offset and r_scratch.
+void emitAttrWithOffset(Assembler* as, void (Assembler::*asm_op)(Address),
+                        Label* next, Register r_obj, Register r_offset,
+                        Register r_layout_id, Register r_scratch) {
+  Label is_overflow;
+  emitConvertFromSmallInt(as, r_offset);
+  __ testq(r_offset, r_offset);
+  __ jcc(SIGN, &is_overflow, Assembler::kNearJump);
+  // In-object attribute. For now, asm_op is always pushq or popq.
+  (as->*asm_op)(Address(r_obj, r_offset, TIMES_1, heapObjectDisp(0)));
+  __ bind(next);
+  emitNextOpcode(as);
+
+  __ bind(&is_overflow);
+  emitLoadOverflowTuple(as, r_scratch, r_layout_id, r_obj);
+  // The real tuple index is -offset - 1, which is the same as ~offset.
+  __ notq(r_offset);
+  (as->*asm_op)(Address(r_scratch, r_offset, TIMES_8, heapObjectDisp(0)));
+  __ jmp(next, Assembler::kNearJump);
+}
+
+template <>
+void emitHandler<LOAD_ATTR_CACHED>(Assembler* as) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_scratch = RDI;
+  Register r_scratch2 = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(as, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookup(as, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
+               r_scratch2);
+
+  Label is_function;
+  Label next;
+  __ testq(r_scratch, Immediate(Object::kSmallIntTagMask));
+  __ jcc(NOT_ZERO, &is_function, Assembler::kNearJump);
+  emitAttrWithOffset(as, &Assembler::pushq, &next, r_base, r_scratch,
+                     r_layout_id, r_scratch2);
+
+  __ bind(&is_function);
+  emitPushBoundMethod(as, &slow_path, r_base, r_scratch, r_caches, R8);
+  __ jmp(&next, Assembler::kNearJump);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitGenericHandler(as, LOAD_ATTR_CACHED);
+}
+
+template <>
+void emitHandler<LOAD_METHOD_CACHED>(Assembler* as) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_scratch = RDI;
+  Register r_scratch2 = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(as, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookup(as, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
+               r_scratch2);
+
+  Label is_smallint;
+  Label next;
+  // r_scratch contains either a SmallInt or a Function.
+  __ testq(r_scratch, Immediate(Object::kSmallIntTagMask));
+  __ jcc(ZERO, &is_smallint, Assembler::kNearJump);
+  __ pushq(r_scratch);
+  __ pushq(r_base);
+  __ jmp(&next, Assembler::kNearJump);
+
+  __ bind(&is_smallint);
+  __ pushq(Immediate(Unbound::object().raw()));
+  emitAttrWithOffset(as, &Assembler::pushq, &next, r_base, r_scratch,
+                     r_layout_id, r_scratch2);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitGenericHandler(as, LOAD_METHOD_CACHED);
+}
+
+template <>
+void emitHandler<STORE_ATTR_CACHED>(Assembler* as) {
+  Register r_base = RAX;
+  Register r_layout_id = R8;
+  Register r_scratch = RDI;
+  Register r_scratch2 = R9;
+  Register r_caches = RDX;
+  Label slow_path;
+  __ popq(r_base);
+  emitGetLayoutId(as, r_layout_id, r_base);
+  __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
+  emitIcLookup(as, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
+               r_scratch2);
+
+  Label next;
+  // We only cache SmallInt values for STORE_ATTR.
+  emitAttrWithOffset(as, &Assembler::popq, &next, r_base, r_scratch,
+                     r_layout_id, r_scratch2);
+
+  __ bind(&slow_path);
+  __ pushq(r_base);
+  emitGenericHandler(as, STORE_ATTR_CACHED);
 }
 
 template <>

@@ -109,6 +109,11 @@ inline D bit_cast(const S& src) {
 #define LIKELY(x) __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 
+// Old-school version of offsetof() that works with non-standard layout classes.
+#define OFFSETOF(ty, memb)                                                     \
+  (reinterpret_cast<char*>(&reinterpret_cast<ty*>(16)->memb) -                 \
+   reinterpret_cast<char*>(16))
+
 #if __has_cpp_atttribute(nodiscard) ||                                         \
     (__GNUC__ >= 5 || __GNUC__ == 4 && __GNUC_MINOR__ >= 8)
 #define NODISCARD [[nodiscard]]

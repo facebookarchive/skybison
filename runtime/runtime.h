@@ -840,6 +840,10 @@ class Runtime {
   // 'builtins._dict_setitem' into a dict builtin function
   void dictEnsureCapacity(Thread* thread, const Dict& dict);
 
+  static int heapOffset() { return OFFSETOF(Runtime, heap_); }
+
+  static int layoutsOffset() { return OFFSETOF(Runtime, layouts_); }
+
  private:
   void initializeApiData();
   void initializeExceptionTypes();

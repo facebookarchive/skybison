@@ -278,7 +278,9 @@ class Thread {
   }
   void setRecursionLimit(int limit) { recursion_limit_ = limit; }
 
-  static word currentFrameOffset() { return offsetof(Thread, currentFrame_); }
+  static int currentFrameOffset() { return offsetof(Thread, currentFrame_); }
+
+  static int runtimeOffset() { return offsetof(Thread, runtime_); }
 
  private:
   Frame* pushInitialFrame();
