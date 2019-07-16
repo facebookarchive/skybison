@@ -1942,11 +1942,36 @@ HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
+static HANDLER_INLINE Continue unpackSequenceWithLength(
+    Thread* thread, Frame* frame, const Tuple& tuple, word count, word length) {
+  if (length < count) {
+    thread->raiseWithFmt(LayoutId::kValueError, "not enough values to unpack");
+    return Continue::UNWIND;
+  }
+  if (length > count) {
+    thread->raiseWithFmt(LayoutId::kValueError, "too many values to unpack");
+    return Continue::UNWIND;
+  }
+  for (word i = length - 1; i >= 0; i--) {
+    frame->pushValue(tuple.at(i));
+  }
+  return Continue::NEXT;
+}
+
 HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
                                                       word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object iterable(&scope, frame->popValue());
+  if (iterable.isTuple()) {
+    Tuple tuple(&scope, *iterable);
+    return unpackSequenceWithLength(thread, frame, tuple, arg, tuple.length());
+  }
+  if (iterable.isList()) {
+    List list(&scope, *iterable);
+    Tuple tuple(&scope, list.items());
+    return unpackSequenceWithLength(thread, frame, tuple, arg, list.numItems());
+  }
   Object iter_method(
       &scope, lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (iter_method.isError()) {

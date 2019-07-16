@@ -1215,7 +1215,8 @@ class bytes(bootstrap=True):
         if _int_check(key):
             return _bytes_getitem(self, key)
         if _slice_check(key):
-            return _bytes_getslice(self, *key.indices(_bytes_len(self)))
+            start, stop, step = key.indices(_bytes_len(self))
+            return _bytes_getslice(self, start, stop, step)
         try:
             return _bytes_getitem(self, _index(key))
         except TypeError:
@@ -2345,7 +2346,8 @@ class list(bootstrap=True):
         if _int_check(key):
             return _list_delitem(self, key)
         if _slice_check(key):
-            return _list_delslice(self, *key.indices(_list_len(self)))
+            start, stop, step = key.indices(_list_len(self))
+            return _list_delslice(self, start, stop, step)
         try:
             return _list_delitem(self, _index(key))
         except TypeError:
@@ -2383,7 +2385,8 @@ class list(bootstrap=True):
         if _int_check(key):
             return _list_getitem(self, key)
         if _slice_check(key):
-            return _list_getslice(self, *key.indices(_list_len(self)))
+            start, stop, step = key.indices(_list_len(self))
+            return _list_getslice(self, start, stop, step)
         try:
             return _list_getitem(self, _index(key))
         except TypeError:

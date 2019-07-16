@@ -1749,6 +1749,40 @@ a, b, c = l
                             "too many values to unpack"));
 }
 
+TEST_F(InterpreterTest, UnpackTuple) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+l = (1, 2, 3)
+a, b, c = l
+)")
+                   .isError());
+  Module main(&scope, findModule(&runtime_, "__main__"));
+  Object a(&scope, moduleAt(&runtime_, main, "a"));
+  Object b(&scope, moduleAt(&runtime_, main, "b"));
+  Object c(&scope, moduleAt(&runtime_, main, "c"));
+  EXPECT_TRUE(isIntEqualsWord(*a, 1));
+  EXPECT_TRUE(isIntEqualsWord(*b, 2));
+  EXPECT_TRUE(isIntEqualsWord(*c, 3));
+}
+
+TEST_F(InterpreterTest, UnpackTupleTooFewObjects) {
+  const char* src = R"(
+l = (1, 2)
+a, b, c = l
+)";
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kValueError,
+                            "not enough values to unpack"));
+}
+
+TEST_F(InterpreterTest, UnpackTupleTooManyObjects) {
+  const char* src = R"(
+l = (1, 2, 3, 4)
+a, b, c = l
+)";
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kValueError,
+                            "too many values to unpack"));
+}
+
 TEST_F(InterpreterTest, PrintExprInvokesDisplayhook) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
