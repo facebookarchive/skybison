@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.5)
 project(python)
 
+# Append flags set by util/*.cmake files
+# Note that setting CMAKE_C_FLAGS directly in util/*.cmake is problematic
+# because using `-DCMAKE_C_FLAGS=` would unintentionally override the platform
+# flags.
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${PLATFORM_COMPILER_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PLATFORM_COMPILER_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS
+    "${CMAKE_SHARED_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
+
 # Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
 if (${PYRO_ASAN})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
