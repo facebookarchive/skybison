@@ -916,6 +916,29 @@ class IsSubclassTests(unittest.TestCase):
 
         self.assertIs(issubclass(A(), list), True)
 
+    def test_issubclass_calls_custom_subclasscheck_true(self):
+        class Meta(type):
+            def __subclasscheck__(cls, subclass):
+                return 1
+
+        class A(metaclass=Meta):
+            pass
+
+        self.assertIs(issubclass(list, A), True)
+
+    def test_issubclass_calls_custom_subclasscheck_false(self):
+        class Meta(type):
+            def __subclasscheck__(cls, subclass):
+                return []
+
+        class A(metaclass=Meta):
+            pass
+
+        class B(A):
+            pass
+
+        self.assertIs(issubclass(B, A), False)
+
 
 class IterTests(unittest.TestCase):
     def test_iter_with_no_dunder_iter_raises_type_error(self):

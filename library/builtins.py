@@ -2289,7 +2289,9 @@ def issubclass(cls, type_or_tuple) -> bool:
             if issubclass(cls, item):
                 return True
         return False
-    # TODO(wmeehan): missing features for ABCMeta.__subclasscheck__
+    if _object_type_hasattr(type_or_tuple, "__subclasscheck__"):
+        return bool(_type(type_or_tuple).__subclasscheck__(type_or_tuple, cls))
+    # according to CPython, this is probably never reached anymore
     return _issubclass(cls, type_or_tuple)
 
 
