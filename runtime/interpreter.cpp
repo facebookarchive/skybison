@@ -931,7 +931,7 @@ RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
     entry = unimplementedTrampoline;
     entry_kw = unimplementedTrampoline;
     entry_ex = unimplementedTrampoline;
-  } else if (code.isCoroutineOrGenerator()) {
+  } else if (code.isGeneratorLike()) {
     if (code.hasFreevarsOrCellvars()) {
       entry = generatorClosureTrampoline;
       entry_kw = generatorClosureTrampolineKw;
@@ -3673,7 +3673,7 @@ RawObject Interpreter::execute(Thread* thread) {
   // adding an alternate entry point that always throws (and asserts that an
   // exception is pending).
   if (thread->hasPendingException()) {
-    DCHECK(entry_frame->function().isCoroutineOrGenerator(),
+    DCHECK(entry_frame->function().isGeneratorLike(),
            "Entered dispatch loop with a pending exception outside of "
            "generator/coroutine");
     if (unwind(thread, entry_frame)) return do_return();

@@ -660,13 +660,16 @@ RawObject Runtime::newFunction() {
   return *result;
 }
 
+RawObject Runtime::newAsyncGenerator() {
+  return heap()->create<RawAsyncGenerator>();
+}
+
 RawObject Runtime::newCoroutine() { return heap()->create<RawCoroutine>(); }
 
 RawObject Runtime::newGenerator() { return heap()->create<RawGenerator>(); }
 
 RawObject Runtime::newHeapFrame(const Function& function) {
-  DCHECK(function.isCoroutineOrGenerator(),
-         "expected a RawGenerator/RawCoroutine code object");
+  DCHECK(function.isGeneratorLike(), "expected a generator-like code object");
 
   HandleScope scope;
   word num_args = function.totalArgs();
@@ -1359,6 +1362,7 @@ void Runtime::initializeHeapTypes() {
   initializeExceptionTypes();
 
   // Concrete classes.
+  AsyncGeneratorBuiltins::initialize(this);
   ByteArrayBuiltins::initialize(this);
   ByteArrayIteratorBuiltins::initialize(this);
   ClassMethodBuiltins::initialize(this);

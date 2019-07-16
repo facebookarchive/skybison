@@ -16,7 +16,8 @@ class GeneratorBaseBuiltins : public Builtins<T, name, type> {
   static RawObject send(Thread* thread, Frame* frame, word nargs);
   static RawObject genThrow(Thread* thread, Frame* frame, word nargs);
 
-  static_assert(type == LayoutId::kGenerator || type == LayoutId::kCoroutine,
+  static_assert(type == LayoutId::kGenerator || type == LayoutId::kCoroutine ||
+                    type == LayoutId::kAsyncGenerator,
                 "unsupported type");
 
  private:
@@ -46,6 +47,14 @@ class CoroutineBuiltins
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(CoroutineBuiltins);
+};
+
+class AsyncGeneratorBuiltins
+    : public GeneratorBaseBuiltins<AsyncGeneratorBuiltins,
+                                   SymbolId::kAsyncGenerator,
+                                   LayoutId::kAsyncGenerator> {
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(AsyncGeneratorBuiltins);
 };
 
 }  // namespace python

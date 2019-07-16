@@ -323,6 +323,7 @@ class Runtime;
   V(AsciiDecode, "ascii_decode")                                               \
   V(AsciiEncode, "ascii_encode")                                               \
   V(AssertionError, "AssertionError")                                          \
+  V(AsyncGenerator, "async_generator")                                         \
   V(AttributeError, "AttributeError")                                          \
   V(Backslashreplace, "backslashreplace")                                      \
   V(BadArgumentToInternalFunction, "bad argument to internal function")        \

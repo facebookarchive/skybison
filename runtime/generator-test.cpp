@@ -10,6 +10,7 @@ using namespace testing;
 
 using CoroutineTest = RuntimeFixture;
 using GeneratorTest = RuntimeFixture;
+using AsyncGeneratorTest = RuntimeFixture;
 
 TEST_F(GeneratorTest, Basic) {
   const char* src = R"(
@@ -213,6 +214,18 @@ coro().send(1)
   EXPECT_TRUE(
       raisedWithStr(runFromCStr(&runtime_, src), LayoutId::kTypeError,
                     "can't send non-None value to a just-started coroutine"));
+}
+
+TEST_F(AsyncGeneratorTest, Create) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+async def async_gen():
+  yield 1234
+ag = async_gen()
+)")
+                   .isError());
+  Object result(&scope, moduleAt(&runtime_, "__main__", "ag"));
+  EXPECT_TRUE(result.isAsyncGenerator());
 }
 
 }  // namespace python

@@ -32,11 +32,10 @@ GeneratorType = type(_g())
 #_c.close()  # Prevent ResourceWarning
 _c = None
 
-# TODO(T42307084)
-#async def _ag():
-#    yield
-#_ag = _ag()
-#AsyncGeneratorType = type(_ag)
+async def _ag():
+    yield
+_ag = _ag()
+AsyncGeneratorType = type(_ag)
 
 class _C:
     def _m(self): pass

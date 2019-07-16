@@ -75,6 +75,8 @@ class Runtime {
   Runtime(word heap_size, bool cache_enabled);
   ~Runtime();
 
+  RawObject newAsyncGenerator();
+
   RawObject newBoundMethod(const Object& function, const Object& self);
 
   RawObject newByteArray();

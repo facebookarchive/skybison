@@ -26,6 +26,7 @@ class Handle;
 // Python types that hold a pointer to heap-allocated data in a RawObject.
 #define HEAP_CLASS_NAMES(V)                                                    \
   V(Object)                                                                    \
+  V(AsyncGenerator)                                                            \
   V(BoundMethod)                                                               \
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
@@ -257,6 +258,7 @@ class RawObject {
   bool isHeapObject() const;
   bool isHeapObjectWithLayout(LayoutId layout_id) const;
   bool isInstance() const;
+  bool isAsyncGenerator() const;
   bool isBaseException() const;
   bool isBoundMethod() const;
   bool isByteArray() const;
@@ -1573,7 +1575,7 @@ class RawCode : public RawHeapObject {
   void setFreevars(RawObject value) const;
   word numFreevars() const;
 
-  bool isCoroutineOrGenerator() const;
+  bool isGeneratorLike() const;
   bool hasFreevarsOrCellvars() const;
   bool hasOptimizedAndNewLocals() const;
   bool hasOptimizedOrNewLocals() const;
@@ -1725,11 +1727,15 @@ class RawFunction : public RawHeapObject {
   RawObject globals() const;
   void setGlobals(RawObject globals) const;
 
+  // Returns true if the function is an async generator.
+  bool isAsyncGenerator() const;
+
   // Returns true if the function is a coroutine.
   bool isCoroutine() const;
 
-  // Returns true if the function is a coroutine or a generator function.
-  bool isCoroutineOrGenerator() const;
+  // Returns true if the function is a coroutine, a generator, or an async
+  // generator.
+  bool isGeneratorLike() const;
 
   // Returns true if the function has free variables or cell variables.
   bool hasFreevarsOrCellvars() const;
@@ -2764,6 +2770,17 @@ class RawCoroutine : public RawGeneratorBase {
   RAW_OBJECT_COMMON(Coroutine);
 };
 
+class RawAsyncGenerator : public RawGeneratorBase {
+ public:
+  // Layout.
+  static const int kFinalizerOffset = RawGeneratorBase::kSize;
+  static const int kHooksInitedOffset = kFinalizerOffset + kPointerSize;
+  static const int kClosedOffset = kHooksInitedOffset + kPointerSize;
+  static const int kSize = kClosedOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(AsyncGenerator);
+};
+
 class RawTraceback : public RawHeapObject {
  public:
   // Layout.
@@ -2862,6 +2879,10 @@ inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
 inline bool RawObject::isInstance() const {
   return isHeapObject() && (RawHeapObject::cast(*this).header().layoutId() >
                             LayoutId::kLastBuiltinId);
+}
+
+inline bool RawObject::isAsyncGenerator() const {
+  return isHeapObjectWithLayout(LayoutId::kAsyncGenerator);
 }
 
 inline bool RawObject::isBaseException() const {
@@ -3128,7 +3149,7 @@ inline bool RawObject::isBytes() const {
 }
 
 inline bool RawObject::isGeneratorBase() const {
-  return isGenerator() || isCoroutine();
+  return isGenerator() || isCoroutine() || isAsyncGenerator();
 }
 
 inline bool RawObject::isInt() const {
@@ -4163,8 +4184,9 @@ inline void RawCode::setVarnames(RawObject value) const {
   instanceVariableAtPut(kVarnamesOffset, value);
 }
 
-inline bool RawCode::isCoroutineOrGenerator() const {
-  return flags() & (Flags::COROUTINE | Flags::GENERATOR);
+inline bool RawCode::isGeneratorLike() const {
+  return flags() &
+         (Flags::COROUTINE | Flags::GENERATOR | Flags::ASYNC_GENERATOR);
 }
 
 inline bool RawCode::hasFreevarsOrCellvars() const {
@@ -4665,12 +4687,17 @@ inline void RawFunction::setGlobals(RawObject globals) const {
   instanceVariableAtPut(kGlobalsOffset, globals);
 }
 
+inline bool RawFunction::isAsyncGenerator() const {
+  return flags() & Flags::kAsyncGenerator;
+}
+
 inline bool RawFunction::isCoroutine() const {
   return flags() & Flags::kCoroutine;
 }
 
-inline bool RawFunction::isCoroutineOrGenerator() const {
-  return flags() & (Flags::kCoroutine | Flags::kGenerator);
+inline bool RawFunction::isGeneratorLike() const {
+  return flags() &
+         (Flags::kCoroutine | Flags::kGenerator | Flags::kAsyncGenerator);
 }
 
 inline bool RawFunction::hasFreevarsOrCellvars() const {

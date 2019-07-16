@@ -460,14 +460,19 @@ RawObject prepareExplodeCall(Thread* thread, RawFunction function_raw,
   return *function;
 }
 
+static RawObject createGeneratorObject(Runtime* runtime,
+                                       const Function& function) {
+  if (function.isGenerator()) return runtime->newGenerator();
+  if (function.isCoroutine()) return runtime->newCoroutine();
+  DCHECK(function.isAsyncGenerator(), "unexpected type");
+  return runtime->newAsyncGenerator();
+}
+
 static RawObject createGenerator(Thread* thread, const Function& function,
                                  const Str& qualname) {
-  CHECK(function.isCoroutineOrGenerator(), "must be a coroutine or generator");
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
-  GeneratorBase gen_base(&scope, function.isGenerator()
-                                     ? runtime->newGenerator()
-                                     : runtime->newCoroutine());
+  GeneratorBase gen_base(&scope, createGeneratorObject(runtime, function));
   gen_base.setHeapFrame(runtime->newHeapFrame(function));
   gen_base.setExceptionState(runtime->newExceptionState());
   gen_base.setQualname(*qualname);
