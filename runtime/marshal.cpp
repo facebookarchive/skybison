@@ -112,34 +112,28 @@ class ScopedCounter {
 
 RawObject Marshal::Reader::readObject() {
   ScopedCounter<int> counter(&depth_);
-  RawObject result;
   byte code = readByte();
   byte flag = code & FLAG_REF;
   byte type = code & ~FLAG_REF;
   isRef_ = flag;
   switch (type) {
     case TYPE_NULL:
-      break;
+      return SmallInt::fromWord(0);
 
     case TYPE_NONE:
-      result = NoneType::object();
-      break;
+      return NoneType::object();
 
     case TYPE_STOPITER:
       UNIMPLEMENTED("TYPE_STOPITER");
-      break;
 
     case TYPE_ELLIPSIS:
-      result = runtime_->ellipsis();
-      break;
+      return runtime_->ellipsis();
 
     case TYPE_FALSE:
-      result = Bool::falseObj();
-      break;
+      return Bool::falseObj();
 
     case TYPE_TRUE:
-      result = Bool::trueObj();
-      break;
+      return Bool::trueObj();
 
     case TYPE_INT: {
       // NB: this will continue to work as long as SmallInt can contain the
@@ -149,103 +143,87 @@ RawObject Marshal::Reader::readObject() {
       if (!SmallInt::isValid(n)) {
         UNIMPLEMENTED("value '%ld' outside range supported by RawSmallInt", n);
       }
-      result = SmallInt::fromWord(n);
+      RawObject result = SmallInt::fromWord(n);
       if (isRef_) {
         addRef(result);
       }
-      break;
+      return result;
     }
 
     case TYPE_FLOAT:
       UNIMPLEMENTED("TYPE_FLOAT");
-      break;
 
     case TYPE_BINARY_FLOAT: {
       double n = readBinaryFloat();
-      result = runtime_->newFloat(n);
+      RawObject result = runtime_->newFloat(n);
       if (isRef_) {
         addRef(result);
       }
-      break;
+      return result;
     }
 
     case TYPE_COMPLEX:
       UNIMPLEMENTED("TYPE_COMPLEX");
-      break;
 
     case TYPE_BINARY_COMPLEX: {
       double real = readBinaryFloat();
       double imag = readBinaryFloat();
-      result = runtime_->newComplex(real, imag);
+      RawObject result = runtime_->newComplex(real, imag);
       if (isRef_) {
         addRef(result);
       }
-      break;
+      return result;
     }
 
     case TYPE_STRING:  // Misnomer, should be TYPE_BYTES
-      result = readTypeString();
-      break;
+      return readTypeString();
 
     case TYPE_INTERNED:
     case TYPE_ASCII_INTERNED:
-      result = readTypeAsciiInterned();
-      break;
+      return readTypeAsciiInterned();
 
     case TYPE_UNICODE:
     case TYPE_ASCII: {
-      result = readTypeAscii();
-      break;
+      return readTypeAscii();
     }
 
     case TYPE_SHORT_ASCII_INTERNED:
-      result = readTypeShortAsciiInterned();
-      break;
+      return readTypeShortAsciiInterned();
 
     case TYPE_SHORT_ASCII:
-      result = readTypeShortAscii();
-      break;
+      return readTypeShortAscii();
 
     case TYPE_SMALL_TUPLE:
-      result = readTypeSmallTuple();
-      break;
+      return readTypeSmallTuple();
 
     case TYPE_TUPLE:
-      result = readTypeTuple();
-      break;
+      return readTypeTuple();
 
     case TYPE_LIST:
       UNIMPLEMENTED("TYPE_LIST");
-      break;
 
     case TYPE_DICT:
       UNIMPLEMENTED("TYPE_DICT");
-      break;
 
     case TYPE_SET:
-      result = readTypeSet();
-      break;
+      return readTypeSet();
 
     case TYPE_FROZENSET:
-      result = readTypeFrozenSet();
-      break;
+      return readTypeFrozenSet();
 
     case TYPE_CODE:
-      result = readTypeCode();
-      break;
+      return readTypeCode();
 
     case TYPE_REF:
-      result = readTypeRef();
-      break;
+      return readTypeRef();
 
     case TYPE_LONG:
-      result = readLongObject();
-      break;
+      return readLongObject();
 
     default:
       UNREACHABLE("unknown type '%c' (flags=%x)", type, flag);
   }
-  return result;
+  UNREACHABLE("all cases should be covered");
 }
 
 word Marshal::Reader::addRef(RawObject value) {

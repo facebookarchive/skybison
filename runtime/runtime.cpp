@@ -3507,7 +3507,7 @@ RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
   Type type(&scope, typeOf(*receiver));
   Object dunder_delattr(
       &scope, typeLookupSymbolInMro(thread, type, SymbolId::kDunderDelattr));
-  RawObject result;
+  RawObject result = NoneType::object();
   if (!dunder_delattr.isError()) {
     result = Interpreter::callMethod2(thread, thread->currentFrame(),
                                       dunder_delattr, receiver, name);

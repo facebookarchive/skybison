@@ -971,46 +971,46 @@ class Runtime {
   ListEntry* tracked_native_objects_ = nullptr;
 
   // A List of Layout objects, indexed by layout id.
-  RawObject layouts_;
+  RawObject layouts_ = NoneType::object();
 
   // Internal-only types, for which the Layout has a different described type
-  RawObject large_bytes_;
-  RawObject large_int_;
-  RawObject large_str_;
-  RawObject small_bytes_;
-  RawObject small_int_;
-  RawObject small_str_;
+  RawObject large_bytes_ = NoneType::object();
+  RawObject large_int_ = NoneType::object();
+  RawObject large_str_ = NoneType::object();
+  RawObject small_bytes_ = NoneType::object();
+  RawObject small_int_ = NoneType::object();
+  RawObject small_str_ = NoneType::object();
 
   // Cached instances
-  RawObject build_class_;
-  RawObject display_hook_;
-  RawObject dunder_import_;
-  RawObject ellipsis_;
-  RawObject empty_frozen_set_;
-  RawObject empty_mutable_bytes_;
-  RawObject empty_tuple_;
-  RawObject implicit_bases_;
-  RawObject object_dunder_getattribute_;
-  RawObject object_dunder_setattr_;
-  RawObject sys_stderr_;
-  RawObject sys_stdout_;
+  RawObject build_class_ = NoneType::object();
+  RawObject display_hook_ = NoneType::object();
+  RawObject dunder_import_ = NoneType::object();
+  RawObject ellipsis_ = NoneType::object();
+  RawObject empty_frozen_set_ = NoneType::object();
+  RawObject empty_mutable_bytes_ = NoneType::object();
+  RawObject empty_tuple_ = NoneType::object();
+  RawObject implicit_bases_ = NoneType::object();
+  RawObject object_dunder_getattribute_ = NoneType::object();
+  RawObject object_dunder_setattr_ = NoneType::object();
+  RawObject sys_stderr_ = NoneType::object();
+  RawObject sys_stdout_ = NoneType::object();
 
   // Interned strings
-  RawObject interned_;
+  RawObject interned_ = NoneType::object();
 
   // Modules
-  RawObject modules_;
+  RawObject modules_ = NoneType::object();
 
   // ApiHandles
-  RawObject api_handles_;
+  RawObject api_handles_ = NoneType::object();
 
   // Some API functions promise to cache their return value and return the same
   // value for repeated invocations on a specific PyObject. Those value are
   // cached here.
-  RawObject api_caches_;
+  RawObject api_caches_ = NoneType::object();
 
   // Weak reference callback list
-  RawObject callbacks_;
+  RawObject callbacks_ = NoneType::object();
 
   Thread* threads_;
 

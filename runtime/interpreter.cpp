@@ -154,14 +154,13 @@ RawObject Interpreter::callKw(Thread* thread, Frame* frame, word nargs) {
   // Top of stack is a tuple of keyword argument names in the order they
   // appear on the stack.
   RawObject* sp = frame->valueStackTop() + nargs + 2;
-  RawObject result;
   RawObject callable = frame->peek(nargs + 1);
   callable = prepareCallableCall(thread, frame, nargs + 1, &nargs);
   if (callable.isError()) {
     frame->setValueStackTop(sp);
     return callable;
   }
-  result = Function::cast(callable).entryKw()(thread, frame, nargs);
+  RawObject result = Function::cast(callable).entryKw()(thread, frame, nargs);
   frame->setValueStackTop(sp);
   return result;
 }
@@ -2565,7 +2564,7 @@ HANDLER_INLINE Continue Interpreter::doCompareOp(Thread* thread, word arg) {
   Object right(&scope, frame->popValue());
   Object left(&scope, frame->popValue());
   CompareOp op = static_cast<CompareOp>(arg);
-  RawObject result;
+  RawObject result = NoneType::object();
   if (op == IS) {
     result = Bool::fromBool(*left == *right);
   } else if (op == IS_NOT) {

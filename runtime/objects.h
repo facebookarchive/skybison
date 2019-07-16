@@ -230,12 +230,6 @@ CLASS_NAMES(CASE)
 
 class RawObject {
  public:
-  // TODO(bsimmers): Delete this. The default constructor gives you a
-  // zero-initialized RawObject, which is equivalent to
-  // RawSmallInt::fromWord(0). This behavior can be confusing and surprising, so
-  // we should just require all Objects to be explicitly initialized.
-  RawObject() = default;
-
   explicit RawObject(uword raw);
 
   // Getters and setters.

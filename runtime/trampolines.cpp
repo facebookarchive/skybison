@@ -1122,7 +1122,7 @@ static inline RawObject builtinTrampolineImpl(Thread* thread, Frame* caller,
   if (prepare_result.isError()) return prepare_result;
   RawFunction function = Function::cast(prepare_result);
 
-  RawObject result;
+  RawObject result = NoneType::object();
   {
     DCHECK(!function.code().isNoneType(),
            "builtin functions should have annotated code objects");

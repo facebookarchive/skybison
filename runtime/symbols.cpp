@@ -14,7 +14,13 @@ static const char* kPredefinedSymbols[] = {
 // clang-format on
 
 Symbols::Symbols(Runtime* runtime) {
-  symbols_ = new RawObject[static_cast<int>(SymbolId::kMaxId)];
+  auto num_symbols = static_cast<uword>(SymbolId::kMaxId);
+  uword symbol_size = sizeof(*symbols_);
+  symbols_ = static_cast<RawObject*>(std::calloc(num_symbols, symbol_size));
+  CHECK(symbols_ != nullptr, "could not allocate memory for symbol table");
+  for (uword i = 0; i < num_symbols; i++) {
+    symbols_[i] = NoneType::object();
+  }
 #define ADD_SYMBOL(symbol, value)                                              \
   symbols_[static_cast<int>(SymbolId::k##symbol)] =                            \
       runtime->newStrFromCStr(value);
@@ -22,7 +28,7 @@ Symbols::Symbols(Runtime* runtime) {
 #undef ADD_SYMBOL
 }
 
-Symbols::~Symbols() { delete[] symbols_; }
+Symbols::~Symbols() { std::free(symbols_); }
 
 void Symbols::visit(PointerVisitor* visitor) {
   for (word i = 0; i < static_cast<int>(SymbolId::kMaxId); i++) {
