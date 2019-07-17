@@ -299,6 +299,8 @@ add_library(
   runtime/interpreter.h
   runtime/intrinsic.cpp
   runtime/intrinsic.h
+  runtime/iterator-builtins.cpp
+  runtime/iterator-builtins.h
   runtime/io-module.cpp
   runtime/io-module.h
   runtime/layout.h

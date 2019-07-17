@@ -1370,7 +1370,8 @@ TEST_F(ByteArrayBuiltinsTest, JoinWithNonByteArrayRaisesTypeError) {
 
 TEST_F(ByteArrayBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytearray(b'').join(0)"),
-                            LayoutId::kTypeError, "object is not iterable"));
+                            LayoutId::kTypeError,
+                            "'int' object is not iterable"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, JoinWithMistypedIterableRaisesTypeError) {

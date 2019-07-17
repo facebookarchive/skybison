@@ -34,6 +34,7 @@
 #include "int-builtins.h"
 #include "interpreter.h"
 #include "io-module.h"
+#include "iterator-builtins.h"
 #include "layout.h"
 #include "list-builtins.h"
 #include "marshal-module.h"
@@ -1406,11 +1407,10 @@ void Runtime::initializeHeapTypes() {
   RangeIteratorBuiltins::initialize(this);
   RefBuiltins::initialize(this);
   SetBuiltins::initialize(this);
+  SeqIteratorBuiltins::initialize(this);
   SetIteratorBuiltins::initialize(this);
   SliceBuiltins::initialize(this);
   StrIteratorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kSeqIterator, LayoutId::kSeqIterator,
-                      LayoutId::kObject);
   StaticMethodBuiltins::initialize(this);
   SuperBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kTraceback, LayoutId::kTraceback,

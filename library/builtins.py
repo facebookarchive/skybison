@@ -71,6 +71,10 @@ _property = _property  # noqa: F821
 _pyobject_offset = _pyobject_offset  # noqa: F821
 _repr_enter = _repr_enter  # noqa: F821
 _repr_leave = _repr_leave  # noqa: F821
+_seq_index = _seq_index  # noqa: F821
+_seq_iterable = _seq_iterable  # noqa: F821
+_seq_set_index = _seq_set_index  # noqa: F821
+_seq_set_iterable = _seq_set_iterable  # noqa: F821
 _set_check = _set_check  # noqa: F821
 _set_len = _set_len  # noqa: F821
 _set_member_double = _set_member_double  # noqa: F821
@@ -2298,11 +2302,15 @@ def issubclass(cls, type_or_tuple) -> bool:
 
 def iter(obj, sentinel=None):
     if sentinel is None:
-        try:
-            dunder_iter = _type(obj).__iter__
-        except Exception:
-            raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
-        return dunder_iter(obj)
+        if _object_type_hasattr(obj, "__iter__"):
+            try:
+                dunder_iter = _type(obj).__iter__
+            except Exception:
+                raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
+            return dunder_iter(obj)
+        if _object_type_hasattr(obj, "__getitem__"):
+            return iterator(obj)
+        raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
 
     class CallIter:
         def __init__(self, callable, sentinel):
@@ -2322,6 +2330,24 @@ def iter(obj, sentinel=None):
             return (iter, (self.__callable, self.__sentinel))
 
     return CallIter(obj, sentinel)
+
+
+class iterator(bootstrap=True):
+    def __init__(self, iterable):
+        _seq_set_iterable(self, iterable)
+        _seq_set_index(self, 0)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            index = _seq_index(self)
+            val = _seq_iterable(self)[index]
+            _seq_set_index(self, index + 1)
+            return val
+        except IndexError:
+            raise StopIteration()
 
 
 def len(seq):

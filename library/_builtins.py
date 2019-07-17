@@ -345,6 +345,26 @@ def _repr_leave(obj):
 
 
 @_patch
+def _seq_index(obj):
+    pass
+
+
+@_patch
+def _seq_iterable(obj):
+    pass
+
+
+@_patch
+def _seq_set_index(obj, index):
+    pass
+
+
+@_patch
+def _seq_set_iterable(obj, iterable):
+    pass
+
+
+@_patch
 def _set_check(obj):
     pass
 

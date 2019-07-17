@@ -847,7 +847,8 @@ TEST_F(ListBuiltinsTest, SetItemSliceScalarErr) {
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 letters[2:6] = 5
 )"),
-                            LayoutId::kTypeError, "object is not iterable"));
+                            LayoutId::kTypeError,
+                            "'int' object is not iterable"));
 }
 
 TEST_F(ListBuiltinsTest, SetItemSliceStepTuple) {

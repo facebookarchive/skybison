@@ -1233,7 +1233,8 @@ class C:
 it = C()
 result = [x for x in it]
 )"),
-                            LayoutId::kUserWarning, "foo"));
+                            LayoutId::kTypeError,
+                            "'C' object is not iterable"));
 }
 
 TEST_F(InterpreterTest, SequenceContains) {

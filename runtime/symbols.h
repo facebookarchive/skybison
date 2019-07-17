@@ -256,6 +256,10 @@ class Runtime;
   V(UnderReferent, "_referent")                                                \
   V(UnderReprEnter, "_repr_enter")                                             \
   V(UnderReprLeave, "_repr_leave")                                             \
+  V(UnderSeqIndex, "_seq_index")                                               \
+  V(UnderSeqIterable, "_seq_iterable")                                         \
+  V(UnderSeqSetIndex, "_seq_set_index")                                        \
+  V(UnderSeqSetIterable, "_seq_set_iterable")                                  \
   V(UnderSetCheck, "_set_check")                                               \
   V(UnderSetLen, "_set_len")                                                   \
   V(UnderSetMemberDouble, "_set_member_double")                                \

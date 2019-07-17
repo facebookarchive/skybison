@@ -1206,6 +1206,75 @@ class SetTests(unittest.TestCase):
         self.assertIn("foo", a)
 
 
+class SeqTests(unittest.TestCase):
+    def test_sequence_is_iterable(self):
+        class A:
+            def __getitem__(self, index):
+                return [1, 2, 3][index]
+
+        self.assertEqual([x for x in A()], [1, 2, 3])
+
+    def test_sequence_iter_is_itself(self):
+        class A:
+            def __getitem__(self, index):
+                return [1, 2, 3][index]
+
+        a = iter(A())
+        self.assertEqual(a, a.__iter__())
+
+    def test_non_iter_non_sequence_with_iter_raises_type_error(self):
+        class NonIter:
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            iter(NonIter())
+
+        self.assertEqual(str(context.exception), "'NonIter' object is not iterable")
+
+    def test_non_iter_non_sequence_with_for_raises_type_error(self):
+        class NonIter:
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            [x for x in NonIter()]
+
+        self.assertEqual(str(context.exception), "'NonIter' object is not iterable")
+
+    def test_sequence_with_error_raising_iter_descriptor_raises_type_error(self):
+        dunder_get_called = False
+
+        class Desc:
+            def __get__(self, obj, type):
+                nonlocal dunder_get_called
+                dunder_get_called = True
+                raise UserWarning("Nope")
+
+        class C:
+            __iter__ = Desc()
+
+        with self.assertRaises(TypeError) as context:
+            [x for x in C()]
+
+        self.assertEqual(str(context.exception), "'C' object is not iterable")
+        self.assertTrue(dunder_get_called)
+
+    def test_sequence_with_error_raising_getitem_descriptor_returns_iter(self):
+        dunder_get_called = False
+
+        class Desc:
+            def __get__(self, obj, type):
+                nonlocal dunder_get_called
+                dunder_get_called = True
+                raise UserWarning("Nope")
+
+        class C:
+            __getitem__ = Desc()
+
+        i = iter(C())
+        self.assertTrue(hasattr(i, "__next__"))
+        self.assertFalse(dunder_get_called)
+
+
 class StrTests(unittest.TestCase):
     def test_format_single_open_curly_brace_raises_value_error(self):
         with self.assertRaises(ValueError) as context:

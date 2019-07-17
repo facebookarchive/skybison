@@ -153,6 +153,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kRuntimeWarning, LayoutId::kRuntimeWarning},
     {SymbolId::kSet, LayoutId::kSet},
     {SymbolId::kSetIterator, LayoutId::kSetIterator},
+    {SymbolId::kSeqIterator, LayoutId::kSeqIterator},
     {SymbolId::kSlice, LayoutId::kSlice},
     {SymbolId::kStaticMethod, LayoutId::kStaticMethod},
     {SymbolId::kStopAsyncIteration, LayoutId::kStopAsyncIteration},

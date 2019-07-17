@@ -1556,8 +1556,15 @@ HANDLER_INLINE Continue Interpreter::doGetIter(Thread* thread, word) {
                 lookupMethod(thread, frame, iterable, SymbolId::kDunderIter));
   if (method.isError()) {
     if (method.isErrorNotFound()) {
-      thread->raiseWithFmt(LayoutId::kTypeError, "object is not iterable");
+      Runtime* runtime = thread->runtime();
+      if (runtime->isSequence(thread, iterable)) {
+        frame->pushValue(runtime->newSeqIterator(iterable));
+        return Continue::NEXT;
+      }
     }
+    thread->clearPendingException();
+    thread->raiseWithFmt(LayoutId::kTypeError, "'%T' object is not iterable",
+                         &iterable);
     return Continue::UNWIND;
   }
   return tailcallMethod1(thread, *method, *iterable);

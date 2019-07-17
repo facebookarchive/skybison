@@ -112,6 +112,10 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
+    {SymbolId::kUnderSeqIndex, underSeqIndex},
+    {SymbolId::kUnderSeqIterable, underSeqIterable},
+    {SymbolId::kUnderSeqSetIndex, underSeqSetIndex},
+    {SymbolId::kUnderSeqSetIterable, underSeqSetIterable},
     {SymbolId::kUnderSetCheck, underSetCheck},
     {SymbolId::kUnderSetLen, underSetLen},
     {SymbolId::kUnderSetMemberDouble, underSetMemberDouble},
@@ -1377,6 +1381,42 @@ RawObject UnderBuiltinsModule::underReprLeave(Thread* thread, Frame* frame,
   Arguments args(frame, nargs);
   Object obj(&scope, args.get(0));
   thread->reprLeave(obj);
+  return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underSeqIndex(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  SeqIterator self(&scope, args.get(0));
+  return SmallInt::fromWord(self.index());
+}
+
+RawObject UnderBuiltinsModule::underSeqIterable(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  SeqIterator self(&scope, args.get(0));
+  return self.iterable();
+}
+
+RawObject UnderBuiltinsModule::underSeqSetIndex(Thread* thread, Frame* frame,
+                                                word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  SeqIterator self(&scope, args.get(0));
+  Int index(&scope, args.get(1));
+  self.setIndex(index.asWord());
+  return NoneType::object();
+}
+
+RawObject UnderBuiltinsModule::underSeqSetIterable(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  SeqIterator self(&scope, args.get(0));
+  Object iterable(&scope, args.get(1));
+  self.setIterable(*iterable);
   return NoneType::object();
 }
 

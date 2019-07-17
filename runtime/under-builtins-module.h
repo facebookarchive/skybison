@@ -108,6 +108,11 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprLeave(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSeqIndex(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSeqIterable(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSeqSetIndex(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSeqSetIterable(Thread* thread, Frame* frame,
+                                       word nargs);
   static RawObject underSetCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underSetLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underSetMemberDouble(Thread* thread, Frame* frame,

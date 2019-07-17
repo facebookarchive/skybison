@@ -110,6 +110,31 @@ static bool underListLen(Frame* frame) {
   return false;
 }
 
+static bool underSeqIndex(Frame* frame) {
+  frame->setTopValue(
+      SmallInt::fromWord(SeqIterator::cast(frame->popValue()).index()));
+  return true;
+}
+
+static bool underSeqIterable(Frame* frame) {
+  frame->setTopValue(SeqIterator::cast(frame->popValue()).iterable());
+  return true;
+}
+
+static bool underSeqSetIndex(Frame* frame) {
+  RawObject seq_iter = frame->popValue();
+  RawObject index = frame->popValue();
+  SeqIterator::cast(seq_iter).setIndex(Int::cast(index).asWord());
+  return true;
+}
+
+static bool underSeqSetIterable(Frame* frame) {
+  RawObject seq_iter = frame->popValue();
+  RawObject iterable = frame->popValue();
+  SeqIterator::cast(seq_iter).setIterable(iterable);
+  return true;
+}
+
 static bool underSetCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfSet(frame->popValue())));
@@ -218,6 +243,14 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underListGetItem(frame);
     case SymbolId::kUnderListLen:
       return underListLen(frame);
+    case SymbolId::kUnderSeqIndex:
+      return underSeqIndex(frame);
+    case SymbolId::kUnderSeqIterable:
+      return underSeqIterable(frame);
+    case SymbolId::kUnderSeqSetIndex:
+      return underSeqSetIndex(frame);
+    case SymbolId::kUnderSeqSetIterable:
+      return underSeqSetIterable(frame);
     case SymbolId::kUnderSetCheck:
       return underSetCheck(thread, frame);
     case SymbolId::kUnderSetLen:
