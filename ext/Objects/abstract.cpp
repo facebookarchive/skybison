@@ -1117,10 +1117,10 @@ PY_EXPORT int PySequence_DelItem(PyObject* seq, Py_ssize_t idx) {
 static RawObject makeSlice(Thread* thread, Py_ssize_t low, Py_ssize_t high) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Slice slice(&scope, runtime->newSlice());
-  slice.setStart(runtime->newInt(low));
-  slice.setStop(runtime->newInt(high));
-  return *slice;
+  Object start(&scope, runtime->newInt(low));
+  Object stop(&scope, runtime->newInt(high));
+  Object step(&scope, NoneType::object());
+  return runtime->newSlice(start, stop, step);
 }
 
 PY_EXPORT int PySequence_DelSlice(PyObject* seq, Py_ssize_t low,

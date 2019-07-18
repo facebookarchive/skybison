@@ -211,9 +211,10 @@ PY_EXPORT int PyList_SetSlice(PyObject* list, Py_ssize_t low, Py_ssize_t high,
   }
   // TODO(T44021663): Don't create a slice; instead, pass the ints directly to
   // the relevant non-slice functions
-  Slice slice(&scope, runtime->newSlice());
-  slice.setStart(runtime->newInt(low));
-  slice.setStop(runtime->newInt(high));
+  Object start(&scope, runtime->newInt(low));
+  Object stop(&scope, runtime->newInt(high));
+  Object step(&scope, NoneType::object());
+  Slice slice(&scope, runtime->newSlice(start, stop, step));
   Object result(&scope, NoneType::object());
   if (items == nullptr) {
     // Equivalent to deleting slice

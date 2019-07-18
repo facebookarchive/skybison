@@ -790,6 +790,8 @@ RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
 
+RawObject Runtime::emptySlice() { return empty_slice_; }
+
 RawObject Runtime::emptyTuple() { return empty_tuple_; }
 
 RawObject Runtime::newTuple(word length) {
@@ -877,7 +879,18 @@ RawObject Runtime::newSetIterator(const Object& set) {
   return *result;
 }
 
-RawObject Runtime::newSlice() { return heap()->create<RawSlice>(); }
+RawObject Runtime::newSlice(const Object& start, const Object& stop,
+                            const Object& step) {
+  if (start.isNoneType() && stop.isNoneType() && step.isNoneType()) {
+    return emptySlice();
+  }
+  HandleScope scope;
+  Slice slice(&scope, heap()->create<RawSlice>());
+  slice.setStart(*start);
+  slice.setStop(*stop);
+  slice.setStep(*step);
+  return *slice;
+}
 
 RawObject Runtime::newStaticMethod() {
   return heap()->create<RawStaticMethod>();
@@ -2131,6 +2144,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
       typeDictAt(thread, object_dict, dunder_getattribute_name);
   Object dunder_setattr_name(&scope, symbols()->DunderSetattr());
   object_dunder_setattr_ = typeDictAt(thread, object_dict, dunder_setattr_name);
+  empty_slice_ = heap()->create<RawSlice>();
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;

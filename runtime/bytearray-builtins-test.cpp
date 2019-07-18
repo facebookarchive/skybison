@@ -338,8 +338,9 @@ TEST_F(ByteArrayBuiltinsTest, DunderGetItemWithSliceReturnsByteArray) {
   ByteArray self(&scope, runtime_.newByteArray());
   const byte bytes[] = {'h', 'e', 'l', 'l', 'o'};
   runtime_.byteArrayExtend(thread_, self, bytes);
-  Slice index(&scope, runtime_.newSlice());
-  index.setStop(SmallInt::fromWord(3));
+  Object none(&scope, NoneType::object());
+  Object stop(&scope, SmallInt::fromWord(3));
+  Slice index(&scope, runtime_.newSlice(none, stop, none));
   Object result(&scope,
                 runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "hel"));
@@ -350,10 +351,10 @@ TEST_F(ByteArrayBuiltinsTest, DunderGetItemWithSliceStepReturnsByteArray) {
   ByteArray self(&scope, runtime_.newByteArray());
   const byte bytes[] = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
   runtime_.byteArrayExtend(thread_, self, bytes);
-  Slice index(&scope, runtime_.newSlice());
-  index.setStart(SmallInt::fromWord(8));
-  index.setStop(SmallInt::fromWord(3));
-  index.setStep(SmallInt::fromWord(-2));
+  Object start(&scope, SmallInt::fromWord(8));
+  Object stop(&scope, SmallInt::fromWord(3));
+  Object step(&scope, SmallInt::fromWord(-2));
+  Slice index(&scope, runtime_.newSlice(start, stop, step));
   Object result(&scope,
                 runBuiltin(ByteArrayBuiltins::dunderGetItem, self, index));
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "rwo"));

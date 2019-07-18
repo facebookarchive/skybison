@@ -171,6 +171,9 @@ class Runtime {
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
 
+  // Returns the singleton empty slice. Guaranteed to not allocate.
+  RawObject emptySlice();
+
   // Returns the singleton empty tuple. Guaranteed to not allocate.
   RawObject emptyTuple();
 
@@ -186,7 +189,8 @@ class Runtime {
 
   RawObject newSetIterator(const Object& set);
 
-  RawObject newSlice();
+  RawObject newSlice(const Object& start, const Object& stop,
+                     const Object& step);
 
   RawObject newStaticMethod();
 
@@ -994,6 +998,7 @@ class Runtime {
   RawObject ellipsis_ = NoneType::object();
   RawObject empty_frozen_set_ = NoneType::object();
   RawObject empty_mutable_bytes_ = NoneType::object();
+  RawObject empty_slice_ = NoneType::object();
   RawObject empty_tuple_ = NoneType::object();
   RawObject implicit_bases_ = NoneType::object();
   RawObject object_dunder_getattribute_ = NoneType::object();

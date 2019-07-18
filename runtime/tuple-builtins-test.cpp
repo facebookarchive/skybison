@@ -171,8 +171,9 @@ TEST_F(TupleBuiltinsTest, SlicePositiveStartIndex) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [2:]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(SmallInt::fromWord(2));
+  Object none(&scope, NoneType::object());
+  Object start(&scope, SmallInt::fromWord(2));
+  Slice slice(&scope, runtime_.newSlice(start, none, none));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 3);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 3));
@@ -186,8 +187,9 @@ TEST_F(TupleBuiltinsTest, SliceNegativeStartIndexIsRelativeToEnd) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [-2:]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(SmallInt::fromWord(-2));
+  Object none(&scope, NoneType::object());
+  Object start(&scope, SmallInt::fromWord(-2));
+  Slice slice(&scope, runtime_.newSlice(start, none, none));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 2);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 4));
@@ -200,8 +202,9 @@ TEST_F(TupleBuiltinsTest, SlicePositiveStopIndex) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [:2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStop(SmallInt::fromWord(2));
+  Object none(&scope, NoneType::object());
+  Object stop(&scope, SmallInt::fromWord(2));
+  Slice slice(&scope, runtime_.newSlice(none, stop, none));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 2);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
@@ -214,8 +217,9 @@ TEST_F(TupleBuiltinsTest, SliceNegativeStopIndexIsRelativeToEnd) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [:-2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStop(SmallInt::fromWord(-2));
+  Object none(&scope, NoneType::object());
+  Object stop(&scope, SmallInt::fromWord(-2));
+  Slice slice(&scope, runtime_.newSlice(none, stop, none));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 3);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
@@ -229,8 +233,9 @@ TEST_F(TupleBuiltinsTest, SlicePositiveStep) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [::2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(2));
+  Object none(&scope, NoneType::object());
+  Object step(&scope, SmallInt::fromWord(2));
+  Slice slice(&scope, runtime_.newSlice(none, none, step));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 3);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
@@ -244,8 +249,9 @@ TEST_F(TupleBuiltinsTest, SliceNegativeStepReversesOrder) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [::-2]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(-2));
+  Object none(&scope, NoneType::object());
+  Object step(&scope, SmallInt::fromWord(-2));
+  Slice slice(&scope, runtime_.newSlice(none, none, step));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 3);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 5));
@@ -259,8 +265,9 @@ TEST_F(TupleBuiltinsTest, SliceStartIndexOutOfBounds) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [10:]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(SmallInt::fromWord(10));
+  Object none(&scope, NoneType::object());
+  Object start(&scope, SmallInt::fromWord(10));
+  Slice slice(&scope, runtime_.newSlice(start, none, none));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 0);
 }
@@ -271,8 +278,9 @@ TEST_F(TupleBuiltinsTest, SliceStopIndexOutOfBounds) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [:10]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStop(SmallInt::fromWord(10));
+  Object none(&scope, NoneType::object());
+  Object stop(&scope, SmallInt::fromWord(10));
+  Slice slice(&scope, runtime_.newSlice(none, stop, none));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 5);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
@@ -285,8 +293,9 @@ TEST_F(TupleBuiltinsTest, SliceStepOutOfBounds) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test [::10]
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(10));
+  Object none(&scope, NoneType::object());
+  Object step(&scope, SmallInt::fromWord(10));
+  Slice slice(&scope, runtime_.newSlice(none, none, step));
   Tuple test(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(test.length(), 1);
   EXPECT_TRUE(isIntEqualsWord(test.at(0), 1));
@@ -298,7 +307,7 @@ TEST_F(TupleBuiltinsTest, IdenticalSliceIsNotCopy) {
   Tuple tuple1(&scope, tupleFromRange(1, 6));
 
   // Test: t[::] is t
-  Slice slice(&scope, runtime_.newSlice());
+  Slice slice(&scope, runtime_.emptySlice());
   Tuple test1(&scope, TupleBuiltins::slice(thread, tuple1, slice));
   ASSERT_EQ(*test1, *tuple1);
 }

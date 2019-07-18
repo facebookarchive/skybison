@@ -1403,15 +1403,10 @@ class RawRangeIterator : public RawHeapObject {
 
 class RawSlice : public RawHeapObject {
  public:
-  // Getters and setters.
+  // Getters.
   RawObject start() const;
-  void setStart(RawObject value) const;
-
   RawObject stop() const;
-  void setStop(RawObject value) const;
-
   RawObject step() const;
-  void setStep(RawObject value) const;
 
   // Returns the correct start, stop, and step word values from this slice
   void unpack(word* start, word* stop, word* step) const;
@@ -1441,6 +1436,14 @@ class RawSlice : public RawHeapObject {
   static const int kSize = kStepOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(Slice);
+
+ private:
+  // Setters.
+  void setStart(RawObject value) const;
+  void setStep(RawObject value) const;
+  void setStop(RawObject value) const;
+
+  friend class Runtime;
 };
 
 class RawStaticMethod : public RawHeapObject {

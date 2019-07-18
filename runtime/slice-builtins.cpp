@@ -107,16 +107,17 @@ RawObject SliceBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "slice.__new__ requires the slice type");
   }
-  Slice slice(&scope, thread->runtime()->newSlice());
-  Object arg2(&scope, args.get(2));
-  if (arg2.isUnbound()) {
-    slice.setStop(args.get(1));
-    return *slice;
+  Object start(&scope, NoneType::object());
+  Object stop(&scope, NoneType::object());
+  Object step(&scope, NoneType::object());
+  if (args.get(2).isUnbound()) {
+    stop = args.get(1);
+    return thread->runtime()->newSlice(start, stop, step);
   }
-  slice.setStart(args.get(1));
-  slice.setStop(*arg2);
-  slice.setStep(args.get(3));  // defaults to None
-  return *slice;
+  start = args.get(1);
+  stop = args.get(2);
+  step = args.get(3);  // defaults to None
+  return thread->runtime()->newSlice(start, stop, step);
 }
 
 }  // namespace python

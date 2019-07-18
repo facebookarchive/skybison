@@ -3028,12 +3028,19 @@ HANDLER_INLINE Continue Interpreter::doMakeFunction(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doBuildSlice(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
-  HandleScope scope(thread);
-  Slice slice(&scope, thread->runtime()->newSlice());
-  if (arg == 3) slice.setStep(frame->popValue());
-  slice.setStop(frame->popValue());
-  slice.setStart(frame->topValue());  // TOP
-  frame->setTopValue(*slice);
+  RawObject step = arg == 3 ? frame->popValue() : NoneType::object();
+  RawObject stop = frame->popValue();
+  RawObject start = frame->topValue();
+  Runtime* runtime = thread->runtime();
+  if (start.isNoneType() && stop.isNoneType() && step.isNoneType()) {
+    frame->setTopValue(runtime->emptySlice());
+  } else {
+    HandleScope scope(thread);
+    Object start_obj(&scope, start);
+    Object stop_obj(&scope, stop);
+    Object step_obj(&scope, step);
+    frame->setTopValue(runtime->newSlice(start_obj, stop_obj, step_obj));
+  }
   return Continue::NEXT;
 }
 

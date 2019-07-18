@@ -12,17 +12,20 @@ PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,
                                 PyObject* step) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Slice slice(&scope, thread->runtime()->newSlice());
+  Object start_obj(&scope, NoneType::object());
+  Object stop_obj(&scope, NoneType::object());
+  Object step_obj(&scope, NoneType::object());
   if (start != nullptr) {
-    slice.setStart(ApiHandle::fromPyObject(start)->asObject());
+    start_obj = ApiHandle::fromPyObject(start)->asObject();
   }
   if (stop != nullptr) {
-    slice.setStop(ApiHandle::fromPyObject(stop)->asObject());
+    stop_obj = ApiHandle::fromPyObject(stop)->asObject();
   }
   if (step != nullptr) {
-    slice.setStep(ApiHandle::fromPyObject(step)->asObject());
+    step_obj = ApiHandle::fromPyObject(step)->asObject();
   }
-  return ApiHandle::newReference(thread, *slice);
+  return ApiHandle::newReference(
+      thread, thread->runtime()->newSlice(start_obj, stop_obj, step_obj));
 }
 
 PY_EXPORT Py_ssize_t PySlice_AdjustIndices(Py_ssize_t length,

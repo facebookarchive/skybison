@@ -12,7 +12,7 @@ using SliceBuiltinsTest = RuntimeFixture;
 
 TEST_F(SliceBuiltinsTest, UnpackWithAllNoneSetsDefaults) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
+  Slice slice(&scope, runtime_.emptySlice());
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
@@ -23,8 +23,10 @@ TEST_F(SliceBuiltinsTest, UnpackWithAllNoneSetsDefaults) {
 
 TEST_F(SliceBuiltinsTest, UnpackWithNegativeStepSetsReverseDefaults) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(-1));
+  Object start_obj(&scope, NoneType::object());
+  Object stop_obj(&scope, NoneType::object());
+  Object step_obj(&scope, SmallInt::fromWord(-1));
+  Slice slice(&scope, runtime_.newSlice(start_obj, stop_obj, step_obj));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
@@ -35,8 +37,10 @@ TEST_F(SliceBuiltinsTest, UnpackWithNegativeStepSetsReverseDefaults) {
 
 TEST_F(SliceBuiltinsTest, UnpackWithNonIndexStartRaisesTypeError) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(runtime_.newSet());
+  Object start_obj(&scope, runtime_.newSet());
+  Object stop_obj(&scope, NoneType::object());
+  Object step_obj(&scope, NoneType::object());
+  Slice slice(&scope, runtime_.newSlice(start_obj, stop_obj, step_obj));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   EXPECT_TRUE(raisedWithStr(
@@ -46,8 +50,10 @@ TEST_F(SliceBuiltinsTest, UnpackWithNonIndexStartRaisesTypeError) {
 
 TEST_F(SliceBuiltinsTest, UnpackWithNonIndexStopRaisesTypeError) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStop(runtime_.newSet());
+  Object start_obj(&scope, NoneType::object());
+  Object stop_obj(&scope, runtime_.newSet());
+  Object step_obj(&scope, NoneType::object());
+  Slice slice(&scope, runtime_.newSlice(start_obj, stop_obj, step_obj));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   EXPECT_TRUE(raisedWithStr(
@@ -57,8 +63,10 @@ TEST_F(SliceBuiltinsTest, UnpackWithNonIndexStopRaisesTypeError) {
 
 TEST_F(SliceBuiltinsTest, UnpackWithNonIndexStepRaisesTypeError) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(runtime_.newSet());
+  Object start_obj(&scope, NoneType::object());
+  Object stop_obj(&scope, NoneType::object());
+  Object step_obj(&scope, runtime_.newSet());
+  Slice slice(&scope, runtime_.newSlice(start_obj, stop_obj, step_obj));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   EXPECT_TRUE(raisedWithStr(
@@ -74,8 +82,10 @@ foo = Foo()
 )")
                    .isError());
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(moduleAt(&runtime_, "__main__", "foo"));
+  Object start_obj(&scope, NoneType::object());
+  Object stop_obj(&scope, NoneType::object());
+  Object step_obj(&scope, moduleAt(&runtime_, "__main__", "foo"));
+  Slice slice(&scope, runtime_.newSlice(start_obj, stop_obj, step_obj));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
@@ -95,10 +105,7 @@ foo = Foo()
                    .isError());
   HandleScope scope(thread_);
   Object foo(&scope, moduleAt(&runtime_, "__main__", "foo"));
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStart(*foo);
-  slice.setStop(*foo);
-  slice.setStep(*foo);
+  Slice slice(&scope, runtime_.newSlice(foo, foo, foo));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
@@ -109,8 +116,9 @@ foo = Foo()
 
 TEST_F(SliceBuiltinsTest, UnpackWithZeroStepRaisesValueError) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
-  slice.setStep(SmallInt::fromWord(0));
+  Object none(&scope, NoneType::object());
+  Object step_obj(&scope, SmallInt::fromWord(0));
+  Slice slice(&scope, runtime_.newSlice(none, none, step_obj));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   EXPECT_TRUE(raisedWithStr(*result, LayoutId::kValueError,
@@ -119,11 +127,8 @@ TEST_F(SliceBuiltinsTest, UnpackWithZeroStepRaisesValueError) {
 
 TEST_F(SliceBuiltinsTest, UnpackWithOverflowSilentlyReducesValues) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
   Object large(&scope, runtime_.newInt(SmallInt::kMaxValue + 1));
-  slice.setStart(*large);
-  slice.setStop(*large);
-  slice.setStep(*large);
+  Slice slice(&scope, runtime_.newSlice(large, large, large));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
@@ -134,11 +139,8 @@ TEST_F(SliceBuiltinsTest, UnpackWithOverflowSilentlyReducesValues) {
 
 TEST_F(SliceBuiltinsTest, UnpackWithUnderflowSilentlyBoostsValues) {
   HandleScope scope(thread_);
-  Slice slice(&scope, runtime_.newSlice());
   Object large(&scope, runtime_.newInt(SmallInt::kMinValue - 1));
-  slice.setStart(*large);
-  slice.setStop(*large);
-  slice.setStep(*large);
+  Slice slice(&scope, runtime_.newSlice(large, large, large));
   word start, stop, step;
   Object result(&scope, sliceUnpack(thread_, slice, &start, &stop, &step));
   ASSERT_FALSE(result.isError());
