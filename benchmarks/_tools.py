@@ -21,6 +21,8 @@ def run(cmd, **kwargs):
 
 
 def pin_to_cpus():
+    if not os.path.exists("/sys/devices/system/cpu/isolated"):
+        return []
     completed_process = run(
         ["cat", "/sys/devices/system/cpu/isolated"], stdout=subprocess.PIPE
     )
