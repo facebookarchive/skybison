@@ -1096,6 +1096,19 @@ class ListTests(unittest.TestCase):
         ls = list(range(5))
         self.assertEqual(ls[C(3)], 3)
 
+    def test_getitem_with_raising_descriptor_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("foo")
+
+        class C:
+            __index__ = Desc()
+
+        ls = list(range(5))
+        with self.assertRaises(AttributeError) as context:
+            ls[C()]
+        self.assertEqual(str(context.exception), "foo")
+
     def test_getitem_with_string_raises_type_error(self):
         ls = list(range(5))
         with self.assertRaises(TypeError) as context:

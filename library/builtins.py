@@ -573,15 +573,14 @@ def _index(obj) -> int:
     # equivalent to PyNumber_Index
     if _int_check(obj):
         return obj
-    try:
-        result = obj.__index__()
+    if _object_type_hasattr(obj, "__index__"):
+        result = _type(obj).__index__(obj)
         if _int_check(result):
             return result
         raise TypeError(f"__index__ returned non-int (type {_type(result).__name__})")
-    except AttributeError:
-        raise TypeError(
-            f"'{_type(obj).__name__}' object cannot be interpreted as an integer"
-        )
+    raise TypeError(
+        f"'{_type(obj).__name__}' object cannot be interpreted as an integer"
+    )
 
 
 def _int(obj) -> int:
@@ -762,7 +761,7 @@ def _new_member_set_readonly_strings(name):
 def _slice_index(num) -> int:
     if _int_check(num):
         return num
-    if hasattr(num, "__index__"):
+    if _object_type_hasattr(num, "__index__"):
         return _index(num)
     raise TypeError(
         "slice indices must be integers or None or have an __index__ method"
@@ -1221,12 +1220,11 @@ class bytes(bootstrap=True):
         if _slice_check(key):
             start, stop, step = key.indices(_bytes_len(self))
             return _bytes_getslice(self, start, stop, step)
-        try:
+        if _object_type_hasattr(key, "__index__"):
             return _bytes_getitem(self, _index(key))
-        except TypeError:
-            raise TypeError(
-                f"byte indices must be integers or slice, not {_type(key).__name__}"
-            )
+        raise TypeError(
+            f"byte indices must be integers or slice, not {_type(key).__name__}"
+        )
 
     def __gt__(self, other):
         pass
@@ -1290,7 +1288,10 @@ class bytes(bootstrap=True):
             return result
         if _str_check(source):
             raise TypeError("string argument without an encoding")
-        if _int_check(source) or hasattr(source, "__index__"):
+        if _int_check(source):
+            # TODO(T36619847): implement bytes subclasses
+            return _bytes_repeat(b"\x00", source)
+        if _object_type_hasattr(source, "__index__"):
             # TODO(T36619847): implement bytes subclasses
             return _bytes_repeat(b"\x00", _index(source))
         # TODO(T36619847): implement bytes subclasses
@@ -2374,10 +2375,8 @@ class list(bootstrap=True):
         if _slice_check(key):
             start, stop, step = key.indices(_list_len(self))
             return _list_delslice(self, start, stop, step)
-        try:
+        if _object_type_hasattr(key, "__index__"):
             return _list_delitem(self, _index(key))
-        except TypeError:
-            pass
         raise TypeError("list indices must be integers or slices")
 
     def __eq__(self, other):
@@ -2413,12 +2412,11 @@ class list(bootstrap=True):
         if _slice_check(key):
             start, stop, step = key.indices(_list_len(self))
             return _list_getslice(self, start, stop, step)
-        try:
+        if _object_type_hasattr(key, "__index__"):
             return _list_getitem(self, _index(key))
-        except TypeError:
-            raise TypeError(
-                f"list indices must be integers or slices, not {_type(key).__name__}"
-            )
+        raise TypeError(
+            f"list indices must be integers or slices, not {_type(key).__name__}"
+        )
 
     def __init__(self, iterable=()):
         self.extend(iterable)
