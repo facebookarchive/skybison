@@ -55,7 +55,6 @@ class PerformanceTool(ABC):
 
     # Add any optional command line arguments to tune the tool
     @staticmethod
-    @abstractmethod
     def add_optional_arguments(parser):
         return parser
 
@@ -96,10 +95,6 @@ class TimeTool(PerformanceTool):
 '{TimeTool.NAME}': Use the 'time' command to measure execution time
 """
 
-    @staticmethod
-    def add_optional_arguments(parser):
-        return parser
-
 
 class PerfStat(PerformanceTool):
     NAME = "perfstat"
@@ -135,10 +130,6 @@ class PerfStat(PerformanceTool):
 '{PerfStat.NAME}': Use `perf stat` to measure the execution time of
 a benchmark. This repeats the run 10 times to find a significant result
 """
-
-    @staticmethod
-    def add_optional_arguments(parser):
-        return parser
 
 
 def add_tools_arguments(parser):
