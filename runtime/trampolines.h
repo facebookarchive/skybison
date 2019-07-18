@@ -124,17 +124,6 @@ RawObject builtinTrampolineKw(Thread* thread, Frame* caller,
 RawObject builtinTrampolineEx(Thread* thread, Frame* caller,
                               word flags) ALIGN_16;
 
-RawObject slotTrampoline(Thread* thread, Frame* caller, word argc) ALIGN_16;
-RawObject slotTrampolineKw(Thread* thread, Frame*, word argc) ALIGN_16;
-RawObject slotTrampolineEx(Thread* thread, Frame* caller, word flags) ALIGN_16;
-
-RawObject varkwSlotTrampoline(Thread* thread, Frame* caller,
-                              word argc) ALIGN_16;
-RawObject varkwSlotTrampolineKw(Thread* thread, Frame* caller,
-                                word argc) ALIGN_16;
-RawObject varkwSlotTrampolineEx(Thread* thread, Frame* caller,
-                                word flags) ALIGN_16;
-
 RawObject processDefaultArguments(Thread* thread, RawFunction function_raw,
                                   Frame* caller, const word argc);
 
