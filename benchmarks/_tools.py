@@ -5,7 +5,9 @@ with various performance measurement tools.
 """
 import logging
 import os
+import re
 import subprocess
+import tempfile
 from abc import ABC, abstractmethod
 
 
@@ -132,6 +134,42 @@ a benchmark. This repeats the run 10 times to find a significant result
 """
 
 
+class Callgrind(PerformanceTool):
+    NAME = "callgrind"
+
+    def __init__(self, args):
+        pass
+
+    def execute(self, interpreter, benchmark):
+        with tempfile.NamedTemporaryFile(prefix="callgrind_") as temp_file:
+            command = [
+                "valgrind",
+                "--quiet",
+                "--tool=callgrind",
+                f"--callgrind-out-file={temp_file.name}",
+                interpreter.binary,
+                benchmark.filepath(),
+            ]
+            completed_process = run(command)
+            if completed_process.returncode != 0:
+                log.error(f"Couldn't run: {completed_process.args}")
+                return {}
+
+            with open(temp_file.name) as fd:
+                r = re.compile(r"summary:\s*(.*)")
+                for line in fd:
+                    m = r.match(line)
+                    if m:
+                        instructions = int(m.group(1))
+            return {"cg_instructions": instructions}
+
+    @classmethod
+    def add_tool(cls):
+        return f"""
+'{cls.NAME}': Measure executed instructions with `valgrind`/`callgrind`.
+"""
+
+
 def add_tools_arguments(parser):
     measure_tools_help = "The measurement tool to use. Available Tools: \n"
     for tool in TOOLS:
@@ -157,4 +195,4 @@ def add_tools_arguments(parser):
 
 
 # Use this to register any new tools
-TOOLS = [TimeTool, PerfStat]
+TOOLS = [TimeTool, PerfStat, Callgrind]
