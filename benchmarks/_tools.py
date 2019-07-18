@@ -120,7 +120,15 @@ class PerfStat(PerformanceTool):
             log.error(f"perf stat returned an error: {perfstat_output}")
             return {}
         events = [e.split(";") for e in perfstat_output.split("\n") if ";" in e]
-        return {event[2]: event[0] for event in events}
+        results = {}
+        for event in events:
+            name = event[2]
+            value = event[0]
+            if value in ("<not counted>", "<not supported>", ""):
+                continue
+            value = float(value) if "." in value else int(value)
+            results[name] = value
+        return results
 
     @staticmethod
     def add_tool():
