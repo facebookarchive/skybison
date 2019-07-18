@@ -170,6 +170,41 @@ class Callgrind(PerformanceTool):
 """
 
 
+class Size(PerformanceTool):
+    NAME = "size"
+
+    def __init__(self, args):
+        pass
+
+    def execute(self, interpreter, benchmark):
+        command = ["size", "--format=sysv", interpreter.binary]
+        completed_process = run(command, stdout=subprocess.PIPE)
+        if completed_process.returncode != 0:
+            log.error(f"Couldn't run: {completed_process.args}")
+            return {}
+        size_output = completed_process.stdout.strip()
+        size = 0
+        r = re.compile(r"([a-zA-Z0-9_.]+)\s+([0-9]+)\s+[0-9a-fA-F]+$")
+        for line in size_output.splitlines():
+            m = r.match(line)
+            if not m:
+                continue
+            section_name = m.group(1)
+            section_size = m.group(2)
+            if section_name == ".text" or section_name == "__text":
+                size += int(section_size)
+        if size == 0:
+            log.error(f"Could not determine text segment size of {interpreter.binary}")
+            return {}
+        return {"size_text": size}
+
+    @classmethod
+    def add_tool(cls):
+        return f"""
+'{cls.NAME}': Use `size` to measure the size of the interpreters text segment.
+"""
+
+
 def add_tools_arguments(parser):
     measure_tools_help = "The measurement tool to use. Available Tools: \n"
     for tool in TOOLS:
@@ -195,4 +230,4 @@ def add_tools_arguments(parser):
 
 
 # Use this to register any new tools
-TOOLS = [TimeTool, PerfStat, Callgrind]
+TOOLS = [TimeTool, PerfStat, Callgrind, Size]
