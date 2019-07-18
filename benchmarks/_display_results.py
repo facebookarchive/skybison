@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
 
+def _format_value(value):
+    if isinstance(value, float):
+        return format(round(value, 6), ".6f")
+    return value
+
+
 def build_table(results):
     # Groups results by benchmark name to compare them more easily
     results.sort(key=lambda x: x["benchmark"], reverse=True)
@@ -8,6 +14,7 @@ def build_table(results):
     message = ""
     tbl = [list(results[0].keys())]
     data = [list(r.values()) for r in results]
+    data = [list(map(_format_value, row)) for row in data]
     tbl.extend(data)
     horizontal = "-"
     vertical = "|"

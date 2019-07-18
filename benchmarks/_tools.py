@@ -81,14 +81,10 @@ class TimeTool(PerformanceTool):
         events = [event.split(" , ") for event in time_output.split("\n")]
         result = {event[0]: event[1] for event in events}
         if "time_sec" in result:
-            result["time_sec"] = format(round(float(result["time_sec"]), 6), "0.6f")
+            result["time_sec"] = float(result["time_sec"])
         if "time_sec_mean" in result:
-            result["time_sec_mean"] = format(
-                round(float(result["time_sec_mean"]), 6), "0.6f"
-            )
-            result["time_sec_stdev"] = format(
-                round(float(result["time_sec_stdev"]), 6), "0.6f"
-            )
+            result["time_sec_mean"] = float(result["time_sec_mean"])
+            result["time_sec_stdev"] = float(result["time_sec_stdev"])
         return result
 
     @staticmethod
