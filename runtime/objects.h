@@ -1479,19 +1479,48 @@ class RawByteArrayIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(ByteArrayIterator);
 };
 
-class RawSeqIterator : public RawIteratorBase {
+class RawDictIteratorBase : public RawIteratorBase {
  public:
-  RAW_OBJECT_COMMON(SeqIterator);
+  // Getters and setters.
+  /*
+   * This looks similar to index but is different and required in order to
+   * implement interators properly. We cannot use index in __length_hint__
+   * because index describes the position inside the internal buckets list of
+   * our implementation of dict -- not the logical number of iterms. Therefore
+   * we need an additional piece of state that refers to the logical number of
+   * items seen so far.
+   */
+  word numFound() const;
+  void setNumFound(word num_found) const;
+
+  // Layout
+  static const int kNumFoundOffset = RawIteratorBase::kSize;
+  static const int kSize = kNumFoundOffset + kPointerSize;
 };
 
-class RawStrIterator : public RawIteratorBase {
+class RawDictItemIterator : public RawDictIteratorBase {
  public:
-  RAW_OBJECT_COMMON(StrIterator);
+  RAW_OBJECT_COMMON(DictItemIterator);
+};
+
+class RawDictKeyIterator : public RawDictIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(DictKeyIterator);
+};
+
+class RawDictValueIterator : public RawDictIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(DictValueIterator);
 };
 
 class RawListIterator : public RawIteratorBase {
  public:
   RAW_OBJECT_COMMON(ListIterator);
+};
+
+class RawSeqIterator : public RawIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(SeqIterator);
 };
 
 class RawSetIterator : public RawIteratorBase {
@@ -1505,6 +1534,11 @@ class RawSetIterator : public RawIteratorBase {
   static const int kSize = kConsumedCountOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(SetIterator);
+};
+
+class RawStrIterator : public RawIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(StrIterator);
 };
 
 class RawTupleIterator : public RawIteratorBase {
@@ -2152,25 +2186,6 @@ class RawDict::Bucket {
   DISALLOW_HEAP_ALLOCATION();
 };
 
-class RawDictIteratorBase : public RawIteratorBase {
- public:
-  // Getters and setters.
-  /*
-   * This looks similar to index but is different and required in order to
-   * implement interators properly. We cannot use index in __length_hint__
-   * because index describes the position inside the internal buckets list of
-   * our implementation of dict -- not the logical number of iterms. Therefore
-   * we need an additional piece of state that refers to the logical number of
-   * items seen so far.
-   */
-  word numFound() const;
-  void setNumFound(word num_found) const;
-
-  // Layout
-  static const int kNumFoundOffset = RawIteratorBase::kSize;
-  static const int kSize = kNumFoundOffset + kPointerSize;
-};
-
 class RawDictViewBase : public RawHeapObject {
  public:
   // Getters and setters
@@ -2182,29 +2197,14 @@ class RawDictViewBase : public RawHeapObject {
   static const int kSize = kDictOffset + kPointerSize;
 };
 
-class RawDictItemIterator : public RawDictIteratorBase {
- public:
-  RAW_OBJECT_COMMON(DictItemIterator);
-};
-
 class RawDictItems : public RawDictViewBase {
  public:
   RAW_OBJECT_COMMON(DictItems);
 };
 
-class RawDictKeyIterator : public RawDictIteratorBase {
- public:
-  RAW_OBJECT_COMMON(DictKeyIterator);
-};
-
 class RawDictKeys : public RawDictViewBase {
  public:
   RAW_OBJECT_COMMON(DictKeys);
-};
-
-class RawDictValueIterator : public RawDictIteratorBase {
- public:
-  RAW_OBJECT_COMMON(DictValueIterator);
 };
 
 class RawDictValues : public RawDictViewBase {
