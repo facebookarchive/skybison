@@ -1784,6 +1784,9 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit interned strings.
   visitor->visitPointer(&interned_);
 
+  // Visit canonical empty slice.
+  visitor->visitPointer(&empty_slice_);
+
   // Visit modules
   visitor->visitPointer(&modules_);
 
