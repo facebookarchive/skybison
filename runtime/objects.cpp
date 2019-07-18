@@ -370,54 +370,6 @@ void RawTuple::replaceFromWith(word start, RawObject array) const {
   }
 }
 
-// RawRangeIterator
-
-bool RawRangeIterator::isOutOfRange(word cur, word stop, word step) {
-  DCHECK(step != 0,
-         "invalid step");  // should have been checked in Builtins::range().
-
-  if (step < 0) {
-    if (cur <= stop) {
-      return true;
-    }
-  } else if (step > 0) {
-    if (cur >= stop) {
-      return true;
-    }
-  }
-  return false;
-}
-
-word RawRangeIterator::pendingLength() const {
-  RawRange range = RawRange::cast(instanceVariableAt(kRangeOffset));
-  word stop = range.stop();
-  word step = range.step();
-  word current = RawSmallInt::cast(instanceVariableAt(kCurValueOffset)).value();
-  if (isOutOfRange(current, stop, step)) {
-    return 0;
-  }
-  return std::abs((stop - current) / step);
-}
-
-RawObject RawRangeIterator::next() const {
-  RawSmallInt ret = RawSmallInt::cast(instanceVariableAt(kCurValueOffset));
-  word cur = ret.value();
-
-  RawRange range = RawRange::cast(instanceVariableAt(kRangeOffset));
-  word stop = range.stop();
-  word step = range.step();
-
-  // TODO(jeethu): range overflow is unchecked. Since a correct implementation
-  // has to support arbitrary precision anyway, there's no point in checking
-  // for overflow.
-  if (isOutOfRange(cur, stop, step)) {
-    return RawError::noMoreItems();
-  }
-
-  instanceVariableAtPut(kCurValueOffset, RawSmallInt::fromWord(cur + step));
-  return ret;
-}
-
 // RawSlice
 
 void RawSlice::unpack(word* start, word* stop, word* step) const {

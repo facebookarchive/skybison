@@ -2,6 +2,7 @@
 
 #include "frame.h"
 #include "globals.h"
+#include "int-builtins.h"
 #include "runtime.h"
 
 namespace python {
@@ -63,12 +64,10 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRange()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__getitem__() must be called with a range instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kRange);
   }
-  return thread->runtime()->newRangeIterator(self);
+  Range range(&scope, *self);
+  return thread->runtime()->newRangeIterator(range);
 }
 
 const BuiltinMethod RangeIteratorBuiltins::kBuiltinMethods[] = {
@@ -84,10 +83,7 @@ RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__iter__() must be called with a range iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
   }
   return *self;
 }
@@ -98,16 +94,18 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__next__() must be called with a range iterator instance as the first "
-        "argument");
+    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
   }
-  Object value(&scope, RangeIterator::cast(*self).next());
-  if (value.isError()) {
+  RangeIterator iter(&scope, *self);
+  Range range(&scope, iter.iterable());
+  word stop = range.stop();
+  word step = range.step();
+  word index = iter.index();
+  if ((step < 0 && index <= stop) || (step > 0 && index >= stop)) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
-  return *value;
+  iter.setIndex(index + step);
+  return SmallInt::fromWord(index);
 }
 
 RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
@@ -116,13 +114,14 @@ RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
   if (!self.isRangeIterator()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "__length_hint__() must be called with a range iterator instance as "
-        "the first argument");
+    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
   }
-  RangeIterator range_iterator(&scope, *self);
-  return SmallInt::fromWord(range_iterator.pendingLength());
+  RangeIterator iter(&scope, *self);
+  Range range(&scope, iter.iterable());
+  word stop = range.stop();
+  word step = range.step();
+  word index = iter.index();
+  return SmallInt::fromWord(std::abs((stop - index) / step));
 }
 
 }  // namespace python

@@ -863,11 +863,12 @@ RawObject Runtime::newRange(word start, word stop, word step) {
   return range;
 }
 
-RawObject Runtime::newRangeIterator(const Object& range) {
+RawObject Runtime::newRangeIterator(const Range& range) {
   HandleScope scope;
-  RangeIterator range_iterator(&scope, heap()->create<RawRangeIterator>());
-  range_iterator.setRange(*range);
-  return *range_iterator;
+  RangeIterator result(&scope, heap()->create<RawRangeIterator>());
+  result.setIterable(*range);
+  result.setIndex(range.start());
+  return *result;
 }
 
 RawObject Runtime::newSetIterator(const Object& set) {

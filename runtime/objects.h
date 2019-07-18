@@ -1376,31 +1376,6 @@ class RawRange : public RawHeapObject {
   RAW_OBJECT_COMMON(Range);
 };
 
-class RawRangeIterator : public RawHeapObject {
- public:
-  // Getters and setters.
-
-  // Bind the iterator to a specific range. The binding should not be changed
-  // after creation.
-  void setRange(RawObject range) const;
-
-  // Iteration.
-  RawObject next() const;
-
-  // Number of unconsumed values in the range iterator
-  word pendingLength() const;
-
-  // Layout.
-  static const int kRangeOffset = RawHeapObject::kSize;
-  static const int kCurValueOffset = kRangeOffset + kPointerSize;
-  static const int kSize = kCurValueOffset + kPointerSize;
-
-  RAW_OBJECT_COMMON(RangeIterator);
-
- private:
-  static bool isOutOfRange(word cur, word stop, word step);
-};
-
 class RawSlice : public RawHeapObject {
  public:
   // Getters.
@@ -1516,6 +1491,11 @@ class RawDictValueIterator : public RawDictIteratorBase {
 class RawListIterator : public RawIteratorBase {
  public:
   RAW_OBJECT_COMMON(ListIterator);
+};
+
+class RawRangeIterator : public RawIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(RangeIterator);
 };
 
 class RawSeqIterator : public RawIteratorBase {
@@ -4398,14 +4378,6 @@ inline RawObject RawProperty::deleter() const {
 
 inline void RawProperty::setDeleter(RawObject function) const {
   instanceVariableAtPut(kDeleterOffset, function);
-}
-
-// RawRangeIterator
-
-inline void RawRangeIterator::setRange(RawObject range) const {
-  auto r = RawRange::cast(range);
-  instanceVariableAtPut(kRangeOffset, r);
-  instanceVariableAtPut(kCurValueOffset, RawSmallInt::fromWord(r.start()));
 }
 
 // RawSlice

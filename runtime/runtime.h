@@ -185,7 +185,7 @@ class Runtime {
 
   RawObject newRange(word start, word stop, word step);
 
-  RawObject newRangeIterator(const Object& range);
+  RawObject newRangeIterator(const Range& range);
 
   RawObject newSetIterator(const Object& set);
 
