@@ -229,18 +229,13 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     runtime/mutex-linux.cpp)
 endif()
 
-execute_process(
-  COMMAND uname -m
-  OUTPUT_VARIABLE MACHINE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if ("${MACHINE_NAME}" STREQUAL "x86_64")
+if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
   set(
     RUNTIME_ARCH_SOURCES
     runtime/interpreter-gen-x64.cpp
   )
 else()
-  message(FATAL_ERROR "Unsupported architecture ${MACHINE_NAME}")
+  message(FATAL_ERROR "Unsupported architecture ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
 add_library(
