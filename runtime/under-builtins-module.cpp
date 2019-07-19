@@ -262,15 +262,11 @@ RawObject UnderBuiltinsModule::underByteArrayJoin(Thread* thread, Frame* frame,
                                 src.length());
   }
   // Check for error or slow path
-  if (!joined.isBytes()) return *joined;
+  if (!joined.isMutableBytes()) return *joined;
+  MutableBytes joined_bytes(&scope, *joined);
   ByteArray result(&scope, runtime->newByteArray());
-  Bytes joined_bytes(&scope, *joined);
-  if (joined.isSmallBytes()) {
-    runtime->byteArrayIadd(thread, result, joined_bytes, joined_bytes.length());
-  } else {
-    result.setBytes(*joined);
-    result.setNumItems(joined_bytes.length());
-  }
+  result.setBytes(*joined_bytes);
+  result.setNumItems(joined_bytes.length());
   return *result;
 }
 

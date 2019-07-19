@@ -118,7 +118,7 @@ void RawByteArray::downsize(word new_length) const {
   word original_length = numItems();
   DCHECK_BOUND(new_length, original_length);
   if (original_length == 0) return;
-  byte* dst = reinterpret_cast<byte*>(RawLargeBytes::cast(bytes()).address());
+  byte* dst = reinterpret_cast<byte*>(RawMutableBytes::cast(bytes()).address());
   std::memset(dst + new_length, 0, original_length - new_length);
   setNumItems(new_length);
 }
@@ -325,6 +325,21 @@ word RawMutableBytes::compareWithBytes(View<byte> that) {
     if (diff != 0) return diff;
   }
   return this_len - that_len;
+}
+
+void RawMutableBytes::replaceFromWithBytes(word index, RawBytes src, word len) {
+  DCHECK_BOUND(index + len, length());
+  byte* dst = reinterpret_cast<byte*>(address());
+  src.copyTo(dst + index, len);
+}
+
+RawObject RawMutableBytes::becomeImmutable() {
+  word len = length();
+  if (len <= SmallBytes::kMaxLength) {
+    return SmallBytes::fromBytes({reinterpret_cast<byte*>(address()), len});
+  }
+  setHeader(header().withLayoutId(LayoutId::kLargeBytes));
+  return *this;
 }
 
 // RawTuple

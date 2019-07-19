@@ -286,7 +286,7 @@ RawObject Runtime::addBuiltinType(SymbolId name, LayoutId subclass_id,
 RawObject Runtime::newByteArray() {
   HandleScope scope;
   ByteArray result(&scope, heap()->create<RawByteArray>());
-  result.setBytes(Bytes::empty());
+  result.setBytes(empty_mutable_bytes_);
   result.setNumItems(0);
   return *result;
 }
@@ -794,9 +794,20 @@ RawObject Runtime::mutableBytesFromBytes(Thread* thread, const Bytes& bytes) {
   return *mb;
 }
 
+RawObject Runtime::mutableBytesWith(word length, byte value) {
+  if (length == 0) return empty_mutable_bytes_;
+  DCHECK(length > 0, "invalid length %ld", length);
+  HandleScope scope;
+  MutableBytes result(&scope, heap()->createMutableBytes(length));
+  std::memset(reinterpret_cast<byte*>(result.address()), value, length);
+  return *result;
+}
+
 RawObject Runtime::newIntFromCPtr(void* ptr) {
   return newInt(reinterpret_cast<word>(ptr));
 }
+
+RawObject Runtime::emptyMutableBytes() { return empty_mutable_bytes_; }
 
 RawObject Runtime::emptySlice() { return empty_slice_; }
 
@@ -2381,11 +2392,9 @@ void Runtime::byteArrayEnsureCapacity(Thread* thread, const ByteArray& array,
   word curr_capacity = array.capacity();
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);
-  DCHECK(new_capacity > SmallBytes::kMaxLength,
-         "non-empty ByteArray must be backed by LargeBytes");
   HandleScope scope(thread);
-  Bytes old_bytes(&scope, array.bytes());
-  LargeBytes new_bytes(&scope, heap()->createLargeBytes(new_capacity));
+  MutableBytes old_bytes(&scope, array.bytes());
+  MutableBytes new_bytes(&scope, newMutableBytesUninitialized(new_capacity));
   byte* dst = reinterpret_cast<byte*>(new_bytes.address());
   word old_length = array.numItems();
   old_bytes.copyTo(dst, old_length);
@@ -2401,8 +2410,8 @@ void Runtime::byteArrayExtend(Thread* thread, const ByteArray& array,
   word new_length = num_items + length;
   byteArrayEnsureCapacity(thread, array, new_length);
   byte* dst =
-      reinterpret_cast<byte*>(LargeBytes::cast(array.bytes()).address());
-  std::memcpy(dst + num_items, view.data(), length);
+      reinterpret_cast<byte*>(MutableBytes::cast(array.bytes()).address());
+  std::memcpy(dst + num_items, view.data(), view.length());
   array.setNumItems(new_length);
 }
 
@@ -2413,9 +2422,8 @@ void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
   word num_items = array.numItems();
   word new_length = num_items + length;
   byteArrayEnsureCapacity(thread, array, new_length);
-  byte* dst =
-      reinterpret_cast<byte*>(LargeBytes::cast(array.bytes()).address());
-  bytes.copyTo(dst + num_items, length);
+  MutableBytes::cast(array.bytes())
+      .replaceFromWithBytes(num_items, *bytes, length);
   array.setNumItems(new_length);
 }
 
@@ -2433,11 +2441,10 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
     return SmallBytes::fromBytes({buffer, len});
   }
   HandleScope scope(thread);
-  LargeBytes result(&scope, heap()->createLargeBytes(len));
-  byte* buffer = reinterpret_cast<byte*>(result.address());
-  self.copyTo(buffer, self_len);
-  other.copyTo(buffer + self_len, other_len);
-  return *result;
+  MutableBytes result(&scope, newMutableBytesUninitialized(len));
+  result.replaceFromWithBytes(0, *self, self_len);
+  result.replaceFromWithBytes(self_len, *other, other_len);
+  return result.becomeImmutable();
 }
 
 RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
@@ -2450,7 +2457,7 @@ RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
     return SmallBytes::fromBytes({buffer, new_length});
   }
   HandleScope scope(thread);
-  LargeBytes copy(&scope, heap()->createLargeBytes(new_length));
+  MutableBytes copy(&scope, newMutableBytesUninitialized(new_length));
   byte* dst = reinterpret_cast<byte*>(copy.address());
   if (old_length < new_length) {
     original.copyTo(dst, old_length);
@@ -2458,21 +2465,21 @@ RawObject Runtime::bytesCopyWithSize(Thread* thread, const Bytes& original,
   } else {
     original.copyTo(dst, new_length);
   }
-  return *copy;
+  return copy.becomeImmutable();
 }
 
 RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
                                   word length) {
   DCHECK_BOUND(length, items.length());
   HandleScope scope(thread);
-  Object result(&scope, Unbound::object());
+  MutableBytes result(&scope, empty_mutable_bytes_);
   byte buffer[SmallBytes::kMaxLength];
   byte* dst;
   if (length <= SmallBytes::kMaxLength) {
     dst = buffer;
   } else {
-    result = heap()->createLargeBytes(length);
-    dst = reinterpret_cast<byte*>(LargeBytes::cast(*result).address());
+    result = newMutableBytesUninitialized(length);
+    dst = reinterpret_cast<byte*>(MutableBytes::cast(*result).address());
   }
   for (word idx = 0; idx < length; idx++) {
     Object item(&scope, items.at(idx));
@@ -2491,13 +2498,19 @@ RawObject Runtime::bytesFromTuple(Thread* thread, const Tuple& items,
   }
   return length <= SmallBytes::kMaxLength
              ? SmallBytes::fromBytes({buffer, length})
-             : *result;
+             : result.becomeImmutable();
 }
 
 RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
                              const Tuple& src, word src_length) {
   DCHECK_BOUND(src_length, src.length());
-  if (src_length == 0) return Bytes::empty();
+  bool is_mutable = sep.isMutableBytes();
+  if (src_length == 0) {
+    if (is_mutable) {
+      return empty_mutable_bytes_;
+    }
+    return Bytes::empty();
+  }
   HandleScope scope(thread);
 
   // first pass to accumulate length and check types
@@ -2520,14 +2533,15 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
   }
 
   // second pass to accumulate concatenation
-  Object result(&scope, Unbound::object());
+  MutableBytes result(&scope, empty_mutable_bytes_);
   byte buffer[SmallBytes::kMaxLength];
-  byte* dst;
-  if (result_length <= SmallBytes::kMaxLength) {
+  byte* dst = nullptr;
+  bool is_small_bytes = result_length <= SmallBytes::kMaxLength && !is_mutable;
+  if (is_small_bytes) {
     dst = buffer;
   } else {
-    result = heap()->createLargeBytes(result_length);
-    dst = reinterpret_cast<byte*>(LargeBytes::cast(*result).address());
+    result = newMutableBytesUninitialized(result_length);
+    dst = reinterpret_cast<byte*>(MutableBytes::cast(*result).address());
   }
   const byte* const end = dst + result_length;
   for (word src_index = 0; src_index < src_length; src_index++) {
@@ -2551,9 +2565,8 @@ RawObject Runtime::bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
     dst += length;
   }
   DCHECK(dst == end, "unexpected number of bytes written");
-  return result_length <= SmallBytes::kMaxLength
-             ? SmallBytes::fromBytes({buffer, result_length})
-             : *result;
+  return is_small_bytes ? SmallBytes::fromBytes({buffer, result_length})
+                        : (is_mutable ? *result : result.becomeImmutable());
 }
 
 RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
@@ -2562,11 +2575,13 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
   DCHECK(count > 0, "count should be positive");
   DCHECK_BOUND(length, source.length());
   DCHECK_BOUND(count, kMaxWord / length);
+  bool is_mutable = source.isMutableBytes();
   if (length == 1) {
-    return newBytes(count, source.byteAt(0));
+    byte item = source.byteAt(0);
+    return is_mutable ? mutableBytesWith(count, item) : newBytes(count, item);
   }
   word new_length = length * count;
-  if (new_length <= SmallBytes::kMaxLength) {
+  if (!is_mutable && new_length <= SmallBytes::kMaxLength) {
     byte buffer[SmallBytes::kMaxLength];
     byte* dst = buffer;
     for (word i = 0; i < count; i++, dst += length) {
@@ -2575,12 +2590,11 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
     return SmallBytes::fromBytes({buffer, new_length});
   }
   HandleScope scope(thread);
-  LargeBytes result(&scope, heap()->createLargeBytes(new_length));
-  byte* dst = reinterpret_cast<byte*>(result.address());
-  for (word i = 0; i < count; i++, dst += length) {
-    source.copyTo(dst, length);
+  MutableBytes result(&scope, newMutableBytesUninitialized(new_length));
+  for (word i = 0; i < count * length; i += length) {
+    result.replaceFromWithBytes(i, *source, length);
   }
-  return *result;
+  return is_mutable ? *result : result.becomeImmutable();
 }
 
 RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
@@ -2594,11 +2608,14 @@ RawObject Runtime::bytesSlice(Thread* thread, const Bytes& self, word start,
     return SmallBytes::fromBytes({buffer, length});
   }
   HandleScope scope(thread);
-  LargeBytes result(&scope, heap()->createLargeBytes(length));
-  for (word i = 0, j = start; i < length; i++, j += step) {
-    result.byteAtPut(i, self.byteAt(j));
+  MutableBytes result(&scope, newMutableBytesUninitialized(length));
+  {
+    byte* dst = reinterpret_cast<byte*>(result.address());
+    for (word i = 0, j = start; i < length; i++, j += step) {
+      dst[i] = self.byteAt(j);
+    }
   }
-  return *result;
+  return result.becomeImmutable();
 }
 
 RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
@@ -2613,16 +2630,20 @@ RawObject Runtime::bytesSubseq(Thread* thread, const Bytes& self, word start,
     return SmallBytes::fromBytes({buffer, length});
   }
   HandleScope scope(thread);
-  LargeBytes copy(&scope, heap()->createLargeBytes(length));
-  const byte* src = reinterpret_cast<byte*>(LargeBytes::cast(*self).address());
-  byte* dst = reinterpret_cast<byte*>(copy.address());
-  std::memcpy(dst, src + start, length);
-  return *copy;
+  MutableBytes copy(&scope, newMutableBytesUninitialized(length));
+  {
+    byte* dst = reinterpret_cast<byte*>(copy.address());
+    const byte* src =
+        reinterpret_cast<byte*>(HeapObject::cast(*self).address());
+    std::memcpy(dst, src + start, length);
+  }
+  return copy.becomeImmutable();
 }
 
 RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
                                   word length, const Bytes& table,
-                                  const Bytes& del, word del_len) {
+                                  word table_len, const Bytes& del,
+                                  word del_len) {
   DCHECK_BOUND(length, self.length());
   DCHECK_BOUND(del_len, del.length());
   // calculate mapping table
@@ -2632,7 +2653,8 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
       new_byte[i] = i;
     }
   } else {
-    DCHECK(table.length() >= BytesBuiltins::kTranslationTableLength,
+    DCHECK_BOUND(table_len, table.length());
+    DCHECK(table_len == BytesBuiltins::kTranslationTableLength,
            "translation table must map every possible byte value");
     for (word i = 0; i < BytesBuiltins::kTranslationTableLength; i++) {
       new_byte[i] = table.byteAt(i);
@@ -2650,7 +2672,8 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
     }
   }
   // replace or delete each byte
-  if (new_length <= SmallBytes::kMaxLength) {
+  bool is_mutable = self.isMutableBytes();
+  if (new_length <= SmallBytes::kMaxLength && !is_mutable) {
     byte buffer[SmallBytes::kMaxLength];
     for (word i = 0, j = 0; j < new_length; i++) {
       DCHECK(i < length, "reached end of self before finishing translation");
@@ -2662,7 +2685,7 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
     return SmallBytes::fromBytes({buffer, new_length});
   }
   HandleScope scope(thread);
-  LargeBytes result(&scope, heap()->createLargeBytes(new_length));
+  MutableBytes result(&scope, newMutableBytesUninitialized(new_length));
   for (word i = 0, j = 0; j < new_length; i++) {
     DCHECK(i < length, "reached end of self before finishing translation");
     byte current = self.byteAt(i);
@@ -2670,7 +2693,7 @@ RawObject Runtime::bytesTranslate(Thread* thread, const Bytes& self,
       result.byteAtPut(j++, new_byte[current]);
     }
   }
-  return *result;
+  return is_mutable ? *result : result.becomeImmutable();
 }
 
 // List

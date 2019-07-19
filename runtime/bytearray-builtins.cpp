@@ -523,7 +523,7 @@ RawObject ByteArrayBuiltins::dunderNew(Thread* thread, Frame* frame,
   Layout layout(&scope, type.instanceLayout());
   Runtime* runtime = thread->runtime();
   ByteArray result(&scope, runtime->newInstance(layout));
-  result.setBytes(Bytes::empty());
+  result.setBytes(runtime->emptyMutableBytes());
   result.setNumItems(0);
   return *result;
 }
@@ -646,13 +646,15 @@ RawObject ByteArrayBuiltins::translate(Thread* thread, Frame* frame,
   Bytes translated(&scope, Bytes::empty());
   if (runtime->isInstanceOfBytes(*del)) {
     Bytes bytes(&scope, bytesUnderlying(thread, del));
-    translated = runtime->bytesTranslate(thread, self_bytes, self.numItems(),
-                                         table, bytes, bytes.length());
+    translated =
+        runtime->bytesTranslate(thread, self_bytes, self.numItems(), table,
+                                table_length, bytes, bytes.length());
   } else if (runtime->isInstanceOfByteArray(*del)) {
     ByteArray array(&scope, *del);
     Bytes bytes(&scope, array.bytes());
-    translated = runtime->bytesTranslate(thread, self_bytes, self.numItems(),
-                                         table, bytes, array.numItems());
+    translated =
+        runtime->bytesTranslate(thread, self_bytes, self.numItems(), table,
+                                table_length, bytes, array.numItems());
   } else {
     // TODO(T38246066): allow any bytes-like object
     return thread->raiseWithFmt(LayoutId::kTypeError,

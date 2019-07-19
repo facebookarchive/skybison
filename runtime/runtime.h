@@ -172,6 +172,9 @@ class Runtime {
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
 
+  // Returns the singleton empty mutablebytes. Guaranteed to not allocate.
+  RawObject emptyMutableBytes();
+
   // Returns the singleton empty slice. Guaranteed to not allocate.
   RawObject emptySlice();
 
@@ -439,13 +442,14 @@ class Runtime {
   RawObject bytesFromTuple(Thread* thread, const Tuple& items, word length);
 
   // Concatenates an iterable of bytes-like objects with a separator. Returns
-  // the concatenated bytes.
+  // Bytes or MutableBytes, depending on `sep`'s type.
   RawObject bytesJoin(Thread* thread, const Bytes& sep, word sep_length,
                       const Tuple& src, word src_length);
 
-  // Creates a new Bytes with the specified containing the first `length` bytes
-  // of the `source` repeated `count` times. Specifies `length` explicitly to
-  // allow for ByteArrays with extra allocated space.
+  // Creates a new Bytes or MutableBytes (depending on `source`'s type)
+  // containing the first `length` bytes of the `source` repeated `count` times.
+  // Specifies `length` explicitly to allow for ByteArrays with extra allocated
+  // space.
   RawObject bytesRepeat(Thread* thread, const Bytes& source, word length,
                         word count);
 
@@ -453,15 +457,17 @@ class Runtime {
   RawObject bytesSlice(Thread* thread, const Bytes& self, word start, word stop,
                        word step);
 
-  // Returns a new Bytes containing the subsequence of self
-  // with the given start index and length.
+  // Returns a new Bytes containing the Bytes or MutableBytes subsequence of
+  // self with the given start index and length.
   RawObject bytesSubseq(Thread* thread, const Bytes& self, word start,
                         word length);
 
-  // Returns a new Bytes containing a copy of `self` with all of the bytes in
-  // `del` removed, where the remaining bytes are mapped using `table`.
+  // Returns a new Bytes or MutableBytes copy of `self` with all of
+  // the bytes in `del` removed, where the remaining bytes are mapped using
+  // `table`.
   RawObject bytesTranslate(Thread* thread, const Bytes& self, word length,
-                           const Bytes& table, const Bytes& del, word del_len);
+                           const Bytes& table, word table_len, const Bytes& del,
+                           word del_len);
 
   // Ensures that the list has at least the desired capacity.
   // Allocates if the existing capacity is insufficient.
@@ -525,6 +531,7 @@ class Runtime {
 
   // Create a MutableBytes object from a given Bytes
   RawObject mutableBytesFromBytes(Thread* thread, const Bytes& bytes);
+  RawObject mutableBytesWith(word length, byte value);
 
   // Set related function, based on dict.
   // Add a value to set and return the object in set.

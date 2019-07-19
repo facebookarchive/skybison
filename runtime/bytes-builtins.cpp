@@ -409,14 +409,14 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
   Object del(&scope, args.get(2));
   if (runtime->isInstanceOfBytes(*del)) {
     Bytes bytes(&scope, bytesUnderlying(thread, del));
-    return runtime->bytesTranslate(thread, self, self.length(), table, bytes,
-                                   bytes.length());
+    return runtime->bytesTranslate(thread, self, self.length(), table,
+                                   table_length, bytes, bytes.length());
   }
   if (runtime->isInstanceOfByteArray(*del)) {
     ByteArray array(&scope, *del);
     Bytes bytes(&scope, array.bytes());
-    return runtime->bytesTranslate(thread, self, self.length(), table, bytes,
-                                   array.numItems());
+    return runtime->bytesTranslate(thread, self, self.length(), table,
+                                   table_length, bytes, array.numItems());
   }
   // TODO(T38246066): allow any bytes-like object
   return thread->raiseWithFmt(
