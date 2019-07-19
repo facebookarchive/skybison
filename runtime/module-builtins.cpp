@@ -97,8 +97,8 @@ int execDef(Thread* thread, const Module& module, PyModuleDef* def) {
 }
 
 const BuiltinAttribute ModuleBuiltins::kAttributes[] = {
-    {SymbolId::kDunderName, RawModule::kNameOffset},
     {SymbolId::kDunderDict, RawModule::kDictOffset, AttributeFlags::kReadOnly},
+    {SymbolId::kInvalid, RawModule::kNameOffset},
     {SymbolId::kSentinelId, -1},
 };
 

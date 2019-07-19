@@ -23,6 +23,17 @@ a = sys.__name__
   EXPECT_TRUE(a.equalsCStr("sys"));
 }
 
+TEST_F(ModuleBuiltinsTest, DunderNameOverwritesDoesNotAffectModuleNameField) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+import sys
+sys.__name__ = "ysy"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Module sys_module(&scope, moduleAt(&runtime_, "__main__", "sys"));
+  EXPECT_TRUE(isStrEqualsCStr(sys_module.name(), "sys"));
+}
+
 // TODO(T39575976): Add tests verifying internal names's hiding.
 
 TEST_F(ModuleBuiltinsTest, DunderDirReturnsList) {
