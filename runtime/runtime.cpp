@@ -1711,6 +1711,7 @@ void Runtime::initializePrimitiveInstances() {
   empty_tuple_ = heap()->createTuple(0);
   empty_frozen_set_ = newFrozenSet();
   empty_mutable_bytes_ = heap()->createMutableBytes(0);
+  empty_slice_ = heap()->create<RawSlice>();
   ellipsis_ = heap()->createEllipsis();
   callbacks_ = NoneType::object();
 }
@@ -2168,7 +2169,6 @@ void Runtime::createBuiltinsModule(Thread* thread) {
       typeDictAt(thread, object_dict, dunder_getattribute_name);
   Object dunder_setattr_name(&scope, symbols()->DunderSetattr());
   object_dunder_setattr_ = typeDictAt(thread, object_dict, dunder_setattr_name);
-  empty_slice_ = heap()->create<RawSlice>();
 
   // Mark functions that have an intrinsic implementation.
   for (word i = 0; BuiltinsModule::kIntrinsicIds[i] != SymbolId::kSentinelId;
