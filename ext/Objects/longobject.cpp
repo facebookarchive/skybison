@@ -327,6 +327,10 @@ PY_EXPORT int _PyLong_AsByteArray(PyLongObject* longobj, unsigned char* dst,
   return 0;
 }
 
+PY_EXPORT double _PyLong_Frexp(PyLongObject*, Py_ssize_t*) {
+  UNIMPLEMENTED("_PyLong_Frexp");
+}
+
 PY_EXPORT PyObject* _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
                                           int little_endian, int is_signed) {
   if (n == 0) return PyLong_FromLong(0);
@@ -341,6 +345,10 @@ PY_EXPORT PyObject* _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
   Object result(&scope,
                 runtime->bytesToInt(thread, source, endianness, is_signed));
   return result.isError() ? nullptr : ApiHandle::newReference(thread, *result);
+}
+
+PY_EXPORT PyObject* _PyLong_GCD(PyObject*, PyObject*) {
+  UNIMPLEMENTED("_PyLong_GCD");
 }
 
 PY_EXPORT int _PyLong_Sign(PyObject* vv) {

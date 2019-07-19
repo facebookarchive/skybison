@@ -7,6 +7,7 @@ extern "C" PyObject* PyInit__stat();
 extern "C" PyObject* PyInit__stentry();
 extern "C" PyObject* PyInit_atexit();
 extern "C" PyObject* PyInit_errno();
+extern "C" PyObject* PyInit_math();
 extern "C" PyObject* PyInit_posix();
 
 // _empty module to test loading from init tab
@@ -26,6 +27,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_stentry", PyInit__stentry},
     {"atexit", PyInit_atexit},
     {"errno", PyInit_errno},
+    {"math", PyInit_math},
     {"posix", PyInit_posix},
     {nullptr, nullptr},
 };

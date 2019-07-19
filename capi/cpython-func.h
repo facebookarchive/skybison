@@ -899,8 +899,10 @@ PyAPI_FUNC(int) _PyImport_ReleaseLock();
 PyAPI_FUNC(int)
     _PyLong_AsByteArray(PyLongObject*, unsigned char*, size_t, int, int);
 PyAPI_FUNC(int) _PyLong_AsInt(PyObject*);
+PyAPI_FUNC(double) _PyLong_Frexp(PyLongObject*, Py_ssize_t*);
 PyAPI_FUNC(PyObject*)
     _PyLong_FromByteArray(const unsigned char*, size_t, int, int);
+PyAPI_FUNC(PyObject*) _PyLong_GCD(PyObject*, PyObject*);
 PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject*);
 PyAPI_FUNC(int) _PyLong_Sign(PyObject*);
 PyAPI_FUNC(int) _PyOS_URandom(void*, Py_ssize_t);
