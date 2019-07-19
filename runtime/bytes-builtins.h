@@ -54,6 +54,7 @@ class BytesBuiltins
   static RawObject dunderGetItem(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderGt(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderHash(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLe(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLen(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderLt(Thread* thread, Frame* frame, word nargs);
@@ -70,6 +71,20 @@ class BytesBuiltins
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(BytesBuiltins);
+};
+
+class BytesIteratorBuiltins
+    : public Builtins<BytesIteratorBuiltins, SymbolId::kBytesIterator,
+                      LayoutId::kBytesIterator> {
+ public:
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
+
+  static const BuiltinMethod kBuiltinMethods[];
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(BytesIteratorBuiltins);
 };
 
 }  // namespace python

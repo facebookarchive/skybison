@@ -326,6 +326,14 @@ RawObject Runtime::newBytesWithAll(View<byte> array) {
   return *result;
 }
 
+RawObject Runtime::newBytesIterator(Thread* thread, const Bytes& bytes) {
+  HandleScope scope(thread);
+  BytesIterator result(&scope, heap()->create<RawBytesIterator>());
+  result.setIndex(0);
+  result.setIterable(*bytes);
+  return *result;
+}
+
 RawObject Runtime::newType() { return newTypeWithMetaclass(LayoutId::kType); }
 
 RawObject Runtime::newTypeWithMetaclass(LayoutId metaclass_id) {
@@ -1380,6 +1388,7 @@ void Runtime::initializeHeapTypes() {
   AsyncGeneratorBuiltins::initialize(this);
   ByteArrayBuiltins::initialize(this);
   ByteArrayIteratorBuiltins::initialize(this);
+  BytesIteratorBuiltins::initialize(this);
   ClassMethodBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kCode, LayoutId::kCode, LayoutId::kObject);
   CodeBuiltins::initialize(this);

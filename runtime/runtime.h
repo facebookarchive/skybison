@@ -84,6 +84,7 @@ class Runtime {
 
   RawObject newBytes(word length, byte fill);
   RawObject newBytesWithAll(View<byte> array);
+  RawObject newBytesIterator(Thread* thread, const Bytes& bytes);
 
   RawObject newType();
   RawObject newTypeWithMetaclass(LayoutId metaclass_id);

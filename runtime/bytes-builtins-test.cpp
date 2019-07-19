@@ -8,6 +8,7 @@ namespace python {
 using namespace testing;
 
 using BytesBuiltinsTest = RuntimeFixture;
+using BytesIteratorBuiltinsTest = RuntimeFixture;
 
 TEST_F(BytesBuiltinsTest, BuiltinBaseIsBytes) {
   HandleScope scope(thread_);
@@ -504,6 +505,13 @@ TEST_F(BytesBuiltinsTest, DunderHashWithEquivalentBytesReturnsSameHash) {
   EXPECT_TRUE(result1.isSmallInt());
   EXPECT_TRUE(result2.isSmallInt());
   EXPECT_EQ(*result1, *result2);
+}
+
+TEST_F(BytesBuiltinsTest, DunderIterReturnsBytesIterator) {
+  HandleScope scope(thread_);
+  Object self(&scope, Bytes::empty());
+  Object result(&scope, runBuiltin(BytesBuiltins::dunderIter, self));
+  EXPECT_TRUE(result.isBytesIterator());
 }
 
 TEST_F(BytesBuiltinsTest, DunderLeWithTooFewArgsRaisesTypeError) {
@@ -1379,6 +1387,51 @@ TEST_F(BytesBuiltinsTest, TranslateDeletesAllBytes) {
   Object del(&scope, runtime_.newBytesWithAll(abc));
   Object result(&scope, runBuiltin(BytesBuiltins::translate, self, table, del));
   EXPECT_EQ(result, Bytes::empty());
+}
+
+TEST_F(BytesIteratorBuiltinsTest, DunderLengthHintReturnsRemainingCount) {
+  HandleScope scope(thread_);
+  const byte data[] = {100, 0, 37};
+  Bytes bytes(&scope, SmallBytes::fromBytes(data));
+  Object iter(&scope, runtime_.newBytesIterator(thread_, bytes));
+  Object result(&scope,
+                runBuiltin(BytesIteratorBuiltins::dunderLengthHint, iter));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+  ASSERT_TRUE(!runBuiltin(BytesIteratorBuiltins::dunderNext, iter).isError());
+  result = runBuiltin(BytesIteratorBuiltins::dunderLengthHint, iter);
+  EXPECT_TRUE(isIntEqualsWord(*result, 2));
+  ASSERT_TRUE(!runBuiltin(BytesIteratorBuiltins::dunderNext, iter).isError());
+  result = runBuiltin(BytesIteratorBuiltins::dunderLengthHint, iter);
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+  ASSERT_TRUE(!runBuiltin(BytesIteratorBuiltins::dunderNext, iter).isError());
+  result = runBuiltin(BytesIteratorBuiltins::dunderLengthHint, iter);
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  EXPECT_TRUE(raised(runBuiltin(BytesIteratorBuiltins::dunderNext, iter),
+                     LayoutId::kStopIteration));
+}
+
+TEST_F(BytesIteratorBuiltinsTest, DunderIterReturnsSelf) {
+  HandleScope scope(thread_);
+  const byte data[] = {100, 0, 37};
+  Bytes bytes(&scope, SmallBytes::fromBytes(data));
+  Object iter(&scope, runtime_.newBytesIterator(thread_, bytes));
+  Object result(&scope, runBuiltin(BytesIteratorBuiltins::dunderIter, iter));
+  EXPECT_EQ(result, iter);
+}
+
+TEST_F(BytesIteratorBuiltinsTest, DunderNextReturnsNextElement) {
+  HandleScope scope(thread_);
+  const byte data[] = {100, 0, 37};
+  Bytes bytes(&scope, SmallBytes::fromBytes(data));
+  Object iter(&scope, runtime_.newBytesIterator(thread_, bytes));
+  Object result(&scope, runBuiltin(BytesIteratorBuiltins::dunderNext, iter));
+  EXPECT_TRUE(isIntEqualsWord(*result, 100));
+  result = runBuiltin(BytesIteratorBuiltins::dunderNext, iter);
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  result = runBuiltin(BytesIteratorBuiltins::dunderNext, iter);
+  EXPECT_TRUE(isIntEqualsWord(*result, 37));
+  EXPECT_TRUE(raised(runBuiltin(BytesIteratorBuiltins::dunderNext, iter),
+                     LayoutId::kStopIteration));
 }
 
 }  // namespace python

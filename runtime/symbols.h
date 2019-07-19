@@ -347,6 +347,7 @@ class Runtime;
   V(ByteArrayIterator, "bytearray_iterator")                                   \
   V(Byteorder, "byteorder")                                                    \
   V(Bytes, "bytes")                                                            \
+  V(BytesIterator, "bytes_iterator")                                           \
   V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
   V(Cast, "cast")                                                              \

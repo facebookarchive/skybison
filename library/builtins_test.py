@@ -130,6 +130,12 @@ class BytesTest(unittest.TestCase):
             b"".__add__(2)
         self.assertEqual(str(context.exception), "can't concat int to bytes")
 
+    def test_dunder_iter_returns_iterator(self):
+        b = b"123"
+        it = b.__iter__()
+        self.assertTrue(hasattr(it, "__next__"))
+        self.assertIs(iter(it), it)
+
     def test_dunder_new_with_str_without_encoding_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytes("foo")
@@ -282,6 +288,14 @@ class BytesTest(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             haystack.index(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
+
+    def test_iteration_returns_ints(self):
+        expected = [97, 98, 99, 100]
+        index = 0
+        for val in b"abcd":
+            self.assertEqual(val, expected[index])
+            index += 1
+        self.assertEqual(index, len(expected))
 
 
 class DictTests(unittest.TestCase):

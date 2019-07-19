@@ -31,6 +31,7 @@ class Handle;
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
+  V(BytesIterator)                                                             \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
@@ -263,6 +264,7 @@ class RawObject {
   bool isBoundMethod() const;
   bool isByteArray() const;
   bool isByteArrayIterator() const;
+  bool isBytesIterator() const;
   bool isClassMethod() const;
   bool isCode() const;
   bool isComplex() const;
@@ -1452,6 +1454,11 @@ class RawIteratorBase : public RawHeapObject {
 class RawByteArrayIterator : public RawIteratorBase {
  public:
   RAW_OBJECT_COMMON(ByteArrayIterator);
+};
+
+class RawBytesIterator : public RawIteratorBase {
+ public:
+  RAW_OBJECT_COMMON(BytesIterator);
 };
 
 class RawDictIteratorBase : public RawIteratorBase {
@@ -2882,6 +2889,10 @@ inline bool RawObject::isByteArray() const {
 
 inline bool RawObject::isByteArrayIterator() const {
   return isHeapObjectWithLayout(LayoutId::kByteArrayIterator);
+}
+
+inline bool RawObject::isBytesIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kBytesIterator);
 }
 
 inline bool RawObject::isClassMethod() const {

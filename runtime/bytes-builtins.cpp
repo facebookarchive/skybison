@@ -135,6 +135,7 @@ const BuiltinMethod BytesBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderGe, dunderGe},
     {SymbolId::kDunderGt, dunderGt},
     {SymbolId::kDunderHash, dunderHash},
+    {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLe, dunderLe},
     {SymbolId::kDunderLen, dunderLen},
     {SymbolId::kDunderLt, dunderLt},
@@ -235,6 +236,18 @@ RawObject BytesBuiltins::dunderHash(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kBytes);
   }
   return runtime->hash(*self);
+}
+
+RawObject BytesBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfBytes(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, SymbolId::kBytes);
+  }
+  Bytes self(&scope, bytesUnderlying(thread, self_obj));
+  return runtime->newBytesIterator(thread, self);
 }
 
 RawObject BytesBuiltins::dunderLe(Thread* thread, Frame* frame, word nargs) {
@@ -408,6 +421,55 @@ RawObject BytesBuiltins::translate(Thread* thread, Frame* frame, word nargs) {
   // TODO(T38246066): allow any bytes-like object
   return thread->raiseWithFmt(
       LayoutId::kTypeError, "a bytes-like object is required, not '%T'", &del);
+}
+
+const BuiltinMethod BytesIteratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLengthHint, dunderLengthHint},
+    {SymbolId::kDunderNext, dunderNext},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+RawObject BytesIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isBytesIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kBytesIterator);
+  }
+  return *self;
+}
+
+RawObject BytesIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isBytesIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kBytesIterator);
+  }
+  BytesIterator iter(&scope, *self);
+  Bytes underlying(&scope, iter.iterable());
+  word index = iter.index();
+  if (index >= underlying.length()) {
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
+  }
+  iter.setIndex(index + 1);
+  return SmallInt::fromWord(underlying.byteAt(index));
+}
+
+RawObject BytesIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isBytesIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kBytesIterator);
+  }
+  BytesIterator iter(&scope, *self);
+  Bytes underlying(&scope, iter.iterable());
+  return SmallInt::fromWord(underlying.length() - iter.index());
 }
 
 }  // namespace python

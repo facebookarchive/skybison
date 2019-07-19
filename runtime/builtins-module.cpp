@@ -88,6 +88,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kByteArray, LayoutId::kByteArray},
     {SymbolId::kByteArrayIterator, LayoutId::kByteArrayIterator},
     {SymbolId::kBytes, LayoutId::kBytes},
+    {SymbolId::kBytesIterator, LayoutId::kBytesIterator},
     {SymbolId::kBytesWarning, LayoutId::kBytesWarning},
     {SymbolId::kChildProcessError, LayoutId::kChildProcessError},
     {SymbolId::kClassmethod, LayoutId::kClassMethod},

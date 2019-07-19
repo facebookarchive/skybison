@@ -39,8 +39,7 @@ __name__ = "collections.abc"
 # Note:  in other implementations, these types might not be distinct
 # and they may have their own implementation specific types that
 # are not included on this list.
-# TODO(T42612384)
-#bytes_iterator = type(iter(b''))
+bytes_iterator = type(iter(b''))
 bytearray_iterator = type(iter(bytearray()))
 #callable_iterator = ???
 dict_keyiterator = type(iter({}.keys()))

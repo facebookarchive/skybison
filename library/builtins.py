@@ -1233,7 +1233,7 @@ class bytes(bootstrap=True):
         pass
 
     def __iter__(self):
-        _unimplemented()
+        pass
 
     def __le__(self, other):
         pass
@@ -1471,6 +1471,17 @@ class bytes(bootstrap=True):
 
     def zfill(self):
         _unimplemented()
+
+
+class bytes_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+    def __next__(self):
+        pass
 
 
 @_patch

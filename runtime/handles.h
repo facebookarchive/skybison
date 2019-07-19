@@ -92,6 +92,7 @@ class WARN_UNUSED Handle : public T {
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
+  V(BytesIterator)                                                             \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
   V(Complex)                                                                   \
