@@ -10,41 +10,88 @@
 namespace python {
 
 RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
-                                const char* c_doc,
-                                Function::ExtensionType flags) {
+                                const char* c_doc, ExtensionMethodType type) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Function function(&scope, runtime->newFunction());
-  Object name(&scope, runtime->newStrFromCStr(c_name));
-  function.setName(*name);
-  function.setCode(runtime->newIntFromCPtr(meth));
-  if (c_doc != nullptr) {
-    Object doc(&scope, runtime->newStrFromCStr(c_doc));
-    function.setDoc(*doc);
-  }
-  switch (flags) {
-    case Function::ExtensionType::kMethNoArgs:
-      function.setEntry(methodTrampolineNoArgs);
-      function.setEntryKw(methodTrampolineNoArgsKw);
-      function.setEntryEx(methodTrampolineNoArgsEx);
+  Function::Entry entry;
+  Function::Entry entry_kw;
+  Function::Entry entry_ex;
+  switch (type) {
+    case ExtensionMethodType::kMethNoArgs:
+      entry = methodTrampolineNoArgs;
+      entry_kw = methodTrampolineNoArgsKw;
+      entry_ex = methodTrampolineNoArgsEx;
       break;
-    case Function::ExtensionType::kMethO:
-      function.setEntry(methodTrampolineOneArg);
-      function.setEntryKw(methodTrampolineOneArgKw);
-      function.setEntryEx(methodTrampolineOneArgEx);
+    case ExtensionMethodType::kMethO:
+      entry = methodTrampolineOneArg;
+      entry_kw = methodTrampolineOneArgKw;
+      entry_ex = methodTrampolineOneArgEx;
       break;
-    case Function::ExtensionType::kMethVarArgs:
-      function.setEntry(methodTrampolineVarArgs);
-      function.setEntryKw(methodTrampolineVarArgsKw);
-      function.setEntryEx(methodTrampolineVarArgsEx);
+    case ExtensionMethodType::kMethVarArgs:
+      entry = methodTrampolineVarArgs;
+      entry_kw = methodTrampolineVarArgsKw;
+      entry_ex = methodTrampolineVarArgsEx;
       break;
-    case Function::ExtensionType::kMethVarArgsAndKeywords:
-      function.setEntry(methodTrampolineKeywords);
-      function.setEntryKw(methodTrampolineKeywordsKw);
-      function.setEntryEx(methodTrampolineKeywordsEx);
+    case ExtensionMethodType::kMethVarArgsAndKeywords:
+      entry = methodTrampolineKeywords;
+      entry_kw = methodTrampolineKeywordsKw;
+      entry_ex = methodTrampolineKeywordsEx;
       break;
     default:
       UNIMPLEMENTED("Unsupported MethodDef type");
+  }
+  Function function(&scope, runtime->newFunction());
+  function.setName(runtime->newStrFromCStr(c_name));
+  function.setCode(runtime->newIntFromCPtr(meth));
+  function.setEntry(entry);
+  function.setEntryKw(entry_kw);
+  function.setEntryEx(entry_ex);
+  if (c_doc != nullptr) {
+    function.setDoc(runtime->newStrFromCStr(c_doc));
+  }
+  return *function;
+}
+
+RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
+                                      void* meth, const char* c_doc,
+                                      ExtensionMethodType type) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function::Entry entry;
+  Function::Entry entry_kw;
+  Function::Entry entry_ex;
+  switch (type) {
+    case ExtensionMethodType::kMethNoArgs:
+      entry = moduleTrampolineNoArgs;
+      entry_kw = moduleTrampolineNoArgsKw;
+      entry_ex = moduleTrampolineNoArgsEx;
+      break;
+    case ExtensionMethodType::kMethO:
+      entry = moduleTrampolineOneArg;
+      entry_kw = moduleTrampolineOneArgKw;
+      entry_ex = moduleTrampolineOneArgEx;
+      break;
+    case ExtensionMethodType::kMethVarArgs:
+      entry = moduleTrampolineVarArgs;
+      entry_kw = moduleTrampolineVarArgsKw;
+      entry_ex = moduleTrampolineVarArgsEx;
+      break;
+    case ExtensionMethodType::kMethVarArgsAndKeywords:
+      entry = moduleTrampolineKeywords;
+      entry_kw = moduleTrampolineKeywordsKw;
+      entry_ex = moduleTrampolineKeywordsEx;
+      break;
+    default:
+      UNIMPLEMENTED("Unsupported MethodDef type");
+  }
+  Function function(&scope, runtime->newFunction());
+  function.setName(runtime->newStrFromCStr(c_name));
+  function.setCode(runtime->newIntFromCPtr(meth));
+  function.setEntry(entry);
+  function.setEntryKw(entry_kw);
+  function.setEntryEx(entry_ex);
+  if (c_doc != nullptr) {
+    function.setDoc(runtime->newStrFromCStr(c_doc));
   }
   return *function;
 }

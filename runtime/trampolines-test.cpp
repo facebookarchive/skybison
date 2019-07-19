@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "frame.h"
+#include "function-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
 
@@ -874,11 +875,9 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesNoArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineNoArgs);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -900,11 +899,9 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesArgsRaisesTypeError) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineNoArgs);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -926,11 +923,9 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReturnsNullRaisesSystemError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineNoArgs);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -952,11 +947,9 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesKwArgsRaisesTypeError) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineNoArgsKw);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, newEmptyCode());
@@ -984,11 +977,9 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesZeroKwArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineNoArgsKw);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls the builtin with (foo='bar')
   Code code(&scope, newEmptyCode());
@@ -1016,11 +1007,9 @@ TEST_F(TrampolinesTest,
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineNoArgsEx);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1047,11 +1036,9 @@ TEST_F(TrampolinesTest, ExtensionModuleNoArgReceivesVariableArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineNoArgsEx);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethNoArgs));
 
   // Set up a code object that calls with (*())
   Code code(&scope, newEmptyCode());
@@ -1078,11 +1065,9 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesNoArgsRaisesTypeError) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineOneArg);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1102,11 +1087,9 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgReturns) {
   binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineOneArg);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -1129,11 +1112,9 @@ TEST_F(TrampolinesTest,
   binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineOneArg);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function with (123, 456)
   Code code(&scope, newEmptyCode());
@@ -1156,11 +1137,9 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReturnsNullRaisesSystemError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineOneArg);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1183,11 +1162,9 @@ TEST_F(TrampolinesTest,
   binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineOneArgKw);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, newEmptyCode());
@@ -1215,11 +1192,9 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesKwArgsRaisesTypeError) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineOneArgKw);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, newEmptyCode());
@@ -1247,11 +1222,9 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgExReturns) {
   binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineOneArgEx);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1277,11 +1250,9 @@ TEST_F(TrampolinesTest, ExtensionModuleOneArgReceivesOneArgAndEmptyKwReturns) {
   binaryfunc func = [](PyObject*, PyObject* arg) -> PyObject* { return arg; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineOneArgEx);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
@@ -1312,11 +1283,9 @@ TEST_F(TrampolinesTest,
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineOneArgEx);
+  Function callee(
+      &scope, functionFromModuleMethodDef(thread_, "foo", bit_cast<void*>(func),
+                                          "", ExtensionMethodType::kMethO));
 
   // Set up a code object that calls with (*(10), {2:3})
   Code code(&scope, newEmptyCode());
@@ -1349,11 +1318,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesNoArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineVarArgs);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1378,11 +1345,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineVarArgs);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -1404,11 +1369,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReturnsNullRaisesSystemError) {
   binaryfunc func = [](PyObject*, PyObject*) -> PyObject* { return nullptr; };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineVarArgs);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1433,11 +1396,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesZeroKwArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineVarArgsKw);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the builtin with (1111, {})
   Code code(&scope, newEmptyCode());
@@ -1465,11 +1426,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesKwArgsRaisesTypeError) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineVarArgsKw);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls the builtin with (1111, foo='bar')
   Code code(&scope, newEmptyCode());
@@ -1502,11 +1461,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineVarArgsEx);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1537,11 +1494,9 @@ TEST_F(TrampolinesTest, ExtensionModuleVarArgReceivesVarArgsAndEmptyKwReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineVarArgsEx);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
@@ -1572,11 +1527,9 @@ TEST_F(TrampolinesTest,
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineVarArgsEx);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgs));
 
   // Set up a code object that calls with (*(10), {})
   Code code(&scope, newEmptyCode());
@@ -1609,11 +1562,9 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesNoArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineKeywords);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1638,11 +1589,9 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineKeywords);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the function with a single argument.
   Code code(&scope, newEmptyCode());
@@ -1666,11 +1615,9 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReturnsNullRaisesSystemError) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntry(moduleTrampolineKeywords);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the function without arguments
   Code code(&scope, newEmptyCode());
@@ -1699,11 +1646,9 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesKwArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineKeywordsKw);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the builtin with ("bar", foo=1111)
   Code code(&scope, newEmptyCode());
@@ -1736,11 +1681,9 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesMultipleArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineKeywordsKw);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the builtin with (123, 456, foo=789)
   Code code(&scope, newEmptyCode());
@@ -1779,11 +1722,9 @@ TEST_F(TrampolinesTest,
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryKw(moduleTrampolineKeywordsKw);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls the builtin with ("foo"=1234, "bar"=5678)
   Code code(&scope, newEmptyCode());
@@ -1817,11 +1758,9 @@ TEST_F(TrampolinesTest, ExtensionModuleKeywordArgReceivesVariableArgsReturns) {
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineKeywordsEx);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls with (*(10))
   Code code(&scope, newEmptyCode());
@@ -1856,11 +1795,9 @@ TEST_F(TrampolinesTest,
   };
 
   HandleScope scope(thread_);
-  Str mod_name(&scope, runtime_.newStrFromCStr("foobar"));
-  Function callee(&scope, runtime_.newFunction());
-  callee.setModule(runtime_.newModule(mod_name));
-  callee.setCode(runtime_.newIntFromCPtr(bit_cast<void*>(func)));
-  callee.setEntryEx(moduleTrampolineKeywordsEx);
+  Function callee(&scope, functionFromModuleMethodDef(
+                              thread_, "foo", bit_cast<void*>(func), "",
+                              ExtensionMethodType::kMethVarArgsAndKeywords));
 
   // Set up a code object that calls with (*(10), **{"foo":1111})
   Code code(&scope, newEmptyCode());

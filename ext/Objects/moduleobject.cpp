@@ -3,6 +3,8 @@
 #include "builtins-module.h"
 #include "cpython-data.h"
 #include "cpython-func.h"
+#include "function-builtins.h"
+#include "function-utils.h"
 #include "handles.h"
 #include "module-builtins.h"
 #include "objects.h"
@@ -46,39 +48,13 @@ PY_EXPORT PyObject* PyModule_Create2(struct PyModuleDef* def, int) {
             "module functions cannot set METH_CLASS or METH_STATIC");
         return nullptr;
       }
-      Function function(&scope, runtime->newFunction());
-      Str function_name(&scope, runtime->newStrFromCStr(fdef->ml_name));
-      function.setName(*function_name);
-      function.setCode(runtime->newIntFromCPtr(bit_cast<void*>(fdef->ml_meth)));
-      switch (fdef->ml_flags) {
-        case METH_NOARGS:
-          function.setEntry(moduleTrampolineNoArgs);
-          function.setEntryKw(moduleTrampolineNoArgsKw);
-          function.setEntryEx(moduleTrampolineNoArgsEx);
-          break;
-        case METH_O:
-          function.setEntry(moduleTrampolineOneArg);
-          function.setEntryKw(moduleTrampolineOneArgKw);
-          function.setEntryEx(moduleTrampolineOneArgEx);
-          break;
-        case METH_VARARGS:
-          function.setEntry(moduleTrampolineVarArgs);
-          function.setEntryKw(moduleTrampolineVarArgsKw);
-          function.setEntryEx(moduleTrampolineVarArgsEx);
-          break;
-        case METH_VARARGS | METH_KEYWORDS:
-          function.setEntry(moduleTrampolineKeywords);
-          function.setEntryKw(moduleTrampolineKeywordsKw);
-          function.setEntryEx(moduleTrampolineKeywordsEx);
-          break;
-        case METH_FASTCALL:
-          UNIMPLEMENTED("METH_FASTCALL");
-        default:
-          UNIMPLEMENTED(
-              "Bad call flags in PyCFunction_Call. METH_OLDARGS is no longer "
-              "supported!");
-      }
+      Function function(
+          &scope, functionFromModuleMethodDef(
+                      thread, fdef->ml_name, bit_cast<void*>(fdef->ml_meth),
+                      fdef->ml_doc, methodTypeFromMethodFlags(fdef->ml_flags)));
+
       function.setModule(*module);
+      Object function_name(&scope, function.name());
       runtime->moduleAtPut(module, function_name, function);
     }
   }

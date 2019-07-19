@@ -8,6 +8,7 @@
 
 #include "builtins-module.h"
 #include "function-builtins.h"
+#include "function-utils.h"
 #include "handles.h"
 #include "int-builtins.h"
 #include "mro.h"
@@ -305,21 +306,6 @@ static ExtensionSlot slotToTypeSlot(int slot) {
       return ExtensionSlot::kFinalize;
     default:
       return ExtensionSlot::kEnd;
-  }
-}
-
-static Function::ExtensionType flagToFunctionType(int flag) {
-  switch (flag) {
-    case METH_NOARGS:
-      return Function::ExtensionType::kMethNoArgs;
-    case METH_O:
-      return Function::ExtensionType::kMethO;
-    case METH_VARARGS:
-      return Function::ExtensionType::kMethVarArgs;
-    case METH_VARARGS | METH_KEYWORDS:
-      return Function::ExtensionType::kMethVarArgsAndKeywords;
-    default:
-      UNIMPLEMENTED("Unsupported function type");
   }
 }
 
@@ -1626,10 +1612,10 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     for (word i = 0; methods[i].ml_name != nullptr; i++) {
       Object name(&scope, runtime->newStrFromCStr(methods[i].ml_name));
       Object function(
-          &scope,
-          functionFromMethodDef(
-              thread, methods[i].ml_name, bit_cast<void*>(methods[i].ml_meth),
-              methods[i].ml_doc, flagToFunctionType(methods[i].ml_flags)));
+          &scope, functionFromMethodDef(
+                      thread, methods[i].ml_name,
+                      bit_cast<void*>(methods[i].ml_meth), methods[i].ml_doc,
+                      methodTypeFromMethodFlags(methods[i].ml_flags)));
       runtime->dictAtPutInValueCell(thread, dict, name, function);
     }
   }

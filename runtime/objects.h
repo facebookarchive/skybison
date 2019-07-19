@@ -1669,13 +1669,6 @@ class RawFunction : public RawHeapObject {
    */
   using Entry = RawObject (*)(Thread*, Frame*, word);
 
-  enum class ExtensionType {
-    kMethNoArgs,
-    kMethO,
-    kMethVarArgs,
-    kMethVarArgsAndKeywords,
-  };
-
   enum Flags {
     kNone = 0,
     // Matching Code::Flags (and CPython)

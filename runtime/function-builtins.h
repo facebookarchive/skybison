@@ -8,9 +8,19 @@
 
 namespace python {
 
+enum class ExtensionMethodType {
+  kMethNoArgs = 4,
+  kMethO = 8,
+  kMethVarArgs = 1,
+  kMethVarArgsAndKeywords = 3,
+};
+
 RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
-                                const char* c_doc,
-                                Function::ExtensionType flags);
+                                const char* c_doc, ExtensionMethodType type);
+
+RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
+                                      void* meth, const char* c_doc,
+                                      ExtensionMethodType type);
 
 RawObject functionGetAttribute(Thread* thread, const Function& function,
                                const Object& name_str);
