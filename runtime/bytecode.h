@@ -273,6 +273,8 @@ namespace python {
   V(STORE_ATTR_CACHED, 254, doStoreAttrCached)                                 \
   V(LOAD_ATTR_CACHED, 255, doLoadAttrCached)
 
+const word kNumBytecodes = 256;
+
 enum Bytecode {
 #define ENUM(name, value, handler) name = value,
   FOREACH_BYTECODE(ENUM)

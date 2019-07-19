@@ -96,7 +96,7 @@ static_assert(kNativeStackFrameSize % 16 == 0,
 // +----------------------+
 // | opcode 255 handler   | <- handlers_base + 255 * kHandlerSize
 // +----------------------+
-const word kHandlerSizeShift = 9;
+const word kHandlerSizeShift = 8;
 const word kHandlerSize = 1 << kHandlerSizeShift;
 
 const Interpreter::OpcodeHandler kCppHandlers[] = {
@@ -110,6 +110,7 @@ struct EmitEnv {
   Assembler as;
   Bytecode current_op;
   const char* current_handler;
+  Label call_handlers[kNumBytecodes];
 };
 
 // This macro helps instruction-emitting code stand out while staying compact.
@@ -218,12 +219,11 @@ bool mayChangeFramePC(Bytecode bc) {
   }
 }
 
-// When calling a C++ handler, most state is synced back to the Thread/Frame
-// before the call and reloaded after the call. We could be smarter about this
-// by auditing which opcodes can read/write the PC and other bits of VM state,
-// but hopefully it will become a non-issue as we implement more and more
-// opcodes in assembly.
-void emitGenericHandler(EmitEnv* env) {
+// Emit a call to the C++ implementation of the given Bytecode, saving and
+// restoring appropriate interpreter state before and after the call. This code
+// is emitted as a series of stubs after the main set of handlers; it's used
+// from the hot path with emitJumpToGenericHandler().
+void emitGenericHandler(EmitEnv* env, Bytecode bc) {
   __ movq(kArgRegs[0], kThreadReg);
   static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
 
@@ -232,8 +232,7 @@ void emitGenericHandler(EmitEnv* env) {
 
   // TODO(bsimmers): Augment Assembler so we can use the 0xe8 call opcode when
   // possible (this will also have implications on our allocation strategy).
-  __ movq(RAX,
-          Immediate(reinterpret_cast<int64_t>(kCppHandlers[env->current_op])));
+  __ movq(RAX, Immediate(reinterpret_cast<int64_t>(kCppHandlers[bc])));
   __ call(RAX);
 
   Label handle_flow;
@@ -242,9 +241,8 @@ void emitGenericHandler(EmitEnv* env) {
   __ testl(RAX, RAX);
   __ jcc(NOT_ZERO, &handle_flow, true);
 
-  emitRestoreInterpreterState(env, mayChangeFramePC(env->current_op)
-                                       ? kAllState
-                                       : (kVMStack | kBytecode));
+  emitRestoreInterpreterState(
+      env, mayChangeFramePC(bc) ? kAllState : (kVMStack | kBytecode));
   emitNextOpcode(env);
 
   __ bind(&handle_flow);
@@ -254,10 +252,15 @@ void emitGenericHandler(EmitEnv* env) {
   __ jmp(RAX);
 }
 
+// Jump to the generic handler for the Bytecode being currently emitted.
+void emitJumpToGenericHandler(EmitEnv* env) {
+  __ jmp(&env->call_handlers[env->current_op]);
+}
+
 // Fallback handler for all unimplemented opcodes: call out to C++.
 template <Bytecode bc>
 void emitHandler(EmitEnv* env) {
-  emitGenericHandler(env);
+  emitJumpToGenericHandler(env);
 }
 
 // Load the LayoutId of the RawObject in r_obj into r_dst.
@@ -454,7 +457,7 @@ void emitHandler<LOAD_ATTR_CACHED>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
-  emitGenericHandler(env);
+  emitJumpToGenericHandler(env);
 }
 
 template <>
@@ -487,7 +490,7 @@ void emitHandler<LOAD_METHOD_CACHED>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
-  emitGenericHandler(env);
+  emitJumpToGenericHandler(env);
 }
 
 template <>
@@ -511,7 +514,7 @@ void emitHandler<STORE_ATTR_CACHED>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
-  emitGenericHandler(env);
+  emitJumpToGenericHandler(env);
 }
 
 template <>
@@ -526,7 +529,7 @@ void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
   emitNextOpcode(env);
 
   __ bind(&not_found);
-  emitGenericHandler(env);
+  emitJumpToGenericHandler(env);
 }
 
 template <>
@@ -567,7 +570,7 @@ void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
 
   __ bind(&slow_path);
   __ pushq(r_scratch);
-  emitGenericHandler(env);
+  emitJumpToGenericHandler(env);
 }
 
 template <>
@@ -598,7 +601,7 @@ void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
 
   __ bind(&slow_path);
   __ pushq(r_scratch);
-  emitGenericHandler(env);
+  emitJumpToGenericHandler(env);
 }
 
 template <>
@@ -750,10 +753,6 @@ void emitInterpreter(EmitEnv* env) {
   const int32_t dummy_offset = 0xdeadbeef;
   __ leaq(kHandlersBaseReg, Address::addressRIPRelative(dummy_offset));
   word post_lea_size = env->as.codeSize();
-  char* lea_offset_addr = reinterpret_cast<char*>(
-      env->as.codeAddress(env->as.codeSize() - sizeof(int32_t)));
-  CHECK(readBytes<int32_t>(lea_offset_addr) == dummy_offset,
-        "Unexpected leaq encoding");
 
   // Load VM state into registers and jump to the first opcode handler.
   emitRestoreInterpreterState(env, kAllState);
@@ -811,6 +810,10 @@ void emitInterpreter(EmitEnv* env) {
 
   // Mark the beginning of the opcode handlers and emit them at regular
   // intervals.
+  char* lea_offset_addr = reinterpret_cast<char*>(
+      env->as.codeAddress(post_lea_size - sizeof(int32_t)));
+  CHECK(readBytes<int32_t>(lea_offset_addr) == dummy_offset,
+        "Unexpected leaq encoding");
   writeBytes<int32_t>(lea_offset_addr, env->as.codeSize() - post_lea_size);
 #define BC(name, i, handler)                                                   \
   {                                                                            \
@@ -821,6 +824,13 @@ void emitInterpreter(EmitEnv* env) {
   }
   FOREACH_BYTECODE(BC)
 #undef BC
+
+  // Emit the generic handler stubs at the end, out of the way of the
+  // interesting code.
+  for (word i = 0; i < 256; ++i) {
+    __ bind(&env->call_handlers[i]);
+    emitGenericHandler(env, static_cast<Bytecode>(i));
+  }
 }
 
 }  // namespace
