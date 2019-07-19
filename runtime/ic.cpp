@@ -422,12 +422,20 @@ void icInvalidateCachesForTypeAttr(Thread* thread, const Type& type,
   ValueCell type_attr_cell(&scope, *value);
   // Delete caches for attribute_name to be shadowed by the type[attribute_name]
   // change in all dependents that depend on the attribute being updated.
-  for (Object link(&scope, type_attr_cell.dependencyLink()); !link.isNoneType();
-       link = WeakLink::cast(*link).next()) {
+  Object link(&scope, type_attr_cell.dependencyLink());
+  while (!link.isNoneType()) {
     Function dependent(&scope, WeakLink::cast(*link).referent());
+    // Capturing the next node in case the current node is deleted by
+    // icDeleteCacheForTypeAttrInDependent
+    link = WeakLink::cast(*link).next();
     icDeleteCacheForTypeAttrInDependent(thread, type, attribute_name,
                                         data_descriptor, dependent);
   }
+
+  // In case data_descriptor is true, we shouldn't see any dependents after
+  // caching invalidation.
+  DCHECK(!data_descriptor || type_attr_cell.dependencyLink().isNoneType(),
+         "dependencyLink must be None if data_descriptor is true");
 }
 
 void icUpdateBinop(RawTuple caches, word index, LayoutId left_layout_id,
