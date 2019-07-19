@@ -23,9 +23,6 @@
 // - PC (as an offset) fits in a uint32_t.
 // - Immediate objects fit in 8 bits.
 
-// This macro helps instruction-emitting code stand out a bit.
-#define __ as->
-
 namespace python {
 
 namespace {
@@ -108,21 +105,32 @@ const Interpreter::OpcodeHandler kCppHandlers[] = {
 #undef OP
 };
 
+// Environment shared by all emit functions.
+struct EmitEnv {
+  Assembler as;
+  Bytecode current_op;
+  const char* current_handler;
+};
+
+// This macro helps instruction-emitting code stand out while staying compact.
+#define __ env->as.
+
 // RAII helper to ensure that a region of code is nop-padded to a specific size,
 // with checks that it doesn't overflow the limit.
 class HandlerSizer {
  public:
-  HandlerSizer(Assembler* as, word size)
-      : as_(as), size_(size), start_cursor_(as->codeSize()) {}
+  HandlerSizer(EmitEnv* env, word size)
+      : env_(env), size_(size), start_cursor_(env->as.codeSize()) {}
 
   ~HandlerSizer() {
-    word padding = start_cursor_ + size_ - as_->codeSize();
-    CHECK(padding >= 0, "Handler overflow by %" PRIdPTR " bytes", -padding);
-    as_->nops(padding);
+    word padding = start_cursor_ + size_ - env_->as.codeSize();
+    CHECK(padding >= 0, "Handler for %s overflowed by %" PRIdPTR " bytes",
+          env_->current_handler, -padding);
+    env_->as.nops(padding);
   }
 
  private:
-  Assembler* as_;
+  EmitEnv* env_;
   word size_;
   word start_cursor_;
 };
@@ -139,7 +147,7 @@ int32_t heapObjectDisp(int32_t offset) {
 }
 
 // Load the next opcode, advance PC, and jump to the appropriate handler.
-void emitNextOpcode(Assembler* as) {
+void emitNextOpcode(EmitEnv* env) {
   Register r_scratch = RAX;
   __ movzbl(r_scratch, Address(kBCReg, kPCReg, TIMES_1, heapObjectDisp(0)));
   __ movzbl(kOpargReg, Address(kBCReg, kPCReg, TIMES_1, heapObjectDisp(1)));
@@ -165,7 +173,7 @@ SaveRestoreFlags operator|(SaveRestoreFlags a, SaveRestoreFlags b) {
                                        static_cast<int>(b));
 }
 
-void emitSaveInterpreterState(Assembler* as, SaveRestoreFlags flags) {
+void emitSaveInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
   if (flags & kVMFrame) {
     __ movq(Address(kThreadReg, Thread::currentFrameOffset()), kFrameReg);
   }
@@ -179,7 +187,7 @@ void emitSaveInterpreterState(Assembler* as, SaveRestoreFlags flags) {
   }
 }
 
-void emitRestoreInterpreterState(Assembler* as, SaveRestoreFlags flags) {
+void emitRestoreInterpreterState(EmitEnv* env, SaveRestoreFlags flags) {
   if (flags & kVMFrame) {
     __ movq(kFrameReg, Address(kThreadReg, Thread::currentFrameOffset()));
   }
@@ -215,16 +223,17 @@ bool mayChangeFramePC(Bytecode bc) {
 // by auditing which opcodes can read/write the PC and other bits of VM state,
 // but hopefully it will become a non-issue as we implement more and more
 // opcodes in assembly.
-void emitGenericHandler(Assembler* as, Bytecode bc) {
+void emitGenericHandler(EmitEnv* env) {
   __ movq(kArgRegs[0], kThreadReg);
   static_assert(kOpargReg == kArgRegs[1], "oparg expect to be in rsi");
 
   // Sync VM state to memory and restore native stack pointer.
-  emitSaveInterpreterState(as, kVMPC | kVMStack | kVMFrame);
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
 
   // TODO(bsimmers): Augment Assembler so we can use the 0xe8 call opcode when
   // possible (this will also have implications on our allocation strategy).
-  __ movq(RAX, Immediate(reinterpret_cast<int64_t>(kCppHandlers[bc])));
+  __ movq(RAX,
+          Immediate(reinterpret_cast<int64_t>(kCppHandlers[env->current_op])));
   __ call(RAX);
 
   Label handle_flow;
@@ -233,9 +242,10 @@ void emitGenericHandler(Assembler* as, Bytecode bc) {
   __ testl(RAX, RAX);
   __ jcc(NOT_ZERO, &handle_flow, true);
 
-  emitRestoreInterpreterState(
-      as, mayChangeFramePC(bc) ? kAllState : (kVMStack | kBytecode));
-  emitNextOpcode(as);
+  emitRestoreInterpreterState(env, mayChangeFramePC(env->current_op)
+                                       ? kAllState
+                                       : (kVMStack | kBytecode));
+  emitNextOpcode(env);
 
   __ bind(&handle_flow);
   __ shll(RAX, Immediate(kHandlerSizeShift));
@@ -246,14 +256,14 @@ void emitGenericHandler(Assembler* as, Bytecode bc) {
 
 // Fallback handler for all unimplemented opcodes: call out to C++.
 template <Bytecode bc>
-void emitHandler(Assembler* as) {
-  emitGenericHandler(as, bc);
+void emitHandler(EmitEnv* env) {
+  emitGenericHandler(env);
 }
 
 // Load the LayoutId of the RawObject in r_obj into r_dst.
 //
 // Writes to r_dst.
-void emitGetLayoutId(Assembler* as, Register r_dst, Register r_obj) {
+void emitGetLayoutId(EmitEnv* env, Register r_dst, Register r_obj) {
   Label done;
   Label immediate;
 
@@ -279,13 +289,13 @@ void emitGetLayoutId(Assembler* as, Register r_dst, Register r_obj) {
 }
 
 // Convert the given register from an int to a SmallInt, assuming it fits.
-void emitConvertToSmallInt(Assembler* as, Register reg) {
+void emitConvertToSmallInt(EmitEnv* env, Register reg) {
   static_assert(Object::kSmallIntTag == 0, "Unexpected SmallInt tag");
   __ shlq(reg, Immediate(Object::kSmallIntTagBits));
 }
 
 // Convert the given register from a SmallInt to an int.
-void emitConvertFromSmallInt(Assembler* as, Register reg) {
+void emitConvertFromSmallInt(EmitEnv* env, Register reg) {
   __ sarq(reg, Immediate(Object::kSmallIntTagBits));
 }
 
@@ -298,10 +308,10 @@ void emitConvertFromSmallInt(Assembler* as, Register reg) {
 //
 // Writes to r_dst, r_layout_id (to turn it into a SmallInt), r_caches, and
 // r_scratch.
-void emitIcLookup(Assembler* as, Label* not_found, Register r_dst,
+void emitIcLookup(EmitEnv* env, Label* not_found, Register r_dst,
                   Register r_layout_id, Register r_caches, Register r_index,
                   Register r_scratch) {
-  emitConvertToSmallInt(as, r_layout_id);
+  emitConvertToSmallInt(env, r_layout_id);
 
   // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerCache,
   // without modifying r_index.
@@ -333,7 +343,7 @@ void emitIcLookup(Assembler* as, Label* not_found, Register r_dst,
 // registers.
 //
 // Writes to r_space and r_scratch.
-void emitPushBoundMethod(Assembler* as, Label* slow_path, Register r_self,
+void emitPushBoundMethod(EmitEnv* env, Label* slow_path, Register r_self,
                          Register r_function, Register r_space,
                          Register r_scratch) {
   __ movq(r_space, Address(kThreadReg, Thread::runtimeOffset()));
@@ -363,7 +373,7 @@ void emitPushBoundMethod(Assembler* as, Label* slow_path, Register r_self,
 // load its overflow RawTuple into r_dst.
 //
 // Writes to r_dst.
-void emitLoadOverflowTuple(Assembler* as, Register r_dst, Register r_layout_id,
+void emitLoadOverflowTuple(EmitEnv* env, Register r_dst, Register r_layout_id,
                            Register r_obj) {
   // Both uses of TIMES_4 in this function are a shortcut to multiply the value
   // of a SmallInt by kPointerSize.
@@ -397,28 +407,28 @@ void emitLoadOverflowTuple(Assembler* as, Register r_dst, Register r_layout_id,
 // case.
 //
 // Writes to r_offset and r_scratch.
-void emitAttrWithOffset(Assembler* as, void (Assembler::*asm_op)(Address),
+void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
                         Label* next, Register r_obj, Register r_offset,
                         Register r_layout_id, Register r_scratch) {
   Label is_overflow;
-  emitConvertFromSmallInt(as, r_offset);
+  emitConvertFromSmallInt(env, r_offset);
   __ testq(r_offset, r_offset);
   __ jcc(SIGN, &is_overflow, Assembler::kNearJump);
   // In-object attribute. For now, asm_op is always pushq or popq.
-  (as->*asm_op)(Address(r_obj, r_offset, TIMES_1, heapObjectDisp(0)));
+  (env->as.*asm_op)(Address(r_obj, r_offset, TIMES_1, heapObjectDisp(0)));
   __ bind(next);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 
   __ bind(&is_overflow);
-  emitLoadOverflowTuple(as, r_scratch, r_layout_id, r_obj);
+  emitLoadOverflowTuple(env, r_scratch, r_layout_id, r_obj);
   // The real tuple index is -offset - 1, which is the same as ~offset.
   __ notq(r_offset);
-  (as->*asm_op)(Address(r_scratch, r_offset, TIMES_8, heapObjectDisp(0)));
+  (env->as.*asm_op)(Address(r_scratch, r_offset, TIMES_8, heapObjectDisp(0)));
   __ jmp(next, Assembler::kNearJump);
 }
 
 template <>
-void emitHandler<LOAD_ATTR_CACHED>(Assembler* as) {
+void emitHandler<LOAD_ATTR_CACHED>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
   Register r_scratch = RDI;
@@ -426,29 +436,29 @@ void emitHandler<LOAD_ATTR_CACHED>(Assembler* as) {
   Register r_caches = RDX;
   Label slow_path;
   __ popq(r_base);
-  emitGetLayoutId(as, r_layout_id, r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
-  emitIcLookup(as, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
+  emitIcLookup(env, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
                r_scratch2);
 
   Label is_function;
   Label next;
   __ testq(r_scratch, Immediate(Object::kSmallIntTagMask));
   __ jcc(NOT_ZERO, &is_function, Assembler::kNearJump);
-  emitAttrWithOffset(as, &Assembler::pushq, &next, r_base, r_scratch,
+  emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
                      r_layout_id, r_scratch2);
 
   __ bind(&is_function);
-  emitPushBoundMethod(as, &slow_path, r_base, r_scratch, r_caches, R8);
+  emitPushBoundMethod(env, &slow_path, r_base, r_scratch, r_caches, R8);
   __ jmp(&next, Assembler::kNearJump);
 
   __ bind(&slow_path);
   __ pushq(r_base);
-  emitGenericHandler(as, LOAD_ATTR_CACHED);
+  emitGenericHandler(env);
 }
 
 template <>
-void emitHandler<LOAD_METHOD_CACHED>(Assembler* as) {
+void emitHandler<LOAD_METHOD_CACHED>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
   Register r_scratch = RDI;
@@ -456,9 +466,9 @@ void emitHandler<LOAD_METHOD_CACHED>(Assembler* as) {
   Register r_caches = RDX;
   Label slow_path;
   __ popq(r_base);
-  emitGetLayoutId(as, r_layout_id, r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
-  emitIcLookup(as, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
+  emitIcLookup(env, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
                r_scratch2);
 
   Label is_smallint;
@@ -472,16 +482,16 @@ void emitHandler<LOAD_METHOD_CACHED>(Assembler* as) {
 
   __ bind(&is_smallint);
   __ pushq(Immediate(Unbound::object().raw()));
-  emitAttrWithOffset(as, &Assembler::pushq, &next, r_base, r_scratch,
+  emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
                      r_layout_id, r_scratch2);
 
   __ bind(&slow_path);
   __ pushq(r_base);
-  emitGenericHandler(as, LOAD_METHOD_CACHED);
+  emitGenericHandler(env);
 }
 
 template <>
-void emitHandler<STORE_ATTR_CACHED>(Assembler* as) {
+void emitHandler<STORE_ATTR_CACHED>(EmitEnv* env) {
   Register r_base = RAX;
   Register r_layout_id = R8;
   Register r_scratch = RDI;
@@ -489,23 +499,23 @@ void emitHandler<STORE_ATTR_CACHED>(Assembler* as) {
   Register r_caches = RDX;
   Label slow_path;
   __ popq(r_base);
-  emitGetLayoutId(as, r_layout_id, r_base);
+  emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(kFrameReg, Frame::kCachesOffset));
-  emitIcLookup(as, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
+  emitIcLookup(env, &slow_path, r_scratch, r_layout_id, r_caches, kOpargReg,
                r_scratch2);
 
   Label next;
   // We only cache SmallInt values for STORE_ATTR.
-  emitAttrWithOffset(as, &Assembler::popq, &next, r_base, r_scratch,
+  emitAttrWithOffset(env, &Assembler::popq, &next, r_base, r_scratch,
                      r_layout_id, r_scratch2);
 
   __ bind(&slow_path);
   __ pushq(r_base);
-  emitGenericHandler(as, STORE_ATTR_CACHED);
+  emitGenericHandler(env);
 }
 
 template <>
-void emitHandler<LOAD_FAST_REVERSE>(Assembler* as) {
+void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
   Label not_found;
   Register r_scratch = RAX;
 
@@ -513,34 +523,34 @@ void emitHandler<LOAD_FAST_REVERSE>(Assembler* as) {
   __ cmpb(r_scratch, Immediate(Error::notFound().raw()));
   __ jcc(EQUAL, &not_found, true);
   __ pushq(r_scratch);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 
   __ bind(&not_found);
-  emitGenericHandler(as, LOAD_FAST_REVERSE);
+  emitGenericHandler(env);
 }
 
 template <>
-void emitHandler<STORE_FAST_REVERSE>(Assembler* as) {
+void emitHandler<STORE_FAST_REVERSE>(EmitEnv* env) {
   __ popq(Address(kFrameReg, kOpargReg, TIMES_8, Frame::kSize));
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<LOAD_IMMEDIATE>(Assembler* as) {
+void emitHandler<LOAD_IMMEDIATE>(EmitEnv* env) {
   __ movsbq(RAX, kOpargReg);
   __ pushq(RAX);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<LOAD_GLOBAL_CACHED>(Assembler* as) {
+void emitHandler<LOAD_GLOBAL_CACHED>(EmitEnv* env) {
   __ movq(RAX, Address(kFrameReg, Frame::kCachesOffset));
   __ movq(RAX, Address(RAX, kOpargReg, TIMES_8, heapObjectDisp(0)));
   __ pushq(Address(RAX, heapObjectDisp(ValueCell::kValueOffset)));
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
-void emitPopJumpIfBool(Assembler* as, Bytecode bc, bool jump_value) {
+void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
   Label next;
   Label slow_path;
   Register r_scratch = RAX;
@@ -553,24 +563,24 @@ void emitPopJumpIfBool(Assembler* as, Bytecode bc, bool jump_value) {
   __ jcc(NOT_EQUAL, &slow_path, true);
   __ movq(kPCReg, kOpargReg);
   __ bind(&next);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 
   __ bind(&slow_path);
   __ pushq(r_scratch);
-  emitGenericHandler(as, bc);
+  emitGenericHandler(env);
 }
 
 template <>
-void emitHandler<POP_JUMP_IF_FALSE>(Assembler* as) {
-  emitPopJumpIfBool(as, POP_JUMP_IF_FALSE, false);
+void emitHandler<POP_JUMP_IF_FALSE>(EmitEnv* env) {
+  emitPopJumpIfBool(env, false);
 }
 
 template <>
-void emitHandler<POP_JUMP_IF_TRUE>(Assembler* as) {
-  emitPopJumpIfBool(as, POP_JUMP_IF_TRUE, true);
+void emitHandler<POP_JUMP_IF_TRUE>(EmitEnv* env) {
+  emitPopJumpIfBool(env, true);
 }
 
-void emitJumpIfBoolOrPop(Assembler* as, Bytecode bc, bool jump_value) {
+void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
   Label next;
   Label slow_path;
   Register r_scratch = RAX;
@@ -584,57 +594,57 @@ void emitJumpIfBoolOrPop(Assembler* as, Bytecode bc, bool jump_value) {
   __ pushq(r_scratch);
   __ movl(kPCReg, kOpargReg);
   __ bind(&next);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 
   __ bind(&slow_path);
   __ pushq(r_scratch);
-  emitGenericHandler(as, bc);
+  emitGenericHandler(env);
 }
 
 template <>
-void emitHandler<JUMP_IF_FALSE_OR_POP>(Assembler* as) {
-  emitJumpIfBoolOrPop(as, JUMP_IF_FALSE_OR_POP, false);
+void emitHandler<JUMP_IF_FALSE_OR_POP>(EmitEnv* env) {
+  emitJumpIfBoolOrPop(env, false);
 }
 
 template <>
-void emitHandler<JUMP_IF_TRUE_OR_POP>(Assembler* as) {
-  emitJumpIfBoolOrPop(as, JUMP_IF_TRUE_OR_POP, true);
+void emitHandler<JUMP_IF_TRUE_OR_POP>(EmitEnv* env) {
+  emitJumpIfBoolOrPop(env, true);
 }
 
 template <>
-void emitHandler<JUMP_ABSOLUTE>(Assembler* as) {
+void emitHandler<JUMP_ABSOLUTE>(EmitEnv* env) {
   __ movl(kPCReg, kOpargReg);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<JUMP_FORWARD>(Assembler* as) {
+void emitHandler<JUMP_FORWARD>(EmitEnv* env) {
   __ addl(kPCReg, kOpargReg);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<DUP_TOP>(Assembler* as) {
+void emitHandler<DUP_TOP>(EmitEnv* env) {
   __ pushq(Address(RSP, 0));
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<ROT_TWO>(Assembler* as) {
+void emitHandler<ROT_TWO>(EmitEnv* env) {
   __ popq(RAX);
   __ pushq(Address(RSP, 0));
   __ movq(Address(RSP, 8), RAX);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<POP_TOP>(Assembler* as) {
+void emitHandler<POP_TOP>(EmitEnv* env) {
   __ popq(RAX);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<EXTENDED_ARG>(Assembler* as) {
+void emitHandler<EXTENDED_ARG>(EmitEnv* env) {
   __ shll(kOpargReg, Immediate(8));
   Register r_scratch = RAX;
   __ movzbl(r_scratch, Address(kBCReg, kPCReg, TIMES_1, heapObjectDisp(0)));
@@ -648,7 +658,7 @@ void emitHandler<EXTENDED_ARG>(Assembler* as) {
   __ ud2();
 }
 
-void emitCompareIs(Assembler* as, bool eq_value) {
+void emitCompareIs(EmitEnv* env, bool eq_value) {
   __ popq(R8);
   __ popq(R9);
   __ movl(RAX, boolImmediate(eq_value));
@@ -656,21 +666,21 @@ void emitCompareIs(Assembler* as, bool eq_value) {
   __ cmpq(R8, R9);
   __ cmovnel(RAX, RDI);
   __ pushq(RAX);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 }
 
 template <>
-void emitHandler<COMPARE_IS>(Assembler* as) {
-  emitCompareIs(as, true);
+void emitHandler<COMPARE_IS>(EmitEnv* env) {
+  emitCompareIs(env, true);
 }
 
 template <>
-void emitHandler<COMPARE_IS_NOT>(Assembler* as) {
-  emitCompareIs(as, false);
+void emitHandler<COMPARE_IS_NOT>(EmitEnv* env) {
+  emitCompareIs(env, false);
 }
 
 template <>
-void emitHandler<RETURN_VALUE>(Assembler* as) {
+void emitHandler<RETURN_VALUE>(EmitEnv* env) {
   Label slow_path;
   Register r_scratch = RAX;
 
@@ -697,12 +707,12 @@ void emitHandler<RETURN_VALUE>(Assembler* as) {
   // Fast path: pop return value, restore caller frame, push return value.
   __ popq(RAX);
   __ movq(kFrameReg, Address(kFrameReg, Frame::kPreviousFrameOffset));
-  emitRestoreInterpreterState(as, kVMStack | kBytecode | kVMPC);
+  emitRestoreInterpreterState(env, kVMStack | kBytecode | kVMPC);
   __ pushq(RAX);
-  emitNextOpcode(as);
+  emitNextOpcode(env);
 
   __ bind(&slow_path);
-  emitSaveInterpreterState(as, kVMStack | kVMFrame);
+  emitSaveInterpreterState(env, kVMStack | kVMFrame);
   const word handler_offset =
       -(Interpreter::kNumContinues -
         static_cast<int>(Interpreter::Continue::RETURN)) *
@@ -723,12 +733,7 @@ void writeBytes(void* addr, T value) {
   std::memcpy(addr, &value, sizeof(value));
 }
 
-}  // namespace
-
-Interpreter::AsmInterpreter generateInterpreter() {
-  Assembler assembler;
-  Assembler* as = &assembler;  // For __ macro
-
+void emitInterpreter(EmitEnv* env) {
   // Set up a frame and save callee-saved registers we'll use.
   __ pushq(RBP);
   __ movq(RBP, RSP);
@@ -744,15 +749,15 @@ Interpreter::AsmInterpreter generateInterpreter() {
   // patched right before emitting the first handler.
   const int32_t dummy_offset = 0xdeadbeef;
   __ leaq(kHandlersBaseReg, Address::addressRIPRelative(dummy_offset));
-  word post_lea_size = as->codeSize();
+  word post_lea_size = env->as.codeSize();
   char* lea_offset_addr = reinterpret_cast<char*>(
-      as->codeAddress(as->codeSize() - sizeof(int32_t)));
+      env->as.codeAddress(env->as.codeSize() - sizeof(int32_t)));
   CHECK(readBytes<int32_t>(lea_offset_addr) == dummy_offset,
         "Unexpected leaq encoding");
 
   // Load VM state into registers and jump to the first opcode handler.
-  emitRestoreInterpreterState(as, kAllState);
-  emitNextOpcode(as);
+  emitRestoreInterpreterState(env, kAllState);
+  emitNextOpcode(env);
 
   Label do_return;
   __ bind(&do_return);
@@ -767,55 +772,67 @@ Interpreter::AsmInterpreter generateInterpreter() {
   static_assert(static_cast<int>(Interpreter::Continue::UNWIND) == 1,
                 "Unexpected UNWIND value");
   {
-    HandlerSizer sizer(as, kHandlerSize);
+    env->current_handler = "UNWIND pseudo-handler";
+    HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], kThreadReg);
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
     __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::unwind)));
     __ call(RAX);
     __ cmpb(RAX, Immediate(0));
     __ jcc(NOT_EQUAL, &do_return, false);
-    emitRestoreInterpreterState(as, kAllState);
-    emitNextOpcode(as);
+    emitRestoreInterpreterState(env, kAllState);
+    emitNextOpcode(env);
   }
 
   // RETURN pseudo-handler
   static_assert(static_cast<int>(Interpreter::Continue::RETURN) == 2,
                 "Unexpected RETURN value");
   {
-    HandlerSizer sizer(as, kHandlerSize);
+    env->current_handler = "RETURN pseudo-handler";
+    HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], kThreadReg);
     __ movq(kArgRegs[1], Address(RBP, kEntryFrameOffset));
     __ movq(RAX, Immediate(reinterpret_cast<word>(Interpreter::handleReturn)));
     __ call(RAX);
     __ cmpb(RAX, Immediate(0));
     __ jcc(NOT_EQUAL, &do_return, false);
-    emitRestoreInterpreterState(as, kAllState);
-    emitNextOpcode(as);
+    emitRestoreInterpreterState(env, kAllState);
+    emitNextOpcode(env);
   }
 
   // YIELD pseudo-handler
   static_assert(static_cast<int>(Interpreter::Continue::YIELD) == 3,
                 "Unexpected YIELD value");
   {
-    HandlerSizer sizer(as, kHandlerSize);
+    env->current_handler = "YIELD pseudo-handler";
+    HandlerSizer sizer(env, kHandlerSize);
     __ jmp(&do_return, false);
   }
 
   // Mark the beginning of the opcode handlers and emit them at regular
   // intervals.
-  writeBytes<int32_t>(lea_offset_addr, as->codeSize() - post_lea_size);
+  writeBytes<int32_t>(lea_offset_addr, env->as.codeSize() - post_lea_size);
 #define BC(name, i, handler)                                                   \
   {                                                                            \
-    HandlerSizer sizer(as, kHandlerSize);                                      \
-    emitHandler<name>(as);                                                     \
+    env->current_op = name;                                                    \
+    env->current_handler = #name;                                              \
+    HandlerSizer sizer(env, kHandlerSize);                                     \
+    emitHandler<name>(env);                                                    \
   }
   FOREACH_BYTECODE(BC)
 #undef BC
+}
+
+}  // namespace
+
+Interpreter::AsmInterpreter generateInterpreter() {
+  EmitEnv env;
+  emitInterpreter(&env);
 
   // Finalize the code.
-  word size = as->codeSize();
+  word size = env.as.codeSize();
   byte* code = OS::allocateMemory(size, &size);
-  as->finalizeInstructions(MemoryRegion(code, size));
+  env.as.finalizeInstructions(MemoryRegion(code, size));
   OS::protectMemory(code, size, OS::kReadExecute);
   return reinterpret_cast<Interpreter::AsmInterpreter>(code);
 }
