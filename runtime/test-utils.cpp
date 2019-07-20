@@ -309,8 +309,9 @@ RawObject newMemoryView(View<byte> bytes, const char* format,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Bytes bytes_obj(&scope, runtime->newBytesWithAll(bytes));
-  MemoryView result(&scope,
-                    runtime->newMemoryView(thread, bytes_obj, read_only));
+  MemoryView result(
+      &scope,
+      runtime->newMemoryView(thread, bytes_obj, bytes_obj.length(), read_only));
   result.setFormat(Str::cast(runtime->newStrFromCStr(format)));
   return *result;
 }

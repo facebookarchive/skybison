@@ -774,13 +774,21 @@ RawObject Runtime::newModule(const Object& name) {
 }
 
 RawObject Runtime::newMemoryView(Thread* thread, const Object& buffer,
-                                 ReadOnly read_only) {
+                                 word length, ReadOnly read_only) {
   HandleScope scope(thread);
   MemoryView result(&scope, heap()->create<RawMemoryView>());
   result.setBuffer(*buffer);
+  result.setLength(length);
   result.setFormat(RawSmallStr::fromCodePoint('B'));
   result.setReadOnly(read_only == ReadOnly::ReadOnly);
   return *result;
+}
+
+RawObject Runtime::newMemoryViewFromCPtr(Thread* thread, void* ptr, word length,
+                                         ReadOnly read_only) {
+  HandleScope scope(thread);
+  Object buffer(&scope, newIntFromCPtr(ptr));
+  return newMemoryView(thread, buffer, length, read_only);
 }
 
 RawObject Runtime::newMutableBytesUninitialized(word size) {

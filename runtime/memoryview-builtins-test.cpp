@@ -319,6 +319,32 @@ TEST_F(MemoryViewBuiltinsTest, GetItemWithOverflowingIndexRaisesIndexError) {
       raisedWithStr(*result, LayoutId::kIndexError, "index out of bounds"));
 }
 
+TEST_F(MemoryViewBuiltinsTest, GetItemWithMemoryBufferReadsMemory) {
+  HandleScope scope(thread_);
+  const word length = 5;
+  byte memory[length];
+  for (word i = 0; i < length; i++) {
+    memory[i] = i;
+  }
+  MemoryView view(&scope, runtime_.newMemoryViewFromCPtr(
+                              thread_, memory, length, ReadOnly::ReadOnly));
+  Int idx(&scope, SmallInt::fromWord(0));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(MemoryViewBuiltins::dunderGetItem, view, idx), 0));
+  idx = Int::cast(SmallInt::fromWord(1));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(MemoryViewBuiltins::dunderGetItem, view, idx), 1));
+  idx = Int::cast(SmallInt::fromWord(2));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(MemoryViewBuiltins::dunderGetItem, view, idx), 2));
+  idx = Int::cast(SmallInt::fromWord(3));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(MemoryViewBuiltins::dunderGetItem, view, idx), 3));
+  idx = Int::cast(SmallInt::fromWord(4));
+  EXPECT_TRUE(isIntEqualsWord(
+      runBuiltin(MemoryViewBuiltins::dunderGetItem, view, idx), 4));
+}
+
 TEST_F(MemoryViewBuiltinsTest, DunderLenWithMemoryViewFormatBReturnsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0, 1, 2};

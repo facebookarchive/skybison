@@ -162,6 +162,13 @@ class Utils {
 #endif
   }
 
+  template <typename T>
+  static T readBytes(void* addr) {
+    T dest;
+    std::memcpy(&dest, addr, sizeof(dest));
+    return dest;
+  }
+
   // Prints a python level stack trace to stderr or the stream of your choice.
   static void printTracebackToStderr();
   static void printTraceback(std::ostream* os);

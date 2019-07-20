@@ -725,13 +725,6 @@ void emitHandler<RETURN_VALUE>(EmitEnv* env) {
 }
 
 template <typename T>
-T readBytes(void* addr) {
-  T dest;
-  std::memcpy(&dest, addr, sizeof(dest));
-  return dest;
-}
-
-template <typename T>
 void writeBytes(void* addr, T value) {
   std::memcpy(addr, &value, sizeof(value));
 }
@@ -812,7 +805,7 @@ void emitInterpreter(EmitEnv* env) {
   // intervals.
   char* lea_offset_addr = reinterpret_cast<char*>(
       env->as.codeAddress(post_lea_size - sizeof(int32_t)));
-  CHECK(readBytes<int32_t>(lea_offset_addr) == dummy_offset,
+  CHECK(Utils::readBytes<int32_t>(lea_offset_addr) == dummy_offset,
         "Unexpected leaq encoding");
   writeBytes<int32_t>(lea_offset_addr, env->as.codeSize() - post_lea_size);
 #define BC(name, i, handler)                                                   \

@@ -758,6 +758,26 @@ TEST_F(RuntimeTest, NewBytesWithAll) {
   EXPECT_EQ(len3.byteAt(2), 0xCC);
 }
 
+TEST_F(RuntimeTest, NewMemoryViewFromCPtrCreatesMemoryView) {
+  HandleScope scope(thread_);
+  word length = 5;
+  std::unique_ptr<byte[]> memory(new byte[length]);
+  for (word i = 0; i < length; i++) {
+    memory[i] = i;
+  }
+  MemoryView view(&scope,
+                  runtime_.newMemoryViewFromCPtr(thread_, memory.get(), length,
+                                                 ReadOnly::ReadOnly));
+  Int buffer(&scope, view.buffer());
+  EXPECT_EQ(view.length(), length);
+  byte* ptr = reinterpret_cast<byte*>(buffer.asCPtr());
+  EXPECT_EQ(ptr[0], 0);
+  EXPECT_EQ(ptr[1], 1);
+  EXPECT_EQ(ptr[2], 2);
+  EXPECT_EQ(ptr[3], 3);
+  EXPECT_EQ(ptr[4], 4);
+}
+
 TEST_F(RuntimeTest, LargeBytesSizeRoundedUpToPointerSizeMultiple) {
   HandleScope scope(thread_);
 

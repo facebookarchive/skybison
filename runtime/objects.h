@@ -1890,13 +1890,18 @@ class RawMemoryView : public RawHeapObject {
   RawObject format() const;
   void setFormat(RawObject format) const;
 
+  // Length in bytes.
+  word length() const;
+  void setLength(word length) const;
+
   bool readOnly() const;
   void setReadOnly(bool read_only) const;
 
   // Layout.
   static const int kBufferOffset = RawHeapObject::kSize;
   static const int kFormatOffset = kBufferOffset + kPointerSize;
-  static const int kReadOnlyOffset = kFormatOffset + kPointerSize;
+  static const int kLengthOffset = kFormatOffset + kPointerSize;
+  static const int kReadOnlyOffset = kLengthOffset + kPointerSize;
   static const int kSize = kReadOnlyOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(MemoryView);
@@ -4903,6 +4908,14 @@ inline bool RawMemoryView::readOnly() const {
 
 inline void RawMemoryView::setReadOnly(bool read_only) const {
   instanceVariableAtPut(kReadOnlyOffset, RawBool::fromBool(read_only));
+}
+
+inline word RawMemoryView::length() const {
+  return RawSmallInt::cast(instanceVariableAt(kLengthOffset)).value();
+}
+
+inline void RawMemoryView::setLength(word length) const {
+  instanceVariableAtPut(kLengthOffset, RawSmallInt::fromWord(length));
 }
 
 // RawModule
