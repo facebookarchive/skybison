@@ -34,4 +34,14 @@ TEST_F(MemoryViewExtensionApiTest, FromObjectWithMemoryViewReturnsMemoryView) {
   EXPECT_NE(result.get(), view.get());
 }
 
+TEST_F(MemoryViewExtensionApiTest, FromMemoryReturnsMemoryView) {
+  const int size = 5;
+  int memory[size] = {0};
+  PyObjectPtr result(PyMemoryView_FromMemory(reinterpret_cast<char*>(memory),
+                                             size, PyBUF_READ));
+  EXPECT_NE(result, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyMemoryView_Check(result));
+}
+
 }  // namespace python

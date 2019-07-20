@@ -1,3 +1,5 @@
+#include "cpython-data.h"
+
 #include "runtime.h"
 
 namespace python {
@@ -6,9 +8,19 @@ PY_EXPORT int PyMemoryView_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isMemoryView();
 }
 
-PY_EXPORT PyObject* PyMemoryView_FromMemory(char* /* m */, Py_ssize_t /* e */,
-                                            int /* s */) {
-  UNIMPLEMENTED("PyMemoryView_FromMemory");
+PY_EXPORT PyObject* PyMemoryView_FromMemory(char* memory, Py_ssize_t size,
+                                            int flags) {
+  DCHECK(memory != nullptr, "memory must not be null");
+  DCHECK(flags == PyBUF_READ || flags == PyBUF_WRITE,
+         "flags must be either PyBUF_READ or PyBUF_WRITE");
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  MemoryView view(&scope, runtime->newMemoryViewFromCPtr(
+                              thread, memory, size,
+                              flags == PyBUF_READ ? ReadOnly::ReadOnly
+                                                  : ReadOnly::ReadWrite));
+  return ApiHandle::newReference(thread, *view);
 }
 
 PY_EXPORT PyObject* PyMemoryView_FromObject(PyObject* obj) {

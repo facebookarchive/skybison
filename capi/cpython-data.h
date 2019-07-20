@@ -139,6 +139,9 @@ extern const unsigned char _Py_ctype_toupper[256];
 #define PyBUF_FULL (PyBUF_INDIRECT | PyBUF_WRITABLE | PyBUF_FORMAT)
 #define PyBUF_FULL_RO (PyBUF_INDIRECT | PyBUF_FORMAT)
 
+#define PyBUF_READ 0x100
+#define PyBUF_WRITE 0x200
+
 /* Type Slots */
 #define Py_mp_ass_subscript 3
 #define Py_mp_length 4
