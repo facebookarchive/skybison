@@ -356,8 +356,12 @@ RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "attribute name must be a string");
   }
-
   HandleScope scope(thread);
+  if (thread->runtime()->isCacheEnabled()) {
+    Str name_str(&scope, *name);
+    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, name_str);
+  }
+
   Type type(&scope, *receiver);
   // TODO(mpage): This needs to handle built-in extension types.
   if (type.isBuiltin()) {

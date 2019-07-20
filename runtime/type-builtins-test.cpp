@@ -10,6 +10,7 @@ namespace python {
 
 using namespace testing;
 
+using TypeBuiltinsDeathTest = RuntimeFixture;
 using TypeBuiltinsTest = RuntimeFixture;
 
 TEST_F(TypeBuiltinsTest, DunderBasesReturnsTuple) {
@@ -826,6 +827,69 @@ TEST_F(TypeBuiltinsTest, ResolveDescriptorGetCallsDescriptorDunderGet) {
   ASSERT_TRUE(descr.isFunction());
   EXPECT_TRUE(
       resolveDescriptorGet(thread_, descr, instance, owner).isBoundMethod());
+}
+
+TEST_F(TypeBuiltinsDeathTest,
+       TerminateIfUnimplementedTypeAttrCacheInvalidation) {
+  HandleScope scope(thread_);
+
+  // Not cached dunder function.
+  Str dunder_len(&scope, runtime_.newStrFromCStr("__len__"));
+  ASSERT_TRUE(runtime_.isInternedStr(thread_, dunder_len));
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread_, dunder_len);
+
+  // Cached, and unimplemented cache invalidation for __add__ terminates Pyro.
+  Str dunder_add(&scope, runtime_.newStrFromCStr("__add__"));
+  ASSERT_TRUE(runtime_.isInternedStr(thread_, dunder_add));
+  ASSERT_DEATH(
+      terminateIfUnimplementedTypeAttrCacheInvalidation(thread_, dunder_add),
+      "unimplemented cache invalidation for type.__add__ update");
+}
+
+TEST_F(
+    TypeBuiltinsDeathTest,
+    DunderSetAttrWithUnimplementedCacheInvalidationTerminatesPyroWhenCacheIsEnabled) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+
+C.__len__ = lambda self: 4
+)")
+                   .isError());
+
+  ASSERT_DEATH(
+      static_cast<void>(runFromCStr(&runtime, R"(
+class C: pass
+
+C.__getattribute__ = lambda self, key: 5
+)")),
+      "unimplemented cache invalidation for type.__getattribute__ update");
+
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+class C: pass
+
+C.__setattr__ = lambda self, key: 5
+)")),
+               "unimplemented cache invalidation for type.__setattr__ update");
+
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+class C: pass
+
+C.__add__ = lambda self, other: 5
+)")),
+               "unimplemented cache invalidation for type.__add__ update");
+}
+
+TEST_F(
+    TypeBuiltinsDeathTest,
+    DunderSetAttrWithUnimplementedCacheInvalidationDoesNotTerminatePyroWhenCacheIsDisabled) {
+  Runtime runtime(/*cache_enabled=*/false);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C: pass
+
+C.__getattribute__ = lambda self, key: 5
+)")
+                   .isError());
 }
 
 }  // namespace python

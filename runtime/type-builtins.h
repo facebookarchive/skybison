@@ -39,6 +39,11 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
 RawObject typeSetAttr(Thread* thread, const Type& type,
                       const Object& name_interned_str, const Object& value);
 
+// Terminate the process if cache invalidation for updating attr_name in type
+// objects is unimplemented.
+void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
+                                                       const Str& attr_name);
+
 class TypeBuiltins
     : public Builtins<TypeBuiltins, SymbolId::kType, LayoutId::kType> {
  public:

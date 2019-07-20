@@ -197,6 +197,47 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   return *type;
 }
 
+// NOTE: Keep the order of these type attributes same as the one from
+// rewriteOperation.
+static const SymbolId kUnimplementedTypeAttrUpdates[] = {
+    // BINARY_*
+    SymbolId::kDunderAdd, SymbolId::kDunderRadd, SymbolId::kDunderAnd,
+    SymbolId::kDunderRand, SymbolId::kDunderFloordiv,
+    SymbolId::kDunderRfloordiv, SymbolId::kDunderLshift,
+    SymbolId::kDunderRlshift, SymbolId::kDunderMatmul, SymbolId::kDunderRmatmul,
+    SymbolId::kDunderMod, SymbolId::kDunderRmod, SymbolId::kDunderOr,
+    SymbolId::kDunderRor, SymbolId::kDunderPow, SymbolId::kDunderRpow,
+    SymbolId::kDunderRshift, SymbolId::kDunderGetitem, SymbolId::kDunderSub,
+    SymbolId::kDunderRsub, SymbolId::kDunderTruediv, SymbolId::kDunderRtruediv,
+    SymbolId::kDunderXor, SymbolId::kDunderRxor,
+    // COMPARE_OP
+    SymbolId::kDunderLt, SymbolId::kDunderLe, SymbolId::kDunderEq,
+    SymbolId::kDunderNe, SymbolId::kDunderGt, SymbolId::kDunderGe,
+    // FOR_ITER
+    SymbolId::kDunderNext,
+    // INPLACE_*
+    SymbolId::kDunderIadd, SymbolId::kDunderIand, SymbolId::kDunderIfloordiv,
+    SymbolId::kDunderIlshift, SymbolId::kDunderImatmul, SymbolId::kDunderImod,
+    SymbolId::kDunderImul, SymbolId::kDunderIor, SymbolId::kDunderIpow,
+    SymbolId::kDunderIrshift, SymbolId::kDunderIsub, SymbolId::kDunderItruediv,
+    SymbolId::kDunderIxor,
+    // LOAD_ATTR, LOAD_METHOD
+    SymbolId::kDunderGetattribute,
+    // STORE_ATTR
+    SymbolId::kDunderSetattr};
+
+void terminateIfUnimplementedTypeAttrCacheInvalidation(Thread* thread,
+                                                       const Str& attr_name) {
+  Runtime* runtime = thread->runtime();
+  for (uword i = 0; i < ARRAYSIZE(kUnimplementedTypeAttrUpdates); ++i) {
+    if (attr_name.equals(
+            runtime->symbols()->at(kUnimplementedTypeAttrUpdates[i]))) {
+      UNIMPLEMENTED("unimplemented cache invalidation for type.%s update",
+                    attr_name.toCStr());
+    }
+  }
+}
+
 RawObject typeSetAttr(Thread* thread, const Type& type,
                       const Object& name_interned_str, const Object& value) {
   Runtime* runtime = thread->runtime();
@@ -374,9 +415,13 @@ RawObject TypeBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   if (!name.isStr()) {
     UNIMPLEMENTED("Strict subclass of string");
   }
-  name = runtime->internStr(thread, name);
+  Str interned_name(&scope, runtime->internStr(thread, name));
+  // Make sure cache invalidation is correctly done for this.
+  if (runtime->isCacheEnabled()) {
+    terminateIfUnimplementedTypeAttrCacheInvalidation(thread, interned_name);
+  }
   Object value(&scope, args.get(2));
-  return typeSetAttr(thread, self, name, value);
+  return typeSetAttr(thread, self, interned_name, value);
 }
 
 RawObject TypeBuiltins::dunderSubclasses(Thread* thread, Frame* frame,

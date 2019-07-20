@@ -2306,6 +2306,39 @@ del Foo.bar
   EXPECT_EQ(args.at(1), *attr);
 }
 
+TEST(
+    RuntimeTestNoFixture,
+    DeleteClassAttributeWithUnimplementedCacheInvalidationTerminatesPyroWhenCacheIsEnabled) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __len__(self): return 4
+
+del C.__len__
+)")
+                   .isError());
+  ASSERT_DEATH(static_cast<void>(runFromCStr(&runtime, R"(
+class C:
+  def __add__(self, other): return 4
+
+del C.__add__
+)")),
+               "unimplemented cache invalidation for type.__add__ update");
+}
+
+TEST(
+    RuntimeTestNoFixture,
+    DeleteClassAttributeWithUnimplementedCacheInvalidationDoesNotTerminatesPyroWhenCacheIsDisabled) {
+  Runtime runtime(/*cache_enabled=*/false);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class C:
+  def __add__(self, other): return 4
+
+del C.__add__
+)")
+                   .isError());
+}
+
 TEST_F(RuntimeModuleAttrTest, DeleteUnknownAttribute) {
   HandleScope scope(thread_);
   const char* src = R"(
