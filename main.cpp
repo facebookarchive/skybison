@@ -10,10 +10,10 @@
 #include "runtime/view.h"
 
 int main(int argc, const char** argv) {
-  bool cache_enabled = false;
+  bool cache_enabled = true;
   const char* enable_cache = std::getenv("PYRO_ENABLE_CACHE");
-  if (enable_cache != nullptr && enable_cache[0] != '\0') {
-    cache_enabled = true;
+  if (enable_cache != nullptr && enable_cache[0] == '0') {
+    cache_enabled = false;
   }
   // TODO(T43657667) Add code that can decide what we can cache and remove this.
   python::Runtime runtime(cache_enabled);
