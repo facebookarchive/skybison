@@ -26,6 +26,12 @@ TEST_F(PythonrunExtensionApiTest, RunSimpleStringReturnsZero) {
   EXPECT_EQ(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(PythonrunExtensionApiTest,
+       RunSimpleStringWithSyntaxErrorRaisesSyntaxError) {
+  EXPECT_EQ(PyRun_SimpleString(",,,"), -1);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
 TEST_F(PythonrunExtensionApiTest, RunSimpleStringPrintsUncaughtException) {
   CaptureStdStreams streams;
   ASSERT_EQ(PyRun_SimpleString("raise RuntimeError('boom')"), -1);

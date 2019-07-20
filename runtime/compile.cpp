@@ -18,18 +18,21 @@ RawObject bytecodeToCode(Thread* thread, const char* buffer) {
   return reader.readObject();
 }
 
+// TODO(T47585202): Remove and expose through a C-API module.
 RawObject compileFromCStr(const char* buffer, const char* file_name) {
   PyCompilerFlags flags;
   flags.cf_flags = 0;
   PyArena* arena = PyArena_New();
   void* node =
       PyParser_ASTFromString(buffer, file_name, Py_file_input, &flags, arena);
-  // TODO(T46359994): Return Error if node is null so we can raise exceptions
-  DCHECK(node != nullptr, "PyParser_ASTFromString must return a valid node");
+  if (node == nullptr) {
+    PyArena_Free(arena);
+    return Error::exception();
+  }
   PyObject* pycode = reinterpret_cast<PyObject*>(PyAST_CompileEx(
       reinterpret_cast<struct _mod*>(node), file_name, &flags, 0, arena));
   PyArena_Free(arena);
-  DCHECK(pycode != nullptr, "PyAST_CompileEx must return a valid code object");
+  if (pycode == nullptr) return Error::exception();
   return ApiHandle::fromPyObject(pycode)->asObject();
 }
 

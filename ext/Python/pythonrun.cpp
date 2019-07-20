@@ -211,7 +211,12 @@ PY_EXPORT int PyRun_SimpleStringFlags(const char* str, PyCompilerFlags* flags) {
   }
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Code code(&scope, compileFromCStr(str, "<string>"));
+  Object code_obj(&scope, compileFromCStr(str, "<string>"));
+  if (code_obj.isError()) {
+    printPendingExceptionWithSysLastVars(thread);
+    return -1;
+  }
+  Code code(&scope, *code_obj);
   Runtime* runtime = thread->runtime();
   Module main_module(&scope, runtime->findOrCreateMainModule());
   Object result(&scope, runtime->executeModule(code, main_module));
@@ -385,6 +390,7 @@ static void errInput(perrdetail* err) {
   Py_XDECREF(error_tuple);
   PyErr_SetObject(errtype, error_msg_tuple);
   Py_XDECREF(error_msg_tuple);
+  errInputCleanup(msg_obj, err);
 }
 
 PY_EXPORT struct _node* PyParser_SimpleParseStringFlagsFilename(

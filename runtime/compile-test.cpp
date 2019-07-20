@@ -28,4 +28,8 @@ TEST_F(CompileTest, CompileFromCStrReturnsCodeObject) {
   EXPECT_EQ(Bytes::cast(code.code()).compare(*expected_bytecode), 0);
 }
 
+TEST_F(CompileTest, CompileFromCStrWithSyntaxErrorRaisesSyntaxErrorException) {
+  EXPECT_TRUE(raised(compileFromCStr(",,,", "<test>"), LayoutId::kSyntaxError));
+}
+
 }  // namespace python
