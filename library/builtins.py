@@ -267,8 +267,7 @@ class object(bootstrap=True):  # noqa: E999
             raise TypeError("format_spec must be empty string")
         return str(self)
 
-    def __getattribute__(self, name):
-        pass
+    # __getattribute__ is defined in C++ code.
 
     def __hash__(self):
         pass

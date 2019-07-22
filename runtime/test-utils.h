@@ -143,6 +143,8 @@ std::string typeName(Runtime* runtime, RawObject obj);
 
 RawCode newEmptyCode();
 
+RawFunction newEmptyFunction();
+
 // Helper to allow construction from initializer list, like
 // newIntFromDigits(runtime, {-1, 1})
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits);

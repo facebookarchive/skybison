@@ -288,6 +288,18 @@ RawCode newEmptyCode() {
                                      /*lnotab=*/empty_bytes));
 }
 
+RawFunction newEmptyFunction() {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Code code(&scope, newEmptyCode());
+  Object qualname(&scope, Str::empty());
+  Module main(&scope, runtime->findOrCreateMainModule());
+  Dict globals(&scope, main.dict());
+  return Function::cast(
+      runtime->newFunctionWithCode(thread, qualname, code, globals));
+}
+
 RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
   return runtime->newIntWithDigits(View<uword>(digits.data(), digits.length()));
 }
@@ -333,15 +345,22 @@ RawObject runBuiltinImpl(NativeMethodType method,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   // Push an empty function so we have one at the expected place in the stack.
-  Str qualname(&scope, Str::empty());
-  Function function(&scope, thread->runtime()->newBuiltinFunction(
-                                SymbolId::kAnonymous, qualname, method));
   word args_length = args.length();
-  function.setArgcount(args_length);
-  function.setTotalArgs(args_length);
-  Code code(&scope, function.code());
-  code.setArgcount(args_length);
-  code.setNlocals(args_length);
+  Runtime* runtime = thread->runtime();
+  Tuple parameter_names(&scope, runtime->newTuple(args_length));
+  for (word i = 0; i < args_length; i++) {
+    parameter_names.atPut(i, runtime->newStrFromFmt("arg%w", i));
+  }
+
+  Object name(&scope, runtime->symbols()->Anonymous());
+  Code code(&scope, runtime->newBuiltinCode(args_length, /*posonlyargcount=*/0,
+                                            /*kwonlyargcount=*/0,
+                                            /*flags=*/0, method,
+                                            parameter_names, name));
+  Module main(&scope, runtime->findOrCreateMainModule());
+  Dict globals(&scope, main.dict());
+  Function function(&scope,
+                    runtime->newFunctionWithCode(thread, name, code, globals));
 
   Frame* frame = thread->currentFrame();
   frame->pushValue(*function);
@@ -360,13 +379,11 @@ RawObject runCode(const Code& code) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Dict globals(&scope, runtime->newDict());
-  Object qualname(&scope, Str::empty());
-  Dict empty_dict(&scope, runtime->newDict());
-  Object empty_tuple(&scope, runtime->emptyTuple());
-  Function function(&scope, Interpreter::makeFunction(
-                                thread, qualname, code, empty_tuple, empty_dict,
-                                empty_dict, empty_tuple, globals));
+  Module main(&scope, runtime->findOrCreateMainModule());
+  Object qualname(&scope, runtime->symbols()->Anonymous());
+  Dict globals(&scope, main.dict());
+  Function function(
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
   return Interpreter::callFunction0(thread, thread->currentFrame(), function);
 }
 

@@ -13,12 +13,27 @@ using namespace testing;
 using UnderBuiltinsModuleTest = RuntimeFixture;
 using UnderBuiltinsModuleDeathTest = RuntimeFixture;
 
+static RawObject createDummyBuiltinFunction(Thread* thread) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Function::Entry entry = UnderBuiltinsModule::underIntCheck;
+  Str name(&scope, runtime->symbols()->UnderIntCheck());
+  Tuple parameter_names(&scope, runtime->newTuple(1));
+  parameter_names.atPut(0, runtime->symbols()->Self());
+  Code code(&scope,
+            runtime->newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
+                                    /*kwonlyargcount=*/0,
+                                    /*flags=*/0, entry, parameter_names, name));
+  Object globals(&scope, NoneType::object());
+  Function function(&scope,
+                    runtime->newFunctionWithCode(thread, name, code, globals));
+  return *function;
+}
+
 TEST_F(UnderBuiltinsModuleTest, CopyFunctionEntriesCopies) {
   HandleScope scope(thread_);
-  Function::Entry entry = UnderBuiltinsModule::underIntCheck;
-  Str qualname(&scope, runtime_.symbols()->UnderIntCheck());
-  Function func(&scope, runtime_.newBuiltinFunction(SymbolId::kUnderIntCheck,
-                                                    qualname, entry));
+  Function function(&scope, createDummyBuiltinFunction(thread_));
+
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def _int_check(self):
   "docstring"
@@ -26,8 +41,8 @@ def _int_check(self):
 )")
                    .isError());
   Function python_func(&scope, moduleAt(&runtime_, "__main__", "_int_check"));
-  copyFunctionEntries(Thread::current(), func, python_func);
-  Code base_code(&scope, func.code());
+  copyFunctionEntries(Thread::current(), function, python_func);
+  Code base_code(&scope, function.code());
   Code patch_code(&scope, python_func.code());
   EXPECT_EQ(patch_code.code(), base_code.code());
   EXPECT_EQ(python_func.entry(), &builtinTrampoline);
@@ -37,10 +52,8 @@ def _int_check(self):
 
 TEST_F(UnderBuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {
   HandleScope scope(thread_);
-  Function::Entry entry = UnderBuiltinsModule::underIntCheck;
-  Str qualname(&scope, runtime_.symbols()->UnderIntCheck());
-  Function func(&scope, runtime_.newBuiltinFunction(SymbolId::kUnderIntCheck,
-                                                    qualname, entry));
+  Function function(&scope, createDummyBuiltinFunction(thread_));
+
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def _int_check(self):
   return True
@@ -48,7 +61,7 @@ def _int_check(self):
                    .isError());
   Function python_func(&scope, moduleAt(&runtime_, "__main__", "_int_check"));
   ASSERT_DEATH(
-      copyFunctionEntries(Thread::current(), func, python_func),
+      copyFunctionEntries(Thread::current(), function, python_func),
       "Redefinition of native code method '_int_check' in managed code");
 }
 
@@ -1309,18 +1322,21 @@ TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
 
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithMissingFuncRaisesAttributeError) {
   HandleScope scope(thread_);
-  SymbolId func_name = SymbolId::kHex;
-  Str qualname(&scope, runtime_.symbols()->at(func_name));
-  Function func(
-      &scope, runtime_.newBuiltinFunction(func_name, qualname,
-                                          UnderBuiltinsModule::underIntCheck));
-  Str module_name(&scope, runtime_.newStrFromCStr("foo"));
+
+  Object module_name(&scope, runtime_.newStrFromCStr("foo"));
   Module module(&scope, runtime_.newModule(module_name));
   runtime_.addModule(module);
-  func.setModule(*module_name);
-  EXPECT_TRUE(raisedWithStr(runBuiltin(UnderBuiltinsModule::underPatch, func),
-                            LayoutId::kAttributeError,
-                            "function hex not found in module foo"));
+
+  Object name(&scope, runtime_.newStrFromCStr("bar"));
+  Code code(&scope, newEmptyCode());
+  code.setName(*name);
+  Dict globals(&scope, module.dict());
+  Function function(&scope,
+                    runtime_.newFunctionWithCode(thread_, name, code, globals));
+
+  EXPECT_TRUE(raisedWithStr(
+      runBuiltin(UnderBuiltinsModule::underPatch, function),
+      LayoutId::kAttributeError, "function bar not found in module foo"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadBaseFuncRaisesTypeError) {

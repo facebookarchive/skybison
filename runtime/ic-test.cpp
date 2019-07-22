@@ -21,11 +21,9 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadAttrOperations) {
       EXTENDED_ARG, 3,         LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
   // makeFunction() calls icRewriteBytecode().
 
   byte expected[] = {
@@ -60,11 +58,9 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesZeroArgMethodCalls) {
       EXTENDED_ARG, 3,         LOAD_ATTR,     4,    CALL_FUNCTION, 1,
       LOAD_ATTR,    4,         CALL_FUNCTION, 0};
   code.setCode(runtime.newBytesWithAll(bytecode));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
 
   byte expected[] = {NOP,
                      99,
@@ -128,11 +124,9 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadConstOperations) {
   consts.atPut(6, runtime.newTuple(4));
   code.setConsts(*consts);
 
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
 
   byte expected[] = {
       LOAD_IMMEDIATE,
@@ -166,12 +160,10 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadMethodOperations) {
       EXTENDED_ARG, 3,           LOAD_METHOD,  4,    LOAD_METHOD,  77,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
-  // makeFunction() calls icRewriteBytecode().
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
+  // newFunctionWithCode() calls icRewriteBytecode().
 
   byte expected[] = {
       NOP,          99,          EXTENDED_ARG,       0, LOAD_METHOD_CACHED, 0,
@@ -201,12 +193,10 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesStoreAttr) {
   Code code(&scope, newEmptyCode());
   byte bytecode[] = {STORE_ATTR, 48};
   code.setCode(runtime.newBytesWithAll(bytecode));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
-  // makeFunction() calls icRewriteBytecode().
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
+  // newFunctionWithCode() calls icRewriteBytecode().
 
   byte expected[] = {STORE_ATTR_CACHED, 0};
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
@@ -250,12 +240,10 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesBinaryOpcodes) {
       0,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
-  // makeFunction() calls icRewriteBytecode().
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
+  // newFunctionWithCode() calls icRewriteBytecode().
 
   byte expected[] = {
       BINARY_OP_CACHED, 0,  BINARY_OP_CACHED, 1,  BINARY_OP_CACHED, 2,
@@ -330,12 +318,10 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesInplaceOpcodes) {
       0,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
-  // makeFunction() calls icRewriteBytecode().
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
+  // newFunctionWithCode() calls icRewriteBytecode().
 
   byte expected[] = {
       INPLACE_OP_CACHED, 0,  INPLACE_OP_CACHED, 1,  INPLACE_OP_CACHED, 2,
@@ -390,12 +376,10 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesCompareOpOpcodes) {
       COMPARE_OP, CompareOp::EXC_MATCH,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
-  // makeFunction() calls icRewriteBytecode().
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
+  // newFunctionWithCode() calls icRewriteBytecode().
 
   byte expected[] = {
       COMPARE_OP_CACHED, 0,
@@ -434,12 +418,10 @@ TEST(IcTestNoFixture,
   };
   code.setCode(runtime.newBytesWithAll(bytecode));
   code.setNames(runtime.newTuple(12));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
-  // makeFunction() calls icRewriteBytecode().
+  Function function(&scope,
+                    runtime.newFunctionWithCode(thread, name, code, globals));
+  // newFunctionWithCode() calls icRewriteBytecode().
 
   byte expected[] = {
       LOAD_GLOBAL,
@@ -500,12 +482,10 @@ TEST(IcTestNoFixture, IcRewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
                             /*filename=*/empty_string, /*name=*/empty_string,
                             /*firstlineno=*/0, lnotab));
 
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime.newDict());
   Function function(
-      &scope, Interpreter::makeFunction(thread, empty_string, code, none, none,
-                                        none, none, globals));
-  // makeFunction() calls icRewriteBytecode().
+      &scope, runtime.newFunctionWithCode(thread, empty_string, code, globals));
+  // newFunctionWithCode() calls icRewriteBytecode().
 
   byte expected[] = {
       LOAD_FAST_REVERSE,  2, LOAD_FAST_REVERSE,  3, LOAD_FAST_REVERSE,  4,
@@ -839,16 +819,14 @@ static RawObject testingFunctionCachingAttributes(Thread* thread,
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime->newDict());
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
   rewritten_bytecode.byteAtPut(0, LOAD_ATTR_CACHED);
   rewritten_bytecode.byteAtPut(1, 1);
 
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
+  Function function(&scope,
+                    runtime->newFunctionWithCode(thread, name, code, globals));
   function.setRewrittenBytecode(*rewritten_bytecode);
 
   Tuple original_arguments(&scope, runtime->newTuple(2));
@@ -1299,7 +1277,6 @@ static RawObject testingFunction(Thread* thread) {
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
   Code code(&scope, newEmptyCode());
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime->newDict());
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
@@ -1312,9 +1289,8 @@ static RawObject testingFunction(Thread* thread) {
   rewritten_bytecode.byteAtPut(6, STORE_GLOBAL);
   rewritten_bytecode.byteAtPut(7, 1);
 
-  Function function(
-      &scope, Interpreter::makeFunction(thread, name, code, none, none, none,
-                                        none, globals));
+  Function function(&scope,
+                    runtime->newFunctionWithCode(thread, name, code, globals));
   function.setRewrittenBytecode(*rewritten_bytecode);
 
   code.setNames(runtime->newTuple(2));

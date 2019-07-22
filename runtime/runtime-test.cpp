@@ -45,10 +45,8 @@ RawObject makeTestFunction() {
   consts.atPut(0, NoneType::object());
   code.setConsts(*consts);
   Object qualname(&scope, runtime->newStrFromCStr("foo"));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime->newDict());
-  return Interpreter::makeFunction(thread, qualname, code, none, none, none,
-                                   none, globals);
+  return runtime->newFunctionWithCode(thread, qualname, code, globals);
 }
 
 TEST_F(RuntimeTest, CollectGarbage) {
@@ -881,7 +879,7 @@ TEST_F(RuntimeTest, NewStrFromFmtWithStrArg) {
 
 TEST_F(RuntimeStrTest, NewStrFromFmtFormatsFunctionName) {
   HandleScope scope(thread_);
-  Function function(&scope, runtime_.newFunction());
+  Function function(&scope, newEmptyFunction());
   function.setQualname(runtime_.newStrFromCStr("foo"));
   Object str(&scope, runtime_.newStrFromFmt("hello %F", &function));
   EXPECT_TRUE(isStrEqualsCStr(*str, "hello foo"));
@@ -3286,14 +3284,6 @@ o.__getitem__ = 4
 
 TEST_F(RuntimeTest, ModuleBuiltinsExists) {
   ASSERT_FALSE(moduleAt(&runtime_, "builtins", "__name__").isError());
-}
-
-TEST_F(RuntimeTest, NewBuiltinFunctionAddsQualname) {
-  HandleScope scope(thread_);
-  Str name(&scope, runtime_.newStrFromCStr("Foo.bar"));
-  Function fn(&scope, runtime_.newBuiltinFunction(SymbolId::kDummy, name,
-                                                  unimplementedTrampoline));
-  EXPECT_EQ(fn.qualname(), *name);
 }
 
 TEST_F(RuntimeStrTest, StrJoinWithNonStrRaisesTypeError) {

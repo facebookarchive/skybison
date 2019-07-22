@@ -640,13 +640,12 @@ TEST_F(TrampolinesTest, InterpreterClosureUsesArgOverCellValue) {
   ASSERT_TRUE(!code.cell2arg().isNoneType());
 
   Object qualname(&scope, runtime_.newStrFromCStr("foo"));
-  Tuple closure_tuple(&scope, runtime_.newTuple(1));
-  closure_tuple.atPut(0, runtime_.newInt(99));
-  Object none(&scope, NoneType::object());
   Dict globals(&scope, runtime_.newDict());
   Function foo(&scope,
-               Interpreter::makeFunction(thread_, qualname, code, closure_tuple,
-                                         none, none, none, globals));
+               runtime_.newFunctionWithCode(thread_, qualname, code, globals));
+  Tuple closure_tuple(&scope, runtime_.newTuple(1));
+  closure_tuple.atPut(0, runtime_.newInt(99));
+  foo.setClosure(*closure_tuple);
 
   Object argument(&scope, runtime_.newInt(3));
   EXPECT_TRUE(
@@ -732,13 +731,8 @@ static RawObject makeFunctionWithPosOnlyArg(Thread* thread) {
                              /*cellvars=*/empty_tuple,
                              /*filename=*/empty_str, name,
                              /*firstlineno=*/0, /*lnotab=*/empty_bytes));
-  Dict annotations(&scope, runtime->newDict());
-  Dict kw_defaults(&scope, runtime->newDict());
   Dict globals(&scope, runtime->newDict());
-  return Interpreter::makeFunction(thread, /*qualname_str=*/name, code,
-                                   /*closure_tuple=*/empty_tuple, annotations,
-                                   kw_defaults, /*defaults_tuple=*/empty_tuple,
-                                   globals);
+  return runtime->newFunctionWithCode(thread, name, code, globals);
 }
 
 TEST_F(TrampolinesTest, KeywordCallRejectsPositionalOnlyArgumentNames) {
@@ -811,16 +805,13 @@ TEST_F(TrampolinesTest, KeywordCallWithPositionalOnlyArgumentsAndVarKeyArgs) {
                              /*cellvars=*/empty_tuple,
                              /*filename=*/empty_str, name,
                              /*firstlineno=*/0, /*lnotab=*/empty_bytes));
-  Dict annotations(&scope, runtime_.newDict());
-  Dict kw_defaults(&scope, runtime_.newDict());
+  Dict globals(&scope, runtime_.newDict());
+  Function foo(&scope,
+               runtime_.newFunctionWithCode(thread_, name, code, globals));
   Tuple defaults(&scope, runtime_.newTuple(2));
   defaults.atPut(0, runtime_.newInt(7));
   defaults.atPut(1, runtime_.newInt(10));
-  Dict globals(&scope, runtime_.newDict());
-  Function foo(&scope, Interpreter::makeFunction(
-                           thread_, /*qualname_str=*/name, code,
-                           /*closure_tuple=*/empty_tuple, annotations,
-                           kw_defaults, defaults, globals));
+  foo.setDefaults(*defaults);
   // Call foo(1, c=13, b=5).
   Frame* frame = thread_->currentFrame();
   frame->pushValue(*foo);

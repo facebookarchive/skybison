@@ -205,7 +205,6 @@ RawObject objectSetAttr(Thread* thread, const Object& object,
 }
 
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderGetattribute, dunderGetattribute},
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderInit, dunderInit},
     {SymbolId::kDunderNew, dunderNew},
@@ -241,18 +240,26 @@ void ObjectBuiltins::postInitialize(Runtime* runtime, const Type& new_type) {
   // Add object as the implicit base class for new types.
   runtime->initializeImplicitBases();
 
-  // Manually set argcount to avoid bootstrap problems.
+  // Manually create `__getattribute__` method to avoid bootstrap problems.
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Dict type_dict(&scope, new_type.dict());
-  Object dunder_getattribute_name(&scope,
-                                  runtime->symbols()->DunderGetattribute());
+
+  Tuple parameter_names(&scope, runtime->newTuple(2));
+  parameter_names.atPut(0, runtime->symbols()->Self());
+  parameter_names.atPut(1, runtime->symbols()->Name());
+  Object name(&scope, runtime->symbols()->DunderGetattribute());
+  Code code(&scope,
+            runtime->newBuiltinCode(
+                /*argcount=*/2, /*posonlyargcount=*/2, /*kwonlyargcount=*/0,
+                /*flags=*/0, dunderGetattribute, parameter_names, name));
+  Object qualname(
+      &scope, runtime->internStrFromCStr(thread, "object.__getattribute__"));
+  Object globals(&scope, NoneType::object());
   Function dunder_getattribute(
-      &scope, runtime->typeDictAt(thread, type_dict, dunder_getattribute_name));
-  Code code(&scope, dunder_getattribute.code());
-  code.setArgcount(2);
-  dunder_getattribute.setArgcount(2);
-  dunder_getattribute.setTotalArgs(2);
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
+
+  runtime->typeDictAtPut(thread, type_dict, name, dunder_getattribute);
 }
 
 RawObject ObjectBuiltins::dunderGetattribute(Thread* thread, Frame* frame,

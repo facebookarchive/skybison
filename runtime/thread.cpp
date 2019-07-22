@@ -170,8 +170,6 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
                        const Object& locals) {
   HandleScope scope(this);
   Object qualname(&scope, Str::empty());
-  Object empty_tuple(&scope, runtime()->emptyTuple());
-  Dict empty_dict(&scope, runtime()->newDict());
 
   CHECK(!code.hasOptimizedOrNewLocals(),
         "exec() code must not have CO_OPTIMIZED or CO_NEWLOCALS");
@@ -187,9 +185,8 @@ RawObject Thread::exec(const Code& code, const Dict& globals,
                              builtins_module_obj);
   }
 
-  Function function(&scope, Interpreter::makeFunction(
-                                this, qualname, code, empty_tuple, empty_dict,
-                                empty_dict, empty_tuple, globals));
+  Function function(
+      &scope, runtime->newFunctionWithCode(this, qualname, code, globals));
   // Push implicit globals.
   currentFrame()->pushValue(*locals);
   // Push function to be available from frame.function().

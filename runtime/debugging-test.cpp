@@ -52,21 +52,23 @@ static RawObject makeTestFunction(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object qualname(&scope, runtime->newStrFromCStr("footype.baz"));
   Code code(&scope, makeTestCode(thread));
-  Object closure(&scope, runtime->emptyTuple());
+  Dict globals(&scope, runtime->newDict());
+  Function func(&scope,
+                runtime->newFunctionWithCode(thread, qualname, code, globals));
   Dict annotations(&scope, runtime->newDict());
   Object return_name(&scope, runtime->newStrFromCStr("return"));
   Object int_type(&scope, runtime->typeAt(LayoutId::kInt));
   runtime->dictAtPut(thread, annotations, return_name, int_type);
+  func.setAnnotations(*annotations);
+  func.setClosure(runtime->emptyTuple());
   Dict kw_defaults(&scope, runtime->newDict());
   Object name0(&scope, runtime->newStrFromCStr("name0"));
   Object none(&scope, NoneType::object());
   runtime->dictAtPut(thread, kw_defaults, name0, none);
+  func.setKwDefaults(*kw_defaults);
   Tuple defaults(&scope, runtime->newTuple(1));
   defaults.atPut(0, runtime->newInt(-9));
-  Dict globals(&scope, runtime->newDict());
-  Function func(&scope, Interpreter::makeFunction(
-                            thread, qualname, code, closure, annotations,
-                            kw_defaults, defaults, globals));
+  func.setDefaults(*defaults);
   func.setIntrinsicId(static_cast<word>(SymbolId::kList));
   func.setModule(runtime->newStrFromCStr("barmodule"));
   func.setName(runtime->newStrFromCStr("baz"));
@@ -413,12 +415,17 @@ def func(arg0, arg1):
                    .isError());
   Function func(&scope, moduleAt(&runtime_, "__main__", "func"));
 
+  Object empty_tuple(&scope, runtime_.emptyTuple());
+  Str name(&scope, runtime_.newStrFromCStr("_bytearray_check"));
+  Code code(&scope,
+            runtime_.newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
+                                    /*kwonlyargcount=*/0,
+                                    /*flags=*/0, /*entry=*/nullptr,
+                                    /*parameter_names=*/empty_tuple, name));
   Str qualname(&scope, runtime_.newStrFromCStr("test._bytearray_check"));
-  Function builtin(&scope,
-                   runtime_.newBuiltinFunction(SymbolId::kUnderByteArrayCheck,
-                                               qualname, nullptr));
-  builtin.setArgcount(0);
-  builtin.setTotalArgs(0);
+  Dict globals(&scope, runtime_.newDict());
+  Function builtin(
+      &scope, runtime_.newFunctionWithCode(thread_, qualname, code, globals));
 
   Frame* root = thread_->currentFrame();
   ASSERT_TRUE(root->isSentinel());

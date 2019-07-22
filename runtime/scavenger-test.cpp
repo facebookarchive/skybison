@@ -258,11 +258,15 @@ def g(ref, b=2):
   {
     Tuple array1(&scope, runtime_.newTuple(10));
     Str name(&scope, runtime_.newStrFromCStr("collect"));
-    Function collect(&scope, runtime_.newBuiltinFunction(SymbolId::kDummy, name,
-                                                         doGarbageCollection));
-    Code::cast(collect.code()).setArgcount(0);
-    collect.setArgcount(0);
-    collect.setTotalArgs(0);
+    Object empty_tuple(&scope, runtime_.emptyTuple());
+    Code code(&scope,
+              runtime_.newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
+                                      /*kwonlyargcount=*/0, /*flags=*/0,
+                                      doGarbageCollection,
+                                      /*parameter_names=*/empty_tuple, name));
+    Dict globals(&scope, runtime_.newDict());
+    Function collect(
+        &scope, runtime_.newFunctionWithCode(thread_, name, code, globals));
 
     WeakRef ref1_inner(&scope, runtime_.newWeakRef(thread_, array1, collect));
     ref1 = *ref1_inner;

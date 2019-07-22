@@ -49,7 +49,7 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNonFunctionSelfRaisesTypeError) {
 
 TEST_F(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
   HandleScope scope(thread_);
-  Object func(&scope, runtime_.newFunction());
+  Object func(&scope, newEmptyFunction());
   Object not_none(&scope, SmallInt::fromWord(1));
   Object not_none_type(&scope, runtime_.typeOf(*not_none));
   Object result(&scope, runBuiltin(FunctionBuiltins::dunderGet, func, not_none,
@@ -62,7 +62,7 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
 TEST_F(FunctionBuiltinsTest,
        DunderGetWithNoneInstanceAndNoneTypeReturnsBoundMethod) {
   HandleScope scope(thread_);
-  Object func(&scope, runtime_.newFunction());
+  Object func(&scope, newEmptyFunction());
   Object none(&scope, NoneType::object());
   Type none_type(&scope, runtime_.typeOf(*none));
   Object result(&scope,
@@ -74,7 +74,7 @@ TEST_F(FunctionBuiltinsTest,
 
 TEST_F(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   HandleScope scope(thread_);
-  Object func(&scope, runtime_.newFunction());
+  Object func(&scope, newEmptyFunction());
   Object none(&scope, NoneType::object());
   Type some_type(&scope, runtime_.typeOf(*func));
   Object result(&scope,

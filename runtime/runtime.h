@@ -99,6 +99,11 @@ class Runtime {
                     const Object& filename, const Object& name,
                     word firstlineno, const Object& lnotab);
 
+  RawObject newBuiltinCode(word argcount, word posonlyargcount,
+                           word kwonlyargcount, word flags,
+                           Function::Entry entry, const Object& parameter_names,
+                           const Object& name_str);
+
   RawObject newComplex(double real, double imag);
 
   RawObject newCoroutine();
@@ -120,21 +125,16 @@ class Runtime {
   RawObject emptyFrozenSet();
   RawObject newFrozenSet();
 
-  RawObject newBuiltinFunction(SymbolId name, const Str& qualname,
-                               Function::Entry entry);
+  RawObject newFunctionWithCode(Thread* thread, const Object& qualname,
+                                const Code& code, const Object& globals_dict);
 
-  // Helper for Interpreter::makeFunction(); do not call directly.
-  RawObject newInterpreterFunction(
-      Thread* thread, const Object& name, const Object& qualname,
-      const Code& code, word flags, word argcount, word total_args,
-      word total_vars, word stacksize, const Object& closure,
-      const Object& annotations, const Object& kw_defaults,
-      const Object& defaults, const Dict& globals, Function::Entry entry,
-      Function::Entry entry_kw, Function::Entry entry_ex);
+  RawObject newFunctionWithCustomEntry(Thread* thread, const Object& name,
+                                       const Object& code,
+                                       Function::Entry entry,
+                                       Function::Entry entry_kw,
+                                       Function::Entry entry_ex);
 
   RawObject newExceptionState();
-
-  RawObject newFunction();
 
   RawObject newGenerator();
 
@@ -885,6 +885,11 @@ class Runtime {
   RawObject valueHash(RawObject object);
 
   RawObject createMro(const Layout& subclass_layout, LayoutId superclass_id);
+
+  RawObject newFunction(Thread* thread, const Object& name, const Object& code,
+                        word flags, word argcount, word total_args,
+                        word total_vars, word stacksize, Function::Entry entry,
+                        Function::Entry entry_kw, Function::Entry entry_ex);
 
   static bool dictHasEmptyItem(const Tuple& data);
 

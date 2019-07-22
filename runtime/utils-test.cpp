@@ -149,14 +149,7 @@ TEST_F(UtilsTest, PrintTracebackPrintsInvalidFrame) {
 TEST_F(UtilsTest, PrinTracebackPrintsFrameWithInvalidFunction) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
-  code.setCode(Bytes::empty());
-  Object qualname(&scope, Str::empty());
-  Object none(&scope, NoneType::object());
-  Dict globals(&scope, runtime_.newDict());
-  Function function(
-      &scope, Interpreter::makeFunction(thread_, qualname, code, none, none,
-                                        none, none, globals));
+  Function function(&scope, newEmptyFunction());
 
   Frame* frame = thread_->currentFrame();
   frame->pushValue(*function);

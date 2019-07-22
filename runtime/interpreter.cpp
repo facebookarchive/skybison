@@ -911,89 +911,6 @@ RawObject Interpreter::isTrueSlowPath(Thread* thread, RawObject value_obj) {
   return Bool::trueObj();
 }
 
-RawObject Interpreter::makeFunction(Thread* thread, const Object& qualname_str,
-                                    const Code& code,
-                                    const Object& closure_tuple,
-                                    const Object& annotations_dict,
-                                    const Object& kw_defaults_dict,
-                                    const Object& defaults_tuple,
-                                    const Dict& globals) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-
-  Function::Entry entry;
-  Function::Entry entry_kw;
-  Function::Entry entry_ex;
-  word flags = code.flags();
-  if (!code.hasOptimizedAndNewLocals()) {
-    // We do not support calling non-optimized functions directly. We only allow
-    // them in Thread::exec() and Thread::runClassFunction().
-    entry = unimplementedTrampoline;
-    entry_kw = unimplementedTrampoline;
-    entry_ex = unimplementedTrampoline;
-  } else if (code.isGeneratorLike()) {
-    if (code.hasFreevarsOrCellvars()) {
-      entry = generatorClosureTrampoline;
-      entry_kw = generatorClosureTrampolineKw;
-      entry_ex = generatorClosureTrampolineEx;
-    } else {
-      entry = generatorTrampoline;
-      entry_kw = generatorTrampolineKw;
-      entry_ex = generatorTrampolineEx;
-    }
-  } else {
-    if (code.hasFreevarsOrCellvars()) {
-      entry = interpreterClosureTrampoline;
-      entry_kw = interpreterClosureTrampolineKw;
-      entry_ex = interpreterClosureTrampolineEx;
-    } else {
-      entry = interpreterTrampoline;
-      entry_kw = interpreterTrampolineKw;
-      entry_ex = interpreterTrampolineEx;
-    }
-    flags |= Function::Flags::kInterpreted;
-  }
-  Object name(&scope, code.name());
-  word total_args = code.totalArgs();
-  word total_vars =
-      code.nlocals() - total_args + code.numCellvars() + code.numFreevars();
-  // HACK: Reserve one extra stack slot for the case where we need to unwrap a
-  // bound method.
-  word stacksize = code.stacksize() + 1;
-
-  Function function(
-      &scope, runtime->newInterpreterFunction(
-                  thread, name, qualname_str, code, flags, code.argcount(),
-                  total_args, total_vars, stacksize, closure_tuple,
-                  annotations_dict, kw_defaults_dict, defaults_tuple, globals,
-                  entry, entry_kw, entry_ex));
-
-  Object dunder_name(&scope, runtime->symbols()->at(SymbolId::kDunderName));
-  Object value_cell(&scope, runtime->dictAt(thread, globals, dunder_name));
-  if (value_cell.isValueCell()) {
-    DCHECK(!ValueCell::cast(*value_cell).isUnbound(), "unbound globals");
-    function.setModule(ValueCell::cast(*value_cell).value());
-  }
-  Object consts_obj(&scope, code.consts());
-  if (consts_obj.isTuple() && Tuple::cast(*consts_obj).length() >= 1) {
-    Tuple consts(&scope, *consts_obj);
-    if (consts.at(0).isStr()) {
-      function.setDoc(consts.at(0));
-    }
-  }
-  Bytes bytecode(&scope, code.code());
-  function.setRewrittenBytecode(
-      runtime->mutableBytesFromBytes(thread, bytecode));
-  function.setCaches(runtime->emptyTuple());
-  function.setOriginalArguments(runtime->emptyTuple());
-  if (runtime->isCacheEnabled()) {
-    // TODO(T45382423): Move this into a separate function to be called by a
-    // relevant opcode during opcode execution.
-    icRewriteBytecode(thread, function);
-  }
-  return *function;
-}
-
 HANDLER_INLINE void Interpreter::raise(Thread* thread, RawObject exc_obj,
                                        RawObject cause_obj) {
   Frame* frame = thread->currentFrame();
@@ -3008,21 +2925,31 @@ HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {
 }
 
 HANDLER_INLINE Continue Interpreter::doMakeFunction(Thread* thread, word arg) {
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
   Object qualname(&scope, frame->popValue());
   Code code(&scope, frame->popValue());
-  Object closure(&scope, NoneType::object());
-  Object annotations(&scope, NoneType::object());
-  Object kw_defaults(&scope, NoneType::object());
-  Object defaults(&scope, NoneType::object());
-  if (arg & MakeFunctionFlag::CLOSURE) closure = frame->popValue();
-  if (arg & MakeFunctionFlag::ANNOTATION_DICT) annotations = frame->popValue();
-  if (arg & MakeFunctionFlag::DEFAULT_KW) kw_defaults = frame->popValue();
-  if (arg & MakeFunctionFlag::DEFAULT) defaults = frame->popValue();
   Dict globals(&scope, frame->function().globals());
-  frame->pushValue(makeFunction(thread, qualname, code, closure, annotations,
-                                kw_defaults, defaults, globals));
+  Runtime* runtime = thread->runtime();
+  Function function(
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
+  if (arg & MakeFunctionFlag::CLOSURE) {
+    function.setClosure(frame->popValue());
+    DCHECK(runtime->isInstanceOfTuple(function.closure()), "expected tuple");
+  }
+  if (arg & MakeFunctionFlag::ANNOTATION_DICT) {
+    function.setAnnotations(frame->popValue());
+    DCHECK(runtime->isInstanceOfDict(function.annotations()), "expected dict");
+  }
+  if (arg & MakeFunctionFlag::DEFAULT_KW) {
+    function.setKwDefaults(frame->popValue());
+    DCHECK(runtime->isInstanceOfDict(function.kwDefaults()), "expected dict");
+  }
+  if (arg & MakeFunctionFlag::DEFAULT) {
+    function.setDefaults(frame->popValue());
+    DCHECK(runtime->isInstanceOfTuple(function.defaults()), "expected tuple");
+  }
+  frame->pushValue(*function);
   return Continue::NEXT;
 }
 

@@ -518,6 +518,7 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
   DCHECK(isInstanceOfStr(*filename), "expected str");
   DCHECK(isInstanceOfStr(*name), "expected str");
   DCHECK(isInstanceOfBytes(*lnotab), "expected bytes");
+  DCHECK(argcount >= 0, "argcount must not be negative");
   DCHECK(posonlyargcount >= 0, "posonlyargcount must not be negative");
   DCHECK(kwonlyargcount >= 0, "kwonlyargcount must not be negative");
   DCHECK(nlocals >= 0, "nlocals must not be negative");
@@ -590,52 +591,36 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
   return *result;
 }
 
-RawObject Runtime::newBuiltinFunction(SymbolId name, const Str& qualname,
-                                      Function::Entry entry) {
+RawObject Runtime::newBuiltinCode(word argcount, word posonlyargcount,
+                                  word kwonlyargcount, word flags,
+                                  Function::Entry entry,
+                                  const Object& parameter_names,
+                                  const Object& name_str) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Object entry_ptr(&scope, newIntFromCPtr(bit_cast<void*>(entry)));
-  Tuple empty_tuple(&scope, newTuple(0));
+  Tuple empty_tuple(&scope, emptyTuple());
   Object empty_string(&scope, Str::empty());
-  Object empty_bytes(&scope, Bytes::empty());
-  Object name_str(&scope, symbols()->at(name));
-  Code code(&scope, newCode(/*argcount=*/-1,
-                            /*posonlyargcount=*/0,
-                            /*kwonlyargcount=*/0,
-                            /*nlocals=*/0,
-                            /*stacksize=*/0,
-                            /*flags=*/0,
-                            /*code=*/entry_ptr,
-                            /*consts=*/empty_tuple,
-                            /*names=*/empty_tuple,
-                            /*varnames=*/empty_tuple,
-                            /*freevars=*/empty_tuple,
-                            /*cellvars=*/empty_tuple,
-                            /*filename=*/empty_string,
-                            /*name=*/name_str,
-                            /*firstlineno=*/0,
-                            /*lnotab=*/empty_bytes));
-
-  Function function(&scope, heap()->create<RawFunction>());
-  function.setFlags(0);
-  function.setArgcount(-1);
-  function.setTotalArgs(-1);
-  function.setName(symbols()->at(name));
-  function.setQualname(internStr(thread, qualname));
-  function.setEntry(builtinTrampoline);
-  function.setEntryKw(builtinTrampolineKw);
-  function.setEntryEx(builtinTrampolineEx);
-  function.setCode(*code);
-  return *function;
+  Object lnotab(&scope, Bytes::empty());
+  word nlocals = argcount + kwonlyargcount +
+                 ((flags & Code::Flags::VARARGS) != 0) +
+                 ((flags & Code::Flags::VARKEYARGS) != 0);
+  flags |= Code::Flags::OPTIMIZED | Code::Flags::NEWLOCALS;
+  Object entry_ptr(&scope, newIntFromCPtr(bit_cast<void*>(entry)));
+  return newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
+                 /*stacksize=*/0, flags, entry_ptr, /*consts=*/empty_tuple,
+                 /*names=*/empty_tuple,
+                 /*varnames=*/parameter_names, /*freevars=*/empty_tuple,
+                 /*cellvars=*/empty_tuple, /*filename=*/empty_string, name_str,
+                 /*firstlineno=*/0, lnotab);
 }
 
-RawObject Runtime::newInterpreterFunction(
-    Thread* thread, const Object& name, const Object& qualname,
-    const Code& code, word flags, word argcount, word total_args,
-    word total_vars, word stacksize, const Object& closure,
-    const Object& annotations, const Object& kw_defaults,
-    const Object& defaults, const Dict& globals, Function::Entry entry,
-    Function::Entry entry_kw, Function::Entry entry_ex) {
+RawObject Runtime::newFunction(Thread* thread, const Object& name,
+                               const Object& code, word flags, word argcount,
+                               word total_args, word total_vars, word stacksize,
+                               Function::Entry entry, Function::Entry entry_kw,
+                               Function::Entry entry_ex) {
+  DCHECK(isInstanceOfStr(*name), "expected str");
+
   HandleScope scope(thread);
   Function function(&scope, heap()->create<RawFunction>());
   function.setCode(*code);
@@ -645,32 +630,124 @@ RawObject Runtime::newInterpreterFunction(
   function.setTotalVars(total_vars);
   function.setStacksize(stacksize);
   function.setName(*name);
-  function.setQualname(*qualname);
-  function.setGlobals(*globals);
-  function.setClosure(*closure);
-  function.setAnnotations(*annotations);
-  function.setKwDefaults(*kw_defaults);
-  function.setDefaults(*defaults);
+  function.setQualname(*name);
   function.setEntry(entry);
   function.setEntryKw(entry_kw);
   function.setEntryEx(entry_ex);
   return *function;
 }
 
-RawObject Runtime::newExceptionState() {
-  return heap()->create<RawExceptionState>();
+RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
+                                       const Code& code,
+                                       const Object& globals_dict) {
+  HandleScope scope(thread);
+
+  Function::Entry entry;
+  Function::Entry entry_kw;
+  Function::Entry entry_ex;
+  word flags = code.flags();
+  word stacksize = code.stacksize();
+  if (!code.hasOptimizedAndNewLocals()) {
+    // We do not support calling non-optimized functions directly. We only allow
+    // them in Thread::exec() and Thread::runClassFunction().
+    entry = unimplementedTrampoline;
+    entry_kw = unimplementedTrampoline;
+    entry_ex = unimplementedTrampoline;
+  } else if (code.isNative()) {
+    entry = builtinTrampoline;
+    entry_kw = builtinTrampolineKw;
+    entry_ex = builtinTrampolineEx;
+    DCHECK(stacksize == 0, "expected zero stacksize");
+  } else if (code.isGeneratorLike()) {
+    if (code.hasFreevarsOrCellvars()) {
+      entry = generatorClosureTrampoline;
+      entry_kw = generatorClosureTrampolineKw;
+      entry_ex = generatorClosureTrampolineEx;
+    } else {
+      entry = generatorTrampoline;
+      entry_kw = generatorTrampolineKw;
+      entry_ex = generatorTrampolineEx;
+    }
+    // HACK: Reserve one extra stack slot for the case where we need to unwrap a
+    // bound method.
+    stacksize++;
+  } else {
+    if (code.hasFreevarsOrCellvars()) {
+      entry = interpreterClosureTrampoline;
+      entry_kw = interpreterClosureTrampolineKw;
+      entry_ex = interpreterClosureTrampolineEx;
+    } else {
+      entry = interpreterTrampoline;
+      entry_kw = interpreterTrampolineKw;
+      entry_ex = interpreterTrampolineEx;
+    }
+    flags |= Function::Flags::kInterpreted;
+    // HACK: Reserve one extra stack slot for the case where we need to unwrap a
+    // bound method.
+    stacksize++;
+  }
+  Object name(&scope, code.name());
+  word total_args = code.totalArgs();
+  word total_vars =
+      code.nlocals() - total_args + code.numCellvars() + code.numFreevars();
+
+  Function function(&scope, newFunction(thread, name, code, flags,
+                                        code.argcount(), total_args, total_vars,
+                                        stacksize, entry, entry_kw, entry_ex));
+
+  DCHECK(isInstanceOfStr(*qualname), "expected str");
+  function.setQualname(*qualname);
+
+  if (!globals_dict.isNoneType()) {
+    Dict globals(&scope, *globals_dict);
+    Object dunder_name(&scope, symbols()->at(SymbolId::kDunderName));
+    Object value_cell(&scope, dictAt(thread, globals, dunder_name));
+    if (value_cell.isValueCell()) {
+      DCHECK(!ValueCell::cast(*value_cell).isUnbound(), "unbound globals");
+      function.setModule(ValueCell::cast(*value_cell).value());
+    }
+    function.setGlobals(*globals);
+  } else {
+    DCHECK(code.isNative(), "Only native code may have no globals");
+  }
+
+  Object consts_obj(&scope, code.consts());
+  if (consts_obj.isTuple()) {
+    Tuple consts(&scope, *consts_obj);
+    if (consts.length() >= 1 && consts.at(0).isStr()) {
+      function.setDoc(consts.at(0));
+    }
+  }
+
+  if (!code.isNative()) {
+    Bytes bytecode(&scope, code.code());
+    function.setRewrittenBytecode(mutableBytesFromBytes(thread, bytecode));
+    function.setCaches(emptyTuple());
+    function.setOriginalArguments(emptyTuple());
+    if (isCacheEnabled()) {
+      // TODO(T45382423): Move this into a separate function to be called by a
+      // relevant opcode during opcode execution.
+      icRewriteBytecode(thread, function);
+    }
+  }
+  return *function;
 }
 
-RawObject Runtime::newFunction() {
-  HandleScope scope;
-  Function result(&scope, heap()->create<RawFunction>());
-  result.setFlags(0);
-  result.setArgcount(-1);
-  result.setEntry(unimplementedTrampoline);
-  result.setEntryKw(unimplementedTrampoline);
-  result.setEntryEx(unimplementedTrampoline);
-  result.setName(symbols()->Anonymous());
-  return *result;
+RawObject Runtime::newFunctionWithCustomEntry(
+    Thread* thread, const Object& name, const Object& code,
+    Function::Entry entry, Function::Entry entry_kw, Function::Entry entry_ex) {
+  DCHECK(!code.isCode(), "Use newFunctionWithCode() for code objects");
+  DCHECK(code.isInt(), "expected int");
+  HandleScope scope(thread);
+  Function function(&scope, newFunction(thread, name, code, /*flags=*/0,
+                                        /*argcount=*/0, /*total_args=*/0,
+                                        /*total_vars=*/0, /*stacksize=*/0,
+                                        entry, entry_kw, entry_ex));
+  return *function;
+}
+
+RawObject Runtime::newExceptionState() {
+  return heap()->create<RawExceptionState>();
 }
 
 RawObject Runtime::newAsyncGenerator() {
@@ -719,10 +796,19 @@ void Runtime::typeAddBuiltinFunction(const Type& type, SymbolId name,
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Str qualname(&scope, newQualname(thread, type, name));
-  Object key(&scope, symbols()->at(name));
-  Function function(&scope, newBuiltinFunction(name, qualname, entry));
+  Str name_str(&scope, symbols()->at(name));
+  Tuple empty_tuple(&scope, emptyTuple());
+  Code code(&scope, newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
+                                   /*kwonlyargcount=*/0,
+                                   /*flags=*/0, entry,
+                                   /*parameter_names=*/empty_tuple, name_str));
+
+  Object globals(&scope, NoneType::object());
+  Function function(&scope,
+                    newFunctionWithCode(thread, qualname, code, globals));
+
   Dict dict(&scope, type.dict());
-  dictAtPutInValueCell(thread, dict, key, function);
+  typeDictAtPut(thread, dict, name_str, function);
 }
 
 RawObject Runtime::newList() {
@@ -2084,10 +2170,18 @@ RawObject Runtime::moduleAddBuiltinFunction(const Module& module, SymbolId name,
                                             Function::Entry entry) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Str key(&scope, symbols()->at(name));
+  Str name_str(&scope, symbols()->at(name));
+  Tuple empty_tuple(&scope, emptyTuple());
+  Code code(&scope, newBuiltinCode(/*argcount=*/0, /*posonlyargcount=*/0,
+                                   /*kwonlyargcount=*/0,
+                                   /*flags=*/0, entry,
+                                   /*parameter_names=*/empty_tuple, name_str));
+  Object globals(&scope, NoneType::object());
+  Function function(&scope,
+                    newFunctionWithCode(thread, name_str, code, globals));
+
   Dict dict(&scope, module.dict());
-  Function value(&scope, newBuiltinFunction(name, key, entry));
-  return dictAtPutInValueCell(thread, dict, key, value);
+  return moduleDictAtPut(thread, dict, name_str, function);
 }
 
 void Runtime::moduleAddBuiltinType(const Module& module, SymbolId name,
@@ -2193,6 +2287,7 @@ void Runtime::createBuiltinsModule(Thread* thread) {
 
 void Runtime::createEmptyBuiltinsModule(Thread* thread) {
   HandleScope scope(thread);
+
   Str name(&scope, symbols()->Builtins());
   Module builtins(&scope, newModule(name));
   addModule(builtins);
@@ -2342,18 +2437,18 @@ void Runtime::createUnderBuiltinsModule(Thread* thread) {
   }
 
   // We have to patch _patch manually.
-  ValueCell under_patch(
-      &scope, moduleAddBuiltinFunction(module, SymbolId::kUnderPatch,
-                                       UnderBuiltinsModule::underPatch));
+  Dict module_dict(&scope, module.dict());
   {
-    Function function(&scope, under_patch.value());
-    function.setFlags(Code::Flags::SIMPLE_CALL);
-    function.setArgcount(1);
-    function.setTotalArgs(1);
-    function.setModule(symbols()->UnderBuiltins());
-    Code code(&scope, function.code());
-    code.setArgcount(1);
-    code.setNlocals(1);
+    Tuple parameters(&scope, newTuple(1));
+    parameters.atPut(0, newStrFromCStr("function"));
+    Object name(&scope, symbols()->UnderPatch());
+    Code code(&scope, newBuiltinCode(/*argcount=*/1, /*posonlyargcount=*/0,
+                                     /*kwonlyargcount=*/0, /*flags=*/0,
+                                     UnderBuiltinsModule::underPatch,
+                                     parameters, name));
+    Function under_patch(&scope,
+                         newFunctionWithCode(thread, name, code, module_dict));
+    moduleDictAtPut(thread, module_dict, name, under_patch);
   }
 
   Object unbound_value(&scope, Unbound::object());

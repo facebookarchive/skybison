@@ -990,27 +990,6 @@ static RawObject newExtCode(Thread* thread, const Object& name,
                           filename, name, /*firstlineno=*/0, lnotab);
 }
 
-static RawObject newSlotFunction(Thread* thread, const Object& qualname,
-                                 const Code& code, Function::Entry entry,
-                                 Function::Entry entry_kw,
-                                 Function::Entry entry_ex) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-  Function function(&scope, runtime->newFunction());
-  function.setCode(*code);
-  function.setFlags(code.flags());
-  function.setArgcount(code.argcount());
-  function.setTotalArgs(code.nlocals());
-  function.setTotalVars(0);
-  function.setStacksize(0);
-  function.setName(code.name());
-  function.setQualname(*qualname);
-  function.setEntry(entry);
-  function.setEntryKw(entry_kw);
-  function.setEntryEx(entry_ex);
-  return *function;
-}
-
 // For every entry in kSlotdefs with a non-null wrapper function, a slot id
 // that was provided by the user, and no preexisting entry in the type dict, add
 // a wrapper function to call the slot from Python.
@@ -1047,13 +1026,11 @@ RawObject addOperators(Thread* thread, const Type& type) {
     Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
                                  slot.num_parameters, slot.flags,
                                  bit_cast<void*>(slot.wrapper), slot_value));
-    Function func(&scope,
-                  newSlotFunction(thread, qualname, code, builtinTrampoline,
-                                  builtinTrampolineKw, builtinTrampolineEx));
-
+    Object globals(&scope, NoneType::object());
+    Function func(
+        &scope, runtime->newFunctionWithCode(thread, qualname, code, globals));
     if (slot.id == ExtensionSlot::kNumberPower) {
-      Tuple defaults(&scope, runtime->newTuple(1));
-      func.setDefaults(*defaults);
+      func.setDefaults(runtime->newTuple(1));
     }
 
     // __new__ is the one special-case static method, so wrap it
@@ -1469,9 +1446,9 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
   Code code(&scope,
             newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
                        /*flags=*/0, bit_cast<void*>(&getterWrapper), value));
+  Object globals(&scope, NoneType::object());
   Function function(&scope,
-                    newSlotFunction(thread, name, code, builtinTrampoline,
-                                    builtinTrampolineKw, builtinTrampolineEx));
+                    runtime->newFunctionWithCode(thread, name, code, globals));
   if (def.doc != nullptr) {
     Object doc(&scope, runtime->newStrFromCStr(def.doc));
     function.setDoc(*doc);
@@ -1485,13 +1462,12 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object value(&scope, runtime->newIntFromCPtr(bit_cast<void*>(def.set)));
-  Code code(
-      &scope,
-      newExtCode(thread, name, kParamsSelfValue, ARRAYSIZE(kParamsSelfValue),
-                 /*flags=*/0, bit_cast<void*>(&setterWrapper), value));
+  Code code(&scope, newExtCode(thread, name, kParamsSelfValue,
+                               ARRAYSIZE(kParamsSelfValue), /*flags=*/0,
+                               bit_cast<void*>(&setterWrapper), value));
+  Object globals(&scope, NoneType::object());
   Function function(&scope,
-                    newSlotFunction(thread, name, code, builtinTrampoline,
-                                    builtinTrampolineKw, builtinTrampolineEx));
+                    runtime->newFunctionWithCode(thread, name, code, globals));
   if (def.doc != nullptr) {
     Object doc(&scope, runtime->newStrFromCStr(def.doc));
     function.setDoc(*doc);

@@ -40,12 +40,10 @@ RawObject functionFromMethodDef(Thread* thread, const char* c_name, void* meth,
     default:
       UNIMPLEMENTED("Unsupported MethodDef type");
   }
-  Function function(&scope, runtime->newFunction());
-  function.setName(runtime->newStrFromCStr(c_name));
-  function.setCode(runtime->newIntFromCPtr(meth));
-  function.setEntry(entry);
-  function.setEntryKw(entry_kw);
-  function.setEntryEx(entry_ex);
+  Object name(&scope, runtime->newStrFromCStr(c_name));
+  Object code(&scope, runtime->newIntFromCPtr(meth));
+  Function function(&scope, runtime->newFunctionWithCustomEntry(
+                                thread, name, code, entry, entry_kw, entry_ex));
   if (c_doc != nullptr) {
     function.setDoc(runtime->newStrFromCStr(c_doc));
   }
@@ -84,12 +82,10 @@ RawObject functionFromModuleMethodDef(Thread* thread, const char* c_name,
     default:
       UNIMPLEMENTED("Unsupported MethodDef type");
   }
-  Function function(&scope, runtime->newFunction());
-  function.setName(runtime->newStrFromCStr(c_name));
-  function.setCode(runtime->newIntFromCPtr(meth));
-  function.setEntry(entry);
-  function.setEntryKw(entry_kw);
-  function.setEntryEx(entry_ex);
+  Object name(&scope, runtime->newStrFromCStr(c_name));
+  Object code(&scope, runtime->newIntFromCPtr(meth));
+  Function function(&scope, runtime->newFunctionWithCustomEntry(
+                                thread, name, code, entry, entry_kw, entry_ex));
   if (c_doc != nullptr) {
     function.setDoc(runtime->newStrFromCStr(c_doc));
   }
