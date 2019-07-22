@@ -108,7 +108,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   Dict dict(&scope, runtime->newDict());
   Object n_sequence_key(&scope, runtime->symbols()->NSequenceFields());
   Object n_sequence(&scope, runtime->newInt(desc->n_in_sequence));
-  runtime->typeDictAtPut(thread, dict, n_sequence_key, n_sequence);
+  runtime->dictAtPut(thread, dict, n_sequence_key, n_sequence);
 
   // Add n_fields
   word num_fields = 0;
@@ -119,26 +119,34 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   }
   Object n_fields_key(&scope, runtime->symbols()->NFields());
   Object n_fields(&scope, runtime->newInt(num_fields));
-  runtime->typeDictAtPut(thread, dict, n_fields_key, n_fields);
+  runtime->dictAtPut(thread, dict, n_fields_key, n_fields);
 
   // unnamed fields are banned. This is done to support _structseq_getitem(),
   // which accesses hidden fields by name.
   Object unnamed_fields_key(&scope, runtime->symbols()->NUnnamedFields());
   Object unnamed_fields(&scope, runtime->newInt(0));
-  runtime->typeDictAtPut(thread, dict, unnamed_fields_key, unnamed_fields);
+  runtime->dictAtPut(thread, dict, unnamed_fields_key, unnamed_fields);
 
   // Add __new__
   Module builtins(&scope, runtime->findModuleById(SymbolId::kBuiltins));
   Function structseq_new(
       &scope, runtime->moduleAtById(builtins, SymbolId::kUnderStructseqNew));
   Str dunder_new_name(&scope, runtime->symbols()->DunderNew());
-  runtime->typeDictAtPut(thread, dict, dunder_new_name, structseq_new);
+  runtime->dictAtPut(thread, dict, dunder_new_name, structseq_new);
 
   // Add __repr__
   Function structseq_repr(
       &scope, runtime->moduleAtById(builtins, SymbolId::kUnderStructseqRepr));
   Str dunder_repr_name(&scope, runtime->symbols()->DunderRepr());
-  runtime->typeDictAtPut(thread, dict, dunder_repr_name, structseq_repr);
+  runtime->dictAtPut(thread, dict, dunder_repr_name, structseq_repr);
+
+  Tuple field_names(&scope, runtime->newTuple(num_fields));
+  for (word i = 0; i < num_fields; i++) {
+    field_names.atPut(i,
+                      runtime->internStrFromCStr(thread, desc->fields[i].name));
+  }
+  Str field_names_key(&scope, runtime->symbols()->UnderStructseqFieldNames());
+  runtime->dictAtPut(thread, dict, field_names_key, field_names);
 
   // Create type
   Tuple bases(&scope, runtime->newTuple(1));
@@ -146,21 +154,16 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
   Type type(&scope, typeNew(thread, LayoutId::kType, name, bases, dict));
 
   // Add struct sequence fields
-  Tuple field_names(&scope, runtime->newTuple(num_fields));
-  for (int i = 0; i < num_fields; i++) {
-    Object member_name(
-        &scope, runtime->internStrFromCStr(thread, desc->fields[i].name));
-    Object index(&scope, i < desc->n_in_sequence ? runtime->newInt(i)
-                                                 : NoneType::object());
-    Object structseq_field(
-        &scope, thread->invokeFunction2(SymbolId::kBuiltins,
-                                        SymbolId::kUnderStructseqField,
-                                        member_name, index));
-    typeSetAttr(thread, type, member_name, structseq_field);
-    field_names.atPut(i, *member_name);
+  Object field_name(&scope, NoneType::object());
+  Object index(&scope, NoneType::object());
+  Object field(&scope, NoneType::object());
+  for (word i = 0; i < num_fields; i++) {
+    field_name = field_names.at(i);
+    index = i < desc->n_in_sequence ? runtime->newInt(i) : NoneType::object();
+    field = thread->invokeFunction2(
+        SymbolId::kBuiltins, SymbolId::kUnderStructseqField, field_name, index);
+    typeSetAttr(thread, type, field_name, field);
   }
-  Str field_names_key(&scope, runtime->symbols()->UnderStructseqFieldNames());
-  runtime->typeDictAtPut(thread, dict, field_names_key, field_names);
 
   return reinterpret_cast<PyTypeObject*>(
       ApiHandle::newReference(thread, *type));

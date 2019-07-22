@@ -1682,6 +1682,17 @@ class TypeTests(unittest.TestCase):
             class Foo(metaclass=Meta):
                 pass
 
+    def test_new_duplicates_dict(self):
+        d = {"foo": 42, "bar": 17}
+        T = type("T", (object,), d)
+        d["foo"] = -7
+        del d["bar"]
+        self.assertEqual(T.foo, 42)
+        self.assertEqual(T.bar, 17)
+        T.foo = 20
+        self.assertEqual(d["foo"], -7)
+        self.assertFalse("bar" in d)
+
     def test_setattr_with_metaclass_does_not_abort(self):
         class Meta(type):
             pass

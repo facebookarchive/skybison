@@ -153,14 +153,32 @@ RawObject typeNew(Thread* thread, LayoutId metaclass_id, const Str& name,
   }
   type.setMro(*maybe_mro);
 
-  // Initialize dict
+  // Copy dict to new type_dict and wrap values in ValueCells.
+  Dict type_dict(&scope, runtime->newDictWithSize(dict.numItems()));
+  {
+    Tuple data(&scope, dict.data());
+    Object value(&scope, NoneType::object());
+    Object key(&scope, NoneType::object());
+    for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
+      value = Dict::Bucket::value(*data, i);
+      // TODO(T47581831) Implicit globals from type initialization should
+      // not contain ValueCells.
+      if (value.isValueCell()) {
+        if (ValueCell::cast(*value).isPlaceholder()) continue;
+        value = ValueCell::cast(*value).value();
+      }
+      key = Dict::Bucket::key(*data, i);
+      runtime->typeDictAtPut(thread, type_dict, key, value);
+    }
+  }
+
   Object class_cell_key(&scope, runtime->symbols()->DunderClassCell());
-  Object class_cell(&scope, runtime->dictAt(thread, dict, class_cell_key));
+  Object class_cell(&scope, runtime->dictAt(thread, type_dict, class_cell_key));
   if (!class_cell.isError()) {
     ValueCell::cast(ValueCell::cast(*class_cell).value()).setValue(*type);
-    runtime->dictRemove(thread, dict, class_cell_key);
+    runtime->dictRemove(thread, type_dict, class_cell_key);
   }
-  type.setDict(*dict);
+  type.setDict(*type_dict);
 
   // Compute builtin base class
   Object builtin_base(&scope, runtime->computeBuiltinBase(thread, type));

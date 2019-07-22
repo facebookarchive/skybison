@@ -351,6 +351,8 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
         "<metaclass>.__prepare__() must return a mapping, not %T", &dict_obj);
   }
   Dict type_dict(&scope, *dict_obj);
+  // TODO(T47581831) LOAD_NAME/STORE_NAME should not expect valuecells and this
+  // shouldn't be necessary.
   wrapInValueCells(thread, type_dict);
 
   // TODO(cshapiro): might need to do some kind of callback here and we want
