@@ -96,30 +96,16 @@ class TimeTool(PerformanceTool):
 
 class PerfStat(PerformanceTool):
     NAME = "perfstat"
+    DEFAULT_EVENTS = ["task-clock", "instructions"]
 
     def __init__(self, args):
-        pass
+        self.events = PerfStat.DEFAULT_EVENTS if not args["events"] else args["events"]
 
-    def execute(self, interpreter, benchmark):
-        command = pin_to_cpus()
-        command += ["perf", "stat"]
-        command += ["--field-separator", ";"]
-        command += ["--repeat", "5"]
-        command += ["--event", "task-clock"]
-        command += ["--event", "cycles"]
-        command += ["--event", "instructions"]
-        command += ["--event", "branches"]
-        command += ["--event", "branch-misses"]
-        command += [interpreter.binary, benchmark.filepath()]
-        completed_process = run(command, stderr=subprocess.PIPE)
-        if completed_process.returncode != 0:
-            log.error(f"Couldn't run: {completed_process.args}")
+    def parse_perfstat(self, output):
+        if ";" not in output:
+            log.error(f"perf stat returned an error: {output}")
             return {}
-        perfstat_output = completed_process.stderr.strip()
-        if ";" not in perfstat_output:
-            log.error(f"perf stat returned an error: {perfstat_output}")
-            return {}
-        events = [e.split(";") for e in perfstat_output.split("\n") if ";" in e]
+        events = [e.split(";") for e in output.split("\n") if ";" in e]
         results = {}
         for event in events:
             name = event[2]
@@ -130,12 +116,57 @@ class PerfStat(PerformanceTool):
             results[name] = value
         return results
 
+    def execute(self, interpreter, benchmark):
+        command = pin_to_cpus()
+        command += ["perf", "stat"]
+        command += ["--field-separator", ";"]
+        command += ["--repeat", "5"]
+
+        # To avoid event multiplexing, we only run two events at a time
+        results = {}
+        events = [event for event in self.events]
+        while events:
+            full_command = command + ["--event", events.pop(0)]
+            if events:
+                full_command += ["--event", events.pop(0)]
+            full_command += [interpreter.binary, benchmark.filepath()]
+            completed_process = run(full_command, stderr=subprocess.PIPE)
+            if completed_process.returncode != 0:
+                log.error(f"Couldn't run: {completed_process.args}")
+                return {}
+            perfstat_output = completed_process.stderr.strip()
+            results.update(self.parse_perfstat(perfstat_output))
+        return results
+
     @staticmethod
     def add_tool():
         return f"""
 '{PerfStat.NAME}': Use `perf stat` to measure the execution time of
 a benchmark. This repeats the run 10 times to find a significant result
 """
+
+    # Add any optional command line arguments to tune the tool
+    @staticmethod
+    def add_optional_arguments(parser):
+        perfstat_event_help = f"""
+Specify the perf stat event to run. Please note, only two are run at the
+same time to avoid event multiplexing. For a full list of perf stat events,
+run: `perf list`.
+
+Examples: 'instructions', 'branch-misses', 'L1-icache-load-misses'
+
+Default: {PerfStat.DEFAULT_EVENTS}
+"""
+        parser.add_argument(
+            "--event",
+            metavar="EVENT",
+            dest="events",
+            type=str,
+            action="append",
+            default=[],
+            help=perfstat_event_help,
+        )
+        return parser
 
 
 class Callgrind(PerformanceTool):
