@@ -161,6 +161,8 @@ class BlockStack {
  */
 class Frame {
  public:
+  void init(word total_locals);
+
   // Function arguments, local variables, cell variables, and free variables
   RawObject local(word idx);
   void setLocal(word idx, RawObject value);
@@ -169,9 +171,6 @@ class Frame {
   void setLocalWithReverseIndex(word reverse_idx, RawObject value);
 
   RawFunction function();
-
-  void setNumLocals(word num_locals);
-  word numLocals();
 
   BlockStack* blockStack();
 
@@ -227,7 +226,6 @@ class Frame {
   void pushLocals(word count, word offset);
 
   bool isSentinel();
-  void makeSentinel();
 
   // Versions of valueStackTop() and popValue() for a Frame that's had
   // stashInternalPointers() called on it.
@@ -240,7 +238,9 @@ class Frame {
 
   // Adjust and/or restore internal pointers after copying this Frame from the
   // heap to the stack.
-  void unstashInternalPointers();
+  // The parameter is the function belonging to the frame. This is necessary
+  // because `function()` does not work on a frame that is stashed away.
+  void unstashInternalPointers(RawFunction function);
 
   // Compute the total space required for a frame object
   static word allocationSize(RawObject code);
@@ -254,8 +254,7 @@ class Frame {
   static const int kValueStackTopOffset = kPreviousFrameOffset + kPointerSize;
   static const int kVirtualPCOffset = kValueStackTopOffset + kPointerSize;
   static const int kBlockStackOffset = kVirtualPCOffset + kPointerSize;
-  static const int kNumLocalsOffset = kBlockStackOffset + BlockStack::kSize;
-  static const int kLocalsOffset = kNumLocalsOffset + kPointerSize;
+  static const int kLocalsOffset = kBlockStackOffset + BlockStack::kSize;
   static const int kSize = kLocalsOffset + kPointerSize;
 
   static const int kFunctionOffsetFromLocals = 1;
@@ -303,6 +302,12 @@ class Arguments {
   word num_args_;
 };
 
+inline void Frame::init(word total_locals) {
+  setValueStackTop(reinterpret_cast<RawObject*>(this));
+  resetLocals(total_locals);
+  blockStack()->setDepth(0);
+}
+
 inline uword Frame::address() { return reinterpret_cast<uword>(this); }
 
 inline RawObject Frame::at(int offset) {
@@ -348,30 +353,25 @@ inline RawObject* Frame::locals() {
 }
 
 inline RawObject Frame::local(word idx) {
-  DCHECK_INDEX(idx, numLocals());
+  DCHECK_INDEX(idx, function().totalLocals());
   return *(locals() - idx);
 }
 
 inline RawObject Frame::localWithReverseIndex(word reverse_idx) {
-  DCHECK_INDEX(reverse_idx, numLocals());
+  DCHECK_INDEX(reverse_idx, function().totalLocals());
   RawObject* locals_end = reinterpret_cast<RawObject*>(address() + kSize);
   return locals_end[reverse_idx];
 }
 
 inline void Frame::setLocal(word idx, RawObject value) {
-  DCHECK_INDEX(idx, numLocals());
+  DCHECK_INDEX(idx, function().totalLocals());
   *(locals() - idx) = value;
 }
 
 inline void Frame::setLocalWithReverseIndex(word reverse_idx, RawObject value) {
-  DCHECK_INDEX(reverse_idx, numLocals());
+  DCHECK_INDEX(reverse_idx, function().totalLocals());
   RawObject* locals_end = reinterpret_cast<RawObject*>(address() + kSize);
   locals_end[reverse_idx] = value;
-}
-
-inline void Frame::setNumLocals(word num_locals) {
-  atPut(kNumLocalsOffset, SmallInt::fromWord(num_locals));
-  resetLocals(num_locals);
 }
 
 inline void Frame::resetLocals(word num_locals) {
@@ -379,10 +379,6 @@ inline void Frame::resetLocals(word num_locals) {
   RawObject* locals = reinterpret_cast<RawObject*>(
       address() + Frame::kSize + ((num_locals - 1) * kPointerSize));
   atPut(kLocalsOffset, SmallInt::fromAlignedCPtr(locals));
-}
-
-inline word Frame::numLocals() {
-  return SmallInt::cast(at(kNumLocalsOffset)).value();
 }
 
 inline RawTuple Frame::caches() { return RawTuple::cast(at(kCachesOffset)); }
@@ -465,7 +461,7 @@ inline RawObject Frame::topValue() { return peek(0); }
 inline void Frame::setTopValue(RawObject value) { *valueStackTop() = value; }
 
 inline void Frame::pushLocals(word count, word offset) {
-  DCHECK(offset + count <= numLocals(), "locals overflow");
+  DCHECK(offset + count <= function().totalLocals(), "locals overflow");
   for (word i = offset; i < offset + count; i++) {
     pushValue(local(i));
   }
@@ -504,9 +500,9 @@ inline void Frame::stashInternalPointers(Frame* old_frame) {
   atPut(kValueStackTopOffset, SmallInt::fromWord(depth));
 }
 
-inline void Frame::unstashInternalPointers() {
+inline void Frame::unstashInternalPointers(RawFunction function) {
   setValueStackTop(stashedValueStackTop());
-  resetLocals(numLocals());
+  resetLocals(function.totalLocals());
 }
 
 inline RawObject TryBlock::asSmallInt() const {

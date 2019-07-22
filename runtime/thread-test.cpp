@@ -265,7 +265,6 @@ TEST_F(ThreadTest, PushPopFrame) {
   EXPECT_TRUE(frame->previousFrame()->isSentinel());
   EXPECT_EQ(frame->valueStackTop(), reinterpret_cast<RawObject*>(frame));
   EXPECT_EQ(frame->valueStackBase(), frame->valueStackTop());
-  EXPECT_EQ(frame->numLocals(), 2);
 
   // Make sure we restore the thread's stack pointer back to its previous
   // location

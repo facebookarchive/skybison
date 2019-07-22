@@ -81,16 +81,14 @@ inline Frame* Thread::openAndLinkFrame(word num_args, word num_vars,
   checkStackOverflow(Frame::kSize + (num_vars + stack_depth) * kPointerSize);
 
   // Initialize the frame.
-  byte* sp = stackPtr();
-  word size = Frame::kSize + num_vars * kPointerSize;
-  sp -= size;
-  auto frame = reinterpret_cast<Frame*>(sp);
-  frame->setValueStackTop(reinterpret_cast<RawObject*>(frame));
-  frame->setNumLocals(num_args + num_vars);
-  frame->blockStack()->setDepth(0);
+  byte* new_sp = stackPtr() - num_vars * kPointerSize - Frame::kSize;
+  Frame* frame = reinterpret_cast<Frame*>(new_sp);
+  frame->init(num_args + num_vars);
 
   // return a pointer to the base of the frame
   linkFrame(frame);
+  DCHECK(frame->function().totalLocals() == num_args + num_vars,
+         "local counts mismatched");
   DCHECK(frame->isInvalid() == nullptr, "invalid frame");
   return frame;
 }
@@ -154,8 +152,8 @@ Frame* Thread::pushInitialFrame() {
   byte* sp = end_ - Frame::kSize;
   CHECK(sp > start_, "no space for initial frame");
   Frame* frame = reinterpret_cast<Frame*>(sp);
-  frame->makeSentinel();
-  frame->setValueStackTop(reinterpret_cast<RawObject*>(sp));
+  frame->init(0);
+  frame->setPreviousFrame(nullptr);
   return frame;
 }
 

@@ -413,12 +413,14 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   Tuple freevar_names(&scope, thread->runtime()->emptyTuple());
   Tuple cellvar_names(&scope, thread->runtime()->emptyTuple());
   bool output_pc = true;
+  word num_locals = 0;
   if (frame->isSentinel()) {
     os << "- initial frame\n";
   } else if (!frame->function().isFunction()) {
     os << "- function: <invalid>\n";
   } else {
     Function function(&scope, frame->function());
+    num_locals = frame->function().totalLocals();
     os << "- function: " << function << '\n';
     if (function.code().isCode()) {
       Code code(&scope, function.code());
@@ -458,7 +460,6 @@ static void dumpSingleFrame(Thread* thread, std::ostream& os, Frame* frame) {
   word var_names_length = var_names.length();
   word cellvar_names_length = cellvar_names.length();
   word freevar_names_length = freevar_names.length();
-  word num_locals = frame->numLocals();
   if (num_locals > 0) os << "  locals:\n";
   for (word l = 0; l < num_locals; l++) {
     os << "    " << l;

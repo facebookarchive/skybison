@@ -3468,7 +3468,7 @@ static Frame* copyHeapFrameToStackFrame(const HeapFrame& heap_frame,
 
   auto live_frame =
       reinterpret_cast<Frame*>(dest_base + heap_frame.maxStackSize());
-  live_frame->unstashInternalPointers();
+  live_frame->unstashInternalPointers(Function::cast(heap_frame.function()));
   return live_frame;
 }
 
