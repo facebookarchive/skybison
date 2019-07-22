@@ -3615,13 +3615,6 @@ Continue Interpreter::doBinaryOpCached(Thread* thread, word arg) {
   return cachedBinaryOpImpl(thread, arg, binaryOpUpdateCache, binaryOpFallback);
 }
 
-const Interpreter::AsmInterpreter kAsmInterpreter =
-    []() -> Interpreter::AsmInterpreter {
-  const char* env = getenv("PYRO_CPP_INTERPRETER");
-  if (env == nullptr || env[0] == '\0') return generateInterpreter();
-  return nullptr;
-}();
-
 RawObject Interpreter::execute(Thread* thread) {
   auto do_return = [thread] {
     Frame* frame = thread->currentFrame();
@@ -3645,8 +3638,13 @@ RawObject Interpreter::execute(Thread* thread) {
     if (unwind(thread, entry_frame)) return do_return();
   }
 
-  if (kAsmInterpreter != nullptr) {
-    kAsmInterpreter(thread, entry_frame);
+  static const auto asm_interpreter = []() -> Interpreter::AsmInterpreter {
+    const char* env = getenv("PYRO_CPP_INTERPRETER");
+    if (env == nullptr || env[0] == '\0') return generateInterpreter();
+    return nullptr;
+  }();
+  if (asm_interpreter != nullptr) {
+    asm_interpreter(thread, entry_frame);
   } else {
     executeImpl(thread, entry_frame);
   }
