@@ -114,8 +114,7 @@ OPCODES = _makecodes("""
 
     MIN_REPEAT MAX_REPEAT
 """)
-# TODO(T42732611): Fix negative index slicing
-# del OPCODES[-2:] # remove MIN_REPEAT and MAX_REPEAT
+del OPCODES[-2:] # remove MIN_REPEAT and MAX_REPEAT
 
 # positions
 ATCODES = _makecodes("""

@@ -46,11 +46,9 @@ dict_keyiterator = type(iter({}.keys()))
 dict_valueiterator = type(iter({}.values()))
 dict_itemiterator = type(iter({}.items()))
 list_iterator = type(iter([]))
-# TODO(T42612451)
-#list_reverseiterator = type(iter(reversed([])))
+list_reverseiterator = type(iter(reversed([])))
 range_iterator = type(iter(range(0)))
-# TODO(T42626542)
-#longrange_iterator = type(iter(range(1 << 1000)))
+longrange_iterator = type(iter(range(1 << 1000)))
 set_iterator = type(iter(set()))
 str_iterator = type(iter(""))
 tuple_iterator = type(iter(()))
@@ -70,12 +68,11 @@ generator = type((lambda: (yield))())
 #coroutine = type(_coro)
 #_coro.close()  # Prevent ResourceWarning
 #del _coro
-# TODO(T42307084)
-## asynchronous generator ##
-#async def _ag(): yield
-#_ag = _ag()
-#async_generator = type(_ag)
-#del _ag
+# asynchronous generator ##
+async def _ag(): yield
+_ag = _ag()
+async_generator = type(_ag)
+del _ag
 
 
 ### ONE-TRICK PONIES ###
@@ -249,8 +246,7 @@ class AsyncGenerator(AsyncIterator):
         return NotImplemented
 
 
-# TODO(T42307084)
-#AsyncGenerator.register(async_generator)
+AsyncGenerator.register(async_generator)
 
 
 class Iterable(metaclass=ABCMeta):
@@ -287,19 +283,16 @@ class Iterator(Iterable):
             return _check_methods(C, '__iter__', '__next__')
         return NotImplemented
 
-# TODO(T42612384)
-#Iterator.register(bytes_iterator)
+Iterator.register(bytes_iterator)
 Iterator.register(bytearray_iterator)
 #Iterator.register(callable_iterator)
 Iterator.register(dict_keyiterator)
 Iterator.register(dict_valueiterator)
 Iterator.register(dict_itemiterator)
 Iterator.register(list_iterator)
-# TODO(T42612451)
-#Iterator.register(list_reverseiterator)
+Iterator.register(list_reverseiterator)
 Iterator.register(range_iterator)
-# TODO(T42626542)
-#Iterator.register(longrange_iterator)
+Iterator.register(longrange_iterator)
 Iterator.register(set_iterator)
 Iterator.register(str_iterator)
 Iterator.register(tuple_iterator)

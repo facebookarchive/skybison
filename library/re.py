@@ -258,9 +258,8 @@ def template(pattern, flags=0):
 
 _alphanum_str = frozenset(
     "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
-# TODO(T42622443): Implement bytes.__iter__
-# _alphanum_bytes = frozenset(
-#     b"_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
+_alphanum_bytes = frozenset(
+    b"_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890")
 
 def escape(pattern):
     """
