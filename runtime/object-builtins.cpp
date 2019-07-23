@@ -302,8 +302,10 @@ RawObject ObjectBuiltins::dunderInit(Thread* thread, Frame* frame, word nargs) {
     return NoneType::object();
   }
   Type type(&scope, runtime->typeOf(*self));
-  if (!runtime->isMethodOverloaded(thread, type, SymbolId::kDunderNew) ||
-      runtime->isMethodOverloaded(thread, type, SymbolId::kDunderInit)) {
+  if ((typeLookupSymbolInMro(thread, type, SymbolId::kDunderNew) ==
+       runtime->objectDunderNew()) ||
+      (typeLookupSymbolInMro(thread, type, SymbolId::kDunderInit) !=
+       runtime->objectDunderInit())) {
     // Throw a TypeError if extra arguments were passed, and __new__ was not
     // overwritten by self, or __init__ was overloaded by self.
     return thread->raiseWithFmt(LayoutId::kTypeError,

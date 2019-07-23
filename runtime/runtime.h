@@ -248,6 +248,8 @@ class Runtime {
 
   RawObject ellipsis() { return ellipsis_; }
   RawObject objectDunderGetattribute() { return object_dunder_getattribute_; }
+  RawObject objectDunderInit() { return object_dunder_init_; }
+  RawObject objectDunderNew() { return object_dunder_new_; }
   RawObject objectDunderSetattr() { return object_dunder_setattr_; }
   RawValueCell sysStderr() { return ValueCell::cast(sys_stderr_); }
   RawValueCell sysStdout() { return ValueCell::cast(sys_stdout_); }
@@ -391,9 +393,6 @@ class Runtime {
   SymbolId swappedComparisonSelector(CompareOp op);
 
   RawObject iteratorLengthHint(Thread* thread, const Object& iterator);
-
-  // Return true if the selector does not appear in the MRO object below object.
-  bool isMethodOverloaded(Thread* thread, const Type& type, SymbolId selector);
 
   RawObject buildClass() { return build_class_; }
 
@@ -1019,6 +1018,8 @@ class Runtime {
   RawObject empty_tuple_ = NoneType::object();
   RawObject implicit_bases_ = NoneType::object();
   RawObject object_dunder_getattribute_ = NoneType::object();
+  RawObject object_dunder_init_ = NoneType::object();
+  RawObject object_dunder_new_ = NoneType::object();
   RawObject object_dunder_setattr_ = NoneType::object();
   RawObject sys_stderr_ = NoneType::object();
   RawObject sys_stdout_ = NoneType::object();

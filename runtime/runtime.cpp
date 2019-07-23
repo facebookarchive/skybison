@@ -1896,6 +1896,8 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_tuple_);
   visitor->visitPointer(&implicit_bases_);
   visitor->visitPointer(&object_dunder_getattribute_);
+  visitor->visitPointer(&object_dunder_init_);
+  visitor->visitPointer(&object_dunder_new_);
   visitor->visitPointer(&object_dunder_setattr_);
   visitor->visitPointer(&sys_stderr_);
   visitor->visitPointer(&sys_stdout_);
@@ -2140,23 +2142,6 @@ SymbolId Runtime::swappedComparisonSelector(CompareOp op) {
   return comparisonSelector(swapped_op);
 }
 
-bool Runtime::isMethodOverloaded(Thread* thread, const Type& type,
-                                 SymbolId selector) {
-  HandleScope scope(thread);
-  Tuple mro(&scope, type.mro());
-  Object key(&scope, symbols()->at(selector));
-  DCHECK(mro.length() > 0, "empty MRO");
-  for (word i = 0; i < mro.length() - 1; i++) {
-    Type mro_type(&scope, mro.at(i));
-    Dict dict(&scope, mro_type.dict());
-    Object value_cell(&scope, dictAt(thread, dict, key));
-    if (!value_cell.isError()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 RawObject Runtime::moduleAddGlobal(const Module& module, SymbolId name,
                                    const Object& value) {
   Thread* thread = Thread::current();
@@ -2273,6 +2258,10 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   Object dunder_getattribute_name(&scope, symbols()->DunderGetattribute());
   object_dunder_getattribute_ =
       typeDictAt(thread, object_dict, dunder_getattribute_name);
+  Object dunder_init_name(&scope, symbols()->DunderInit());
+  object_dunder_init_ = typeDictAt(thread, object_dict, dunder_init_name);
+  Object dunder_new_name(&scope, symbols()->DunderNew());
+  object_dunder_new_ = typeDictAt(thread, object_dict, dunder_new_name);
   Object dunder_setattr_name(&scope, symbols()->DunderSetattr());
   object_dunder_setattr_ = typeDictAt(thread, object_dict, dunder_setattr_name);
 
