@@ -214,7 +214,7 @@ class type(bootstrap=True):
         pass
 
     def __instancecheck__(self, obj) -> bool:
-        return _isinstance_type(obj, self)
+        return _isinstance_type(obj, _type(obj), self)
 
     def __new__(cls, name_or_object, bases=_Unbound, dict=_Unbound):
         pass

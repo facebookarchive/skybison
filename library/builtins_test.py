@@ -1651,6 +1651,32 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__bases__, (A,))
         self.assertEqual(D.__bases__, (C, B))
 
+    def test_dunder_instancecheck_with_instance_returns_true(self):
+        self.assertIs(int.__instancecheck__(3), True)
+        self.assertIs(int.__instancecheck__(False), True)
+        self.assertIs(object.__instancecheck__(type), True)
+        self.assertIs(str.__instancecheck__("123"), True)
+        self.assertIs(type.__instancecheck__(type, int), True)
+        self.assertIs(type.__instancecheck__(type, object), True)
+
+    def test_dunder_instancecheck_with_non_instance_returns_false(self):
+        self.assertIs(bool.__instancecheck__(3), False)
+        self.assertIs(int.__instancecheck__("123"), False)
+        self.assertIs(str.__instancecheck__(b"123"), False)
+        self.assertIs(type.__instancecheck__(type, 3), False)
+
+    def test_dunder_subclasscheck_with_subclass_returns_true(self):
+        self.assertIs(int.__subclasscheck__(int), True)
+        self.assertIs(int.__subclasscheck__(bool), True)
+        self.assertIs(object.__subclasscheck__(int), True)
+        self.assertIs(object.__subclasscheck__(type), True)
+
+    def test_dunder_subclasscheck_with_non_subclass_returns_false(self):
+        self.assertIs(bool.__subclasscheck__(int), False)
+        self.assertIs(int.__subclasscheck__(object), False)
+        self.assertIs(str.__subclasscheck__(object), False)
+        self.assertIs(type.__subclasscheck__(type, object), False)
+
     def test_dunder_subclasses_with_leaf_type_returns_empty_list(self):
         class C:
             pass
