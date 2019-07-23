@@ -203,13 +203,4 @@ RawObject Heap::createTuple(word length) {
   return Tuple::cast(result);
 }
 
-RawObject Heap::createRange() {
-  RawObject raw = allocate(allocationSize<RawRange>(), RawHeader::kSize);
-  CHECK(!raw.isError(), "out of memory");
-  auto result = raw.rawCast<RawRange>();
-  result.setHeader(
-      Header::from(RawRange::kSize, 0, LayoutId::kRange, ObjectFormat::kData));
-  return Range::cast(result);
-}
-
 }  // namespace python

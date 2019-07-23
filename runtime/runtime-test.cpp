@@ -1849,7 +1849,9 @@ TEST_F(RuntimeSetTest, UpdateTuple) {
 TEST_F(RuntimeSetTest, UpdateIterator) {
   HandleScope scope(thread_);
   Set set(&scope, runtime_.newSet());
-  Object iterable(&scope, runtime_.newRange(1, 4, 1));
+  Int one(&scope, SmallInt::fromWord(1));
+  Int four(&scope, SmallInt::fromWord(4));
+  Object iterable(&scope, runtime_.newRange(one, four, one));
   runtime_.setUpdate(thread_, set, iterable);
 
   ASSERT_EQ(set.numItems(), 3);
@@ -1939,7 +1941,9 @@ TEST_F(RuntimeSetTest, IntersectionReturnsSetWithCommonElements) {
 TEST_F(RuntimeSetTest, IntersectIterator) {
   HandleScope scope(thread_);
   Set set(&scope, runtime_.newSet());
-  Object iterable(&scope, runtime_.newRange(1, 4, 1));
+  Int one(&scope, SmallInt::fromWord(1));
+  Int four(&scope, SmallInt::fromWord(4));
+  Object iterable(&scope, runtime_.newRange(one, four, one));
   Set result(&scope, runtime_.setIntersection(thread_, set, iterable));
   EXPECT_EQ(result.numItems(), 0);
 
@@ -1947,8 +1951,7 @@ TEST_F(RuntimeSetTest, IntersectIterator) {
   runtime_.setAdd(thread_, set, key);
   key = SmallInt::fromWord(2);
   runtime_.setAdd(thread_, set, key);
-  Object iterable1(&scope, runtime_.newRange(1, 4, 1));
-  Set result1(&scope, runtime_.setIntersection(thread_, set, iterable1));
+  Set result1(&scope, runtime_.setIntersection(thread_, set, iterable));
   EXPECT_EQ(result1.numItems(), 2);
   EXPECT_TRUE(runtime_.setIncludes(thread_, result1, key));
   key = SmallInt::fromWord(1);

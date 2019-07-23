@@ -506,6 +506,7 @@ class Runtime;
   V(ListIterator, "list_iterator")                                             \
   V(Little, "little")                                                          \
   V(Loads, "loads")                                                            \
+  V(LongRangeIterator, "longrange_iterator")                                   \
   V(LookupError, "LookupError")                                                \
   V(Lower, "lower")                                                            \
   V(Lshift, "lshift")                                                          \

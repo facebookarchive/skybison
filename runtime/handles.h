@@ -123,6 +123,7 @@ class WARN_UNUSED Handle : public T {
   V(LargeStr)                                                                  \
   V(Layout)                                                                    \
   V(ListIterator)                                                              \
+  V(LongRangeIterator)                                                         \
   V(LookupError)                                                               \
   V(MemoryView)                                                                \
   V(Module)                                                                    \

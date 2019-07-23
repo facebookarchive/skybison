@@ -972,19 +972,32 @@ RawObject Runtime::newProperty(const Object& getter, const Object& setter,
   return *new_prop;
 }
 
-RawObject Runtime::newRange(word start, word stop, word step) {
-  auto range = Range::cast(heap()->createRange());
-  range.setStart(start);
-  range.setStop(stop);
-  range.setStep(step);
-  return range;
+RawObject Runtime::newRange(const Object& start, const Object& stop,
+                            const Object& step) {
+  HandleScope scope;
+  Range result(&scope, heap()->create<RawRange>());
+  result.setStart(*start);
+  result.setStop(*stop);
+  result.setStep(*step);
+  return *result;
 }
 
-RawObject Runtime::newRangeIterator(const Range& range) {
+RawObject Runtime::newLongRangeIterator(const Int& start, const Int& stop,
+                                        const Int& step) {
+  HandleScope scope;
+  LongRangeIterator result(&scope, heap()->create<RawLongRangeIterator>());
+  result.setNext(*start);
+  result.setStop(*stop);
+  result.setStep(*step);
+  return *result;
+}
+
+RawObject Runtime::newRangeIterator(word start, word step, word length) {
   HandleScope scope;
   RangeIterator result(&scope, heap()->create<RawRangeIterator>());
-  result.setIterable(*range);
-  result.setIndex(range.start());
+  result.setNext(start);
+  result.setStep(step);
+  result.setLength(length);
   return *result;
 }
 
@@ -1524,6 +1537,7 @@ void Runtime::initializeHeapTypes() {
   LargeStrBuiltins::initialize(this);
   ListBuiltins::initialize(this);
   ListIteratorBuiltins::initialize(this);
+  LongRangeIteratorBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kMethod, LayoutId::kBoundMethod,
                       LayoutId::kObject);
   MemoryViewBuiltins::initialize(this);

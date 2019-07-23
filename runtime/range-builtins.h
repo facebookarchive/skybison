@@ -5,12 +5,25 @@
 
 namespace python {
 
-// TODO(dulinr): write this in Python
+class LongRangeIteratorBuiltins
+    : public Builtins<LongRangeIteratorBuiltins, SymbolId::kLongRangeIterator,
+                      LayoutId::kLongRangeIterator> {
+ public:
+  static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderLengthHint(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNext(Thread* thread, Frame* frame, word nargs);
+
+  static const BuiltinMethod kBuiltinMethods[];
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(LongRangeIteratorBuiltins);
+};
+
 class RangeBuiltins
     : public Builtins<RangeBuiltins, SymbolId::kRange, LayoutId::kRange> {
  public:
-  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderIter(Thread* thread, Frame* frame, word nargs);
+  static RawObject dunderNew(Thread* thread, Frame* frame, word nargs);
 
   static const BuiltinAttribute kAttributes[];
   static const BuiltinMethod kBuiltinMethods[];

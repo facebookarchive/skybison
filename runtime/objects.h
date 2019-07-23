@@ -57,6 +57,7 @@ class Handle;
   V(Layout)                                                                    \
   V(List)                                                                      \
   V(ListIterator)                                                              \
+  V(LongRangeIterator)                                                         \
   V(MemoryView)                                                                \
   V(Module)                                                                    \
   V(MutableBytes)                                                              \
@@ -293,6 +294,7 @@ class RawObject {
   bool isLayout() const;
   bool isList() const;
   bool isListIterator() const;
+  bool isLongRangeIterator() const;
   bool isLookupError() const;
   bool isMemoryView() const;
   bool isModule() const;
@@ -1355,14 +1357,14 @@ class RawProperty : public RawHeapObject {
 class RawRange : public RawHeapObject {
  public:
   // Getters and setters.
-  word start() const;
-  void setStart(word value) const;
+  RawObject start() const;
+  void setStart(RawObject value) const;
 
-  word stop() const;
-  void setStop(word value) const;
+  RawObject stop() const;
+  void setStop(RawObject value) const;
 
-  word step() const;
-  void setStep(word value) const;
+  RawObject step() const;
+  void setStep(RawObject value) const;
 
   // Layout.
   static const int kStartOffset = RawHeapObject::kSize;
@@ -1495,8 +1497,46 @@ class RawListIterator : public RawIteratorBase {
   RAW_OBJECT_COMMON(ListIterator);
 };
 
-class RawRangeIterator : public RawIteratorBase {
+class RawLongRangeIterator : public RawHeapObject {
  public:
+  // Getters and setters.
+  RawObject next() const;
+  void setNext(RawObject next) const;
+
+  RawObject stop() const;
+  void setStop(RawObject stop) const;
+
+  RawObject step() const;
+  void setStep(RawObject step) const;
+
+  // Layout.
+  static const int kNextOffset = RawHeapObject::kSize;
+  static const int kStopOffset = kNextOffset + kPointerSize;
+  static const int kStepOffset = kStopOffset + kPointerSize;
+  static const int kSize = kStepOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(LongRangeIterator);
+};
+
+// RangeIterator guarantees that start, stop, step, and length are all SmallInt.
+class RawRangeIterator : public RawHeapObject {
+ public:
+  // Getters and setters.
+  word next() const;
+  void setNext(word next) const;
+
+  word step() const;
+  void setStep(word step) const;
+
+  word length() const;
+  void setLength(word length) const;
+
+  // Layout.
+  static const int kNextOffset = RawHeapObject::kSize;
+  static const int kStepOffset = kNextOffset + kPointerSize;
+  static const int kLengthOffset = kStepOffset + kPointerSize;
+  static const int kSize = kLengthOffset + kPointerSize;
+
   RAW_OBJECT_COMMON(RangeIterator);
 };
 
@@ -3000,6 +3040,10 @@ inline bool RawObject::isListIterator() const {
   return isHeapObjectWithLayout(LayoutId::kListIterator);
 }
 
+inline bool RawObject::isLongRangeIterator() const {
+  return isHeapObjectWithLayout(LayoutId::kLongRangeIterator);
+}
+
 inline bool RawObject::isLookupError() const {
   return isHeapObjectWithLayout(LayoutId::kLookupError);
 }
@@ -4346,28 +4390,28 @@ inline void RawUserStrBase::setValue(RawObject value) const {
 
 // RawRange
 
-inline word RawRange::start() const {
-  return RawSmallInt::cast(instanceVariableAt(kStartOffset)).value();
+inline RawObject RawRange::start() const {
+  return instanceVariableAt(kStartOffset);
 }
 
-inline void RawRange::setStart(word value) const {
-  instanceVariableAtPut(kStartOffset, RawSmallInt::fromWord(value));
+inline void RawRange::setStart(RawObject value) const {
+  instanceVariableAtPut(kStartOffset, value);
 }
 
-inline word RawRange::stop() const {
-  return RawSmallInt::cast(instanceVariableAt(kStopOffset)).value();
+inline RawObject RawRange::stop() const {
+  return instanceVariableAt(kStopOffset);
 }
 
-inline void RawRange::setStop(word value) const {
-  instanceVariableAtPut(kStopOffset, RawSmallInt::fromWord(value));
+inline void RawRange::setStop(RawObject value) const {
+  instanceVariableAtPut(kStopOffset, value);
 }
 
-inline word RawRange::step() const {
-  return RawSmallInt::cast(instanceVariableAt(kStepOffset)).value();
+inline RawObject RawRange::step() const {
+  return instanceVariableAt(kStepOffset);
 }
 
-inline void RawRange::setStep(word value) const {
-  instanceVariableAtPut(kStepOffset, RawSmallInt::fromWord(value));
+inline void RawRange::setStep(RawObject value) const {
+  instanceVariableAtPut(kStepOffset, value);
 }
 
 // RawProperty
@@ -5226,6 +5270,58 @@ inline word RawIteratorBase::index() const {
 
 inline void RawIteratorBase::setIndex(word index) const {
   instanceVariableAtPut(kIndexOffset, RawSmallInt::fromWord(index));
+}
+
+// RawLongRangeIterator
+
+inline RawObject RawLongRangeIterator::next() const {
+  return instanceVariableAt(kNextOffset);
+}
+
+inline void RawLongRangeIterator::setNext(RawObject next) const {
+  return instanceVariableAtPut(kNextOffset, next);
+}
+
+inline RawObject RawLongRangeIterator::stop() const {
+  return instanceVariableAt(kStopOffset);
+}
+
+inline void RawLongRangeIterator::setStop(RawObject stop) const {
+  return instanceVariableAtPut(kStopOffset, stop);
+}
+
+inline RawObject RawLongRangeIterator::step() const {
+  return instanceVariableAt(kStepOffset);
+}
+
+inline void RawLongRangeIterator::setStep(RawObject step) const {
+  return instanceVariableAtPut(kStepOffset, step);
+}
+
+// RawRangeIterator
+
+inline word RawRangeIterator::next() const {
+  return RawSmallInt::cast(instanceVariableAt(kNextOffset)).value();
+}
+
+inline void RawRangeIterator::setNext(word next) const {
+  return instanceVariableAtPut(kNextOffset, RawSmallInt::fromWord(next));
+}
+
+inline word RawRangeIterator::step() const {
+  return RawSmallInt::cast(instanceVariableAt(kStepOffset)).value();
+}
+
+inline void RawRangeIterator::setStep(word step) const {
+  return instanceVariableAtPut(kStepOffset, RawSmallInt::fromWord(step));
+}
+
+inline word RawRangeIterator::length() const {
+  return RawSmallInt::cast(instanceVariableAt(kLengthOffset)).value();
+}
+
+inline void RawRangeIterator::setLength(word length) const {
+  return instanceVariableAtPut(kLengthOffset, RawSmallInt::fromWord(length));
 }
 
 // RawSuper

@@ -1186,6 +1186,138 @@ class ListTests(unittest.TestCase):
         self.assertIsNot(copy, ls)
 
 
+class LongRangeIteratorTests(unittest.TestCase):
+    def test_dunder_iter_returns_self(self):
+        large_int = 2 ** 123
+        it = iter(range(large_int))
+        self.assertEqual(iter(it), it)
+
+    def test_dunder_length_hint_returns_pending_length(self):
+        large_int = 2 ** 123
+        it = iter(range(large_int))
+        self.assertEqual(it.__length_hint__(), large_int)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), large_int - 1)
+
+    def test_dunder_next_returns_ints(self):
+        large_int = 2 ** 123
+        it = iter(range(large_int))
+        for i in [0, 1, 2, 3]:
+            self.assertEqual(it.__next__(), i)
+
+
+class RangeTests(unittest.TestCase):
+    def test_dunder_iter_returns_range_iterator(self):
+        it = iter(range(100))
+        self.assertEqual(type(it).__name__, "range_iterator")
+
+    def test_dunder_iter_returns_longrange_iterator(self):
+        it = iter(range(2 ** 63))
+        self.assertEqual(type(it).__name__, "longrange_iterator")
+
+    def test_dunder_new_with_non_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            range.__new__(2, 1)
+        self.assertEqual(
+            str(context.exception), "range.__new__(X): X is not a type object (int)"
+        )
+
+    def test_dunder_new_with_str_type_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            range.__new__(str, 5)
+        self.assertEqual(
+            str(context.exception), "range.__new__(str): str is not a subtype of range"
+        )
+
+    def test_dunder_new_with_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            range("2")
+        self.assertEqual(
+            str(context.exception), "'str' object cannot be interpreted as an integer"
+        )
+
+    def test_dunder_new_with_zero_step_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            range(1, 2, 0)
+        self.assertEqual(str(context.exception), "range() arg 3 must not be zero")
+
+    def test_dunder_new_calls_dunder_index(self):
+        class Foo:
+            def __index__(self):
+                return 10
+
+        obj = range(10)
+        self.assertEqual(obj.start, 0)
+        self.assertEqual(obj.stop, 10)
+        self.assertEqual(obj.step, 1)
+
+    def test_dunder_new_stores_int_subclasses(self):
+        class Foo(int):
+            pass
+
+        class Bar:
+            def __index__(self):
+                return Foo(10)
+
+        obj = range(Foo(2), Bar())
+        self.assertEqual(type(obj.start), Foo)
+        self.assertEqual(type(obj.stop), Foo)
+        self.assertEqual(obj.start, 2)
+        self.assertEqual(obj.stop, 10)
+        self.assertEqual(obj.step, 1)
+
+    def test_dunder_new_with_one_arg_sets_stop(self):
+        obj = range(10)
+        self.assertEqual(obj.start, 0)
+        self.assertEqual(obj.stop, 10)
+        self.assertEqual(obj.step, 1)
+
+    def test_dunder_new_with_two_args_sets_start_and_stop(self):
+        obj = range(10, 11)
+        self.assertEqual(obj.start, 10)
+        self.assertEqual(obj.stop, 11)
+        self.assertEqual(obj.step, 1)
+
+    def test_dunder_new_with_three_args_sets_all(self):
+        obj = range(10, 11, 12)
+        self.assertEqual(obj.start, 10)
+        self.assertEqual(obj.stop, 11)
+        self.assertEqual(obj.step, 12)
+
+    def test_start_is_readonly(self):
+        with self.assertRaises(AttributeError):
+            range(0, 1, 2).start = 2
+
+    def test_step_is_readonly(self):
+        with self.assertRaises(AttributeError):
+            range(0, 1, 2).step = 2
+
+    def test_stop_is_readonly(self):
+        with self.assertRaises(AttributeError):
+            range(0, 1, 2).stop = 2
+
+
+class RangeIteratorTests(unittest.TestCase):
+    def test_dunder_iter_returns_self(self):
+        it = iter(range(100))
+        self.assertEqual(iter(it), it)
+
+    def test_dunder_length_hint_returns_pending_length(self):
+        len = 100
+        it = iter(range(len))
+        self.assertEqual(it.__length_hint__(), len)
+        it.__next__()
+        self.assertEqual(it.__length_hint__(), len - 1)
+
+    def test_dunder_next_returns_ints(self):
+        it = iter(range(10, 5, -2))
+        self.assertEqual(it.__next__(), 10)
+        self.assertEqual(it.__next__(), 8)
+        self.assertEqual(it.__next__(), 6)
+        with self.assertRaises(StopIteration):
+            it.__next__()
+
+
 class SetTests(unittest.TestCase):
     def test_discard_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -1733,26 +1865,6 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(m.attr, "foo")
         m.attr = "bar"
         self.assertEqual(m.attr, "bar")
-
-
-class RangeTests(unittest.TestCase):
-    def test_range_attrs_are_set(self):
-        obj = range(0, 1, 2)
-        self.assertEqual(obj.start, 0)
-        self.assertEqual(obj.stop, 1)
-        self.assertEqual(obj.step, 2)
-
-    def test_range_start_is_readonly(self):
-        with self.assertRaises(AttributeError):
-            range(0, 1, 2).start = 2
-
-    def test_range_step_is_readonly(self):
-        with self.assertRaises(AttributeError):
-            range(0, 1, 2).step = 2
-
-    def test_range_stop_is_readonly(self):
-        with self.assertRaises(AttributeError):
-            range(0, 1, 2).stop = 2
 
 
 if __name__ == "__main__":

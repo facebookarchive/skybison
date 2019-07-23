@@ -128,6 +128,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kKeyboardInterrupt, LayoutId::kKeyboardInterrupt},
     {SymbolId::kList, LayoutId::kList},
     {SymbolId::kListIterator, LayoutId::kListIterator},
+    {SymbolId::kLongRangeIterator, LayoutId::kLongRangeIterator},
     {SymbolId::kLookupError, LayoutId::kLookupError},
     {SymbolId::kMemoryError, LayoutId::kMemoryError},
     {SymbolId::kMemoryView, LayoutId::kMemoryView},

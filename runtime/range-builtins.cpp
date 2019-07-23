@@ -7,6 +7,88 @@
 
 namespace python {
 
+const BuiltinMethod LongRangeIteratorBuiltins::kBuiltinMethods[] = {
+    {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderLengthHint, dunderLengthHint},
+    {SymbolId::kDunderNext, dunderNext},
+    {SymbolId::kSentinelId, nullptr},
+};
+
+RawObject LongRangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isLongRangeIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kLongRangeIterator);
+  }
+  return *self;
+}
+
+RawObject LongRangeIteratorBuiltins::dunderLengthHint(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isLongRangeIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kLongRangeIterator);
+  }
+  LongRangeIterator iter(&scope, *self);
+  Int next(&scope, iter.next());
+  Int stop(&scope, iter.stop());
+  Int step(&scope, iter.step());
+  word diff = next.compare(*stop);
+  // This is the same as Slice::length but allowing LargeInt.
+  if (step.isNegative()) {
+    if (diff > 0) {
+      Runtime* runtime = thread->runtime();
+      Int tmp1(&scope, runtime->intSubtract(thread, next, stop));
+      Int one(&scope, SmallInt::fromWord(1));
+      tmp1 = runtime->intSubtract(thread, tmp1, one);
+      Int tmp2(&scope, runtime->intNegate(thread, step));
+      Object quotient(&scope, NoneType::object());
+      bool division_succeeded =
+          runtime->intDivideModulo(thread, tmp1, tmp2, &quotient, nullptr);
+      DCHECK(division_succeeded, "step must be nonzero");
+      tmp1 = *quotient;
+      return runtime->intAdd(thread, tmp1, one);
+    }
+  } else if (diff < 0) {
+    Runtime* runtime = thread->runtime();
+    Int tmp(&scope, runtime->intSubtract(thread, stop, next));
+    Int one(&scope, SmallInt::fromWord(1));
+    tmp = runtime->intSubtract(thread, tmp, one);
+    Object quotient(&scope, NoneType::object());
+    bool division_succeeded =
+        runtime->intDivideModulo(thread, tmp, step, &quotient, nullptr);
+    DCHECK(division_succeeded, "step must be nonzero");
+    tmp = *quotient;
+    return runtime->intAdd(thread, tmp, one);
+  }
+  return SmallInt::fromWord(0);
+}
+
+RawObject LongRangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
+                                                word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isLongRangeIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kLongRangeIterator);
+  }
+  LongRangeIterator iter(&scope, *self);
+  Int next(&scope, iter.next());
+  Int stop(&scope, iter.stop());
+  Int step(&scope, iter.step());
+  word diff = next.compare(*stop);
+  if ((step.isNegative() && diff <= 0) || (step.isPositive() && diff >= 0)) {
+    return thread->raise(LayoutId::kStopIteration, NoneType::object());
+  }
+  iter.setNext(thread->runtime()->intAdd(thread, next, step));
+  return *next;
+}
+
 const BuiltinAttribute RangeBuiltins::kAttributes[] = {
     {SymbolId::kStart, Range::kStartOffset, AttributeFlags::kReadOnly},
     {SymbolId::kStep, Range::kStepOffset, AttributeFlags::kReadOnly},
@@ -15,48 +97,63 @@ const BuiltinAttribute RangeBuiltins::kAttributes[] = {
 };
 
 const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
-    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kDunderIter, dunderIter},
+    {SymbolId::kDunderNew, dunderNew},
     {SymbolId::kSentinelId, nullptr},
 };
 
 RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  if (!args.get(0).isType()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "not a type object");
-  }
   HandleScope scope(thread);
-  Type type(&scope, args.get(0));
+  Arguments args(frame, nargs);
+  Object cls(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfType(*cls)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "range.__new__(X): X is not a type object (%T)",
+                                &cls);
+  }
+  Type type(&scope, *cls);
   if (type.builtinBase() != LayoutId::kRange) {
-    return thread->raiseWithFmt(LayoutId::kTypeError, "not a subtype of range");
-  }
-  for (word i = 1; i < nargs; i++) {
-    if (!args.get(i).isSmallInt() && !args.get(i).isUnbound()) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "Arguments to range() must be integers");
-    }
+    Str name(&scope, type.name());
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError, "range.__new__(%S): %S is not a subtype of range",
+        &name, &name);
   }
 
-  word start = 0;
-  word stop = 0;
-  word step = 1;
-  if (args.get(2).isUnbound() && args.get(3).isUnbound()) {
-    stop = SmallInt::cast(args.get(1)).value();
-  } else if (args.get(3).isUnbound()) {
-    start = SmallInt::cast(args.get(1)).value();
-    stop = SmallInt::cast(args.get(2)).value();
-  } else {
-    start = SmallInt::cast(args.get(1)).value();
-    stop = SmallInt::cast(args.get(2)).value();
-    step = SmallInt::cast(args.get(3)).value();
+  Object start_or_stop(&scope, args.get(1));
+  Object maybe_stop(&scope, args.get(2));
+  Object maybe_step(&scope, args.get(3));
+  if (maybe_stop.isUnbound()) {
+    DCHECK(maybe_step.isUnbound(),
+           "cannot provide step without providing both start and stop");
+    Object start(&scope, SmallInt::fromWord(0));
+    Object stop(&scope, intFromIndex(thread, start_or_stop));
+    if (stop.isError()) return *stop;
+    Object step(&scope, SmallInt::fromWord(1));
+    return runtime->newRange(start, stop, step);
   }
 
-  if (step == 0) {
+  if (maybe_step.isUnbound()) {
+    Object start(&scope, intFromIndex(thread, start_or_stop));
+    if (start.isError()) return *start;
+    Object stop(&scope, intFromIndex(thread, maybe_stop));
+    if (stop.isError()) return *stop;
+    Object step(&scope, SmallInt::fromWord(1));
+    return runtime->newRange(start, stop, step);
+  }
+
+  Object start(&scope, intFromIndex(thread, start_or_stop));
+  if (start.isError()) return *start;
+  Object stop(&scope, intFromIndex(thread, maybe_stop));
+  if (stop.isError()) return *stop;
+  Object step(&scope, intFromIndex(thread, maybe_step));
+  if (step.isError()) return *step;
+  Int step_int(&scope, intUnderlying(thread, step));
+  if (step_int.isZero()) {
     return thread->raiseWithFmt(LayoutId::kValueError,
-                                "range() step argument must not be zero");
+                                "range() arg 3 must not be zero");
   }
-
-  return thread->runtime()->newRange(start, stop, step);
+  return runtime->newRange(start, stop, step);
 }
 
 RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
@@ -67,7 +164,25 @@ RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
     return thread->raiseRequiresType(self, SymbolId::kRange);
   }
   Range range(&scope, *self);
-  return thread->runtime()->newRangeIterator(range);
+  Object start_obj(&scope, range.start());
+  Object stop_obj(&scope, range.stop());
+  Object step_obj(&scope, range.step());
+  Int start_int(&scope, intUnderlying(thread, start_obj));
+  Int stop_int(&scope, intUnderlying(thread, stop_obj));
+  Int step_int(&scope, intUnderlying(thread, step_obj));
+  Runtime* runtime = thread->runtime();
+  if (start_int.isLargeInt() || stop_int.isLargeInt() ||
+      step_int.isLargeInt()) {
+    return runtime->newLongRangeIterator(start_int, stop_int, step_int);
+  }
+  word start = start_int.asWord();
+  word stop = stop_int.asWord();
+  word step = step_int.asWord();
+  word length = Slice::length(start, stop, step);
+  if (SmallInt::isValid(length)) {
+    return runtime->newRangeIterator(start, step, length);
+  }
+  return runtime->newLongRangeIterator(start_int, stop_int, step_int);
 }
 
 const BuiltinMethod RangeIteratorBuiltins::kBuiltinMethods[] = {
@@ -97,15 +212,17 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
   }
   RangeIterator iter(&scope, *self);
-  Range range(&scope, iter.iterable());
-  word stop = range.stop();
-  word step = range.step();
-  word index = iter.index();
-  if ((step < 0 && index <= stop) || (step > 0 && index >= stop)) {
+  word length = iter.length();
+  if (length == 0) {
     return thread->raise(LayoutId::kStopIteration, NoneType::object());
   }
-  iter.setIndex(index + step);
-  return SmallInt::fromWord(index);
+  iter.setLength(length - 1);
+  word next = iter.next();
+  if (length > 1) {
+    word step = iter.step();
+    iter.setNext(next + step);
+  }
+  return SmallInt::fromWord(next);
 }
 
 RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
@@ -117,11 +234,7 @@ RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
   }
   RangeIterator iter(&scope, *self);
-  Range range(&scope, iter.iterable());
-  word stop = range.stop();
-  word step = range.step();
-  word index = iter.index();
-  return SmallInt::fromWord(std::abs((stop - index) / step));
+  return SmallInt::fromWord(iter.length());
 }
 
 }  // namespace python

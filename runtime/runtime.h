@@ -191,9 +191,13 @@ class Runtime {
   RawObject newProperty(const Object& getter, const Object& setter,
                         const Object& deleter);
 
-  RawObject newRange(word start, word stop, word step);
+  RawObject newRange(const Object& start, const Object& stop,
+                     const Object& step);
 
-  RawObject newRangeIterator(const Range& range);
+  RawObject newLongRangeIterator(const Int& start, const Int& stop,
+                                 const Int& step);
+
+  RawObject newRangeIterator(word start, word step, word length);
 
   RawObject newSetIterator(const Object& set);
 

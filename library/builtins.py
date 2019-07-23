@@ -2539,6 +2539,17 @@ def locals():
     _unimplemented()
 
 
+class longrange_iterator(bootstrap=True):
+    def __iter__(self):
+        pass
+
+    def __length_hint__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+
 class map:
     def __init__(self, func, *iterables):
         if len(iterables) < 1:

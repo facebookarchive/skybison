@@ -1076,48 +1076,6 @@ result = any([False, True, False])
   EXPECT_TRUE(result.value());
 }
 
-TEST_F(BuiltinsModuleTest, RangeOnNonIntegerRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, R"(range("foo", "bar", "baz"))"),
-      LayoutId::kTypeError, "Arguments to range() must be integers"));
-}
-
-TEST_F(BuiltinsModuleTest, RangeWithOnlyStopDefaultsOtherArguments) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-result = range(5)
-  )")
-                   .isError());
-  HandleScope scope(thread_);
-  Range result(&scope, moduleAt(&runtime_, "__main__", "result"));
-  EXPECT_EQ(result.start(), 0);
-  EXPECT_EQ(result.stop(), 5);
-  EXPECT_EQ(result.step(), 1);
-}
-
-TEST_F(BuiltinsModuleTest, RangeWithStartAndStopDefaultsStep) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-result = range(1, 5)
-  )")
-                   .isError());
-  HandleScope scope(thread_);
-  Range result(&scope, moduleAt(&runtime_, "__main__", "result"));
-  EXPECT_EQ(result.start(), 1);
-  EXPECT_EQ(result.stop(), 5);
-  EXPECT_EQ(result.step(), 1);
-}
-
-TEST_F(BuiltinsModuleTest, RangeWithAllArgsSetsAllArgs) {
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-result = range(1, 5, 7)
-  )")
-                   .isError());
-  HandleScope scope(thread_);
-  Range result(&scope, moduleAt(&runtime_, "__main__", "result"));
-  EXPECT_EQ(result.start(), 1);
-  EXPECT_EQ(result.stop(), 5);
-  EXPECT_EQ(result.step(), 7);
-}
-
 TEST_F(BuiltinsModuleTest, FilterWithNonIterableArgumentRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "filter(None, 1)"),
                             LayoutId::kTypeError,
