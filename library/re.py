@@ -166,9 +166,11 @@ class RegexFlag(enum.IntFlag):
     TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     T = TEMPLATE
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-# TODO(T42698674): Fully support enum module
 # TODO(T41326706): Implement builtins.globals
 # globals().update(RegexFlag.__members__)
+ASCII = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
+DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
+LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
 
 # sre exception
 error = sre_compile.error
@@ -291,8 +293,7 @@ def escape(pattern):
 
 _cache = {}
 
-# TODO(T38780562): Requires int subclassing
-# _pattern_type = type(sre_compile.compile("", 0))
+_pattern_type = type(sre_compile.compile("", 0))
 
 _MAXCACHE = 512
 def _compile(pattern, flags):
@@ -350,8 +351,7 @@ def _subx(pattern, template):
 def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
-# TODO(T38780562): Requires `_pattern_type` from above
-# copyreg.pickle(_pattern_type, _pickle, _compile)
+copyreg.pickle(_pattern_type, _pickle, _compile)
 
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)

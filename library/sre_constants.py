@@ -57,13 +57,12 @@ class error(Exception):
         super().__init__(msg)
 
 
-# TODO(T38780562): Requires int subclassing
-# class _NamedIntConstant(int):
-    # def __new__(cls, value, name):
-        # self = super(_NamedIntConstant, cls).__new__(cls, value)
-        # self.name = name
-        # return self
-class _NamedIntConstant():
+class _NamedIntConstant(int):
+    def __new__(cls, value, name):
+        self = super(_NamedIntConstant, cls).__new__(cls, value)
+        self.name = name
+        return self
+
     def __init__(self, value, name):
         self.name = name
 
