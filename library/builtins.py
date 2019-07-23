@@ -3032,7 +3032,7 @@ class str(bootstrap=True):
             raise TypeError(
                 f"expected a 'str' instance but got {_type(other).__name__}"
             )
-        return str.find(self, other) != -1
+        return _str_find(self, other, None, None) != -1
 
     def __eq__(self, other):
         pass
