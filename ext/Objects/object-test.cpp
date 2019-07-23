@@ -17,6 +17,13 @@ TEST_F(ObjectExtensionApiTest, PyNoneIdentityIsEqual) {
   EXPECT_EQ(none1, none2);
 }
 
+TEST_F(ObjectExtensionApiTest, PyNotImplementedIdentityIsEqual) {
+  // Test Identitiy
+  PyObject* not_impl1 = Py_NotImplemented;
+  PyObject* not_impl2 = Py_NotImplemented;
+  EXPECT_EQ(not_impl1, not_impl2);
+}
+
 TEST_F(ObjectExtensionApiTest, BytesWithNullReturnsBytes) {
   PyObjectPtr result(PyObject_Bytes(nullptr));
   ASSERT_EQ(PyErr_Occurred(), nullptr);

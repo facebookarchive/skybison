@@ -18,6 +18,11 @@ PY_EXPORT PyObject* PyNone_Ptr() {
   return ApiHandle::borrowedReference(Thread::current(), NoneType::object());
 }
 
+PY_EXPORT PyObject* PyNotImplemented_Ptr() {
+  return ApiHandle::borrowedReference(Thread::current(),
+                                      NotImplementedType::object());
+}
+
 PY_EXPORT void _Py_Dealloc_Func(PyObject* obj) {
   if (ApiHandle::isManaged(obj)) {
     ApiHandle::fromPyObject(obj)->dispose();

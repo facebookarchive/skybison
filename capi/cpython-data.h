@@ -13,6 +13,7 @@ extern "C" {
 #define Py_Ellipsis PyEllipsis_Ptr()
 #define Py_False PyFalse_Ptr()
 #define Py_None PyNone_Ptr()
+#define Py_NotImplemented PyNotImplemented_Ptr()
 #define Py_True PyTrue_Ptr()
 
 #define PyExc_BaseException PyExc_BaseException_Ptr()
