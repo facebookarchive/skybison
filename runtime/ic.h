@@ -65,15 +65,41 @@ void icInsertDependencyForTypeLookupInMro(Thread* thread, const Type& type,
 void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
                                   const Object& dependent);
 
-// Delete dependent in all ValueCells in mro's type dictionaries under
-// attribute_name.
-void icDeleteDependentInMro(Thread* thread, const Object& attribute_name,
-                            const Tuple& mro, const Object& dependent);
+// Deletes a function dependency on an attribute affected by a change to some
+// type.
+void icDoesCacheNeedInvalidationAfterUpdate(Thread* thread,
+                                            const Type& cached_type,
+                                            const Str& attribute_name,
+                                            const Type& updated_type,
+                                            const Object& dependent);
+
+// Returns true if a cached attribute from type cached_type is affected by
+// an update to type[attribute_name] during MRO lookups.
+// with the given mro. assuming that type[attribute_name] exists.
+//
+// Consider the following example:
+//
+// class A:
+//   def foo(self): return 1
+//
+// class B(A):
+//   pass
+//
+// class C(B):
+//   def foo(self): return 3
+//
+// When B.foo is cached, an update to A.foo affects the cache, but not the one
+// to C.foo.
+bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
+                                              const Type& cached_type,
+                                              const Str& attribute_name,
+                                              const Type& updated_type);
 
 // Delete caches for attribute_name to be shadowed by an update to
 // type[attribute_name] in dependent's cache entries, and delete obsolete
 // dependencies between dependent and other type attributes in caches' mro.
-void icDeleteCacheForTypeAttrInDependent(Thread* thread, const Type& type,
+void icDeleteCacheForTypeAttrInDependent(Thread* thread,
+                                         const Type& updated_type,
                                          const Str& attribute_name,
                                          bool data_descriptor,
                                          const Function& dependent);

@@ -4286,4 +4286,122 @@ c = C()
             *cache_attribute);
 }
 
+TEST(InterpreterTestNoFixture, StoreAttrsCausingShadowingInvalidatesCache) {
+  Runtime runtime(/*cache_enabled=*/true);
+  EXPECT_FALSE(runFromCStr(&runtime, R"(
+class A:
+  def foo(self): return 40
+
+class B(A):
+  def foo(self): return 50
+
+class C(B):
+  pass
+
+def function_that_caches_attr_lookup(a, b, c):
+  return a.foo() + b.foo() + c.foo()
+
+def func_that_causes_shadowing_of_attr_a():
+  A.foo = lambda self: 300
+
+def func_that_causes_shadowing_of_attr_b():
+  B.foo = lambda self: 200
+
+
+# Caching A.foo and B.foo in cache_attribute.
+a = A()
+b = B()
+c = C()
+a_foo = A.foo
+b_foo = B.foo
+function_that_caches_attr_lookup(a, b, c)
+)")
+                   .isError());
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type_a(&scope, moduleAt(&runtime, "__main__", "A"));
+  Type type_b(&scope, moduleAt(&runtime, "__main__", "B"));
+  Object a(&scope, moduleAt(&runtime, "__main__", "a"));
+  Object b(&scope, moduleAt(&runtime, "__main__", "b"));
+  Object c(&scope, moduleAt(&runtime, "__main__", "c"));
+  Function function_that_caches_attr_lookup(
+      &scope,
+      moduleAt(&runtime, "__main__", "function_that_caches_attr_lookup"));
+  Tuple caches(&scope, function_that_caches_attr_lookup.caches());
+  // 0: global variable
+  // 1: a.foo
+  // 2: b.foo
+  // 3: binary op cache
+  // 4: c.foo
+  // 5, binary op cache
+  Function a_foo(&scope, moduleAt(&runtime, "__main__", "a_foo"));
+  Function b_foo(&scope, moduleAt(&runtime, "__main__", "b_foo"));
+  ASSERT_EQ(caches.length(), 6 * kIcPointersPerCache);
+  ASSERT_EQ(icLookup(*caches, 1, a.layoutId()), *a_foo);
+  ASSERT_EQ(icLookup(*caches, 2, b.layoutId()), *b_foo);
+  ASSERT_EQ(icLookup(*caches, 4, c.layoutId()), *b_foo);
+
+  // Verify that function_that_caches_attr_lookup cached the attribute lookup
+  // and appears on the dependency list of A.foo.
+  Dict type_a_dict(&scope, type_a.dict());
+  Str foo_name(&scope, runtime.newStrFromCStr("foo"));
+  ValueCell foo_in_a(&scope, runtime.dictAt(thread, type_a_dict, foo_name));
+  ASSERT_TRUE(foo_in_a.dependencyLink().isWeakLink());
+  ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(),
+            *function_that_caches_attr_lookup);
+
+  // Verify that function_that_caches_attr_lookup cached the attribute lookup
+  // and appears on the dependency list of B.foo.
+  Dict type_b_dict(&scope, type_b.dict());
+  ValueCell foo_in_b(&scope, runtime.dictAt(thread, type_b_dict, foo_name));
+  ASSERT_TRUE(foo_in_b.dependencyLink().isWeakLink());
+  ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(),
+            *function_that_caches_attr_lookup);
+
+  // Verify that function_that_caches_attr_lookup cached the attribute lookup
+  // and appears on the dependency list of C.foo.
+  Dict type_c_dict(&scope, type_b.dict());
+  ValueCell foo_in_c(&scope, runtime.dictAt(thread, type_c_dict, foo_name));
+  ASSERT_TRUE(foo_in_c.dependencyLink().isWeakLink());
+  ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(),
+            *function_that_caches_attr_lookup);
+
+  // Change the class A so that any caches that reference A.foo are invalidated.
+  Function func_that_causes_shadowing_of_attr_a(
+      &scope,
+      moduleAt(&runtime, "__main__", "func_that_causes_shadowing_of_attr_a"));
+  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+                                         func_that_causes_shadowing_of_attr_a)
+                  .isNoneType());
+  // Verify that the cache for A.foo is cleared out, and dependent does not
+  // depend on A.foo anymore.
+  EXPECT_TRUE(icLookup(*caches, 1, a.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
+  // Check that any lookups of B have not been invalidated.
+  EXPECT_EQ(icLookup(*caches, 2, b.layoutId()), *b_foo);
+  EXPECT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(),
+            *function_that_caches_attr_lookup);
+  // Check that any lookups of C have not been invalidated.
+  EXPECT_EQ(icLookup(*caches, 4, c.layoutId()), *b_foo);
+  EXPECT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(),
+            *function_that_caches_attr_lookup);
+
+  // Invalidate the cache for B.foo.
+  Function func_that_causes_shadowing_of_attr_b(
+      &scope,
+      moduleAt(&runtime, "__main__", "func_that_causes_shadowing_of_attr_b"));
+  ASSERT_TRUE(Interpreter::callFunction0(thread, thread->currentFrame(),
+                                         func_that_causes_shadowing_of_attr_b)
+                  .isNoneType());
+  // Check that caches for A are still invalidated.
+  EXPECT_TRUE(icLookup(*caches, 1, a.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(foo_in_a.dependencyLink().isNoneType());
+  // Check that caches for B and C got just invalidated since they refer to
+  // B.foo.
+  EXPECT_TRUE(icLookup(*caches, 2, b.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(foo_in_b.dependencyLink().isNoneType());
+  EXPECT_TRUE(icLookup(*caches, 4, c.layoutId()).isErrorNotFound());
+  EXPECT_TRUE(foo_in_c.dependencyLink().isNoneType());
+}
+
 }  // namespace python

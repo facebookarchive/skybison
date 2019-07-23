@@ -310,21 +310,29 @@ void icDeleteDependentInValueCell(Thread* thread, const ValueCell& value_cell,
   }
 }
 
-void icDeleteDependentInMro(Thread* thread, const Object& attribute_name,
-                            const Tuple& mro, const Object& dependent) {
+void icDoesCacheNeedInvalidationAfterUpdate(Thread* thread,
+                                            const Type& cached_type,
+                                            const Str& attribute_name,
+                                            const Type& updated_type,
+                                            const Object& dependent) {
+  DCHECK(icIsCachedAttributeAffectedByUpdatedType(thread, cached_type,
+                                                  attribute_name, updated_type),
+         "icIsTypeAttrFromMro must return true");
   HandleScope scope(thread);
+  Tuple mro(&scope, cached_type.mro());
   Runtime* runtime = thread->runtime();
   for (word i = 0; i < mro.length(); ++i) {
-    Type mro_type(&scope, mro.at(i));
-    Dict dict(&scope, mro_type.dict());
-    Object result(&scope, runtime->dictAt(thread, dict, attribute_name));
-    if (!result.isValueCell()) {
-      // No ValueCell found, implying no dependencies in this type dict and
-      // above.
-      break;
-    }
-    ValueCell value_cell(&scope, *result);
+    Type type(&scope, mro.at(i));
+    Dict dict(&scope, type.dict());
+    ValueCell value_cell(&scope, runtime->dictAt(thread, dict, attribute_name));
     icDeleteDependentInValueCell(thread, value_cell, dependent);
+    if (type == updated_type) {
+      DCHECK(!value_cell.isPlaceholder(),
+             "value_cell for updated_type must not be Placeholder");
+      return;
+    }
+    DCHECK(value_cell.isPlaceholder(),
+           "value_cell below updated_type must be Placeholder");
   }
 }
 
@@ -337,7 +345,44 @@ static bool isTypeInMro(RawType type, RawTuple mro) {
   return false;
 }
 
-void icDeleteCacheForTypeAttrInDependent(Thread* thread, const Type& type,
+bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
+                                              const Type& cached_type,
+                                              const Str& attribute_name,
+                                              const Type& updated_type) {
+  HandleScope scope(thread);
+  Tuple mro(&scope, cached_type.mro());
+  Runtime* runtime = thread->runtime();
+  if (!isTypeInMro(*cached_type, *mro)) {
+    return false;
+  }
+  for (word i = 0; i < mro.length(); ++i) {
+    Type type(&scope, mro.at(i));
+    Dict dict(&scope, type.dict());
+    Object result(&scope, runtime->dictAt(thread, dict, attribute_name));
+    if (type == updated_type) {
+      // The current type in MRO is the searched type, and the searched
+      // attribute is unfound in MRO so far, so type[attribute_name] is the one
+      // retrieved from this mro.
+      DCHECK(result.isValueCell(), "result must be ValueCell");
+      return true;
+    }
+    if (result.isErrorNotFound()) {
+      // No ValueCell found, implying that no dependencies in this type dict and
+      // above.
+      return false;
+    }
+    ValueCell value_cell(&scope, *result);
+    if (!value_cell.isPlaceholder()) {
+      // A non-placeholder is found for the attribute, this is retrived as the
+      // value for the attribute, so no shadowing happens.
+      return false;
+    }
+  }
+  return false;
+}
+
+void icDeleteCacheForTypeAttrInDependent(Thread* thread,
+                                         const Type& updated_type,
                                          const Str& attribute_name,
                                          bool data_descriptor,
                                          const Function& dependent) {
@@ -370,31 +415,12 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread, const Type& type,
       if (caches.at(j + kIcEntryValueOffset).isSmallInt() && !data_descriptor) {
         continue;
       }
-      Type cache_type(&scope, runtime->typeAt(static_cast<LayoutId>(
-                                  SmallInt::cast(*cache_key).value())));
-      Tuple cache_mro(&scope, cache_type.mro());
-      // The type of the attribute being modified may not not appear in the mro
-      // of the type of the cache. See the following example.
-      //
-      // class A:
-      //   def foo(self): return 100
-      // class B:
-      //   def foo(self): return 200
-      //
-      // a = A()
-      // b = B()
-      // tmp0 = a.foo (*)
-      // tmp1 = b.foo (+)
-      // A.foo = lambda self: -100 (@)
-      //
-      // In the example above, (*) caches A.foo, (=) caches B.foo.
-      // (@) should only invalidate (*) not, (+) although they share the same
-      // attribute name since their types are unrelated.
-      // TODO(djang): Delete caches for type attribute values (function) only if
-      // naming shadowing actually happens. For instance offset caches, this
-      // check is enough since creating a data descriptor type attribute shadows
-      // them.
-      if (!isTypeInMro(*type, *cache_mro)) {
+      Type cached_type(&scope, runtime->typeAt(static_cast<LayoutId>(
+                                   SmallInt::cast(*cache_key).value())));
+      // Adding an attribute to the updated type will not affect a lookup of the
+      // name name through the cached type.
+      if (!icIsCachedAttributeAffectedByUpdatedType(
+              thread, cached_type, attribute_name, updated_type)) {
         continue;
       }
 
@@ -403,7 +429,10 @@ void icDeleteCacheForTypeAttrInDependent(Thread* thread, const Type& type,
 
       // Delete all direct/indirect dependencies from the deleted cache to
       // dependent since such dependencies are gone now.
-      icDeleteDependentInMro(thread, attribute_name, cache_mro, dependent);
+      // TODO(T47281253): Call this per (cached_type, attribute_name) after
+      // cache invalidation.
+      icDoesCacheNeedInvalidationAfterUpdate(
+          thread, cached_type, attribute_name, updated_type, dependent);
     }
   }
 }
