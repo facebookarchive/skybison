@@ -26,8 +26,9 @@ static bool underBytesCheck(Thread* thread, Frame* frame) {
 }
 
 static bool underBytesLen(Frame* frame) {
-  RawObject arg = frame->popValue();
+  RawObject arg = frame->peek(0);
   if (arg.isBytes()) {
+    frame->popValue();
     frame->setTopValue(SmallInt::fromWord(Bytes::cast(arg).length()));
     return true;
   }
@@ -41,8 +42,9 @@ static bool underDictCheck(Thread* thread, Frame* frame) {
 }
 
 static bool underDictLen(Frame* frame) {
-  RawObject arg = frame->popValue();
+  RawObject arg = frame->peek(0);
   if (arg.isDict()) {
+    frame->popValue();
     frame->setTopValue(SmallInt::fromWord(Dict::cast(arg).numItems()));
     return true;
   }
@@ -102,8 +104,9 @@ static bool underListGetItem(Frame* frame) {
 }
 
 static bool underListLen(Frame* frame) {
-  RawObject arg = frame->popValue();
+  RawObject arg = frame->peek(0);
   if (arg.isList()) {
+    frame->popValue();
     frame->setTopValue(SmallInt::fromWord(List::cast(arg).numItems()));
     return true;
   }
@@ -142,8 +145,9 @@ static bool underSetCheck(Thread* thread, Frame* frame) {
 }
 
 static bool underSetLen(Frame* frame) {
-  RawObject arg = frame->popValue();
+  RawObject arg = frame->peek(0);
   if (arg.isSet()) {
+    frame->popValue();
     frame->setTopValue(SmallInt::fromWord(Set::cast(arg).numItems()));
     return true;
   }
@@ -162,8 +166,9 @@ static bool underStrCheck(Thread* thread, Frame* frame) {
 }
 
 static bool underStrLen(Frame* frame) {
-  RawObject arg = frame->popValue();
+  RawObject arg = frame->peek(0);
   if (arg.isStr()) {
+    frame->popValue();
     frame->setTopValue(SmallInt::fromWord(Str::cast(arg).length()));
     return true;
   }
@@ -182,8 +187,9 @@ static bool underTupleCheckExact(Frame* frame) {
 }
 
 static bool underTupleLen(Frame* frame) {
-  RawObject arg = frame->popValue();
+  RawObject arg = frame->peek(0);
   if (arg.isBytes()) {
+    frame->popValue();
     frame->setTopValue(SmallInt::fromWord(Tuple::cast(arg).length()));
     return true;
   }

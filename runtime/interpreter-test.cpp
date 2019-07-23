@@ -8,6 +8,7 @@
 #include "handles.h"
 #include "ic.h"
 #include "interpreter.h"
+#include "intrinsic.h"
 #include "objects.h"
 #include "runtime.h"
 #include "trampolines.h"
@@ -4402,6 +4403,15 @@ function_that_caches_attr_lookup(a, b, c)
   EXPECT_TRUE(foo_in_b.dependencyLink().isNoneType());
   EXPECT_TRUE(icLookup(*caches, 4, c.layoutId()).isErrorNotFound());
   EXPECT_TRUE(foo_in_c.dependencyLink().isNoneType());
+}
+
+TEST_F(InterpreterTest, DoIntrinsicWithSlowPathDoesNotAlterStack) {
+  HandleScope scope(thread_);
+  Object obj(&scope, runtime_.newList());
+  Frame* frame = thread_->currentFrame();
+  frame->pushValue(*obj);
+  ASSERT_FALSE(doIntrinsic(thread_, frame, SymbolId::kUnderTupleLen));
+  EXPECT_EQ(frame->peek(0), *obj);
 }
 
 }  // namespace python
