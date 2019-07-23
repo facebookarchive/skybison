@@ -163,9 +163,16 @@ class EnumMeta(type):
 
         # save DynamicClassAttribute attributes from super classes so we know
         # if we can take the shortcut of storing members in the class dict
-        dynamic_attributes = {k for c in enum_class.mro()
-                              for k, v in c.__dict__.items()
-                              if isinstance(v, DynamicClassAttribute)}
+        # TODO(T47599044): Fix type.__dict__
+        #dynamic_attributes = {k for c in enum_class.mro()
+        #                      for k, v in c.__dict__.items()
+        #                      if isinstance(v, DynamicClassAttribute)}
+        dynamic_attributes = set()
+        for c in enum_class.mro():
+            for name in dir(c):
+                value = type.__getattribute__(c, name)
+                if isinstance(value, DynamicClassAttribute):
+                    dynamic_attributes.add(name)
 
         # Reverse value->name map for hashable values.
         enum_class._value2member_map_ = {}
@@ -364,7 +371,12 @@ class EnumMeta(type):
         resulting in an inconsistent Enumeration.
 
         """
-        member_map = cls.__dict__.get('_member_map_', {})
+        # TODO(T47599044): Fix type.__dict__
+        # member_map = cls.__dict__.get('_member_map_', {})
+        try:
+            member_map = type.__getattribute__(cls, '_member_map_')
+        except AttributeError:
+            member_map = {}
         if name in member_map:
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
@@ -514,9 +526,7 @@ class EnumMeta(type):
         return __new__, save_new, use_args
 
 
-# TODO(T42697770): Support metaclasses
-# class Enum(metaclass=EnumMeta):
-class Enum:
+class Enum(metaclass=EnumMeta):
     """Generic enumeration.
 
     Derive from this class to define new enumerations.

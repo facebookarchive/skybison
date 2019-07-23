@@ -19,7 +19,9 @@
 # other compatibility work.
 #
 
-r"""Support for regular expressions (RE).
+r"""
+isort:skip_file
+Support for regular expressions (RE).
 
 This module provides regular expression matching operations similar to
 those found in Perl.  It supports both 8-bit and Unicode strings; both
@@ -168,9 +170,10 @@ class RegexFlag(enum.IntFlag):
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
 # TODO(T41326706): Implement builtins.globals
 # globals().update(RegexFlag.__members__)
-ASCII = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
-DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
+import sys
+_this_module = sys.modules[__name__]
+for name, value in RegexFlag.__members__.items():
+    setattr(_this_module, name, value)
 
 # sre exception
 error = sre_compile.error
