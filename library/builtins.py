@@ -1519,6 +1519,9 @@ class complex(bootstrap=True):
         return _complex_real(self)
 
 
+copyright = ""
+
+
 class coroutine(bootstrap=True):
     def send(self, value):
         pass
@@ -1528,6 +1531,9 @@ class coroutine(bootstrap=True):
 
     def __repr__(self):
         return f"<coroutine object {self.__qualname__} at {_address(self)}>"
+
+
+credits = ""
 
 
 def delattr(obj, name):
@@ -2366,6 +2372,9 @@ def len(seq):
     if dunder_len is None:
         raise TypeError("object has no len()")
     return dunder_len()
+
+
+license = ""
 
 
 class list(bootstrap=True):

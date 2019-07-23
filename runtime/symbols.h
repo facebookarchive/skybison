@@ -33,6 +33,7 @@ class Runtime;
   V(DunderComplex, "__complex__")                                              \
   V(DunderContains, "__contains__")                                            \
   V(DunderContext, "__context__")                                              \
+  V(DunderDebug, "__debug__")                                                  \
   V(DunderDel, "__del__")                                                      \
   V(DunderDelattr, "__delattr__")                                              \
   V(DunderDelete, "__delete__")                                                \
@@ -419,6 +420,7 @@ class Runtime;
   V(Extend, "extend")                                                          \
   V(ExtensionPtr, "___extension___")                                           \
   V(ExtensionSuffixes, "extension_suffixes")                                   \
+  V(False, "False")                                                            \
   V(File, "file")                                                              \
   V(FileExistsError, "FileExistsError")                                        \
   V(FileNotFoundError, "FileNotFoundError")                                    \
@@ -624,6 +626,7 @@ class Runtime;
   V(ToBytes, "to_bytes")                                                       \
   V(Traceback, "traceback")                                                    \
   V(Translate, "translate")                                                    \
+  V(True, "True")                                                              \
   V(Truediv, "truediv")                                                        \
   V(Tuple, "tuple")                                                            \
   V(TupleIterator, "tuple_iterator")                                           \

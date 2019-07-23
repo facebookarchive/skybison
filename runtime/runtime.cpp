@@ -2226,8 +2226,23 @@ void Runtime::createBuiltinsModule(Thread* thread) {
   build_class_ = moduleAddBuiltinFunction(module, SymbolId::kDunderBuildClass,
                                           BuiltinsModule::dunderBuildClass);
 
-  Object not_implemented(&scope, NotImplementedType::object());
-  moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
+  // Add module variables
+  {
+    Object dunder_debug(&scope, Bool::falseObj());
+    moduleAddGlobal(module, SymbolId::kDunderDebug, dunder_debug);
+
+    Object false_obj(&scope, Bool::falseObj());
+    moduleAddGlobal(module, SymbolId::kFalse, false_obj);
+
+    Object none(&scope, NoneType::object());
+    moduleAddGlobal(module, SymbolId::kNone, none);
+
+    Object not_implemented(&scope, NotImplementedType::object());
+    moduleAddGlobal(module, SymbolId::kNotImplemented, not_implemented);
+
+    Object true_obj(&scope, Bool::trueObj());
+    moduleAddGlobal(module, SymbolId::kTrue, true_obj);
+  }
 
   Dict module_dict(&scope, module.dict());
   {
