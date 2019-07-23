@@ -43,6 +43,7 @@ void copyFunctionEntries(Thread* thread, const Function& base,
   patch.setEntryKw(base.entryKw());
   patch.setEntryEx(base.entryEx());
   patch.setIsInterpreted(false);
+  patch.setIntrinsicId(base.intrinsicId());
 }
 
 const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {

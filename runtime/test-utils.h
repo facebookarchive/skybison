@@ -209,6 +209,8 @@ RawObject listFromRange(word start, word stop);
 
 ::testing::AssertionResult isStrEqualsCStr(RawObject obj, const char* c_str);
 
+::testing::AssertionResult isSymbolIdEquals(SymbolId result, SymbolId expected);
+
 ::testing::AssertionResult isIntEqualsWord(RawObject obj, word value);
 
 ::testing::AssertionResult isIntEqualsDigits(RawObject obj, View<uword> digits);

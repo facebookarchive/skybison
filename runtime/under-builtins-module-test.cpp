@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "runtime.h"
 #include "test-utils.h"
@@ -27,6 +28,7 @@ static RawObject createDummyBuiltinFunction(Thread* thread) {
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
+  function.setIntrinsicId(static_cast<word>(SymbolId::kUnderIntCheck));
   return *function;
 }
 
@@ -48,6 +50,8 @@ def _int_check(self):
   EXPECT_EQ(python_func.entry(), &builtinTrampoline);
   EXPECT_EQ(python_func.entryKw(), &builtinTrampolineKw);
   EXPECT_EQ(python_func.entryEx(), &builtinTrampolineEx);
+  EXPECT_TRUE(isSymbolIdEquals(static_cast<SymbolId>(python_func.intrinsicId()),
+                               SymbolId::kUnderIntCheck));
 }
 
 TEST_F(UnderBuiltinsModuleDeathTest, CopyFunctionEntriesRedefinitionDies) {

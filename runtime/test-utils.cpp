@@ -553,6 +553,20 @@ RawObject listFromRange(word start, word stop) {
   return ::testing::AssertionSuccess();
 }
 
+::testing::AssertionResult isSymbolIdEquals(SymbolId result,
+                                            SymbolId expected) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  if (result == expected) return ::testing::AssertionSuccess();
+  const char* result_name =
+      result == SymbolId::kInvalid
+          ? "<Invalid>"
+          : runtime->symbols()->predefinedSymbolAt(result);
+  return ::testing::AssertionFailure()
+         << "Expected '" << runtime->symbols()->predefinedSymbolAt(expected)
+         << "', but got '" << result_name << "'";
+}
+
 ::testing::AssertionResult isIntEqualsWord(RawObject obj, word value) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);

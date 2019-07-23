@@ -86,6 +86,21 @@ foo = Foo(b"foo")
   EXPECT_STREQ(exc.message(), exc_msg);
 }
 
+TEST_F(TestUtils, IsSymbolIdEquals) {
+  EXPECT_TRUE(isSymbolIdEquals(SymbolId::kBuiltins, SymbolId::kBuiltins));
+
+  auto const exc = isSymbolIdEquals(SymbolId::kTime, SymbolId::kFunction);
+  EXPECT_FALSE(exc);
+  const char* exc_msg = "Expected 'function', but got 'time'";
+  EXPECT_STREQ(exc.message(), exc_msg);
+
+  auto const invalid_exc =
+      isSymbolIdEquals(SymbolId::kInvalid, SymbolId::kFunction);
+  EXPECT_FALSE(invalid_exc);
+  const char* invalid_exc_msg = "Expected 'function', but got '<Invalid>'";
+  EXPECT_STREQ(invalid_exc.message(), invalid_exc_msg);
+}
+
 TEST_F(TestUtils, PyListEqual) {
   HandleScope scope(thread_);
 
