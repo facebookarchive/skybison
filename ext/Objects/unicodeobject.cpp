@@ -17,6 +17,37 @@
 const char* Py_FileSystemDefaultEncodeErrors = "surrogateescape";
 // _Py_DecodeLocaleEx is defined in fileutils.c
 extern "C" wchar_t* _Py_DecodeLocaleEx(const char*, size_t*, int);
+// clang-format off
+extern "C" const unsigned char _Py_ascii_whitespace[] = {  // NOLINT
+    0, 0, 0, 0, 0, 0, 0, 0,
+//     case 0x0009: * CHARACTER TABULATION
+//     case 0x000A: * LINE FEED
+//     case 0x000B: * LINE TABULATION
+//     case 0x000C: * FORM FEED
+//     case 0x000D: * CARRIAGE RETURN
+    0, 1, 1, 1, 1, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+//     case 0x001C: * FILE SEPARATOR
+//     case 0x001D: * GROUP SEPARATOR
+//     case 0x001E: * RECORD SEPARATOR
+//     case 0x001F: * UNIT SEPARATOR
+    0, 0, 0, 0, 1, 1, 1, 1,
+//     case 0x0020: * SPACE
+    1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+// clang-format on
 
 namespace python {
 
@@ -1867,8 +1898,10 @@ PY_EXPORT PyObject* PyUnicode_FromUnicode(const Py_UNICODE* code_units,
                   View<int32_t>(bit_cast<int32_t*>(code_units), size)));
 }
 
-PY_EXPORT int PyUnicode_KIND_Func(PyObject*) {
-  UNIMPLEMENTED("PyUnicode_KIND_Func");
+PY_EXPORT int PyUnicode_KIND_Func(PyObject* obj) {
+  // TODO(T47682853): Introduce new PyUnicode_VARBYTE_KIND
+  CHECK(PyUnicode_IS_ASCII_Func(obj), "only ASCII allowed");
+  return PyUnicode_1BYTE_KIND;
 }
 
 // NOTE: This will return a cached and managed C-string buffer that is a copy

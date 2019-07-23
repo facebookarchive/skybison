@@ -112,6 +112,7 @@ extern int Py_VerboseFlag;
 #define PY_CTF_SPACE 0x08
 #define PY_CTF_XDIGIT 0x10
 
+extern const unsigned char _Py_ascii_whitespace[128];
 extern const unsigned int _Py_ctype_table[256];
 extern const unsigned char _Py_ctype_tolower[256];
 extern const unsigned char _Py_ctype_toupper[256];

@@ -3,6 +3,7 @@
 
 extern "C" PyObject* PyInit__capsule();
 extern "C" PyObject* PyInit__myreadline();
+extern "C" PyObject* PyInit__sre();
 extern "C" PyObject* PyInit__stat();
 extern "C" PyObject* PyInit__stentry();
 extern "C" PyObject* PyInit_atexit();
@@ -23,6 +24,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_capsule", PyInit__capsule},
     {"_empty", PyInit__empty},
     {"_myreadline", PyInit__myreadline},
+    {"_sre", PyInit__sre},
     {"_stat", PyInit__stat},
     {"_stentry", PyInit__stentry},
     {"atexit", PyInit_atexit},
