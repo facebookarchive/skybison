@@ -32,6 +32,15 @@ RawObject objectSetAttrSetLocation(Thread* thread, const Object& object,
                                    const Object& name_interned_str,
                                    const Object& value, Object* location_out);
 
+RawObject objectDelItem(Thread* thread, const Object& object,
+                        const Object& key);
+
+RawObject objectGetItem(Thread* thread, const Object& object,
+                        const Object& key);
+
+RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
+                        const Object& value);
+
 class ObjectBuiltins {
  public:
   static void initialize(Runtime* runtime);

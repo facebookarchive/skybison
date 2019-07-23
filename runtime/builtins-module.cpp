@@ -240,21 +240,6 @@ static RawObject calculateMetaclass(Thread* thread, const Type& metaclass_type,
   return *result;
 }
 
-// Wraps every value of the dict with ValueCell.
-static void wrapInValueCells(Thread* thread, const Dict& dict) {
-  HandleScope scope(thread);
-  Tuple data(&scope, dict.data());
-  Runtime* runtime = thread->runtime();
-  for (word i = Dict::Bucket::kFirst; Dict::Bucket::nextItem(*data, &i);) {
-    DCHECK(!Dict::Bucket::value(*data, i).isValueCell(),
-           "ValueCell in Python code");
-    ValueCell cell(&scope, runtime->newValueCell());
-    cell.setValue(Dict::Bucket::value(*data, i));
-    Dict::Bucket::set(*data, i, Dict::Bucket::hash(*data, i),
-                      Dict::Bucket::key(*data, i), *cell);
-  }
-}
-
 RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
                                            word nargs) {
   Runtime* runtime = thread->runtime();
@@ -352,9 +337,6 @@ RawObject BuiltinsModule::dunderBuildClass(Thread* thread, Frame* frame,
         "<metaclass>.__prepare__() must return a mapping, not %T", &dict_obj);
   }
   Dict type_dict(&scope, *dict_obj);
-  // TODO(T47581831) LOAD_NAME/STORE_NAME should not expect valuecells and this
-  // shouldn't be necessary.
-  wrapInValueCells(thread, type_dict);
 
   // TODO(cshapiro): might need to do some kind of callback here and we want
   // backtraces to work correctly.  The key to doing that would be to put some
@@ -483,36 +465,28 @@ RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {
   Object globals_obj(&scope, args.get(1));
   Object locals(&scope, args.get(2));
   Runtime* runtime = thread->runtime();
-  if (globals_obj.isNoneType() &&
-      locals.isNoneType()) {  // neither globals nor locals are provided
+  if (globals_obj.isNoneType()) {
     Frame* caller_frame = frame->previousFrame();
     globals_obj = caller_frame->function().globals();
-    DCHECK(globals_obj.isDict(),
-           "Expected caller_frame->globals() to be dict in 'exec'");
-    if (globals_obj != caller_frame->implicitGlobals()) {
-      // TODO(T37888835): Fix 1 argument case
-      // globals == implicitGlobals when code is being executed in a module
-      // context. If we're not in a module context, this case is unimplemented.
-      UNIMPLEMENTED("exec() with 1 argument not at the module level");
+    if (locals.isNoneType()) {
+      if (!caller_frame->function().hasOptimizedOrNewLocals()) {
+        locals = caller_frame->implicitGlobals();
+      } else {
+        // TODO(T41634372) This should transfer locals into a dictionary similar
+        // to calling `builtins.local()`.
+        UNIMPLEMENTED("locals() not implemented yet");
+      }
     }
+  } else if (locals.isNoneType()) {
     locals = *globals_obj;
-  } else if (!globals_obj.isNoneType()) {  // only globals is provided
-    if (!runtime->isInstanceOfDict(*globals_obj)) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "Expected 'globals' to be dict in 'exec'");
-    }
-    locals = *globals_obj;
-  } else {  // both globals and locals are provided
-    if (!runtime->isInstanceOfDict(*globals_obj)) {
-      return thread->raiseWithFmt(LayoutId::kTypeError,
-                                  "Expected 'globals' to be dict in 'exec'");
-    }
-    if (!runtime->isMapping(thread, locals)) {
-      return thread->raiseWithFmt(
-          LayoutId::kTypeError, "Expected 'locals' to be a mapping in 'exec'");
-    }
-    // TODO(T37888835): Fix 3 argument case
-    UNIMPLEMENTED("exec() with both globals and locals");
+  }
+  if (!runtime->isInstanceOfDict(*globals_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Expected 'globals' to be dict in 'exec'");
+  }
+  if (!runtime->isMapping(thread, locals)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "Expected 'locals' to be a mapping in 'exec'");
   }
   if (source_obj.isStr()) {
     Str source(&scope, *source_obj);

@@ -204,6 +204,44 @@ RawObject objectSetAttr(Thread* thread, const Object& object,
                                   nullptr);
 }
 
+RawObject objectDelItem(Thread* thread, const Object& object,
+                        const Object& key) {
+  HandleScope scope(thread);
+  Object result(&scope,
+                thread->invokeMethod2(object, SymbolId::kDunderDelitem, key));
+  if (result.isErrorNotFound()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' object does not support item deletion",
+                                &object);
+  }
+  return *result;
+}
+
+RawObject objectGetItem(Thread* thread, const Object& object,
+                        const Object& key) {
+  HandleScope scope(thread);
+  Object result(&scope,
+                thread->invokeMethod2(object, SymbolId::kDunderGetitem, key));
+  if (result.isErrorNotFound()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' object is not subscriptable", &object);
+  }
+  return *result;
+}
+
+RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
+                        const Object& value) {
+  HandleScope scope(thread);
+  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetitem,
+                                              key, value));
+  if (result.isErrorNotFound()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'%T' object does not support item assignment",
+                                &object);
+  }
+  return *result;
+}
+
 const BuiltinMethod ObjectBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderHash, dunderHash},
     {SymbolId::kDunderInit, dunderInit},

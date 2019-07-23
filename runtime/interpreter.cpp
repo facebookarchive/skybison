@@ -1808,29 +1808,27 @@ HANDLER_INLINE Continue Interpreter::doPopExcept(Thread* thread, word) {
 }
 
 HANDLER_INLINE Continue Interpreter::doStoreName(Thread* thread, word arg) {
-  // TypeDict results are not cached since LOAD_NAME doesn't use caching.
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Dict implicit_globals(&scope, frame->implicitGlobals());
+  Object implicit_globals_obj(&scope, frame->implicitGlobals());
+  // Forward to doStoreGlobal() when implicit globals and globals are the same.
+  // This avoids duplicating all the cache invalidation logic here.
+  // TODO(T47581831) This should be removed and invalidation should happen when
+  // changing the globals dictionary.
+  if (implicit_globals_obj == frame->function().globals()) {
+    return doStoreGlobal(thread, arg);
+  }
   RawObject names = Code::cast(frame->code()).names();
   Object key(&scope, Tuple::cast(names).at(arg));
   Object value(&scope, frame->popValue());
-  Runtime* runtime = thread->runtime();
-  runtime->dictAtPutInValueCell(thread, implicit_globals, key, value);
-  if (isCacheEnabledForCurrentFunction(frame) &&
-      frame->implicitGlobals() == frame->function().globals()) {
-    Dict globals(&scope, frame->function().globals());
-    Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
-    // TODO(T45203542): Use a placeholder in globals to avoid builtin lookup.
-    Object builtin_result(&scope, runtime->dictAt(thread, builtins, key));
-    DCHECK(builtin_result.isErrorNotFound() || !builtin_result.isError(),
-           "dictAt should not raise an exception other than ErrorNotFound");
-    if (!builtin_result.isErrorNotFound()) {
-      // The newly created global variable shadows the previously cached value
-      // from _builtins__, so invalidate the cached builtin value.
-      DCHECK(builtin_result.isValueCell(), "result must be a ValueCell");
-      ValueCell value_cell(&scope, *builtin_result);
-      icInvalidateGlobalVar(thread, value_cell);
+  if (implicit_globals_obj.isDict()) {
+    Dict implicit_globals(&scope, *implicit_globals_obj);
+    thread->runtime()->dictAtPutInValueCell(thread, implicit_globals, key,
+                                            value);
+  } else {
+    if (objectSetItem(thread, implicit_globals_obj, key, value)
+            .isErrorException()) {
+      return Continue::UNWIND;
     }
   }
   return Continue::NEXT;
@@ -1844,24 +1842,28 @@ static Continue raiseUndefinedName(Thread* thread, const Str& name) {
 HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  Dict implicit_globals(&scope, frame->implicitGlobals());
+  Object implicit_globals_obj(&scope, frame->implicitGlobals());
+  // Forward to doDeleteGlobal() when implicit globals and globals are the same.
+  // This avoids duplicating all the cache invalidation logic here.
+  // TODO(T47581831) This should be removed and invalidation should happen when
+  // changing the globals dictionary.
+  if (implicit_globals_obj == frame->function().globals()) {
+    return doDeleteGlobal(thread, arg);
+  }
   RawObject names = Code::cast(frame->code()).names();
   Str key(&scope, Tuple::cast(names).at(arg));
-  Object result(&scope,
-                thread->runtime()->dictRemove(thread, implicit_globals, key));
-  DCHECK(result.isErrorNotFound() || result.isValueCell(),
-         "dictRemove must return either ErrorNotFound or ValueCell");
-  if (result.isErrorNotFound()) {
-    return raiseUndefinedName(thread, key);
-  }
-  // Only a module dict needs cache invalidation since a type dict entry is
-  // only read via LOAD_NAME which never involves caching.
-  Dict globals(&scope, frame->function().globals());
-  if (isCacheEnabledForCurrentFunction(frame) &&
-      frame->implicitGlobals() == *globals) {
-    DCHECK(result.isValueCell(), "result must be a ValueCell");
-    ValueCell value_cell(&scope, *result);
-    icInvalidateGlobalVar(thread, value_cell);
+  if (implicit_globals_obj.isDict()) {
+    Dict implicit_globals(&scope, *implicit_globals_obj);
+    if (thread->runtime()
+            ->dictRemove(thread, implicit_globals, key)
+            .isErrorNotFound()) {
+      return raiseUndefinedName(thread, key);
+    }
+  } else {
+    if (objectDelItem(thread, implicit_globals_obj, key).isErrorException()) {
+      thread->clearPendingException();
+      return raiseUndefinedName(thread, key);
+    }
   }
   return Continue::NEXT;
 }
@@ -2279,29 +2281,52 @@ HANDLER_INLINE Continue Interpreter::doLoadName(Thread* thread, word arg) {
   Object names(&scope, Code::cast(frame->code()).names());
   Str key(&scope, Tuple::cast(*names).at(arg));
 
-  // 1. implicitGlobals
-  Dict implicit_globals(&scope, frame->implicitGlobals());
-  Object result(&scope, runtime->moduleDictAt(thread, implicit_globals, key));
+  // Check implicit globals.
+  Dict globals(&scope, frame->function().globals());
+  Object implicit_globals_obj(&scope, frame->implicitGlobals());
+  Object result(&scope, Error::notFound());
+  if (implicit_globals_obj != globals) {
+    if (implicit_globals_obj.isDict()) {
+      // Shortcut for the common case of implicit_globals being a dict.
+      Dict implicit_globals(&scope, *implicit_globals_obj);
+      result = runtime->dictAt(thread, implicit_globals, key);
+      DCHECK(!result.isError() || result.isErrorNotFound(),
+             "expected value or not found");
+      // TODO(T47581831) Once we have tagged dictionaries we should no longer
+      // need to manually check for valuecell results here.
+      if (result.isValueCell()) {
+        ValueCell value_cell(&scope, *result);
+        if (value_cell.isPlaceholder()) {
+          result = Error::notFound();
+        } else {
+          result = value_cell.value();
+        }
+      }
+      if (!result.isErrorNotFound()) {
+        frame->pushValue(*result);
+        return Continue::NEXT;
+      }
+    } else {
+      result = objectGetItem(thread, implicit_globals_obj, key);
+      if (!result.isErrorException()) {
+        frame->pushValue(*result);
+        return Continue::NEXT;
+      }
+      if (!thread->pendingExceptionMatches(LayoutId::kKeyError)) {
+        return Continue::UNWIND;
+      }
+      thread->clearPendingException();
+    }
+  }
+
+  // Check globals.
+  result = runtime->moduleDictAt(thread, globals, key);
   if (!result.isErrorNotFound()) {
-    // 3a. found in [implicit]/globals
     frame->pushValue(*result);
     return Continue::NEXT;
   }
 
-  Dict globals(&scope, frame->function().globals());
-  // In the module body, globals == implicit_globals, so no need to check
-  // twice. However in class body, it is a different dict.
-  if (frame->implicitGlobals() != *globals) {
-    // 2. globals
-    result = runtime->moduleDictAt(thread, globals, key);
-    if (!result.isErrorNotFound()) {
-      // 3a. found in [implicit]/globals
-      frame->pushValue(*result);
-      return Continue::NEXT;
-    }
-  }
-
-  // 3b. not found; check builtins.
+  // Check builtins.
   Dict builtins(&scope, runtime->moduleDictBuiltins(thread, globals));
   result = runtime->moduleDictAt(thread, builtins, key);
   if (!result.isErrorNotFound()) {

@@ -7,6 +7,7 @@
 #include "frame.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
+#include "object-builtins.h"
 #include "runtime.h"
 #include "type-builtins.h"
 
@@ -180,19 +181,6 @@ PY_EXPORT int PyMapping_Check(PyObject* py_obj) {
   return thread->runtime()->isMapping(thread, obj);
 }
 
-static PyObject* getItem(Thread* thread, const Object& obj, const Object& key) {
-  HandleScope scope(thread);
-  Object result(&scope,
-                thread->invokeMethod2(obj, SymbolId::kDunderGetitem, key));
-  if (result.isError()) {
-    if (result.isErrorNotFound()) {
-      thread->raiseWithFmt(LayoutId::kTypeError, "object is not subscriptable");
-    }
-    return nullptr;
-  }
-  return ApiHandle::newReference(thread, *result);
-}
-
 PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* obj, const char* key) {
   Thread* thread = Thread::current();
   if (obj == nullptr || key == nullptr) {
@@ -201,7 +189,9 @@ PY_EXPORT PyObject* PyMapping_GetItemString(PyObject* obj, const char* key) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object key_obj(&scope, thread->runtime()->newStrFromCStr(key));
-  return getItem(thread, object, key_obj);
+  Object result(&scope, objectGetItem(thread, object, key_obj));
+  if (result.isErrorException()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT int PyMapping_HasKey(PyObject* obj, PyObject* key) {
@@ -912,7 +902,9 @@ PY_EXPORT PyObject* PyObject_GetItem(PyObject* obj, PyObject* key) {
   HandleScope scope(thread);
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
-  return getItem(thread, object, key_obj);
+  Object result(&scope, objectGetItem(thread, object, key_obj));
+  if (result.isErrorException()) return nullptr;
+  return ApiHandle::newReference(thread, *result);
 }
 
 PY_EXPORT PyObject* PyObject_GetIter(PyObject* pyobj) {
@@ -1009,16 +1001,8 @@ PY_EXPORT int PyObject_SetItem(PyObject* obj, PyObject* key, PyObject* value) {
   Object object(&scope, ApiHandle::fromPyObject(obj)->asObject());
   Object key_obj(&scope, ApiHandle::fromPyObject(key)->asObject());
   Object value_obj(&scope, ApiHandle::fromPyObject(value)->asObject());
-  Object result(&scope, thread->invokeMethod3(object, SymbolId::kDunderSetitem,
-                                              key_obj, value_obj));
-  if (result.isError()) {
-    if (result.isErrorNotFound()) {
-      thread->raiseWithFmt(LayoutId::kTypeError,
-                           "object does not support item assignment");
-    }
-    return -1;
-  }
-  return 0;
+  Object result(&scope, objectSetItem(thread, object, key_obj, value_obj));
+  return result.isErrorException() ? -1 : 0;
 }
 
 PY_EXPORT Py_ssize_t PyObject_Size(PyObject* pyobj) {
