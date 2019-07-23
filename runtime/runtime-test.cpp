@@ -1638,6 +1638,21 @@ stop_iteration = StopIterationSub()
   EXPECT_FALSE(runtime_.isInstanceOfSystemExit(*stop_iteration));
 }
 
+TEST_F(RuntimeTest, IsInstanceOfUserBaseAcceptsMetaclassInstances) {
+  HandleScope scope(thread_);
+  EXPECT_FALSE(runFromCStr(&runtime_, R"(
+class M(type):
+  pass
+class IS(int, metaclass=M):
+  pass
+i = IS()
+)")
+                   .isError());
+  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
+  EXPECT_TRUE(runtime_.isInstanceOfUserIntBase(*i));
+  EXPECT_FALSE(runtime_.isInstanceOfUserStrBase(*i));
+}
+
 TEST_F(RuntimeTupleTest, Create) {
   RawObject obj0 = runtime_.newTuple(0);
   ASSERT_TRUE(obj0.isTuple());

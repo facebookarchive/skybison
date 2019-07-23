@@ -680,7 +680,7 @@ class Runtime {
 #define DEFINE_IS_USER_INSTANCE(ty)                                            \
   bool isInstanceOfUser##ty##Base(RawObject obj) {                             \
     return !obj.is##ty() &&                                                    \
-           Type::cast(typeOf(obj)).builtinBase() == LayoutId::k##ty;           \
+           typeOf(obj).rawCast<RawType>().builtinBase() == LayoutId::k##ty;    \
   }
   DEFINE_IS_USER_INSTANCE(Bytes)
   DEFINE_IS_USER_INSTANCE(Float)
