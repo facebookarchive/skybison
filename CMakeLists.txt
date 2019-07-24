@@ -205,6 +205,8 @@ add_custom_command(
   WORKING_DIRECTORY
   ${CMAKE_SOURCE_DIR}
   DEPENDS util/freeze_modules.py ${FROZEN_MODULE_INPUT})
+# This target is built in util/run_clang_tidy.py:create_compile_commands() to
+# ensure all generated files are present when clang-tidy runs.
 add_custom_target(
   frozen-sources
   DEPENDS

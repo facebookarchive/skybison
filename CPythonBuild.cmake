@@ -333,6 +333,8 @@ add_custom_command(
   DEPENDS ${CPYTHON_OUTPUT_SOURCES} third-party/cpython/Tools/clinic/clinic.py
   COMMENT "Regenerate headers from module sources with argument clinic annotations")
 
+# This target is built in util/run_clang_tidy.py:create_compile_commands() to
+# ensure all generated files are present when clang-tidy runs.
 add_custom_target(
   cpython-sources
   DEPENDS
