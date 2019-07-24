@@ -38,6 +38,8 @@ class UnderBuiltinsModule {
   static RawObject underByteslikeFindInt(Thread* thread, Frame* frame,
                                          word nargs);
   static RawObject underClassMethod(Thread* thread, Frame* frame, word nargs);
+  static RawObject underClassMethodIsAbstract(Thread* thread, Frame* frame,
+                                              word nargs);
   static RawObject underComplexImag(Thread* thread, Frame* frame, word nargs);
   static RawObject underComplexReal(Thread* thread, Frame* frame, word nargs);
   static RawObject underDictBucketInsert(Thread* thread, Frame* frame,
@@ -105,6 +107,8 @@ class UnderBuiltinsModule {
                                           word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
   static RawObject underProperty(Thread* thread, Frame* frame, word nargs);
+  static RawObject underPropertyIsAbstract(Thread* thread, Frame* frame,
+                                           word nargs);
   static RawObject underPyObjectOffset(Thread* thread, Frame* frame,
                                        word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
@@ -128,6 +132,8 @@ class UnderBuiltinsModule {
   static RawObject underSliceStart(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStep(Thread* thread, Frame* frame, word nargs);
   static RawObject underSliceStop(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStaticMethodIsAbstract(Thread* thread, Frame* frame,
+                                               word nargs);
   static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);

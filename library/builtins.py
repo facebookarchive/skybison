@@ -24,6 +24,7 @@ _bytes_repeat = _bytes_repeat  # noqa: F821
 _byteslike_find_byteslike = _byteslike_find_byteslike  # noqa: F821
 _byteslike_find_int = _byteslike_find_int  # noqa: F821
 _classmethod = _classmethod  # noqa: F821
+_classmethod_isabstract = _classmethod_isabstract  # noqa: F821
 _complex_imag = _complex_imag  # noqa: F821
 _complex_real = _complex_real  # noqa: F821
 _dict_bucket_insert = _dict_bucket_insert  # noqa: F821
@@ -70,6 +71,7 @@ _list_sort = _list_sort  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
 _property = _property  # noqa: F821
+_property_isabstract = _property_isabstract  # noqa: F821
 _pyobject_offset = _pyobject_offset  # noqa: F821
 _repr_enter = _repr_enter  # noqa: F821
 _repr_leave = _repr_leave  # noqa: F821
@@ -87,6 +89,7 @@ _slice_check = _slice_check  # noqa: F821
 _slice_start = _slice_start  # noqa: F821
 _slice_step = _slice_step  # noqa: F821
 _slice_stop = _slice_stop  # noqa: F821
+_staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
@@ -150,6 +153,8 @@ class classmethod(bootstrap=True):
     def __init__(self, fn):
         pass
 
+    __isabstractmethod__ = _property(_classmethod_isabstract)
+
     def __new__(cls, fn):
         pass
 
@@ -163,6 +168,8 @@ class property(bootstrap=True):
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
         pass
+
+    __isabstractmethod__ = _property(_property_isabstract)
 
     def __new__(cls, fget=None, fset=None, fdel=None, doc=None):
         pass
@@ -186,6 +193,8 @@ class staticmethod(bootstrap=True):
 
     def __init__(self, fn):
         pass
+
+    __isabstractmethod__ = _property(_staticmethod_isabstract)
 
     def __new__(cls, fn):
         pass

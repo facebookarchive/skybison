@@ -74,6 +74,7 @@ class Runtime;
   V(DunderIor, "__ior__")                                                      \
   V(DunderIpow, "__ipow__")                                                    \
   V(DunderIrshift, "__irshift__")                                              \
+  V(DunderIsAbstractMethod, "__isabstractmethod__")                            \
   V(DunderIsub, "__isub__")                                                    \
   V(DunderIter, "__iter__")                                                    \
   V(DunderItruediv, "__itruediv__")                                            \
@@ -159,6 +160,7 @@ class Runtime;
   V(UnderByteslikeFindByteslike, "_byteslike_find_byteslike")                  \
   V(UnderByteslikeFindInt, "_byteslike_find_int")                              \
   V(UnderClassMethod, "_classmethod")                                          \
+  V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
@@ -252,6 +254,7 @@ class Runtime;
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderPatch, "_patch")                                                      \
   V(UnderProperty, "_property")                                                \
+  V(UnderPropertyIsAbstract, "_property_isabstract")                           \
   V(UnderPyObjectOffset, "_pyobject_offset")                                   \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
@@ -273,6 +276,7 @@ class Runtime;
   V(UnderSliceStart, "_slice_start")                                           \
   V(UnderSliceStep, "_slice_step")                                             \
   V(UnderSliceStop, "_slice_stop")                                             \
+  V(UnderStaticMethodIsAbstract, "_staticmethod_isabstract")                   \
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStdoutFd, "_stdout_fd")                                               \

@@ -5,6 +5,7 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "dict-builtins.h"
+#include "exception-builtins.h"
 #include "frozen-modules.h"
 #include "int-builtins.h"
 #include "list-builtins.h"
@@ -65,6 +66,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderByteslikeFindByteslike, underByteslikeFindByteslike},
     {SymbolId::kUnderByteslikeFindInt, underByteslikeFindInt},
     {SymbolId::kUnderClassMethod, underClassMethod},
+    {SymbolId::kUnderClassMethodIsAbstract, underClassMethodIsAbstract},
     {SymbolId::kUnderComplexImag, underComplexImag},
     {SymbolId::kUnderComplexReal, underComplexReal},
     {SymbolId::kUnderDictBucketInsert, underDictBucketInsert},
@@ -111,6 +113,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderProperty, underProperty},
+    {SymbolId::kUnderPropertyIsAbstract, underPropertyIsAbstract},
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
@@ -128,6 +131,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSliceStart, underSliceStart},
     {SymbolId::kUnderSliceStep, underSliceStep},
     {SymbolId::kUnderSliceStop, underSliceStop},
+    {SymbolId::kUnderStaticMethodIsAbstract, underStaticMethodIsAbstract},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrJoin, underStrJoin},
@@ -529,6 +533,34 @@ RawObject UnderBuiltinsModule::underClassMethod(Thread* thread, Frame* frame,
   ClassMethod result(&scope, thread->runtime()->newClassMethod());
   result.setFunction(args.get(0));
   return *result;
+}
+
+static RawObject isAbstract(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  // TODO(T47800709): make this lookup more efficient
+  Object abstract(&scope, runtime->attributeAtId(
+                              thread, obj, SymbolId::kDunderIsAbstractMethod));
+  if (abstract.isError()) {
+    Object given(&scope, thread->pendingExceptionType());
+    Object exc(&scope, runtime->typeAt(LayoutId::kAttributeError));
+    if (givenExceptionMatches(thread, given, exc)) {
+      thread->clearPendingException();
+      return Bool::falseObj();
+    }
+    return *abstract;
+  }
+  return Interpreter::isTrue(thread, *abstract);
+}
+
+RawObject UnderBuiltinsModule::underClassMethodIsAbstract(Thread* thread,
+                                                          Frame* frame,
+                                                          word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  ClassMethod self(&scope, args.get(0));
+  Object func(&scope, self.function());
+  return isAbstract(thread, func);
 }
 
 RawObject UnderBuiltinsModule::underComplexImag(Thread* thread, Frame* frame,
@@ -1366,6 +1398,25 @@ RawObject UnderBuiltinsModule::underProperty(Thread* thread, Frame* frame,
   return thread->runtime()->newProperty(getter, setter, deleter);
 }
 
+RawObject UnderBuiltinsModule::underPropertyIsAbstract(Thread* thread,
+                                                       Frame* frame,
+                                                       word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Property self(&scope, args.get(0));
+  Object getter(&scope, self.getter());
+  Object abstract(&scope, isAbstract(thread, getter));
+  if (abstract != Bool::falseObj()) {
+    return *abstract;
+  }
+  Object setter(&scope, self.setter());
+  if ((abstract = isAbstract(thread, setter)) != Bool::falseObj()) {
+    return *abstract;
+  }
+  Object deleter(&scope, self.deleter());
+  return isAbstract(thread, deleter);
+}
+
 RawObject UnderBuiltinsModule::underPyObjectOffset(Thread* thread, Frame* frame,
                                                    word nargs) {
   // TODO(eelizondo): Remove the HandleScope
@@ -1561,6 +1612,16 @@ RawObject UnderBuiltinsModule::underSliceStop(Thread* thread, Frame* frame,
     stop = *upper;
   }
   return *stop;
+}
+
+RawObject UnderBuiltinsModule::underStaticMethodIsAbstract(Thread* thread,
+                                                           Frame* frame,
+                                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  StaticMethod self(&scope, args.get(0));
+  Object func(&scope, self.function());
+  return isAbstract(thread, func);
 }
 
 RawObject UnderBuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,

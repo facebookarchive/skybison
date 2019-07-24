@@ -387,6 +387,35 @@ class DictTests(unittest.TestCase):
             dict.update({}, D())
 
 
+class ClassMethodTests(unittest.TestCase):
+    def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
+        def foo():
+            pass
+
+        method = classmethod(foo)
+        self.assertIs(method.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_false_attr_returns_false(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = False
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_abstract_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = ["random", "values"]
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        method = classmethod(foo)
+        self.assertIs(method.__isabstractmethod__, True)
+
+
 class ExceptionTests(unittest.TestCase):
     def test_maybe_unbound_attributes(self):
         exc = BaseException()
@@ -1005,6 +1034,55 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(object.__subclasshook__(int), NotImplemented)
 
 
+class PropertyTests(unittest.TestCase):
+    def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
+        def foo():
+            pass
+
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_false_attr_returns_false(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = False
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_abstract_getter_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = b"random non-empty value"
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(foo)
+        self.assertIs(prop.__isabstractmethod__, True)
+
+    def test_dunder_abstractmethod_with_abstract_setter_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = True
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(fset=foo)
+        self.assertIs(prop.__isabstractmethod__, True)
+
+    def test_dunder_abstractmethod_with_abstract_deleter_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = (42, "non-empty tuple")
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        prop = property(fdel=foo)
+        self.assertIs(prop.__isabstractmethod__, True)
+
+
 class ReversedTests(unittest.TestCase):
     def test_reversed_iterates_backwards_over_iterable(self):
         it = reversed([1, 2, 3])
@@ -1432,6 +1510,35 @@ class SeqTests(unittest.TestCase):
         i = iter(C())
         self.assertTrue(hasattr(i, "__next__"))
         self.assertFalse(dunder_get_called)
+
+
+class StaticMethodTests(unittest.TestCase):
+    def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
+        def foo():
+            pass
+
+        method = staticmethod(foo)
+        self.assertIs(method.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_false_attr_returns_false(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = False
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        method = staticmethod(foo)
+        self.assertIs(method.__isabstractmethod__, False)
+
+    def test_dunder_abstractmethod_with_abstract_returns_true(self):
+        def foo():
+            pass
+
+        foo.__isabstractmethod__ = 10  # non-zero is True
+        with self.assertRaises(AttributeError):
+            type(foo).__isabstractmethod__
+        method = staticmethod(foo)
+        self.assertIs(method.__isabstractmethod__, True)
 
 
 class StrTests(unittest.TestCase):

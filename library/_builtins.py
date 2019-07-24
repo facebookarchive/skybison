@@ -99,6 +99,11 @@ def _classmethod(function):
 
 
 @_patch
+def _classmethod_isabstract(self):
+    pass
+
+
+@_patch
 def _complex_imag(c):
     pass
 
@@ -335,6 +340,11 @@ def _property(fget=None, fset=None, fdel=None, doc=None):
 
 
 @_patch
+def _property_isabstract(self):
+    pass
+
+
+@_patch
 def _pyobject_offset(instance, offset):
     pass
 
@@ -416,6 +426,11 @@ def _slice_step(step):
 
 @_patch
 def _slice_stop(stop, step, length):
+    pass
+
+
+@_patch
+def _staticmethod_isabstract(self):
     pass
 
 
