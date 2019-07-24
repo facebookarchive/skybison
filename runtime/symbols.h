@@ -269,6 +269,9 @@ class Runtime;
   V(UnderSetMemberPyObject, "_set_member_pyobject")                            \
   V(UnderSliceCheck, "_slice_check")                                           \
   V(UnderSliceIndex, "_slice_index")                                           \
+  V(UnderSliceStart, "_slice_start")                                           \
+  V(UnderSliceStep, "_slice_step")                                             \
+  V(UnderSliceStop, "_slice_stop")                                             \
   V(UnderStderrFd, "_stderr_fd")                                               \
   V(UnderStdout, "_stdout")                                                    \
   V(UnderStdoutFd, "_stdout_fd")                                               \

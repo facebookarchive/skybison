@@ -400,6 +400,21 @@ def _slice_check(obj):
 
 
 @_patch
+def _slice_start(start, step, length):
+    pass
+
+
+@_patch
+def _slice_step(step):
+    pass
+
+
+@_patch
+def _slice_stop(stop, step, length):
+    pass
+
+
+@_patch
 def _str_check(obj):
     pass
 

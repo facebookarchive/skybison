@@ -124,6 +124,9 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
     {SymbolId::kUnderSetMemberPyObject, underSetMemberPyObject},
     {SymbolId::kUnderSliceCheck, underSliceCheck},
+    {SymbolId::kUnderSliceStart, underSliceStart},
+    {SymbolId::kUnderSliceStep, underSliceStep},
+    {SymbolId::kUnderSliceStop, underSliceStop},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrJoin, underStrJoin},
@@ -1473,6 +1476,80 @@ RawObject UnderBuiltinsModule::underSliceCheck(Thread*, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isSlice());
+}
+
+RawObject UnderBuiltinsModule::underSliceStart(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object step_obj(&scope, args.get(1));
+  Int step(&scope, intUnderlying(thread, step_obj));
+  Object length_obj(&scope, args.get(2));
+  Int length(&scope, intUnderlying(thread, length_obj));
+  bool negative_step = step.isNegative();
+  Int lower(&scope, SmallInt::fromWord(negative_step ? -1 : 0));
+  Runtime* runtime = thread->runtime();
+  // upper = length + lower; if step < 0, then lower = 0 anyway
+  Int upper(&scope,
+            negative_step ? runtime->intAdd(thread, length, lower) : *length);
+  Object start_obj(&scope, args.get(0));
+  if (start_obj.isNoneType()) {
+    return negative_step ? *upper : *lower;
+  }
+  Int start(&scope, intUnderlying(thread, start_obj));
+  if (start.isNegative()) {
+    start = runtime->intAdd(thread, start, length);
+    if (start.compare(*lower) < 0) {
+      start = *lower;
+    }
+  } else if (start.compare(*upper) > 0) {
+    start = *upper;
+  }
+  return *start;
+}
+
+RawObject UnderBuiltinsModule::underSliceStep(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object step_obj(&scope, args.get(0));
+  if (step_obj.isNoneType()) return SmallInt::fromWord(1);
+  Int step(&scope, intUnderlying(thread, step_obj));
+  if (step.isZero()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "slice step cannot be zero");
+  }
+  return *step;
+}
+
+RawObject UnderBuiltinsModule::underSliceStop(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object step_obj(&scope, args.get(1));
+  Int step(&scope, intUnderlying(thread, step_obj));
+  Object length_obj(&scope, args.get(2));
+  Int length(&scope, intUnderlying(thread, length_obj));
+  bool negative_step = step.isNegative();
+  Int lower(&scope, SmallInt::fromWord(negative_step ? -1 : 0));
+  Runtime* runtime = thread->runtime();
+  // upper = length + lower; if step < 0, then lower = 0 anyway
+  Int upper(&scope,
+            negative_step ? runtime->intAdd(thread, length, lower) : *length);
+  Object stop_obj(&scope, args.get(0));
+  if (stop_obj.isNoneType()) {
+    return negative_step ? *lower : *upper;
+  }
+  Int stop(&scope, intUnderlying(thread, stop_obj));
+  if (stop.isNegative()) {
+    stop = runtime->intAdd(thread, stop, length);
+    if (stop.compare(*lower) < 0) {
+      stop = *lower;
+    }
+  } else if (stop.compare(*upper) > 0) {
+    stop = *upper;
+  }
+  return *stop;
 }
 
 RawObject UnderBuiltinsModule::underStrArrayIadd(Thread* thread, Frame* frame,

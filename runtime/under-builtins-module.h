@@ -124,6 +124,9 @@ class UnderBuiltinsModule {
   static RawObject underSetMemberPyObject(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underSliceCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSliceStart(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSliceStep(Thread* thread, Frame* frame, word nargs);
+  static RawObject underSliceStop(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
