@@ -11,6 +11,7 @@ _bound_method = _bound_method  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
 _bytearray_join = _bytearray_join  # noqa: F821
+_bytearray_len = _bytearray_len  # noqa: F821
 _bytearray_setitem = _bytearray_setitem  # noqa: F821
 _bytes_check = _bytes_check  # noqa: F821
 _bytes_from_ints = _bytes_from_ints  # noqa: F821
@@ -1046,7 +1047,7 @@ class bytearray(bootstrap=True):
                 f"but received a '{_type(self).__name__}'"
             )
         start = 0 if start is None else _index(start)
-        end = bytearray.__len__(self) if end is None else _index(end)
+        end = _bytearray_len(self) if end is None else _index(end)
         # TODO(T38246066) allow any bytes-like object
         if _bytes_check(sub) or _bytearray_check(sub):
             return _byteslike_find_byteslike(self, sub, start, end)
@@ -1334,7 +1335,7 @@ class bytes(bootstrap=True):
                 f"but received a '{_type(self).__name__}'"
             )
         start = 0 if start is None else _index(start)
-        end = bytes.__len__(self) if end is None else _index(end)
+        end = _bytes_len(self) if end is None else _index(end)
         # TODO(T38246066) allow any bytes-like object
         if _bytes_check(sub) or _bytearray_check(sub):
             return _byteslike_find_byteslike(self, sub, start, end)
