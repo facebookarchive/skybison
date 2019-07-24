@@ -156,6 +156,11 @@ def _dict_update_mapping(self, seq):
 
 
 @_patch
+def _divmod(number, divisor):
+    pass
+
+
+@_patch
 def _float_check(obj):
     pass
 

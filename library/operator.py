@@ -70,7 +70,7 @@ __all__ = [
 ]
 
 
-from builtins import divmod as _divmod
+from _builtins import _divmod
 
 
 # Comparison Operations *******************************************************#

@@ -54,6 +54,7 @@ class UnderBuiltinsModule {
                                        word nargs);
   static RawObject underDictUpdateMapping(Thread* thread, Frame* frame,
                                           word nargs);
+  static RawObject underDivmod(Thread* thread, Frame* frame, word nargs);
   static RawObject underFloatCheck(Thread* thread, Frame* frame, word nargs);
   static RawObject underFrozenSetCheck(Thread* thread, Frame* frame,
                                        word nargs);

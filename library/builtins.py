@@ -34,6 +34,7 @@ _dict_check = _dict_check  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
 _dict_update_mapping = _dict_update_mapping  # noqa: F821
+_divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
@@ -1702,9 +1703,7 @@ def dir(obj=_Unbound):
     return sorted(names)
 
 
-@_patch
-def divmod(a, b):
-    pass
+divmod = _divmod
 
 
 class enumerate:

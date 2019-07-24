@@ -76,6 +76,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictLookup, underDictLookup},
     {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
+    {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
@@ -745,6 +746,16 @@ RawObject UnderBuiltinsModule::underDictUpdateMapping(Thread* thread,
          "other must have 'keys' method");
   Dict self(&scope, *self_obj);
   return dictMergeOverride(thread, self, other);
+}
+
+RawObject UnderBuiltinsModule::underDivmod(Thread* thread, Frame* frame,
+                                           word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object number(&scope, args.get(0));
+  Object divisor(&scope, args.get(1));
+  return Interpreter::binaryOperation(
+      thread, frame, Interpreter::BinaryOp::DIVMOD, number, divisor);
 }
 
 RawObject UnderBuiltinsModule::underFloatCheck(Thread* thread, Frame* frame,

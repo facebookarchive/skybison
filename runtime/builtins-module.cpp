@@ -65,7 +65,6 @@ const BuiltinMethod BuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kCallable, callable},
     {SymbolId::kChr, chr},
     {SymbolId::kCompile, compile},
-    {SymbolId::kDivmod, divmod},
     {SymbolId::kDunderImport, dunderImport},
     {SymbolId::kExec, exec},
     {SymbolId::kGetattr, getattr},
@@ -445,10 +444,6 @@ RawObject BuiltinsModule::compile(Thread* thread, Frame* frame, word nargs) {
   }
   Bytes source_bytes(&scope, bytesUnderlying(thread, data));
   return compileBytes(source_bytes, filename);
-}
-
-RawObject BuiltinsModule::divmod(Thread*, Frame*, word) {
-  UNIMPLEMENTED("divmod(a, b)");
 }
 
 RawObject BuiltinsModule::exec(Thread* thread, Frame* frame, word nargs) {

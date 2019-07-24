@@ -268,6 +268,19 @@ dc = Foo(b"DC")
   EXPECT_TRUE(isBytesEqualsCStr(result, "AC-DC"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderDivmodReturnsQuotientAndDividend) {
+  HandleScope scope(thread_);
+  Int number(&scope, SmallInt::fromWord(1234));
+  Int divisor(&scope, SmallInt::fromWord(-5));
+  Object tuple_obj(
+      &scope, runBuiltin(UnderBuiltinsModule::underDivmod, number, divisor));
+  ASSERT_TRUE(tuple_obj.isTuple());
+  Tuple tuple(&scope, *tuple_obj);
+  ASSERT_EQ(tuple.length(), 2);
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), -247));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(1), -1));
+}
+
 TEST_F(UnderBuiltinsModuleTest,
        UnderIntFromBytesWithLittleEndianReturnsSmallInt) {
   HandleScope scope(thread_);

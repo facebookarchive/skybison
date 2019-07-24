@@ -174,6 +174,7 @@ class Runtime;
   V(UnderDictLookupNext, "_dict_lookup_next")                                  \
   V(UnderDictSetItem, "_dict_setitem")                                         \
   V(UnderDictUpdateMapping, "_dict_update_mapping")                            \
+  V(UnderDivmod, "_divmod")                                                    \
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
   V(UnderFdFlush, "_fd_flush")                                                 \

@@ -17,7 +17,6 @@ class BuiltinsModule {
   static RawObject callable(Thread* thread, Frame* frame, word nargs);
   static RawObject chr(Thread* thread, Frame* frame, word nargs);
   static RawObject compile(Thread* thread, Frame* frame, word nargs);
-  static RawObject divmod(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderBuildClass(Thread* thread, Frame* frame, word nargs);
   static RawObject dunderImport(Thread* thread, Frame* frame, word nargs);
   static RawObject exec(Thread* thread, Frame* frame, word nargs);
