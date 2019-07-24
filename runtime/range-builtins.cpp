@@ -102,6 +102,35 @@ const BuiltinMethod RangeBuiltins::kBuiltinMethods[] = {
     {SymbolId::kSentinelId, nullptr},
 };
 
+RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isRange()) {
+    return thread->raiseRequiresType(self, SymbolId::kRange);
+  }
+  Range range(&scope, *self);
+  Object start_obj(&scope, range.start());
+  Object stop_obj(&scope, range.stop());
+  Object step_obj(&scope, range.step());
+  Int start_int(&scope, intUnderlying(thread, start_obj));
+  Int stop_int(&scope, intUnderlying(thread, stop_obj));
+  Int step_int(&scope, intUnderlying(thread, step_obj));
+  Runtime* runtime = thread->runtime();
+  if (start_int.isLargeInt() || stop_int.isLargeInt() ||
+      step_int.isLargeInt()) {
+    return runtime->newLongRangeIterator(start_int, stop_int, step_int);
+  }
+  word start = start_int.asWord();
+  word stop = stop_int.asWord();
+  word step = step_int.asWord();
+  word length = Slice::length(start, stop, step);
+  if (SmallInt::isValid(length)) {
+    return runtime->newRangeIterator(start, step, length);
+  }
+  return runtime->newLongRangeIterator(start_int, stop_int, step_int);
+}
+
 RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   HandleScope scope(thread);
   Arguments args(frame, nargs);
@@ -156,35 +185,6 @@ RawObject RangeBuiltins::dunderNew(Thread* thread, Frame* frame, word nargs) {
   return runtime->newRange(start, stop, step);
 }
 
-RawObject RangeBuiltins::dunderIter(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!self.isRange()) {
-    return thread->raiseRequiresType(self, SymbolId::kRange);
-  }
-  Range range(&scope, *self);
-  Object start_obj(&scope, range.start());
-  Object stop_obj(&scope, range.stop());
-  Object step_obj(&scope, range.step());
-  Int start_int(&scope, intUnderlying(thread, start_obj));
-  Int stop_int(&scope, intUnderlying(thread, stop_obj));
-  Int step_int(&scope, intUnderlying(thread, step_obj));
-  Runtime* runtime = thread->runtime();
-  if (start_int.isLargeInt() || stop_int.isLargeInt() ||
-      step_int.isLargeInt()) {
-    return runtime->newLongRangeIterator(start_int, stop_int, step_int);
-  }
-  word start = start_int.asWord();
-  word stop = stop_int.asWord();
-  word step = step_int.asWord();
-  word length = Slice::length(start, stop, step);
-  if (SmallInt::isValid(length)) {
-    return runtime->newRangeIterator(start, step, length);
-  }
-  return runtime->newLongRangeIterator(start_int, stop_int, step_int);
-}
-
 const BuiltinMethod RangeIteratorBuiltins::kBuiltinMethods[] = {
     {SymbolId::kDunderIter, dunderIter},
     {SymbolId::kDunderLengthHint, dunderLengthHint},
@@ -201,6 +201,18 @@ RawObject RangeIteratorBuiltins::dunderIter(Thread* thread, Frame* frame,
     return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
   }
   return *self;
+}
+
+RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!self.isRangeIterator()) {
+    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
+  }
+  RangeIterator iter(&scope, *self);
+  return SmallInt::fromWord(iter.length());
 }
 
 RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
@@ -223,18 +235,6 @@ RawObject RangeIteratorBuiltins::dunderNext(Thread* thread, Frame* frame,
     iter.setNext(next + step);
   }
   return SmallInt::fromWord(next);
-}
-
-RawObject RangeIteratorBuiltins::dunderLengthHint(Thread* thread, Frame* frame,
-                                                  word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object self(&scope, args.get(0));
-  if (!self.isRangeIterator()) {
-    return thread->raiseRequiresType(self, SymbolId::kRangeIterator);
-  }
-  RangeIterator iter(&scope, *self);
-  return SmallInt::fromWord(iter.length());
 }
 
 }  // namespace python
