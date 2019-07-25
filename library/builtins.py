@@ -2855,7 +2855,12 @@ class reversed:
 
 
 def round(number, ndigits=_Unbound):
-    _unimplemented()
+    if _object_type_hasattr(number, "__round__"):
+        dunder_round = _type(number).__round__
+        if ndigits is _Unbound:
+            return dunder_round(number)
+        return dunder_round(number, ndigits)
+    raise TypeError(f"{_type(number).__name__} doesn't define __round__ method")
 
 
 class set(bootstrap=True):

@@ -1396,6 +1396,26 @@ class RangeIteratorTests(unittest.TestCase):
             it.__next__()
 
 
+class RoundTests(unittest.TestCase):
+    def test_round_calls_dunder_round(self):
+        class Roundable:
+            def __init__(self, value):
+                self.value = value
+
+            def __round__(self, ndigits="a default value"):
+                return (self.value, ndigits)
+
+        self.assertEqual(round(Roundable(12), 34), (12, 34))
+        self.assertEqual(round(Roundable(56)), (56, "a default value"))
+
+    def test_round_raises_type_error(self):
+        class ClassWithoutDunderRound:
+            pass
+
+        with self.assertRaises(TypeError):
+            round(ClassWithoutDunderRound())
+
+
 class SetTests(unittest.TestCase):
     def test_discard_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):
