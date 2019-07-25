@@ -44,6 +44,13 @@ x = X()
   EXPECT_FALSE(PyLong_CheckExact(x));
 }
 
+TEST_F(LongExtensionApiTest, CheckExactWithBoolReturnsFalse) {
+  EXPECT_TRUE(PyLong_Check(Py_False));
+  EXPECT_TRUE(PyLong_Check(Py_True));
+  EXPECT_FALSE(PyLong_CheckExact(Py_False));
+  EXPECT_FALSE(PyLong_CheckExact(Py_True));
+}
+
 TEST_F(LongExtensionApiTest, CheckWithTypeReturnsFalse) {
   PyObjectPtr pylong(PyLong_FromLong(10));
   PyObjectPtr type(reinterpret_cast<PyObject*>(Py_TYPE(pylong)));

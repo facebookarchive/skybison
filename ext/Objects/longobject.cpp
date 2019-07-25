@@ -36,7 +36,8 @@ unsigned char _PyLong_DigitValue[256] = {
 namespace python {
 
 PY_EXPORT int PyLong_CheckExact_Func(PyObject* obj) {
-  return ApiHandle::fromPyObject(obj)->asObject().isInt();
+  RawObject arg = ApiHandle::fromPyObject(obj)->asObject();
+  return arg.isSmallInt() || arg.isLargeInt();
 }
 
 PY_EXPORT int PyLong_Check_Func(PyObject* obj) {
