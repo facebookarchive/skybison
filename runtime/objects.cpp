@@ -316,18 +316,7 @@ void RawLargeInt::copyFrom(RawBytes bytes, byte sign_extension) const {
 
 // RawMutableBytes
 
-word RawMutableBytes::compareWithBytes(View<byte> that) {
-  word this_len = this->length();
-  word that_len = that.length();
-  word len = Utils::minimum(this_len, that_len);
-  for (word i = 0; i < len; i++) {
-    word diff = this->byteAt(i) - that.get(i);
-    if (diff != 0) return diff;
-  }
-  return this_len - that_len;
-}
-
-void RawMutableBytes::replaceFromWithBytes(word index, RawBytes src, word len) {
+void RawMutableBytes::replaceFromWith(word index, RawBytes src, word len) {
   DCHECK_BOUND(index + len, length());
   byte* dst = reinterpret_cast<byte*>(address());
   src.copyTo(dst + index, len);

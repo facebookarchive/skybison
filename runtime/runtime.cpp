@@ -2547,8 +2547,7 @@ void Runtime::byteArrayIadd(Thread* thread, const ByteArray& array,
   word num_items = array.numItems();
   word new_length = num_items + length;
   byteArrayEnsureCapacity(thread, array, new_length);
-  MutableBytes::cast(array.bytes())
-      .replaceFromWithBytes(num_items, *bytes, length);
+  MutableBytes::cast(array.bytes()).replaceFromWith(num_items, *bytes, length);
   array.setNumItems(new_length);
 }
 
@@ -2567,8 +2566,8 @@ RawObject Runtime::bytesConcat(Thread* thread, const Bytes& self,
   }
   HandleScope scope(thread);
   MutableBytes result(&scope, newMutableBytesUninitialized(len));
-  result.replaceFromWithBytes(0, *self, self_len);
-  result.replaceFromWithBytes(self_len, *other, other_len);
+  result.replaceFromWith(0, *self, self_len);
+  result.replaceFromWith(self_len, *other, other_len);
   return result.becomeImmutable();
 }
 
@@ -2717,7 +2716,7 @@ RawObject Runtime::bytesRepeat(Thread* thread, const Bytes& source, word length,
   HandleScope scope(thread);
   MutableBytes result(&scope, newMutableBytesUninitialized(new_length));
   for (word i = 0; i < count * length; i += length) {
-    result.replaceFromWithBytes(i, *source, length);
+    result.replaceFromWith(i, *source, length);
   }
   return is_mutable ? *result : result.becomeImmutable();
 }

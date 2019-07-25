@@ -1109,12 +1109,9 @@ class RawLargeBytes : public RawArray {
 class RawMutableBytes : public RawLargeBytes {
  public:
   void byteAtPut(word index, byte value) const;
+
   // Replace the bytes from index with len bytes from src
-  void replaceFromWithBytes(word index, RawBytes src, word len);
-  // Compares the bytes in this to the bytes in that. Returns a negative value
-  // if this is less than that, positive if this is greater than that, and zero
-  // if they have the same bytes. Does not guarantee to return -1, 0, or 1.
-  word compareWithBytes(View<byte> that);
+  void replaceFromWith(word index, RawBytes src, word len);
 
   RawObject becomeImmutable();
 
