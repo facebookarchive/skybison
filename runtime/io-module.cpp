@@ -12,9 +12,17 @@
 namespace python {
 
 const BuiltinMethod UnderIoModule::kBuiltinMethods[] = {
-    {SymbolId::kUnderReadFile, underReadFile},
     {SymbolId::kUnderReadBytes, underReadBytes},
+    {SymbolId::kUnderReadFile, underReadFile},
     {SymbolId::kSentinelId, nullptr},
+};
+
+const BuiltinType UnderIoModule::kBuiltinTypes[] = {
+    {SymbolId::kBytesIO, LayoutId::kBytesIO},
+    {SymbolId::kUnderBufferedIOBase, LayoutId::kUnderBufferedIOBase},
+    {SymbolId::kUnderIOBase, LayoutId::kUnderIOBase},
+    {SymbolId::kUnderRawIOBase, LayoutId::kUnderRawIOBase},
+    {SymbolId::kSentinelId, LayoutId::kSentinelId},
 };
 
 const char* const UnderIoModule::kFrozenData = kUnderIoModuleData;
@@ -44,6 +52,31 @@ RawObject UnderIoModule::underReadBytes(Thread* thread, Frame* frame,
   data[length] = '\0';
   Str result(&scope, thread->runtime()->newStrFromCStr(data.get()));
   return *result;
+}
+
+const BuiltinAttribute UnderIOBaseBuiltins::kAttributes[] = {
+    {SymbolId::kUnderClosed, UnderIOBase::kClosedOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
+void UnderRawIOBaseBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+}
+
+void UnderBufferedIOBaseBuiltins::postInitialize(Runtime*,
+                                                 const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
+}
+
+const BuiltinAttribute BytesIOBuiltins::kAttributes[] = {
+    {SymbolId::kDunderDict, BytesIO::kDictOffset},
+    {SymbolId::kUnderBuffer, BytesIO::kBufferOffset},
+    {SymbolId::kUnderPos, BytesIO::kPosOffset},
+    {SymbolId::kSentinelId, 0},
+};
+
+void BytesIOBuiltins::postInitialize(Runtime*, const Type& new_type) {
+  new_type.setBuiltinBase(kSuperType);
 }
 
 }  // namespace python

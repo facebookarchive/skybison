@@ -31,6 +31,7 @@ class Handle;
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
+  V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
@@ -77,6 +78,9 @@ class Handle;
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Type)                                                                      \
+  V(UnderBufferedIOBase)                                                       \
+  V(UnderIOBase)                                                               \
+  V(UnderRawIOBase)                                                            \
   V(ValueCell)                                                                 \
   V(WeakLink)                                                                  \
   V(WeakRef)
@@ -265,6 +269,7 @@ class RawObject {
   bool isBoundMethod() const;
   bool isByteArray() const;
   bool isByteArrayIterator() const;
+  bool isBytesIO() const;
   bool isBytesIterator() const;
   bool isClassMethod() const;
   bool isCode() const;
@@ -319,6 +324,9 @@ class RawObject {
   bool isTuple() const;
   bool isTupleIterator() const;
   bool isType() const;
+  bool isUnderBufferedIOBase() const;
+  bool isUnderIOBase() const;
+  bool isUnderRawIOBase() const;
   bool isUnicodeDecodeError() const;
   bool isUnicodeEncodeError() const;
   bool isUnicodeError() const;
@@ -2813,6 +2821,50 @@ class RawTraceback : public RawHeapObject {
   RAW_OBJECT_COMMON(Traceback);
 };
 
+// The primitive IO types
+
+class RawUnderIOBase : public RawHeapObject {
+ public:
+  // Getters and setters
+  bool closed() const;
+  void setClosed(bool closed) const;
+
+  // Layout
+  static const int kClosedOffset = RawHeapObject::kSize;
+  static const int kSize = kClosedOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(UnderIOBase);
+};
+
+class RawUnderRawIOBase : public RawUnderIOBase {
+ public:
+  RAW_OBJECT_COMMON_NO_CAST(UnderRawIOBase);
+};
+
+class RawUnderBufferedIOBase : public RawUnderRawIOBase {
+ public:
+  RAW_OBJECT_COMMON_NO_CAST(UnderBufferedIOBase);
+};
+
+class RawBytesIO : public RawUnderBufferedIOBase {
+ public:
+  // Getters and setters
+  RawObject buffer() const;
+  void setBuffer(RawObject buffer) const;
+  RawObject pos() const;
+  void setPos(RawObject pos) const;
+  RawObject dict() const;
+  void setDict(RawObject dict) const;
+
+  // Layout
+  static const int kBufferOffset = RawUnderBufferedIOBase::kSize;
+  static const int kPosOffset = kBufferOffset + kPointerSize;
+  static const int kDictOffset = kPosOffset + kPointerSize;
+  static const int kSize = kDictOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON_NO_CAST(BytesIO);
+};
+
 // RawObject
 
 inline RawObject::RawObject(uword raw) : raw_{raw} {}
@@ -2913,12 +2965,20 @@ inline bool RawObject::isBoundMethod() const {
   return isHeapObjectWithLayout(LayoutId::kBoundMethod);
 }
 
+inline bool RawObject::isUnderBufferedIOBase() const {
+  return isHeapObjectWithLayout(LayoutId::kUnderBufferedIOBase);
+}
+
 inline bool RawObject::isByteArray() const {
   return isHeapObjectWithLayout(LayoutId::kByteArray);
 }
 
 inline bool RawObject::isByteArrayIterator() const {
   return isHeapObjectWithLayout(LayoutId::kByteArrayIterator);
+}
+
+inline bool RawObject::isBytesIO() const {
+  return isHeapObjectWithLayout(LayoutId::kBytesIO);
 }
 
 inline bool RawObject::isBytesIterator() const {
@@ -3009,6 +3069,10 @@ inline bool RawObject::isIndexError() const {
   return isHeapObjectWithLayout(LayoutId::kIndexError);
 }
 
+inline bool RawObject::isUnderIOBase() const {
+  return isHeapObjectWithLayout(LayoutId::kUnderIOBase);
+}
+
 inline bool RawObject::isKeyError() const {
   return isHeapObjectWithLayout(LayoutId::kKeyError);
 }
@@ -3075,6 +3139,10 @@ inline bool RawObject::isRange() const {
 
 inline bool RawObject::isRangeIterator() const {
   return isHeapObjectWithLayout(LayoutId::kRangeIterator);
+}
+
+inline bool RawObject::isUnderRawIOBase() const {
+  return isHeapObjectWithLayout(LayoutId::kUnderRawIOBase);
 }
 
 inline bool RawObject::isRuntimeError() const {
@@ -5447,6 +5515,34 @@ inline void RawHeapFrame::setMaxStackSize(word offset) const {
 inline RawObject RawHeapFrame::function() const {
   return instanceVariableAt(kFrameOffset +
                             (numFrameWords() - 1) * kPointerSize);
+}
+
+// RawUnderIOBase
+
+inline bool RawUnderIOBase::closed() const {
+  return RawBool::cast(instanceVariableAt(kClosedOffset)).value();
+}
+
+inline void RawUnderIOBase::setClosed(bool closed) const {
+  instanceVariableAtPut(kClosedOffset, RawBool::fromBool(closed));
+}
+
+// RawBytesIO
+
+inline RawObject RawBytesIO::buffer() const {
+  return instanceVariableAt(kBufferOffset);
+}
+
+inline void RawBytesIO::setBuffer(RawObject buffer) const {
+  instanceVariableAtPut(kBufferOffset, buffer);
+}
+
+inline RawObject RawBytesIO::pos() const {
+  return instanceVariableAt(kPosOffset);
+}
+
+inline void RawBytesIO::setPos(RawObject pos) const {
+  instanceVariableAtPut(kPosOffset, pos);
 }
 
 }  // namespace python

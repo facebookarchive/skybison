@@ -92,6 +92,7 @@ class WARN_UNUSED Handle : public T {
   V(ByteArray)                                                                 \
   V(ByteArrayIterator)                                                         \
   V(Bytes)                                                                     \
+  V(BytesIO)                                                                   \
   V(BytesIterator)                                                             \
   V(ClassMethod)                                                               \
   V(Code)                                                                      \
@@ -150,6 +151,9 @@ class WARN_UNUSED Handle : public T {
   V(Tuple)                                                                     \
   V(TupleIterator)                                                             \
   V(Unbound)                                                                   \
+  V(UnderBufferedIOBase)                                                       \
+  V(UnderIOBase)                                                               \
+  V(UnderRawIOBase)                                                            \
   V(ValueCell)                                                                 \
   V(WeakLink)                                                                  \
   V(WeakRef)

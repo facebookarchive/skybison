@@ -1564,6 +1564,12 @@ void Runtime::initializeHeapTypes() {
   TypeBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kValueCell, LayoutId::kValueCell,
                       LayoutId::kObject);
+
+  // IO types
+  UnderIOBaseBuiltins::initialize(this);
+  UnderRawIOBaseBuiltins::initialize(this);
+  UnderBufferedIOBaseBuiltins::initialize(this);
+  BytesIOBuiltins::initialize(this);
 }
 
 void Runtime::initializeExceptionTypes() {

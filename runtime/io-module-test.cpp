@@ -9,6 +9,20 @@ namespace python {
 
 using IoModuleTest = testing::RuntimeFixture;
 
+TEST_F(IoModuleTest, PostInitializeSetsBuiltinBaseToSupertype) {
+  HandleScope scope(thread_);
+
+  Type raw_io_base(&scope, runtime_.typeAt(LayoutId::kUnderRawIOBase));
+  EXPECT_EQ(raw_io_base.builtinBase(), LayoutId::kUnderIOBase);
+
+  Type buffered_io_base(&scope,
+                        runtime_.typeAt(LayoutId::kUnderBufferedIOBase));
+  EXPECT_EQ(buffered_io_base.builtinBase(), LayoutId::kUnderRawIOBase);
+
+  Type bytes_io(&scope, runtime_.typeAt(LayoutId::kBytesIO));
+  EXPECT_EQ(bytes_io.builtinBase(), LayoutId::kUnderBufferedIOBase);
+}
+
 TEST_F(IoModuleTest, ReadFileBytesAsString) {
   int fd;
   testing::unique_file_ptr filename(OS::temporaryFile("filebytes-test", &fd));

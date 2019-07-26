@@ -141,6 +141,8 @@ class Runtime;
   V(UnderBases, "_bases")                                                      \
   V(UnderBootstrap, "_bootstrap")                                              \
   V(UnderBoundMethod, "_bound_method")                                         \
+  V(UnderBuffer, "_buffer")                                                    \
+  V(UnderBufferedIOBase, "_BufferedIOBase")                                    \
   V(UnderBuiltins, "_builtins")                                                \
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayClear, "_bytearray_clear")                                   \
@@ -161,6 +163,7 @@ class Runtime;
   V(UnderByteslikeFindInt, "_byteslike_find_int")                              \
   V(UnderClassMethod, "_classmethod")                                          \
   V(UnderClassMethodIsAbstract, "_classmethod_isabstract")                     \
+  V(UnderClosed, "_closed")                                                    \
   V(UnderCodecs, "_codecs")                                                    \
   V(UnderComplexImag, "_complex_imag")                                         \
   V(UnderComplexReal, "_complex_real")                                         \
@@ -213,6 +216,7 @@ class Runtime;
   V(UnderIntNewFromBytes, "_int_new_from_bytes")                               \
   V(UnderIntNewFromInt, "_int_new_from_int")                                   \
   V(UnderIntNewFromStr, "_int_new_from_str")                                   \
+  V(UnderIOBase, "_IOBase")                                                    \
   V(UnderIo, "_io")                                                            \
   V(UnderLatin1Encode, "_latin_1_encode")                                      \
   V(UnderListCheck, "_list_check")                                             \
@@ -253,9 +257,11 @@ class Runtime;
   V(UnderNewMemberSetReadonlyStrings, "_new_member_set_readonly_strings")      \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderPatch, "_patch")                                                      \
+  V(UnderPos, "_pos")                                                          \
   V(UnderProperty, "_property")                                                \
   V(UnderPropertyIsAbstract, "_property_isabstract")                           \
   V(UnderPyObjectOffset, "_pyobject_offset")                                   \
+  V(UnderRawIOBase, "_RawIOBase")                                              \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \
   V(UnderReferent, "_referent")                                                \
@@ -356,6 +362,7 @@ class Runtime;
   V(ByteArrayIterator, "bytearray_iterator")                                   \
   V(Byteorder, "byteorder")                                                    \
   V(Bytes, "bytes")                                                            \
+  V(BytesIO, "BytesIO")                                                        \
   V(BytesIterator, "bytes_iterator")                                           \
   V(BytesWarning, "BytesWarning")                                              \
   V(Callable, "callable")                                                      \
