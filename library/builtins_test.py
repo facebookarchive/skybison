@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+import warnings
 
 
 class ByteArrayTest(unittest.TestCase):
@@ -493,6 +494,13 @@ class ExceptionTests(unittest.TestCase):
 
 class GeneratorTests(unittest.TestCase):
     def test_managed_stop_iteration(self):
+        warnings.filterwarnings(
+            action="ignore",
+            category=DeprecationWarning,
+            message="generator.*raised StopIteration",
+            module=__name__,
+        )
+
         def inner_gen():
             yield None
             raise StopIteration("hello")
@@ -1374,6 +1382,12 @@ class RangeTests(unittest.TestCase):
             def __index__(self):
                 return Foo(10)
 
+        warnings.filterwarnings(
+            action="ignore",
+            category=DeprecationWarning,
+            message="__index__ returned non-int.*",
+            module=__name__,
+        )
         obj = range(Foo(2), Bar())
         self.assertEqual(type(obj.start), Foo)
         self.assertEqual(type(obj.stop), Foo)

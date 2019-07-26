@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+import warnings
 
 
 class AttributesTest(unittest.TestCase):
@@ -10,6 +11,11 @@ class AttributesTest(unittest.TestCase):
         # TODO(bsimmers): Test more once we have coroutine.__await__()
         cr = coro()
         self.assertFalse(cr.cr_running)
+        warnings.filterwarnings(
+            action="ignore",
+            category=RuntimeWarning,
+            message="coroutine.*was never awaited",
+        )
 
 
 class MethodTest(unittest.TestCase):
@@ -17,6 +23,11 @@ class MethodTest(unittest.TestCase):
         async def foo():
             return 5
 
+        warnings.filterwarnings(
+            action="ignore",
+            category=RuntimeWarning,
+            message="coroutine.*was never awaited",
+        )
         self.assertTrue(
             foo()
             .__repr__()
