@@ -8,8 +8,9 @@
 namespace python {
 
 static ALWAYS_INLINE RawObject sliceIndex(Thread* thread, const Object& obj) {
+  if (obj.isInt()) return *obj;
   if (thread->runtime()->isInstanceOfInt(*obj)) {
-    return *obj;
+    return intUnderlying(thread, obj);
   }
   return thread->invokeFunction1(SymbolId::kBuiltins,
                                  SymbolId::kUnderSliceIndex, obj);

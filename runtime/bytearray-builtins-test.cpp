@@ -360,6 +360,26 @@ TEST_F(ByteArrayBuiltinsTest, DunderGetItemWithSliceStepReturnsByteArray) {
   EXPECT_TRUE(isByteArrayEqualsCStr(result, "rwo"));
 }
 
+TEST_F(ByteArrayBuiltinsTest,
+       DunderGetItemWithSliceWithIntSubclassReturnsByteArray) {
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+class N(int): pass
+index = N(1)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  ByteArray self(&scope, runtime_.newByteArray());
+  Object start(&scope, moduleAt(&runtime_, "__main__", "index"));
+  Object stop(&scope, NoneType::object());
+  Object step(&scope, NoneType::object());
+  Slice slice(&scope, runtime_.newSlice(start, stop, step));
+  const byte bytes[] = {'h', 'e', 'l', 'l', 'o'};
+  runtime_.byteArrayExtend(thread_, self, bytes);
+  Object result(&scope,
+                runBuiltin(ByteArrayBuiltins::dunderGetItem, self, slice));
+  EXPECT_TRUE(isByteArrayEqualsCStr(result, "ello"));
+}
+
 TEST_F(ByteArrayBuiltinsTest, DunderGtWithNonByteArraySelfRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "bytearray.__gt__(b'', bytearray())"),
