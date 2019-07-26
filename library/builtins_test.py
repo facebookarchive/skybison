@@ -2074,5 +2074,49 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(m.attr, "bar")
 
 
+class ChrTests(unittest.TestCase):
+    def test_returns_string(self):
+        self.assertEqual(chr(101), "e")
+        self.assertEqual(chr(42), "*")
+        self.assertEqual(chr(0x1F40D), "🐍")
+
+    def test_with_int_subclass_returns_string(self):
+        class C(int):
+            pass
+
+        self.assertEqual(chr(C(122)), "z")
+
+    def test_with_unicode_max_returns_string(self):
+        import sys
+
+        self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
+
+    def test_with_unicode_max_plus_one_raises_value_error(self):
+        import sys
+
+        with self.assertRaises(ValueError) as context:
+            chr(sys.maxunicode + 1)
+        self.assertIn("chr() arg not in range", str(context.exception))
+
+    def test_with_negative_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            chr(-1)
+        self.assertIn("chr() arg not in range", str(context.exception))
+
+    def test_non_int_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            chr(None)
+        self.assertEqual(
+            str(context.exception), "an integer is required (got type NoneType)"
+        )
+
+    def test_with_large_int_raises_overflow_error(self):
+        with self.assertRaises(OverflowError) as context:
+            chr(123456789012345678901234567890)
+        self.assertEqual(
+            str(context.exception), "Python int too large to convert to C long"
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

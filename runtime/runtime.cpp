@@ -2395,6 +2395,9 @@ void Runtime::createSysModule(Thread* thread) {
   Object maxsize(&scope, newInt(kMaxWord));
   moduleAddGlobal(module, SymbolId::kMaxsize, maxsize);
 
+  Object maxunicode(&scope, newInt(kMaxUnicode));
+  moduleAddGlobal(module, SymbolId::kMaxunicode, maxunicode);
+
   // Count the number of modules and create a tuple
   uword num_external_modules = 0;
   while (_PyImport_Inittab[num_external_modules].name != nullptr) {

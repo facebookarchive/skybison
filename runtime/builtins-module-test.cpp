@@ -94,62 +94,6 @@ a = callable(f)
   EXPECT_FALSE(a.value());
 }
 
-TEST_F(BuiltinsModuleTest, BuiltinChrWithNonIntRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object i(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
-                            LayoutId::kTypeError,
-                            "an integer is required (got type NoneType)"));
-}
-
-TEST_F(BuiltinsModuleTest, BuiltinChrWithLargeIntRaisesOverflowError) {
-  HandleScope scope(thread_);
-  Object i(&scope, runtime_.newInt(kMaxWord));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
-                            LayoutId::kOverflowError,
-                            "Python int too large to convert to C long"));
-}
-
-TEST_F(BuiltinsModuleTest, BuiltinChrWithNegativeIntRaisesValueError) {
-  HandleScope scope(thread_);
-  Object i(&scope, SmallInt::fromWord(-1));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
-                            LayoutId::kValueError,
-                            "chr() arg not in range(0x110000)"));
-}
-
-TEST_F(BuiltinsModuleTest, BuiltinChrWithNonUnicodeIntRaisesValueError) {
-  HandleScope scope(thread_);
-  Object i(&scope, SmallInt::fromWord(kMaxUnicode + 1));
-  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::chr, i),
-                            LayoutId::kValueError,
-                            "chr() arg not in range(0x110000)"));
-}
-
-TEST_F(BuiltinsModuleTest, BuiltinChrWithMaxUnicodeReturnsString) {
-  HandleScope scope(thread_);
-  Object i(&scope, SmallInt::fromWord(kMaxUnicode));
-  EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i),
-            SmallStr::fromCodePoint(kMaxUnicode));
-}
-
-TEST_F(BuiltinsModuleTest, BuiltinChrWithASCIIReturnsString) {
-  HandleScope scope(thread_);
-  Object i(&scope, SmallInt::fromWord('*'));
-  EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i), SmallStr::fromCStr("*"));
-}
-
-TEST_F(BuiltinsModuleTest, BuiltinChrWithIntSubclassReturnsString) {
-  HandleScope scope(thread_);
-  ASSERT_FALSE(runFromCStr(&runtime_, R"(
-class C(int): pass
-i = C(42)
-)")
-                   .isError());
-  Object i(&scope, moduleAt(&runtime_, "__main__", "i"));
-  EXPECT_EQ(runBuiltin(BuiltinsModule::chr, i), SmallStr::fromCStr("*"));
-}
-
 TEST_F(BuiltinsModuleTest, DirCallsDunderDirReturnsSortedList) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(

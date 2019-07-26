@@ -534,6 +534,7 @@ class Runtime;
   V(Marshal, "marshal")                                                        \
   V(Matmul, "matmul")                                                          \
   V(Maxsize, "maxsize")                                                        \
+  V(Maxunicode, "maxunicode")                                                  \
   V(MemoryError, "MemoryError")                                                \
   V(MemoryView, "memoryview")                                                  \
   V(MetaPath, "meta_path")                                                     \
