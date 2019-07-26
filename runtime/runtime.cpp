@@ -5310,37 +5310,6 @@ RawObject Runtime::intToBytes(Thread* thread, const Int& num, word length,
              : *result;
 }
 
-// TODO(djang, emacs): Use this for strFind/strRFind.
-static inline bool isPrefix(const Str& str, const Str& prefix, word start) {
-  word str_len = str.length();
-  word prefix_len = prefix.length();
-  if (str_len - start + 1 < prefix_len) {
-    return false;
-  }
-  for (word i = 0; i < prefix_len; i++) {
-    if (str.charAt(start + i) != prefix.charAt(i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// Return the number of occurences of sub in str up to count.
-static word countSubStr(const Str& str, const Str& sub, word count) {
-  word str_len = str.length();
-  word sub_len = sub.length();
-  word num_match = 0;
-  for (word i = 0; i < str_len && num_match < count;) {
-    if (isPrefix(str, sub, i)) {
-      i += sub_len;
-      num_match++;
-      continue;
-    }
-    i++;
-  }
-  return num_match;
-}
-
 // Str replacement when the result can fit in SmallStr.
 static RawObject strReplaceSmallStr(const Str& src, const Str& oldstr,
                                     const Str& newstr, word count,
@@ -5352,7 +5321,7 @@ static RawObject strReplaceSmallStr(const Str& src, const Str& oldstr,
   byte buffer[SmallStr::kMaxLength];
   byte* dst = buffer;
   for (word i = 0, match_count = 0; i < src_len;) {
-    if (match_count == count || !isPrefix(src, oldstr, i)) {
+    if (match_count == count || !strHasPrefix(src, oldstr, i)) {
       *dst++ = src.charAt(i++);
       continue;
     }
@@ -5379,7 +5348,7 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
 
   // Update the count to the number of occurences of oldstr in src, capped by
   // the given count.
-  count = countSubStr(src, oldstr, count);
+  count = strCountSubStr(src, oldstr, count);
   if (count == 0) {
     return *src;
   }
@@ -5398,8 +5367,8 @@ RawObject Runtime::strReplace(Thread* thread, const Str& src, const Str& oldstr,
   word match_count = 0;
   word i;
   for (i = 0; i < src_len && match_count < count;) {
-    // TODO(djang): Use indexOf() instead of isPrefix to simplify the code.
-    if (isPrefix(src, oldstr, i)) {
+    // TODO(T41400083): Use a different search algorithm
+    if (strHasPrefix(src, oldstr, i)) {
       byte* dst = reinterpret_cast<byte*>(LargeStr::cast(*result).address());
       newstr.copyTo(dst + i + offset, new_len);
       match_count++;

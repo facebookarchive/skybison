@@ -1369,6 +1369,41 @@ def not_a_function():
 }
 
 TEST_F(UnderBuiltinsModuleTest,
+       UnderStrCountWithStartAndEndSearchesWithinBounds) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("ofoodo"));
+  Str needle(&scope, runtime_.newStrFromCStr("o"));
+  Object start(&scope, SmallInt::fromWord(2));
+  Object end(&scope, SmallInt::fromWord(4));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderBuiltinsModule::underStrCount,
+                                         haystack, needle, start, end),
+                              2));
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderStrCountWithNoneStartStartsFromZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("foo"));
+  Str needle(&scope, runtime_.newStrFromCStr("o"));
+  Object start(&scope, NoneType::object());
+  Object end(&scope, SmallInt::fromWord(haystack.codePointLength()));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderBuiltinsModule::underStrCount,
+                                         haystack, needle, start, end),
+                              2));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderStrCountWithNoneEndSetsEndToHaystackLength) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("foo"));
+  Str needle(&scope, runtime_.newStrFromCStr("o"));
+  Object start(&scope, SmallInt::fromWord(0));
+  Object end(&scope, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(UnderBuiltinsModule::underStrCount,
+                                         haystack, needle, start, end),
+                              2));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
        UnderStrFromStrWithStrTypeReturnsValueOfStrType) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = _str_from_str(str, 'value')

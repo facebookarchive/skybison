@@ -12,6 +12,59 @@
 
 namespace python {
 
+RawObject strCount(const Str& haystack, const Str& needle, word start,
+                   word end) {
+  if (end < 0 || start < 0) {
+    // N.B.: If end is negative we may be able to cheaply walk backward. We
+    // should avoid calling adjustSearchIndices here since the underlying
+    // container is not O(1) and replace it with something that preserves some
+    // of the signals that would be useful to lower the cost of the O(n)
+    // traversal.
+    // TODO(T41400083): Use a different search algorithm
+    Slice::adjustSearchIndices(&start, &end, haystack.codePointLength());
+  }
+
+  word start_index = start == 0 ? 0 : haystack.offsetByCodePoints(0, start);
+  if (start_index == haystack.length() && needle.length() > 0) {
+    // Haystack is too small; fast early return
+    return SmallInt::fromWord(0);
+  }
+
+  word end_index = end == kMaxWord
+                       ? haystack.length()
+                       : haystack.offsetByCodePoints(start_index, end - start);
+  if ((end_index - start_index) < needle.length() || start_index > end_index) {
+    // Haystack is too small; fast early return
+    return SmallInt::fromWord(0);
+  }
+
+  // TODO(T41400083): Use a different search algorithm
+  return SmallInt::fromWord(strCountSubStrFromTo(haystack, needle, start_index,
+                                                 end_index, haystack.length()));
+}
+
+word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
+                          word end, word max_count) {
+  DCHECK(max_count > 0, "max_count must be positive");
+  word needle_len = needle.length();
+  word num_match = 0;
+  // Loop is in byte space, not code point space
+  for (word i = start; i <= end - needle_len && num_match < max_count;) {
+    if (strHasPrefix(haystack, needle, i)) {
+      i += needle_len;
+      num_match++;
+      continue;
+    }
+    i++;
+  }
+  return num_match;
+}
+
+word strCountSubStr(const Str& haystack, const Str& needle, word max_count) {
+  return strCountSubStrFromTo(haystack, needle, 0, haystack.length(),
+                              max_count);
+}
+
 // TODO(T39861344): This can be replaced by a real string codec.
 RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
   CHECK(str_obj.isStr(), "strEscapeNonASCII cannot currently handle non-str");
@@ -471,15 +524,9 @@ RawObject strFind(const Str& haystack, const Str& needle, word start,
 
   // Loop is in byte space, not code point space
   word result = start;
-  bool has_match = false;
   // TODO(T41400083): Use a different search algorithm
   for (word i = start_index; i <= end_index - needle.length(); result++) {
-    has_match = true;
-    for (word j = 0; has_match && j < needle.length(); j++) {
-      if (haystack.charAt(i + j) != needle.charAt(j)) {
-        has_match = false;
-      }
-    }
+    bool has_match = strHasPrefix(haystack, needle, i);
     word next = haystack.offsetByCodePoints(i, 1);
     if (i == next) {
       // We've reached a fixpoint; offsetByCodePoints will not advance past the
@@ -507,6 +554,20 @@ word strFindFirstNonWhitespace(const Str& str) {
   return i;
 }
 
+bool strHasPrefix(const Str& str, const Str& prefix, word start) {
+  word str_len = str.length();
+  word prefix_len = prefix.length();
+  if (str_len - start + 1 < prefix_len) {
+    return false;
+  }
+  for (word i = 0; i < prefix_len; i++) {
+    if (str.charAt(start + i) != prefix.charAt(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 RawObject strRFind(const Str& haystack, const Str& needle, word start,
                    word end) {
   if (end < 0 || start < 0) {
@@ -528,16 +589,9 @@ RawObject strRFind(const Str& haystack, const Str& needle, word start,
   // Loop is in byte space, not code point space
   word result = start;
   word last_index = -1;
-  bool has_match = false;
   // TODO(T41400083): Use a different search algorithm
   for (word i = start_index; i <= end_index - needle.length(); result++) {
-    has_match = true;
-    for (word j = 0; has_match && j < needle.length(); j++) {
-      if (haystack.charAt(i + j) != needle.charAt(j)) {
-        has_match = false;
-      }
-    }
-    if (has_match) {
+    if (strHasPrefix(haystack, needle, i)) {
       last_index = result;
     }
     word next = haystack.offsetByCodePoints(i, 1);

@@ -91,6 +91,7 @@ _slice_step = _slice_step  # noqa: F821
 _slice_stop = _slice_stop  # noqa: F821
 _staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_str_count = _str_count  # noqa: F821
 _str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
@@ -3127,8 +3128,22 @@ class str(bootstrap=True):
     def center(self, width, fillchar=" "):
         _unimplemented()
 
-    def count(self, sub, start=_Unbound, end=_Unbound):
-        _unimplemented()
+    def count(self, sub, start=None, end=None):
+        if not _str_check(self):
+            raise TypeError(
+                "'count' requires a 'str' instance but received a "
+                f"'{_type(self).__name__}'"
+            )
+        if not _str_check(sub):
+            raise TypeError(
+                "'count' requires a 'str' instance but received a "
+                f"'{_type(sub).__name__}'"
+            )
+        if start is not None:
+            start = _index(start)
+        if end is not None:
+            end = _index(end)
+        return _str_count(self, sub, start, end)
 
     def encode(self, encoding="utf-8", errors=_Unbound) -> bytes:
         import _codecs

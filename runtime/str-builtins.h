@@ -8,14 +8,34 @@
 
 namespace python {
 
+// Look for needle in haystack in the range [start, end]. Return the number of
+// occurrences found in that range. Note that start and end are code point
+// offsets, not byte offsets.
+RawObject strCount(const Str& haystack, const Str& needle, word start,
+                   word end);
+
+// Return the number of occurences of needle in haystack up to max_count.
+word strCountSubStr(const Str& haystack, const Str& needle, word max_count);
+
+// Return the number of occurences of needle in haystack[start:end] up to
+// max_count. Note that start and end are byte offsets, not code point offsets.
+word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
+                          word end, word max_count);
+
 RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
+
 // Look for needle in haystack in the range [start, end]. Return the first
-// index found in that range, or -1 if needle was not found.
+// index found in that range, or -1 if needle was not found. Note that start
+// and end are code point offsets, not byte offsets.
 RawObject strFind(const Str& haystack, const Str& needle, word start, word end);
 
 // Find the index of the first non-whitespace character in the string. If there
 // are no non-whitespace characters, return the length of the string.
 word strFindFirstNonWhitespace(const Str& str);
+
+// Check if str[start:] has the given prefix. Note that start is a byte offset,
+// not a code point offset.
+bool strHasPrefix(const Str& str, const Str& prefix, word start);
 
 // Intern strings in place in a tuple of strings
 void strInternInTuple(Thread* thread, const Object& items);
@@ -27,7 +47,8 @@ bool strInternConstants(Thread* thread, const Object& items);
 bool strIsASCII(const Str& str);
 
 // Look for needle in haystack in the range [start, end]. Return the last
-// index found in that range, or -1 if needle was not found.
+// index found in that range, or -1 if needle was not found. Note that start
+// and end are code point offsets, not byte offsets.
 RawObject strRFind(const Str& haystack, const Str& needle, word start,
                    word end);
 

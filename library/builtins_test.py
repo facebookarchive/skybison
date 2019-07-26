@@ -1562,6 +1562,35 @@ class StaticMethodTests(unittest.TestCase):
 
 
 class StrTests(unittest.TestCase):
+    def test_count_with_non_str_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.count(None, "foo")
+
+    def test_count_with_non_str_other_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            str.count("foo", None)
+
+    def test_count_calls_dunder_index_on_start(self):
+        class C:
+            def __index__(self):
+                raise UserWarning("foo")
+
+        c = C()
+        with self.assertRaises(UserWarning):
+            str.count("foo", "bar", c, 100)
+
+    def test_count_calls_dunder_index_on_end(self):
+        class C:
+            def __index__(self):
+                raise UserWarning("foo")
+
+        c = C()
+        with self.assertRaises(UserWarning):
+            str.count("foo", "bar", 0, c)
+
+    def test_count_returns_number_of_occurrences(self):
+        self.assertEqual("foo".count("o"), 2)
+
     def test_format_single_open_curly_brace_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
             str.format("{")

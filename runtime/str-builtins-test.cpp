@@ -2246,6 +2246,68 @@ TEST_F(StrBuiltinsTest, StripRight) {
   EXPECT_TRUE(isStrEqualsCStr(*rstripped_str, "bcdHello Worl"));
 }
 
+TEST_F(StrBuiltinsTest, CountWithNeedleLargerThanHaystackReturnsZero) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("h"));
+  Str needle(&scope, runtime_.newStrFromCStr("hello"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, kMaxWord), 0));
+}
+
+TEST_F(StrBuiltinsTest, CountWithSmallNegativeStartIndexesFromEnd) {
+  // Index from the end if abs(start) < len(haystack)
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, runtime_.newStrFromCStr("h"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, -1, kMaxWord), 0));
+}
+
+TEST_F(StrBuiltinsTest, CountWithLargeNegativeStartIndexesFromStart) {
+  // Default to 0 if abs(start) >= len(haystack)
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, runtime_.newStrFromCStr("h"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, -10, kMaxWord), 1));
+}
+
+TEST_F(StrBuiltinsTest, CountWithSmallNegativeEndIndexesFromEnd) {
+  // Index from the end if abs(end) < len(haystack)
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, runtime_.newStrFromCStr("o"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, -2), 0));
+}
+
+TEST_F(StrBuiltinsTest, CountWithLargeNegativeEndIndexesFromStart) {
+  // Default to 0 if abs(end) >= len(haystack)
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("hello"));
+  Str needle(&scope, runtime_.newStrFromCStr("o"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, -10), 0));
+}
+
+TEST_F(StrBuiltinsTest, CountWithSingleCharNeedleFindsNeedle) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("oooo"));
+  Str needle(&scope, runtime_.newStrFromCStr("o"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, kMaxWord), 4));
+}
+
+TEST_F(StrBuiltinsTest, CountWithMultiCharNeedleFindsNeedle) {
+  HandleScope scope(thread_);
+  Str haystack(&scope, runtime_.newStrFromCStr("oooo"));
+  Str needle(&scope, runtime_.newStrFromCStr("oo"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, kMaxWord), 2));
+}
+
+TEST_F(StrBuiltinsTest, CountWithUnicodeNeedleReturnsCount) {
+  HandleScope scope(thread_);
+  Str haystack(&scope,
+               runtime_.newStrFromCStr(
+                   u8"\u20ac10 Cr\u00e8me Cr\u00e8me br\u00fbl\u00e9e"));
+  Str needle(&scope, runtime_.newStrFromCStr(u8"Cr\u00e8me"));
+  EXPECT_TRUE(isIntEqualsWord(strCount(haystack, needle, 0, kMaxWord), 2));
+}
+
 TEST_F(StrBuiltinsTest, FindFirstNonWhitespaceWithEmptyStringReturnsZero) {
   HandleScope scope(thread_);
   Str str(&scope, Str::empty());

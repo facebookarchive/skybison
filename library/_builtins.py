@@ -440,6 +440,11 @@ def _str_check(obj):
 
 
 @_patch
+def _str_count(self, sub, start, end):
+    pass
+
+
+@_patch
 def _str_join(sep, iterable):
     pass
 
