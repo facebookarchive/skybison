@@ -657,6 +657,43 @@ class GeneratorTests(unittest.TestCase):
 
 
 class IntTests(unittest.TestCase):
+    def test_dunder_new_with_bool_class_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            int.__new__(bool, 0)
+        self.assertEqual(
+            str(context.exception), "int.__new__(bool) is not safe, use bool.__new__()"
+        )
+
+    def test_dunder_new_with_dunder_int_subclass_warns(self):
+        class Num(int):
+            pass
+
+        class Foo:
+            def __int__(self):
+                return Num(42)
+
+        foo = Foo()
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(int(foo), 42)
+
+    def test_dunder_new_uses_type_dunder_int(self):
+        class Foo:
+            def __int__(self):
+                return 0
+
+        foo = Foo()
+        foo.__int__ = "not callable"
+        self.assertEqual(int(foo), 0)
+
+    def test_dunder_new_uses_type_dunder_trunc(self):
+        class Foo:
+            def __trunc__(self):
+                return 0
+
+        foo = Foo()
+        foo.__trunc__ = "not callable"
+        self.assertEqual(int(foo), 0)
+
     def test_dunder_pow_with_zero_returns_one(self):
         self.assertEqual(int.__pow__(4, 0), 1)
 

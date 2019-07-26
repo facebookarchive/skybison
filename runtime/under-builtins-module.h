@@ -86,6 +86,7 @@ class UnderBuiltinsModule {
   static RawObject underInstanceSetattr(Thread* thread, Frame* frame,
                                         word nargs);
   static RawObject underIntCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underIntCheckExact(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntFromBytes(Thread* thread, Frame* frame, word nargs);
   static RawObject underIntNewFromByteArray(Thread* thread, Frame* frame,
                                             word nargs);
@@ -136,6 +137,7 @@ class UnderBuiltinsModule {
                                                word nargs);
   static RawObject underStrArrayIadd(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underStrCheckExact(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrCount(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrJoin(Thread* thread, Frame* frame, word nargs);
   static RawObject underStrEscapeNonAscii(Thread* thread, Frame* frame,

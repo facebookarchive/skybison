@@ -97,6 +97,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderInstanceGetattr, underInstanceGetattr},
     {SymbolId::kUnderInstanceSetattr, underInstanceSetattr},
     {SymbolId::kUnderIntCheck, underIntCheck},
+    {SymbolId::kUnderIntCheckExact, underIntCheckExact},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
     {SymbolId::kUnderIntNewFromByteArray, underIntNewFromByteArray},
     {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
@@ -134,6 +135,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStaticMethodIsAbstract, underStaticMethodIsAbstract},
     {SymbolId::kUnderStrArrayIadd, underStrArrayIadd},
     {SymbolId::kUnderStrCheck, underStrCheck},
+    {SymbolId::kUnderStrCheckExact, underStrCheckExact},
     {SymbolId::kUnderStrCount, underStrCount},
     {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
@@ -174,11 +176,12 @@ const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
     SymbolId::kUnderBytesCheck,     SymbolId::kUnderBytesLen,
     SymbolId::kUnderDictCheck,      SymbolId::kUnderDictLen,
     SymbolId::kUnderFloatCheck,     SymbolId::kUnderFrozenSetCheck,
-    SymbolId::kUnderIntCheck,       SymbolId::kUnderListCheck,
-    SymbolId::kUnderListCheckExact, SymbolId::kUnderListGetitem,
-    SymbolId::kUnderListLen,        SymbolId::kUnderSetCheck,
-    SymbolId::kUnderSetLen,         SymbolId::kUnderSliceCheck,
-    SymbolId::kUnderStrCheck,       SymbolId::kUnderStrLen,
+    SymbolId::kUnderIntCheck,       SymbolId::kUnderIntCheckExact,
+    SymbolId::kUnderListCheck,      SymbolId::kUnderListCheckExact,
+    SymbolId::kUnderListGetitem,    SymbolId::kUnderListLen,
+    SymbolId::kUnderSetCheck,       SymbolId::kUnderSetLen,
+    SymbolId::kUnderSliceCheck,     SymbolId::kUnderStrCheck,
+    SymbolId::kUnderStrCheckExact,  SymbolId::kUnderStrLen,
     SymbolId::kUnderTupleCheck,     SymbolId::kUnderTupleCheckExact,
     SymbolId::kUnderTupleLen,       SymbolId::kUnderType,
     SymbolId::kUnderTypeCheck,      SymbolId::kUnderTypeCheckExact,
@@ -948,6 +951,13 @@ RawObject UnderBuiltinsModule::underIntCheck(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfInt(args.get(0)));
 }
 
+RawObject UnderBuiltinsModule::underIntCheckExact(Thread*, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  RawObject arg = args.get(0);
+  return Bool::fromBool(arg.isSmallInt() || arg.isLargeInt());
+}
+
 static RawObject intOrUserSubclass(Thread* thread, const Type& type,
                                    const Object& value) {
   DCHECK(value.isSmallInt() || value.isLargeInt(),
@@ -1640,6 +1650,12 @@ RawObject UnderBuiltinsModule::underStrCheck(Thread* thread, Frame* frame,
                                              word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfStr(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underStrCheckExact(Thread*, Frame* frame,
+                                                  word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isStr());
 }
 
 RawObject UnderBuiltinsModule::underStrCount(Thread* thread, Frame* frame,

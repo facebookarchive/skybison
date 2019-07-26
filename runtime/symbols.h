@@ -211,6 +211,7 @@ class Runtime;
   V(UnderInstanceGetattr, "_instance_getattr")                                 \
   V(UnderInstanceSetattr, "_instance_setattr")                                 \
   V(UnderIntCheck, "_int_check")                                               \
+  V(UnderIntCheckExact, "_int_checkexact")                                     \
   V(UnderIntFromBytes, "_int_from_bytes")                                      \
   V(UnderIntNewFromByteArray, "_int_new_from_bytearray")                       \
   V(UnderIntNewFromBytes, "_int_new_from_bytes")                               \
@@ -289,6 +290,7 @@ class Runtime;
   V(UnderStrArray, "_strarray")                                                \
   V(UnderStrArrayIadd, "_strarray_iadd")                                       \
   V(UnderStrCheck, "_str_check")                                               \
+  V(UnderStrCheckExact, "_str_checkexact")                                     \
   V(UnderStrCount, "_str_count")                                               \
   V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \

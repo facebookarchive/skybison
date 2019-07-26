@@ -54,6 +54,7 @@ _get_member_ushort = _get_member_ushort  # noqa: F821
 _instance_getattr = _instance_getattr  # noqa: F821
 _instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
+_int_checkexact = _int_checkexact  # noqa: F821
 _int_from_bytes = _int_from_bytes  # noqa: F821
 _int_new_from_bytearray = _int_new_from_bytearray  # noqa: F821
 _int_new_from_bytes = _int_new_from_bytes  # noqa: F821
@@ -91,6 +92,7 @@ _slice_step = _slice_step  # noqa: F821
 _slice_stop = _slice_stop  # noqa: F821
 _staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
+_str_checkexact = _str_checkexact  # noqa: F821
 _str_count = _str_count  # noqa: F821
 _str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
@@ -599,16 +601,25 @@ def _index(obj) -> int:
 
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
-    obj_type = _type(obj)
-    if obj_type is int:
+    if _int_checkexact(obj):
         return obj
-    if not hasattr(obj, "__int__"):
-        raise TypeError(f"an integer is required (got type {obj_type.__name__})")
-    result = obj.__int__()
-    result_type = _type(result)
-    if result_type is int:
+    if not _object_type_hasattr(obj, "__int__"):
+        raise TypeError(f"an integer is required (got type {_type(obj).__name__})")
+    result = _type(obj).__int__(obj)
+    if _int_checkexact(result):
         return result
-    raise TypeError(f"__int__ returned non-int (type {result_type.__name__})")
+    if _int_check(result):
+        import warnings
+
+        warnings.warn(
+            f"__int__ returned non-int (type {_type(result).__name__}).  "
+            "The ability to return an instance of a strict subclass of int "
+            "is deprecated, and may be removed in a future version of Python.",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        return result
+    raise TypeError(f"__int__ returned non-int (type {_type(result).__name__})")
 
 
 def _isinstance_type(obj, ty: type, cls: type) -> bool:
@@ -2034,6 +2045,8 @@ class int(bootstrap=True):
         pass
 
     def __new__(cls, x=_Unbound, base=_Unbound) -> int:  # noqa: C901
+        if cls is bool:
+            raise TypeError("int.__new__(bool) is not safe, use bool.__new__()")
         if not _type_check(cls):
             raise TypeError(
                 f"int.__new__(X): X is not a type object ({_type(cls).__name__})"
@@ -2047,21 +2060,21 @@ class int(bootstrap=True):
                 return _int_new_from_int(cls, 0)
             raise TypeError("int() missing string argument")
         if base is _Unbound:
-            if _type(x) is int:
+            if _int_checkexact(x):
                 return _int_new_from_int(cls, x)
-            if hasattr(x, "__int__"):
+            if _object_type_hasattr(x, "__int__"):
                 return _int_new_from_int(cls, _int(x))
-            if hasattr(x, "__trunc__"):
-                trunc_result = x.__trunc__()
-                result_type = _type(trunc_result)
-                if result_type is int:
-                    return _int_new_from_int(cls, trunc_result)
-                if not hasattr(trunc_result, "__int__"):
-                    raise TypeError(
-                        "__trunc__ returned non-Integral "
-                        f"(type {result_type.__name__})"
-                    )
-                return _int_new_from_int(cls, _int(trunc_result))
+            if _object_type_hasattr(x, "__trunc__"):
+                result = _type(x).__trunc__(x)
+                if _int_checkexact(result) and cls is int:
+                    return result
+                if _int_check(result):
+                    return _int_new_from_int(cls, result)
+                if _object_type_hasattr(result, "__int__"):
+                    return _int_new_from_int(cls, _int(result))
+                raise TypeError(
+                    f"__trunc__ returned non-Integral (type {_type(result).__name__})"
+                )
             if _str_check(x):
                 return _int_new_from_str(cls, x, 10)
             if _bytes_check(x):
@@ -3069,7 +3082,7 @@ class str(bootstrap=True):
         if obj is _Unbound:
             return _str_from_str(cls, "")
         if encoding is _Unbound and errors is _Unbound:
-            if _type(obj) is str:
+            if _str_checkexact(obj):
                 return _str_from_str(cls, obj)
             try:
                 result = _type(obj).__str__(obj)

@@ -69,6 +69,12 @@ static bool underIntCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underIntCheckExact(Frame* frame) {
+  RawObject arg = frame->popValue();
+  frame->setTopValue(Bool::fromBool(arg.isSmallInt() || arg.isLargeInt()));
+  return true;
+}
+
 static bool underListCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfList(frame->popValue())));
@@ -175,6 +181,11 @@ static bool underStrCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underStrCheckExact(Frame* frame) {
+  frame->setTopValue(Bool::fromBool(frame->popValue().isStr()));
+  return true;
+}
+
 static bool underStrLen(Frame* frame) {
   RawObject arg = frame->peek(0);
   if (arg.isStr()) {
@@ -251,6 +262,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underFrozenSetCheck(thread, frame);
     case SymbolId::kUnderIntCheck:
       return underIntCheck(thread, frame);
+    case SymbolId::kUnderIntCheckExact:
+      return underIntCheckExact(frame);
     case SymbolId::kUnderListCheck:
       return underListCheck(thread, frame);
     case SymbolId::kUnderListCheckExact:
@@ -277,6 +290,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underSliceIndex(thread, frame);
     case SymbolId::kUnderStrCheck:
       return underStrCheck(thread, frame);
+    case SymbolId::kUnderStrCheckExact:
+      return underStrCheckExact(frame);
     case SymbolId::kUnderStrLen:
       return underStrLen(frame);
     case SymbolId::kUnderTupleCheck:

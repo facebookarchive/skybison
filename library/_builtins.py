@@ -256,6 +256,11 @@ def _int_check(obj):
 
 
 @_patch
+def _int_checkexact(obj):
+    pass
+
+
+@_patch
 def _int_from_bytes(cls, bytes, byteorder_big, signed):
     pass
 
@@ -436,6 +441,11 @@ def _staticmethod_isabstract(self):
 
 @_patch
 def _str_check(obj):
+    pass
+
+
+@_patch
+def _str_checkexact(obj):
     pass
 
 
