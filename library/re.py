@@ -326,8 +326,7 @@ def _compile(pattern, flags):
         _cache[type(pattern), pattern, flags] = p, loc
     return p
 
-# TODO(T42802697): Import _functools to enable _functools.lru_cache_wrapper
-# @functools.lru_cache(_MAXCACHE)
+@functools.lru_cache(_MAXCACHE)
 def _compile_repl(repl, pattern):
     # internal: compile replacement pattern
     return sre_parse.parse_template(repl, pattern)
