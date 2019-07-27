@@ -1468,6 +1468,23 @@ class RoundTests(unittest.TestCase):
 
 
 class SetTests(unittest.TestCase):
+    def test_difference_no_others_copies_self(self):
+        a_set = {1, 2, 3}
+        self.assertIsNot(set.difference(a_set), a_set)
+
+    def test_difference_same_sets_returns_empty_set(self):
+        a_set = {1, 2, 3}
+        self.assertFalse(set.difference(a_set, a_set))
+
+    def test_difference_two_sets_returns_difference(self):
+        set1 = {1, 2, 3, 4, 5, 6, 7}
+        set2 = {1, 3, 5, 7}
+        self.assertEquals(set.difference(set1, set2), {2, 4, 6})
+
+    def test_difference_many_sets_returns_difference(self):
+        a_set = {1, 10, 100, 1000}
+        self.assertEquals(set.difference(a_set, {10}, {100}, {1000}), {1})
+
     def test_discard_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):
             set.discard(None, 1)

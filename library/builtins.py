@@ -2962,6 +2962,21 @@ class set(bootstrap=True):
     def copy(self):
         pass
 
+    def difference(self, *others):
+        if not _set_check(self):
+            raise TypeError(
+                "'difference' requires a 'set' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        result = list(self)
+        for other in others:
+            diff = []
+            for item in result:
+                if item not in other:
+                    diff.append(item)
+            result = diff
+        return set(result)
+
     def discard(self, elem):
         pass
 
