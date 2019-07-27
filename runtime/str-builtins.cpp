@@ -715,7 +715,7 @@ RawObject StrBuiltins::strFormatBufferLength(Thread* thread, const Str& fmt,
       continue;
     }
     if (++fmt_idx >= fmt.length()) {
-      return thread->raiseWithFmt(LayoutId::kValueError, "Incomplete format");
+      return thread->raiseWithFmt(LayoutId::kValueError, "incomplete format");
     }
     switch (fmt.charAt(fmt_idx)) {
       case 'd': {

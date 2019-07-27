@@ -1832,6 +1832,65 @@ class StrTests(unittest.TestCase):
         self.assertEqual(str(A()), "test")
 
 
+class StrModTests(unittest.TestCase):
+    def test_empty_format_returns_empty_string(self):
+        self.assertEqual("" % (), "")
+
+    def test_simple_string_returns_string(self):
+        self.assertEqual("foo bar (}" % (), "foo bar (}")
+
+    def test_with_non_tuple_args_returns_string(self):
+        self.assertEqual("%s" % "foo", "foo")
+        self.assertEqual("%d" % 42, "42")
+
+    def test_s_format_returns_string(self):
+        self.assertEqual("%s" % ("foo",), "foo")
+
+    def test_d_format_returns_string(self):
+        self.assertEqual("%d" % (0,), "0")
+        self.assertEqual("%d" % (-1,), "-1")
+        self.assertEqual("%d" % (42,), "42")
+
+    def test_g_format_returns_string(self):
+        self.assertEqual("%g" % (0.0,), "0")
+        self.assertEqual("%g" % (-1.0,), "-1")
+        self.assertEqual("%g" % (0.125,), "0.125")
+        self.assertEqual("%g" % (3.5,), "3.5")
+
+    def test_g_format_with_inf_returns_string(self):
+        self.assertEqual("%g" % (float("inf"),), "inf")
+        self.assertEqual("%g" % (-float("inf"),), "-inf")
+
+    def test_g_format_with_nan_returns_string(self):
+        self.assertEqual("%g" % (float("nan"),), "nan")
+
+    def test_percent_format_returns_percent(self):
+        self.assertEqual("%%" % (), "%")
+
+    def test_two_specifiers_returns_string(self):
+        self.assertEqual("%s%s" % ("foo", "bar"), "foobar")
+        self.assertEqual(",%s%s" % ("foo", "bar"), ",foobar")
+        self.assertEqual("%s,%s" % ("foo", "bar"), "foo,bar")
+        self.assertEqual("%s%s," % ("foo", "bar"), "foobar,")
+        self.assertEqual(",%s..%s---" % ("foo", "bar"), ",foo..bar---")
+        self.assertEqual(",%s...%s--" % ("foo", "bar"), ",foo...bar--")
+        self.assertEqual(",,%s.%s---" % ("foo", "bar"), ",,foo.bar---")
+        self.assertEqual(",,%s...%s-" % ("foo", "bar"), ",,foo...bar-")
+        self.assertEqual(",,,%s..%s-" % ("foo", "bar"), ",,,foo..bar-")
+        self.assertEqual(",,,%s.%s--" % ("foo", "bar"), ",,,foo.bar--")
+
+    def test_mixed_specifiers_with_percents_returns_string(self):
+        self.assertEqual("%%%s%%%s%%" % ("foo", "bar"), "%foo%bar%")
+
+    def test_mixed_specifiers_returns_string(self):
+        self.assertEqual("a %d %g %s" % (123, 3.14, "baz"), "a 123 3.14 baz")
+
+    def test_specifier_missing_format_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            "%" % ()
+        self.assertEqual(str(context.exception), "incomplete format")
+
+
 class SumTests(unittest.TestCase):
     def test_str_as_start_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
