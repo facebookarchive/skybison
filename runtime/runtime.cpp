@@ -1538,8 +1538,7 @@ void Runtime::initializeHeapTypes() {
   ListBuiltins::initialize(this);
   ListIteratorBuiltins::initialize(this);
   LongRangeIteratorBuiltins::initialize(this);
-  addEmptyBuiltinType(SymbolId::kMethod, LayoutId::kBoundMethod,
-                      LayoutId::kObject);
+  BoundMethodBuiltins::initialize(this);
   MemoryViewBuiltins::initialize(this);
   ModuleBuiltins::initialize(this);
   addEmptyBuiltinType(SymbolId::kNotImplementedType,

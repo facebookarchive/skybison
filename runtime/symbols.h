@@ -51,6 +51,7 @@ class Runtime;
   V(DunderFloordiv, "__floordiv__")                                            \
   V(DunderFormat, "__format__")                                                \
   V(DunderFspath, "__fspath__")                                                \
+  V(DunderFunc, "__func__")                                                    \
   V(DunderGe, "__ge__")                                                        \
   V(DunderGet, "__get__")                                                      \
   V(DunderGetattr, "__getattr__")                                              \
@@ -120,6 +121,7 @@ class Runtime;
   V(DunderRsub, "__rsub__")                                                    \
   V(DunderRtruediv, "__rtruediv__")                                            \
   V(DunderRxor, "__rxor__")                                                    \
+  V(DunderSelf, "__self__")                                                    \
   V(DunderSet, "__set__")                                                      \
   V(DunderSetattr, "__setattr__")                                              \
   V(DunderSetitem, "__setitem__")                                              \

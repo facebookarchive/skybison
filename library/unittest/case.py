@@ -434,9 +434,8 @@ class TestCase(object):
                 # but not an *incorrect* or missing method name
                 raise ValueError("no such test method in %s: %s" %
                       (self.__class__, methodName))
-        # TODO(T42598182): Implement method.__doc__
-        # else:
-        #     self._testMethodDoc = testMethod.__doc__
+        else:
+            self._testMethodDoc = testMethod.__doc__
         self._cleanups = []
         self._subtest = None
 

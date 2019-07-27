@@ -2657,6 +2657,12 @@ def max(arg1, arg2=_Unbound, *args, key=_Unbound, default=_Unbound):  # noqa: C9
     return result
 
 
+class method(bootstrap=True):
+    @_property
+    def __doc__(self):
+        return self.__func__.__doc__
+
+
 class memoryview(bootstrap=True):
     def __getitem__(self, index):
         pass

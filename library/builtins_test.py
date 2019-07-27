@@ -3,6 +3,48 @@ import unittest
 import warnings
 
 
+class BoundMethodTest(unittest.TestCase):
+    def test_bound_method_dunder_func(self):
+        class Foo:
+            def foo(self):
+                pass
+
+        self.assertIs(Foo.foo, Foo().foo.__func__)
+
+    def test_bound_method_dunder_self(self):
+        class Foo:
+            def foo(self):
+                pass
+
+        f = Foo()
+        self.assertIs(f, f.foo.__self__)
+
+    def test_bound_method_doc(self):
+        class Foo:
+            def foo(self):
+                "This is the docstring of foo"
+                pass
+
+        self.assertEqual(Foo().foo.__doc__, "This is the docstring of foo")
+        self.assertIs(Foo.foo.__doc__, Foo().foo.__doc__)
+
+    def test_bound_method_readonly_attributes(self):
+        class Foo:
+            def foo(self):
+                "This is the docstring of foo"
+                pass
+
+        f = Foo().foo
+        with self.assertRaises(AttributeError):
+            f.__func__ = abs
+
+        with self.assertRaises(AttributeError):
+            f.__self__ = int
+
+        with self.assertRaises(AttributeError):
+            f.__doc__ = "hey!"
+
+
 class ByteArrayTest(unittest.TestCase):
     def test_dunder_setitem_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):

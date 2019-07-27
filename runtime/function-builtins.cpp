@@ -225,4 +225,12 @@ RawObject FunctionBuiltins::dunderSetattr(Thread* thread, Frame* frame,
   return functionSetAttr(thread, self, name, value);
 }
 
+const BuiltinAttribute BoundMethodBuiltins::kAttributes[] = {
+    {SymbolId::kDunderFunc, RawBoundMethod::kFunctionOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kDunderSelf, RawBoundMethod::kSelfOffset,
+     AttributeFlags::kReadOnly},
+    {SymbolId::kSentinelId, 0},
+};
+
 }  // namespace python

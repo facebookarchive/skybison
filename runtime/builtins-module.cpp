@@ -131,6 +131,7 @@ const BuiltinType BuiltinsModule::kBuiltinTypes[] = {
     {SymbolId::kLookupError, LayoutId::kLookupError},
     {SymbolId::kMemoryError, LayoutId::kMemoryError},
     {SymbolId::kMemoryView, LayoutId::kMemoryView},
+    {SymbolId::kMethod, LayoutId::kBoundMethod},
     {SymbolId::kModule, LayoutId::kModule},
     {SymbolId::kModuleNotFoundError, LayoutId::kModuleNotFoundError},
     {SymbolId::kNameError, LayoutId::kNameError},

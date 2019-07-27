@@ -44,4 +44,14 @@ class FunctionBuiltins : public Builtins<FunctionBuiltins, SymbolId::kFunction,
   DISALLOW_IMPLICIT_CONSTRUCTORS(FunctionBuiltins);
 };
 
+class BoundMethodBuiltins
+    : public Builtins<BoundMethodBuiltins, SymbolId::kMethod,
+                      LayoutId::kBoundMethod> {
+ public:
+  static const BuiltinAttribute kAttributes[];
+
+ private:
+  DISALLOW_IMPLICIT_CONSTRUCTORS(BoundMethodBuiltins);
+};
+
 }  // namespace python
