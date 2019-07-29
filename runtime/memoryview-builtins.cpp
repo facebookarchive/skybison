@@ -188,8 +188,14 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfBytes(*buffer)) {
     // TODO(T38246066) support bytes subclasses
+    // TODO(T48004357): Collapse these branches
     if (buffer.isLargeBytes()) {
       LargeBytes bytes(&scope, *buffer);
+      return unpackObject(thread, bytes.address(), length, format_c,
+                          byte_index);
+    }
+    if (buffer.isMutableBytes()) {
+      MutableBytes bytes(&scope, *buffer);
       return unpackObject(thread, bytes.address(), length, format_c,
                           byte_index);
     }
@@ -243,7 +249,7 @@ RawObject MemoryViewBuiltins::dunderNew(Thread* thread, Frame* frame,
   if (runtime->isInstanceOfByteArray(*object)) {
     ByteArray bytearray(&scope, *object);
     Bytes bytes(&scope, bytearray.bytes());
-    return runtime->newMemoryView(thread, bytes, bytes.length(),
+    return runtime->newMemoryView(thread, bytes, bytearray.numItems(),
                                   ReadOnly::ReadWrite);
   }
   if (object.isMemoryView()) {

@@ -345,6 +345,23 @@ TEST_F(MemoryViewBuiltinsTest, GetItemWithMemoryBufferReadsMemory) {
       runBuiltin(MemoryViewBuiltins::dunderGetItem, view, idx), 4));
 }
 
+TEST_F(MemoryViewBuiltinsTest, GetItemWithByteArrayReadsFromMutableBytes) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Type type(&scope, runtime_.typeAt(LayoutId::kMemoryView));
+  ByteArray bytearray(&scope, runtime_.newByteArray());
+  const byte byte_array[] = {0xce};
+  runtime_.byteArrayExtend(thread, bytearray, byte_array);
+  Object result_obj(&scope,
+                    runBuiltin(MemoryViewBuiltins::dunderNew, type, bytearray));
+  ASSERT_TRUE(result_obj.isMemoryView());
+  MemoryView view(&scope, *result_obj);
+  Int index(&scope, runtime_.newInt(0));
+  Object result(&scope,
+                runBuiltin(MemoryViewBuiltins::dunderGetItem, view, index));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xce));
+}
+
 TEST_F(MemoryViewBuiltinsTest, DunderLenWithMemoryViewFormatBReturnsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0, 1, 2};
@@ -394,6 +411,7 @@ TEST_F(MemoryViewBuiltinsTest, DunderNewWithByteArrayReturnsMemoryView) {
   ASSERT_TRUE(result_obj.isMemoryView());
   MemoryView view(&scope, *result_obj);
   EXPECT_EQ(view.buffer(), bytearray.bytes());
+  EXPECT_EQ(view.length(), bytearray.numItems());
   EXPECT_TRUE(isStrEqualsCStr(view.format(), "B"));
   EXPECT_FALSE(view.readOnly());
 }
