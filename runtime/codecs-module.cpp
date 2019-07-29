@@ -48,15 +48,15 @@ static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
 }
 
 const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
-    {SymbolId::kUnderAsciiEncode, underAsciiEncode},
     {SymbolId::kUnderAsciiDecode, underAsciiDecode},
+    {SymbolId::kUnderAsciiEncode, underAsciiEncode},
+    {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
     {SymbolId::kUnderEscapeDecode, underEscapeDecode},
     {SymbolId::kUnderLatin1Encode, underLatin1Encode},
     {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
     {SymbolId::kUnderUtf16Encode, underUtf16Encode},
     {SymbolId::kUnderUtf32Encode, underUtf32Encode},
     {SymbolId::kUnderUtf8Encode, underUtf8Encode},
-    {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
     {SymbolId::kSentinelId, nullptr},
 };
 
