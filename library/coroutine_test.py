@@ -11,6 +11,7 @@ class AttributesTest(unittest.TestCase):
         # TODO(bsimmers): Test more once we have coroutine.__await__()
         cr = coro()
         self.assertFalse(cr.cr_running)
+        # TODO(T42623564): Remove this warning filter and call cr.close().
         warnings.filterwarnings(
             action="ignore",
             category=RuntimeWarning,
@@ -23,15 +24,15 @@ class MethodTest(unittest.TestCase):
         async def foo():
             return 5
 
+        cr = foo()
+        # TODO(T42623564): Remove this warning filter and call cr.close().
         warnings.filterwarnings(
             action="ignore",
             category=RuntimeWarning,
             message="coroutine.*was never awaited",
         )
         self.assertTrue(
-            foo()
-            .__repr__()
-            .startswith(
+            cr.__repr__().startswith(
                 "<coroutine object MethodTest.test_dunder_repr.<locals>.foo at "
             )
         )
