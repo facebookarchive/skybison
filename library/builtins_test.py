@@ -1509,70 +1509,6 @@ class RoundTests(unittest.TestCase):
             round(ClassWithoutDunderRound())
 
 
-class SetTests(unittest.TestCase):
-    def test_difference_no_others_copies_self(self):
-        a_set = {1, 2, 3}
-        self.assertIsNot(set.difference(a_set), a_set)
-
-    def test_difference_same_sets_returns_empty_set(self):
-        a_set = {1, 2, 3}
-        self.assertFalse(set.difference(a_set, a_set))
-
-    def test_difference_two_sets_returns_difference(self):
-        set1 = {1, 2, 3, 4, 5, 6, 7}
-        set2 = {1, 3, 5, 7}
-        self.assertEquals(set.difference(set1, set2), {2, 4, 6})
-
-    def test_difference_many_sets_returns_difference(self):
-        a_set = {1, 10, 100, 1000}
-        self.assertEquals(set.difference(a_set, {10}, {100}, {1000}), {1})
-
-    def test_discard_with_non_set_raises_type_error(self):
-        with self.assertRaises(TypeError):
-            set.discard(None, 1)
-
-    def test_discard_with_non_member_returns_none(self):
-        self.assertIs(set.discard(set(), 1), None)
-
-    def test_discard_with_member_removes_element(self):
-        s = {1, 2, 3}
-        self.assertIn(1, s)
-        self.assertIs(set.discard(s, 1), None)
-        self.assertNotIn(1, s)
-
-    def test_remove_with_non_set_raises_type_error(self):
-        with self.assertRaises(TypeError):
-            set.remove(None, 1)
-
-    def test_remove_with_non_member_raises_key_error(self):
-        with self.assertRaises(KeyError):
-            set.remove(set(), 1)
-
-    def test_remove_with_member_removes_element(self):
-        s = {1, 2, 3}
-        self.assertIn(1, s)
-        set.remove(s, 1)
-        self.assertNotIn(1, s)
-
-    def test_inplace_with_non_set_raises_type_error(self):
-        a = frozenset()
-        self.assertRaises(TypeError, set.__ior__, a, set())
-
-    def test_inplace_with_non_set_as_other_returns_unimplemented(self):
-        a = set()
-        result = set.__ior__(a, 1)
-        self.assertEqual(len(a), 0)
-        self.assertIs(result, NotImplemented)
-
-    def test_inplace_or_modifies_self(self):
-        a = set()
-        b = {"foo"}
-        result = set.__ior__(a, b)
-        self.assertIs(result, a)
-        self.assertEqual(len(a), 1)
-        self.assertIn("foo", a)
-
-
 class SeqTests(unittest.TestCase):
     def test_sequence_is_iterable(self):
         class A:
@@ -1640,6 +1576,70 @@ class SeqTests(unittest.TestCase):
         i = iter(C())
         self.assertTrue(hasattr(i, "__next__"))
         self.assertFalse(dunder_get_called)
+
+
+class SetTests(unittest.TestCase):
+    def test_difference_no_others_copies_self(self):
+        a_set = {1, 2, 3}
+        self.assertIsNot(set.difference(a_set), a_set)
+
+    def test_difference_same_sets_returns_empty_set(self):
+        a_set = {1, 2, 3}
+        self.assertFalse(set.difference(a_set, a_set))
+
+    def test_difference_two_sets_returns_difference(self):
+        set1 = {1, 2, 3, 4, 5, 6, 7}
+        set2 = {1, 3, 5, 7}
+        self.assertEquals(set.difference(set1, set2), {2, 4, 6})
+
+    def test_difference_many_sets_returns_difference(self):
+        a_set = {1, 10, 100, 1000}
+        self.assertEquals(set.difference(a_set, {10}, {100}, {1000}), {1})
+
+    def test_discard_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.discard(None, 1)
+
+    def test_discard_with_non_member_returns_none(self):
+        self.assertIs(set.discard(set(), 1), None)
+
+    def test_discard_with_member_removes_element(self):
+        s = {1, 2, 3}
+        self.assertIn(1, s)
+        self.assertIs(set.discard(s, 1), None)
+        self.assertNotIn(1, s)
+
+    def test_remove_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.remove(None, 1)
+
+    def test_remove_with_non_member_raises_key_error(self):
+        with self.assertRaises(KeyError):
+            set.remove(set(), 1)
+
+    def test_remove_with_member_removes_element(self):
+        s = {1, 2, 3}
+        self.assertIn(1, s)
+        set.remove(s, 1)
+        self.assertNotIn(1, s)
+
+    def test_inplace_with_non_set_raises_type_error(self):
+        a = frozenset()
+        self.assertRaises(TypeError, set.__ior__, a, set())
+
+    def test_inplace_with_non_set_as_other_returns_unimplemented(self):
+        a = set()
+        result = set.__ior__(a, 1)
+        self.assertEqual(len(a), 0)
+        self.assertIs(result, NotImplemented)
+
+    def test_inplace_or_modifies_self(self):
+        a = set()
+        b = {"foo"}
+        result = set.__ior__(a, b)
+        self.assertIs(result, a)
+        self.assertEqual(len(a), 1)
+        self.assertIn("foo", a)
 
 
 class StaticMethodTests(unittest.TestCase):
