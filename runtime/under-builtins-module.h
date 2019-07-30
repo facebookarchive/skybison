@@ -112,6 +112,8 @@ class UnderBuiltinsModule {
                                            word nargs);
   static RawObject underPyObjectOffset(Thread* thread, Frame* frame,
                                        word nargs);
+  static RawObject underRangeCheck(Thread* thread, Frame* frame, word nargs);
+  static RawObject underRangeLen(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprEnter(Thread* thread, Frame* frame, word nargs);
   static RawObject underReprLeave(Thread* thread, Frame* frame, word nargs);
   static RawObject underSeqIndex(Thread* thread, Frame* frame, word nargs);

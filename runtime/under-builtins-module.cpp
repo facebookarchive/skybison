@@ -10,6 +10,7 @@
 #include "int-builtins.h"
 #include "list-builtins.h"
 #include "object-builtins.h"
+#include "range-builtins.h"
 #include "str-builtins.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
@@ -116,6 +117,8 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderProperty, underProperty},
     {SymbolId::kUnderPropertyIsAbstract, underPropertyIsAbstract},
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
+    {SymbolId::kUnderRangeCheck, underRangeCheck},
+    {SymbolId::kUnderRangeLen, underRangeLen},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
     {SymbolId::kUnderSeqIndex, underSeqIndex},
@@ -172,19 +175,33 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck, SymbolId::kUnderByteArrayLen,
-    SymbolId::kUnderBytesCheck,     SymbolId::kUnderBytesLen,
-    SymbolId::kUnderDictCheck,      SymbolId::kUnderDictLen,
-    SymbolId::kUnderFloatCheck,     SymbolId::kUnderFrozenSetCheck,
-    SymbolId::kUnderIntCheck,       SymbolId::kUnderIntCheckExact,
-    SymbolId::kUnderListCheck,      SymbolId::kUnderListCheckExact,
-    SymbolId::kUnderListGetitem,    SymbolId::kUnderListLen,
-    SymbolId::kUnderSetCheck,       SymbolId::kUnderSetLen,
-    SymbolId::kUnderSliceCheck,     SymbolId::kUnderStrCheck,
-    SymbolId::kUnderStrCheckExact,  SymbolId::kUnderStrLen,
-    SymbolId::kUnderTupleCheck,     SymbolId::kUnderTupleCheckExact,
-    SymbolId::kUnderTupleLen,       SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,      SymbolId::kUnderTypeCheckExact,
+    SymbolId::kUnderByteArrayCheck,
+    SymbolId::kUnderByteArrayLen,
+    SymbolId::kUnderBytesCheck,
+    SymbolId::kUnderBytesLen,
+    SymbolId::kUnderDictCheck,
+    SymbolId::kUnderDictLen,
+    SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFrozenSetCheck,
+    SymbolId::kUnderIntCheck,
+    SymbolId::kUnderIntCheckExact,
+    SymbolId::kUnderListCheck,
+    SymbolId::kUnderListCheckExact,
+    SymbolId::kUnderListGetitem,
+    SymbolId::kUnderListLen,
+    SymbolId::kUnderRangeCheck,
+    SymbolId::kUnderSetCheck,
+    SymbolId::kUnderSetLen,
+    SymbolId::kUnderSliceCheck,
+    SymbolId::kUnderStrCheck,
+    SymbolId::kUnderStrCheckExact,
+    SymbolId::kUnderStrLen,
+    SymbolId::kUnderTupleCheck,
+    SymbolId::kUnderTupleCheckExact,
+    SymbolId::kUnderTupleLen,
+    SymbolId::kUnderType,
+    SymbolId::kUnderTypeCheck,
+    SymbolId::kUnderTypeCheckExact,
     SymbolId::kSentinelId,
 };
 
@@ -1438,6 +1455,23 @@ RawObject UnderBuiltinsModule::underPyObjectOffset(Thread* thread, Frame* frame,
   auto addr = reinterpret_cast<uword>(instance.asCPtr());
   addr += RawInt::cast(args.get(1)).asWord();
   return thread->runtime()->newIntFromCPtr(bit_cast<void*>(addr));
+}
+
+RawObject UnderBuiltinsModule::underRangeCheck(Thread*, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  return Bool::fromBool(args.get(0).isRange());
+}
+
+RawObject UnderBuiltinsModule::underRangeLen(Thread* thread, Frame* frame,
+                                             word nargs) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Range self(&scope, args.get(0));
+  Object start(&scope, self.start());
+  Object stop(&scope, self.stop());
+  Object step(&scope, self.step());
+  return rangeLen(thread, start, stop, step);
 }
 
 RawObject UnderBuiltinsModule::underReprEnter(Thread* thread, Frame* frame,

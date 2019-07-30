@@ -1372,6 +1372,62 @@ class LongRangeIteratorTests(unittest.TestCase):
 
 
 class RangeTests(unittest.TestCase):
+    def test_dunder_eq_with_non_range_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            range.__eq__(1, 2)
+
+    def test_dunder_eq_with_non_range_other_returns_not_implemented(self):
+        r = range(100)
+        self.assertIs(r.__eq__(1), NotImplemented)
+
+    def test_dunder_eq_same_returns_true(self):
+        r = range(10)
+        self.assertTrue(r == r)
+
+    def test_dunder_eq_both_empty_returns_true(self):
+        r1 = range(0)
+        r2 = range(4, 3, 2)
+        r3 = range(2, 5, -1)
+        self.assertTrue(r1 == r2)
+        self.assertTrue(r1 == r3)
+        self.assertTrue(r2 == r3)
+
+    def test_dunder_eq_different_start_returns_false(self):
+        r1 = range(1, 10, 3)
+        r2 = range(2, 10, 3)
+        self.assertFalse(r1 == r2)
+
+    def test_dunder_eq_different_stop_returns_true(self):
+        r1 = range(0, 10, 3)
+        r2 = range(0, 11, 3)
+        self.assertTrue(r1 == r2)
+
+    def test_dunder_eq_different_step_length_one_returns_true(self):
+        r1 = range(0, 4, 10)
+        r2 = range(0, 4, 11)
+        self.assertTrue(r1 == r2)
+
+    def test_dunder_eq_different_step_returns_false(self):
+        r1 = range(0, 14, 10)
+        r2 = range(0, 14, 11)
+        self.assertFalse(r1 == r2)
+
+    def test_dunder_ge_with_non_range_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            range.__ge__(1, 2)
+
+    def test_dunder_ge_returns_not_implemented(self):
+        r = range(100)
+        self.assertIs(r.__ge__(r), NotImplemented)
+
+    def test_dunder_gt_with_non_range_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            range.__gt__(1, 2)
+
+    def test_dunder_gt_returns_not_implemented(self):
+        r = range(100)
+        self.assertIs(r.__gt__(r), NotImplemented)
+
     def test_dunder_iter_returns_range_iterator(self):
         it = iter(range(100))
         self.assertEqual(type(it).__name__, "range_iterator")
@@ -1379,6 +1435,62 @@ class RangeTests(unittest.TestCase):
     def test_dunder_iter_returns_longrange_iterator(self):
         it = iter(range(2 ** 63))
         self.assertEqual(type(it).__name__, "longrange_iterator")
+
+    def test_dunder_le_with_non_range_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            range.__le__(1, 2)
+
+    def test_dunder_le_returns_not_implemented(self):
+        r = range(100)
+        self.assertIs(r.__le__(r), NotImplemented)
+
+    def test_dunder_lt_with_non_range_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            range.__lt__(1, 2)
+
+    def test_dunder_lt_returns_not_implemented(self):
+        r = range(100)
+        self.assertIs(r.__lt__(r), NotImplemented)
+
+    def test_dunder_ne_with_non_range_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            range.__ne__(1, 2)
+
+    def test_dunder_ne_with_non_range_other_returns_not_implemented(self):
+        r = range(100)
+        self.assertIs(r.__ne__(1), NotImplemented)
+
+    def test_dunder_ne_same_returns_false(self):
+        r = range(10)
+        self.assertFalse(r != r)
+
+    def test_dunder_ne_both_empty_returns_false(self):
+        r1 = range(0)
+        r2 = range(4, 3, 2)
+        r3 = range(2, 5, -1)
+        self.assertFalse(r1 != r2)
+        self.assertFalse(r1 != r3)
+        self.assertFalse(r2 != r3)
+
+    def test_dunder_ne_different_start_returns_true(self):
+        r1 = range(1, 10, 3)
+        r2 = range(2, 10, 3)
+        self.assertTrue(r1 != r2)
+
+    def test_dunder_ne_different_stop_returns_false(self):
+        r1 = range(0, 10, 3)
+        r2 = range(0, 11, 3)
+        self.assertFalse(r1 != r2)
+
+    def test_dunder_ne_different_step_length_one_returns_false(self):
+        r1 = range(0, 4, 10)
+        r2 = range(0, 4, 11)
+        self.assertFalse(r1 != r2)
+
+    def test_dunder_ne_different_step_returns_true(self):
+        r1 = range(0, 14, 10)
+        r2 = range(0, 14, 11)
+        self.assertTrue(r1 != r2)
 
     def test_dunder_new_with_non_type_raises_type_error(self):
         with self.assertRaises(TypeError) as context:

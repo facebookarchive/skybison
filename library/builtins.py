@@ -74,6 +74,8 @@ _patch = _patch  # noqa: F821
 _property = _property  # noqa: F821
 _property_isabstract = _property_isabstract  # noqa: F821
 _pyobject_offset = _pyobject_offset  # noqa: F821
+_range_check = _range_check  # noqa: F821
+_range_len = _range_len  # noqa: F821
 _repr_enter = _repr_enter  # noqa: F821
 _repr_leave = _repr_leave  # noqa: F821
 _seq_index = _seq_index  # noqa: F821
@@ -2816,11 +2818,85 @@ def quit():
 
 
 class range(bootstrap=True):
+    def __eq__(self, other):
+        if not _range_check(self):
+            raise TypeError(
+                "'__eq__' requires a 'range' object but received a "
+                f"{_type(self).__name__}"
+            )
+        if not _range_check(other):
+            return NotImplemented
+        if self is other:
+            return True
+        self_len = _range_len(self)
+        if not self_len == _range_len(other):
+            return False
+        if not self_len:
+            return True
+        if self.start != other.start:
+            return False
+        if self_len == 1:
+            return True
+        return self.step == other.step
+
+    def __ge__(self, other):
+        if not _range_check(self):
+            raise TypeError(
+                "'__ge__' requires a 'range' object but received a "
+                f"{_type(self).__name__}"
+            )
+        return NotImplemented
+
+    def __gt__(self, other):
+        if not _range_check(self):
+            raise TypeError(
+                "'__gt__' requires a 'range' object but received a "
+                f"{_type(self).__name__}"
+            )
+        return NotImplemented
+
     def __iter__(self):
         pass
 
+    def __le__(self, other):
+        if not _range_check(self):
+            raise TypeError(
+                "'__le__' requires a 'range' object but received a "
+                f"{_type(self).__name__}"
+            )
+        return NotImplemented
+
     def __len__(self):
         pass
+
+    def __lt__(self, other):
+        if not _range_check(self):
+            raise TypeError(
+                "'__lt__' requires a 'range' object but received a "
+                f"{_type(self).__name__}"
+            )
+        return NotImplemented
+
+    def __ne__(self, other):
+        if not _range_check(self):
+            raise TypeError(
+                "'__ne__' requires a 'range' object but received a "
+                f"{_type(self).__name__}"
+            )
+        if not _range_check(other):
+            return NotImplemented
+        if self is other:
+            return False
+        self_len = _range_len(self)
+        if self_len != _range_len(other):
+            return True
+        if not self_len:
+            return False
+        if self.start != other.start:
+            return True
+        if self_len == 1:
+            return False
+        return not self.step == other.step
 
     def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
         pass

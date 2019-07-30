@@ -119,6 +119,11 @@ static bool underListLen(Frame* frame) {
   return false;
 }
 
+static bool underRangeCheck(Frame* frame) {
+  frame->setTopValue(Bool::fromBool(frame->popValue().isRange()));
+  return true;
+}
+
 static bool underSeqIndex(Frame* frame) {
   frame->setTopValue(
       SmallInt::fromWord(SeqIterator::cast(frame->popValue()).index()));
@@ -272,6 +277,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underListGetItem(frame);
     case SymbolId::kUnderListLen:
       return underListLen(frame);
+    case SymbolId::kUnderRangeCheck:
+      return underRangeCheck(frame);
     case SymbolId::kUnderSeqIndex:
       return underSeqIndex(frame);
     case SymbolId::kUnderSeqIterable:

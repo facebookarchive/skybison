@@ -264,6 +264,8 @@ class Runtime;
   V(UnderProperty, "_property")                                                \
   V(UnderPropertyIsAbstract, "_property_isabstract")                           \
   V(UnderPyObjectOffset, "_pyobject_offset")                                   \
+  V(UnderRangeCheck, "_range_check")                                           \
+  V(UnderRangeLen, "_range_len")                                               \
   V(UnderRawIOBase, "_RawIOBase")                                              \
   V(UnderReadBytes, "_readbytes")                                              \
   V(UnderReadFile, "_readfile")                                                \

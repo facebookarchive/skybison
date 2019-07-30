@@ -355,6 +355,16 @@ def _pyobject_offset(instance, offset):
 
 
 @_patch
+def _range_check(obj):
+    pass
+
+
+@_patch
+def _range_len(self):
+    pass
+
+
+@_patch
 def _repr_enter(obj):
     pass
 
