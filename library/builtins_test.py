@@ -1420,6 +1420,113 @@ class RangeTests(unittest.TestCase):
         r = range(100)
         self.assertIs(r.__ge__(r), NotImplemented)
 
+    def test_dunder_getitem_with_non_range_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            range.__getitem__(1, 2)
+
+    def test_dunder_getitem_with_int_subclass_does_not_call_dunder_index(self):
+        class C(int):
+            def __index__(self):
+                raise ValueError("foo")
+
+        r = range(5)
+        self.assertEqual(r[C(3)], 3)
+
+    def test_dunder_getitem_with_raising_descriptor_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("foo")
+
+        class C:
+            __index__ = Desc()
+
+        r = range(5)
+        with self.assertRaises(AttributeError) as context:
+            r[C()]
+        self.assertEqual(str(context.exception), "foo")
+
+    def test_dunder_getitem_with_string_raises_type_error(self):
+        r = range(5)
+        with self.assertRaises(TypeError) as context:
+            r["3"]
+        self.assertEqual(
+            str(context.exception), "range indices must be integers or slices, not str"
+        )
+
+    def test_dunder_getitem_with_dunder_index_calls_dunder_index(self):
+        class C:
+            def __index__(self):
+                return 2
+
+        r = range(5)
+        self.assertEqual(r[C()], 2)
+
+    def test_dunder_getitem_index_too_small_raises_index_error(self):
+        r = range(5)
+        with self.assertRaises(IndexError) as context:
+            r[-6]
+        self.assertEqual(str(context.exception), "range object index out of range")
+
+    def test_dunder_getitem_index_too_large_raises_index_error(self):
+        r = range(5)
+        with self.assertRaises(IndexError) as context:
+            r[5]
+        self.assertEqual(str(context.exception), "range object index out of range")
+
+    def test_dunder_getitem_negative_index_relative_to_end_value_error(self):
+        r = range(5)
+        self.assertEqual(r[-4], 1)
+
+    def test_dunder_getitem_with_valid_indices_returns_sublist(self):
+        r = range(5)
+        self.assertEqual(r[2:-1:1], range(2, 4))
+
+    def test_dunder_getitem_with_negative_start_returns_trailing(self):
+        r = range(5)
+        self.assertEqual(r[-2:], range(3, 5))
+
+    def test_dunder_getitem_with_positive_stop_returns_leading(self):
+        r = range(5)
+        self.assertEqual(r[:2], range(2))
+
+    def test_dunder_getitem_with_negative_stop_returns_all_but_trailing(self):
+        r = range(5)
+        self.assertEqual(r[:-2], range(3))
+
+    def test_dunder_getitem_with_positive_step_returns_forwards_list(self):
+        r = range(5)
+        self.assertEqual(r[::2], range(0, 5, 2))
+
+    def test_dunder_getitem_with_negative_step_returns_backwards_list(self):
+        r = range(5)
+        self.assertEqual(r[::-2], range(4, -1, -2))
+
+    def test_dunder_getitem_with_large_negative_start_returns_copy(self):
+        r = range(5)
+        copy = r[-10:]
+        self.assertEqual(copy, r)
+        self.assertIsNot(copy, r)
+
+    def test_dunder_getitem_with_large_positive_start_returns_empty(self):
+        r = range(5)
+        self.assertEqual(r[10:], range(0))
+
+    def test_dunder_getitem_with_large_negative_start_returns_empty(self):
+        r = range(5)
+        self.assertEqual(r[:-10], range(0))
+
+    def test_dunder_getitem_with_large_positive_start_returns_copy(self):
+        r = range(5)
+        copy = r[:10]
+        self.assertEqual(copy, r)
+        self.assertIsNot(copy, r)
+
+    def test_dunder_getitem_with_identity_slice_returns_copy(self):
+        r = range(5)
+        copy = r[::]
+        self.assertEqual(copy, r)
+        self.assertIsNot(copy, r)
+
     def test_dunder_gt_with_non_range_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             range.__gt__(1, 2)

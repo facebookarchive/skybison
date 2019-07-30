@@ -785,6 +785,22 @@ def _new_member_set_readonly_strings(name):
     return setter
 
 
+def _range_getitem(self: range, idx: int) -> int:
+    length = _range_len(self)
+    if idx < 0:
+        idx = length + idx
+    if idx < 0 or idx >= length:
+        raise IndexError("range object index out of range")
+    return self.start + idx * self.step
+
+
+def _range_getslice(self: range, start: int, stop: int, step: int) -> range:
+    new_step = self.step * step
+    new_start = self.start + start * self.step
+    new_stop = self.start + stop * self.step
+    return range(new_start, new_stop, new_step)
+
+
 def _slice_index(num) -> int:
     if num is None or _int_check(num):
         return num
@@ -2846,6 +2862,26 @@ class range(bootstrap=True):
                 f"{_type(self).__name__}"
             )
         return NotImplemented
+
+    def __getitem__(self, key):
+        if not _range_check(self):
+            raise TypeError(
+                "'__getitem__' requires a 'range' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        if _int_check(key):
+            return _range_getitem(self, key)
+        if _slice_check(key):
+            step = _slice_step(_slice_index(key.step))
+            length = _range_len(self)
+            start = _slice_start(_slice_index(key.start), step, length)
+            stop = _slice_stop(_slice_index(key.stop), step, length)
+            return _range_getslice(self, start, stop, step)
+        if _object_type_hasattr(key, "__index__"):
+            return _range_getitem(self, _index(key))
+        raise TypeError(
+            f"range indices must be integers or slices, not {_type(key).__name__}"
+        )
 
     def __gt__(self, other):
         if not _range_check(self):
