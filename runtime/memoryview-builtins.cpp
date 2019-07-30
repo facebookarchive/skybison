@@ -188,14 +188,8 @@ RawObject MemoryViewBuiltins::dunderGetItem(Thread* thread, Frame* frame,
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfBytes(*buffer)) {
     // TODO(T38246066) support bytes subclasses
-    // TODO(T48004357): Collapse these branches
     if (buffer.isLargeBytes()) {
       LargeBytes bytes(&scope, *buffer);
-      return unpackObject(thread, bytes.address(), length, format_c,
-                          byte_index);
-    }
-    if (buffer.isMutableBytes()) {
-      MutableBytes bytes(&scope, *buffer);
       return unpackObject(thread, bytes.address(), length, format_c,
                           byte_index);
     }

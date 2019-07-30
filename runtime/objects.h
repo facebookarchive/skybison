@@ -3078,7 +3078,7 @@ inline bool RawObject::isKeyError() const {
 }
 
 inline bool RawObject::isLargeBytes() const {
-  return isHeapObjectWithLayout(LayoutId::kLargeBytes);
+  return isHeapObjectWithLayout(LayoutId::kLargeBytes) || isMutableBytes();
 }
 
 inline bool RawObject::isLargeInt() const {
@@ -3241,7 +3241,7 @@ inline bool RawObject::isWeakRef() const {
 }
 
 inline bool RawObject::isBytes() const {
-  return isSmallBytes() || isLargeBytes() || isMutableBytes();
+  return isSmallBytes() || isLargeBytes();
 }
 
 inline bool RawObject::isGeneratorBase() const {
@@ -3284,20 +3284,14 @@ inline word RawBytes::length() const {
   if (isSmallBytes()) {
     return RawSmallBytes::cast(*this).length();
   }
-  if (isLargeBytes()) {
-    return RawLargeBytes::cast(*this).length();
-  }
-  return RawMutableBytes::cast(*this).length();
+  return RawLargeBytes::cast(*this).length();
 }
 
 ALWAYS_INLINE byte RawBytes::byteAt(word index) const {
   if (isSmallBytes()) {
     return RawSmallBytes::cast(*this).byteAt(index);
   }
-  if (isLargeBytes()) {
-    return RawLargeBytes::cast(*this).byteAt(index);
-  }
-  return RawMutableBytes::cast(*this).byteAt(index);
+  return RawLargeBytes::cast(*this).byteAt(index);
 }
 
 inline void RawBytes::copyTo(byte* dst, word length) const {
@@ -3305,39 +3299,26 @@ inline void RawBytes::copyTo(byte* dst, word length) const {
     RawSmallBytes::cast(*this).copyTo(dst, length);
     return;
   }
-  if (isLargeBytes()) {
-    RawLargeBytes::cast(*this).copyTo(dst, length);
-    return;
-  }
-  return RawMutableBytes::cast(*this).copyTo(dst, length);
+  RawLargeBytes::cast(*this).copyTo(dst, length);
 }
 
 inline uint16_t RawBytes::uint16At(word index) const {
   if (isSmallBytes()) {
     return RawSmallBytes::cast(*this).uint16At(index);
   }
-  if (isLargeBytes()) {
-    return RawLargeBytes::cast(*this).uint16At(index);
-  }
-  return RawMutableBytes::cast(*this).uint16At(index);
+  return RawLargeBytes::cast(*this).uint16At(index);
 }
 
 inline uint32_t RawBytes::uint32At(word index) const {
   if (isSmallBytes()) {
     return RawSmallBytes::cast(*this).uint32At(index);
   }
-  if (isLargeBytes()) {
-    return RawLargeBytes::cast(*this).uint32At(index);
-  }
-  return RawMutableBytes::cast(*this).uint32At(index);
+  return RawLargeBytes::cast(*this).uint32At(index);
 }
 
 inline uint64_t RawBytes::uint64At(word index) const {
   DCHECK(!isSmallBytes(), "uint64_t cannot fit into SmallBytes");
-  if (isLargeBytes()) {
-    return RawLargeBytes::cast(*this).uint64At(index);
-  }
-  return RawMutableBytes::cast(*this).uint64At(index);
+  return RawLargeBytes::cast(*this).uint64At(index);
 }
 
 // RawInt
