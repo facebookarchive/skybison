@@ -108,6 +108,50 @@ TEST_F(RangeBuiltinsTest, DunderIterReturnsRangeIter) {
   EXPECT_TRUE(iter.isRangeIterator());
 }
 
+TEST_F(RangeBuiltinsTest, DunderLenWithNonRangeRaisesTypeError) {
+  HandleScope scope(thread_);
+  Object not_range(&scope, runtime_.emptySlice());
+  ASSERT_TRUE(raised(runBuiltin(RangeBuiltins::dunderLen, not_range),
+                     LayoutId::kTypeError));
+}
+
+TEST_F(RangeBuiltinsTest, DunderLenWithForwardRangeReturnsSliceLength) {
+  HandleScope scope(thread_);
+  Int start(&scope, SmallInt::fromWord(-4));
+  Int stop(&scope, SmallInt::fromWord(13));
+  Int step(&scope, SmallInt::fromWord(5));
+  Object empty(&scope, runtime_.newRange(stop, start, step));
+  Object range(&scope, runtime_.newRange(start, stop, step));
+  Object len1(&scope, runBuiltin(RangeBuiltins::dunderLen, empty));
+  Object len2(&scope, runBuiltin(RangeBuiltins::dunderLen, range));
+  EXPECT_TRUE(isIntEqualsWord(*len1, 0));
+  EXPECT_TRUE(isIntEqualsWord(*len2, 4));
+}
+
+TEST_F(RangeBuiltinsTest, DunderLenWithBackwardRangeReturnsSliceLength) {
+  HandleScope scope(thread_);
+  Int start(&scope, SmallInt::fromWord(15));
+  Int stop(&scope, SmallInt::fromWord(3));
+  Int step(&scope, SmallInt::fromWord(-2));
+  Object empty(&scope, runtime_.newRange(stop, start, step));
+  Object range(&scope, runtime_.newRange(start, stop, step));
+  Object len1(&scope, runBuiltin(RangeBuiltins::dunderLen, empty));
+  Object len2(&scope, runBuiltin(RangeBuiltins::dunderLen, range));
+  EXPECT_TRUE(isIntEqualsWord(*len1, 0));
+  EXPECT_TRUE(isIntEqualsWord(*len2, 6));
+}
+
+TEST_F(RangeBuiltinsTest, DunderLenWithLargeIntReturnsLength) {
+  HandleScope scope(thread_);
+  Int start(&scope, SmallInt::fromWord(0));
+  Int stop(&scope, runtime_.newIntFromUnsigned(kMaxUword));
+  Int step(&scope, SmallInt::fromWord(10));
+  word expected = static_cast<word>(kMaxUword / 10 + 1);
+  Object range(&scope, runtime_.newRange(start, stop, step));
+  Object len(&scope, runBuiltin(RangeBuiltins::dunderLen, range));
+  EXPECT_TRUE(isIntEqualsWord(*len, expected));
+}
+
 TEST_F(RangeIteratorBuiltinsTest, DunderIterReturnsSelf) {
   HandleScope scope(thread_);
   Object iter(&scope, runtime_.newRangeIterator(0, 2, 13));

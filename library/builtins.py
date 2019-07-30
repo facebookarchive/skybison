@@ -2819,6 +2819,9 @@ class range(bootstrap=True):
     def __iter__(self):
         pass
 
+    def __len__(self):
+        pass
+
     def __new__(cls, start_or_stop, stop=_Unbound, step=_Unbound):
         pass
 
