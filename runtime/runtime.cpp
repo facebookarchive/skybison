@@ -3991,8 +3991,7 @@ bool Runtime::layoutHasDictOverflow(const Layout& layout) {
 RawObject Runtime::layoutGetOverflowDict(Thread* thread,
                                          const HeapObject& instance,
                                          const Layout& layout) {
-  DCHECK(layout.overflowAttributes().isSmallInt(),
-         "layout must have dict overflow");
+  DCHECK(layout.hasDictOverflow(), "layout must have dict overflow");
   word offset = SmallInt::cast(layout.overflowAttributes()).value();
   HandleScope scope(thread);
   if (instance.instanceVariableAt(offset).isNoneType()) {
@@ -4071,11 +4070,11 @@ bool Runtime::layoutFindAttribute(Thread* thread, const Layout& layout,
   }
 
   // Check overflow attributes
-  if (layout.overflowAttributes().isNoneType()) {
+  if (layout.isSealed()) {
     return false;
   }
   // There is an overflow dict; don't try and read the tuple
-  if (layout.overflowAttributes().isSmallInt()) {
+  if (layout.hasDictOverflow()) {
     return false;
   }
   Tuple overflow(&scope, layout.overflowAttributes());

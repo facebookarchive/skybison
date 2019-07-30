@@ -2616,9 +2616,17 @@ class RawLayout : public RawHeapObject {
   // Return the offset, in bytes, of the overflow slot
   word overflowOffset() const;
 
-  // Seal the attributes of the layout. Sets overflowAttributes to
-  // RawNoneType::object().
-  void sealAttributes() const;
+  // Seal the attributes of the layout.
+  void seal() const;
+
+  // Returns true if the layout has sealed attributes.
+  bool isSealed() const;
+
+  // Returns true if the layout stores its overflow attributes in a dictionary.
+  bool hasDictOverflow() const;
+
+  // Returns true if the layout stores its overflow attributes in a tuple.
+  bool hasTupleOverflow() const;
 
   // Layout.
   static const int kDescribedTypeOffset = RawHeapObject::kSize;
@@ -3968,11 +3976,10 @@ inline void RawType::sealAttributes() const {
   DCHECK(layout.deletions().isList(), "Deletions must be list");
   DCHECK(RawList::cast(layout.deletions()).numItems() == 0,
          "Cannot seal a layout with outgoing edges");
-  DCHECK(layout.overflowAttributes().isTuple(),
-         "OverflowAttributes must be tuple");
+  DCHECK(layout.hasTupleOverflow(), "OverflowAttributes must be tuple");
   DCHECK(RawTuple::cast(layout.overflowAttributes()).length() == 0,
          "Cannot seal a layout with outgoing edges");
-  layout.sealAttributes();
+  layout.seal();
 }
 
 // RawArray
@@ -5247,9 +5254,17 @@ inline void RawLayout::setOverflowAttributes(RawObject attributes) const {
 }
 
 inline word RawLayout::instanceSize() const {
-  word instance_size_in_words =
-      numInObjectAttributes() + !overflowAttributes().isNoneType();
+  word instance_size_in_words = numInObjectAttributes();
+  instance_size_in_words += (isSealed() ? 0 : 1);
   return instance_size_in_words * kPointerSize;
+}
+
+inline bool RawLayout::hasDictOverflow() const {
+  return overflowAttributes().isSmallInt();
+}
+
+inline bool RawLayout::hasTupleOverflow() const {
+  return overflowAttributes().isTuple();
 }
 
 inline RawObject RawLayout::overflowAttributes() const {
@@ -5286,8 +5301,12 @@ inline void RawLayout::setNumInObjectAttributes(word count) const {
                         RawSmallInt::fromWord(count));
 }
 
-inline void RawLayout::sealAttributes() const {
+inline void RawLayout::seal() const {
   setOverflowAttributes(RawNoneType::object());
+}
+
+inline bool RawLayout::isSealed() const {
+  return overflowAttributes().isNoneType();
 }
 
 // RawSetIterator

@@ -3169,7 +3169,7 @@ TEST_F(RuntimeTest, SetHasSameSizeCreatedTwoDifferentWays) {
 TEST_F(RuntimeTest, SealedClassLayoutDoesNotHaveSpaceForOverflowAttributes) {
   HandleScope scope(thread_);
   Layout layout(&scope, runtime_.layoutAt(LayoutId::kSet));
-  EXPECT_TRUE(layout.overflowAttributes().isNoneType());
+  EXPECT_TRUE(layout.isSealed());
   word expected_set_size = kPointerSize * layout.numInObjectAttributes();
   EXPECT_EQ(layout.instanceSize(), expected_set_size);
 }
@@ -3211,7 +3211,7 @@ TEST_F(RuntimeTest, InstanceAtPutWithread_OnlyAttributeRaisesAttributeError) {
 TEST_F(RuntimeTest, NonSealedClassHasSpaceForOverflowAttrbutes) {
   HandleScope scope(thread_);
   Layout layout(&scope, runtime_.layoutAt(LayoutId::kMemoryError));
-  EXPECT_TRUE(layout.overflowAttributes().isTuple());
+  EXPECT_TRUE(layout.hasTupleOverflow());
   EXPECT_EQ(layout.instanceSize(),
             (layout.numInObjectAttributes() + 1) * kPointerSize);  // 1=overflow
 }

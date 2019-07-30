@@ -70,7 +70,7 @@ static RawObject instanceSetAttrSetLocation(Thread* thread,
   Layout layout(&scope, runtime->layoutAt(instance.layoutId()));
   AttributeInfo info;
   if (!runtime->layoutFindAttribute(thread, layout, name_interned, &info)) {
-    if (layout.overflowAttributes().isNoneType()) {
+    if (layout.isSealed()) {
       return thread->raiseWithFmt(LayoutId::kAttributeError,
                                   "Cannot set attribute on sealed class");
     }
