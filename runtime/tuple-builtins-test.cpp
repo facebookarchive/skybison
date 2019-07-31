@@ -36,12 +36,13 @@ a = Foo()
 }
 
 TEST_F(TupleBuiltinsTest, SubscriptTuple) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = 1
 b = (a, 2)
-print(b[0])
-)");
-  EXPECT_EQ(output, "1\n");
+result = b[0]
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 1));
 }
 
 TEST_F(TupleBuiltinsTest, SubscriptTupleSlice) {
