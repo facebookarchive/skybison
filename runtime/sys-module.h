@@ -9,8 +9,8 @@
 
 namespace python {
 
-static const word kStdoutFd = 100;
-static const word kStderrFd = 101;
+static const word kStdoutFd = 1;
+static const word kStderrFd = 2;
 
 // Internal equivalents to PySys_Write(Stdout|Stderr): Write a formatted string
 // to sys.stdout or sys.stderr, or stdout or stderr if writing to the Python
@@ -32,8 +32,6 @@ class SysModule {
  public:
   static RawObject excInfo(Thread* thread, Frame* frame, word nargs);
   static RawObject excepthook(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFdWrite(Thread* thread, Frame* frame, word nargs);
-  static RawObject underFdFlush(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetframeCode(Thread* thread, Frame* frame, word nargs);
   static RawObject underGetframeGlobals(Thread* thread, Frame* frame,
                                         word nargs);

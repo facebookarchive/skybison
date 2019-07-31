@@ -377,6 +377,11 @@ def _os_read(fd, size):
     pass
 
 
+@_patch
+def _os_write(fd, buf):
+    pass
+
+
 # _patch is patched manually to avoid circularity problems
 
 

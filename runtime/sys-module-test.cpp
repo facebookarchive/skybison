@@ -9,6 +9,7 @@
 #include "str-builtins.h"
 #include "sys-module.h"
 #include "test-utils.h"
+#include "under-builtins-module.h"
 
 namespace python {
 
@@ -134,22 +135,6 @@ TEST_F(SysModuleTest, ExecutableIsValid) {
   EXPECT_FALSE(find_result.isNegative());
 }
 
-TEST_F(SysModuleTest, StderrWriteWritesToStderrFile) {
-  EXPECT_EQ(compileAndRunToStderrString(&runtime_, R"(
-import sys
-sys.stderr.write("Bonjour")
-)"),
-            "Bonjour");
-}
-
-TEST_F(SysModuleTest, StdoutWriteWritesToStdoutFile) {
-  EXPECT_EQ(compileAndRunToString(&runtime_, R"(
-import sys
-sys.stdout.write("Hola")
-)"),
-            "Hola");
-}
-
 TEST_F(SysModuleTest, SysExit) {
   const char* src = R"(
 import sys
@@ -268,138 +253,6 @@ TEST_F(SysModuleTest, ByteorderIsCorrectString) {
   Object byteorder(&scope, moduleAt(&runtime_, "sys", "byteorder"));
   EXPECT_TRUE(isStrEqualsCStr(
       *byteorder, endian::native == endian::little ? "little" : "big"));
-}
-
-TEST_F(SysModuleTest, UnderFdFlushFlushesFile) {
-  HandleScope scope(thread_);
-  char buf[128];
-  std::memset(buf, 0, sizeof(buf));
-  FILE* out = fmemopen(buf, sizeof(buf), "w");
-  ASSERT_NE(out, nullptr);
-  char stream_buf[64];
-  int res = setvbuf(out, stream_buf, _IOFBF, sizeof(stream_buf));
-  ASSERT_EQ(res, 0);
-  runtime_.setStdoutFile(out);
-  Bytes bytes(&scope, runtime_.newBytesWithAll(
-                          View<byte>(reinterpret_cast<const byte*>("a"), 1)));
-  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
-  runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes);
-  EXPECT_EQ(buf[0], 0);
-  Object result(&scope, runBuiltin(SysModule::underFdFlush, under_stdout_fd));
-  EXPECT_TRUE(result.isNoneType());
-  EXPECT_EQ(buf[0], 'a');
-  std::fclose(out);
-}
-
-TEST_F(SysModuleTest, UnderFdFlushWithNonIntFdRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object fd(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SysModule::underFdFlush, fd), LayoutId::kTypeError,
-      "'<anonymous>' requires a 'int' object but got 'NoneType'"));
-}
-
-TEST_F(SysModuleTest, UnderFdFlushWithInvalidFdRaisesValueError) {
-  HandleScope scope(thread_);
-  Object fd(&scope, runtime_.newInt(0xbadf00d));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SysModule::underFdFlush, fd), LayoutId::kValueError,
-      "'<anonymous>' called with unknown file descriptor"));
-}
-
-TEST_F(SysModuleTest, UnderFdFlushOnFailureRaisesOSError) {
-  HandleScope scope(thread_);
-  char buf[1] = "";
-  FILE* out = fmemopen(buf, sizeof(buf), "w");
-  ASSERT_NE(out, nullptr);
-  char stream_buf[64];
-  int res = setvbuf(out, stream_buf, _IOFBF, sizeof(stream_buf));
-  ASSERT_EQ(res, 0);
-  runtime_.setStdoutFile(out);
-  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
-  const byte aaa[] = {'a', 'a', 'a'};
-  Object bytes(&scope, runtime_.newBytesWithAll(aaa));
-  runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes);
-  // The write may or may not have triggered an error depending on the libc.
-  thread_->clearPendingException();
-  EXPECT_TRUE(raised(runBuiltin(SysModule::underFdFlush, under_stdout_fd),
-                     LayoutId::kOSError));
-  std::fclose(out);
-}
-
-TEST_F(SysModuleTest, UnderFdWriteWithStderrFdStrWritesToStderrFile) {
-  HandleScope scope(thread_);
-  char buf[128];
-  std::memset(buf, 0, sizeof(buf));
-  FILE* out = fmemopen(buf, sizeof(buf), "w");
-  ASSERT_NE(out, nullptr);
-  runtime_.setStderrFile(out);
-  runtime_.setStdoutFile(nullptr);
-  Object under_stderr_fd(&scope, moduleAt(&runtime_, "sys", "_stderr_fd"));
-  ASSERT_TRUE(under_stderr_fd.isSmallInt());
-  const byte hi[] = {'H', 'i', '!'};
-  Object bytes(&scope, runtime_.newBytesWithAll(hi));
-  Object result(&scope,
-                runBuiltin(SysModule::underFdWrite, under_stderr_fd, bytes));
-  EXPECT_TRUE(isIntEqualsWord(*result, 3));
-  std::fclose(out);
-  buf[sizeof(buf) - 1] = '\0';
-  EXPECT_EQ(std::strcmp(buf, "Hi!"), 0);
-}
-
-TEST_F(SysModuleTest, UnderFdWriteWithStdoutFdStrWritesToStdoutFile) {
-  HandleScope scope(thread_);
-  char buf[128];
-  std::memset(buf, 0, sizeof(buf));
-  FILE* out = fmemopen(buf, sizeof(buf), "w");
-  ASSERT_NE(out, nullptr);
-  runtime_.setStderrFile(nullptr);
-  runtime_.setStdoutFile(out);
-  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
-  ASSERT_TRUE(under_stdout_fd.isSmallInt());
-  const byte yo[] = {'Y', 'o', '!'};
-  Object bytes(&scope, runtime_.newBytesWithAll(yo));
-  Object result(&scope,
-                runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes));
-  EXPECT_TRUE(isIntEqualsWord(*result, 3));
-  std::fclose(out);
-  buf[sizeof(buf) - 1] = '\0';
-  EXPECT_EQ(std::strcmp(buf, "Yo!"), 0);
-}
-
-TEST_F(SysModuleTest, UnderFdWriteWithNonIntFdRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object fd(&scope, NoneType::object());
-  Object bytes(&scope, runtime_.newBytes(0, 0));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SysModule::underFdWrite, fd, bytes), LayoutId::kTypeError,
-      "'<anonymous>' requires a 'int' object but got 'NoneType'"));
-}
-
-TEST_F(SysModuleTest, UnderFdWriteWithInvalidFdRaisesValueError) {
-  HandleScope scope(thread_);
-  Object fd(&scope, runtime_.newInt(0xbadf00d));
-  Object bytes(&scope, runtime_.newBytes(0, 0));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(SysModule::underFdWrite, fd, bytes), LayoutId::kValueError,
-      "'<anonymous>' called with unknown file descriptor"));
-}
-
-TEST_F(SysModuleTest, UnderFdWriteOnFailureRaisesOSError) {
-  HandleScope scope(thread_);
-  char buf[1] = "";
-  FILE* out = fmemopen(buf, sizeof(buf), "r");
-  ASSERT_NE(out, nullptr);
-  int res = setvbuf(out, nullptr, _IONBF, 0);
-  ASSERT_EQ(res, 0);
-  runtime_.setStdoutFile(out);
-  Object under_stdout_fd(&scope, moduleAt(&runtime_, "sys", "_stdout_fd"));
-  const byte hi[] = {'H', 'i', '!'};
-  Object bytes(&scope, runtime_.newBytesWithAll(hi));
-  Object result(&scope,
-                runBuiltin(SysModule::underFdWrite, under_stdout_fd, bytes));
-  EXPECT_TRUE(raised(*result, LayoutId::kOSError));
-  std::fclose(out);
 }
 
 }  // namespace python

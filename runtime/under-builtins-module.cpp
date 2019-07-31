@@ -136,6 +136,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderOsRead, underOsRead},
+    {SymbolId::kUnderOsWrite, underOsWrite},
     {SymbolId::kUnderProperty, underProperty},
     {SymbolId::kUnderPropertyIsAbstract, underPropertyIsAbstract},
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
@@ -1498,6 +1499,30 @@ RawObject UnderBuiltinsModule::underOsRead(Thread* thread, Frame* frame,
     return thread->raiseOSErrorFromErrno(errno);
   }
   return thread->runtime()->newBytesWithAll(View<byte>(buffer.get(), result));
+}
+
+RawObject UnderBuiltinsModule::underOsWrite(Thread* thread, Frame* frame,
+                                            word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object fd_obj(&scope, args.get(0));
+  CHECK(fd_obj.isSmallInt(), "fd must be small int");
+  Bytes bytes_buf(&scope, args.get(1));
+  size_t count = bytes_buf.length();
+  std::unique_ptr<byte[]> buffer(new byte[count]);
+  bytes_buf.copyTo(buffer.get(), count);
+  ssize_t result;
+  {
+    int fd = SmallInt::cast(*fd_obj).value();
+    do {
+      result = ::write(fd, buffer.get(), count);
+    } while (result == -1 && errno == EINTR);
+  }
+  if (result == -1) {
+    DCHECK(errno != EINTR, "this should have been handled in the loop");
+    return thread->raiseOSErrorFromErrno(errno);
+  }
+  return SmallInt::fromWord(result);
 }
 
 RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,

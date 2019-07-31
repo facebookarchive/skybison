@@ -187,8 +187,6 @@ class Runtime;
   V(UnderDivmod, "_divmod")                                                    \
   V(UnderEscapeDecode, "_escape_decode")                                       \
   V(UnderEscapeDecodeStateful, "_escape_decode_stateful")                      \
-  V(UnderFdFlush, "_fd_flush")                                                 \
-  V(UnderFdWrite, "_fd_write")                                                 \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
   V(UnderFloatGuard, "_float_guard")                                           \
@@ -268,6 +266,7 @@ class Runtime;
   V(UnderObjectTypeGetattr, "_object_type_getattr")                            \
   V(UnderObjectTypeHasattr, "_object_type_hasattr")                            \
   V(UnderOsRead, "_os_read")                                                   \
+  V(UnderOsWrite, "_os_write")                                                 \
   V(UnderPatch, "_patch")                                                      \
   V(UnderPos, "_pos")                                                          \
   V(UnderProperty, "_property")                                                \

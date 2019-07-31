@@ -1295,6 +1295,86 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(super(Bar, Bar()).__class__, super)
 
 
+class PrintTests(unittest.TestCase):
+    class MyStream:
+        def __init__(self):
+            self.buf = ""
+
+        def write(self, text):
+            self.buf += text
+            return len(text)
+
+        def flush(self):
+            raise UserWarning("foo")
+
+    def test_print_writes_to_stream(self):
+        stream = PrintTests.MyStream()
+        print("hello", file=stream)
+        self.assertEqual(stream.buf, "hello\n")
+
+    def test_print_returns_none(self):
+        stream = PrintTests.MyStream()
+        self.assertIs(print("hello", file=stream), None)
+
+    def test_print_writes_end(self):
+        stream = PrintTests.MyStream()
+        print("hi", end="ho", file=stream)
+        self.assertEqual(stream.buf, "hiho")
+
+    def test_print_with_no_sep_defaults_to_space(self):
+        stream = PrintTests.MyStream()
+        print("hello", "world", file=stream)
+        self.assertEqual(stream.buf, "hello world\n")
+
+    def test_print_writes_none(self):
+        stream = PrintTests.MyStream()
+        print(None, file=stream)
+        self.assertEqual(stream.buf, "None\n")
+
+    def test_print_with_none_file_prints_to_sys_stdout(self):
+        stream = PrintTests.MyStream()
+        import sys
+
+        orig_stdout = sys.stdout
+        sys.stdout = stream
+        print("hello", file=None)
+        self.assertEqual(stream.buf, "hello\n")
+        sys.stdout = orig_stdout
+
+    def test_print_with_none_stdout_does_nothing(self):
+        import sys
+
+        orig_stdout = sys.stdout
+        sys.stdout = None
+        print("hello", file=None)
+        sys.stdout = orig_stdout
+
+    def test_print_with_deleted_stdout_raises_runtime_error(self):
+        import sys
+
+        orig_stdout = sys.stdout
+        del sys.stdout
+        with self.assertRaises(RuntimeError):
+            print("hello", file=None)
+        sys.stdout = orig_stdout
+
+    def test_print_with_flush_calls_file_flush(self):
+        stream = PrintTests.MyStream()
+        with self.assertRaises(UserWarning):
+            print("hello", file=stream, flush=True)
+        self.assertEqual(stream.buf, "hello\n")
+
+    def test_print_calls_dunder_str(self):
+        class C:
+            def __str__(self):
+                raise UserWarning("foo")
+
+        stream = PrintTests.MyStream()
+        c = C()
+        with self.assertRaises(UserWarning):
+            print(c, file=stream)
+
+
 class PropertyTests(unittest.TestCase):
     def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
         def foo():

@@ -147,40 +147,6 @@ template <typename T1, typename T2>
   return ::testing::AssertionSuccess();
 }
 
-std::string compileAndRunToString(Runtime* runtime, const char* src) {
-  // We have to pre-allocate the output buffer. This is the maximum amount of
-  // bytes that we can write when using this function.
-  size_t buffer_size = 16384;
-  std::unique_ptr<char[]> buffer(new char[buffer_size]);
-  memset(buffer.get(), 0, buffer_size);
-  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
-  CHECK(out != nullptr, "fmemopen failed");
-  FILE* prev_stdout = runtime->stdoutFile();
-  runtime->setStdoutFile(out);
-  RawObject result = runFromCStr(runtime, src);
-  CHECK(result == NoneType::object(), "unexpected result");
-  runtime->setStdoutFile(prev_stdout);
-  fclose(out);
-  buffer[buffer_size - 1] = '\0';
-  return std::string(buffer.get());
-}
-
-std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
-  size_t buffer_size = 16384;
-  std::unique_ptr<char[]> buffer(new char[buffer_size]);
-  memset(buffer.get(), 0, buffer_size);
-  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
-  CHECK(out != nullptr, "fmemopen failed");
-  FILE* prev_stderr = runtime->stderrFile();
-  runtime->setStderrFile(out);
-  RawObject result = runFromCStr(runtime, src);
-  CHECK(result == NoneType::object(), "unexpected result");
-  fclose(out);
-  runtime->setStderrFile(prev_stderr);
-  buffer[buffer_size - 1] = '\0';
-  return std::string(buffer.get());
-}
-
 RawObject callFunction(const Function& func, const Tuple& args) {
   Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();

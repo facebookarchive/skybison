@@ -101,9 +101,7 @@ static const SymbolId kComparisonSelector[] = {
 Runtime::Runtime(word heap_size, bool cache_enabled)
     : heap_(heap_size),
       new_value_cell_callback_(this),
-      cache_enabled_(cache_enabled),
-      stderr_file_(stderr),
-      stdout_file_(stdout) {
+      cache_enabled_(cache_enabled) {
   initializeDebugging();
   initializeRandom();
   initializeThreads();

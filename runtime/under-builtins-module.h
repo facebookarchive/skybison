@@ -116,6 +116,7 @@ class UnderBuiltinsModule {
   static RawObject underObjectTypeHasattr(Thread* thread, Frame* frame,
                                           word nargs);
   static RawObject underOsRead(Thread* thread, Frame* frame, word nargs);
+  static RawObject underOsWrite(Thread* thread, Frame* frame, word nargs);
   static RawObject underPatch(Thread* thread, Frame* frame, word nargs);
   static RawObject underProperty(Thread* thread, Frame* frame, word nargs);
   static RawObject underPropertyIsAbstract(Thread* thread, Frame* frame,

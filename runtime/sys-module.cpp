@@ -89,8 +89,6 @@ void writeStderrV(Thread* thread, const char* format, va_list va) {
 const BuiltinMethod SysModule::kBuiltinMethods[] = {
     {SymbolId::kExcInfo, excInfo},
     {SymbolId::kExcepthook, excepthook},
-    {SymbolId::kUnderFdFlush, underFdFlush},
-    {SymbolId::kUnderFdWrite, underFdWrite},
     {SymbolId::kUnderGetframeCode, underGetframeCode},
     {SymbolId::kUnderGetframeGlobals, underGetframeGlobals},
     {SymbolId::kUnderGetframeLineno, underGetframeLineno},
@@ -121,77 +119,6 @@ RawObject SysModule::excInfo(Thread* thread, Frame* /* frame */,
     result.atPut(2, RawNoneType::object());
   }
   return *result;
-}
-
-static RawObject fileFromFd(Thread* thread, const Object& object,
-                            FILE** result) {
-  if (!object.isSmallInt()) {
-    return thread->raiseRequiresType(object, SymbolId::kInt);
-  }
-  int fd = SmallInt::cast(*object).value();
-  if (fd == kStdoutFd) {
-    *result = thread->runtime()->stdoutFile();
-  } else if (fd == kStderrFd) {
-    *result = thread->runtime()->stderrFile();
-  } else {
-    HandleScope scope(thread);
-    Function function(&scope, thread->currentFrame()->function());
-    Str function_name(&scope, function.name());
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "'%S' called with unknown file descriptor",
-                                &function_name);
-  }
-  return NoneType::object();
-}
-
-RawObject SysModule::underFdFlush(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object fd(&scope, args.get(0));
-  FILE* file = nullptr;
-  Object file_from_fd_result(&scope, fileFromFd(thread, fd, &file));
-  if (file_from_fd_result.isError()) return *file_from_fd_result;
-  int res = fflush(file);
-  if (res != 0) return thread->raiseOSErrorFromErrno(errno);
-  return NoneType::object();
-}
-
-RawObject SysModule::underFdWrite(Thread* thread, Frame* frame, word nargs) {
-  Arguments args(frame, nargs);
-  HandleScope scope(thread);
-  Object fd(&scope, args.get(0));
-  FILE* file = nullptr;
-  Object file_from_fd_result(&scope, fileFromFd(thread, fd, &file));
-  if (file_from_fd_result.isError()) return *file_from_fd_result;
-
-  Runtime* runtime = thread->runtime();
-  Object bytes_obj(&scope, args.get(1));
-  // TODO(matthiasb): Remove this and use str.encode() in sys.py once it is
-  // avilable.
-  if (runtime->isInstanceOfStr(*bytes_obj)) {
-    Str str(&scope, *bytes_obj);
-    word str_length = str.length();
-    std::unique_ptr<byte[]> buf(new byte[str_length]);
-    for (word i = 0; i < str_length; i++) {
-      buf[i] = str.charAt(i);
-    }
-    bytes_obj = runtime->newBytesWithAll(View<byte>(buf.get(), str_length));
-  }
-
-  if (!runtime->isInstanceOfBytes(*bytes_obj)) {
-    return thread->raiseRequiresType(bytes_obj, SymbolId::kBytes);
-  }
-  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
-
-  // This is a slow way to write. We eventually expect this whole function to
-  // get replaced with something else anyway.
-  word length = bytes.length();
-  for (word i = 0; i < length; i++) {
-    if (fputc(bytes.byteAt(i), file) == EOF) {
-      return thread->raiseOSErrorFromErrno(errno);
-    }
-  }
-  return runtime->newIntFromUnsigned(length);
 }
 
 class UserVisibleFrameVisitor : public FrameVisitor {

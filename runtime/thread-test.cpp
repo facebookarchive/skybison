@@ -48,14 +48,6 @@ TEST_F(ThreadTest, RunEmptyFunction) {
   Thread::setCurrentThread(thread_);
 }
 
-TEST_F(ThreadTest, RunHelloWorld) {
-  const char* src = R"(
-print('hello, world')
-)";
-  std::string result = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(result, "hello, world\n");
-}
-
 TEST_F(ThreadTest, ModuleBodyCallsHelloWorldFunction) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def hello():
@@ -410,18 +402,6 @@ TEST_F(ThreadTest, ExtendedArg) {
   code.setStacksize(2);
 
   EXPECT_TRUE(isIntEqualsWord(runCode(code), 0xDEADBEEF));
-}
-
-TEST_F(ThreadTest, CallBuiltinPrint) {
-  std::string output = compileAndRunToString(
-      &runtime_, "print(1111, 'testing 123', True, False)");
-  EXPECT_EQ(output, "1111 testing 123 True False\n");
-}
-
-TEST_F(ThreadTest, CallBuiltinPrintKw) {
-  std::string output =
-      compileAndRunToString(&runtime_, "print('testing 123', end='abc')");
-  EXPECT_STREQ(output.c_str(), "testing 123abc");
 }
 
 TEST_F(ThreadTest, ExecuteDupTop) {

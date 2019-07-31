@@ -6,6 +6,7 @@
 # about their definitions and will complain without these lines.
 _Unbound = _Unbound  # noqa: F821
 _base_dir = _base_dir  # noqa: F821
+_os_write = _os_write  # noqa: F821
 _patch = _patch  # noqa: F821
 _stderr_fd = _stderr_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
@@ -20,23 +21,11 @@ class _IOStream:
         self._fd = fd
 
     def flush(self):
-        _fd_flush(self._fd)
+        pass
 
     def write(self, text):
-        # TODO(matthiasb): Use text.encode() once it is available and remove
-        # hack from _fd_write().
-        text_bytes = text
-        _fd_write(self._fd, text_bytes)
-
-
-@_patch
-def _fd_flush(fd):
-    pass
-
-
-@_patch
-def _fd_write(fd, bytes):
-    pass
+        text_bytes = text.encode("utf-8")
+        _os_write(self._fd, text_bytes)
 
 
 def exit(code=0):

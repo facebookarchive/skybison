@@ -37,10 +37,6 @@ class RuntimeFixture : public ::testing::Test {
   Thread* thread_;
 };
 
-// Compile the supplied python snippet, run it, and return stdout or stderr
-std::string compileAndRunToString(Runtime* runtime, const char* src);
-std::string compileAndRunToStderrString(Runtime* runtime, const char* src);
-
 // Basic variant wrapper for a subset of Python values, used by
 // EXPECT_PYLIST_EQ().
 class Value {

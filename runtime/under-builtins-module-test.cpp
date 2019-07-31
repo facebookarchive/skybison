@@ -1386,6 +1386,53 @@ TEST_F(UnderBuiltinsModuleTest, UnderOsReadReadsSizeBytes) {
   ::close(buf_fd);
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWithBadFdRaisesOSError) {
+  HandleScope scope(thread_);
+  Int fd(&scope, SmallInt::fromWord(-1));
+  const byte buf[] = {0x1, 0x2};
+  Bytes bytes_buf(&scope, runtime_.newBytesWithAll(buf));
+  EXPECT_TRUE(
+      raised(runBuiltin(UnderBuiltinsModule::underOsWrite, fd, bytes_buf),
+             LayoutId::kOSError));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderOsWriteWithFdNotOpenedForWritingRaisesOSError) {
+  HandleScope scope(thread_);
+  int fds[2];
+  int result = ::pipe(fds);
+  ASSERT_EQ(result, 0);
+  Int fd(&scope, SmallInt::fromWord(fds[0]));
+  const byte buf[] = {0x1, 0x2};
+  Bytes bytes_buf(&scope, runtime_.newBytesWithAll(buf));
+  EXPECT_TRUE(
+      raised(runBuiltin(UnderBuiltinsModule::underOsWrite, fd, bytes_buf),
+             LayoutId::kOSError));
+  ::close(fds[0]);
+  ::close(fds[1]);
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderOsWriteWritesSizeBytes) {
+  HandleScope scope(thread_);
+  int fds[2];
+  int result = ::pipe(fds);
+  ASSERT_EQ(result, 0);
+  Int fd(&scope, SmallInt::fromWord(fds[1]));
+  byte to_write[] = "hello";
+  word count = std::strlen(reinterpret_cast<char*>(to_write));
+  Bytes bytes_buf(&scope,
+                  runtime_.newBytesWithAll(View<byte>(to_write, count)));
+  Object result_obj(
+      &scope, runBuiltin(UnderBuiltinsModule::underOsWrite, fd, bytes_buf));
+  EXPECT_TRUE(isIntEqualsWord(*result_obj, count));
+  ::close(fds[1]);  // Send EOF
+  std::unique_ptr<char[]> buf(new char[count + 1]{0});
+  result = ::read(fds[0], buf.get(), count);
+  EXPECT_EQ(result, count);
+  EXPECT_STREQ(buf.get(), reinterpret_cast<char*>(to_write));
+  ::close(fds[0]);
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
   HandleScope scope(thread_);
   Object not_func(&scope, runtime_.newInt(12));
