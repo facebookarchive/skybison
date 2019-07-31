@@ -1329,6 +1329,63 @@ obj = C()
   EXPECT_FALSE(thread_->hasPendingException());
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderOsReadWithBadFdRaisesOSError) {
+  HandleScope scope(thread_);
+  Int fd(&scope, SmallInt::fromWord(-1));
+  Int size(&scope, SmallInt::fromWord(5));
+  EXPECT_TRUE(raised(runBuiltin(UnderBuiltinsModule::underOsRead, fd, size),
+                     LayoutId::kOSError));
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderOsReadWithFdNotOpenedForReadingRaisesOSError) {
+  HandleScope scope(thread_);
+  int fds[2];
+  int result = ::pipe(fds);
+  ASSERT_EQ(result, 0);
+  Int fd(&scope, SmallInt::fromWord(fds[1]));
+  Int size(&scope, SmallInt::fromWord(5));
+  EXPECT_TRUE(raised(runBuiltin(UnderBuiltinsModule::underOsRead, fd, size),
+                     LayoutId::kOSError));
+  ::close(fds[0]);
+  ::close(fds[1]);
+}
+
+static void createDummyFdWithContents(const char* c_str, int* fd) {
+  word length = std::strlen(c_str);
+  int fds[2];
+  int result = ::pipe(fds);
+  ASSERT_EQ(result, 0);
+  result = ::write(fds[1], c_str, length);
+  ASSERT_EQ(result, length);
+  result = ::close(fds[1]);
+  ASSERT_NE(result, -1);
+  *fd = fds[0];
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderOsReadWithFewerThanSizeBytesAvailableReadsFewerThanSizeBytes) {
+  HandleScope scope(thread_);
+  int buf_fd;
+  ASSERT_NO_FATAL_FAILURE(createDummyFdWithContents("h", &buf_fd));
+  Int fd(&scope, SmallInt::fromWord(buf_fd));
+  Int size(&scope, SmallInt::fromWord(5));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underOsRead, fd, size));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "h"));
+  ::close(buf_fd);
+}
+
+TEST_F(UnderBuiltinsModuleTest, UnderOsReadReadsSizeBytes) {
+  HandleScope scope(thread_);
+  int buf_fd;
+  ASSERT_NO_FATAL_FAILURE(createDummyFdWithContents("hello, world!", &buf_fd));
+  Int fd(&scope, SmallInt::fromWord(buf_fd));
+  Int size(&scope, SmallInt::fromWord(5));
+  Object result(&scope, runBuiltin(UnderBuiltinsModule::underOsRead, fd, size));
+  EXPECT_TRUE(isBytesEqualsCStr(result, "hello"));
+  ::close(buf_fd);
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderPatchWithBadPatchFuncRaisesTypeError) {
   HandleScope scope(thread_);
   Object not_func(&scope, runtime_.newInt(12));

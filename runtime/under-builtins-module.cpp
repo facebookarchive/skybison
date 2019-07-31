@@ -2,6 +2,8 @@
 
 #include <cerrno>
 
+#include <unistd.h>
+
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "dict-builtins.h"
@@ -133,6 +135,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
+    {SymbolId::kUnderOsRead, underOsRead},
     {SymbolId::kUnderProperty, underProperty},
     {SymbolId::kUnderPropertyIsAbstract, underPropertyIsAbstract},
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
@@ -1469,6 +1472,32 @@ RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
   Str name(&scope, args.get(1));
   Object result(&scope, typeLookupNameInMro(thread, type, name));
   return Bool::fromBool(!result.isErrorNotFound());
+}
+
+RawObject UnderBuiltinsModule::underOsRead(Thread* thread, Frame* frame,
+                                           word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object fd_obj(&scope, args.get(0));
+  CHECK(fd_obj.isSmallInt(), "fd must be small int");
+  Object count_obj(&scope, args.get(1));
+  CHECK(count_obj.isSmallInt(), "count must be small int");
+  CHECK(!Int::cast(*count_obj).isNegative(), "count must be non-negative");
+  size_t count = SmallInt::cast(*count_obj).value();
+  ssize_t result;
+  std::unique_ptr<byte[]> buffer(new byte[count]{0});
+  {
+    int fd = SmallInt::cast(*fd_obj).value();
+    do {
+      errno = 0;
+      result = ::read(fd, buffer.get(), count);
+    } while (result == -1 && errno == EINTR);
+  }
+  if (result < 0) {
+    DCHECK(errno != EINTR, "this should have been handled in the loop");
+    return thread->raiseOSErrorFromErrno(errno);
+  }
+  return thread->runtime()->newBytesWithAll(View<byte>(buffer.get(), result));
 }
 
 RawObject UnderBuiltinsModule::underPatch(Thread* thread, Frame* frame,

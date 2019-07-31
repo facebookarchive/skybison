@@ -372,6 +372,11 @@ def _object_type_hasattr(obj, name):
     pass
 
 
+@_patch
+def _os_read(fd, size):
+    pass
+
+
 # _patch is patched manually to avoid circularity problems
 
 

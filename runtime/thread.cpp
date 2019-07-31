@@ -1,5 +1,6 @@
 #include "thread.h"
 
+#include <cerrno>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -433,6 +434,12 @@ void Thread::raiseBadInternalCall() {
 
 RawObject Thread::raiseMemoryError() {
   return raise(LayoutId::kMemoryError, NoneType::object());
+}
+
+RawObject Thread::raiseOSErrorFromErrno(int errno_value) {
+  // TODO(matthiasb): Pick apropriate OSError subclass.
+  return raiseWithFmt(LayoutId::kOSError, "[Errno %d] %s", errno_value,
+                      std::strerror(errno_value));
 }
 
 RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {

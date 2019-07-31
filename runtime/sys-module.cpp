@@ -123,13 +123,6 @@ RawObject SysModule::excInfo(Thread* thread, Frame* /* frame */,
   return *result;
 }
 
-static RawObject raiseOSErrorFromErrno(Thread* thread) {
-  int errno_value = errno;
-  // TODO(matthiasb): Pick apropriate OSError subclass.
-  return thread->raiseWithFmt(LayoutId::kOSError, "[Errno %d] %s", errno_value,
-                              std::strerror(errno_value));
-}
-
 static RawObject fileFromFd(Thread* thread, const Object& object,
                             FILE** result) {
   if (!object.isSmallInt()) {
@@ -159,7 +152,7 @@ RawObject SysModule::underFdFlush(Thread* thread, Frame* frame, word nargs) {
   Object file_from_fd_result(&scope, fileFromFd(thread, fd, &file));
   if (file_from_fd_result.isError()) return *file_from_fd_result;
   int res = fflush(file);
-  if (res != 0) return raiseOSErrorFromErrno(thread);
+  if (res != 0) return thread->raiseOSErrorFromErrno(errno);
   return NoneType::object();
 }
 
@@ -195,7 +188,7 @@ RawObject SysModule::underFdWrite(Thread* thread, Frame* frame, word nargs) {
   word length = bytes.length();
   for (word i = 0; i < length; i++) {
     if (fputc(bytes.byteAt(i), file) == EOF) {
-      return raiseOSErrorFromErrno(thread);
+      return thread->raiseOSErrorFromErrno(errno);
     }
   }
   return runtime->newIntFromUnsigned(length);

@@ -159,6 +159,9 @@ class Thread {
   // up the stack by the caller.
   RawObject raiseMemoryError();
 
+  // Raises an OSError exception generated from the value of errno.
+  RawObject raiseOSErrorFromErrno(int errno_value);
+
   // Raises a TypeError exception of the form '<method> requires a <type(obj)>
   // object but got <expected_type>' and returns an Error object that must be
   // returned up the stack by the caller.
