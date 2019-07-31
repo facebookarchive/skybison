@@ -2087,34 +2087,21 @@ print(foo.bar)
                             "'Foo' object has no attribute 'bar'"));
 }
 
-TEST_F(RuntimeAttributeTest, DunderClassOnInstance) {
-  const char* src = R"(
-class Foo: pass
-class Bar(Foo): pass
-class Hello(Bar, list): pass
-print(list().__class__ is list)
-print(Foo().__class__ is Foo)
-print(Bar().__class__ is Bar)
-print(Hello().__class__ is Hello)
-print(Foo.__class__ is type)
-print(super(Bar, Bar()).__class__ is super)
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\nTrue\nTrue\n");
-}
-
 TEST_F(RuntimeAttributeTest, DunderNewOnInstance) {
   const char* src = R"(
+result = []
 class Foo:
     def __new__(cls):
-        print("New")
+        result.append("New")
         return object.__new__(cls)
     def __init__(self):
-        print("Init")
-a = Foo()
+        result.append("Init")
+Foo()
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "New\nInit\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {"New", "Init"});
 }
 
 TEST_F(RuntimeAttributeTest, NoInstanceDictReturnsClassAttribute) {
@@ -2126,8 +2113,7 @@ TEST_F(RuntimeAttributeTest, NoInstanceDictReturnsClassAttribute) {
 }
 
 TEST_F(RuntimeAttributeTest, DeleteKnownAttribute) {
-  HandleScope scope(thread_);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
     def __init__(self):
       self.foo = 'foo'
@@ -2136,9 +2122,9 @@ class Foo:
 def test():
     foo = Foo()
     del foo.bar
-)";
-  compileAndRunToString(&runtime_, src);
-
+)")
+                   .isError());
+  HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function test(&scope, moduleAt(&runtime_, main, "test"));
   Tuple args(&scope, runtime_.emptyTuple());
@@ -2147,8 +2133,7 @@ def test():
 }
 
 TEST_F(RuntimeAttributeTest, DeleteDescriptor) {
-  HandleScope scope(thread_);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = None
 
 class DeleteDescriptor:
@@ -2162,8 +2147,9 @@ class Foo:
 
 foo = Foo()
 del foo.bar
-)";
-  compileAndRunToString(&runtime_, src);
+)")
+                   .isError());
+  HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object data(&scope, moduleAt(&runtime_, main, "result"));
   ASSERT_TRUE(data.isTuple());
@@ -2179,14 +2165,13 @@ del foo.bar
 }
 
 TEST_F(RuntimeAttributeTest, DeleteUnknownAttribute) {
-  const char* src = R"(
+  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
 class Foo:
     pass
 
 foo = Foo()
 del foo.bar
-)";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, src),
+)"),
                             LayoutId::kAttributeError,
                             "'Foo' object has no attribute 'bar'"));
 }
@@ -2204,7 +2189,7 @@ class Foo:
 foo = Foo()
 del foo.bar
 )";
-  compileAndRunToString(&runtime_, src);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object data(&scope, moduleAt(&runtime_, main, "result"));
   ASSERT_TRUE(data.isTuple());
@@ -2218,8 +2203,7 @@ del foo.bar
 }
 
 TEST_F(RuntimeAttributeTest, DeleteAttributeWithDunderDelattrOnSuperclass) {
-  HandleScope scope(thread_);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = None
 
 class Foo:
@@ -2232,8 +2216,9 @@ class Bar(Foo):
 
 bar = Bar()
 del bar.baz
-)";
-  compileAndRunToString(&runtime_, src);
+)")
+                   .isError());
+  HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Object data(&scope, moduleAt(&runtime_, main, "result"));
   ASSERT_TRUE(data.isTuple());
@@ -2247,17 +2232,16 @@ del bar.baz
 }
 
 TEST_F(RuntimeClassAttrTest, DeleteKnownAttribute) {
-  HandleScope scope(thread_);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
     foo = 'foo'
     bar = 'bar'
 
 def test():
     del Foo.bar
-)";
-  compileAndRunToString(&runtime_, src);
-
+)")
+                   .isError());
+  HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function test(&scope, moduleAt(&runtime_, main, "test"));
   Tuple args(&scope, runtime_.emptyTuple());
@@ -2381,7 +2365,7 @@ TEST_F(RuntimeModuleAttrTest, DeleteUnknownAttribute) {
 def test(module):
     del module.foo
 )";
-  compileAndRunToString(&runtime_, src);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function test(&scope, moduleAt(&runtime_, main, "test"));
   Tuple args(&scope, runtime_.newTuple(1));
@@ -2390,15 +2374,15 @@ def test(module):
 }
 
 TEST_F(RuntimeModuleAttrTest, DeleteKnownAttribute) {
-  HandleScope scope(thread_);
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 foo = 'testing 123'
 
 def test(module):
     del module.foo
     return 123
-)";
-  compileAndRunToString(&runtime_, src);
+)")
+                   .isError());
+  HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Function test(&scope, moduleAt(&runtime_, main, "test"));
   Tuple args(&scope, runtime_.newTuple(1));
@@ -2642,12 +2626,11 @@ TEST_F(RuntimeIntTest, NormalizeLargeIntToLargeInt) {
 }
 
 TEST_F(RuntimeInstanceAttrTest, DeleteUnknownAttribute) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
     pass
-)";
-  compileAndRunToString(&runtime_, src);
-
+)")
+                   .isError());
   HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Type type(&scope, moduleAt(&runtime_, main, "Foo"));
@@ -2658,7 +2641,7 @@ class Foo:
 }
 
 TEST_F(RuntimeInstanceAttrTest, DeleteInObjectAttribute) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
     def __init__(self):
         self.bar = 'bar'
@@ -2666,8 +2649,8 @@ class Foo:
 
 def new_foo():
     return Foo()
-)";
-  compileAndRunToString(&runtime_, src);
+)")
+                   .isError());
 
   // Create an instance of Foo
   HandleScope scope(thread_);
@@ -2692,7 +2675,7 @@ def new_foo():
 }
 
 TEST_F(RuntimeInstanceAttrTest, DeleteOverflowAttribute) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo:
     pass
 
@@ -2700,8 +2683,8 @@ def new_foo():
     foo = Foo()
     foo.bar = 'bar'
     return foo
-)";
-  compileAndRunToString(&runtime_, src);
+)")
+                   .isError());
 
   // Create an instance of Foo
   HandleScope scope(thread_);

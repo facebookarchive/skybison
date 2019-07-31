@@ -1120,6 +1120,23 @@ class ObjectTests(unittest.TestCase):
         self.assertIs(object.__subclasshook__(), NotImplemented)
         self.assertIs(object.__subclasshook__(int), NotImplemented)
 
+    def test_dunder_class_on_instance_returns_type(self):
+        class Foo:
+            pass
+
+        class Bar(Foo):
+            pass
+
+        class Hello(Bar, list):
+            pass
+
+        self.assertIs([].__class__, list)
+        self.assertIs(Foo().__class__, Foo)
+        self.assertIs(Bar().__class__, Bar)
+        self.assertIs(Hello().__class__, Hello)
+        self.assertIs(Foo.__class__, type)
+        self.assertIs(super(Bar, Bar()).__class__, super)
+
 
 class PropertyTests(unittest.TestCase):
     def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
@@ -1447,6 +1464,7 @@ class ListTests(unittest.TestCase):
     def test_pop_with_negative_out_of_bounds_arg_raises_index_error(self):
         original = [1, 2, 3]
         self.assertRaises(IndexError, list.pop, original, -10)
+
 
 class LongRangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):
