@@ -1809,11 +1809,11 @@ class SetTests(unittest.TestCase):
     def test_difference_two_sets_returns_difference(self):
         set1 = {1, 2, 3, 4, 5, 6, 7}
         set2 = {1, 3, 5, 7}
-        self.assertEquals(set.difference(set1, set2), {2, 4, 6})
+        self.assertEqual(set.difference(set1, set2), {2, 4, 6})
 
     def test_difference_many_sets_returns_difference(self):
         a_set = {1, 10, 100, 1000}
-        self.assertEquals(set.difference(a_set, {10}, {100}, {1000}), {1})
+        self.assertEqual(set.difference(a_set, {10}, {100}, {1000}), {1})
 
     def test_discard_with_non_set_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -1859,6 +1859,44 @@ class SetTests(unittest.TestCase):
         self.assertIs(result, a)
         self.assertEqual(len(a), 1)
         self.assertIn("foo", a)
+
+    def test_union_with_non_set_as_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.union(frozenset(), set())
+
+    def test_union_with_set_returns_union(self):
+        set1 = {1, 2}
+        set2 = {2, 3}
+        set3 = {4, 5}
+        self.assertEqual(set.union(set1, set2, set3), {1, 2, 3, 4, 5})
+
+    def test_union_with_self_returns_copy(self):
+        a_set = {1, 2, 3}
+        self.assertIsNot(set.union(a_set), a_set)
+        self.assertIsNot(set.union(a_set, a_set), a_set)
+
+    def test_union_with_iterable_contains_iterable_items(self):
+        a_set = {1, 2}
+        a_dict = {2: True, 3: True}
+        self.assertEqual(set.union(a_set, a_dict), {1, 2, 3})
+
+    def test_union_with_custom_iterable(self):
+        class C:
+            def __init__(self, start, end):
+                self.pos = start
+                self.end = end
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.pos == self.end:
+                    raise StopIteration
+                result = self.pos
+                self.pos += 1
+                return result
+
+        self.assertEqual(set.union(set(), C(1, 3), C(6, 9)), {1, 2, 6, 7, 8})
 
 
 class StaticMethodTests(unittest.TestCase):

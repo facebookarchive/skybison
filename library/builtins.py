@@ -3113,6 +3113,19 @@ class set(bootstrap=True):
     def remove(self, elt):
         pass
 
+    def union(self, *others):
+        if not _set_check(self):
+            raise TypeError(
+                "'union' requires a 'set' object but received a "
+                f"'{_type(self).__name__}'"
+            )
+        result = set.copy(self)
+        for item in others:
+            if item is self:
+                continue
+            set.update(result, item)
+        return result
+
     def update(self, *args):
         pass
 
