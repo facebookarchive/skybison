@@ -2039,6 +2039,22 @@ class SetTests(unittest.TestCase):
         self.assertEqual(len(a), 1)
         self.assertIn("foo", a)
 
+    def test_sub_returns_difference(self):
+        self.assertEqual(set.__sub__({1, 2}, set()), {1, 2})
+        self.assertEqual(set.__sub__({1, 2}, {1}), {2})
+        self.assertEqual(set.__sub__({1, 2}, {1, 2}), set())
+
+    def test_sub_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            set.__sub__("not a set", set())
+        with self.assertRaises(TypeError):
+            set.__sub__("not a set", "also not a set")
+        with self.assertRaises(TypeError):
+            set.__sub__(frozenset(), set())
+
+    def test_sub_with_non_set_other_returns_not_implemented(self):
+        self.assertEqual(set.__sub__(set(), "not a set"), NotImplemented)
+
     def test_union_with_non_set_as_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             set.union(frozenset(), set())

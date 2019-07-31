@@ -2978,6 +2978,12 @@ class set(bootstrap=True):
         _repr_leave(self)
         return result
 
+    def __sub__(self, other):
+        _set_guard(self)
+        if not _set_check(other):
+            return NotImplemented
+        return set.difference(self, other)
+
     def add(self, value):
         pass
 
