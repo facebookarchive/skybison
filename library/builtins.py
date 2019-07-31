@@ -75,6 +75,7 @@ _list_getslice = _list_getslice  # noqa: F821
 _list_guard = _list_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
+_object_type_getattr = _object_type_getattr  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
 _patch = _patch  # noqa: F821
 _property = _property  # noqa: F821
@@ -603,23 +604,25 @@ def _index(obj) -> int:
     # equivalent to PyNumber_Index
     if _int_check(obj):
         return obj
-    if _object_type_hasattr(obj, "__index__"):
-        result = _type(obj).__index__(obj)
-        if _int_check(result):
-            return result
-        raise TypeError(f"__index__ returned non-int (type {_type(result).__name__})")
-    raise TypeError(
-        f"'{_type(obj).__name__}' object cannot be interpreted as an integer"
-    )
+    dunder_index = _object_type_getattr(obj, "__index__")
+    if dunder_index is _Unbound:
+        raise TypeError(
+            f"'{_type(obj).__name__}' object cannot be interpreted as an integer"
+        )
+    result = dunder_index()
+    if _int_check(result):
+        return result
+    raise TypeError(f"__index__ returned non-int (type {_type(result).__name__})")
 
 
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
     if _int_checkexact(obj):
         return obj
-    if not _object_type_hasattr(obj, "__int__"):
+    dunder_int = _object_type_getattr(obj, "__int__")
+    if dunder_int is _Unbound:
         raise TypeError(f"an integer is required (got type {_type(obj).__name__})")
-    result = _type(obj).__int__(obj)
+    result = dunder_int()
     if _int_checkexact(result):
         return result
     if _int_check(result):
@@ -1094,7 +1097,9 @@ class bytearray(bootstrap=True):
             return _byteslike_find_byteslike(self, sub, start, end)
         if _int_check(sub):
             return _byteslike_find_int(self, sub, start, end)
-        if hasattr(_type(sub), "__int__") or hasattr(_type(sub), "__float__"):
+        if _object_type_hasattr(sub, "__int__") or _object_type_hasattr(
+            sub, "__float__"
+        ):
             try:
                 return _byteslike_find_int(self, _index(sub), start, end)
             except TypeError:
@@ -1940,15 +1945,15 @@ def hasattr(obj, name):
 
 
 def hash(obj):
-    dunder_hash = _type(obj).__hash__
     try:
-        result = dunder_hash(obj)
-    except TypeError:
+        result = _object_type_getattr(obj, "__hash__")()
+    except Exception:
         raise TypeError(f"unhashable type: '{_type(obj).__name__}'")
-    if not _int_check(result):
-        raise TypeError("__hash__ method should return an integer")
-    # TODO(djang): This needs to be cast to the exact int type.
-    return result
+    if _int_checkexact(result):
+        return result
+    if _int_check(result):
+        return _int_new_from_int(int, result)
+    raise TypeError("__hash__ method should return an integer")
 
 
 def help(obj=_Unbound):
@@ -2055,8 +2060,9 @@ class int(bootstrap=True):
                 return _int_new_from_int(cls, x)
             if _object_type_hasattr(x, "__int__"):
                 return _int_new_from_int(cls, _int(x))
-            if _object_type_hasattr(x, "__trunc__"):
-                result = _type(x).__trunc__(x)
+            dunder_trunc = _object_type_getattr(x, "__trunc__")
+            if dunder_trunc is not _Unbound:
+                result = dunder_trunc()
                 if _int_checkexact(result) and cls is int:
                     return result
                 if _int_check(result):
@@ -2239,9 +2245,8 @@ class int(bootstrap=True):
         if not _type_issubclass(cls, int):
             raise TypeError(f"'from_bytes' {cls.__name__} is not a subtype of int")
         if not _bytes_check(bytes):
-            try:
-                dunder_bytes = bytes.__bytes__
-            except AttributeError:
+            dunder_bytes = _object_type_getattr(bytes, "__bytes__")
+            if dunder_bytes is _Unbound:
                 raise TypeError(
                     f"'from_bytes' bytes argument requires a "
                     f"'bytes' object but received a "
@@ -2289,8 +2294,9 @@ def isinstance(obj, type_or_tuple) -> bool:
             if isinstance(obj, item):
                 return True
         return False
-    if _object_type_hasattr(type_or_tuple, "__instancecheck__"):
-        return bool(_type(type_or_tuple).__instancecheck__(type_or_tuple, obj))
+    dunder_instancecheck = _object_type_getattr(type_or_tuple, "__instancecheck__")
+    if dunder_instancecheck is not _Unbound:
+        return bool(dunder_instancecheck(obj))
     # according to CPython, this is probably never reached anymore
     if _type_check(type_or_tuple):
         return _isinstance_type(obj, ty, type_or_tuple)
@@ -2311,20 +2317,24 @@ def issubclass(cls, type_or_tuple) -> bool:
             if issubclass(cls, item):
                 return True
         return False
-    if _object_type_hasattr(type_or_tuple, "__subclasscheck__"):
-        return bool(_type(type_or_tuple).__subclasscheck__(type_or_tuple, cls))
+    dunder_subclasscheck = _object_type_getattr(type_or_tuple, "__subclasscheck__")
+    if dunder_subclasscheck is not _Unbound:
+        return bool(dunder_subclasscheck(cls))
     # according to CPython, this is probably never reached anymore
     return _issubclass(cls, type_or_tuple)
 
 
 def iter(obj, sentinel=None):
     if sentinel is None:
-        if _object_type_hasattr(obj, "__iter__"):
-            try:
-                dunder_iter = _type(obj).__iter__
-            except Exception:
-                raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
-            return dunder_iter(obj)
+        dunder_iter = _Unbound
+        try:
+            dunder_iter = _object_type_getattr(obj, "__iter__")
+        except Exception:
+            pass
+        if dunder_iter is None:
+            raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
+        if dunder_iter is not _Unbound:
+            return dunder_iter()
         if _object_type_hasattr(obj, "__getitem__"):
             return iterator(obj)
         raise TypeError(f"'{_type(obj).__name__}' object is not iterable")
@@ -2368,10 +2378,10 @@ class iterator(bootstrap=True):
 
 
 def len(seq):
-    dunder_len = getattr(seq, "__len__", None)
-    if dunder_len is None:
-        raise TypeError("object has no len()")
-    return dunder_len()
+    dunder_len = _object_type_getattr(seq, "__len__")
+    if dunder_len is _Unbound:
+        raise TypeError(f"object of type '{_type(seq).__name__}' has no len()")
+    return _index(dunder_len())
 
 
 license = ""
@@ -2700,18 +2710,15 @@ class module(bootstrap=True):
 
 
 def next(iterator, default=_Unbound):
+    dunder_next = _object_type_getattr(iterator, "__next__")
+    if dunder_next is _Unbound:
+        raise TypeError(f"'{_type(iterator).__name__}' object is not iterable")
     try:
-        dunder_next = _Unbound
-        dunder_next = _type(iterator).__next__
-        return dunder_next(iterator)
+        return dunder_next()
     except StopIteration:
         if default is _Unbound:
             raise
         return default
-    except AttributeError:
-        if dunder_next is _Unbound:
-            raise TypeError(f"'{_type(iterator).__name__}' object is not iterable")
-        raise
 
 
 def oct(number):
@@ -2871,12 +2878,11 @@ class reversed:
         return self
 
     def __new__(cls, seq, **kwargs):
-        seq_cls = _type(seq)
-        if hasattr(seq_cls, "__reversed__"):
-            meth = seq_cls.__reversed__
-            if meth is None:
-                raise TypeError(f"{seq_cls.__name__} is not reversible")
-            return meth(seq)
+        dunder_reversed = _object_type_getattr(seq, "__reversed__")
+        if dunder_reversed is None:
+            raise TypeError(f"'{_type(seq).__name__}' object is not reversible")
+        if dunder_reversed is not _Unbound:
+            return dunder_reversed()
         return object.__new__(cls)
 
     def __init__(self, seq):
@@ -2899,13 +2905,15 @@ class reversed:
         return self.remaining
 
 
-def round(number, ndigits=_Unbound):
-    if _object_type_hasattr(number, "__round__"):
-        dunder_round = _type(number).__round__
-        if ndigits is _Unbound:
-            return dunder_round(number)
-        return dunder_round(number, ndigits)
-    raise TypeError(f"{_type(number).__name__} doesn't define __round__ method")
+def round(number, ndigits=None):
+    dunder_round = _object_type_getattr(number, "__round__")
+    if dunder_round is _Unbound:
+        raise TypeError(
+            f"type {_type(number).__name__} doesn't define __round__ method"
+        )
+    if ndigits is None:
+        return dunder_round()
+    return dunder_round(ndigits)
 
 
 class set(bootstrap=True):
@@ -3132,15 +3140,13 @@ class str(bootstrap=True):
         if encoding is _Unbound and errors is _Unbound:
             if _str_checkexact(obj):
                 return _str_from_str(cls, obj)
-            try:
-                result = _type(obj).__str__(obj)
-                if not _str_check(result):
-                    raise TypeError(
-                        "__str__ returned non-string '{_type(obj).__name__}'"
-                    )
-                return _str_from_str(cls, result)
-            except AttributeError:
+            dunder_str = _object_type_getattr(obj, "__str__")
+            if dunder_str is _Unbound:
                 return _str_from_str(cls, _type(obj).__repr__(obj))
+            result = dunder_str()
+            if not _str_check(result):
+                raise TypeError(f"__str__ returned non-string '{_type(obj).__name__}'")
+            return _str_from_str(cls, result)
         if _str_check(obj):
             raise TypeError("decoding str is not supported")
         # TODO(T38246066): Replace with a check for the buffer protocol

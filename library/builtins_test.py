@@ -738,6 +738,55 @@ class GeneratorTests(unittest.TestCase):
         )
 
 
+class HashTests(unittest.TestCase):
+    def test_hash_with_raising_dunder_hash_raises_type_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("failed")
+
+        class Foo:
+            __hash__ = Desc()
+
+        foo = Foo()
+        with self.assertRaises(TypeError) as context:
+            hash(foo)
+        self.assertEqual(str(context.exception), "unhashable type: 'Foo'")
+
+    def test_hash_with_none_dunder_hash_raises_type_error(self):
+        class Foo:
+            __hash__ = None
+
+        foo = Foo()
+        with self.assertRaises(TypeError) as context:
+            hash(foo)
+        self.assertEqual(str(context.exception), "unhashable type: 'Foo'")
+
+    def test_hash_with_non_int_dunder_hash_raises_type_error(self):
+        class Foo:
+            def __hash__(self):
+                return "not an int"
+
+        foo = Foo()
+        with self.assertRaises(TypeError) as context:
+            hash(foo)
+        self.assertEqual(
+            str(context.exception), "__hash__ method should return an integer"
+        )
+
+    def test_hash_with_int_subclass_dunder_hash_returns_int(self):
+        class SubInt(int):
+            pass
+
+        class Foo:
+            def __hash__(self):
+                return SubInt(42)
+
+        foo = Foo()
+        result = hash(foo)
+        self.assertEqual(42, result)
+        self.assertEqual(type(42), int)
+
+
 class IntTests(unittest.TestCase):
     def test_dunder_new_with_bool_class_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
@@ -775,6 +824,79 @@ class IntTests(unittest.TestCase):
         foo = Foo()
         foo.__trunc__ = "not callable"
         self.assertEqual(int(foo), 0)
+
+    def test_dunder_new_with_raising_trunc_propagates_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("failed")
+
+        class Foo:
+            __trunc__ = Desc()
+
+        foo = Foo()
+        with self.assertRaises(AttributeError) as context:
+            int(foo)
+        self.assertEqual(str(context.exception), "failed")
+
+    def test_dunder_new_with_base_without_str_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            int(base=8)
+
+    def test_dunder_new_with_bool_returns_int(self):
+        self.assertIs(int(False), 0)
+        self.assertIs(int(True), 1)
+
+    def test_dunder_new_with_bytearray_returns_int(self):
+        self.assertEqual(int(bytearray(b"23")), 23)
+        self.assertEqual(int(bytearray(b"-23"), 8), -0o23)
+        self.assertEqual(int(bytearray(b"abc"), 16), 0xABC)
+        self.assertEqual(int(bytearray(b"0xabc"), 0), 0xABC)
+
+    def test_dunder_new_with_bytes_returns_int(self):
+        self.assertEqual(int(b"-23"), -23)
+        self.assertEqual(int(b"23", 8), 0o23)
+        self.assertEqual(int(b"abc", 16), 0xABC)
+        self.assertEqual(int(b"0xabc", 0), 0xABC)
+
+    def test_dunder_new_with_empty_bytearray_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            int(bytearray())
+
+    def test_dunder_new_with_empty_bytes_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            int(b"")
+
+    def test_dunder_new_with_empty_str_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            int("")
+
+    def test_dunder_new_with_int_returns_int(self):
+        self.assertEqual(int(23), 23)
+
+    def test_dunder_new_with_int_and_base_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            int(4, 5)
+
+    def test_dunder_new_with_invalid_base_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            int("0", 1)
+
+    def test_dunder_new_with_invalid_chars_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            int("&2*")
+
+    def test_dunder_new_with_invalid_digits_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            int(b"789", 6)
+
+    def test_dunder_new_with_str_returns_int(self):
+        self.assertEqual(int("23"), 23)
+        self.assertEqual(int("-23", 8), -0o23)
+        self.assertEqual(int("-abc", 16), -0xABC)
+        self.assertEqual(int("0xabc", 0), 0xABC)
+
+    def test_dunder_new_with_zero_args_returns_zero(self):
+        self.assertIs(int(), 0)
 
     def test_dunder_pow_with_zero_returns_one(self):
         self.assertEqual(int.__pow__(4, 0), 1)
@@ -837,65 +959,14 @@ class IntTests(unittest.TestCase):
         ):
             int.from_bytes(b"*", byteorder=42)
 
-    def test_new_with_base_without_str_raises_type_error(self):
-        with self.assertRaises(TypeError):
-            int(base=8)
+    def test_from_bytes_uses_type_dunder_bytes(self):
+        class Foo:
+            def __bytes__(self):
+                return b"*"
 
-    def test_new_with_bool_returns_int(self):
-        self.assertIs(int(False), 0)
-        self.assertIs(int(True), 1)
-
-    def test_new_with_bytearray_returns_int(self):
-        self.assertEqual(int(bytearray(b"23")), 23)
-        self.assertEqual(int(bytearray(b"-23"), 8), -0o23)
-        self.assertEqual(int(bytearray(b"abc"), 16), 0xABC)
-        self.assertEqual(int(bytearray(b"0xabc"), 0), 0xABC)
-
-    def test_new_with_bytes_returns_int(self):
-        self.assertEqual(int(b"-23"), -23)
-        self.assertEqual(int(b"23", 8), 0o23)
-        self.assertEqual(int(b"abc", 16), 0xABC)
-        self.assertEqual(int(b"0xabc", 0), 0xABC)
-
-    def test_new_with_empty_bytearray_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            int(bytearray())
-
-    def test_new_with_empty_bytes_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            int(b"")
-
-    def test_new_with_empty_str_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            int("")
-
-    def test_new_with_int_returns_int(self):
-        self.assertEqual(int(23), 23)
-
-    def test_new_with_int_and_base_raises_type_error(self):
-        with self.assertRaises(TypeError):
-            int(4, 5)
-
-    def test_new_with_invalid_base_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            int("0", 1)
-
-    def test_new_with_invalid_chars_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            int("&2*")
-
-    def test_new_with_invalid_digits_raises_value_error(self):
-        with self.assertRaises(ValueError):
-            int(b"789", 6)
-
-    def test_new_with_str_returns_int(self):
-        self.assertEqual(int("23"), 23)
-        self.assertEqual(int("-23", 8), -0o23)
-        self.assertEqual(int("-abc", 16), -0xABC)
-        self.assertEqual(int("0xabc", 0), 0xABC)
-
-    def test_new_with_zero_args_returns_zero(self):
-        self.assertIs(int(), 0)
+        foo = Foo()
+        foo.__bytes__ = lambda: b"123"
+        self.assertEqual(int.from_bytes(foo, "big"), 42)
 
 
 class IsInstanceTests(unittest.TestCase):
@@ -1034,6 +1105,21 @@ class IsInstanceTests(unittest.TestCase):
         self.assertIs(isinstance(A(), A), True)
         self.assertIs(isinstance(B(), A), False)
 
+    def test_isinstance_with_raising_instancecheck_propagates_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("failed")
+
+        class Meta(type):
+            __instancecheck__ = Desc()
+
+        class A(metaclass=Meta):
+            pass
+
+        with self.assertRaises(AttributeError) as context:
+            isinstance(2, A)
+        self.assertEqual(str(context.exception), "failed")
+
 
 class IsSubclassTests(unittest.TestCase):
     def test_issubclass_with_same_types_returns_true(self):
@@ -1101,6 +1187,21 @@ class IsSubclassTests(unittest.TestCase):
 
         self.assertIs(issubclass(B, A), False)
 
+    def test_issubclass_with_raising_subclasscheck_propagates_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("failed")
+
+        class Meta(type):
+            __subclasscheck__ = Desc()
+
+        class A(metaclass=Meta):
+            pass
+
+        with self.assertRaises(AttributeError) as context:
+            issubclass(bool, A)
+        self.assertEqual(str(context.exception), "failed")
+
 
 class IterTests(unittest.TestCase):
     def test_iter_with_no_dunder_iter_raises_type_error(self):
@@ -1145,6 +1246,30 @@ class IterTests(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "'C' object is not iterable")
         self.assertTrue(dunder_get_called)
+
+    def test_iter_with_none_dunder_iter_raises_type_error(self):
+        class Foo:
+            __iter__ = None
+
+        foo = Foo()
+        with self.assertRaises(TypeError) as context:
+            iter(foo)
+        self.assertEqual(str(context.exception), "'Foo' object is not iterable")
+
+
+class NextTests(unittest.TestCase):
+    def test_next_with_raising_dunder_next_propagates_error(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("failed")
+
+        class Foo:
+            __next__ = Desc()
+
+        foo = Foo()
+        with self.assertRaises(AttributeError) as context:
+            next(foo)
+        self.assertEqual(str(context.exception), "failed")
 
 
 class ObjectTests(unittest.TestCase):
@@ -1239,8 +1364,17 @@ class ReversedTests(unittest.TestCase):
         class C:
             __reversed__ = None
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as context:
             reversed(C())
+        self.assertEqual(str(context.exception), "'C' object is not reversible")
+
+    def test_reversed_with_non_callable_dunder_reverse_raises_type_error(self):
+        class C:
+            __reversed__ = 1
+
+        with self.assertRaises(TypeError) as context:
+            reversed(C())
+        self.assertEqual(str(context.exception), "'int' object is not callable")
 
     def test_reversed_length_hint(self):
         it = reversed([1, 2, 3])
@@ -1254,6 +1388,35 @@ class ReversedTests(unittest.TestCase):
 
 
 class LenTests(unittest.TestCase):
+    def test_len_without_class_dunder_len_raises_type_error(self):
+        class Foo:
+            pass
+
+        foo = Foo()
+        foo.__len__ = lambda: 0
+        with self.assertRaises(TypeError) as context:
+            len(foo)
+        self.assertEqual(str(context.exception), "object of type 'Foo' has no len()")
+
+    def test_len_without_non_int_dunder_len_raises_type_error(self):
+        class Foo:
+            def __len__(self):
+                return "not an int"
+
+        foo = Foo()
+        with self.assertRaises(TypeError) as context:
+            len(foo)
+        self.assertEqual(
+            str(context.exception), "'str' object cannot be interpreted as an integer"
+        )
+
+    def test_len_with_dunder_len_returns_int(self):
+        class Foo:
+            def __len__(self):
+                return 5
+
+        self.assertEqual(len(Foo()), 5)
+
     def test_len_with_list_returns_list_length(self):
         self.assertEqual(len([1, 2, 3]), 3)
 
@@ -2124,6 +2287,19 @@ class StaticMethodTests(unittest.TestCase):
 
 
 class StrTests(unittest.TestCase):
+    def test_dunder_new_with_raising_dunder_str_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise AttributeError("failed")
+
+        class Foo:
+            __str__ = Desc()
+
+        foo = Foo()
+        with self.assertRaises(AttributeError) as context:
+            str(foo)
+        self.assertEqual(str(context.exception), "failed")
+
     def test_capitalize_with_non_str_self_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             str.capitalize(1)

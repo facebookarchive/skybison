@@ -131,6 +131,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListGuard, underListGuard},
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
+    {SymbolId::kUnderObjectTypeGetattr, underObjectTypeGetAttr},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
     {SymbolId::kUnderProperty, underProperty},
     {SymbolId::kUnderPropertyIsAbstract, underPropertyIsAbstract},
@@ -1442,6 +1443,21 @@ RawObject UnderBuiltinsModule::underListSort(Thread* thread, Frame* frame,
         "Unsupported argument type for 'ls'");
   List list(&scope, args.get(0));
   return listSort(thread, list);
+}
+
+RawObject UnderBuiltinsModule::underObjectTypeGetAttr(Thread* thread,
+                                                      Frame* frame,
+                                                      word nargs) {
+  Arguments args(frame, nargs);
+  HandleScope scope(thread);
+  Object instance(&scope, args.get(0));
+  Type type(&scope, thread->runtime()->typeOf(*instance));
+  Str name(&scope, args.get(1));
+  Object attr(&scope, typeLookupNameInMro(thread, type, name));
+  if (attr.isErrorNotFound()) {
+    return Unbound::object();
+  }
+  return resolveDescriptorGet(thread, attr, instance, type);
 }
 
 RawObject UnderBuiltinsModule::underObjectTypeHasattr(Thread* thread,
