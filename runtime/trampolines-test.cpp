@@ -245,133 +245,182 @@ def test(callable):
 }
 
 TEST_F(CallTest, CallDefaultArgs) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a=1, b=2, c=3):
-  print(a, b, c)
+  return [a, b, c]
 
-print()
-foo(33, 22, 11)
-foo()
-foo(1001)
-foo(1001, 1002)
-foo(1001, 1002, 1003)
-)");
-  EXPECT_EQ(output, R"(
-33 22 11
-1 2 3
-1001 2 3
-1001 1002 3
-1001 1002 1003
-)");
+result0 = foo(33, 22, 11)
+result1 = foo()
+result2 = foo(1001)
+result3 = foo(1001, 1002)
+result4 = foo(1001, 1002, 1003)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result0(&scope, moduleAt(&runtime_, "__main__", "result0"));
+  EXPECT_PYLIST_EQ(result0, {33, 22, 11});
+  Object result1(&scope, moduleAt(&runtime_, "__main__", "result1"));
+  EXPECT_PYLIST_EQ(result1, {1, 2, 3});
+  Object result2(&scope, moduleAt(&runtime_, "__main__", "result2"));
+  EXPECT_PYLIST_EQ(result2, {1001, 2, 3});
+  Object result3(&scope, moduleAt(&runtime_, "__main__", "result3"));
+  EXPECT_PYLIST_EQ(result3, {1001, 1002, 3});
+  Object result4(&scope, moduleAt(&runtime_, "__main__", "result4"));
+  EXPECT_PYLIST_EQ(result4, {1001, 1002, 1003});
 }
 
 TEST_F(CallTest, CallMethodMixPosDefaultArgs) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b=2):
-  print(a, b)
-foo(1)
-)");
-  EXPECT_EQ(output, "1 2\n");
+  return [a, b]
+result = foo(1)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2});
 }
 
 TEST_F(CallTest, CallBoundMethodMixed) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class R:
-  def __init__(self, a, b=2):
-    print(a, b)
-a = R(9)
-)");
-  EXPECT_EQ(output, "9 2\n");
+  def m(self, a, b=2):
+    return [a, b]
+r = R()
+result = r.m(9)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {9, 2});
 }
 
 TEST_F(CallTest, SingleKW) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(bar):
-   print('bar =',bar)
-foo(bar=2)
-)");
-  EXPECT_EQ(output, "bar = 2\n");
+   return bar
+result = foo(bar=2)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 2));
 }
 
 TEST_F(CallTest, MixedKW) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b, c):
-   print(a, b, c)
-foo(1, b = 2, c = 3)
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+   return [a, b, c]
+result = foo(1, b = 2, c = 3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, FullKW) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b, c):
-   print(a, b, c)
-foo(a = 1, b = 2, c = 3)
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+   return [a, b, c]
+result = foo(a = 1, b = 2, c = 3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KWOutOfOrder1) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b, c):
-   print(a, b, c)
-foo(c = 3, a = 1, b = 2)
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+   return [a, b, c]
+result = foo(c = 3, a = 1, b = 2)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KWOutOfOrder2) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b, c):
-   print(a, b, c)
-foo(1, c = 3, b = 2)
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+   return [a, b, c]
+result = foo(1, c = 3, b = 2)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KeywordOnly1) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a,b, *, c):
-  print(a,b,c)
-foo(1, 2, c = 3);
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+  return [a,b,c]
+result = foo(1, 2, c = 3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KeywordOnly2) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a,b, *, c):
-  print(a,b,c)
-foo(1, b = 2, c = 3);
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+  return [a,b,c]
+result = foo(1, b = 2, c = 3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, KeyWordDefaults) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b = 22, c = 33):
-  print(a,b,c)
-foo(11, c = 3);
-)");
-  EXPECT_EQ(output, "11 22 3\n");
+  return [a,b,c]
+result = foo(11, c = 3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {11, 22, 3});
 }
 
 TEST_F(CallTest, VarArgsWithExcess) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b, *c):
-  print(a,b,c)
-foo(1,2,3,4,5,6);
-)");
-  EXPECT_EQ(output, "1 2 (3, 4, 5, 6)\n");
+  return [a,b,c]
+result = foo(1,2,3,4,5,6)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  Tuple tuple(&scope, result.at(2));
+  ASSERT_EQ(tuple.length(), 4);
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 3));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(1), 4));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(2), 5));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(3), 6));
 }
 
 TEST_F(CallTest, VarArgsEmpty) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a, b, *c):
-  print(a,b,c)
-foo(1,2);
-)");
-  EXPECT_EQ(output, "1 2 ()\n");
+  return [a,b,c]
+result = foo(1,2)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  Tuple tuple(&scope, result.at(2));
+  EXPECT_EQ(tuple.length(), 0);
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeWithVarkeyword) {
@@ -397,21 +446,42 @@ result = foo(1,2,c=3,g=4,h=5,j="bar")
 }
 
 TEST_F(CallTest, CallWithNoArgsCalleeDefaultArgsVarargsVarkeyargs) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def bar(a=1, b=2, *c, **d):
-    print(a,b,c,d)
-bar()
-)");
-  EXPECT_EQ(output, "1 2 () {}\n");
+    return [a,b,c,d]
+result = bar()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  List result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  Tuple tuple(&scope, result.at(2));
+  EXPECT_EQ(tuple.length(), 0);
+  Dict dict(&scope, result.at(3));
+  EXPECT_EQ(dict.numItems(), 0);
 }
 
 TEST_F(CallTest, CallPositionalCalleeVargsEmptyVarkeyargs) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def bar(a=1, b=2, *c, **d):
-    print(a,b,c,d)
-bar(1,2,3,4,5,6,7)
-)");
-  EXPECT_EQ(output, "1 2 (3, 4, 5, 6, 7) {}\n");
+    return [a,b,c,d]
+result = bar(1,2,3,4,5,6,7)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  List result(&scope, testing::moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  Tuple tuple(&scope, result.at(2));
+  ASSERT_EQ(tuple.length(), 5);
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 3));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(1), 4));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(2), 5));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(3), 6));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(4), 7));
+  Dict dict(&scope, result.at(3));
+  EXPECT_EQ(dict.numItems(), 0);
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeEmptyVarargsFullVarkeyargs) {
@@ -465,60 +535,94 @@ result = bar(1,2,3,4,5,6,7,a9=9)
 }
 
 TEST_F(CallTest, CallWithOutOfOrderKeywords) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foobar(a,b,*,c):
-    print(a,b,c)
-foobar(c=3,a=1,b=2)
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+    return [a,b,c]
+result = foobar(c=3,a=1,b=2)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeVarargsKeywordOnly) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foobar1(a,b,*c,d):
-    print(a,b,c,d)
-foobar1(1,2,3,4,5,d=9)
-)");
-  EXPECT_EQ(output, "1 2 (3, 4, 5) 9\n");
+    return [a,b,c,d]
+result = foobar1(1,2,3,4,5,d=9)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  Tuple tuple(&scope, result.at(2));
+  ASSERT_EQ(tuple.length(), 3);
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 3));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(1), 4));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(2), 5));
+  EXPECT_TRUE(isIntEqualsWord(result.at(3), 9));
 }
 
 TEST_F(CallTest, CallWithKeywordsCalleeVarargsVarkeyargsKeywordOnly) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foobar2(a,b,*c, e, **d):
-    print(a,b,c,d,e)
-foobar2(1,e=9,b=2,f1="a",f11=12)
-)");
-  EXPECT_EQ(output, "1 2 () {'f1': 'a', 'f11': 12} 9\n");
+    return [a,b,c,d,e]
+result = foobar2(1,e=9,b=2,f1="a",f11=12)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  List result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  Tuple tuple(&scope, result.at(2));
+  ASSERT_EQ(tuple.length(), 0);
+  Dict dict(&scope, result.at(3));
+  Object f1(&scope, runtime_.newStrFromCStr("f1"));
+  EXPECT_TRUE(isStrEqualsCStr(runtime_.dictAt(thread_, dict, f1), "a"));
+  Object f11(&scope, runtime_.newStrFromCStr("f11"));
+  EXPECT_TRUE(isIntEqualsWord(runtime_.dictAt(thread_, dict, f11), 12));
+  EXPECT_TRUE(isIntEqualsWord(result.at(4), 9));
 }
 
 TEST_F(CallTest, CallEx) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a,b,c,d):
-    print(a,b,c,d)
+    return [a,b,c,d]
 a = (1,2,3,4)
-foo(*a)
-)");
-  EXPECT_EQ(output, "1 2 3 4\n");
+result = foo(*a)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
 TEST_F(CallTest, CallExBuildTupleUnpackWithCall) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a,b,c,d):
-    print(a,b,c,d)
+    return [a,b,c,d]
 a = (3,4)
-foo(1,2,*a)
-)");
-  EXPECT_EQ(output, "1 2 3 4\n");
+result = foo(1,2,*a)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
 TEST_F(CallTest, CallExKw) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def foo(a,b,c,d):
-    print(a,b,c,d)
+    return [a,b,c,d]
 a = {'d': 4, 'b': 2, 'a': 1, 'c': 3}
-foo(**a)
-)");
-  EXPECT_EQ(output, "1 2 3 4\n");
+result = foo(**a)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3, 4});
 }
 
 TEST_F(CallTest, KeywordOnly) {
