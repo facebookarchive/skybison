@@ -290,6 +290,31 @@ class DecodeEscapeTests(unittest.TestCase):
         self.assertEqual(first_invalid, 3)
 
 
+class DecodeLatin1Tests(unittest.TestCase):
+    def test_decode_latin_1_with_non_bytes_first_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.latin_1_decode([])
+
+    def test_decode_latin_1_with_non_string_second_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.latin_1_decode(b"", [])
+
+    def test_decode_latin_1_with_zero_length_returns_empty_string(self):
+        decoded, consumed = _codecs.latin_1_decode(b"")
+        self.assertEqual(decoded, "")
+        self.assertEqual(consumed, 0)
+
+    def test_decode_latin_1_with_ascii_returns_string(self):
+        decoded, consumed = _codecs.latin_1_decode(b"hello")
+        self.assertEqual(decoded, "hello")
+        self.assertEqual(consumed, 5)
+
+    def test_decode_latin_1_with_latin_1_returns_string(self):
+        decoded, consumed = _codecs.latin_1_decode(b"\x7D\x7E\x7F\x80\x81\x82")
+        self.assertEqual(decoded, "\x7D\x7E\x7F\x80\x81\x82")
+        self.assertEqual(consumed, 6)
+
+
 class DecodeUnicodeEscapeTests(unittest.TestCase):
     def test_decode_unicode_escape_with_non_bytes_first_raises_type_error(self):
         with self.assertRaises(TypeError):

@@ -1019,10 +1019,25 @@ PY_EXPORT PyObject* PyUnicode_DecodeFSDefaultAndSize(const char* c_str,
   return ApiHandle::newReference(thread, thread->runtime()->newStrWithAll(str));
 }
 
-PY_EXPORT PyObject* PyUnicode_DecodeLatin1(const char* /* s */,
-                                           Py_ssize_t /* e */,
-                                           const char* /* s */) {
-  UNIMPLEMENTED("PyUnicode_DecodeLatin1");
+PY_EXPORT PyObject* PyUnicode_DecodeLatin1(const char* c_str, Py_ssize_t size,
+                                           const char* /* errors */) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Bytes bytes(&scope, runtime->newBytesWithAll(View<byte>(
+                          reinterpret_cast<const byte*>(c_str), size)));
+  Object result_obj(&scope,
+                    thread->invokeFunction1(SymbolId::kUnderCodecs,
+                                            SymbolId::kLatin1Decode, bytes));
+  if (result_obj.isError()) {
+    if (result_obj.isErrorNotFound()) {
+      thread->raiseWithFmt(LayoutId::kSystemError,
+                           "could not call _codecs.latin_1_decode");
+    }
+    return nullptr;
+  }
+  Tuple result(&scope, *result_obj);
+  return ApiHandle::newReference(thread, result.at(0));
 }
 
 PY_EXPORT PyObject* PyUnicode_DecodeLocale(const char* str,

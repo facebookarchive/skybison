@@ -915,6 +915,14 @@ TEST_F(UnicodeExtensionApiTest, DecodeASCIIReturnsString) {
   EXPECT_TRUE(isUnicodeEqualsCStr(str, "hello world"));
 }
 
+TEST_F(UnicodeExtensionApiTest, DecodeLatin1ReturnsString) {
+  const char* c_str = "\xBFhello world?";
+  PyObjectPtr str(PyUnicode_DecodeLatin1(c_str, std::strlen(c_str), nullptr));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyUnicode_CheckExact(str), 1);
+  EXPECT_STREQ(PyUnicode_AsUTF8(str), "\xC2\xBFhello world?");
+}
+
 TEST_F(UnicodeExtensionApiTest, PyUnicodeWriterPrepareWithLenZeroReturnsZero) {
   _PyUnicodeWriter writer;
   _PyUnicodeWriter_Init(&writer);

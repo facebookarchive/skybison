@@ -221,6 +221,7 @@ class Runtime;
   V(UnderIntNewFromStr, "_int_new_from_str")                                   \
   V(UnderIOBase, "_IOBase")                                                    \
   V(UnderIo, "_io")                                                            \
+  V(UnderLatin1Decode, "_latin_1_decode")                                      \
   V(UnderLatin1Encode, "_latin_1_encode")                                      \
   V(UnderListCheck, "_list_check")                                             \
   V(UnderListCheckExact, "_list_checkexact")                                   \
@@ -521,6 +522,7 @@ class Runtime;
   V(LastTraceback, "last_traceback")                                           \
   V(LastType, "last_type")                                                     \
   V(LastValue, "last_value")                                                   \
+  V(Latin1Decode, "latin_1_decode")                                            \
   V(Latin1Encode, "latin_1_encode")                                            \
   V(Layout, "layout")                                                          \
   V(Len, "len")                                                                \

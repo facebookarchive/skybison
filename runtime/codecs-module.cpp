@@ -52,6 +52,7 @@ const BuiltinMethod UnderCodecsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAsciiEncode, underAsciiEncode},
     {SymbolId::kUnderByteArrayStringAppend, underByteArrayStringAppend},
     {SymbolId::kUnderEscapeDecode, underEscapeDecode},
+    {SymbolId::kUnderLatin1Decode, underLatin1Decode},
     {SymbolId::kUnderLatin1Encode, underLatin1Encode},
     {SymbolId::kUnderUnicodeEscapeDecode, underUnicodeEscapeDecode},
     {SymbolId::kUnderUtf16Encode, underUtf16Encode},
@@ -367,6 +368,40 @@ RawObject UnderCodecsModule::underEscapeDecode(Thread* thread, Frame* frame,
   result.atPut(0, byteArrayAsBytes(thread, runtime, dst));
   result.atPut(1, runtime->newInt(length));
   result.atPut(2, runtime->newInt(first_invalid_escape_index));
+  return *result;
+}
+
+RawObject UnderCodecsModule::underLatin1Decode(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Runtime* runtime = thread->runtime();
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Object bytes_obj(&scope, args.get(0));
+  DCHECK(runtime->isInstanceOfBytes(*bytes_obj),
+         "First arg to _latin_1_decode must be str");
+  Bytes bytes(&scope, bytesUnderlying(thread, bytes_obj));
+  StrArray array(&scope, runtime->newStrArray());
+  word length = bytes.length();
+  runtime->strArrayEnsureCapacity(thread, array, length);
+  // First, try a quick ASCII decoding
+  word num_bytes = asciiDecode(thread, array, bytes, 0);
+  if (num_bytes != length) {
+    // A non-ASCII character was found; switch to a Latin-1 decoding for the
+    // remainder of the input sequence
+    Str str(&scope, Str::empty());
+    for (word i = num_bytes; i < length; ++i) {
+      byte code_point = bytes.byteAt(i);
+      if (code_point <= kMaxASCII) {
+        runtime->strArrayAddASCII(thread, array, code_point);
+      } else {
+        str = SmallStr::fromCodePoint(code_point);
+        runtime->strArrayAddStr(thread, array, str);
+      }
+    }
+  }
+  Tuple result(&scope, runtime->newTuple(2));
+  result.atPut(0, runtime->strFromStrArray(array));
+  result.atPut(1, runtime->newInt(length));
   return *result;
 }
 

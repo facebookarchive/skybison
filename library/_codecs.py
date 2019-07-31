@@ -214,6 +214,24 @@ def escape_decode(data: bytes, errors: str = "strict") -> str:
 
 
 @_patch
+def _latin_1_decode(data: bytes):
+    pass
+
+
+def latin_1_decode(data: bytes, errors: str = "strict"):
+    if not _bytes_check(data):
+        raise TypeError(
+            f"a bytes-like object is required, not '{_type(data).__name__}'"
+        )
+    if not _str_check(errors):
+        raise TypeError(
+            "latin_1_decode() argument 2 must be str or None, not "
+            f"'{_type(errors).__name__}'"
+        )
+    return _latin_1_decode(data)
+
+
+@_patch
 def _latin_1_encode(data: str, errors: str, index: int, out: bytearray):
     """Tries to encode `data`, starting from `index`, into the `out` bytearray.
     If it encounters any codepoints above 255, it tries using the `errors`
