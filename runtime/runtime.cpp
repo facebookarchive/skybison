@@ -55,7 +55,6 @@
 #include "super-builtins.h"
 #include "sys-module.h"
 #include "thread.h"
-#include "time-module.h"
 #include "tuple-builtins.h"
 #include "type-builtins.h"
 #include "under-builtins-module.h"
@@ -2038,7 +2037,6 @@ void Runtime::moduleAtPut(const Module& module, const Object& key,
 // TODO(emacs): Move these names into the modules themselves, so there is only
 // once source of truth.
 const ModuleInitializer Runtime::kBuiltinModules[] = {
-    {SymbolId::kTime, &TimeModule::initialize},
     {SymbolId::kUnderImp, &UnderImpModule::initialize},
     {SymbolId::kUnderCodecs, &UnderCodecsModule::initialize},
     {SymbolId::kUnderIo, &UnderIoModule::initialize},

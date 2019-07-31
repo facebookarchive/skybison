@@ -128,6 +128,7 @@ set(
   ${CMAKE_SOURCE_DIR}/ext/Objects/memoryobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/methodobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/moduleobject.cpp
+  ${CMAKE_SOURCE_DIR}/ext/Objects/namespaceobject.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/object.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/obmalloc.cpp
   ${CMAKE_SOURCE_DIR}/ext/Objects/odictobject.cpp
@@ -352,8 +353,6 @@ add_library(
   runtime/sys-module.h
   runtime/thread.cpp
   runtime/thread.h
-  runtime/time-module.cpp
-  runtime/time-module.h
   runtime/trampolines.cpp
   runtime/trampolines.h
   runtime/tuple-builtins.cpp
@@ -501,7 +500,6 @@ add_library(
   runtime/test-utils.cpp
   runtime/test-utils.h
   runtime/thread-test.cpp
-  runtime/time-module-test.cpp
   runtime/trampolines-test.cpp
   runtime/tuple-builtins-test.cpp
   runtime/type-builtins-test.cpp

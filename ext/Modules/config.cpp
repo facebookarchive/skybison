@@ -10,6 +10,7 @@ extern "C" PyObject* PyInit_atexit();
 extern "C" PyObject* PyInit_errno();
 extern "C" PyObject* PyInit_math();
 extern "C" PyObject* PyInit_posix();
+extern "C" PyObject* PyInit_time();
 
 // _empty module to test loading from init tab
 PyObject* PyInit__empty() {
@@ -31,6 +32,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"errno", PyInit_errno},
     {"math", PyInit_math},
     {"posix", PyInit_posix},
+    {"time", PyInit_time},
     {nullptr, nullptr},
 };
 // clang-format on

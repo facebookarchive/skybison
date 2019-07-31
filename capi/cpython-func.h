@@ -739,6 +739,7 @@ PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicode(PyObject*);
 PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeAndSize(PyObject*, Py_ssize_t*);
 PyAPI_FUNC(PyObject*) PyUnicode_AsUnicodeEscapeString(PyObject*);
 PyAPI_FUNC(Py_ssize_t) PyUnicode_AsWideChar(PyObject*, wchar_t*, Py_ssize_t);
+PyAPI_FUNC(wchar_t*) _PyUnicode_AsWideCharString(PyObject*);
 PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(PyObject*, Py_ssize_t*);
 PyAPI_FUNC(PyObject*) PyUnicode_BuildEncodingMap(PyObject*);
 PyAPI_FUNC(int) PyUnicode_ClearFreeList();
@@ -923,6 +924,7 @@ PyAPI_FUNC(PyCodeObject*)
     PyAST_CompileEx(struct _mod*, const char*, PyCompilerFlags*, int, PyArena*);
 PyAPI_FUNC(PyCodeObject*) PyAST_CompileObject(struct _mod*, PyObject*,
                                               PyCompilerFlags*, int, PyArena*);
+PyAPI_FUNC(PyObject*) _PyNamespace_New(PyObject* kwds);
 
 /* Non C-API functions */
 PyAPI_FUNC(int) PyBool_Check_Func(PyObject*);

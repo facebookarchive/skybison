@@ -45,4 +45,24 @@ TEST_F(ConfigExtensionApiTest, ImportMathReturnsModule) {
   EXPECT_TRUE(PyModule_Check(module));
 }
 
+TEST_F(ConfigExtensionApiTest, ImportTimeReturnsModule) {
+  PyObjectPtr module(PyImport_ImportModule("time"));
+  ASSERT_NE(module, nullptr);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyModule_Check(module));
+}
+
+TEST_F(ConfigExtensionApiTest, TimeModuleMethods) {
+  PyRun_SimpleString(R"(
+import time
+a = time.time()
+b = time.perf_counter()
+)");
+  PyObjectPtr a(moduleGet("__main__", "a"));
+  PyObjectPtr b(moduleGet("__main__", "b"));
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(PyFloat_Check(a), 1);
+  EXPECT_EQ(PyFloat_Check(b), 1);
+}
+
 }  // namespace python

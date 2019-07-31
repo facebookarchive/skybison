@@ -272,9 +272,37 @@ static PyStructSequence_Desc struct_time_type_desc = {
     9,
 };
 
-static int initialized;
-static PyTypeObject StructTimeType;
+static PyModuleDef timemodule;
 
+typedef struct {
+  PyObject *StructTimeType;
+  PyObject *_strptime_time;
+} timestate;
+
+#define timestate(o) ((timestate *)PyModule_GetState(o))
+#define timestate_global ((timestate *)PyModule_GetState(PyState_FindModule(&timemodule)))
+
+static int
+time_clear(PyObject *m)
+{
+   timestate *state = timestate(m);
+   Py_CLEAR(state->StructTimeType);
+   return 0;
+}
+
+static int
+time_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    timestate *state = timestate(m);
+    Py_VISIT(state->StructTimeType);
+    return 0;
+}
+
+static void
+time_free(void *m)
+{
+    time_clear((PyObject *)m);
+}
 
 static PyObject *
 tmtotuple(struct tm *p
@@ -283,7 +311,7 @@ tmtotuple(struct tm *p
 #endif
 )
 {
-    PyObject *v = PyStructSequence_New(&StructTimeType);
+    PyObject *v = PyStructSequence_New((PyTypeObject *)timestate_global->StructTimeType);
     if (v == NULL)
         return NULL;
 
@@ -444,7 +472,7 @@ gettmarg(PyObject *args, struct tm *p)
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    if (Py_TYPE(args) == &StructTimeType) {
+    if (Py_TYPE(args) == (PyTypeObject *)timestate_global->StructTimeType) {
         PyObject *item;
         item = PyTuple_GET_ITEM(args, 9);
         p->tm_zone = item == Py_None ? NULL : PyUnicode_AsUTF8(item);
@@ -726,12 +754,12 @@ time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *strptime_module = PyImport_ImportModuleNoBlock("_strptime");
     PyObject *strptime_result;
-    _Py_IDENTIFIER(_strptime_time);
 
     if (!strptime_module)
         return NULL;
-    strptime_result = _PyObject_CallMethodId(strptime_module,
-                                             &PyId__strptime_time, "O", args);
+    const char *_strptime_time_str = PyUnicode_AsUTF8(timestate_global->_strptime_time);
+    strptime_result = PyObject_CallMethod(strptime_module, _strptime_time_str,
+                                          "O", args);
     Py_DECREF(strptime_module);
     return strptime_result;
 }
@@ -1364,18 +1392,24 @@ static struct PyModuleDef timemodule = {
     PyModuleDef_HEAD_INIT,
     "time",
     module_doc,
-    -1,
+    sizeof(timestate),
     time_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    time_traverse,
+    time_clear,
+    time_free,
 };
 
 PyMODINIT_FUNC
 PyInit_time(void)
 {
     PyObject *m;
+    m = PyState_FindModule(&timemodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     m = PyModule_Create(&timemodule);
     if (m == NULL)
         return NULL;
@@ -1408,19 +1442,17 @@ PyInit_time(void)
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructTimeType,
-                                       &struct_time_type_desc) < 0)
-            return NULL;
-    }
-    Py_INCREF(&StructTimeType);
+    PyObject *StructTimeType = (PyObject *)PyStructSequence_NewType(&struct_time_type_desc);
+    timestate(m)->StructTimeType = StructTimeType;
+    Py_INCREF(timestate(m)->StructTimeType);
     PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
-    PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
-    initialized = 1;
+    PyModule_AddObject(m, "struct_time", StructTimeType);
+    timestate(m)->_strptime_time = PyUnicode_FromString("_strptime_time");
 
     if (PyErr_Occurred()) {
         return NULL;
     }
+    PyState_AddModule(m, &timemodule);
     return m;
 }
 

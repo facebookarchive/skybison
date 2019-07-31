@@ -864,6 +864,10 @@ PY_EXPORT Py_ssize_t PyUnicode_AsWideChar(PyObject* /* e */, wchar_t* /* w */,
   UNIMPLEMENTED("PyUnicode_AsWideChar");
 }
 
+PY_EXPORT wchar_t* _PyUnicode_AsWideCharString(PyObject* /* unicodee */) {
+  UNIMPLEMENTED("_PyUnicode_AsWideCharString");
+}
+
 PY_EXPORT wchar_t* PyUnicode_AsWideCharString(PyObject* /* e */,
                                               Py_ssize_t* /* e */) {
   UNIMPLEMENTED("PyUnicode_AsWideCharString");
