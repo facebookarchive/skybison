@@ -1204,6 +1204,14 @@ class ReversedTests(unittest.TestCase):
         self.assertEqual(it.__length_hint__(), 0)
 
 
+class LenTests(unittest.TestCase):
+    def test_len_with_list_returns_list_length(self):
+        self.assertEqual(len([1, 2, 3]), 3)
+
+    def test_len_with_non_container_raises_type_error(self):
+        self.assertRaises(TypeError, len, 1)
+
+
 class ListTests(unittest.TestCase):
     def test_extend_with_iterator_that_raises_partway_through_has_sideeffect(self):
         class C:

@@ -147,13 +147,6 @@ TEST_F(BuiltinsModuleTest, IdReturnsDifferentValueForDifferentObject) {
             runBuiltin(BuiltinsModule::id, obj2));
 }
 
-TEST_F(BuiltinsModuleTest, BuiltinLen) {
-  std::string result = compileAndRunToString(&runtime_, "print(len([1,2,3]))");
-  EXPECT_EQ(result, "3\n");
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "print(len(1))"),
-                            LayoutId::kTypeError, "object has no len()"));
-}
-
 TEST_F(BuiltinsModuleTest, BuiltinLenGetLenFromDict) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 len0 = len({})
@@ -207,9 +200,11 @@ len5 = len({1,2,3,4,5})
 }
 
 TEST_F(BuiltinsModuleTest, BuiltinOrd) {
-  std::string result = compileAndRunToString(&runtime_, "print(ord('A'))");
-  EXPECT_EQ(result, "65\n");
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "print(ord(1))"),
+  HandleScope scope(thread_);
+  Str str(&scope, runtime_.newStrFromCStr("A"));
+  EXPECT_TRUE(isIntEqualsWord(runBuiltin(BuiltinsModule::ord, str), 65));
+  Int one(&scope, SmallInt::fromWord(1));
+  EXPECT_TRUE(raisedWithStr(runBuiltin(BuiltinsModule::ord, one),
                             LayoutId::kTypeError,
                             "Unsupported type in builtin 'ord'"));
 }
