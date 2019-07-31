@@ -81,7 +81,7 @@ s = B().getsuper()
 }
 
 TEST_F(SuperBuiltinsTest, SuperTest1) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
     def f(self):
         return 1
@@ -107,18 +107,24 @@ class F(E):
 class G(A):
     pass
 
-print(D().f())
-print(D.f(D()))
-print(E().f())
-print(E.f(E()))
-print(F().f())
-print(F.f(F()))
-)");
-  EXPECT_EQ(output, "10\n10\n10\n10\n10\n10\n");
+result0 = D().f()
+result1 = D.f(D())
+result2 = E().f()
+result3 = E.f(E())
+result4 = F().f()
+result5 = F.f(F())
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result0"), 10));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result1"), 10));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result2"), 10));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result3"), 10));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result4"), 10));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result5"), 10));
 }
 
 TEST_F(SuperBuiltinsTest, SuperTest2) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
     @classmethod
     def cm(cls):
@@ -144,20 +150,26 @@ class E(D):
 class G(A):
     pass
 
-print(A.cm() == (A, 1))
-print(A().cm() == (A, 1))
-print(G.cm() == (G, 1))
-print(G().cm() == (G, 1))
+result0 = A.cm() == (A, 1)
+result1 = A().cm() == (A, 1)
+result2 = G.cm() == (G, 1)
+result3 = G().cm() == (G, 1)
 d = D()
-print(d.cm() == (d, (D, (D, (D, 1), 2), 3), 4))
+result4 = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
 e = E()
-print(e.cm() == (e, (E, (E, (E, 1), 2), 3), 4))
-)");
-  EXPECT_EQ(output, "True\nTrue\nTrue\nTrue\nTrue\nTrue\n");
+result5 = e.cm() == (e, (E, (E, (E, 1), 2), 3), 4)
+)")
+                   .isError());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result0"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result1"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result2"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result3"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result4"), Bool::trueObj());
+  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result5"), Bool::trueObj());
 }
 
 TEST_F(SuperBuiltinsTest, SuperTestNoArgument) {
-  compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class A:
     @classmethod
     def cm(cls):
@@ -194,7 +206,8 @@ b = D().f()
 c = B.cm() == (B, (B, 1), 2)
 d = D()
 e = d.cm() == (d, (D, (D, (D, 1), 2), 3), 4)
-)");
+)")
+                   .isError());
   HandleScope scope(thread_);
   Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   Object b(&scope, moduleAt(&runtime_, "__main__", "b"));
