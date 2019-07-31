@@ -1350,13 +1350,6 @@ result.update([5, 6])
   EXPECT_EQ(result.numItems(), 4);
 }
 
-TEST_F(SetBuiltinsTest, DunderOrWithNonSetBaseSelfReturnsNotImplemented) {
-  ASSERT_FALSE(
-      runFromCStr(&runtime_, "result = set.__or__(None, set())").isError());
-  EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"),
-            NotImplementedType::object());
-}
-
 TEST_F(SetBuiltinsTest, DunderOrWithNonSetBaseOtherReturnsNotImplemented) {
   ASSERT_FALSE(
       runFromCStr(&runtime_, "result = set.__or__(set(), None)").isError());

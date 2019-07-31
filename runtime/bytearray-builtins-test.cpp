@@ -37,12 +37,6 @@ TEST_F(ByteArrayBuiltinsTest, AsBytes) {
   EXPECT_TRUE(isBytesEqualsBytes(bytes, expected_bytes));
 }
 
-TEST_F(ByteArrayBuiltinsTest, ClearWithNonByteArrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytearray.clear(5)"),
-                            LayoutId::kTypeError,
-                            "'clear' requires a 'bytearray' object"));
-}
-
 TEST_F(ByteArrayBuiltinsTest, ClearSetsLengthToZero) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
@@ -1381,12 +1375,6 @@ TEST_F(ByteArrayBuiltinsTest, HexWithNonEmptyBytesReturnsString) {
   runtime_.byteArrayExtend(thread_, self, bytes);
   Object result(&scope, runBuiltin(ByteArrayBuiltins::hex, self));
   EXPECT_TRUE(isStrEqualsCStr(*result, "600e1821"));
-}
-
-TEST_F(ByteArrayBuiltinsTest, JoinWithNonByteArrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytearray.join(b'', [])"),
-                            LayoutId::kTypeError,
-                            "'join' requires a 'bytearray' object"));
 }
 
 TEST_F(ByteArrayBuiltinsTest, JoinWithNonIterableRaisesTypeError) {

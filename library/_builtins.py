@@ -29,6 +29,11 @@ def _bytearray_clear(obj):
 
 
 @_patch
+def _bytearray_guard(obj):
+    pass
+
+
+@_patch
 def _bytearray_join(self, iterable):
     pass
 
@@ -60,6 +65,11 @@ def _bytes_getitem(self, index):
 
 @_patch
 def _bytes_getslice(self, start, stop, step):
+    pass
+
+
+@_patch
+def _bytes_guard(obj):
     pass
 
 
@@ -139,6 +149,11 @@ def _dict_check(obj):
 
 
 @_patch
+def _dict_guard(obj):
+    pass
+
+
+@_patch
 def _dict_len(self):
     pass
 
@@ -167,6 +182,11 @@ def _divmod(number, divisor):
 
 @_patch
 def _float_check(obj):
+    pass
+
+
+@_patch
+def _float_guard(obj):
     pass
 
 
@@ -266,6 +286,11 @@ def _int_from_bytes(cls, bytes, byteorder_big, signed):
 
 
 @_patch
+def _int_guard(obj):
+    pass
+
+
+@_patch
 def _int_new_from_bytearray(cls, x, base):
     pass
 
@@ -321,6 +346,11 @@ def _list_getslice(self, start, stop, step):
 
 
 @_patch
+def _list_guard(obj):
+    pass
+
+
+@_patch
 def _list_len(self):
     pass
 
@@ -356,6 +386,11 @@ def _pyobject_offset(instance, offset):
 
 @_patch
 def _range_check(obj):
+    pass
+
+
+@_patch
+def _range_guard(obj):
     pass
 
 
@@ -400,6 +435,11 @@ def _set_check(obj):
 
 
 @_patch
+def _set_guard(obj):
+    pass
+
+
+@_patch
 def _set_len(self):
     pass
 
@@ -426,6 +466,11 @@ def _set_member_pyobject(addr, value):
 
 @_patch
 def _slice_check(obj):
+    pass
+
+
+@_patch
+def _slice_guard(obj):
     pass
 
 
@@ -461,6 +506,11 @@ def _str_checkexact(obj):
 
 @_patch
 def _str_count(self, sub, start, end):
+    pass
+
+
+@_patch
+def _str_guard(obj):
     pass
 
 
@@ -516,6 +566,11 @@ def _tuple_check(obj):
 
 @_patch
 def _tuple_checkexact(obj):
+    pass
+
+
+@_patch
+def _tuple_guard(obj):
     pass
 
 
@@ -576,6 +631,11 @@ def _type_check_exact(obj):
 
 @_patch
 def _type_dict_keys(obj):
+    pass
+
+
+@_patch
+def _type_guard(obj):
     pass
 
 

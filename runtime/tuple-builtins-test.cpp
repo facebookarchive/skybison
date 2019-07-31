@@ -843,18 +843,6 @@ result2 = t2.__hash__()
   EXPECT_EQ(*result1, *result2);
 }
 
-TEST_F(TupleBuiltinsTest, DunderLtWithNonTupleSelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "tuple.__lt__(None, tuple())"),
-      LayoutId::kTypeError, "__lt__ expected 'tuple' but got NoneType"));
-}
-
-TEST_F(TupleBuiltinsTest, DunderLtWithNonTupleOtherRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "tuple.__lt__(tuple(), None)"),
-      LayoutId::kTypeError, "__lt__ expected 'tuple' but got NoneType"));
-}
-
 TEST_F(TupleBuiltinsTest, DunderLtComparesFirstNonEqualElement) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 t1 = (1, 2, 3)

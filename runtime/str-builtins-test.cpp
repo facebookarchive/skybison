@@ -2661,12 +2661,6 @@ TEST_F(StrBuiltinsTest, DunderContainsWithNotPresentSubstrReturnsTrue) {
   EXPECT_EQ(*result, Bool::falseObj());
 }
 
-TEST_F(StrBuiltinsTest, IsalnumWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "str.isalnum(None)"),
-                            LayoutId::kTypeError,
-                            "isalnum expected 'str' but got NoneType"));
-}
-
 TEST_F(StrBuiltinsTest, IsalnumWithEmptyStringReturnsFalse) {
   ASSERT_FALSE(runFromCStr(&runtime_, "result = str.isalnum('')").isError());
   EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::falseObj());
@@ -2766,12 +2760,6 @@ result = ' \r '.isspace()
   EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
 }
 
-TEST_F(StrBuiltinsTest, IsupperWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "str.isupper(None)"),
-                            LayoutId::kTypeError,
-                            "isupper expected 'str' but got NoneType"));
-}
-
 TEST_F(StrBuiltinsTest, IsupperWithEmptyStringReturnsFalse) {
   ASSERT_FALSE(runFromCStr(&runtime_, "result = str.isupper('')").isError());
   EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::falseObj());
@@ -2793,12 +2781,6 @@ TEST_F(StrBuiltinsTest, IsupperWithUppercaseLettersReturnsTrue) {
                            "'ABCDEFGHIJKLMNOPQRSTUVWXYZ'])")
                    .isError());
   EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), Bool::trueObj());
-}
-
-TEST_F(StrBuiltinsTest, IslowerWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "str.islower(None)"),
-                            LayoutId::kTypeError,
-                            "islower expected 'str' but got NoneType"));
 }
 
 TEST_F(StrBuiltinsTest, IslowerWithEmptyStringReturnsFalse) {
@@ -2871,12 +2853,6 @@ a = "foo 123".upper()
   HandleScope scope(thread_);
   Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
   EXPECT_TRUE(isStrEqualsCStr(*a, "FOO 123"));
-}
-
-TEST_F(StrBuiltinsTest, CapitalizeWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "str.capitalize(1)"), LayoutId::kTypeError,
-      "'capitalize' requires a 'str' instance but got 'int'"));
 }
 
 TEST_F(StrBuiltinsTest, CapitalizeReturnsCapitalizedStr) {

@@ -148,6 +148,7 @@ class Runtime;
   V(UnderBuiltins, "_builtins")                                                \
   V(UnderByteArrayCheck, "_bytearray_check")                                   \
   V(UnderByteArrayClear, "_bytearray_clear")                                   \
+  V(UnderByteArrayGuard, "_bytearray_guard")                                   \
   V(UnderByteArrayJoin, "_bytearray_join")                                     \
   V(UnderByteArrayLen, "_bytearray_len")                                       \
   V(UnderByteArraySetitem, "_bytearray_setitem")                               \
@@ -156,6 +157,7 @@ class Runtime;
   V(UnderBytesFromInts, "_bytes_from_ints")                                    \
   V(UnderBytesGetitem, "_bytes_getitem")                                       \
   V(UnderBytesGetslice, "_bytes_getslice")                                     \
+  V(UnderBytesGuard, "_bytes_guard")                                           \
   V(UnderBytesJoin, "_bytes_join")                                             \
   V(UnderBytesLen, "_bytes_len")                                               \
   V(UnderBytesMaketrans, "_bytes_maketrans")                                   \
@@ -176,6 +178,7 @@ class Runtime;
   V(UnderDictBucketValue, "_dict_bucket_value")                                \
   V(UnderDictCheck, "_dict_check")                                             \
   V(UnderDictGetItem, "_dict_getitem")                                         \
+  V(UnderDictGuard, "_dict_guard")                                             \
   V(UnderDictLen, "_dict_len")                                                 \
   V(UnderDictLookup, "_dict_lookup")                                           \
   V(UnderDictLookupNext, "_dict_lookup_next")                                  \
@@ -188,6 +191,7 @@ class Runtime;
   V(UnderFdWrite, "_fd_write")                                                 \
   V(UnderFindAndLoad, "_find_and_load")                                        \
   V(UnderFloatCheck, "_float_check")                                           \
+  V(UnderFloatGuard, "_float_guard")                                           \
   V(UnderFrozenImportlib, "_frozen_importlib")                                 \
   V(UnderFrozenImportlibExternal, "_frozen_importlib_external")                \
   V(UnderFrozenSetCheck, "_frozenset_check")                                   \
@@ -215,6 +219,7 @@ class Runtime;
   V(UnderIntCheck, "_int_check")                                               \
   V(UnderIntCheckExact, "_int_checkexact")                                     \
   V(UnderIntFromBytes, "_int_from_bytes")                                      \
+  V(UnderIntGuard, "_int_guard")                                               \
   V(UnderIntNewFromByteArray, "_int_new_from_bytearray")                       \
   V(UnderIntNewFromBytes, "_int_new_from_bytes")                               \
   V(UnderIntNewFromInt, "_int_new_from_int")                                   \
@@ -230,6 +235,7 @@ class Runtime;
   V(UnderListExtend, "_list_extend")                                           \
   V(UnderListGetitem, "_list_getitem")                                         \
   V(UnderListGetslice, "_list_getslice")                                       \
+  V(UnderListGuard, "_list_guard")                                             \
   V(UnderListLen, "_list_len")                                                 \
   V(UnderListSort, "_list_sort")                                               \
   V(UnderLookupText, "_lookup_text")                                           \
@@ -266,6 +272,7 @@ class Runtime;
   V(UnderPropertyIsAbstract, "_property_isabstract")                           \
   V(UnderPyObjectOffset, "_pyobject_offset")                                   \
   V(UnderRangeCheck, "_range_check")                                           \
+  V(UnderRangeGuard, "_range_guard")                                           \
   V(UnderRangeLen, "_range_len")                                               \
   V(UnderRawIOBase, "_RawIOBase")                                              \
   V(UnderReadBytes, "_readbytes")                                              \
@@ -278,12 +285,14 @@ class Runtime;
   V(UnderSeqSetIndex, "_seq_set_index")                                        \
   V(UnderSeqSetIterable, "_seq_set_iterable")                                  \
   V(UnderSetCheck, "_set_check")                                               \
+  V(UnderSetGuard, "_set_guard")                                               \
   V(UnderSetLen, "_set_len")                                                   \
   V(UnderSetMemberDouble, "_set_member_double")                                \
   V(UnderSetMemberFloat, "_set_member_float")                                  \
   V(UnderSetMemberIntegral, "_set_member_integral")                            \
   V(UnderSetMemberPyObject, "_set_member_pyobject")                            \
   V(UnderSliceCheck, "_slice_check")                                           \
+  V(UnderSliceGuard, "_slice_guard")                                           \
   V(UnderSliceIndex, "_slice_index")                                           \
   V(UnderSliceStart, "_slice_start")                                           \
   V(UnderSliceStep, "_slice_step")                                             \
@@ -297,6 +306,7 @@ class Runtime;
   V(UnderStrCheck, "_str_check")                                               \
   V(UnderStrCheckExact, "_str_checkexact")                                     \
   V(UnderStrCount, "_str_count")                                               \
+  V(UnderStrGuard, "_str_guard")                                               \
   V(UnderStrJoin, "_str_join")                                                 \
   V(UnderStrEscapeNonAscii, "_str_escape_non_ascii")                           \
   V(UnderStrFind, "_str_find")                                                 \
@@ -313,6 +323,7 @@ class Runtime;
   V(UnderThread, "_thread")                                                    \
   V(UnderTupleCheck, "_tuple_check")                                           \
   V(UnderTupleCheckExact, "_tuple_checkexact")                                 \
+  V(UnderTupleGuard, "_tuple_guard")                                           \
   V(UnderTupleLen, "_tuple_len")                                               \
   V(UnderTupleNew, "_tuple_new")                                               \
   V(UnderTraceback, "_traceback")                                              \
@@ -326,6 +337,7 @@ class Runtime;
   V(UnderTypeCheck, "_type_check")                                             \
   V(UnderTypeCheckExact, "_type_check_exact")                                  \
   V(UnderTypeDictKeys, "_type_dict_keys")                                      \
+  V(UnderTypeGuard, "_type_guard")                                             \
   V(UnderTypeIsSubclass, "_type_issubclass")                                   \
   V(UnderUnbound, "_Unbound")                                                  \
   V(UnderUnicodeEscapeDecode, "_unicode_escape_decode")                        \

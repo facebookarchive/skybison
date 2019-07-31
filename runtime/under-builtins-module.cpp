@@ -48,11 +48,24 @@ void copyFunctionEntries(Thread* thread, const Function& base,
   patch.setIntrinsicId(base.intrinsicId());
 }
 
+static RawObject raiseRequiresFromCaller(Thread* thread, Frame* frame,
+                                         word nargs, SymbolId expected_type) {
+  HandleScope scope(thread);
+  Arguments args(frame, nargs);
+  Function function(&scope, frame->previousFrame()->function());
+  Str function_name(&scope, function.name());
+  Object obj(&scope, args.get(0));
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "'%S' requires a '%Y' object but received a '%T'",
+                              &function_name, expected_type, &obj);
+}
+
 const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderAddress, underAddress},
     {SymbolId::kUnderBoundMethod, underBoundMethod},
     {SymbolId::kUnderByteArrayCheck, underByteArrayCheck},
     {SymbolId::kUnderByteArrayClear, underByteArrayClear},
+    {SymbolId::kUnderByteArrayGuard, underByteArrayGuard},
     {SymbolId::kUnderByteArrayJoin, underByteArrayJoin},
     {SymbolId::kUnderByteArrayLen, underByteArrayLen},
     {SymbolId::kUnderByteArraySetitem, underByteArraySetItem},
@@ -60,6 +73,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderBytesFromInts, underBytesFromInts},
     {SymbolId::kUnderBytesGetitem, underBytesGetItem},
     {SymbolId::kUnderBytesGetslice, underBytesGetSlice},
+    {SymbolId::kUnderBytesGuard, underBytesGuard},
     {SymbolId::kUnderBytesJoin, underBytesJoin},
     {SymbolId::kUnderBytesLen, underBytesLen},
     {SymbolId::kUnderBytesMaketrans, underBytesMaketrans},
@@ -75,12 +89,14 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderDictBucketUpdate, underDictBucketUpdate},
     {SymbolId::kUnderDictBucketValue, underDictBucketValue},
     {SymbolId::kUnderDictCheck, underDictCheck},
+    {SymbolId::kUnderDictGuard, underDictGuard},
     {SymbolId::kUnderDictLen, underDictLen},
     {SymbolId::kUnderDictLookup, underDictLookup},
     {SymbolId::kUnderDictLookupNext, underDictLookupNext},
     {SymbolId::kUnderDictUpdateMapping, underDictUpdateMapping},
     {SymbolId::kUnderDivmod, underDivmod},
     {SymbolId::kUnderFloatCheck, underFloatCheck},
+    {SymbolId::kUnderFloatGuard, underFloatGuard},
     {SymbolId::kUnderFrozenSetCheck, underFrozenSetCheck},
     {SymbolId::kUnderGetMemberByte, underGetMemberByte},
     {SymbolId::kUnderGetMemberChar, underGetMemberChar},
@@ -100,6 +116,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderIntCheck, underIntCheck},
     {SymbolId::kUnderIntCheckExact, underIntCheckExact},
     {SymbolId::kUnderIntFromBytes, underIntFromBytes},
+    {SymbolId::kUnderIntGuard, underIntGuard},
     {SymbolId::kUnderIntNewFromByteArray, underIntNewFromByteArray},
     {SymbolId::kUnderIntNewFromBytes, underIntNewFromBytes},
     {SymbolId::kUnderIntNewFromInt, underIntNewFromInt},
@@ -111,6 +128,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderListExtend, underListExtend},
     {SymbolId::kUnderListGetitem, underListGetItem},
     {SymbolId::kUnderListGetslice, underListGetSlice},
+    {SymbolId::kUnderListGuard, underListGuard},
     {SymbolId::kUnderListLen, underListLen},
     {SymbolId::kUnderListSort, underListSort},
     {SymbolId::kUnderObjectTypeHasattr, underObjectTypeHasattr},
@@ -118,6 +136,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderPropertyIsAbstract, underPropertyIsAbstract},
     {SymbolId::kUnderPyObjectOffset, underPyObjectOffset},
     {SymbolId::kUnderRangeCheck, underRangeCheck},
+    {SymbolId::kUnderRangeGuard, underRangeGuard},
     {SymbolId::kUnderRangeLen, underRangeLen},
     {SymbolId::kUnderReprEnter, underReprEnter},
     {SymbolId::kUnderReprLeave, underReprLeave},
@@ -126,12 +145,14 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderSeqSetIndex, underSeqSetIndex},
     {SymbolId::kUnderSeqSetIterable, underSeqSetIterable},
     {SymbolId::kUnderSetCheck, underSetCheck},
+    {SymbolId::kUnderSetGuard, underSetGuard},
     {SymbolId::kUnderSetLen, underSetLen},
     {SymbolId::kUnderSetMemberDouble, underSetMemberDouble},
     {SymbolId::kUnderSetMemberFloat, underSetMemberFloat},
     {SymbolId::kUnderSetMemberIntegral, underSetMemberIntegral},
     {SymbolId::kUnderSetMemberPyObject, underSetMemberPyObject},
     {SymbolId::kUnderSliceCheck, underSliceCheck},
+    {SymbolId::kUnderSliceGuard, underSliceGuard},
     {SymbolId::kUnderSliceStart, underSliceStart},
     {SymbolId::kUnderSliceStep, underSliceStep},
     {SymbolId::kUnderSliceStop, underSliceStop},
@@ -140,6 +161,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrCheck, underStrCheck},
     {SymbolId::kUnderStrCheckExact, underStrCheckExact},
     {SymbolId::kUnderStrCount, underStrCount},
+    {SymbolId::kUnderStrGuard, underStrGuard},
     {SymbolId::kUnderStrJoin, underStrJoin},
     {SymbolId::kUnderStrEscapeNonAscii, underStrEscapeNonAscii},
     {SymbolId::kUnderStrFind, underStrFind},
@@ -150,6 +172,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderStrSplitlines, underStrSplitlines},
     {SymbolId::kUnderTupleCheck, underTupleCheck},
     {SymbolId::kUnderTupleCheckExact, underTupleCheckExact},
+    {SymbolId::kUnderTupleGuard, underTupleGuard},
     {SymbolId::kUnderTupleLen, underTupleLen},
     {SymbolId::kUnderTupleNew, underTupleNew},
     {SymbolId::kUnderType, underType},
@@ -162,6 +185,7 @@ const BuiltinMethod UnderBuiltinsModule::kBuiltinMethods[] = {
     {SymbolId::kUnderTypeCheck, underTypeCheck},
     {SymbolId::kUnderTypeCheckExact, underTypeCheckExact},
     {SymbolId::kUnderTypeDictKeys, underTypeDictKeys},
+    {SymbolId::kUnderTypeGuard, underTypeGuard},
     {SymbolId::kUnderTypeIsSubclass, underTypeIsSubclass},
     {SymbolId::kUnderUnimplemented, underUnimplemented},
     {SymbolId::kSentinelId, nullptr},
@@ -175,34 +199,26 @@ const BuiltinType UnderBuiltinsModule::kBuiltinTypes[] = {
 const char* const UnderBuiltinsModule::kFrozenData = kUnderBuiltinsModuleData;
 
 const SymbolId UnderBuiltinsModule::kIntrinsicIds[] = {
-    SymbolId::kUnderByteArrayCheck,
-    SymbolId::kUnderByteArrayLen,
-    SymbolId::kUnderBytesCheck,
-    SymbolId::kUnderBytesLen,
-    SymbolId::kUnderDictCheck,
-    SymbolId::kUnderDictLen,
-    SymbolId::kUnderFloatCheck,
-    SymbolId::kUnderFrozenSetCheck,
-    SymbolId::kUnderIntCheck,
-    SymbolId::kUnderIntCheckExact,
-    SymbolId::kUnderListCheck,
-    SymbolId::kUnderListCheckExact,
-    SymbolId::kUnderListGetitem,
-    SymbolId::kUnderListLen,
-    SymbolId::kUnderRangeCheck,
-    SymbolId::kUnderSetCheck,
-    SymbolId::kUnderSetLen,
-    SymbolId::kUnderSliceCheck,
-    SymbolId::kUnderStrCheck,
-    SymbolId::kUnderStrCheckExact,
-    SymbolId::kUnderStrLen,
-    SymbolId::kUnderTupleCheck,
-    SymbolId::kUnderTupleCheckExact,
-    SymbolId::kUnderTupleLen,
-    SymbolId::kUnderType,
-    SymbolId::kUnderTypeCheck,
-    SymbolId::kUnderTypeCheckExact,
-    SymbolId::kSentinelId,
+    SymbolId::kUnderByteArrayCheck,  SymbolId::kUnderByteArrayGuard,
+    SymbolId::kUnderByteArrayLen,    SymbolId::kUnderBytesCheck,
+    SymbolId::kUnderBytesGuard,      SymbolId::kUnderBytesLen,
+    SymbolId::kUnderDictCheck,       SymbolId::kUnderDictGuard,
+    SymbolId::kUnderDictLen,         SymbolId::kUnderFloatCheck,
+    SymbolId::kUnderFloatGuard,      SymbolId::kUnderFrozenSetCheck,
+    SymbolId::kUnderIntCheck,        SymbolId::kUnderIntCheckExact,
+    SymbolId::kUnderIntGuard,        SymbolId::kUnderListCheck,
+    SymbolId::kUnderListCheckExact,  SymbolId::kUnderListGetitem,
+    SymbolId::kUnderListGuard,       SymbolId::kUnderListLen,
+    SymbolId::kUnderRangeCheck,      SymbolId::kUnderRangeGuard,
+    SymbolId::kUnderSetCheck,        SymbolId::kUnderSetGuard,
+    SymbolId::kUnderSetLen,          SymbolId::kUnderSliceCheck,
+    SymbolId::kUnderSliceGuard,      SymbolId::kUnderStrCheck,
+    SymbolId::kUnderStrCheckExact,   SymbolId::kUnderStrGuard,
+    SymbolId::kUnderStrLen,          SymbolId::kUnderTupleCheck,
+    SymbolId::kUnderTupleCheckExact, SymbolId::kUnderTupleGuard,
+    SymbolId::kUnderTupleLen,        SymbolId::kUnderType,
+    SymbolId::kUnderTypeCheck,       SymbolId::kUnderTypeCheckExact,
+    SymbolId::kUnderTypeGuard,       SymbolId::kSentinelId,
 };
 
 RawObject UnderBuiltinsModule::underAddress(Thread* thread, Frame* frame,
@@ -233,6 +249,15 @@ RawObject UnderBuiltinsModule::underByteArrayCheck(Thread* thread, Frame* frame,
                                                    word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfByteArray(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underByteArrayGuard(Thread* thread, Frame* frame,
+                                                   word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfByteArray(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kByteArray);
 }
 
 RawObject UnderBuiltinsModule::underByteArraySetItem(Thread* thread,
@@ -270,6 +295,15 @@ RawObject UnderBuiltinsModule::underBytesCheck(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfBytes(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underBytesGuard(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfBytes(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kBytes);
 }
 
 RawObject UnderBuiltinsModule::underByteArrayJoin(Thread* thread, Frame* frame,
@@ -675,6 +709,15 @@ RawObject UnderBuiltinsModule::underDictCheck(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfDict(args.get(0)));
 }
 
+RawObject UnderBuiltinsModule::underDictGuard(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfDict(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kDict);
+}
+
 RawObject UnderBuiltinsModule::underDictLen(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
@@ -815,6 +858,15 @@ RawObject UnderBuiltinsModule::underFloatCheck(Thread* thread, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(thread->runtime()->isInstanceOfFloat(args.get(0)));
+}
+
+RawObject UnderBuiltinsModule::underFloatGuard(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfFloat(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kFloat);
 }
 
 RawObject UnderBuiltinsModule::underFrozenSetCheck(Thread* thread, Frame* frame,
@@ -1002,6 +1054,15 @@ RawObject UnderBuiltinsModule::underIntFromBytes(Thread* thread, Frame* frame,
   bool is_signed = signed_arg == Bool::trueObj();
   Int value(&scope, runtime->bytesToInt(thread, bytes, endianness, is_signed));
   return intOrUserSubclass(thread, type, value);
+}
+
+RawObject UnderBuiltinsModule::underIntGuard(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfInt(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kInt);
 }
 
 static RawObject intFromBytes(Thread* /* t */, const Bytes& bytes, word length,
@@ -1356,6 +1417,15 @@ RawObject UnderBuiltinsModule::underListGetSlice(Thread* thread, Frame* frame,
   return listSlice(thread, self, start.asWord(), stop.asWord(), step.asWord());
 }
 
+RawObject UnderBuiltinsModule::underListGuard(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfList(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kList);
+}
+
 RawObject UnderBuiltinsModule::underListLen(Thread* thread, Frame* frame,
                                             word nargs) {
   HandleScope scope(thread);
@@ -1463,6 +1533,15 @@ RawObject UnderBuiltinsModule::underRangeCheck(Thread*, Frame* frame,
   return Bool::fromBool(args.get(0).isRange());
 }
 
+RawObject UnderBuiltinsModule::underRangeGuard(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isRange()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kRange);
+}
+
 RawObject UnderBuiltinsModule::underRangeLen(Thread* thread, Frame* frame,
                                              word nargs) {
   HandleScope scope(thread);
@@ -1533,6 +1612,15 @@ RawObject UnderBuiltinsModule::underSetCheck(Thread* thread, Frame* frame,
   return Bool::fromBool(thread->runtime()->isInstanceOfSet(args.get(0)));
 }
 
+RawObject UnderBuiltinsModule::underSetGuard(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfSet(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kSet);
+}
+
 RawObject UnderBuiltinsModule::underSetLen(Thread* thread, Frame* frame,
                                            word nargs) {
   HandleScope scope(thread);
@@ -1583,6 +1671,15 @@ RawObject UnderBuiltinsModule::underSliceCheck(Thread*, Frame* frame,
                                                word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isSlice());
+}
+
+RawObject UnderBuiltinsModule::underSliceGuard(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  if (args.get(0).isSlice()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kSlice);
 }
 
 RawObject UnderBuiltinsModule::underSliceStart(Thread* thread, Frame* frame,
@@ -1770,6 +1867,15 @@ RawObject UnderBuiltinsModule::underStrFromStr(Thread* thread, Frame* frame,
   return *instance;
 }
 
+RawObject UnderBuiltinsModule::underStrGuard(Thread* thread, Frame* frame,
+                                             word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfStr(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kStr);
+}
+
 RawObject UnderBuiltinsModule::underStrJoin(Thread* thread, Frame* frame,
                                             word nargs) {
   Runtime* runtime = thread->runtime();
@@ -1865,6 +1971,15 @@ RawObject UnderBuiltinsModule::underTupleCheckExact(Thread*, Frame* frame,
                                                     word nargs) {
   Arguments args(frame, nargs);
   return Bool::fromBool(args.get(0).isTuple());
+}
+
+RawObject UnderBuiltinsModule::underTupleGuard(Thread* thread, Frame* frame,
+                                               word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfTuple(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kTuple);
 }
 
 RawObject UnderBuiltinsModule::underTupleLen(Thread* thread, Frame* frame,
@@ -2004,6 +2119,15 @@ RawObject UnderBuiltinsModule::underTypeDictKeys(Thread* thread, Frame* frame,
     runtime->listAdd(thread, keys, key);
   }
   return *keys;
+}
+
+RawObject UnderBuiltinsModule::underTypeGuard(Thread* thread, Frame* frame,
+                                              word nargs) {
+  Arguments args(frame, nargs);
+  if (thread->runtime()->isInstanceOfType(args.get(0))) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, frame, nargs, SymbolId::kType);
 }
 
 RawObject UnderBuiltinsModule::underTypeIsSubclass(Thread* thread, Frame* frame,

@@ -60,6 +60,14 @@ class ByteArrayTest(unittest.TestCase):
         bytearray.__setitem__(ba, 1, 1)
         self.assertEqual(ba, bytearray(b"f\01o"))
 
+    def test_clear_with_non_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray.clear(b"")
+        self.assertIn(
+            "'clear' requires a 'bytearray' object but received a 'bytes'",
+            str(context.exception),
+        )
+
     def test_find_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.find(b"", bytearray())
@@ -163,8 +171,16 @@ class ByteArrayTest(unittest.TestCase):
             haystack.index(needle, 0, 2)
         self.assertEqual(str(context.exception), "subsection not found")
 
+    def test_join_with_non_bytearray_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytearray.join(b"", [])
+        self.assertIn(
+            "'join' requires a 'bytearray' object but received a 'bytes'",
+            str(context.exception),
+        )
 
-class BytesTest(unittest.TestCase):
+
+class BytesTests(unittest.TestCase):
     def test_dunder_add_with_bytes_like_other_returns_bytes(self):
         self.assertEqual(b"123".__add__(bytearray(b"456")), b"123456")
 
@@ -340,6 +356,14 @@ class BytesTest(unittest.TestCase):
             index += 1
         self.assertEqual(index, len(expected))
 
+    def test_join_with_non_bytes_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            bytes.join(1, [])
+        self.assertIn(
+            "'join' requires a 'bytes' object but received a 'int'",
+            str(context.exception),
+        )
+
 
 class DictTests(unittest.TestCase):
     def test_clear_with_non_dict_raises_type_error(self):
@@ -351,6 +375,14 @@ class DictTests(unittest.TestCase):
         self.assertEqual(dict.clear(d), None)
         self.assertEqual(d.__len__(), 0)
         self.assertNotIn("a", d)
+
+    def test_copy_with_non_dict_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            dict.copy(None)
+        self.assertIn(
+            "'copy' requires a 'dict' object but received a 'NoneType'",
+            str(context.exception),
+        )
 
     def test_update_with_malformed_sequence_elt_raises_type_error(self):
         with self.assertRaises(ValueError):
@@ -1230,6 +1262,22 @@ class LenTests(unittest.TestCase):
 
 
 class ListTests(unittest.TestCase):
+    def test_dunder_eq_with_non_list_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.__eq__(False, [])
+        self.assertIn(
+            "'__eq__' requires a 'list' object but received a 'bool'",
+            str(context.exception),
+        )
+
+    def test_copy_with_non_list_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.copy(None)
+        self.assertIn(
+            "'copy' requires a 'list' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
     def test_extend_list_returns_none(self):
         original = [1, 2, 3]
         copy = []
@@ -1464,6 +1512,14 @@ class ListTests(unittest.TestCase):
     def test_pop_with_negative_out_of_bounds_arg_raises_index_error(self):
         original = [1, 2, 3]
         self.assertRaises(IndexError, list.pop, original, -10)
+
+    def test_sort_with_non_list_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            list.sort(None)
+        self.assertIn(
+            "'sort' requires a 'list' object but received a 'NoneType'",
+            str(context.exception),
+        )
 
 
 class LongRangeIteratorTests(unittest.TestCase):
@@ -1913,6 +1969,14 @@ class SeqTests(unittest.TestCase):
 
 
 class SetTests(unittest.TestCase):
+    def test_dunder_or_with_non_set_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            set.__or__(frozenset(), set())
+        self.assertIn(
+            "'__or__' requires a 'set' object but received a 'frozenset'",
+            str(context.exception),
+        )
+
     def test_difference_no_others_copies_self(self):
         a_set = {1, 2, 3}
         self.assertIsNot(set.difference(a_set), a_set)
@@ -2044,6 +2108,14 @@ class StaticMethodTests(unittest.TestCase):
 
 
 class StrTests(unittest.TestCase):
+    def test_capitalize_with_non_str_self_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.capitalize(1)
+        self.assertIn(
+            "'capitalize' requires a 'str' object but received a 'int'",
+            str(context.exception),
+        )
+
     def test_count_with_non_str_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             str.count(None, "foo")
@@ -2138,6 +2210,30 @@ class StrTests(unittest.TestCase):
     def test_format_keyword_fields_returns_formatted_str(self):
         result = str.format("1{a}2{b}3{c}4{b}5", a="a", b="b", c="c")
         self.assertEqual(result, "1a2b3c4b5")
+
+    def test_isalnum_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isalnum(None)
+        self.assertIn(
+            "'isalnum' requires a 'str' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_islower_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.islower(None)
+        self.assertIn(
+            "'islower' requires a 'str' object but received a 'NoneType'",
+            str(context.exception),
+        )
+
+    def test_isupper_with_non_str_raises_type_error(self):
+        with self.assertRaises(TypeError) as context:
+            str.isupper(None)
+        self.assertIn(
+            "'isupper' requires a 'str' object but received a 'NoneType'",
+            str(context.exception),
+        )
 
     def test_join_with_raising_descriptor_dunder_iter_raises_type_error(self):
         class Desc:
@@ -2360,6 +2456,13 @@ class SumTests(unittest.TestCase):
 
 
 class TupleTests(unittest.TestCase):
+    def test_dunder_lt_with_non_tuple_self_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            tuple.__lt__(None, ())
+
+    def test_dunder_lt_with_non_tuple_other_returns_not_implemented(self):
+        self.assertIs(tuple.__lt__((), None), NotImplemented)
+
     def test_dunder_new_with_no_iterable_arg_returns_empty_tuple(self):
         result = tuple.__new__(tuple)
         self.assertIs(result, ())

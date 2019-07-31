@@ -53,14 +53,6 @@ d = {'a': C()}
   EXPECT_EQ(ref.referent(), NoneType::object());
 }
 
-TEST_F(DictBuiltinsTest, CopyWithNonDictRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-result = dict.copy(None)
-)"),
-                            LayoutId::kTypeError,
-                            "expected 'dict' instance but got NoneType"));
-}
-
 TEST_F(DictBuiltinsTest, CopyWithDictReturnsNewInstance) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 d = {'a': 3}

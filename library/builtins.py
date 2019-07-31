@@ -10,6 +10,7 @@ _address = _address  # noqa: F821
 _bound_method = _bound_method  # noqa: F821
 _bytearray_check = _bytearray_check  # noqa: F821
 _bytearray_clear = _bytearray_clear  # noqa: F821
+_bytearray_guard = _bytearray_guard  # noqa: F821
 _bytearray_join = _bytearray_join  # noqa: F821
 _bytearray_len = _bytearray_len  # noqa: F821
 _bytearray_setitem = _bytearray_setitem  # noqa: F821
@@ -17,6 +18,7 @@ _bytes_check = _bytes_check  # noqa: F821
 _bytes_from_ints = _bytes_from_ints  # noqa: F821
 _bytes_getitem = _bytes_getitem  # noqa: F821
 _bytes_getslice = _bytes_getslice  # noqa: F821
+_bytes_guard = _bytes_guard  # noqa: F821
 _bytes_join = _bytes_join  # noqa: F821
 _bytes_len = _bytes_len  # noqa: F821
 _bytes_maketrans = _bytes_maketrans  # noqa: F821
@@ -32,11 +34,13 @@ _dict_bucket_key = _dict_bucket_key  # noqa: F821
 _dict_bucket_update = _dict_bucket_update  # noqa: F821
 _dict_bucket_value = _dict_bucket_value  # noqa: F821
 _dict_check = _dict_check  # noqa: F821
+_dict_guard = _dict_guard  # noqa: F821
 _dict_lookup = _dict_lookup  # noqa: F821
 _dict_lookup_next = _dict_lookup_next  # noqa: F821
 _dict_update_mapping = _dict_update_mapping  # noqa: F821
 _divmod = _divmod  # noqa: F821
 _float_check = _float_check  # noqa: F821
+_float_guard = _float_guard  # noqa: F821
 _frozenset_check = _frozenset_check  # noqa: F821
 _get_member_byte = _get_member_byte  # noqa: F821
 _get_member_char = _get_member_char  # noqa: F821
@@ -56,6 +60,7 @@ _instance_setattr = _instance_setattr  # noqa: F821
 _int_check = _int_check  # noqa: F821
 _int_checkexact = _int_checkexact  # noqa: F821
 _int_from_bytes = _int_from_bytes  # noqa: F821
+_int_guard = _int_guard  # noqa: F821
 _int_new_from_bytearray = _int_new_from_bytearray  # noqa: F821
 _int_new_from_bytes = _int_new_from_bytes  # noqa: F821
 _int_new_from_int = _int_new_from_int  # noqa: F821
@@ -67,6 +72,7 @@ _list_delslice = _list_delslice  # noqa: F821
 _list_extend = _list_extend  # noqa: F821
 _list_getitem = _list_getitem  # noqa: F821
 _list_getslice = _list_getslice  # noqa: F821
+_list_guard = _list_guard  # noqa: F821
 _list_len = _list_len  # noqa: F821
 _list_sort = _list_sort  # noqa: F821
 _object_type_hasattr = _object_type_hasattr  # noqa: F821
@@ -75,6 +81,7 @@ _property = _property  # noqa: F821
 _property_isabstract = _property_isabstract  # noqa: F821
 _pyobject_offset = _pyobject_offset  # noqa: F821
 _range_check = _range_check  # noqa: F821
+_range_guard = _range_guard  # noqa: F821
 _range_len = _range_len  # noqa: F821
 _repr_enter = _repr_enter  # noqa: F821
 _repr_leave = _repr_leave  # noqa: F821
@@ -83,12 +90,14 @@ _seq_iterable = _seq_iterable  # noqa: F821
 _seq_set_index = _seq_set_index  # noqa: F821
 _seq_set_iterable = _seq_set_iterable  # noqa: F821
 _set_check = _set_check  # noqa: F821
+_set_guard = _set_guard  # noqa: F821
 _set_len = _set_len  # noqa: F821
 _set_member_double = _set_member_double  # noqa: F821
 _set_member_float = _set_member_float  # noqa: F821
 _set_member_integral = _set_member_integral  # noqa: F821
 _set_member_pyobject = _set_member_pyobject  # noqa: F821
 _slice_check = _slice_check  # noqa: F821
+_slice_guard = _slice_guard  # noqa: F821
 _slice_start = _slice_start  # noqa: F821
 _slice_step = _slice_step  # noqa: F821
 _slice_stop = _slice_stop  # noqa: F821
@@ -96,6 +105,7 @@ _staticmethod_isabstract = _staticmethod_isabstract  # noqa: F821
 _str_check = _str_check  # noqa: F821
 _str_checkexact = _str_checkexact  # noqa: F821
 _str_count = _str_count  # noqa: F821
+_str_guard = _str_guard  # noqa: F821
 _str_join = _str_join  # noqa: F821
 _str_escape_non_ascii = _str_escape_non_ascii  # noqa: F821
 _str_find = _str_find  # noqa: F821
@@ -107,6 +117,7 @@ _str_splitlines = _str_splitlines  # noqa: F821
 _traceback = _traceback  # noqa: F821
 _tuple_check = _tuple_check  # noqa: F821
 _tuple_checkexact = _tuple_checkexact  # noqa: F821
+_tuple_guard = _tuple_guard  # noqa: F821
 _tuple_len = _tuple_len  # noqa: F821
 _tuple_new = _tuple_new  # noqa: F821
 _type = _type  # noqa: F821
@@ -119,6 +130,7 @@ _type_bases_set = _type_bases_set  # noqa: F821
 _type_check = _type_check  # noqa: F821
 _type_check_exact = _type_check_exact  # noqa: F821
 _type_dict_keys = _type_dict_keys  # noqa: F821
+_type_guard = _type_guard  # noqa: F821
 _type_issubclass = _type_issubclass  # noqa: F821
 _Unbound = _Unbound  # noqa: F821
 _unimplemented = _unimplemented  # noqa: F821
@@ -1028,22 +1040,13 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def __rmul__(self, n: int) -> bytearray:
-        if not _bytearray_check(self):
-            raise TypeError("'__rmul__' requires a 'bytearray' instance")
+        _bytearray_guard(self)
         return bytearray.__mul__(self, n)
 
     def __setitem__(self, key, value):
-        if not _bytearray_check(self):
-            raise TypeError(
-                f"'__setitem__' requires a 'bytearray' instance but got "
-                f"'{_type(self).__name__}'"
-            )
+        _bytearray_guard(self)
         if _int_check(key):
-            if not _int_check(value):
-                raise TypeError(
-                    f"'__setitem__' requires an 'int' instance but got "
-                    f"'{_type(value).__name__}'"
-                )
+            _int_guard(value)
             return _bytearray_setitem(self, key, value)
         # TODO(T46473889): Implement bytearray.__setitem__ with slice key
         # TODO(T46473949): Implement bytearray.__setitem__ with index key
@@ -1059,8 +1062,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def clear(self):
-        if not _bytearray_check(self):
-            raise TypeError("'clear' requires a 'bytearray' object")
+        _bytearray_guard(self)
         _bytearray_clear(self)
 
     def copy(self):
@@ -1084,11 +1086,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def find(self, sub, start=None, end=None) -> int:
-        if not _bytearray_check(self):
-            raise TypeError(
-                "'find' requires a 'bytearray' object"
-                f"but received a '{_type(self).__name__}'"
-            )
+        _bytearray_guard(self)
         start = 0 if start is None else _index(start)
         end = _bytearray_len(self) if end is None else _index(end)
         # TODO(T38246066) allow any bytes-like object
@@ -1111,11 +1109,7 @@ class bytearray(bootstrap=True):
         pass
 
     def index(self, sub, start=None, end=None) -> int:
-        if not _bytearray_check(self):
-            raise TypeError(
-                "'index' requires a 'bytearray' object"
-                f"but received a '{_type(self).__name__}'"
-            )
+        _bytearray_guard(self)
         result = bytearray.find(self, sub, start, end)
         if result is -1:
             raise ValueError("subsection not found")
@@ -1146,8 +1140,7 @@ class bytearray(bootstrap=True):
         _unimplemented()
 
     def join(self, iterable) -> bytearray:
-        if not _bytearray_check(self):
-            raise TypeError("'join' requires a 'bytearray' object")
+        _bytearray_guard(self)
         result = _bytearray_join(self, iterable)
         if result is not None:
             return result
@@ -1253,11 +1246,7 @@ class bytes(bootstrap=True):
         pass
 
     def __getitem__(self, key):
-        if not _bytes_check(self):
-            raise TypeError(
-                "'__getitem__' requires a 'bytes' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _bytes_guard(self)
         if _int_check(key):
             return _bytes_getitem(self, key)
         if _slice_check(key):
@@ -1350,8 +1339,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def __rmul__(self, n: int) -> bytes:
-        if not _bytes_check(self):
-            raise TypeError("'__rmul__' requires a 'bytes' instance")
+        _bytes_guard(self)
         return bytes.__mul__(self, n)
 
     def capitalize(self):
@@ -1375,11 +1363,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def find(self, sub, start=None, end=None) -> int:
-        if not _bytes_check(self):
-            raise TypeError(
-                "'find' requires a 'bytes' object"
-                f"but received a '{_type(self).__name__}'"
-            )
+        _bytes_guard(self)
         start = 0 if start is None else _index(start)
         end = _bytes_len(self) if end is None else _index(end)
         # TODO(T38246066) allow any bytes-like object
@@ -1404,11 +1388,7 @@ class bytes(bootstrap=True):
         pass
 
     def index(self, sub, start=None, end=None) -> int:
-        if not _bytes_check(self):
-            raise TypeError(
-                "'index' requires a 'bytes' object"
-                f"but received a '{_type(self).__name__}'"
-            )
+        _bytes_guard(self)
         result = bytes.find(self, sub, start, end)
         if result is -1:
             raise ValueError("subsection not found")
@@ -1436,8 +1416,7 @@ class bytes(bootstrap=True):
         _unimplemented()
 
     def join(self, iterable) -> bytes:
-        if not _bytes_check(self):
-            raise TypeError("'join' requires a 'bytes' object")
+        _bytes_guard(self)
         result = _bytes_join(self, iterable)
         if result is not None:
             return result
@@ -1633,8 +1612,7 @@ class dict(bootstrap=True):
         pass
 
     def copy(self):
-        if not _dict_check(self):
-            raise TypeError(f"expected 'dict' instance but got {_type(self).__name__}")
+        _dict_guard(self)
         return dict(self)
 
     def get(self, key, default=None):
@@ -1647,6 +1625,7 @@ class dict(bootstrap=True):
         pass
 
     def pop(self, key, default=_Unbound):
+        _dict_guard(self)
         value = dict.get(self, key, default)
         if value is _Unbound:
             raise KeyError(key)
@@ -1655,8 +1634,7 @@ class dict(bootstrap=True):
         return value
 
     def setdefault(self, key, default=None):
-        if not _dict_check(self):
-            raise TypeError("setdefault expected 'dict' but got {_type(self).__name__}")
+        _dict_guard(self)
         value = dict.get(self, key, _Unbound)
         if value is _Unbound:
             dict.__setitem__(self, key, default)
@@ -1664,8 +1642,7 @@ class dict(bootstrap=True):
         return value
 
     def update(self, seq=_Unbound):
-        if not _dict_check(self):
-            raise TypeError("update expected 'dict' but got {_type(self).__name__}")
+        _dict_guard(self)
         if seq is _Unbound:
             return
         if hasattr(seq, "keys"):
@@ -1831,11 +1808,7 @@ class float(bootstrap=True):
         pass
 
     def __ne__(self, n: float) -> float:  # noqa: T484
-        if not _float_check(self):
-            raise TypeError(
-                f"'__ne__' requires a 'float' object "
-                f"but received a '{self.__class__.__name__}'"
-            )
+        _float_guard(self)
         if not _float_check(n) and not _int_check(n):
             return NotImplemented
         return not float.__eq__(self, n)  # noqa: T484
@@ -2122,10 +2095,7 @@ class int(bootstrap=True):
 
     def __pow__(self, power, mod=None) -> int:
         # TODO(T42359066): Re-write this in C++ if we need a speed boost.
-        if not _int_check(self):
-            raise TypeError(
-                f"'__pow__' requires an 'int' object but got '{_type(self).__name__}'"
-            )
+        _int_guard(self)
         if not _int_check(power):
             return NotImplemented
         if mod is not None and not _int_check(mod):
@@ -2150,22 +2120,19 @@ class int(bootstrap=True):
         return result
 
     def __radd__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__radd__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__add__(n, self)
 
     def __rand__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rand__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__and__(n, self)
 
     def __rdivmod__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rdivmod__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__divmod__(n, self)  # noqa: T484
@@ -2174,36 +2141,31 @@ class int(bootstrap=True):
         pass
 
     def __rfloordiv__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rfloordiv__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__floordiv__(n, self)  # noqa: T484
 
     def __rlshift__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rlshift__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__lshift__(n, self)
 
     def __rmod__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rmod__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__mod__(n, self)  # noqa: T484
 
     def __rmul__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rmul__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__mul__(n, self)
 
     def __ror__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__ror__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__or__(n, self)
@@ -2212,15 +2174,13 @@ class int(bootstrap=True):
         pass
 
     def __rpow__(self, n: int, *, mod=None):
-        if not _int_check(self):
-            raise TypeError("'__rpow__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__pow__(n, self, mod=mod)  # noqa: T484
 
     def __rrshift__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rrshift__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__rshift__(n, self)
@@ -2229,22 +2189,19 @@ class int(bootstrap=True):
         pass
 
     def __rsub__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rsub__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__sub__(n, self)
 
     def __rtruediv__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rtruediv__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__truediv__(n, self)  # noqa: T484
 
     def __rxor__(self, n: int) -> int:
-        if not _int_check(self):
-            raise TypeError("'__rxor__' requires a 'int' object")
+        _int_guard(self)
         if not _int_check(n):
             return NotImplemented
         return int.__xor__(n, self)
@@ -2278,11 +2235,7 @@ class int(bootstrap=True):
     def from_bytes(
         cls: type, bytes: bytes, byteorder: str, *, signed: bool = False
     ) -> int:
-        if not _type_check(cls):
-            raise TypeError(
-                f"'from_bytes' requires a 'type' object "
-                f"but received a '{type(cls).__name__}'"
-            )
+        _type_guard(cls)
         if not _type_issubclass(cls, int):
             raise TypeError(f"'from_bytes' {cls.__name__} is not a subtype of int")
         if not _bytes_check(bytes):
@@ -2432,10 +2385,7 @@ class list(bootstrap=True):
         pass
 
     def __delitem__(self, key) -> None:
-        if not _list_check(self):
-            raise TypeError(
-                f"'__delitem__' requires 'list' but received a '{_type(self).__name__}'"
-            )
+        _list_guard(self)
         if _int_check(key):
             return _list_delitem(self, key)
         if _slice_check(key):
@@ -2449,10 +2399,7 @@ class list(bootstrap=True):
         raise TypeError("list indices must be integers or slices")
 
     def __eq__(self, other):
-        if not _list_check(self):
-            raise TypeError(
-                f"'__eq__' requires 'list' but received a '{_type(self).__name__}'"
-            )
+        _list_guard(self)
         if not _list_check(other):
             return NotImplemented
 
@@ -2471,11 +2418,7 @@ class list(bootstrap=True):
         return True
 
     def __getitem__(self, key):
-        if not _list_check(self):
-            raise TypeError(
-                "'__getitem__' requires a 'list' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _list_guard(self)
         if _int_check(key):
             return _list_getitem(self, key)
         if _slice_check(key):
@@ -2522,15 +2465,11 @@ class list(bootstrap=True):
         pass
 
     def copy(self):
-        if not _list_check(self):
-            raise TypeError(f"expected 'list' instance but got {_type(self).__name__}")
+        _list_guard(self)
         return list(self)
 
     def extend(self, other):
-        if not _list_check(self):
-            raise TypeError(
-                f"'extend' requires 'list' but received a {_type(self).__name__}"
-            )
+        _list_guard(self)
         if _tuple_checkexact(other) or _list_checkexact(other):
             return _list_extend(self, other)
         for item in other:
@@ -2546,11 +2485,7 @@ class list(bootstrap=True):
         pass
 
     def reverse(self):
-        if not _list_check(self):
-            raise TypeError(
-                "'reverse' requires a 'list' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _list_guard(self)
         length = _list_len(self)
         if length < 2:
             return
@@ -2564,8 +2499,7 @@ class list(bootstrap=True):
             right -= 1
 
     def sort(self, key=None, reverse=False):
-        if not _list_check(self):
-            raise TypeError(f"sort expected 'list' but got {_type(self).__name__}")
+        _list_guard(self)
         if reverse:
             list.reverse(self)
         if key:
@@ -2835,11 +2769,7 @@ def quit():
 
 class range(bootstrap=True):
     def __eq__(self, other):
-        if not _range_check(self):
-            raise TypeError(
-                "'__eq__' requires a 'range' object but received a "
-                f"{_type(self).__name__}"
-            )
+        _range_guard(self)
         if not _range_check(other):
             return NotImplemented
         if self is other:
@@ -2856,11 +2786,7 @@ class range(bootstrap=True):
         return self.step == other.step
 
     def __ge__(self, other):
-        if not _range_check(self):
-            raise TypeError(
-                "'__ge__' requires a 'range' object but received a "
-                f"{_type(self).__name__}"
-            )
+        _range_guard(self)
         return NotImplemented
 
     def __getitem__(self, key):
@@ -2884,41 +2810,25 @@ class range(bootstrap=True):
         )
 
     def __gt__(self, other):
-        if not _range_check(self):
-            raise TypeError(
-                "'__gt__' requires a 'range' object but received a "
-                f"{_type(self).__name__}"
-            )
+        _range_guard(self)
         return NotImplemented
 
     def __iter__(self):
         pass
 
     def __le__(self, other):
-        if not _range_check(self):
-            raise TypeError(
-                "'__le__' requires a 'range' object but received a "
-                f"{_type(self).__name__}"
-            )
+        _range_guard(self)
         return NotImplemented
 
     def __len__(self):
         pass
 
     def __lt__(self, other):
-        if not _range_check(self):
-            raise TypeError(
-                "'__lt__' requires a 'range' object but received a "
-                f"{_type(self).__name__}"
-            )
+        _range_guard(self)
         return NotImplemented
 
     def __ne__(self, other):
-        if not _range_check(self):
-            raise TypeError(
-                "'__ne__' requires a 'range' object but received a "
-                f"{_type(self).__name__}"
-            )
+        _range_guard(self)
         if not _range_check(other):
             return NotImplemented
         if self is other:
@@ -3039,11 +2949,7 @@ class set(bootstrap=True):
         pass
 
     def __ior__(self, other):
-        if not _set_check(self):
-            raise TypeError(
-                "'__ior__' requires a 'set' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _set_guard(self)
         if not _set_check(other) and not _frozenset_check(other):
             return NotImplemented
         if self is other:
@@ -3052,8 +2958,7 @@ class set(bootstrap=True):
         return self
 
     def __or__(self, other):
-        if not _set_check(self) and not _frozenset_check(self):
-            return NotImplemented
+        _set_guard(self)
         if not _set_check(other) and not _frozenset_check(other):
             return NotImplemented
         result = set.copy(self)
@@ -3063,11 +2968,7 @@ class set(bootstrap=True):
         return result
 
     def __repr__(self):
-        if not _set_check(self):
-            raise TypeError(
-                "'__repr__' requires a 'set' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _set_guard(self)
         if _repr_enter(self):
             return f"{_type(self).__name__}(...)"
         if _set_len(self) == 0:
@@ -3084,11 +2985,7 @@ class set(bootstrap=True):
         pass
 
     def difference(self, *others):
-        if not _set_check(self):
-            raise TypeError(
-                "'difference' requires a 'set' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _set_guard(self)
         result = list(self)
         for other in others:
             diff = []
@@ -3151,11 +3048,7 @@ class slice(bootstrap=True):
         pass
 
     def indices(self, length) -> tuple:  # noqa: C901
-        if not _slice_check(self):
-            raise TypeError(
-                "'indices' requires a 'slice' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _slice_guard(self)
         length = _index(length)
         if length < 0:
             raise ValueError("length should not be negative")
@@ -3179,11 +3072,11 @@ class str(bootstrap=True):
         pass
 
     def __contains__(self, other):
-        if not _str_check(self):
-            raise TypeError(f"expected a 'str' instance but got {_type(self).__name__}")
+        _str_guard(self)
         if not _str_check(other):
             raise TypeError(
-                f"expected a 'str' instance but got {_type(other).__name__}"
+                "'in <string>' requires string as left operand, not "
+                f"{_type(other).__name__}"
             )
         return _str_find(self, other, None, None) != -1
 
@@ -3265,19 +3158,14 @@ class str(bootstrap=True):
         _unimplemented()
 
     def __rmul__(self, n: int) -> str:
-        if not _str_check(self):
-            raise TypeError("'__rmul__' requires a 'str' instance")
+        _str_guard(self)
         return str.__mul__(self, n)
 
     def __str__(self):
         return self
 
     def capitalize(self):
-        if not _str_check(self):
-            self_type = _type(self).__name__
-            raise TypeError(
-                f"'capitalize' requires a 'str' instance but got '{self_type}'"
-            )
+        _str_guard(self)
         if not self:
             return self
         first_letter = str.upper(str.__getitem__(self, 0).upper())
@@ -3291,16 +3179,9 @@ class str(bootstrap=True):
         _unimplemented()
 
     def count(self, sub, start=None, end=None):
-        if not _str_check(self):
-            raise TypeError(
-                "'count' requires a 'str' instance but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _str_guard(self)
         if not _str_check(sub):
-            raise TypeError(
-                "'count' requires a 'str' instance but received a "
-                f"'{_type(sub).__name__}'"
-            )
+            raise TypeError(f"must be str, not {_type(sub).__name__}")
         if start is not None:
             start = _index(start)
         if end is not None:
@@ -3308,11 +3189,14 @@ class str(bootstrap=True):
         return _str_count(self, sub, start, end)
 
     def encode(self, encoding="utf-8", errors=_Unbound) -> bytes:
+        _str_guard(self)
         import _codecs
 
         return _codecs.encode(self, encoding, errors)
 
     def endswith(self, suffix, start=0, end=None):  # noqa: C901
+        _str_guard(self)
+
         def real_bounds_from_slice_bounds(start, end, length):
             if start < 0:
                 start = length + start
@@ -3362,14 +3246,9 @@ class str(bootstrap=True):
         _unimplemented()
 
     def find(self, sub, start=None, end=None):
-        if not _str_check(self):
-            raise TypeError(
-                f"find requires a 'str' instance but got {_type(self).__name__}"
-            )
+        _str_guard(self)
         if not _str_check(sub):
-            raise TypeError(
-                f"find requires a 'str' instance but got {_type(sub).__name__}"
-            )
+            raise TypeError(f"must be str, not {_type(sub).__name__}")
         if start is not None:
             start = _index(start)
         if end is not None:
@@ -3391,9 +3270,8 @@ class str(bootstrap=True):
         return res
 
     def isalnum(self):
+        _str_guard(self)
         # TODO(T41626152): Support non-ASCII
-        if not _str_check(self):
-            raise TypeError(f"isalnum expected 'str' but got {_type(self).__name__}")
         if self is "":  # noqa: P202
             return False
         num = range(ord("0"), ord("9") + 1)
@@ -3417,10 +3295,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def isidentifier(self):
-        if not _str_check(self):
-            raise TypeError(
-                f"'isidentifier' expected 'str' but got '{_type(self).__name__}'"
-            )
+        _str_guard(self)
         if not self:
             return False
         is_continue = False
@@ -3437,9 +3312,8 @@ class str(bootstrap=True):
         return True
 
     def islower(self):
+        _str_guard(self)
         # TODO(T42050373): Support non-ASCII
-        if not _str_check(self):
-            raise TypeError(f"islower expected 'str' but got {_type(self).__name__}")
         if self is "":  # noqa: P202
             return False
         lower = range(ord("a"), ord("z") + 1)
@@ -3458,8 +3332,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def isspace(self):
-        if not _str_check(self):
-            raise TypeError(f"expected 'str' but got {_type(self).__name__}")
+        _str_guard(self)
         if not self:
             return False
         for ch in str.__iter__(self):
@@ -3477,9 +3350,8 @@ class str(bootstrap=True):
         _unimplemented()
 
     def isupper(self):
+        _str_guard(self)
         # TODO(T41626183): Support non-ASCII
-        if not _str_check(self):
-            raise TypeError(f"isupper expected 'str' but got {_type(self).__name__}")
         if self is "":  # noqa: P202
             return False
         upper = range(ord("A"), ord("Z") + 1)
@@ -3492,11 +3364,7 @@ class str(bootstrap=True):
         return True
 
     def join(self, items) -> str:
-        if not _str_check(self):
-            raise TypeError(
-                "'join' requires a 'str' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _str_guard(self)
         if _tuple_checkexact(tuple) or _list_checkexact(items):
             return _str_join(self, items)
         try:
@@ -3519,11 +3387,7 @@ class str(bootstrap=True):
         _unimplemented()
 
     def partition(self, sep):
-        if not _str_check(self):
-            raise TypeError(
-                f"descriptor 'partition' requires a 'str' object "
-                f"but received a {_type(self).__name__}"
-            )
+        _str_guard(self)
         if not _str_check(sep):
             raise TypeError(f"must be str, not {_type(sep).__name__}")
         sep_len = _str_len(sep)
@@ -3545,17 +3409,14 @@ class str(bootstrap=True):
         return (self, "", "")
 
     def replace(self, old, new, count=None):
-        if not _str_check(self):
-            raise TypeError(
-                f"replace requires a 'str' instance but got {_type(self).__name__}"
-            )
+        _str_guard(self)
         if not _str_check(old):
             raise TypeError(
-                f"replace requires a 'str' instance but got {_type(old).__name__}"
+                f"replace() argument 1 must be str, not {_type(old).__name__}"
             )
         if not _str_check(new):
             raise TypeError(
-                f"replace requires a 'str' instance but got {_type(new).__name__}"
+                f"replace() argument 2 must be str, not {_type(new).__name__}"
             )
         if count:
             count = _index(count)
@@ -3565,14 +3426,9 @@ class str(bootstrap=True):
         return str(result) if self is result else result
 
     def rfind(self, sub, start=None, end=None):
-        if not _str_check(self):
-            raise TypeError(
-                f"rfind requires a 'str' instance but got {_type(self).__name__}"
-            )
+        _str_guard(self)
         if not _str_check(sub):
-            raise TypeError(
-                f"rfind requires a 'str' instance but got {_type(sub).__name__}"
-            )
+            raise TypeError(f"must be str, not {_type(sub).__name__}")
         if start is not None:
             start = _index(start)
         if end is not None:
@@ -3598,8 +3454,7 @@ class str(bootstrap=True):
         pass
 
     def split(self, sep=None, maxsplit=-1):  # noqa: C901
-        if not _str_check(self):
-            raise TypeError(f"expected a 'str' instance but got {_type(self).__name__}")
+        _str_guard(self)
         # If the separator is not specified, split on all whitespace characters.
         if sep is None:
             return _str_split_whitespace(self, maxsplit)
@@ -3648,10 +3503,7 @@ class str(bootstrap=True):
         return parts
 
     def splitlines(self, keepends=False):
-        if not _str_check(self):
-            raise TypeError(
-                f"'splitlines' requires a 'str' but got '{_type(self).__name__}'"
-            )
+        _str_guard(self)
         if _float_check(keepends):
             raise TypeError("integer argument expected, got float")
         if not _int_check(keepends):
@@ -3659,6 +3511,8 @@ class str(bootstrap=True):
         return _str_splitlines(self, keepends)
 
     def startswith(self, prefix, start=0, end=None):  # noqa: C901
+        _str_guard(self)
+
         def real_bounds_from_slice_bounds(start, end, length):
             if start < 0:
                 start = length + start
@@ -3694,11 +3548,6 @@ class str(bootstrap=True):
                 i += 1
             return True
 
-        if not _str_check(self):
-            raise TypeError(
-                "'startswith' requires a 'str' object by received a "
-                f"'{_type(self).__name__}'"
-            )
         start, end = real_bounds_from_slice_bounds(start, end, _str_len(self))
         if not _tuple_check(prefix):
             return prefix_match(self, prefix, start, end)
@@ -3786,10 +3635,9 @@ class tuple(bootstrap=True):
         pass
 
     def __lt__(self, other):
-        if not _tuple_check(self):
-            raise TypeError(f"__lt__ expected 'tuple' but got {_type(self).__name__}")
+        _tuple_guard(self)
         if not _tuple_check(other):
-            raise TypeError(f"__lt__ expected 'tuple' but got {_type(other).__name__}")
+            return NotImplemented
         len_self = _tuple_len(self)
         len_other = _tuple_len(other)
         # TODO(T42050051): Use builtin.min when it's developed
@@ -3830,11 +3678,7 @@ class tuple(bootstrap=True):
         return _tuple_new(cls, [*it])
 
     def __repr__(self):
-        if not _tuple_check(self):
-            raise TypeError(
-                "'__repr__' requires a 'tuple' object but received a "
-                f"'{_type(self).__name__}'"
-            )
+        _tuple_guard(self)
         if _repr_enter(self):
             return "(...)"
         num_elems = _tuple_len(self)

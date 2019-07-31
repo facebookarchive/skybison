@@ -10,6 +10,15 @@ static bool underByteArrayCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underByteArrayGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfByteArray(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underByteArrayLen(Frame* frame) {
   RawObject arg = frame->popValue();
   if (arg.isByteArray()) {
@@ -23,6 +32,15 @@ static bool underBytesCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfBytes(frame->popValue())));
   return true;
+}
+
+static bool underBytesGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfBytes(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
 }
 
 static bool underBytesLen(Frame* frame) {
@@ -41,6 +59,15 @@ static bool underDictCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underDictGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfDict(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underDictLen(Frame* frame) {
   RawObject arg = frame->peek(0);
   if (arg.isDict()) {
@@ -55,6 +82,15 @@ static bool underFloatCheck(Thread* thread, Frame* frame) {
   frame->setTopValue(
       Bool::fromBool(thread->runtime()->isInstanceOfFloat(frame->popValue())));
   return true;
+}
+
+static bool underFloatGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfFloat(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
 }
 
 static bool underFrozenSetCheck(Thread* thread, Frame* frame) {
@@ -73,6 +109,15 @@ static bool underIntCheckExact(Frame* frame) {
   RawObject arg = frame->popValue();
   frame->setTopValue(Bool::fromBool(arg.isSmallInt() || arg.isLargeInt()));
   return true;
+}
+
+static bool underIntGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfInt(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
 }
 
 static bool underListCheck(Thread* thread, Frame* frame) {
@@ -109,6 +154,15 @@ static bool underListGetItem(Frame* frame) {
   return false;
 }
 
+static bool underListGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfList(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underListLen(Frame* frame) {
   RawObject arg = frame->peek(0);
   if (arg.isList()) {
@@ -122,6 +176,15 @@ static bool underListLen(Frame* frame) {
 static bool underRangeCheck(Frame* frame) {
   frame->setTopValue(Bool::fromBool(frame->popValue().isRange()));
   return true;
+}
+
+static bool underRangeGuard(Frame* frame) {
+  if (frame->topValue().isRange()) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
 }
 
 static bool underSeqIndex(Frame* frame) {
@@ -155,6 +218,15 @@ static bool underSetCheck(Thread* thread, Frame* frame) {
   return true;
 }
 
+static bool underSetGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfSet(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underSetLen(Frame* frame) {
   RawObject arg = frame->peek(0);
   if (arg.isSet()) {
@@ -168,6 +240,15 @@ static bool underSetLen(Frame* frame) {
 static bool underSliceCheck(Frame* frame) {
   frame->setTopValue(Bool::fromBool(frame->popValue().isSlice()));
   return true;
+}
+
+static bool underSliceGuard(Frame* frame) {
+  if (frame->topValue().isSlice()) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
 }
 
 static bool underSliceIndex(Thread* thread, Frame* frame) {
@@ -191,6 +272,15 @@ static bool underStrCheckExact(Frame* frame) {
   return true;
 }
 
+static bool underStrGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfStr(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool underStrLen(Frame* frame) {
   RawObject arg = frame->peek(0);
   if (arg.isStr()) {
@@ -210,6 +300,15 @@ static bool underTupleCheck(Thread* thread, Frame* frame) {
 static bool underTupleCheckExact(Frame* frame) {
   frame->setTopValue(Bool::fromBool(frame->popValue().isList()));
   return true;
+}
+
+static bool underTupleGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfTuple(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
 }
 
 static bool underTupleLen(Frame* frame) {
@@ -238,6 +337,15 @@ static bool underTypeCheckExact(Frame* frame) {
   return true;
 }
 
+static bool underTypeGuard(Thread* thread, Frame* frame) {
+  if (thread->runtime()->isInstanceOfType(frame->topValue())) {
+    frame->popValue();
+    frame->setTopValue(NoneType::object());
+    return true;
+  }
+  return false;
+}
+
 static bool isInstance(Thread* thread, Frame* frame) {
   if (thread->runtime()->typeOf(frame->peek(1)) == frame->peek(0)) {
     frame->dropValues(2);
@@ -251,34 +359,48 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
   switch (name) {
     case SymbolId::kUnderByteArrayCheck:
       return underByteArrayCheck(thread, frame);
+    case SymbolId::kUnderByteArrayGuard:
+      return underByteArrayGuard(thread, frame);
     case SymbolId::kUnderByteArrayLen:
       return underByteArrayLen(frame);
     case SymbolId::kUnderBytesCheck:
       return underBytesCheck(thread, frame);
+    case SymbolId::kUnderBytesGuard:
+      return underBytesGuard(thread, frame);
     case SymbolId::kUnderBytesLen:
       return underBytesLen(frame);
     case SymbolId::kUnderDictCheck:
       return underDictCheck(thread, frame);
+    case SymbolId::kUnderDictGuard:
+      return underDictGuard(thread, frame);
     case SymbolId::kUnderDictLen:
       return underDictLen(frame);
     case SymbolId::kUnderFloatCheck:
       return underFloatCheck(thread, frame);
+    case SymbolId::kUnderFloatGuard:
+      return underFloatGuard(thread, frame);
     case SymbolId::kUnderFrozenSetCheck:
       return underFrozenSetCheck(thread, frame);
     case SymbolId::kUnderIntCheck:
       return underIntCheck(thread, frame);
     case SymbolId::kUnderIntCheckExact:
       return underIntCheckExact(frame);
+    case SymbolId::kUnderIntGuard:
+      return underIntGuard(thread, frame);
     case SymbolId::kUnderListCheck:
       return underListCheck(thread, frame);
     case SymbolId::kUnderListCheckExact:
       return underListCheckExact(frame);
     case SymbolId::kUnderListGetitem:
       return underListGetItem(frame);
+    case SymbolId::kUnderListGuard:
+      return underListGuard(thread, frame);
     case SymbolId::kUnderListLen:
       return underListLen(frame);
     case SymbolId::kUnderRangeCheck:
       return underRangeCheck(frame);
+    case SymbolId::kUnderRangeGuard:
+      return underRangeGuard(frame);
     case SymbolId::kUnderSeqIndex:
       return underSeqIndex(frame);
     case SymbolId::kUnderSeqIterable:
@@ -289,22 +411,30 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underSeqSetIterable(frame);
     case SymbolId::kUnderSetCheck:
       return underSetCheck(thread, frame);
+    case SymbolId::kUnderSetGuard:
+      return underSetGuard(thread, frame);
     case SymbolId::kUnderSetLen:
       return underSetLen(frame);
     case SymbolId::kUnderSliceCheck:
       return underSliceCheck(frame);
+    case SymbolId::kUnderSliceGuard:
+      return underSliceGuard(frame);
     case SymbolId::kUnderSliceIndex:
       return underSliceIndex(thread, frame);
     case SymbolId::kUnderStrCheck:
       return underStrCheck(thread, frame);
     case SymbolId::kUnderStrCheckExact:
       return underStrCheckExact(frame);
+    case SymbolId::kUnderStrGuard:
+      return underStrGuard(thread, frame);
     case SymbolId::kUnderStrLen:
       return underStrLen(frame);
     case SymbolId::kUnderTupleCheck:
       return underTupleCheck(thread, frame);
     case SymbolId::kUnderTupleCheckExact:
       return underTupleCheckExact(frame);
+    case SymbolId::kUnderTupleGuard:
+      return underTupleGuard(thread, frame);
     case SymbolId::kUnderTupleLen:
       return underTupleLen(frame);
     case SymbolId::kUnderType:
@@ -313,6 +443,8 @@ bool doIntrinsic(Thread* thread, Frame* frame, SymbolId name) {
       return underTypeCheck(thread, frame);
     case SymbolId::kUnderTypeCheckExact:
       return underTypeCheckExact(frame);
+    case SymbolId::kUnderTypeGuard:
+      return underTypeGuard(thread, frame);
     case SymbolId::kIsInstance:
       return isInstance(thread, frame);
     default:

@@ -1230,12 +1230,6 @@ self = Foo(b"*\x01a\x92")
   EXPECT_TRUE(isStrEqualsCStr(*repr, "2a016192"));
 }
 
-TEST_F(BytesBuiltinsTest, JoinWithNonBytesRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "bytes.join(1, [])"),
-                            LayoutId::kTypeError,
-                            "'join' requires a 'bytes' object"));
-}
-
 TEST_F(BytesBuiltinsTest, JoinWithNonIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "b''.join(0)"),
                             LayoutId::kTypeError,

@@ -13,14 +13,6 @@ using namespace testing;
 using ListBuiltinsTest = RuntimeFixture;
 using ListIteratorBuiltinsTest = RuntimeFixture;
 
-TEST_F(ListBuiltinsTest, CopyWithNonListRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-result = list.copy(None)
-)"),
-                            LayoutId::kTypeError,
-                            "expected 'list' instance but got NoneType"));
-}
-
 TEST_F(ListBuiltinsTest, CopyWithListReturnsNewInstance) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 l = [1, 2, 3]
@@ -97,18 +89,12 @@ result = list.__eq__([1, 2, 3], [1, 2, 4])
   EXPECT_EQ(moduleAt(&runtime_, "__main__", "result"), RawBool::falseObj());
 }
 
-TEST_F(ListBuiltinsTest, DunderEqWithNonListRhsRaisesNotImplemented) {
+TEST_F(ListBuiltinsTest, DunderEqWithNonListRhsReturnsNotImplemented) {
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 result = list.__eq__([1, 2, 3], (1, 2, 3));
 )")
                    .isError());
   EXPECT_TRUE(moduleAt(&runtime_, "__main__", "result").isNotImplementedType());
-}
-
-TEST_F(ListBuiltinsTest, DunderEqWithNonListLhsReturnsTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "list.__eq__((1, 2, 3), [1, 2, 3])"),
-      LayoutId::kTypeError, "'__eq__' requires 'list' but received a 'tuple'"));
 }
 
 TEST_F(ListBuiltinsTest, DunderInitFromList) {
@@ -1310,15 +1296,6 @@ result.reverse()
 )")
                    .isError());
   EXPECT_FALSE(Thread::current()->hasPendingException());
-}
-
-TEST_F(ListBuiltinsTest, SortWithNonListRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-list.sort(None)
-)"),
-                            LayoutId::kTypeError,
-                            "sort expected 'list' but got NoneType"));
-  ;
 }
 
 TEST_F(ListBuiltinsTest, SortWithMultiElementListSortsElements) {
