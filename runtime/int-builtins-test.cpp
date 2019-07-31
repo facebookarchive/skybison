@@ -237,68 +237,15 @@ minus_neg = -neg
 }
 
 TEST_F(IntBuiltinsTest, TruthyIntPos) {
-  const char* src = R"(
-if 1:
-  print("foo")
-else:
-  print("bar")
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "foo\n");
+  HandleScope scope(thread_);
+  Int one(&scope, SmallInt::fromWord(1));
+  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, one), Bool::trueObj());
 }
 
-TEST_F(IntBuiltinsTest, TruthyIntNeg) {
-  const char* src = R"(
-if 0:
-  print("foo")
-else:
-  print("bar")
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "bar\n");
-}
-
-TEST_F(IntBuiltinsTest, BinaryOps) {
-  const char* src = R"(
-a = 2
-b = 3
-c = 6
-d = 7
-print('a & b ==', a & b)
-print('a ^ b ==', a ^ b)
-print('a + b ==', a + b)
-
-print('c // b ==', c // b)
-print('d // b ==', d // b)
-
-print('d % a ==', d % a)
-print('d % b ==', d % b)
-
-print('d * b ==', d * b)
-print('c * b ==', c * b)
-
-print('c - b ==', c - b)
-print('b - c ==', b - c)
-
-print('d * 0 ==', d * 0)
-print('0 * d ==', 0 * d)
-)";
-
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, R"(a & b == 2
-a ^ b == 1
-a + b == 5
-c // b == 2
-d // b == 2
-d % a == 1
-d % b == 1
-d * b == 21
-c * b == 18
-c - b == 3
-b - c == -3
-d * 0 == 0
-0 * d == 0
-)");
+TEST_F(IntBuiltinsTest, TruthyIntZero) {
+  HandleScope scope(thread_);
+  Int zero(&scope, SmallInt::fromWord(0));
+  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, zero), Bool::falseObj());
 }
 
 TEST_F(IntBuiltinsTest, InplaceAdd) {
@@ -1331,16 +1278,13 @@ TEST_F(IntBuiltinsTest, DunderFloordivWithNontIntReturnsNotImplemented) {
 }
 
 TEST_F(LargeIntBuiltinsTest, TruthyLargeInt) {
-  const char* src = R"(
-a = 4611686018427387903 + 1
-if a:
-  print("true")
-else:
-  print("false")
-)";
-
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "true\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+value = 46116860184273879030000000
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object value(&scope, moduleAt(&runtime_, "__main__", "value"));
+  EXPECT_EQ(runBuiltin(IntBuiltins::dunderBool, value), Bool::trueObj());
 }
 
 TEST_F(IntBuiltinsTest, CompareLargeIntGe) {
