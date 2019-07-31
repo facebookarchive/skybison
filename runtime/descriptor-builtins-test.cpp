@@ -13,48 +13,46 @@ using namespace testing;
 using DescriptorBuiltinsTest = RuntimeFixture;
 
 TEST_F(DescriptorBuiltinsTest, Classmethod) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class Foo():
   a = 1
   @classmethod
   def bar(cls):
-    print(cls.a)
-a = Foo()
-a.bar()
+    return cls.a
+instance_a = Foo().bar()
 Foo.a = 2
-Foo.bar()
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1\n2\n");
+class_a = Foo.bar()
+)")
+                   .isError());
+  EXPECT_TRUE(
+      isIntEqualsWord(moduleAt(&runtime_, "__main__", "instance_a"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "class_a"), 2));
 }
 
 TEST_F(DescriptorBuiltinsTest, StaticmethodObjAccess) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class E:
     @staticmethod
     def f(x):
         return x + 1
 
-e = E()
-print(e.f(5))
-)";
-
-  const std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "6\n");
+result = E().f(5)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 6));
 }
 
 TEST_F(DescriptorBuiltinsTest, StaticmethodClsAccess) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class E():
     @staticmethod
     def f(x, y):
         return x + y
 
-print(E.f(1,2))
-)";
-
-  const std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "3\n");
+result = E.f(1,2)
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 3));
 }
 
 TEST_F(DescriptorBuiltinsTest,
@@ -140,7 +138,7 @@ y = x.setter(set_foo)
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyAddedViaClassAccessibleViaInstance) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 class C:
   def __init__(self, x):
       self.__x = x
@@ -152,11 +150,12 @@ class C:
 
 c1 = C(24)
 c2 = C(42)
-print(c1.x, c2.x)
-)";
-
-  const std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "24 42\n");
+result0 = c1.x
+result1 = c2.x
+)")
+                   .isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result0"), 24));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result1"), 42));
 }
 
 TEST_F(DescriptorBuiltinsTest, PropertyNoDeleterRaisesAttributeError) {
