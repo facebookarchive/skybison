@@ -19,7 +19,7 @@ a = Foo()
 weak = ref(a)
 )";
   HandleScope scope(thread_);
-  compileAndRunToString(&runtime_, src);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   RawObject a = moduleAt(&runtime_, "__main__", "a");
   RawObject weak = moduleAt(&runtime_, "__main__", "weak");
   EXPECT_EQ(WeakRef::cast(weak).referent(), a);
@@ -47,7 +47,7 @@ def f(ref):
 weak = ref(a, f)
 )";
   HandleScope scope(thread_);
-  compileAndRunToString(&runtime_, src);
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
   RawObject a = moduleAt(&runtime_, "__main__", "a");
   RawObject b = moduleAt(&runtime_, "__main__", "b");
   RawObject weak = moduleAt(&runtime_, "__main__", "weak");
