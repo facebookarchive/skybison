@@ -1358,6 +1358,46 @@ class ListTests(unittest.TestCase):
         self.assertEqual(copy, ls)
         self.assertIsNot(copy, ls)
 
+    def test_getslice_with_none_slice_copies_list(self):
+        original = [1, 2, 3]
+        copy = original[:]
+        self.assertEqual(len(copy), 3)
+        self.assertEqual(copy[0], 1)
+        self.assertEqual(copy[1], 2)
+        self.assertEqual(copy[2], 3)
+
+    def test_getslice_with_start_stop_step_returns_list(self):
+        original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        sliced = original[1:2:3]
+        self.assertEqual(sliced, [2])
+
+    def test_getslice_with_start_step_returns_list(self):
+        original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        sliced = original[1::3]
+        self.assertEqual(sliced, [2, 5, 8])
+
+    def test_getslice_with_start_stop_negative_step_returns_list(self):
+        original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        sliced = original[8:2:-2]
+        self.assertEqual(sliced, [9, 7, 5])
+
+    def test_getslice_with_start_stop_step_returns_empty_list(self):
+        original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        sliced = original[8:2:2]
+        self.assertEqual(sliced, [])
+
+    def test_getslice_in_list_comprehension(self):
+        original = [1, 2, 3]
+        result = [item[:] for item in [original] * 2]
+        self.assertIsNot(result, original)
+        self.assertEqual(len(result), 2)
+        r1, r2 = result
+        self.assertEqual(len(r1), 3)
+        r11, r12, r13 = r1
+        self.assertEqual(r11, 1)
+        self.assertEqual(r12, 2)
+        self.assertEqual(r13, 3)
+
 
 class LongRangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):

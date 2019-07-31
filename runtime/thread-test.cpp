@@ -57,14 +57,14 @@ print('hello, world')
 }
 
 TEST_F(ThreadTest, ModuleBodyCallsHelloWorldFunction) {
-  const char* src = R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def hello():
-  print('hello, world')
-hello()
-)";
-  // Execute the code and make sure we get back the result we expect
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "hello, world\n");
+  return 'hello, world'
+result = hello()
+)")
+                   .isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"),
+                              "hello, world"));
 }
 
 TEST_F(ThreadTest, DunderCallInstance) {
@@ -553,118 +553,6 @@ TEST_F(ThreadTest, LoadGlobal) {
 
   EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, globals, globals), 1234));
 }
-
-struct TestData {
-  const char* name;
-  const char* expected_output;
-  const char* src;
-  const bool death;
-};
-
-static std::string TestName(::testing::TestParamInfo<TestData> info) {
-  return info.param.name;
-}
-
-TestData kGlobalVariableAccessTests[] = {
-    {"LoadGlobal", "1\n",
-     R"(
-a = 1
-def f():
-  print(a)
-f()
-)",
-     false},
-    {"LoadGlobalFromBuiltin", "True\n",
-     R"(
-class A(): pass
-a = A()
-def f():
-  print(isinstance(a, A))
-f()
-)",
-     false},
-    {"LoadGlobalUnbound", "a is undefined\n",
-     R"(
-def f():
-  try:
-    print(a)
-  except NameError:
-    print("a is undefined")
-f()
-)",
-     false},
-    {"StoreGlobal", "2\n2\n",
-     R"(
-def f():
-  global a
-  a = 2
-  print(a)
-f()
-print(a)
-)",
-     false},
-    {"StoreGlobalShadowBuiltin", "2\n",
-     R"(
-def f():
-  global isinstance
-  isinstance = 2
-f()
-print(isinstance)
-)",
-     false},
-    {"DeleteGlobal", "True\nTrue\n",
-     R"(
-class A(): pass
-a = A()
-def f():
-  global isinstance
-  isinstance = 1
-  del isinstance
-  print(isinstance(a, A))  # fallback to builtin
-f()
-print(isinstance(a, A))
-)",
-     false},
-    {"DeleteGlobalUnbound", "a is undefined\n",
-     R"(
-def f():
-  global a
-  try:
-    del a
-  except NameError:
-    print("a is undefined")
-f()
-)",
-     false},
-    {"DeleteGlobalBuiltinUnbound", "isinstance is undefined\n",
-     R"(
-def f():
-  global isinstance
-  try:
-    del isinstance
-  except NameError:
-    print("isinstance is undefined")
-f()
-)",
-     false}};
-
-class GlobalsTest : public ::testing::TestWithParam<TestData> {};
-
-TEST_P(GlobalsTest, GlobalVariableAcess) {
-  Runtime runtime;
-  TestData data = GetParam();
-  if (data.death) {
-    EXPECT_DEATH(static_cast<void>(runFromCStr(&runtime, data.src)),
-                 data.expected_output);
-  } else {
-    std::string output = compileAndRunToString(&runtime, data.src);
-    EXPECT_EQ(output, data.expected_output);
-  }
-}
-
-INSTANTIATE_TEST_CASE_P(GlobalVariableAcess, GlobalsTest,
-                        ::testing::ValuesIn(kGlobalVariableAccessTests),
-                        TestName);
 
 TEST_F(ThreadTest, StoreGlobalCreateValueCell) {
   HandleScope scope(thread_);
@@ -1335,116 +1223,6 @@ class C(A, B): pass
 
 // iteration
 
-TEST_F(ThreadTest, IteratePrint) {
-  const char* src = R"(
-for i in range(3):
-  print(i)
-for i in range(3,6):
-  print(i)
-for i in range(6,12,2):
-  print(i)
-for i in range(6,3,-1):
-  print(i)
-for i in range(42,0,1):
-  print(i)
-for i in range(42,100,-1):
-  print(i)
-)";
-
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "0\n1\n2\n3\n4\n5\n6\n8\n10\n6\n5\n4\n");
-}
-
-TestData kManipulateLocalsTests[] = {
-    // Load an argument when no local variables are present
-    {"LoadSingleArg", "1\n",
-     R"(
-def test(x):
-  print(x)
-test(1)
-)",
-     false},
-
-    // Load and store an argument when no local variables are present
-    {"LoadStoreSingleArg", "1\n2\n",
-     R"(
-def test(x):
-  print(x)
-  x = 2
-  print(x)
-test(1)
-)",
-     false},
-
-    // Load multiple arguments when no local variables are present
-    {"LoadManyArgs", "1 2 3\n",
-     R"(
-def test(x, y, z):
-  print(x, y, z)
-test(1, 2, 3)
-)",
-     false},
-
-    // Load/store multiple arguments when no local variables are present
-    {"LoadStoreManyArgs", "1 2 3\n3 2 1\n",
-     R"(
-def test(x, y, z):
-  print(x, y, z)
-  x = 3
-  z = 1
-  print(x, y, z)
-test(1, 2, 3)
-)",
-     false},
-
-    // Load a single local variable when no arguments are present
-    {"LoadSingleLocalVar", "1\n",
-     R"(
-def test():
-  x = 1
-  print(x)
-test()
-)",
-     false},
-
-    // Load multiple local variables when no arguments are present
-    {"LoadManyLocalVars", "1 2 3\n",
-     R"(
-def test():
-  x = 1
-  y = 2
-  z = 3
-  print(x, y, z)
-test()
-)",
-     false},
-
-    // Mixed local var and arg usage
-    {"MixedLocals", "1 2 3\n3 2 1\n",
-     R"(
-def test(x, y):
-  z = 3
-  print(x, y, z)
-  x = z
-  z = 1
-  print(x, y, z)
-test(1, 2)
-)",
-     false},
-};
-
-class LocalsTest : public ::testing::TestWithParam<TestData> {};
-
-TEST_P(LocalsTest, ManipulateLocals) {
-  Runtime runtime;
-  TestData data = GetParam();
-  std::string output = compileAndRunToString(&runtime, data.src);
-  EXPECT_EQ(output, data.expected_output);
-}
-
-INSTANTIATE_TEST_CASE_P(ManipulateLocals, LocalsTest,
-                        ::testing::ValuesIn(kManipulateLocalsTests), TestName);
-
 TEST_F(ThreadTest, RaiseVarargs) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, "raise 1"),
                             LayoutId::kTypeError,
@@ -1482,21 +1260,21 @@ TEST_F(ThreadTest, ImportTest) {
 
   const char* module_src = R"(
 def say_hello():
-  print("hello");
+  return "hello"
 )";
 
   const char* main_src = R"(
 import hello
-hello.say_hello()
+result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
   Code code(&scope, compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
-
-  std::string output = compileAndRunToString(&runtime_, main_src);
-  EXPECT_EQ(output, "hello\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, main_src).isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "hello"));
 }
 
 TEST_F(ThreadTest, FailedImportTest) {
@@ -1538,134 +1316,88 @@ TEST_F(ThreadTest, ModuleSetAttrTest) {
 
   const char* module_src = R"(
 def say_hello():
-  print("hello");
+  return "hello"
 )";
 
   const char* main_src = R"(
 import hello
 def goodbye():
-  print("goodbye")
+  return "goodbye"
 hello.say_hello = goodbye
-hello.say_hello()
+result = hello.say_hello()
 )";
 
   // Pre-load the hello module so is cached.
   Code code(&scope, compileFromCStr(module_src, "<test string>"));
   Object name(&scope, runtime_.newStrFromCStr("hello"));
   ASSERT_FALSE(runtime_.importModuleFromCode(code, name).isError());
-
-  std::string output = compileAndRunToString(&runtime_, main_src);
-  EXPECT_EQ(output, "goodbye\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, main_src).isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "goodbye"));
 }
 
 TEST_F(ThreadTest, StoreFastStackEffect) {
   const char* src = R"(
 def printit(x, y, z):
-  print(x, y, z)
+  return (x, y, z)
 
 def test():
   x = 1
   y = 2
   z = 3
-  printit(x, y, z)
+  return printit(x, y, z)
 
-test()
+result = test()
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1 2 3\n");
-}
-
-TEST_F(ThreadTest, SubscriptDict) {
-  const char* src = R"(
-a = {"1": 2, 2: 3}
-print(a["1"])
-# exceeds kInitialDictCapacity
-b = { 0:0, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11 }
-print(b[11])
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "2\n11\n");
-
-  const char* src1 = R"(
-a = {"1": 2, 2: 3}
-print(a[1])
-)";
-  EXPECT_TRUE(raised(runFromCStr(&runtime_, src1), LayoutId::kKeyError));
-}
-
-TEST_F(ThreadTest, BuildDictNonLiteralKey) {
-  const char* src = R"(
-b = "foo"
-a = { b: 3, 'c': 4 }
-# we need one dict that exceeds kInitialDictCapacity
-c = { b: 1, 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11 }
-print(a["foo"])
-print(a["c"])
-print(c[11])
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "3\n4\n11\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  ASSERT_TRUE(result.isTuple());
+  Tuple tuple(&scope, *result);
+  ASSERT_EQ(tuple.length(), 3);
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(tuple.at(2), 3));
 }
 
 TEST_F(ThreadTest, Closure) {
   const char* src = R"(
+result = []
 def f():
   a = 1
   def g():
     b = 2
     def h():
-      print(b)
-    print(a)
+      result.append(b)
+    result.append(a)
     h()
     b = 3
     h()
   g()
 f()
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1\n2\n3\n");
-}
-
-TEST_F(ThreadTest, UnpackSequence) {
-  const char* src = R"(
-a, b = (1, 2)
-print(a, b)
-a, b = [3, 4]
-print(a, b)
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1 2\n3 4\n");
-}
-
-TEST_F(ThreadTest, BinaryTrueDivide) {
-  const char* src = R"(
-a = 6
-b = 2
-print(a / b)
-a = 5
-b = 2
-print(a / b)
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "3\n2.5\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(FormatTest, NoConvEmpty) {
   const char* src = R"(
-print(f'')
+result = f''
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), ""));
 }
 
 TEST_F(FormatTest, NoConvOneElement) {
   const char* src = R"(
 a = "hello"
-x = f'a={a}'
-print(x)
+result = f'a={a}'
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "a=hello\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(
+      isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"), "a=hello"));
 }
 
 TEST_F(FormatTest, NoConvMultiElements) {
@@ -1673,25 +1405,25 @@ TEST_F(FormatTest, NoConvMultiElements) {
 a = "hello"
 b = "world"
 c = "python"
-x = f'{a} {b} {c}'
-print(x)
+result = f'{a} {b} {c}'
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "hello world python\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "result"),
+                              "hello world python"));
 }
 
 TEST_F(FormatTest, NoConvMultiElementsLarge) {
   const char* src = R"(
 a = "Python"
 b = "is"
-c = "an interpreted high-level programming language for general-purpose programming.";
-x = f'{a} {b} {c}'
-print(x)
+c = "an interpreted high-level programming language for general-purpose programming."
+result = f'{a} {b} {c}'
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output,
-            "Python is an interpreted high-level programming language for "
-            "general-purpose programming.\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isStrEqualsCStr(
+      moduleAt(&runtime_, "__main__", "result"),
+      "Python is an interpreted high-level programming language for "
+      "general-purpose programming."));
 }
 
 TEST_F(ThreadTest, BuildTupleUnpack) {
@@ -1832,22 +1564,14 @@ TEST_F(BuildString, buildStringMultiLarge) {
   EXPECT_TRUE(isStrEqualsCStr(runCode(code), "helloworldpython"));
 }
 
-TEST_F(UnpackSeq, unpackRangePyStone) {
-  const char* src = R"(
-[Ident1, Ident2, Ident3, Ident4, Ident5] = range(1, 6)
-print(Ident1, Ident2, Ident3, Ident4, Ident5)
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1 2 3 4 5\n");
-}
-
 TEST_F(UnpackSeq, unpackRange) {
   const char* src = R"(
 [a ,b, c] = range(2, 5)
-print(a, b, c)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "2 3 4\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "a"), 2));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b"), 3));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "c"), 4));
 }
 
 // LIST_APPEND(listAdd) in list_comp, followed by unpack
@@ -1857,10 +1581,11 @@ TEST_F(UnpackList, unpackListCompAppend) {
 a = [1, 2, 3]
 b = [x for x in a]
 b1, b2, b3 = b
-print(b1, b2, b3)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1 2 3\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b1"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b2"), 2));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b3"), 3));
 }
 
 TEST_F(ThreadTest, SetAdd) {
@@ -1897,38 +1622,56 @@ b = [[1,2], [3,4,5]]
 b1, b2 = b
 b11, b12 = b1
 b21, b22, b23 = b2
-print(len(b), len(b1), len(b2), b11, b12, b21, b22, b23)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "2 2 3 1 2 3 4 5\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  List b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  EXPECT_EQ(b.numItems(), 2);
+  List b1(&scope, moduleAt(&runtime_, "__main__", "b1"));
+  EXPECT_EQ(b1.numItems(), 2);
+  List b2(&scope, moduleAt(&runtime_, "__main__", "b2"));
+  EXPECT_EQ(b2.numItems(), 3);
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b11"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b12"), 2));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b21"), 3));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b22"), 4));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b23"), 5));
 }
 
 TEST_F(UnpackSeq, unpackRangeStep) {
   const char* src = R"(
 [a ,b, c, d] = range(2, 10, 2)
-print(a, b, c, d)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "2 4 6 8\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "a"), 2));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b"), 4));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "c"), 6));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "d"), 8));
 }
 
 TEST_F(UnpackSeq, unpackRangeNeg) {
   const char* src = R"(
 [a ,b, c, d, e] = range(-10, 0, 2)
-print(a, b, c, d, e)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "-10 -8 -6 -4 -2\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "a"), -10));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b"), -8));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "c"), -6));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "d"), -4));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "e"), -2));
 }
 
 TEST_F(ListIterTest, build) {
   const char* src = R"(
 a = [1, 2, 3]
+result = []
 for x in a:
-  print(x)
+  result.append(x)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1\n2\n3\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(ListAppendTest, buildAndUnpack) {
@@ -1937,10 +1680,15 @@ a = [1, 2]
 b = [x for x in [a] * 3]
 b1, b2, b3 = b
 b11, b12 = b1
-print(len(b), len(b1), b11, b12)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "3 2 1 2\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  List b(&scope, moduleAt(&runtime_, "__main__", "b"));
+  EXPECT_EQ(b.numItems(), 3);
+  List b1(&scope, moduleAt(&runtime_, "__main__", "b1"));
+  EXPECT_EQ(b1.numItems(), 2);
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b11"), 1));
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "b12"), 2));
 }
 
 TEST_F(ListInsertTest, InsertToList) {
@@ -2028,98 +1776,37 @@ class Foo(list, dict): pass
                             "multiple bases have instance lay-out conflict"));
 }
 
-TEST_F(BuildSlice, noneSliceCopyList) {
-  const char* src = R"(
-a = [1, 2, 3]
-b = a[:]
-print(len(b), b[0], b[1], b[2])
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "3 1 2 3\n");
-}
-
-TEST_F(BuildSlice, sliceOperations) {
-  const char* src = R"(
-a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-b = a[1:2:3]
-print(len(b), b[0])
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1 2\n");
-
-  const char* src2 = R"(
-a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-b = a[1::3]
-print(len(b), b[0], b[1], b[2])
-)";
-  std::string output2 = compileAndRunToString(&runtime_, src2);
-  EXPECT_EQ(output2, "3 2 5 8\n");
-
-  const char* src3 = R"(
-a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-b = a[8:2:-2]
-print(len(b), b[0], b[1], b[2])
-)";
-  std::string output3 = compileAndRunToString(&runtime_, src3);
-  ASSERT_EQ(output3, "3 9 7 5\n");
-
-  const char* src4 = R"(
-a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-b = a[8:2:2]
-print(len(b))
-)";
-  std::string output4 = compileAndRunToString(&runtime_, src4);
-  EXPECT_EQ(output4, "0\n");
-}
-
-TEST_F(BuildSlice, noneSliceCopyListComp) {  // pystone
-  const char* src = R"(
-a = [1, 2, 3]
-b = [x[:] for x in [a] * 2]
-c = b is a
-b1, b2 = b
-b11, b12, b13 = b1
-print(c, len(b), len(b1), b11, b12, b13)
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "False 2 3 1 2 3\n");
-}
-
-TEST_F(ThreadTest, SliceNoneCopyListCompPrint) {  // based on pystone.py
-  const char* src = R"(
-Array1Glob = [0]*5
-Array2Glob = [x[:] for x in [Array1Glob]*5]
-print(len(Array1Glob), len(Array2Glob), len(Array2Glob[0]), Array1Glob, Array2Glob[0])
-)";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "5 5 5 [0, 0, 0, 0, 0] [0, 0, 0, 0, 0]\n");
-}
-
 TEST_F(ThreadTest, BreakLoopWhileLoop) {
   const char* src = R"(
 a = 0
+result = []
 while 1:
     a = a + 1
-    print(a)
+    result.append(a)
     if a == 3:
         break
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1\n2\n3\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
 }
 
 TEST_F(ThreadTest, BreakLoopWhileLoop1) {
   const char* src = R"(
 a = 0
+result = []
 while 1:
     a = a + 1
-    print(a)
+    result.append(a)
     if a == 3:
         break
-print("ok",a)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1\n2\n3\nok 3\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "a"), 3));
 }
 
 TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
@@ -2162,13 +1849,16 @@ TEST_F(ThreadTest, BreakLoopWhileLoopBytecode) {
 
 TEST_F(ThreadTest, BreakLoopRangeLoop) {
   const char* src = R"(
+result = []
 for x in range(1,6):
   if x == 3:
     break;
-  print(x)
+  result.append(x)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1\n2\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2});
 }
 
 TEST_F(ThreadTest, ContinueLoopRangeLoop) {
@@ -2269,31 +1959,40 @@ def f1(x, y):
   return x + y
 def f2():
   return f1(1, 2)
-print(f2())
+result = f2()
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "3\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 3));
 }
 
 TEST_F(ThreadTest, BinSubscrString) {  // pystone dependency
   const char* src = R"(
 a = 'Hello'
-print(a[0],a[1],a[2],a[3],a[4])
+r0 = a[0]
+r1 = a[1]
+r2 = a[2]
+r3 = a[3]
+r4 = a[4]
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "H e l l o\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "r0"), "H"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "r1"), "e"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "r2"), "l"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "r3"), "l"));
+  EXPECT_TRUE(isStrEqualsCStr(moduleAt(&runtime_, "__main__", "r4"), "o"));
 }
 
 TEST_F(ThreadTest, SetupExceptNoOp) {  // pystone dependency
   const char* src = R"(
 def f(x):
-  try: print(x)
+  try:
+    return x
   except ValueError:
-    print("Invalid Argument")
-f(100)
+    return "Invalid Argument"
+result = f(100)
 )";
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "100\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
+  EXPECT_TRUE(isIntEqualsWord(moduleAt(&runtime_, "__main__", "result"), 100));
 }
 
 TEST_F(ThreadTest, BuildTypeWithMetaclass) {
