@@ -18,7 +18,7 @@ TEST_F(CallTest, CallBoundMethod) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def func(self):
-  print(self)
+  return self
 
 def test(callable):
   return callable()
@@ -36,18 +36,16 @@ def test(callable):
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
-  Tuple args(&scope, runtime_.newTuple(1));
-  args.atPut(0, *method);
-
-  std::string output = callFunctionToString(func, args);
-  EXPECT_EQ(output, "1111\n");
+  Object result(&scope, Interpreter::callFunction1(
+                            thread_, thread_->currentFrame(), func, method));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1111));
 }
 
 TEST_F(CallTest, CallBoundMethodWithArgs) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(&runtime_, R"(
 def func(self, a, b):
-  print(self, a, b)
+  return [self, a, b]
 
 def test(callable):
   return callable(2222, 3333)
@@ -65,11 +63,9 @@ def test(callable):
   ASSERT_TRUE(test.isFunction());
   Function func(&scope, *test);
 
-  Tuple args(&scope, runtime_.newTuple(1));
-  args.atPut(0, *method);
-
-  std::string output = callFunctionToString(func, args);
-  EXPECT_EQ(output, "1111 2222 3333\n");
+  Object result(&scope, Interpreter::callFunction1(
+                            thread_, thread_->currentFrame(), func, method));
+  EXPECT_PYLIST_EQ(result, {1111, 2222, 3333});
 }
 
 TEST_F(CallTest, CallBoundMethodKw) {

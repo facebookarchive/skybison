@@ -1977,10 +1977,12 @@ class Foo:
     self.attr = 'testing 123'
 
 def test(x):
+  result = []
   Foo.__init__(x)
-  print(x.attr)
+  result.append(x.attr)
   x.attr = '321 testing'
-  print(x.attr)
+  result.append(x.attr)
+  return result
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
@@ -1988,13 +1990,14 @@ def test(x):
   HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Type type(&scope, moduleAt(&runtime_, main, "Foo"));
-  Tuple args(&scope, runtime_.newTuple(1));
   Layout layout(&scope, type.instanceLayout());
-  args.atPut(0, runtime_.newInstance(layout));
+  Object instance(&scope, runtime_.newInstance(layout));
 
   // Run __init__ then RMW the attribute
   Function test(&scope, moduleAt(&runtime_, main, "test"));
-  EXPECT_EQ(callFunctionToString(test, args), "testing 123\n321 testing\n");
+  Object result(&scope, Interpreter::callFunction1(
+                            thread_, thread_->currentFrame(), test, instance));
+  EXPECT_PYLIST_EQ(result, {"testing 123", "321 testing"});
 }
 
 TEST_F(RuntimeAttributeTest, AddOverflowAttributes) {
@@ -2003,15 +2006,21 @@ class Foo:
   pass
 
 def test(x):
+  result = []
   x.foo = 100
   x.bar = 200
   x.baz = 'hello'
-  print(x.foo, x.bar, x.baz)
+  result.append(x.foo)
+  result.append(x.bar)
+  result.append(x.baz)
 
   x.foo = 'aaa'
   x.bar = 'bbb'
   x.baz = 'ccc'
-  print(x.foo, x.bar, x.baz)
+  result.append(x.foo)
+  result.append(x.bar)
+  result.append(x.baz)
+  return result
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
@@ -2024,17 +2033,18 @@ def test(x):
   LayoutId original_layout_id = layout.id();
 
   // Add overflow attributes that should force layout transitions
-  Tuple args(&scope, runtime_.newTuple(1));
-  args.atPut(0, *foo1);
   Function test(&scope, moduleAt(&runtime_, main, "test"));
-  EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
+  Object result0(&scope, Interpreter::callFunction1(
+                             thread_, thread_->currentFrame(), test, foo1));
+  EXPECT_PYLIST_EQ(result0, {100, 200, "hello", "aaa", "bbb", "ccc"});
   EXPECT_NE(foo1.layoutId(), original_layout_id);
 
   // Add the same set of attributes to a new instance, should arrive at the
   // same layout
   Instance foo2(&scope, runtime_.newInstance(layout));
-  args.atPut(0, *foo2);
-  EXPECT_EQ(callFunctionToString(test, args), "100 200 hello\naaa bbb ccc\n");
+  Object result1(&scope, Interpreter::callFunction1(
+                             thread_, thread_->currentFrame(), test, foo2));
+  EXPECT_PYLIST_EQ(result1, {100, 200, "hello", "aaa", "bbb", "ccc"});
 }
 
 TEST_F(RuntimeAttributeTest, ManipulateMultipleAttributes) {
@@ -2046,12 +2056,18 @@ class Foo:
     self.baz = 'baz'
 
 def test(x):
+  result = []
   Foo.__init__(x)
-  print(x.foo, x.bar, x.baz)
+  result.append(x.foo)
+  result.append(x.bar)
+  result.append(x.baz)
   x.foo = 'aaa'
   x.bar = 'bbb'
   x.baz = 'ccc'
-  print(x.foo, x.bar, x.baz)
+  result.append(x.foo)
+  result.append(x.bar)
+  result.append(x.baz)
+  return result
 )";
   ASSERT_FALSE(runFromCStr(&runtime_, src).isError());
 
@@ -2059,13 +2075,14 @@ def test(x):
   HandleScope scope(thread_);
   Module main(&scope, findModule(&runtime_, "__main__"));
   Type type(&scope, moduleAt(&runtime_, main, "Foo"));
-  Tuple args(&scope, runtime_.newTuple(1));
   Layout layout(&scope, type.instanceLayout());
-  args.atPut(0, runtime_.newInstance(layout));
+  Object instance(&scope, runtime_.newInstance(layout));
 
   // Run the test
   Function test(&scope, moduleAt(&runtime_, main, "test"));
-  EXPECT_EQ(callFunctionToString(test, args), "foo bar baz\naaa bbb ccc\n");
+  Object result(&scope, Interpreter::callFunction1(
+                            thread_, thread_->currentFrame(), test, instance));
+  EXPECT_PYLIST_EQ(result, {"foo", "bar", "baz", "aaa", "bbb", "ccc"});
 }
 
 TEST_F(RuntimeAttributeTest, FetchConditionalInstanceAttribute) {

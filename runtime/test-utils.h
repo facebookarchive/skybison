@@ -106,14 +106,6 @@ inline std::vector<Value> make_list(std::vector<Value> l) { return l; }
   EXPECT_PRED_FORMAT2(::python::testing::AssertPyListEqual, l1,                \
                       ::python::testing::make_list(__VA_ARGS__))
 
-// Calls func using the supplied arguments and captures output.
-//
-// This opens a new frame linked to the initial frame of the current thread,
-// pushes all the arguments onto the stack, and invokes the interpreter.
-//
-// The caller is responsible for cleaning up any exception state.
-std::string callFunctionToString(const Function& func, const Tuple& args);
-
 // Calls func using the supplied arguments.
 //
 // This opens a new frame linked to the initial frame of the current thread,

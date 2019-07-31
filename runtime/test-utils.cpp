@@ -181,23 +181,6 @@ std::string compileAndRunToStderrString(Runtime* runtime, const char* src) {
   return std::string(buffer.get());
 }
 
-std::string callFunctionToString(const Function& func, const Tuple& args) {
-  Thread* thread = Thread::current();
-  Runtime* runtime = thread->runtime();
-  size_t buffer_size = 16384;
-  std::unique_ptr<char[]> buffer(new char[buffer_size]);
-  memset(buffer.get(), 0, buffer_size);
-  FILE* out = fmemopen(buffer.get(), buffer_size, "w");
-  CHECK(out != nullptr, "fmemopen failed");
-  FILE* prev_stdout = runtime->stdoutFile();
-  runtime->setStdoutFile(out);
-  callFunction(func, args);
-  fclose(out);
-  runtime->setStdoutFile(prev_stdout);
-  buffer[buffer_size - 1] = '\0';
-  return std::string(buffer.get());
-}
-
 RawObject callFunction(const Function& func, const Tuple& args) {
   Thread* thread = Thread::current();
   Frame* frame = thread->currentFrame();
