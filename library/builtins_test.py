@@ -1213,6 +1213,13 @@ class LenTests(unittest.TestCase):
 
 
 class ListTests(unittest.TestCase):
+    def test_extend_list_returns_none(self):
+        original = [1, 2, 3]
+        copy = []
+        self.assertIsNone(copy.extend(original))
+        self.assertFalse(copy is original)
+        self.assertEqual(copy, original)
+
     def test_extend_with_iterator_that_raises_partway_through_has_sideeffect(self):
         class C:
             def __init__(self):
@@ -1312,6 +1319,17 @@ class ListTests(unittest.TestCase):
         ls = list(range(5))
         self.assertEqual(ls[C()], 2)
 
+    def test_getitem_returns_item(self):
+        original = [1, 2, 3, 4, 5, 6]
+        self.assertEqual(original[0], 1)
+        self.assertEqual(original[3], 4)
+        self.assertEqual(original[5], 6)
+        original[0] = 6
+        original[5] = 1
+        self.assertEqual(original[0], 6)
+        self.assertEqual(original[3], 4)
+        self.assertEqual(original[5], 1)
+
     def test_getslice_with_valid_indices_returns_sublist(self):
         ls = list(range(5))
         self.assertEqual(ls[2:-1:1], [2, 3])
@@ -1398,6 +1416,37 @@ class ListTests(unittest.TestCase):
         self.assertEqual(r12, 2)
         self.assertEqual(r13, 3)
 
+    def test_pop_with_non_list_raises_type_error(self):
+        self.assertRaises(TypeError, list.pop, None)
+
+    def test_pop_with_non_index_index_raises_type_error(self):
+        self.assertRaises(TypeError, list.pop, [], "idx")
+
+    def test_pop_with_empty_list_raises_index_error(self):
+        self.assertRaises(IndexError, list.pop, [])
+
+    def test_pop_with_no_args_pops_from_end_of_list(self):
+        original = [1, 2, 3]
+        self.assertEqual(original.pop(), 3)
+        self.assertEqual(original, [1, 2])
+
+    def test_pop_with_positive_in_bounds_arg_pops_from_list(self):
+        original = [1, 2, 3]
+        self.assertEqual(original.pop(1), 2)
+        self.assertEqual(original, [1, 3])
+
+    def test_pop_with_positive_out_of_bounds_arg_raises_index_error(self):
+        original = [1, 2, 3]
+        self.assertRaises(IndexError, list.pop, original, 10)
+
+    def test_pop_with_negative_in_bounds_arg_pops_from_list(self):
+        original = [1, 2, 3]
+        self.assertEqual(original.pop(-1), 3)
+        self.assertEqual(original, [1, 2])
+
+    def test_pop_with_negative_out_of_bounds_arg_raises_index_error(self):
+        original = [1, 2, 3]
+        self.assertRaises(IndexError, list.pop, original, -10)
 
 class LongRangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):

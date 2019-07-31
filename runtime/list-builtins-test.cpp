@@ -203,16 +203,21 @@ c = a + b
 }
 
 TEST_F(ListBuiltinsTest, ListAppend) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = list()
 b = list()
 a.append(1)
 a.append("2")
 b.append(3)
 a.append(b)
-print(a[0], a[1], a[2][0])
-)");
-  EXPECT_EQ(output, "1 2 3\n");
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  List a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  EXPECT_TRUE(isIntEqualsWord(a.at(0), 1));
+  EXPECT_TRUE(isStrEqualsCStr(a.at(1), "2"));
+  List b(&scope, a.at(2));
+  EXPECT_TRUE(isIntEqualsWord(b.at(0), 3));
 }
 
 TEST_F(ListBuiltinsTest, DunderContainsWithContainedElementReturnsTrue) {
@@ -344,16 +349,6 @@ TEST_F(ListBuiltinsTest, DunderContainsWithNonListSelfRaisesTypeError) {
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
 }
 
-TEST_F(ListBuiltinsTest, ListExtend) {
-  std::string output = compileAndRunToString(&runtime_, R"(
-a = []
-b = [1, 2, 3]
-r = a.extend(b)
-print(r is None, len(b) == 3)
-)");
-  EXPECT_EQ(output, "True True\n");
-}
-
 TEST_F(ListBuiltinsTest, ListInsertWithMissingArgumentsRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(&runtime_, "[1, 2].insert()"), LayoutId::kTypeError,
@@ -416,71 +411,16 @@ b = N(3)
   EXPECT_EQ(self.at(3), value);
 }
 
-TEST_F(ListBuiltinsTest, ListPop) {
-  std::string output = compileAndRunToString(&runtime_, R"(
-a = [1,2,3,4,5]
-a.pop()
-print(len(a))
-a.pop(0)
-a.pop(-1)
-print(len(a), a[0], a[1])
-)");
-  EXPECT_EQ(output, "4\n2 2 3\n");
-
-  std::string output2 = compileAndRunToString(&runtime_, R"(
-a = [1,2,3,4,5]
-print(a.pop(), a.pop(0), a.pop(-2))
-)");
-  EXPECT_EQ(output2, "5 1 3\n");
-}
-
-TEST_F(ListBuiltinsTest, ListPopExcept) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, R"(
-a = [1, 2]
-a.pop(1, 2, 3, 4)
-)"),
-      LayoutId::kTypeError,
-      "TypeError: 'list.pop' takes max 2 positional arguments but 5 given"));
-  thread_->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(&runtime_, "list.pop(None)"), LayoutId::kTypeError,
-      "'pop' requires a 'list' object but got 'NoneType'"));
-  thread_->clearPendingException();
-
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(&runtime_, R"(
-a = [1, 2]
-a.pop("i")
-)"),
-                    LayoutId::kTypeError,
-                    "index object cannot be interpreted as an integer"));
-  thread_->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-a = [1]
-a.pop()
-a.pop()
-)"),
-                            LayoutId::kIndexError, "pop from empty list"));
-  thread_->clearPendingException();
-
-  EXPECT_TRUE(raisedWithStr(runFromCStr(&runtime_, R"(
-a = [1]
-a.pop(3)
-)"),
-                            LayoutId::kIndexError, "pop index out of range"));
-}
-
 TEST_F(ListBuiltinsTest, ListRemove) {
-  std::string output = compileAndRunToString(&runtime_, R"(
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
 a = [5, 4, 3, 2, 1]
 a.remove(2)
 a.remove(5)
-print(len(a), a[0], a[1], a[2])
-)");
-  EXPECT_EQ(output, "3 4 3 1\n");
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object a(&scope, moduleAt(&runtime_, "__main__", "a"));
+  EXPECT_PYLIST_EQ(a, {4, 3, 1});
 }
 
 TEST_F(ListBuiltinsTest, ListRemoveWithDuplicateItemsRemovesFirstMatchingItem) {
@@ -593,34 +533,14 @@ list = [None]
                             LayoutId::kUserWarning, "foo"));
 }
 
-TEST_F(ListBuiltinsTest, PrintList) {
-  std::string output = compileAndRunToString(&runtime_, R"(
-a = [1, 0, True]
-print(a)
-a[0]=7
-print(a)
-)");
-  EXPECT_EQ(output, "[1, 0, True]\n[7, 0, True]\n");
-}
-
 TEST_F(ListBuiltinsTest, ReplicateList) {
-  std::string output = compileAndRunToString(&runtime_, R"(
-data = [1, 2, 3] * 3
-for i in range(9):
-  print(data[i])
-)");
-  EXPECT_EQ(output, "1\n2\n3\n1\n2\n3\n1\n2\n3\n");
-}
-
-TEST_F(ListBuiltinsTest, SubscriptList) {
-  std::string output = compileAndRunToString(&runtime_, R"(
-l = [1, 2, 3, 4, 5, 6]
-print(l[0], l[3], l[5])
-l[0] = 6
-l[5] = 1
-print(l[0], l[3], l[5])
-)");
-  ASSERT_EQ(output, "1 4 6\n6 4 1\n");
+  ASSERT_FALSE(runFromCStr(&runtime_, R"(
+result = [1, 2, 3] * 3
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Object result(&scope, moduleAt(&runtime_, "__main__", "result"));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3, 1, 2, 3, 1, 2, 3});
 }
 
 TEST_F(ListBuiltinsTest, SliceWithPositiveStepReturnsForwardsList) {
