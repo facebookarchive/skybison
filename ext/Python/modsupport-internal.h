@@ -10,6 +10,7 @@ namespace python {
 
 const int kFlagSizeT = 1;
 
-PyObject* makeValueFromFormat(const char** p_format, va_list* p_va, int flags);
+PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
+                              int flags);
 
 }  // namespace python

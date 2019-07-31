@@ -54,11 +54,12 @@ PY_EXPORT int PyModule_AddStringConstant(PyObject* pymodule, const char* name,
   return -1;
 }
 
-static PyObject* doMakeTuple(const char**, va_list*, char, Py_ssize_t, int);
-static PyObject* doMakeList(const char**, va_list*, char, Py_ssize_t, int);
-static PyObject* doMakeDict(const char**, va_list*, char, Py_ssize_t, int);
+static PyObject* doMakeTuple(const char**, std::va_list*, char, Py_ssize_t,
+                             int);
+static PyObject* doMakeList(const char**, std::va_list*, char, Py_ssize_t, int);
+static PyObject* doMakeDict(const char**, std::va_list*, char, Py_ssize_t, int);
 
-static void doIgnore(const char** p_format, va_list* p_va, char endchar,
+static void doIgnore(const char** p_format, std::va_list* p_va, char endchar,
                      Py_ssize_t n, int flags) {
   DCHECK(PyErr_Occurred() != nullptr, "exception has not been raised");
   PyObject* v = PyTuple_New(n);
@@ -85,8 +86,8 @@ static void doIgnore(const char** p_format, va_list* p_va, char endchar,
   }
 }
 
-static PyObject* doMakeDict(const char** p_format, va_list* p_va, char endchar,
-                            Py_ssize_t n, int flags) {
+static PyObject* doMakeDict(const char** p_format, std::va_list* p_va,
+                            char endchar, Py_ssize_t n, int flags) {
   if (n < 0) {
     return nullptr;
   }
@@ -131,8 +132,8 @@ static PyObject* doMakeDict(const char** p_format, va_list* p_va, char endchar,
   return d;
 }
 
-static PyObject* doMakeList(const char** p_format, va_list* p_va, char endchar,
-                            Py_ssize_t n, int flags) {
+static PyObject* doMakeList(const char** p_format, std::va_list* p_va,
+                            char endchar, Py_ssize_t n, int flags) {
   if (n < 0) {
     return nullptr;
   }
@@ -163,8 +164,8 @@ static PyObject* doMakeList(const char** p_format, va_list* p_va, char endchar,
   return v;
 }
 
-static PyObject* doMakeTuple(const char** p_format, va_list* p_va, char endchar,
-                             Py_ssize_t n, int flags) {
+static PyObject* doMakeTuple(const char** p_format, std::va_list* p_va,
+                             char endchar, Py_ssize_t n, int flags) {
   if (n < 0) {
     return nullptr;
   }
@@ -234,7 +235,8 @@ static Py_ssize_t countFormat(const char* format, char endchar) {
   return count;
 }
 
-PyObject* makeValueFromFormat(const char** p_format, va_list* p_va, int flags) {
+PyObject* makeValueFromFormat(const char** p_format, std::va_list* p_va,
+                              int flags) {
   for (;;) {
     switch (*(*p_format)++) {
       case '(':
@@ -426,7 +428,7 @@ PyObject* makeValueFromFormat(const char** p_format, va_list* p_va, int flags) {
   }
 }
 
-static PyObject* vaBuildValue(const char* format, va_list va, int flags) {
+static PyObject* vaBuildValue(const char* format, std::va_list va, int flags) {
   Py_ssize_t n = countFormat(format, '\0');
   if (n < 0) {
     return nullptr;
@@ -435,7 +437,7 @@ static PyObject* vaBuildValue(const char* format, va_list va, int flags) {
     Py_INCREF(Py_None);
     return Py_None;
   }
-  va_list lva;
+  std::va_list lva;
   va_copy(lva, va);
   const char* f = format;
   PyObject* retval;
@@ -448,16 +450,17 @@ static PyObject* vaBuildValue(const char* format, va_list va, int flags) {
   return retval;
 }
 
-PY_EXPORT PyObject* Py_VaBuildValue(const char* format, va_list va) {
+PY_EXPORT PyObject* Py_VaBuildValue(const char* format, std::va_list va) {
   return vaBuildValue(format, va, 0);
 }
 
-PY_EXPORT PyObject* _Py_VaBuildValue_SizeT(const char* format, va_list va) {
+PY_EXPORT PyObject* _Py_VaBuildValue_SizeT(const char* format,
+                                           std::va_list va) {
   return vaBuildValue(format, va, kFlagSizeT);
 }
 
 PY_EXPORT PyObject* Py_BuildValue(const char* format, ...) {
-  va_list va;
+  std::va_list va;
   va_start(va, format);
   PyObject* retval = vaBuildValue(format, va, 0);
   va_end(va);
@@ -465,7 +468,7 @@ PY_EXPORT PyObject* Py_BuildValue(const char* format, ...) {
 }
 
 PY_EXPORT PyObject* _Py_BuildValue_SizeT(const char* format, ...) {
-  va_list va;
+  std::va_list va;
   va_start(va, format);
   PyObject* retval = vaBuildValue(format, va, kFlagSizeT);
   va_end(va);
