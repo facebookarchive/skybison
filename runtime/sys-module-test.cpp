@@ -150,41 +150,6 @@ sys.stdout.write("Hola")
             "Hola");
 }
 
-TEST_F(SysModuleTest, SysArgvProgArg) {  // pystone dependency
-  const char* src = R"(
-import sys
-print(len(sys.argv))
-
-for x in sys.argv:
-  print(x)
-)";
-  const char* argv[2];
-  argv[0] = "./python";  // program
-  argv[1] = "SysArgv";   // script
-  runtime_.setArgv(thread_, 2, argv);
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "1\nSysArgv\n");
-}
-
-TEST_F(SysModuleTest, SysArgvMultiArgs) {  // pystone dependency
-  const char* src = R"(
-import sys
-print(len(sys.argv))
-
-print(sys.argv[1])
-
-for x in sys.argv:
-  print(x)
-)";
-  const char* argv[3];
-  argv[0] = "./python";  // program
-  argv[1] = "SysArgv";   // script
-  argv[2] = "200";       // argument
-  runtime_.setArgv(thread_, 3, argv);
-  std::string output = compileAndRunToString(&runtime_, src);
-  EXPECT_EQ(output, "2\n200\nSysArgv\n200\n");
-}
-
 TEST_F(SysModuleTest, SysExit) {
   const char* src = R"(
 import sys
